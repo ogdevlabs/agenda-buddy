@@ -1,6 +1,8 @@
 using System.Reflection;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using Provider.Extensions;
+using Provider.Infrastructure.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,6 +16,15 @@ builder.Services.AddSwaggerGen();
 
 
 var app = builder.Build();
+
+//Migrate Database
+using (IServiceScope scope = app.Services.CreateScope())
+{
+    var serviceProvider = scope.ServiceProvider;
+    var context = serviceProvider.GetRequiredService<ProviderContext>();
+    context.Database.Migrate();
+    DataSeeder.Seed(context);
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
