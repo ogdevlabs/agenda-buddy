@@ -51,7 +51,7 @@ namespace Provider.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Addresses");
+                    b.ToTable("Address");
                 });
 
             modelBuilder.Entity("Provider.Models.Customer", b =>
@@ -84,7 +84,7 @@ namespace Provider.Migrations
 
                     b.HasIndex("ProviderModelId");
 
-                    b.ToTable("Customers");
+                    b.ToTable("Customer");
                 });
 
             modelBuilder.Entity("Provider.Models.ProviderModel", b =>
