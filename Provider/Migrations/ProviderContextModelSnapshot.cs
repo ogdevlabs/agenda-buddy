@@ -22,7 +22,7 @@ namespace Provider.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("Provider.Models.AddressModel", b =>
+            modelBuilder.Entity("Provider.Models.Address", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -51,10 +51,10 @@ namespace Provider.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("AddressModel");
+                    b.ToTable("Addresses");
                 });
 
-            modelBuilder.Entity("Provider.Models.CustomerModel", b =>
+            modelBuilder.Entity("Provider.Models.Customer", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -84,7 +84,7 @@ namespace Provider.Migrations
 
                     b.HasIndex("ProviderModelId");
 
-                    b.ToTable("CustomerModel");
+                    b.ToTable("Customers");
                 });
 
             modelBuilder.Entity("Provider.Models.ProviderModel", b =>
@@ -120,7 +120,7 @@ namespace Provider.Migrations
                     b.ToTable("Providers");
                 });
 
-            modelBuilder.Entity("Provider.Models.CustomerModel", b =>
+            modelBuilder.Entity("Provider.Models.Customer", b =>
                 {
                     b.HasOne("Provider.Models.ProviderModel", null)
                         .WithMany("Customers")
@@ -129,7 +129,7 @@ namespace Provider.Migrations
 
             modelBuilder.Entity("Provider.Models.ProviderModel", b =>
                 {
-                    b.HasOne("Provider.Models.AddressModel", "AddressInformation")
+                    b.HasOne("Provider.Models.Address", "AddressInformation")
                         .WithMany()
                         .HasForeignKey("AddressInformationId");
 

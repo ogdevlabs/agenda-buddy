@@ -12,7 +12,7 @@ public class EndpointDefinition: IEndpointDefinition
 
         app.MapPost("api/v1/providers", async(IMediator mediator, ProviderContext context, ProviderModel provider) =>
         {
-            await context.Providers.AddAsync(provider);
+            await context.Providers!.AddAsync(provider);
             await context.SaveChangesAsync();
             await Notify(mediator, "Provider:Created");
             

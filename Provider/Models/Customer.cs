@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Provider.Models;
 
-public class CustomerModel
+public class Customer
 {
     public int Id { get; set; }
     public required string FirstName { get; set; }

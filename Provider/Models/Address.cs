@@ -3,7 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 namespace Provider.Models;
 
 [ExcludeFromCodeCoverage]
-public class AddressModel
+public class Address
 {
     public int Id { get; set; }
     public required string AddressLine1 { get; set; }

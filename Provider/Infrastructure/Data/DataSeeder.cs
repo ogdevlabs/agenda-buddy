@@ -25,7 +25,7 @@ public class DataSeeder
                 LastName = "Jirafales",
                 Email = "profesor.jirafales@elchavo.com",
                 Phone = "(612)262-7624",
-                AddressInformation = new AddressModel()
+                AddressInformation = new Address()
                 {
                     AddressLine1 = "La vecindad del Chavo",
                     AddressLine2 = "2",

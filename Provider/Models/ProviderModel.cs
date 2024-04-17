@@ -14,7 +14,7 @@ public record ProviderModel
     public required string Email { get; set; }
     [Phone]
     public string? Phone { get; set; }
-    public AddressModel? AddressInformation { get; set; }
-    public List<CustomerModel>? Customers { get; set; }
+    public Address? AddressInformation { get; set; }
+    public List<Customer>? Customers { get; set; }
 }
 

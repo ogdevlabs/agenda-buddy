@@ -12,7 +12,7 @@ namespace Provider.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
-                name: "AddressModel",
+                name: "Address",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
@@ -25,7 +25,7 @@ namespace Provider.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_AddressModel", x => x.Id);
+                    table.PrimaryKey("PK_Address", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -44,14 +44,14 @@ namespace Provider.Migrations
                 {
                     table.PrimaryKey("PK_Providers", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Providers_AddressModel_AddressInformationId",
+                        name: "FK_Providers_Address_AddressInformationId",
                         column: x => x.AddressInformationId,
-                        principalTable: "AddressModel",
+                        principalTable: "Address",
                         principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
-                name: "CustomerModel",
+                name: "Customer",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
@@ -64,17 +64,17 @@ namespace Provider.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_CustomerModel", x => x.Id);
+                    table.PrimaryKey("PK_Customer", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_CustomerModel_Providers_ProviderModelId",
+                        name: "FK_Customer_Providers_ProviderModelId",
                         column: x => x.ProviderModelId,
                         principalTable: "Providers",
                         principalColumn: "Id");
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_CustomerModel_ProviderModelId",
-                table: "CustomerModel",
+                name: "IX_Customer_ProviderModelId",
+                table: "Customer",
                 column: "ProviderModelId");
 
             migrationBuilder.CreateIndex(
@@ -87,13 +87,13 @@ namespace Provider.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "CustomerModel");
+                name: "Customer");
 
             migrationBuilder.DropTable(
                 name: "Providers");
 
             migrationBuilder.DropTable(
-                name: "AddressModel");
+                name: "Address");
         }
     }
 }
