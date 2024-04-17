@@ -1,3 +1,13 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Provider.Models;
 
-public record Address();
+[ExcludeFromCodeCoverage]
+public class Address
+{
+    public required string AddressLine1 { get; set; }
+    public string? AddressLine2 { get; set; }
+    public required string City { get; set; }
+    public required string State { get; set; }
+    public required string ZipCode { get; set; }
+}

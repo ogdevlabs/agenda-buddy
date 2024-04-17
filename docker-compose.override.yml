@@ -94,10 +94,7 @@ services:
       - Kestrel__Endpoints__GRPC__Protocols=Http2
       - ConnectionStrings__TopicDB=Host=provider.postgresql;Port=5432;Database=ProviderDB;Username=postgres;Password=Admin123
       - UseCustomizationData=true
-      - AzureStorageEnabled=false
-      - ApplicationInsights__InstrumentationKey=${INSTRUMENTATION_KEY}
-      - OrchestratorType=${ORCHESTRATOR_TYPE}
-      - PATH_BASE=/topic.api
+      - PATH_BASE=/provider
     ports:
       - "8300:80"
       - "8301:81"

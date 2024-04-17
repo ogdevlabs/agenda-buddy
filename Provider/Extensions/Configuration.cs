@@ -1,6 +1,40 @@
+using Microsoft.EntityFrameworkCore;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Infrastructure;
+using Provider.Infrastructure.Data;
+
 namespace Provider.Extensions;
 
-public class Configuration
+
+public static class Configuration
 {
+    public static IServiceCollection AddHealthChecks(this IServiceCollection serviceCollection,
+        IConfiguration configuration)
+    {
+        var healthCheckBuilder = serviceCollection.AddHealthChecks();
+
+        healthCheckBuilder
+            .AddNpgSql(_ => configuration!.GetConnectionString("ProviderDB")!,
+                name: "ProviderDB-Check",
+                tags: new string[] { "ready" });
+        
+        return serviceCollection;
+    }
     
+    public static IServiceCollection AddDbContexts(this IServiceCollection serviceCollection, IConfiguration configuration)
+    {
+        static void ConfigurePostgreSqlOptions(NpgsqlDbContextOptionsBuilder options)
+        {
+            options.MigrationsAssembly(typeof(Program).Assembly.FullName);
+            options.EnableRetryOnFailure(maxRetryCount: 15);
+        };
+
+        serviceCollection.AddDbContext<ProviderContext>(options =>
+        {
+            var connectionString = configuration.GetConnectionString("ProviderDB");
+
+            options.UseNpgsql(connectionString, ConfigurePostgreSqlOptions);
+        });
+
+        return serviceCollection;
+    }
 }
