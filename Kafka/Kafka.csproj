@@ -1,0 +1,20 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="KafkaFlow" Version="3.0.7" />
+      <PackageReference Include="KafkaFlow.Admin" Version="3.0.7" />
+      <PackageReference Include="KafkaFlow.LogHandler.Console" Version="3.0.7" />
+      <PackageReference Include="KafkaFlow.Microsoft.DependencyInjection" Version="3.0.7" />
+      <PackageReference Include="KafkaFlow.Serializer.JsonCore" Version="3.0.7" />
+      <PackageReference Include="MediatR" Version="12.0.0" />
+      <PackageReference Include="MediatR.Extensions.Microsoft.DependencyInjection" Version="11.0.0" />
+      <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
+    </ItemGroup>
+
+</Project>
