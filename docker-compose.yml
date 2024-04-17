@@ -95,10 +95,8 @@ services:
     #            kafka-topics --create --topic agenda-buddy-topic --partitions 1 --replication-factor 1 --if-not-exists --bootstrap-server broker:29092 && \
     #            kafka-console-producer --bootstrap-server broker:29092 --topic agenda-buddy-topic < /data/message.json'"
   
-  provider.db:
-    hostname: provider.db
-    container_name: provider.db
-    image: postgresql:16.2
+  provider-db:
+    image: postgres:latest
   
   provider:
     hostname: provider
@@ -106,6 +104,6 @@ services:
     image: ${DOCKER_REGISTRY-}provider
     build:
       context: .
-      dockerfile: Provider/dockerfile
+      dockerfile: Provider/Dockerfile
     depends_on:
-      - provider.db
+      - provider-db
