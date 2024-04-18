@@ -3,7 +3,7 @@ using MediatR;
 
 namespace EventAndCommands.Commands;
 
-public class RequestHandler(IMediator mediator): IRequestHandler<Request>
+public class RequestHandler(IMediator mediator) : IRequestHandler<Request>
 {
     public async Task<Unit> Handle(Request request, CancellationToken cancellationToken)
     {
@@ -11,3 +11,4 @@ public class RequestHandler(IMediator mediator): IRequestHandler<Request>
         return Unit.Value;
     }
 }
+
