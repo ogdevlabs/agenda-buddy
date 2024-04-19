@@ -11,7 +11,7 @@ public class Program
         _mediator = mediator;
     }
 
-    static async Task Main(string[] args)
+    static void Main(string[] args)
     {
         var kafkaClient = new KafkaClient();
     }
