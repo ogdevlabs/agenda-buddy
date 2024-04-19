@@ -1,5 +1,4 @@
 using MediatR;
-using KafkaFlow.Admin;
 
 namespace EventAndCommands.Commands;
 
