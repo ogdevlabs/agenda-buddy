@@ -1,20 +1,18 @@
 using EventAndCommands.Commands;
+using Kafka;
 using MediatR;
 
 namespace Provider.Requests;
 
-public static class RequestCollection
+public class RequestCollection(IKafkaClient kafkaClient) : IRequestCollection
 {
-    public static async Task<IResult> CreateTopic(IMediator mediator, string topicName)
+    public async Task<string> CreateTopicNotification(IMediator mediator, string topicName)
     {
-        await Task.CompletedTask;
-        return Results.Ok("Notified");
+        //var result = await mediator.Send(new CreateTopicCommand() { TopicName = topicName });
+        var result = await new CreateTopicCommandHandler(mediator, (kafkaClient as KafkaClient)!).Handle(
+            new CreateTopicCommand() { TopicName = topicName },
+            new CancellationToken());
+        return result;
     }
     
-    private static async Task<IResult> Notify(IMediator mediator, string message)
-    {
-        await new RequestHandler(mediator).Handle(new Request() { Message = message },
-            new CancellationToken());
-        return Results.Ok("Notified");
-    }
 }

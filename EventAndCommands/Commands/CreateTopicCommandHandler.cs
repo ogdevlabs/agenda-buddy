@@ -1,14 +1,16 @@
+using EventAndCommands.Events;
+using Kafka;
 using MediatR;
-using KafkaFlow.Admin;
 
 namespace EventAndCommands.Commands;
 
-public class CreateTopicCommandHandler :IRequestHandler<CreateTopicCommand>
+public class CreateTopicCommandHandler(IMediator mediator, KafkaClient kafkaClient)
+    : IRequestHandler<CreateTopicCommand, string>
 {
-    
-    public Task<Unit> Handle(CreateTopicCommand request, CancellationToken cancellationToken)
+    public async Task<string> Handle(CreateTopicCommand request, CancellationToken cancellationToken)
     {
-        
-        throw new NotImplementedException();
+        await mediator.Publish(new EventNotifications() { Message = request.TopicName }, cancellationToken);
+        await kafkaClient.CreateTopicIfNotExist(request.TopicName);
+        return await Task.FromResult(request.TopicName);
     }
 }

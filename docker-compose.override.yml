@@ -86,7 +86,6 @@ services:
       - provider-data:/var/lib/postgres/data
 
   provider:
-    restart: always
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - Kestrel__Endpoints__HTTP__Url=http://0.0.0.0:80

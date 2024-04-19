@@ -8,9 +8,9 @@ public class DataSeeder
     public static void Seed(ProviderContext context)
     {
         if (context == null) throw new DataException("Cannot connect to DB");
-        if (!context.Providers.Any())
+        if (!context.Providers!.Any())
         {
-            context.Providers.AddRange(GetPreAddedProviders());
+            context.Providers!.AddRange(GetPreAddedProviders());
             context.SaveChanges();
         }
     }
@@ -19,7 +19,7 @@ public class DataSeeder
     {
         return new List<ProviderModel>()
         {
-            new ProviderModel()
+            new()
             {
                 FirstName = "Profesor",
                 LastName = "Jirafales",

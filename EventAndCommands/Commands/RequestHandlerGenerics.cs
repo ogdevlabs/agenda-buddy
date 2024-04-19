@@ -10,7 +10,7 @@ public class RequestHandlerGenerics<TRequest, TResponse>(IMediator mediator)
     {
         await mediator.Publish(new EventNotificationsGenerics<TRequest>(),
             cancellationToken);
-        return default;
+        return default!;
     }
 
    

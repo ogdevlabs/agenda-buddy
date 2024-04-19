@@ -1,12 +1,21 @@
 using EventAndCommands.Commands;
+using Kafka;
 using MediatR;
 using Provider.Infrastructure.Data;
 using Provider.Models;
+using Provider.Requests;
 
 namespace Provider.Endpoints;
 
 public class EndpointDefinition: IEndpointDefinition
 {
+    private readonly IRequestCollection _requestCollection;
+    
+    public EndpointDefinition(IRequestCollection requestCollection)
+    {
+        _requestCollection = requestCollection;
+    }
+
     public void RegisterEndpoints(WebApplication app)
     {
 
@@ -14,6 +23,7 @@ public class EndpointDefinition: IEndpointDefinition
         {
             await context.Providers!.AddAsync(provider);
             await context.SaveChangesAsync();
+            await _requestCollection.CreateTopicNotification(mediator, "WinniePoe");
             await Notify(mediator, "Provider:Created");
             
             return Results.Created($"api/v1/providers/{provider.Id}", provider);
@@ -26,4 +36,6 @@ public class EndpointDefinition: IEndpointDefinition
             new CancellationToken());
         return Results.Ok("Notified");
     }
+
+    
 }
