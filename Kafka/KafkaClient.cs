@@ -9,7 +9,7 @@ public class KafkaClient: IKafkaClient
     {
         var config = new AdminClientConfig
         {
-            BootstrapServers = "broker:9092"
+            BootstrapServers = "localhost:9092"
         };
 
         using var adminClient = new AdminClientBuilder(config).Build();

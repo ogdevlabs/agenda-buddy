@@ -52,7 +52,8 @@ app.MapPost("api/v1/providers",
 {
     await context.Providers!.AddAsync(provider);
     await context.SaveChangesAsync();
-    //await requestCollection.CreateTopicNotification(mediator, "WinniePoe");
+    var providerTopicName = $"{provider.FirstName.ToLower()}-{provider.LastName.ToLower()}-topic";
+    await requestCollection.CreateTopicNotification(mediator, providerTopicName);
             
     return Results.Created($"api/v1/providers/{provider.Id}", provider);
 });
