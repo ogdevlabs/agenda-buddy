@@ -4,6 +4,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Provider.Extensions;
 using Provider.Infrastructure.Data;
+using Provider.Middleware;
 using Provider.Models;
 using Provider.Requests;
 
@@ -39,6 +40,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseDbExceptionHandler();
 app.UseHttpsRedirection();
 
 //app.RegisterEndpoints();
@@ -52,7 +54,7 @@ app.MapPost("api/v1/providers",
 {
     await context.Providers!.AddAsync(provider);
     await context.SaveChangesAsync();
-    var providerTopicName = $"{provider.FirstName.ToLower()}-{provider.LastName.ToLower()}-topic";
+    var providerTopicName = $"{provider.Email.Replace('@','-').ToLower()}-topic";
     await requestCollection.CreateTopicNotification(mediator, providerTopicName);
             
     return Results.Created($"api/v1/providers/{provider.Id}", provider);
