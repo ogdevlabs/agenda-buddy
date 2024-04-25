@@ -1,3 +1,4 @@
+using System.Text;
 using Microsoft.EntityFrameworkCore;
 
 namespace Provider.Middleware;
@@ -12,10 +13,20 @@ public class DbExceptionHandlerMiddleware(RequestDelegate next)
         }
         catch (DbUpdateException ex)
         {
+            // ToDo:
             // Log the exception or handle it gracefully
-            // For demonstration purposes, let's just return a generic error response
-            context.Response.StatusCode = 500;
-            await context.Response.WriteAsync("Database operation failed. Please try again later.");
+            context.Response.StatusCode = 409;
+            var errorResponse = new
+            {
+                status = "Error",
+                code = 409,
+                message = "Duplicate record found",
+                details = new
+                {
+                    value = "[FirstName, LastName, Email] might be a duplicate. Please verify and retry"
+                }
+            };
+            await context.Response.WriteAsJsonAsync(errorResponse);
         }
     }
 }

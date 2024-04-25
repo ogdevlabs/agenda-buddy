@@ -52,9 +52,12 @@ app.MapPost("api/v1/providers",
         ProviderModel provider, 
         IRequestCollection requestCollection) =>
 {
+    var iLength = provider.Email.IndexOf('@');
+    var providerTopicName = provider.Email.Substring(0, iLength).ToLower()+"-topic";
+    provider.Topic = providerTopicName;
     await context.Providers!.AddAsync(provider);
     await context.SaveChangesAsync();
-    var providerTopicName = $"{provider.Email.Replace('@','-').ToLower()}-topic";
+   
     await requestCollection.CreateTopicNotification(mediator, providerTopicName);
             
     return Results.Created($"api/v1/providers/{provider.Id}", provider);

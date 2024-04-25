@@ -12,7 +12,7 @@ public class ProviderContext(DbContextOptions<ProviderContext> options) : DbCont
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<ProviderModel>()
-            .HasIndex(u => new {u.FirstName, u.LastName, u.Email, u.Topic})
+            .HasIndex(u => new {u.FirstName, u.LastName, u.Email})
             .IsUnique();
     }
 }
