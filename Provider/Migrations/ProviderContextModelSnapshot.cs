@@ -113,9 +113,16 @@ namespace Provider.Migrations
                     b.Property<string>("Phone")
                         .HasColumnType("text");
 
+                    b.Property<string>("Topic")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.HasKey("Id");
 
                     b.HasIndex("AddressInformationId");
+
+                    b.HasIndex("FirstName", "LastName", "Email", "Topic")
+                        .IsUnique();
 
                     b.ToTable("Providers");
                 });

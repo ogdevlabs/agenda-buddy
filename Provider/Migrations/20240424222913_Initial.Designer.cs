@@ -12,7 +12,7 @@ using Provider.Infrastructure.Data;
 namespace Provider.Migrations
 {
     [DbContext(typeof(ProviderContext))]
-    [Migration("20240417211950_Initial")]
+    [Migration("20240424222913_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -116,9 +116,16 @@ namespace Provider.Migrations
                     b.Property<string>("Phone")
                         .HasColumnType("text");
 
+                    b.Property<string>("Topic")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.HasKey("Id");
 
                     b.HasIndex("AddressInformationId");
+
+                    b.HasIndex("FirstName", "LastName", "Email", "Topic")
+                        .IsUnique();
 
                     b.ToTable("Providers");
                 });

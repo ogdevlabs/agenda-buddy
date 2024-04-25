@@ -5,7 +5,7 @@ using Provider.Infrastructure.Data;
 namespace Provider.Extensions;
 
 
-public static class Configuration
+public static class ServiceCollectionExtension
 {
     public static IServiceCollection AddHealthChecks(this IServiceCollection serviceCollection,
         IConfiguration configuration)

@@ -38,6 +38,7 @@ namespace Provider.Migrations
                     LastName = table.Column<string>(type: "text", nullable: false),
                     Email = table.Column<string>(type: "text", nullable: false),
                     Phone = table.Column<string>(type: "text", nullable: true),
+                    Topic = table.Column<string>(type: "text", nullable: false),
                     AddressInformationId = table.Column<int>(type: "integer", nullable: true)
                 },
                 constraints: table =>
@@ -81,6 +82,12 @@ namespace Provider.Migrations
                 name: "IX_Providers_AddressInformationId",
                 table: "Providers",
                 column: "AddressInformationId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Providers_FirstName_LastName_Email_Topic",
+                table: "Providers",
+                columns: new[] { "FirstName", "LastName", "Email", "Topic" },
+                unique: true);
         }
 
         /// <inheritdoc />

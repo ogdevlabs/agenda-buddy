@@ -24,6 +24,7 @@ public class DataSeeder
                 FirstName = "Profesor",
                 LastName = "Jirafales",
                 Email = "profesor.jirafales@elchavo.com",
+                Topic = "profesor.jirafales-topic",
                 Phone = "(612)262-7624",
                 AddressInformation = new Address()
                 {

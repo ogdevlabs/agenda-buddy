@@ -21,4 +21,8 @@
       <ProjectReference Include="..\Kafka\Kafka.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Infrastructure\" />
+    </ItemGroup>
+
 </Project>
