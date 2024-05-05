@@ -13,6 +13,8 @@ The different professionals that could be finding value in this application, inc
 In a nutshell Agenda Buddy will include the following features:
 - 
 - Provider registration
+- Provider define services to offer
+- Provider management module (Update profile, Update services, Update customers)
 - Customer registration
 - Calendar booking management
 - Journal and notes
