@@ -20,18 +20,4 @@ public class MongoDbService : IMongoDbService
     {
         return await _collection.Find(service => true).ToListAsync();
     }
-
-    private bool ConnectionCheck(MongoClient client)
-    {
-        try
-        {
-            client.GetDatabase("admin").RunCommand<BsonDocument>(new BsonDocument("ping", 1));
-            return true;
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"An exception occurred, Exception: {ex.InnerException}");
-            return false;
-        }
-    }
 }
