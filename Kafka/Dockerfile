@@ -7,9 +7,9 @@ WORKDIR "/src/Kafka"
 RUN dotnet build "Kafka.csproj" -c Release -o /app/build
 
 
-FROM build AS pack
-RUN dotnet pack --no-build --no-restore --configuration Release --output /app/pack
+FROM build AS publish
+RUN dotnet publish --configuration Release --output /app/publish
 
 FROM mcr.microsoft.com/dotnet/runtime:8.0
 WORKDIR /app
-COPY --from=pack /app/pack .
+COPY --from=publish /app/publish .
