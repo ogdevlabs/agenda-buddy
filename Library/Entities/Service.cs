@@ -18,9 +18,9 @@ public class Service
 
     public Service(string name, string description, double fee, Unit unit)
     {
-        this.Name = name;
-        this.Description = description;
-        this.Fee = fee;
-        this.Unit = unit;
+        Name = name;
+        Description = description;
+        Fee = fee;
+        Unit = unit;
     }
 }
