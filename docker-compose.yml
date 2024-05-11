@@ -52,3 +52,9 @@ services:
       dockerfile: Provider/Dockerfile
     depends_on:
       - provider-db
+  
+  kafkalib:
+      image: ${DOCKER_REGISTRY-}kafka
+      build:
+        context: .
+        dockerfile: Kafka/Dockerfile
