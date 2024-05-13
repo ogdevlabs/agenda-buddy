@@ -26,7 +26,7 @@ public class DataSeeder
             database,
             collection);
         var record = AddTestProviders().FirstOrDefault();
-        repository.InsertAsync(record).Wait();
+        repository.InsertAsync(record!).Wait();
     }
    
 
@@ -53,11 +53,11 @@ public class DataSeeder
         };
     }
 
-    private static IEnumerable<Library.Entities.ProviderEntity> AddTestProviders()
+    private static IEnumerable<ProviderEntity> AddTestProviders()
     {
-        return new List<Library.Entities.ProviderEntity>()
+        return new List<ProviderEntity>()
         {
-            new Library.Entities.ProviderEntity()
+            new()
             {
                 FirstName = "Professor",
                 LastName = "Jirafales",
