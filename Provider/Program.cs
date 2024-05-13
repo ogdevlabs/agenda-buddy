@@ -2,6 +2,7 @@ using System.Reflection;
 using Kafka;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Provider.Configurations;
 using Provider.Extensions;
 using Provider.Infrastructure.Data;
 using Provider.Middleware;
@@ -14,6 +15,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContexts(builder.Configuration);
 builder.Services.AddHealthChecks(builder.Configuration);
 builder.Services.AddMediatR(Assembly.GetExecutingAssembly());
+builder.Services.AddSingleton<IMongoDbConfiguration, MongoDbConfiguration>();
 builder.Services.AddSingleton<IKafkaClient, KafkaClient>();
 builder.Services.AddSingleton<IRequestCollection, RequestCollection>();
 
@@ -23,15 +25,22 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-//Fresh Start Database
+//Fresh Start Database 
 using (IServiceScope scope = app.Services.CreateScope())
 {
     var serviceProvider = scope.ServiceProvider;
+    // PostgreSQL
     var context = serviceProvider.GetRequiredService<ProviderContext>();
     context.Database.EnsureDeleted();
     context.Database.Migrate();
     DataSeeder.Seed(context);
+    DataSeeder.SeedDocument(
+        builder.Configuration,
+        builder.Configuration.GetSection("MongoDB")["DatabaseName"]!,
+        builder.Configuration.GetSection("MongoDB")["CollectionName"]!);
 }
+
+
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

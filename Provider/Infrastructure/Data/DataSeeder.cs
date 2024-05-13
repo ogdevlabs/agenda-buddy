@@ -1,10 +1,14 @@
 using System.Data;
+using Library.Entities;
+using Library.Repositories;
+using Provider.Configurations;
 using Provider.Models;
 
 namespace Provider.Infrastructure.Data;
 
 public class DataSeeder
 {
+    
     public static void Seed(ProviderContext context)
     {
         if (context == null) throw new DataException("Cannot connect to DB");
@@ -14,6 +18,17 @@ public class DataSeeder
             context.SaveChanges();
         }
     }
+
+    public static void SeedDocument(IConfiguration configuration, string database, string collection)
+    {
+        var client = new MongoDbConfiguration(configuration).MongoClient();
+        var repository = new MongoDbRepository<ProviderEntity>(client, 
+            database,
+            collection);
+        var record = AddTestProviders().FirstOrDefault();
+        repository.InsertAsync(record).Wait();
+    }
+   
 
     private static IEnumerable<ProviderModel> GetPreAddedProviders()
     {
@@ -34,6 +49,20 @@ public class DataSeeder
                     State = "Somewhere",
                     ZipCode = "12345"
                 }
+            }
+        };
+    }
+
+    private static IEnumerable<Library.Entities.ProviderEntity> AddTestProviders()
+    {
+        return new List<Library.Entities.ProviderEntity>()
+        {
+            new Library.Entities.ProviderEntity()
+            {
+                FirstName = "Professor",
+                LastName = "Jirafales",
+                Email = "professor.jirafales@elchavo.com",
+                KafkaTopic = "TBD"
             }
         };
     }

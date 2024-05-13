@@ -27,13 +27,14 @@ public static class ServiceCollectionExtension
             options.MigrationsAssembly(typeof(Program).Assembly.FullName);
             options.EnableRetryOnFailure(maxRetryCount: 15);
         };
-
+        
         serviceCollection.AddDbContext<ProviderContext>(options =>
         {
             var connectionString = configuration.GetConnectionString("ProviderDB");
 
             options.UseNpgsql(connectionString, ConfigurePostgreSqlOptions);
         });
+        
 
         return serviceCollection;
     }

@@ -46,15 +46,21 @@ services:
   provider:
     hostname: provider
     container_name: provider
-    image: ${DOCKER_REGISTRY-}provider
+    image: ${DOCKER_REGISTRY-}provider:latest
     build:
       context: .
       dockerfile: Provider/Dockerfile
     depends_on:
       - provider-db
   
-  kafkalib:
-      image: ${DOCKER_REGISTRY-}kafka
+  kafka-library:
+      image: ${DOCKER_REGISTRY-}kafka:latest
       build:
         context: .
         dockerfile: Kafka/Dockerfile
+
+  common-library:
+      image: ${DOCKER_REGISTRY-}library:latest
+      build:
+        context: .
+        dockerfile: Library/Dockerfile

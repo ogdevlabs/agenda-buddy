@@ -6,7 +6,7 @@ namespace Services.Services;
 
 public class MongoDbService : IMongoDbService
 {
-    private readonly IMongoCollection<Service> _collection;
+    private readonly IMongoCollection<ServiceEntity> _collection;
 
     public MongoDbService(IConfiguration configuration)
     {
@@ -14,9 +14,9 @@ public class MongoDbService : IMongoDbService
         //settings.ServerApi = new ServerApi(ServerApiVersion.V1);
         var client = new MongoClient(mongoUri);
         var database = client.GetDatabase("provider-service");
-        _collection = database.GetCollection<Service>("services");
+        _collection = database.GetCollection<ServiceEntity>("services");
     }
-    public async Task<List<Service>> GetServices()
+    public async Task<List<ServiceEntity>> GetServices()
     {
         return await _collection.Find(service => true).ToListAsync();
     }
