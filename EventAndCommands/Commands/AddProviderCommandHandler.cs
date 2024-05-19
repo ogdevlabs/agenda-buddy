@@ -1,16 +1,16 @@
 using EventAndCommands.Events;
+using Kafka;
 using MediatR;
 
 namespace EventAndCommands.Commands;
 
-public class AddProviderCommandHandler(IMediator mediator) : IRequestHandler<AddProviderCommand>
+public class AddProviderTopicCommandHandler(IMediator mediator, KafkaClient kafkaClient)
+    : IRequestHandler<AddProviderTopicCommand, string>
 {
-    public async Task<Unit> Handle(AddProviderCommand request, CancellationToken cancellationToken)
+    public async Task<string> Handle(AddProviderTopicCommand request, CancellationToken cancellationToken)
     {
-        await mediator.Publish(
-            new ProviderAddedEvent { ProviderName = request.ProviderName! }, 
-            cancellationToken);
-
-        return Unit.Value;
+        await mediator.Publish(new AddProviderEvent() { ProviderName = request.TopicName }, cancellationToken);
+        await kafkaClient.CreateTopicIfNotExist(request.TopicName);
+        return await Task.FromResult(request.TopicName);
     }
 }

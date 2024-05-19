@@ -1,6 +1,10 @@
+using Library.Entities;
+using Library.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Infrastructure;
+using Provider.Configurations;
 using Provider.Infrastructure.Data;
+using Provider.Services;
 
 namespace Provider.Extensions;
 
@@ -20,7 +24,8 @@ public static class ServiceCollectionExtension
         return serviceCollection;
     }
     
-    public static IServiceCollection AddDbContexts(this IServiceCollection serviceCollection, IConfiguration configuration)
+    public static IServiceCollection AddDbContexts(this IServiceCollection serviceCollection, 
+        IConfiguration configuration)
     {
         static void ConfigurePostgreSqlOptions(NpgsqlDbContextOptionsBuilder options)
         {
@@ -35,6 +40,21 @@ public static class ServiceCollectionExtension
             options.UseNpgsql(connectionString, ConfigurePostgreSqlOptions);
         });
         
+
+        return serviceCollection;
+    }
+
+    public static IServiceCollection AddMongoDbRepository(this IServiceCollection serviceCollection,
+        IConfiguration configuration)
+    {
+        var client = new MongoDbConfiguration(configuration).MongoClient();
+        var database = client.GetDatabase(configuration.GetSection("MongoDB")["DatabaseName"]);
+        
+        serviceCollection.AddScoped<IRepository<ProviderEntity>>(
+            provider => new MongoDbRepository<ProviderEntity>(database, 
+                configuration.GetSection("MongoDB")["CollectionName"]!));
+
+        serviceCollection.AddScoped<ProviderService>();
 
         return serviceCollection;
     }

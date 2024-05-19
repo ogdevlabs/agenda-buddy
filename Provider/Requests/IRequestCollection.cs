@@ -4,5 +4,5 @@ namespace Provider.Requests;
 
 public interface IRequestCollection
 {
-    public Task<string> CreateTopicNotification(IMediator mediator, string topicName);
+    public Task<string> AddProviderRequest(IMediator mediator, string topicName);
 }

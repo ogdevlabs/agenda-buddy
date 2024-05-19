@@ -2,7 +2,7 @@ using MediatR;
 
 namespace EventAndCommands.Commands;
 
-public class AddProviderCommand: IRequest
+public class AddProviderTopicCommand : IRequest<string>
 {
-    public string? ProviderName { get; set; }
+    public required string TopicName { get; set; }
 }

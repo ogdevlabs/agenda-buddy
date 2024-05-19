@@ -11,7 +11,7 @@ public class DbExceptionHandlerMiddleware(RequestDelegate next)
         {
             await next(context);
         }
-        catch (DbUpdateException ex)
+        catch (DbUpdateException)
         {
             // ToDo:
             // Log the exception or handle it gracefully
