@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using MongoDB.Bson;
 using MongoDB.Driver;
 
@@ -10,6 +11,11 @@ public class MongoDbRepository<TEntity> : IRepository<TEntity> where TEntity: cl
     public MongoDbRepository(MongoClient dbClient, string databaseName, string collectionName)
     {
         var database = dbClient.GetDatabase(databaseName);
+        _collection = database.GetCollection<TEntity>(collectionName);
+    }
+
+    public MongoDbRepository(IMongoDatabase database, string collectionName)
+    {
         _collection = database.GetCollection<TEntity>(collectionName);
     }
     
@@ -46,5 +52,10 @@ public class MongoDbRepository<TEntity> : IRepository<TEntity> where TEntity: cl
         var filter = Builders<TEntity>.Filter.Eq("_id", objectId);
         var result = await _collection.DeleteOneAsync(filter);
         return result.IsAcknowledged && result.DeletedCount > 0;
+    }
+
+    public async Task<TEntity> Find(BsonDocument filter)
+    {
+        return await _collection.Find(filter).FirstOrDefaultAsync();
     }
 }

@@ -2,7 +2,7 @@ using MediatR;
 
 namespace EventAndCommands.Events;
 
-public class ProviderAddedEvent: INotification
+public class AddProviderEvent: INotification
 {
     public string? ProviderName { get; set; }
 }

@@ -67,39 +67,39 @@ services:
                kafka-topics --create --topic profesor.jirafales-topic --partitions 1 --replication-factor 1 --if-not-exists --bootstrap-server broker:29092 && \
                kafka-console-producer --bootstrap-server broker:29092 --topic profesor.jirafales-topic < /data/message.json'"
 
-  provider-db:
-    restart: always
-    environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=Admin123
-      - POSTGRES_DB=ProviderDB
-      - PGUSER=postgres
-    ports:
-      - "1032:5432"
-    command: postgres
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready"]
-      interval: 30s
-      timeout: 5s
-      retries: 5
-    volumes:
-      - provider-data:/var/lib/postgres/data
+  # provider-db:
+  #   restart: always
+  #   environment:
+  #     - POSTGRES_USER=postgres
+  #     - POSTGRES_PASSWORD=Admin123
+  #     - POSTGRES_DB=ProviderDB
+  #     - PGUSER=postgres
+  #   ports:
+  #     - "1032:5432"
+  #   command: postgres
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready"]
+  #     interval: 30s
+  #     timeout: 5s
+  #     retries: 5
+  #   volumes:
+  #     - provider-data:/var/lib/postgres/data
 
-  provider:
-    restart: always
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - Kestrel__Endpoints__HTTP__Url=http://0.0.0.0:80
-      - Kestrel__Endpoints__GRPC__Url=http://0.0.0.0:81
-      - Kestrel__Endpoints__GRPC__Protocols=Http2
-      - ConnectionStrings__ProviderDB=Host=provider-db;Port=5432;Database=ProviderDB;Username=postgres;Password=Admin123
-      - UseCustomizationData=true
-      - PATH_BASE=/provider
-    ports:
-      - "8300:80"
-      - "8301:81"
+  # provider:
+  #   restart: always
+  #   environment:
+  #     - ASPNETCORE_ENVIRONMENT=Development
+  #     - Kestrel__Endpoints__HTTP__Url=http://0.0.0.0:80
+  #     - Kestrel__Endpoints__GRPC__Url=http://0.0.0.0:81
+  #     - Kestrel__Endpoints__GRPC__Protocols=Http2
+  #     - ConnectionStrings__ProviderDB=Host=provider-db;Port=5432;Database=ProviderDB;Username=postgres;Password=Admin123
+  #     - UseCustomizationData=true
+  #     - PATH_BASE=/provider
+  #   ports:
+  #     - "8300:80"
+  #     - "8301:81"
 
-volumes:
-  provider-data:
-    driver: local
-    external: false
+# volumes:
+  # provider-data:
+  #   driver: local
+  #   external: false

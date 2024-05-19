@@ -1,3 +1,5 @@
+using MongoDB.Bson;
+
 namespace Library.Repositories;
 
 public interface IRepository<TEntity> where TEntity : class
@@ -7,4 +9,5 @@ public interface IRepository<TEntity> where TEntity : class
     Task InsertAsync(TEntity entity);
     Task<bool> UpdateAsync(string id, TEntity entity);
     Task<bool> DeleteAsync(string id);
+    Task<TEntity> Find(BsonDocument filter);
 }
