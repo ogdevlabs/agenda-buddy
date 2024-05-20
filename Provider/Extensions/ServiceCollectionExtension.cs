@@ -1,9 +1,6 @@
 using Library.Entities;
 using Library.Repositories;
-using Microsoft.EntityFrameworkCore;
-using Npgsql.EntityFrameworkCore.PostgreSQL.Infrastructure;
 using Provider.Configurations;
-using Provider.Infrastructure.Data;
 using ProviderService = Library.Services.ProviderService;
 
 namespace Provider.Extensions;

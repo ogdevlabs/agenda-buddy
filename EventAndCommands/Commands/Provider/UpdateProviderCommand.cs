@@ -5,5 +5,5 @@ namespace EventAndCommands.Commands.Provider;
 
 public class UpdateProviderCommand : IRequest<string>
 {
-    public required ProviderEntity Provider { get; set; }
+    public required ProviderEntity ProviderEntity { get; set; }
 }

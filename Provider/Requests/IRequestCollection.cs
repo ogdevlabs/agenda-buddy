@@ -6,9 +6,13 @@ namespace Provider.Requests;
 
 public interface IRequestCollection
 {
-    // public Task<string> AddProviderRequest(IMediator mediator, string topicName);
-
     public Task<string> AddProviderRequest(
+        IMediator mediator, 
+        ProviderService providerService,
+        ProviderEntity providerEntity);
+    
+    public Task<string> UpdateProviderRequest(
+        string email,
         IMediator mediator, 
         ProviderService providerService,
         ProviderEntity providerEntity);

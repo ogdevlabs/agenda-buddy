@@ -12,12 +12,6 @@ public class AddProviderCommandHandler : IRequestHandler<AddProviderCommand, str
     private readonly KafkaClient _kafkaClient;
     private readonly ProviderService _providerService;
     private readonly ProviderEntity _providerEntity;
-
-    public AddProviderCommandHandler(IMediator mediator, KafkaClient kafkaClient)
-    {
-        _mediator = mediator;
-        _kafkaClient = kafkaClient;
-    }
     
     public AddProviderCommandHandler(
         IMediator mediator, 

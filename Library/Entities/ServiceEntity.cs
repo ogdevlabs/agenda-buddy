@@ -12,11 +12,11 @@ public class ServiceEntity
     
     [Required]
     [BsonElement("name")]
-    public string Name { get; set; } = null;
+    public string Name { get; set; } = null!;
     
     [Required]
     [BsonElement("description")]
-    public string Description { get; set; } = null;
+    public string Description { get; set; } = null!;
     
     [BsonElement("fee")]
     public double? Fee { get; set; } = 0;

@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using System.Reflection;
 using Kafka;
@@ -11,16 +12,12 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
 using MiniValidation;
 using Provider.Configurations;
+using Provider.Events;
 using Provider.Extensions;
-using Provider.Infrastructure.Data;
 using Provider.Middleware;
 using Provider.Requests;
 
 var builder = WebApplication.CreateBuilder(args);
-
-// Add PostgreSQL Context
-// builder.Services.AddDbContexts(builder.Configuration);
-// builder.Services.AddHealthChecks(builder.Configuration);
 
 // Add MongoDB
 builder.Services.AddMongoDbRepository(builder.Configuration);
@@ -129,9 +126,8 @@ var providers = app.MapGroup("/api/v1/providers")
                         $"FirstName:{providerEntity.FirstName}", $"LastName:{providerEntity.LastName}"
                     }));
             
-            //var kakfaTopicName = await KafkaExtension.AddProviderEvent(requestCollection, mediator, topicName);
-            var kakfaTopicName = await KafkaExtension.AddProviderEvent(requestCollection, mediator, providerService, providerEntity);
-            if (!string.IsNullOrEmpty(kakfaTopicName))
+            var eventResponse = await EventsHelper.AddProviderEvent(requestCollection, mediator, providerService, providerEntity);
+            if (!string.IsNullOrEmpty(eventResponse))
             {
                 return TypedResults.Created($"/api/v1/providers/{providerEntity.Id}", providerEntity);
             }
@@ -153,8 +149,8 @@ var providers = app.MapGroup("/api/v1/providers")
 
     // Get provider by Email
     providers.MapGet("/{email}", async Task<Results<Ok<ProviderEntity>, NotFound>> (IMediator mediator,
-        ProviderService providerService,
         string email,
+        ProviderService providerService,
         IRequestCollection requestCollection) =>
         {
             var record = await providerService
@@ -171,7 +167,8 @@ var providers = app.MapGroup("/api/v1/providers")
 
 
     // Update a provider, using email for search of the record
-    providers.MapPut("/", async Task<Results<ValidationProblem, NotFound, Accepted>>(
+    providers.MapPut("/{email}", async Task<Results<ValidationProblem, NotFound, Accepted>>(
+        string email,
         IMediator mediator, 
         ProviderService providerService, 
         ProviderEntity providerEntity,
@@ -180,11 +177,11 @@ var providers = app.MapGroup("/api/v1/providers")
             if (!MiniValidator.TryValidate(providerEntity, out var errors))
                 return TypedResults.ValidationProblem(errors);
 
-            var record = await providerService
-                    .FindProviders(SupportTools<ProviderEntity>.FilterByEmail(providerEntity.Email));
-            if (record != null)
+            var eventResponse =
+                await EventsHelper.UpdateProviderEvent(email, requestCollection, mediator, providerService, providerEntity);
+            
+            if (!string.IsNullOrEmpty(eventResponse))
             {
-                record = providerEntity;
                 return TypedResults.Accepted("api/v1/providers");
             }
 

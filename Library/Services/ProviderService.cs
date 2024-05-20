@@ -21,14 +21,14 @@ public class ProviderService (IRepository<ProviderEntity> providerRepository)
         await providerRepository.InsertAsync(provider);
     }
 
-    public async Task UpdateProvider(string id, ProviderEntity provider)
+    public async Task<bool> UpdateProvider(string id, ProviderEntity provider)
     {
         var existingProvider = await providerRepository.GetByIdAsync(id);
         if (existingProvider == null)
         {
             throw new ArgumentException("Provider not found");
         }
-        await providerRepository.UpdateAsync(id, provider);
+        return await providerRepository.UpdateAsync(id, provider);
     }
 
     public async Task DeleteProvider(string id)
