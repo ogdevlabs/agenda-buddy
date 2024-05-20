@@ -1,29 +1,26 @@
 using System.Diagnostics;
 using System.Reflection;
-using Confluent.Kafka;
 using Kafka;
 using Library.Entities;
+using Library.Services;
 using Library.Tools;
 using MediatR;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 using Microsoft.AspNetCore.WebUtilities;
 using MiniValidation;
-using MongoDB.Bson;
 using Provider.Configurations;
 using Provider.Extensions;
 using Provider.Infrastructure.Data;
 using Provider.Middleware;
 using Provider.Requests;
-using Provider.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add PostgreSQL Context
-builder.Services.AddDbContexts(builder.Configuration);
-builder.Services.AddHealthChecks(builder.Configuration);
+// builder.Services.AddDbContexts(builder.Configuration);
+// builder.Services.AddHealthChecks(builder.Configuration);
 
 // Add MongoDB
 builder.Services.AddMongoDbRepository(builder.Configuration);
@@ -51,23 +48,6 @@ builder.Services.AddSwaggerGen();
 
 
 var app = builder.Build();
-
-//Fresh Start Database 
-using (IServiceScope scope = app.Services.CreateScope())
-{
-    var serviceProvider = scope.ServiceProvider;
-    // PostgreSQL
-    var context = serviceProvider.GetRequiredService<ProviderContext>();
-    // context.Database.EnsureDeleted();
-    // context.Database.Migrate();
-    // DataSeeder.Seed(context);
-    // DataSeeder.SeedDocument(
-    //     builder.Configuration,
-    //     builder.Configuration.GetSection("MongoDB")["DatabaseName"]!,
-    //     builder.Configuration.GetSection("MongoDB")["CollectionName"]!);
-}
-
-
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -149,10 +129,10 @@ var providers = app.MapGroup("/api/v1/providers")
                         $"FirstName:{providerEntity.FirstName}", $"LastName:{providerEntity.LastName}"
                     }));
             
-            var kakfaTopicName = await KafkaExtension.AddProviderEvent(requestCollection, mediator, topicName);
+            //var kakfaTopicName = await KafkaExtension.AddProviderEvent(requestCollection, mediator, topicName);
+            var kakfaTopicName = await KafkaExtension.AddProviderEvent(requestCollection, mediator, providerService, providerEntity);
             if (!string.IsNullOrEmpty(kakfaTopicName))
             {
-                await providerService.AddProvider(providerEntity);
                 return TypedResults.Created($"/api/v1/providers/{providerEntity.Id}", providerEntity);
             }
 
@@ -167,8 +147,6 @@ var providers = app.MapGroup("/api/v1/providers")
         ProviderService providerService,
         IRequestCollection requestCollection) =>
         {
-            
-            
             var providerList = await providerService.GetAllProviders();
             return TypedResults.Ok(providerList);
         }).WithName("GetAllProviders");
@@ -179,7 +157,6 @@ var providers = app.MapGroup("/api/v1/providers")
         string email,
         IRequestCollection requestCollection) =>
         {
-
             var record = await providerService
                 .FindProviders(SupportTools<ProviderEntity>.FilterByEmail(email));
             if (record != null)

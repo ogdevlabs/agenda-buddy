@@ -13,6 +13,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\Kafka\Kafka.csproj" />
+      <ProjectReference Include="..\Library\Library.csproj" />
     </ItemGroup>
 
     <ItemGroup>

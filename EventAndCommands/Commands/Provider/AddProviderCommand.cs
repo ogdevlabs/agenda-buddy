@@ -1,6 +1,6 @@
 using MediatR;
 
-namespace EventAndCommands.Commands;
+namespace EventAndCommands.Commands.Provider;
 
 public class AddProviderCommand : IRequest<string>
 {

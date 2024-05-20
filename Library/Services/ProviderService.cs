@@ -1,11 +1,10 @@
-using System.Linq.Expressions;
 using Library.Entities;
 using Library.Repositories;
 using MongoDB.Bson;
 
-namespace Provider.Services;
+namespace Library.Services;
 
-public class ProviderService(IRepository<ProviderEntity> providerRepository)
+public class ProviderService (IRepository<ProviderEntity> providerRepository)
 {
     public async Task<IEnumerable<ProviderEntity>> GetAllProviders()
     {

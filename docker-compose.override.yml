@@ -64,8 +64,8 @@ services:
        - ./compose/data/message.json:/data/message.json
     command: "bash -c 'echo Waiting for Kafka to be ready... && \
                cub kafka-ready -b broker:29092 1 30 && \
-               kafka-topics --create --topic profesor.jirafales-topic --partitions 1 --replication-factor 1 --if-not-exists --bootstrap-server broker:29092 && \
-               kafka-console-producer --bootstrap-server broker:29092 --topic profesor.jirafales-topic < /data/message.json'"
+               kafka-topics --create --topic agenda-buddy-topic --partitions 1 --replication-factor 1 --if-not-exists --bootstrap-server broker:29092 && \
+               kafka-console-producer --bootstrap-server broker:29092 --topic agenda-buddy-topic < /data/message.json'"
 
   # provider-db:
   #   restart: always
