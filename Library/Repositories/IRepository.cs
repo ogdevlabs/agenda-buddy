@@ -1,5 +1,3 @@
-using MongoDB.Bson;
-
 namespace Library.Repositories;
 
 public interface IRepository<TEntity> where TEntity : class

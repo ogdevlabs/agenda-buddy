@@ -1,7 +1,3 @@
-using System.Linq.Expressions;
-using MongoDB.Bson;
-using MongoDB.Driver;
-
 namespace Library.Repositories;
 
 public class MongoDbRepository<TEntity> : IRepository<TEntity> where TEntity: class

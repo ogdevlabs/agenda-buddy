@@ -1,9 +1,3 @@
-using EventAndCommands.Events.Provider;
-using Kafka;
-using Library.Entities;
-using Library.Services;
-using MediatR;
-
 namespace EventAndCommands.Commands.Provider;
 
 public class AddProviderCommandHandler : IRequestHandler<AddProviderCommand, string>

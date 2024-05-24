@@ -1,6 +1,3 @@
-using MediatR;
-using MongoDB.Bson;
-
 namespace EventAndCommands.Commands.Provider;
 
 public class DeactivateProviderCommandHandler (IMediator mediator) 

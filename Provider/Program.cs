@@ -1,22 +1,3 @@
-using System.ComponentModel.DataAnnotations;
-using System.Diagnostics;
-using System.Reflection;
-using Kafka;
-using Library.Entities;
-using Library.Services;
-using Library.Tools;
-using MediatR;
-using Microsoft.AspNetCore.Diagnostics;
-using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.WebUtilities;
-using MiniValidation;
-using Provider.Configurations;
-using Provider.Events;
-using Provider.Extensions;
-using Provider.Middleware;
-using Provider.Requests;
-
 var builder = WebApplication.CreateBuilder(args);
 
 // Add MongoDB
@@ -66,7 +47,8 @@ if (app.Environment.IsDevelopment())
             }
 
             if (exceptionContext.Request.AcceptsJson()
-                && exceptionContext.RequestServices.GetRequiredService<IProblemDetailsService>() is { } problemDetailsService)
+                && exceptionContext.RequestServices.GetRequiredService<IProblemDetailsService>() is
+                    { } problemDetailsService)
             {
                 // Write as JSON problem details
                 await problemDetailsService.WriteAsync(new()
@@ -85,7 +67,8 @@ if (app.Environment.IsDevelopment())
                     _ => "An error occurred"
                 };
                 await exceptionContext.Response.WriteAsync(message + "\r\n");
-                await exceptionContext.Response.WriteAsync($"Request ID: {Activity.Current?.Id ?? exceptionContext.TraceIdentifier}");
+                await exceptionContext.Response.WriteAsync(
+                    $"Request ID: {Activity.Current?.Id ?? exceptionContext.TraceIdentifier}");
             }
         }
     });
@@ -102,91 +85,92 @@ var providers = app.MapGroup("/api/v1/providers")
     .WithOpenApi()
     .AddEndpointFilter<ProblemDetailsServiceEndpointFilter>();
 
-    // Create a Provider, verifying for duplicate record
-    // create a Topic for the provider
-    providers.MapPost("/", async Task<Results<ValidationProblem, Created<ProviderEntity>>>(
-        IMediator mediator, 
-        ProviderService providerService, 
+// Create a Provider, verifying for duplicate record
+// create a Topic for the provider
+providers.MapPost("/", async Task<Results<ValidationProblem, Created<ProviderEntity>>> (
+        IMediator mediator,
+        ProviderService providerService,
         ProviderEntity providerEntity,
         IRequestCollection requestCollection) =>
-        {
-            if (!MiniValidator.TryValidate(providerEntity, out var errors))
-                return TypedResults.ValidationProblem(errors);
-            
-            var iLength = providerEntity.Email.IndexOf('@');
-            var topicName = providerEntity.Email.Substring(0, iLength).ToLower() + "-topic";
-            providerEntity.KafkaTopic = topicName;
-            var filter =SupportTools<ProviderEntity>.FilterByNameAndLastName(providerEntity.FirstName, providerEntity.LastName);
-            var existingProvider = await providerService.FindProviders(filter);
+    {
+        if (!MiniValidator.TryValidate(providerEntity, out var errors))
+            return TypedResults.ValidationProblem(errors);
 
-            if (existingProvider != null)
-                return TypedResults.ValidationProblem(GenerateErrorMessage(
-                    "Existing record found", new string[]
-                    {
-                        $"FirstName:{providerEntity.FirstName}", $"LastName:{providerEntity.LastName}"
-                    }));
-            
-            var eventResponse = await EventsHelper.AddProviderEvent(requestCollection, mediator, providerService, providerEntity);
-            if (!string.IsNullOrEmpty(eventResponse))
-            {
-                return TypedResults.Created($"/api/v1/providers/{providerEntity.Id}", providerEntity);
-            }
+        var iLength = providerEntity.Email.IndexOf('@');
+        var topicName = providerEntity.Email.Substring(0, iLength).ToLower() + "-topic";
+        providerEntity.KafkaTopic = topicName;
+        var filter =
+            SupportTools<ProviderEntity>.FilterByNameAndLastName(providerEntity.FirstName, providerEntity.LastName);
+        var existingProvider = await providerService.FindProviders(filter);
 
+        if (existingProvider != null)
             return TypedResults.ValidationProblem(GenerateErrorMessage(
-                "Kafka Error", new string[] { "Kafka Topic", $"{topicName}" })
-            );
-        })
-        .WithName("CreateProvider");
+                "Existing record found", new string[]
+                {
+                    $"FirstName:{providerEntity.FirstName}", $"LastName:{providerEntity.LastName}"
+                }));
 
-    // Get provider list
-    providers.MapGet("", async Task<Results<Ok<IEnumerable<ProviderEntity>>,NoContent>> (IMediator mediator,
-        ProviderService providerService,
-        IRequestCollection requestCollection) =>
+        var eventResponse =
+            await EventsHelper.AddProviderEvent(requestCollection, mediator, providerService, providerEntity);
+        if (!string.IsNullOrEmpty(eventResponse))
         {
-            var providerList = await providerService.GetAllProviders();
-            return TypedResults.Ok(providerList);
-        }).WithName("GetAllProviders");
+            return TypedResults.Created($"/api/v1/providers/{providerEntity.Id}", providerEntity);
+        }
 
-    // Get provider by Email
-    providers.MapGet("/{email}", async Task<Results<Ok<ProviderEntity>, NotFound>> (IMediator mediator,
-        string email,
-        ProviderService providerService,
-        IRequestCollection requestCollection) =>
-        {
-            var record = await providerService
-                .FindProviders(SupportTools<ProviderEntity>.FilterByEmail(email));
-            if (record != null)
-            {
-                return TypedResults.Ok(record);
-            }
-            else
-            {
-                return TypedResults.NotFound();
-            }
-        }).WithName("GetProviderByEmail");
+        return TypedResults.ValidationProblem(GenerateErrorMessage(
+            "Kafka Error", new string[] { "Kafka Topic", $"{topicName}" })
+        );
+    })
+    .WithName("CreateProvider");
+
+// Get provider list
+providers.MapGet("", async Task<Results<Ok<IEnumerable<ProviderEntity>>, NoContent>> (IMediator mediator,
+    ProviderService providerService,
+    IRequestCollection requestCollection) =>
+{
+    var providerCollection = await EventsHelper.GetProvidersEvent(requestCollection, mediator,providerService);
+    return TypedResults.Ok(providerCollection);
+}).WithName("GetAllProviders");
+
+// Get provider by Email
+providers.MapGet("/{email}", async Task<Results<Ok<ProviderEntity>, NotFound>> (IMediator mediator,
+    string email,
+    ProviderService providerService,
+    IRequestCollection requestCollection) =>
+{
+    var record = await EventsHelper.GetProviderByEmail(requestCollection, mediator, providerService, email);
+    if (record != null)
+    {
+        return TypedResults.Ok(record);
+    }
+    else
+    {
+        return TypedResults.NotFound();
+    }
+}).WithName("GetProviderByEmail");
 
 
-    // Update a provider, using email for search of the record
-    providers.MapPut("/{email}", async Task<Results<ValidationProblem, NotFound, Accepted>>(
-        string email,
-        IMediator mediator, 
-        ProviderService providerService, 
-        ProviderEntity providerEntity,
-        IRequestCollection requestCollection) =>
-        {
-            if (!MiniValidator.TryValidate(providerEntity, out var errors))
-                return TypedResults.ValidationProblem(errors);
+// Update a provider, using email for search of the record
+providers.MapPut("/{email}", async Task<Results<ValidationProblem, NotFound, Accepted>> (
+    string email,
+    IMediator mediator,
+    ProviderService providerService,
+    ProviderEntity providerEntity,
+    IRequestCollection requestCollection) =>
+{
+    if (!MiniValidator.TryValidate(providerEntity, out var errors))
+        return TypedResults.ValidationProblem(errors);
 
-            var eventResponse =
-                await EventsHelper.UpdateProviderEvent(email, requestCollection, mediator, providerService, providerEntity);
-            
-            if (!string.IsNullOrEmpty(eventResponse))
-            {
-                return TypedResults.Accepted("api/v1/providers");
-            }
+    var eventResponse =
+        await EventsHelper.UpdateProviderEvent(email, requestCollection, mediator, providerService, providerEntity);
 
-            return TypedResults.NotFound();
-        }).WithName("UpdateProvider");
+    if (!string.IsNullOrEmpty(eventResponse))
+    {
+        return TypedResults.Accepted("api/v1/providers");
+    }
+
+    return TypedResults.NotFound();
+}).WithName("UpdateProvider");
 
 app.Run();
 
