@@ -24,7 +24,8 @@ public class GetProvidersQueryHandler(IMediator mediator, ProviderService provid
             {
                 Id = new ObjectId(),
                 TimeStamp = DateTime.UtcNow,
-                Type = "GetProviders_Success",
+                Status = "Success",
+                Type = "GetProvidersQuery",
                 Data = JsonSerializer.Serialize(providerEntities)
             };
             await EventStore!.SaveAsync(@successEvent);
@@ -36,7 +37,8 @@ public class GetProvidersQueryHandler(IMediator mediator, ProviderService provid
             {
                 Id = new ObjectId(),
                 TimeStamp = DateTime.UtcNow,
-                Type = "GetProviders_Failed",
+                Status = "Failed",
+                Type = "GetProvidersQuery",
                 Data = JsonSerializer.Serialize(new List<ProviderEntity>())
             };
             await EventStore!.SaveAsync(@failEvent);

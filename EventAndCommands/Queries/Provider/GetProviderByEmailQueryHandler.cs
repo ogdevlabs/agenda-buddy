@@ -21,7 +21,8 @@ public class GetProviderByEmailQueryHandler(IMediator mediator, ProviderService 
             {
                 Id = new ObjectId(),
                 TimeStamp = DateTime.UtcNow,
-                Type = "GetProviderByEmail_Success",
+                Status = "Success",
+                Type = "GetProviderByEmailQuery",
                 Data = JsonSerializer.Serialize(providerEntity)
             };
             await EventStore!.SaveAsync(@successEvent);
@@ -33,7 +34,8 @@ public class GetProviderByEmailQueryHandler(IMediator mediator, ProviderService 
             {
                 Id = new ObjectId(),
                 TimeStamp = DateTime.UtcNow,
-                Type = "GetProviderByEmail_Fail",
+                Status = "Failed",
+                Type = "GetProviderByEmailQuery",
                 Data = JsonSerializer.Serialize(new ProviderEntity())
             };
             await EventStore!.SaveAsync(@failEvent);

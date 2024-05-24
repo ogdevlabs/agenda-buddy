@@ -22,7 +22,8 @@ public class DeactivateProviderCommandHandler (IMediator mediator)
             {
                 Id = new ObjectId(),
                 TimeStamp = DateTime.UtcNow,
-                Type = "DeactiveProvider_Success",
+                Status = "Success",
+                Type = "DeactivateProviderCommand",
                 Data = JsonSerializer.Serialize(new ProviderEntity())
             };
             await EventStore!.SaveAsync(@successEvent);
@@ -34,7 +35,8 @@ public class DeactivateProviderCommandHandler (IMediator mediator)
             {
                 Id = new ObjectId(),
                 TimeStamp = DateTime.UtcNow,
-                Type = "GetProviders_Failed",
+                Status = "Failed",
+                Type = "DeactivateProviderCommand",
                 Data = JsonSerializer.Serialize(new ProviderEntity())
             };
             await EventStore!.SaveAsync(@failEvent);

@@ -18,30 +18,36 @@ public class AddProviderCommandHandler(
     public async Task<string> Handle(AddProviderCommand request, CancellationToken cancellationToken)
     {
         await mediator.Publish(new AddProviderEvent { ProviderName = request.TopicName }, cancellationToken);
-        var kafkaTopic = await kafkaClient.CreateTopicIfNotExist(request.TopicName);
-        if (!string.IsNullOrEmpty(kafkaTopic))
+        try
         {
-            await providerService.AddProvider(providerEntity);
-
-            var @succesEvent = new Event()
+            var kafkaTopic = await kafkaClient.CreateTopicIfNotExist(request.TopicName);
+            if (!string.IsNullOrEmpty(kafkaTopic))
+            {
+                await providerService.AddProvider(providerEntity);
+                var @succesEvent = new Event()
+                {
+                    Id = providerEntity.Id,
+                    TimeStamp = DateTime.UtcNow,
+                    Status = "Success",
+                    Type = "AddProviderCommand",
+                    Data = JsonSerializer.Serialize(providerEntity)
+                };
+                await EventStore.SaveAsync(@succesEvent);
+                return await Task.FromResult(request.TopicName);
+            }
+        }
+        catch
+        {
+            var @failEvent = new Event()
             {
                 Id = providerEntity.Id,
                 TimeStamp = DateTime.UtcNow,
-                Type = "AddProvider_Success",
+                Status = "Failed",
+                Type = "AddProviderCommand",
                 Data = JsonSerializer.Serialize(providerEntity)
             };
-            await EventStore.SaveAsync(@succesEvent);
-            return await Task.FromResult(request.TopicName);
+            await EventStore.SaveAsync(@failEvent);
         }
-
-        var @failEvent = new Event()
-        {
-            Id = providerEntity.Id,
-            TimeStamp = DateTime.UtcNow,
-            Type = "AddProvider_Failed",
-            Data = JsonSerializer.Serialize(providerEntity)
-        };
-        await EventStore.SaveAsync(@failEvent);
         return await Task.FromResult(string.Empty);
     }
 }

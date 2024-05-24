@@ -31,7 +31,8 @@ public class UpdateProviderCommandHandler(
                 {
                     Id = new ObjectId(),
                     TimeStamp = DateTime.UtcNow,
-                    Type = "UpdateProvider_Success",
+                    Status = "Success",
+                    Type = "UpdateProviderCommand",
                     Data = JsonSerializer.Serialize(providerEntity)
                 };
                 await EventStore!.SaveAsync(@successEvent);
@@ -41,7 +42,8 @@ public class UpdateProviderCommandHandler(
             {
                 Id = new ObjectId(),
                 TimeStamp = DateTime.UtcNow,
-                Type = "UpdateProvider_Failed",
+                Status = "Failed",
+                Type = "UpdateProviderCommand",
                 Data = JsonSerializer.Serialize(providerEntity)
             };
             await EventStore!.SaveAsync(@failEvent);
