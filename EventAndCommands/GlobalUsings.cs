@@ -7,3 +7,4 @@ global using Library.Services;
 global using Library.Tools;
 global using MediatR;
 global using MongoDB.Bson;
+global using MongoDB.Bson.Serialization.Attributes;
