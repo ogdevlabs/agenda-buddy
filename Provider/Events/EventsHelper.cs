@@ -25,7 +25,8 @@ public static class EventsHelper
         return notificationResponse;
     }
 
-    public static async Task<IEnumerable<ProviderEntity>> GetProvidersEvent(IRequestCollection requestCollection, IMediator mediator,
+    public static async Task<IEnumerable<ProviderEntity>> GetProvidersEvent(IRequestCollection requestCollection,
+        IMediator mediator,
         ProviderService providerService)
     {
         var notificationResponse = await requestCollection.GetProvidersRequest(mediator, providerService);

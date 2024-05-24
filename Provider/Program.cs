@@ -128,7 +128,7 @@ providers.MapGet("", async Task<Results<Ok<IEnumerable<ProviderEntity>>, NoConte
     ProviderService providerService,
     IRequestCollection requestCollection) =>
 {
-    var providerCollection = await EventsHelper.GetProvidersEvent(requestCollection, mediator,providerService);
+    var providerCollection = await EventsHelper.GetProvidersEvent(requestCollection, mediator, providerService);
     return TypedResults.Ok(providerCollection);
 }).WithName("GetAllProviders");
 

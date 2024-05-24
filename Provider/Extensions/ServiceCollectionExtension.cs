@@ -3,7 +3,6 @@ using ProviderService = Library.Services.ProviderService;
 
 namespace Provider.Extensions;
 
-
 public static class ServiceCollectionExtension
 {
     // public static IServiceCollection AddHealthChecks(this IServiceCollection serviceCollection,
@@ -44,9 +43,9 @@ public static class ServiceCollectionExtension
     {
         var client = new MongoDbConfiguration(configuration).MongoClient();
         var database = client.GetDatabase(configuration.GetSection("MongoDB")["DatabaseName"]);
-        
+
         serviceCollection.AddScoped<IRepository<ProviderEntity>>(
-            provider => new MongoDbRepository<ProviderEntity>(database, 
+            provider => new MongoDbRepository<ProviderEntity>(database,
                 configuration.GetSection("MongoDB")["CollectionName"]!));
 
         serviceCollection.AddScoped<ProviderService>();

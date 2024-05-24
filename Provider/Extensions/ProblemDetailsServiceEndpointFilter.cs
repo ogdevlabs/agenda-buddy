@@ -9,7 +9,8 @@ public class ProblemDetailsServiceEndpointFilter : IEndpointFilter
     public async ValueTask<object?> InvokeAsync(EndpointFilterInvocationContext context, EndpointFilterDelegate next)
         => await next(context) switch
         {
-            ProblemHttpResult problemHttpResult => new ProblemDetailsServiceAwareResult(problemHttpResult.StatusCode, problemHttpResult.ProblemDetails),
+            ProblemHttpResult problemHttpResult => new ProblemDetailsServiceAwareResult(problemHttpResult.StatusCode,
+                problemHttpResult.ProblemDetails),
             ProblemDetails problemDetails => new ProblemDetailsServiceAwareResult(null, problemDetails),
             { } result => result,
             null => null
@@ -31,12 +32,14 @@ public class ProblemDetailsServiceEndpointFilter : IEndpointFilter
 
         public async Task ExecuteAsync(HttpContext httpContext)
         {
-            if (httpContext.RequestServices.GetService<IProblemDetailsService>() is IProblemDetailsService problemDetailsService)
+            if (httpContext.RequestServices.GetService<IProblemDetailsService>() is IProblemDetailsService
+                problemDetailsService)
             {
                 if (_statusCode is { } statusCode)
                 {
                     httpContext.Response.StatusCode = statusCode;
                 }
+
                 await problemDetailsService.WriteAsync(new()
                 {
                     HttpContext = httpContext,

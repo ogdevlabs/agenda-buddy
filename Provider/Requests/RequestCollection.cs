@@ -38,7 +38,8 @@ public class RequestCollection(IKafkaClient kafkaClient) : IRequestCollection
         return result;
     }
 
-    public async Task<IEnumerable<ProviderEntity>> GetProvidersRequest(IMediator mediator, ProviderService providerService)
+    public async Task<IEnumerable<ProviderEntity>> GetProvidersRequest(IMediator mediator,
+        ProviderService providerService)
     {
         var result =
             await new GetProvidersQueryHandler(mediator, providerService).Handle(new GetProvidersQuery(),
@@ -46,7 +47,8 @@ public class RequestCollection(IKafkaClient kafkaClient) : IRequestCollection
         return result;
     }
 
-    public async Task<ProviderEntity> GetProviderByEmail(IMediator mediator, ProviderService providerService, string email)
+    public async Task<ProviderEntity> GetProviderByEmail(IMediator mediator, ProviderService providerService,
+        string email)
     {
         var result =
             await new GetProviderByEmailQueryHandler(mediator, providerService, email).Handle(
