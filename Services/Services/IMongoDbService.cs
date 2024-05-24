@@ -4,5 +4,5 @@ namespace Services.Services;
 
 public interface IMongoDbService
 { 
-    Task<List<Service>> GetServices();
+    Task<List<ServiceEntity>> GetServices();
 }

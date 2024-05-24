@@ -40,21 +40,27 @@ services:
     depends_on:
       - kafka0
   
-  provider-db:
-    image: postgres:latest
+  # provider-db:
+  #   image: postgres:latest
   
-  provider:
-    hostname: provider
-    container_name: provider
-    image: ${DOCKER_REGISTRY-}provider
-    build:
-      context: .
-      dockerfile: Provider/Dockerfile
-    depends_on:
-      - provider-db
+  # provider:
+  #   hostname: provider
+  #   container_name: provider
+  #   image: ${DOCKER_REGISTRY-}provider:latest
+  #   build:
+  #     context: .
+  #     dockerfile: Provider/Dockerfile
+  #   depends_on:
+  #     - provider-db
   
-  kafkalib:
-      image: ${DOCKER_REGISTRY-}kafka
+  kafka-library:
+      image: ${DOCKER_REGISTRY-}kafka:latest
       build:
         context: .
         dockerfile: Kafka/Dockerfile
+
+  common-library:
+      image: ${DOCKER_REGISTRY-}library:latest
+      build:
+        context: .
+        dockerfile: Library/Dockerfile
