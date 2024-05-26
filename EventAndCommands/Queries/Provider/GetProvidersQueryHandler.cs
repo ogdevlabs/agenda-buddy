@@ -16,13 +16,14 @@ public class GetProvidersQueryHandler(IMediator mediator, ProviderService provid
         CancellationToken cancellationToken)
     {
         await mediator.Publish(new GetAllProvidersEvent(), cancellationToken);
-        try
+
+        var providerList = await providerService.GetAllProviders();
+        var providerEntities = providerList.ToList();
+        if (providerEntities.Count != 0)
         {
-            var providerList = await providerService.GetAllProviders();
-            var providerEntities = providerList.ToList();
             var @successEvent = new Event()
             {
-                Id = new ObjectId(),
+                Id = ObjectId.GenerateNewId(),
                 TimeStamp = DateTime.UtcNow,
                 Status = "Success",
                 Type = "GetProvidersQuery",
@@ -31,18 +32,17 @@ public class GetProvidersQueryHandler(IMediator mediator, ProviderService provid
             await EventStore!.SaveAsync(@successEvent);
             return await Task.FromResult(providerEntities);
         }
-        catch
+
+
+        var @failEvent = new Event()
         {
-            var @failEvent = new Event()
-            {
-                Id = new ObjectId(),
-                TimeStamp = DateTime.UtcNow,
-                Status = "Failed",
-                Type = "GetProvidersQuery",
-                Data = JsonSerializer.Serialize(new List<ProviderEntity>())
-            };
-            await EventStore!.SaveAsync(@failEvent);
-            return await Task.FromResult(new List<ProviderEntity>());
-        }
+            Id = ObjectId.GenerateNewId(),
+            TimeStamp = DateTime.UtcNow,
+            Status = "Failed",
+            Type = "GetProvidersQuery",
+            Data = JsonSerializer.Serialize(new List<ProviderEntity>())
+        };
+        await EventStore!.SaveAsync(@failEvent);
+        return await Task.FromResult(new List<ProviderEntity>());
     }
 }

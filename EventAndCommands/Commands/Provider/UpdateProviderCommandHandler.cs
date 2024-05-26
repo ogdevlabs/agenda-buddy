@@ -14,9 +14,10 @@ public class UpdateProviderCommandHandler(
     : IRequestHandler<UpdateProviderCommand, string>
 {
     [InjectService] private IEventStore? EventStore { get; } = new EventStore();
+
     public async Task<string> Handle(UpdateProviderCommand request, CancellationToken cancellationToken)
     {
-        await mediator.Publish( new UpdateProviderEvent
+        await mediator.Publish(new UpdateProviderEvent
         {
             ProviderEntity = request.ProviderEntity
         }, cancellationToken);
@@ -25,11 +26,12 @@ public class UpdateProviderCommandHandler(
         if (record != null)
         {
             providerEntity.Id = record.Id;
-            if (await providerService.UpdateProvider(record.Id.ToString(), providerEntity))
+            var updateResult = await providerService.UpdateProvider(record.Id.ToString(), providerEntity);
+            if (updateResult)
             {
                 var @successEvent = new Event()
                 {
-                    Id = new ObjectId(),
+                    Id = providerEntity.Id,
                     TimeStamp = DateTime.UtcNow,
                     Status = "Success",
                     Type = "UpdateProviderCommand",
@@ -38,9 +40,12 @@ public class UpdateProviderCommandHandler(
                 await EventStore!.SaveAsync(@successEvent);
                 return await Task.FromResult(providerEntity.ToJson());
             }
+        }
+        else
+        {
             var @failEvent = new Event()
             {
-                Id = new ObjectId(),
+                Id = providerEntity.Id,
                 TimeStamp = DateTime.UtcNow,
                 Status = "Failed",
                 Type = "UpdateProviderCommand",
@@ -48,6 +53,7 @@ public class UpdateProviderCommandHandler(
             };
             await EventStore!.SaveAsync(@failEvent);
         }
+
         return await Task.FromResult(string.Empty);
     }
 }
