@@ -3,7 +3,7 @@ using Confluent.Kafka.Admin;
 
 namespace Kafka;
 
-public class KafkaClient: IKafkaClient
+public class KafkaClient : IKafkaClient
 {
     public async Task<string> CreateTopicIfNotExist(string topicName)
     {
@@ -13,7 +13,7 @@ public class KafkaClient: IKafkaClient
         };
 
         using var adminClient = new AdminClientBuilder(config).Build();
-        
+
         try
         {
             var topic = new TopicSpecification
@@ -34,10 +34,14 @@ public class KafkaClient: IKafkaClient
         {
             if (e.Results[0].Error.Code == ErrorCode.TopicAlreadyExists)
             {
-                return $"Topic '{topicName}' already exists.";
+                return $"Exception Topic '{topicName}' already exists.";
             }
-
-            throw new Exception($"An error occurred creating topic '{topicName}': {e.Results[0].Error.Reason}");
         }
+        catch (Exception e)
+        {
+            return $"Exception: {e.Message}";
+        }
+
+        return string.Empty;
     }
 }

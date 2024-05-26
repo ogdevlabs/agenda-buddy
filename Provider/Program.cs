@@ -107,12 +107,12 @@ providers.MapPost("/", async Task<Results<ValidationProblem, Created<ProviderEnt
             return TypedResults.ValidationProblem(GenerateErrorMessage(
                 "Existing record found", new string[]
                 {
-                    $"FirstName:{providerEntity.FirstName}", $"LastName:{providerEntity.LastName}"
+                    $"Email:{providerEntity.Email}"
                 }));
 
         var eventResponse =
             await EventsHelper.AddProviderEvent(requestCollection, mediator, providerService, providerEntity);
-        if (!string.IsNullOrEmpty(eventResponse))
+        if (!string.IsNullOrEmpty(eventResponse) && !eventResponse.ToLower().StartsWith("exception"))
         {
             return TypedResults.Created($"/api/v1/providers/{providerEntity.Id}", providerEntity);
         }
