@@ -4,7 +4,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddMongoDbRepository(builder.Configuration);
 
 // Add MediatR
-builder.Services.AddMediatR(Assembly.GetExecutingAssembly());
+builder.Services.AddMediatR(cfg => { cfg.RegisterServicesFromAssembly(typeof(Program).Assembly); });
 
 // Add services required to support using MVC's model binders
 builder.Services.AddMvcCore();
@@ -76,7 +76,6 @@ if (app.Environment.IsDevelopment())
 
 app.UseAntiforgery();
 app.UseStatusCodePages();
-app.UseDbExceptionHandler();
 app.UseHttpsRedirection();
 
 

@@ -1,4 +1,6 @@
-namespace Provider.Extensions;
+using Microsoft.Net.Http.Headers;
+
+namespace Services.Extensions;
 
 public static class HttpContextExtensions
 {

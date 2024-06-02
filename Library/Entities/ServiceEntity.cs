@@ -14,18 +14,24 @@ public class ServiceEntity
     public string Description { get; set; } = null!;
     
     [BsonElement("fee")]
-    public double? Fee { get; set; } = 0;
+    public decimal? Fee { get; set; } = 0;
     
-    [BsonElement("unit")]
-    public Unit? Unit { get; private set; }
+    [BsonElement("feeType")]
+    public FeeType FeeType { get; set; }
 
     public ServiceEntity(){ }
 
-    public ServiceEntity(string name, string description, double fee, Unit unit)
+    public ServiceEntity(string name, string description, decimal fee)
     {
         Name = name;
         Description = description;
         Fee = fee;
-        Unit = unit;
     }
+}
+
+public enum FeeType
+{
+    Hourly,
+    Fixed, 
+    Subscription
 }

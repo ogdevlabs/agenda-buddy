@@ -20,3 +20,16 @@ In a nutshell Agenda Buddy will include the following features:
 - Journal and notes
 - Messaging Provider - Customer
   
+## Launching locally 
+
+Leveraging docker compose to launch locally 
+
+Starting:
+
+```
+docker compose -f docker-compose.yml -f docker-compose.override.yml up -d
+```
+Terminating:
+```
+docker compose down
+```

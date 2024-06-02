@@ -1,4 +1,4 @@
-namespace Provider.Configurations;
+namespace Services.Configurations;
 
 public interface IMongoDbConfiguration
 {
