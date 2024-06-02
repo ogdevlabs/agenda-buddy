@@ -1,8 +1,3 @@
-using System.Text.Json;
-using EventAndCommands.Events.Services;
-using EventAndCommands.Persitency;
-using Quickwire.Attributes;
-
 namespace EventAndCommands.Queries.Services;
 
 public class GetServicesFromProviderQueryHandler(IMediator mediator, ProviderService providerService, string email)

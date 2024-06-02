@@ -1,14 +1,9 @@
-using System.Text.Json;
-using EventAndCommands.Events.Services;
-using EventAndCommands.Persitency;
-using Quickwire.Attributes;
-
 namespace EventAndCommands.Commands.Services;
 
 public class
     AddServicesToProviderCommandHandler(
         IMediator mediator,
-        ProviderService providerService, 
+        ProviderService providerService,
         List<ServiceEntity> serviceEntities,
         string email)
     : IRequestHandler<AddServicesToProviderCommand, string>
@@ -26,13 +21,13 @@ public class
         var provider = await providerService.FindProviders(SupportTools<ProviderEntity>.FilterByEmail(email));
         if (provider != null)
         {
-            provider.ServiceEntities.AddRange(serviceEntities);
+            provider.ServiceEntities.AddRange(SupportTools<ServiceEntity>.GenerateIdForRecord(serviceEntities));
             var updateResult = await providerService.UpdateProvider(provider.Id.ToString(), provider);
             if (updateResult)
             {
                 var @successEvent = new Event()
                 {
-                    Id = provider.Id,
+                    Id = ObjectId.GenerateNewId(),
                     TimeStamp = DateTime.UtcNow,
                     Status = "Success",
                     Type = "AddServicesToProviderCommand",

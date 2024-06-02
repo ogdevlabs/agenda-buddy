@@ -1,9 +1,3 @@
-using System.Diagnostics;
-using MediatR;
-using MiniValidation;
-using Services.Events;
-using Services.Requests;
-
 namespace Services;
 
 public class Program
@@ -121,7 +115,7 @@ public class Program
 
                 if (providerEntity != null)
                 {
-                    return TypedResults.Accepted("api/v1/providers");
+                    return TypedResults.Accepted($"api/v1/services/{email}");
                 }
 
                 return TypedResults.NotFound();

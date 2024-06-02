@@ -1,6 +1,3 @@
-using MediatR;
-using Services.Requests;
-
 namespace Services.Events;
 
 public static class EventHelper

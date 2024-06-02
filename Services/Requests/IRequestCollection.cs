@@ -1,5 +1,3 @@
-using MediatR;
-
 namespace Services.Requests;
 
 public interface IRequestCollection

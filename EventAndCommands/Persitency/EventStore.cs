@@ -1,5 +1,3 @@
-using MongoDB.Driver;
-
 namespace EventAndCommands.Persitency;
 
 public class EventStore : IEventStore
@@ -9,7 +7,7 @@ public class EventStore : IEventStore
     public EventStore()
     {
         var librarySettings = ConfigurationLoader.LoadConfiguration() ?? throw new ArgumentException(nameof(LibrarySettings));
-        var client = new MongoClient(librarySettings.MongoDbSettings.ConnectionString);
+        var client = new MongoClient(librarySettings.MongoDbSettings!.ConnectionString);
         var database = client.GetDatabase(librarySettings.MongoDbSettings.DatabaseName);
         _eventCollection = database.GetCollection<Event>(librarySettings.MongoDbSettings.CollectionName);
     }

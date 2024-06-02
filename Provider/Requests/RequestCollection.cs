@@ -1,6 +1,3 @@
-using EventAndCommands.Commands.Provider;
-using EventAndCommands.Queries.Provider;
-
 namespace Provider.Requests;
 
 public class RequestCollection(IKafkaClient kafkaClient) : IRequestCollection

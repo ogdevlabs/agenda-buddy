@@ -2,24 +2,23 @@ namespace Library.Entities;
 
 public class ServiceEntity
 {
-    [BsonElement("_id")]
-    public ObjectId Id { get; set; }
-    
-    [Required]
-    [BsonElement("name")]
-    public string Name { get; set; } = null!;
-    
+    [BsonElement("_id")] public ObjectId Id { get; set; }
+
+    [Required] [BsonElement("name")] public string Name { get; set; } = null!;
+
     [Required]
     [BsonElement("description")]
     public string Description { get; set; } = null!;
-    
-    [BsonElement("fee")]
-    public decimal? Fee { get; set; } = 0;
-    
-    [BsonElement("feeType")]
-    public FeeType FeeType { get; set; }
 
-    public ServiceEntity(){ }
+    [BsonElement("fee")] public decimal? Fee { get; set; } = 0;
+
+    [BsonElement("feeType")] public FeeType FeeType { get; set; }
+
+    [BsonElement("isActive")] public bool IsActive { get; set; } = true;
+
+    public ServiceEntity()
+    {
+    }
 
     public ServiceEntity(string name, string description, decimal fee)
     {
@@ -32,6 +31,6 @@ public class ServiceEntity
 public enum FeeType
 {
     Hourly,
-    Fixed, 
+    Fixed,
     Subscription
 }

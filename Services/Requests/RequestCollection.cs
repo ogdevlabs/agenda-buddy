@@ -1,7 +1,3 @@
-using EventAndCommands.Commands.Services;
-using EventAndCommands.Queries.Services;
-using MediatR;
-
 namespace Services.Requests;
 
 public class RequestCollection : IRequestCollection

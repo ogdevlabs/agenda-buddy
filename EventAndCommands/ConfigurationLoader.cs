@@ -1,6 +1,3 @@
-using Microsoft.Extensions.Configuration;
-using System.Reflection;
-
 namespace EventAndCommands;
 
 public static class ConfigurationLoader
@@ -9,7 +6,7 @@ public static class ConfigurationLoader
     {
         var basePath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
         var builder = new ConfigurationBuilder()
-            .SetBasePath(basePath)
+            .SetBasePath(basePath!)
             .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
 
         IConfiguration configuration = builder.Build();

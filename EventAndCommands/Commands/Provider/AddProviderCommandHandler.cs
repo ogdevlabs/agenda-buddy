@@ -1,8 +1,3 @@
-using System.Text.Json;
-using EventAndCommands.Persitency;
-using Microsoft.Extensions.DependencyInjection;
-using Quickwire.Attributes;
-
 namespace EventAndCommands.Commands.Provider;
 
 [RegisterService(ServiceLifetime.Scoped)]

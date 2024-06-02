@@ -1,6 +1,8 @@
 // Global using directives
 
 global using System.Diagnostics;
+global using EventAndCommands.Commands.Provider;
+global using EventAndCommands.Queries.Provider;
 global using Kafka;
 global using Library.Entities;
 global using Library.Repositories;
