@@ -10,7 +10,7 @@ public static class EventHelper
         return notificationResponse;
     }
 
-    public static async Task<string> AddServicesToProviderEvent(
+    public static async Task<ProviderEntity> AddServicesToProviderEvent(
         IRequestCollection requestCollection, IMediator mediator, ProviderService providerService,
         List<ServiceEntity> serviceEntities, string email)
     {

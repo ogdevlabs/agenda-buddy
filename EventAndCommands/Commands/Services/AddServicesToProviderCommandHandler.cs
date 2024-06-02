@@ -6,11 +6,11 @@ public class
         ProviderService providerService,
         List<ServiceEntity> serviceEntities,
         string email)
-    : IRequestHandler<AddServicesToProviderCommand, string>
+    : IRequestHandler<AddServicesToProviderCommand, ProviderEntity>
 {
     [InjectService] private IEventStore? EventStore { get; } = new EventStore();
 
-    public async Task<string> Handle(AddServicesToProviderCommand request, CancellationToken cancellationToken)
+    public async Task<ProviderEntity> Handle(AddServicesToProviderCommand request, CancellationToken cancellationToken)
     {
         await mediator.Publish(new AddServicesToProviderEvent
         {
@@ -34,7 +34,7 @@ public class
                     Data = JsonSerializer.Serialize(provider)
                 };
                 await EventStore!.SaveAsync(@successEvent);
-                return await Task.FromResult(provider.ToJson());
+                return await Task.FromResult(provider);
             }
         }
         else
@@ -50,6 +50,6 @@ public class
             await EventStore!.SaveAsync(@failEvent);
         }
 
-        return await Task.FromResult(string.Empty);
+        return null!;
     }
 }

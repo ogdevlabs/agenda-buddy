@@ -1,3 +1,5 @@
+using System.Text.Json;
+
 namespace Services;
 
 public class Program
@@ -102,7 +104,7 @@ public class Program
             }).WithName("GetServicesFromProvider");
 
         services.MapPut("/{email}",
-            async Task<Results<ValidationProblem, NotFound, Accepted>> (IMediator mediator,
+            async Task<Results<ValidationProblem, NotFound, Ok<ProviderEntity>>> (IMediator mediator,
                 ProviderService providerService, IRequestCollection requestCollection,
                 [FromBody]List<ServiceEntity> serviceEntities, string email) =>
             {
@@ -115,7 +117,7 @@ public class Program
 
                 if (providerEntity != null)
                 {
-                    return TypedResults.Accepted($"api/v1/services/{email}");
+                    return TypedResults.Ok(providerEntity);
                 }
 
                 return TypedResults.NotFound();

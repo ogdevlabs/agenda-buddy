@@ -11,7 +11,7 @@ public class RequestCollection : IRequestCollection
         return result;
     }
 
-    public async Task<string> AddServicesToProvider(IMediator mediator, ProviderService providerService,
+    public async Task<ProviderEntity> AddServicesToProvider(IMediator mediator, ProviderService providerService,
         List<ServiceEntity> serviceEntities, string email)
     {
         var result =
