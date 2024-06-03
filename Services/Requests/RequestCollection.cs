@@ -19,4 +19,14 @@ public class RequestCollection : IRequestCollection
                 email).Handle(new AddServicesToProviderCommand(), new CancellationToken());
         return result;
     }
+
+    public async Task<ProviderEntity> UpdateServicesFromProvider(IMediator mediator, ProviderService providerService,
+        List<ServiceEntity> serviceEntities,
+        string email)
+    {
+        var result =
+            await new UpdateServicesFromProviderCommandHandler(mediator, providerService, serviceEntities, email).Handle(
+                new UpdateServicesFromProviderCommand(), new CancellationToken());
+        return result;
+    }
 }

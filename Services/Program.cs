@@ -122,6 +122,26 @@ public class Program
 
                 return TypedResults.NotFound();
             }).WithName("AddServicesToProvider");
+        
+        services.MapPatch("/{email}",
+            async Task<Results<ValidationProblem, NotFound, Ok<ProviderEntity>>> (IMediator mediator,
+                ProviderService providerService, IRequestCollection requestCollection,
+                [FromBody]List<ServiceEntity> serviceEntities, string email) =>
+            {
+                if (!MiniValidator.TryValidate(serviceEntities, out var errors))
+                    return TypedResults.ValidationProblem(errors);
+                
+                var providerEntity = 
+                    await EventHelper.UpdateServicesFromProviderEvent(requestCollection, mediator,
+                        providerService, serviceEntities, email);
+
+                if (providerEntity != null)
+                {
+                    return TypedResults.Ok(providerEntity);
+                }
+
+                return TypedResults.NotFound();
+            }).WithName("UpdateServicesFromProvider");
 
         app.Run();
 
