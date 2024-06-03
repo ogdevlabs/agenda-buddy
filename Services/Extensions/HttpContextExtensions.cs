@@ -1,4 +1,4 @@
-namespace Provider.Extensions;
+namespace Services.Extensions;
 
 public static class HttpContextExtensions
 {

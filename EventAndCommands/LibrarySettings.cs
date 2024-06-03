@@ -2,12 +2,12 @@ namespace EventAndCommands;
 
 public class LibrarySettings
 {
-    public MongoDbSettings MongoDbSettings { get; set; }
+    public MongoDbSettings? MongoDbSettings { get; init; }
 }
 
 public class MongoDbSettings
 {
-    public string ConnectionString { get; set; }
-    public string DatabaseName { get; set; }
-    public string CollectionName { get; set; }
+    public string? ConnectionString { get; init; }
+    public string? DatabaseName { get; init; }
+    public string? CollectionName { get; init; }
 } 

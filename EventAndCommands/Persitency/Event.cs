@@ -7,9 +7,9 @@ public class Event
     [BsonElement("timestamp")]
     public DateTime TimeStamp { get; set; }
     [BsonElement("status")]
-    public string Status { get; set; }
+    public string? Status { get; set; }
     [BsonElement("type")]
-    public string Type { get; set; }
+    public string? Type { get; set; }
     [BsonElement("data")]
-    public string Data { get; set; }
+    public string? Data { get; set; }
 }

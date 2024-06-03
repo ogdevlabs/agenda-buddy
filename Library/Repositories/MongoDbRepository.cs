@@ -1,6 +1,6 @@
 namespace Library.Repositories;
 
-public class MongoDbRepository<TEntity> : IRepository<TEntity> where TEntity: class
+public class MongoDbRepository<TEntity> : IRepository<TEntity> where TEntity : class
 {
     private readonly IMongoCollection<TEntity> _collection;
 
@@ -14,7 +14,7 @@ public class MongoDbRepository<TEntity> : IRepository<TEntity> where TEntity: cl
     {
         _collection = database.GetCollection<TEntity>(collectionName);
     }
-    
+
     public async Task<IEnumerable<TEntity>> GetAllAsync()
     {
         var documents = await _collection.Find(new BsonDocument()).ToListAsync();
@@ -41,7 +41,7 @@ public class MongoDbRepository<TEntity> : IRepository<TEntity> where TEntity: cl
         var result = await _collection.ReplaceOneAsync(filter, entity);
         return result.IsAcknowledged && result.ModifiedCount > 0;
     }
-    
+
     public async Task<bool> DeleteAsync(string id)
     {
         var objectId = new ObjectId(id);

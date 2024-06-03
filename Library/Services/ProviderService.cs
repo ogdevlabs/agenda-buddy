@@ -1,12 +1,12 @@
 namespace Library.Services;
 
-public class ProviderService (IRepository<ProviderEntity> providerRepository)
+public class ProviderService(IRepository<ProviderEntity> providerRepository)
 {
     public async Task<IEnumerable<ProviderEntity>> GetAllProviders()
     {
         return await providerRepository.GetAllAsync();
     }
-    
+
     public async Task<ProviderEntity> GetProviderById(string id)
     {
         return await providerRepository.GetByIdAsync(id);
@@ -24,6 +24,7 @@ public class ProviderService (IRepository<ProviderEntity> providerRepository)
         {
             throw new ArgumentException("Provider not found");
         }
+
         return await providerRepository.UpdateAsync(id, provider);
     }
 

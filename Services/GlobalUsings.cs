@@ -1,22 +1,20 @@
 // Global using directives
 
 global using System.Diagnostics;
-global using EventAndCommands.Commands.Provider;
-global using EventAndCommands.Queries.Provider;
-global using Kafka;
+global using EventAndCommands.Commands.Services;
+global using EventAndCommands.Queries.Services;
 global using Library.Entities;
 global using Library.Repositories;
-global using Library.Tools;
+global using Library.Services;
 global using MediatR;
+global using MongoDB.Driver;
+global using Services.Configurations;
+global using Services.Extensions;
 global using Microsoft.AspNetCore.Diagnostics;
 global using Microsoft.AspNetCore.Http.HttpResults;
 global using Microsoft.AspNetCore.Mvc;
 global using Microsoft.AspNetCore.WebUtilities;
 global using Microsoft.Net.Http.Headers;
 global using MiniValidation;
-global using MongoDB.Driver;
-global using Provider.Configurations;
-global using Provider.Events;
-global using Provider.Extensions;
-global using Provider.Requests;
-global using ProviderService = Library.Services.ProviderService;
+global using Services.Events;
+global using Services.Requests;
