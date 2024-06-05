@@ -16,6 +16,7 @@ public class GetProviderByEmailQueryHandler(IMediator mediator, ProviderService 
                 var @successEvent = new Event()
                 {
                     Id = ObjectId.GenerateNewId(),
+                    Email = providerEntity.Email,
                     TimeStamp = DateTime.UtcNow,
                     Status = "Success",
                     Type = "GetProviderByEmailQuery",
