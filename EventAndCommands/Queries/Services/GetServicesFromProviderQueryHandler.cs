@@ -8,7 +8,7 @@ public class GetServicesFromProviderQueryHandler(IMediator mediator, ProviderSer
     
     public async Task<IEnumerable<ServiceEntity>> Handle(GetServicesFromProviderQuery request, CancellationToken cancellationToken)
     {
-        await mediator.Publish(new GetServicesFromProviderEvent { Email = email }, cancellationToken);
+         await mediator.Publish(new GetServicesFromProviderEvent { Email = email }, cancellationToken);
         
         var filter = SupportTools<ProviderEntity>.FilterByEmail(email);
         var providerEntity = await providerService.FindProviders(filter);

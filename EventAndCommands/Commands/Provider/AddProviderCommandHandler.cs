@@ -20,6 +20,7 @@ public class AddProviderCommandHandler(
             var @succesEvent = new Event()
             {
                 Id = providerEntity.Id,
+                Email = providerEntity.Email,
                 TimeStamp = DateTime.UtcNow,
                 Status = "Success",
                 Type = "AddProviderCommand",
@@ -34,6 +35,7 @@ public class AddProviderCommandHandler(
             var @failEvent = new Event()
             {
                 Id = providerEntity.Id,
+                Email = providerEntity.Email,
                 TimeStamp = DateTime.UtcNow,
                 Status = "Failed",
                 Type = $"AddProviderCommand - {kafkaTopic}",

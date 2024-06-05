@@ -33,6 +33,7 @@ public class UpdateServicesFromProviderCommandHandler(
             var @successEvent = new Event()
             {
                 Id = ObjectId.GenerateNewId(),
+                Email = existingProvider.Email,
                 TimeStamp = DateTime.UtcNow,
                 Status = "Success",
                 Type = "UpdateServicesFromProviderCommand",
@@ -46,10 +47,11 @@ public class UpdateServicesFromProviderCommandHandler(
             var @failEvent = new Event()
             {
                 Id = ObjectId.GenerateNewId(),
+                Email = existingProvider.Email,
                 TimeStamp = DateTime.UtcNow,
                 Status = "Failed",
                 Type = "UpdateServicesFromProviderCommand",
-                Data = JsonSerializer.Serialize(new ProviderEntity())
+                Data = JsonSerializer.Serialize(existingProvider)
             };
             await EventStore!.SaveAsync(@failEvent);
             return null!;

@@ -28,6 +28,7 @@ public class
                 var @successEvent = new Event()
                 {
                     Id = ObjectId.GenerateNewId(),
+                    Email = provider.Email,
                     TimeStamp = DateTime.UtcNow,
                     Status = "Success",
                     Type = "AddServicesToProviderCommand",
