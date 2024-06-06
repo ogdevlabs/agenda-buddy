@@ -37,6 +37,15 @@ public class
                 await EventStore!.SaveAsync(@successEvent);
                 return await Task.FromResult(provider);
             }
+            var @failEvent = new Event()
+            {
+                Id = ObjectId.GenerateNewId(),
+                TimeStamp = DateTime.UtcNow,
+                Status = "Failed",
+                Type = "AddServicesToProviderCommand",
+                Data = JsonSerializer.Serialize(new ProviderEntity())
+            };
+            await EventStore!.SaveAsync(@failEvent);
         }
         else
         {
@@ -50,7 +59,6 @@ public class
             };
             await EventStore!.SaveAsync(@failEvent);
         }
-
         return null!;
     }
 }

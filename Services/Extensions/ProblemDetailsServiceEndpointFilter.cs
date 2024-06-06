@@ -1,9 +1,13 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Services.Extensions;
 
 /// <summary>
 /// Defines an endpoint filter that modifies <see cref="ProblemHttpResult"/> instances returned by route handler delegates
 /// using the <see cref="IProblemDetailsService"/>.
 /// </summary>
+
+[ExcludeFromCodeCoverage]
 public class ProblemDetailsServiceEndpointFilter : IEndpointFilter
 {
     public async ValueTask<object?> InvokeAsync(EndpointFilterInvocationContext context, EndpointFilterDelegate next)

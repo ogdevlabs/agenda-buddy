@@ -29,5 +29,12 @@
     <ItemGroup>
       <ProjectReference Include="..\Services\Services.csproj" />
     </ItemGroup>
-
+    <ItemGroup>
+        <PackageReference Include="coverlet.collector" Version="3.1.2"/>
+    </ItemGroup>
+    <PropertyGroup>
+        <CollectCoverage>true</CollectCoverage>
+        <CoverletOutputFormat>cobertura</CoverletOutputFormat>
+        <ExcludeByFile>**/Migrations/*</ExcludeByFile>
+    </PropertyGroup>
 </Project>

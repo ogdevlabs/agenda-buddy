@@ -1,5 +1,8 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Services.Extensions;
 
+[ExcludeFromCodeCoverage]
 public static class HttpContextExtensions
 {
     private static readonly MediaTypeHeaderValue _jsonMediaType = new("application/json");
