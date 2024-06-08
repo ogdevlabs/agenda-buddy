@@ -2,14 +2,14 @@ namespace Services.Extensions;
 
 public static class HttpContextExtensions
 {
-    private static readonly MediaTypeHeaderValue _jsonMediaType = new("application/json");
+    private static readonly MediaTypeHeaderValue JsonMediaType = new("application/json");
 
     /// <summary>
     /// Determines if the request accepts responses formatted as JSON via the <c>Accepts</c> header.
     /// </summary>
     /// <param name="httpRequest">The <see cref="HttpRequest"/>.</param>
     /// <returns><c>true</c> if the <c>Accept</c> header contains a media type compatible with "application/json".</returns>
-    public static bool AcceptsJson(this HttpRequest httpRequest) => Accepts(httpRequest, _jsonMediaType);
+    public static bool AcceptsJson(this HttpRequest httpRequest) => Accepts(httpRequest, JsonMediaType);
 
     /// <summary>
     /// Determines if the request accepts responses formatted as the specified media type via the <c>Accepts</c> header.
@@ -30,15 +30,7 @@ public static class HttpContextExtensions
     {
         if (httpRequest.GetTypedHeaders().Accept is { Count: > 0 } acceptHeader)
         {
-            for (var i = 0; i < acceptHeader.Count; i++)
-            {
-                var acceptHeaderValue = acceptHeader[i];
-
-                if (mediaType.IsSubsetOf(acceptHeaderValue))
-                {
-                    return true;
-                }
-            }
+            return acceptHeader.Any(acceptHeaderValue => mediaType.IsSubsetOf(acceptHeaderValue));
         }
 
         return false;

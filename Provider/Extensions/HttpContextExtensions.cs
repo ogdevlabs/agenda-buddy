@@ -30,15 +30,7 @@ public static class HttpContextExtensions
     {
         if (httpRequest.GetTypedHeaders().Accept is { Count: > 0 } acceptHeader)
         {
-            for (var i = 0; i < acceptHeader.Count; i++)
-            {
-                var acceptHeaderValue = acceptHeader[i];
-
-                if (mediaType.IsSubsetOf(acceptHeaderValue))
-                {
-                    return true;
-                }
-            }
+            return acceptHeader.Any(acceptHeaderValue => mediaType.IsSubsetOf(acceptHeaderValue));
         }
 
         return false;

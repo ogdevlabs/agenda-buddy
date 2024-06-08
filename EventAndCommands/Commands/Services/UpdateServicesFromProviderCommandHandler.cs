@@ -11,7 +11,7 @@ public class UpdateServicesFromProviderCommandHandler(
     public async Task<ProviderEntity> Handle(UpdateServicesFromProviderCommand request,
         CancellationToken cancellationToken)
     {
-        mediator.Publish(new UpdateServicesFromProviderEvent
+        await mediator.Publish(new UpdateServicesFromProviderEvent
         {
             Email = email,
             ServiceEntities = serviceEntities
@@ -27,6 +27,7 @@ public class UpdateServicesFromProviderCommandHandler(
             serviceMatch.Fee = updatedService.Fee;
             serviceMatch.FeeType = updatedService.FeeType;
         }
+
         var updateResult = await providerService.UpdateProvider(existingProvider.Id.ToString(), existingProvider);
         if (updateResult)
         {

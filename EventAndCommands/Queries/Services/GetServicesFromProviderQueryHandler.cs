@@ -23,7 +23,7 @@ public class GetServicesFromProviderQueryHandler(IMediator mediator, ProviderSer
                 Data = JsonSerializer.Serialize(providerEntity)
             };
             await EventStore!.SaveAsync(@successEvent);
-            return providerEntity.ServiceEntities?? [];
+            return providerEntity.ServiceEntities;
         }
 
         var @failEvent = new Event()

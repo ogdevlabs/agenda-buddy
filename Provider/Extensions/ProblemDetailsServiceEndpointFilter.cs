@@ -28,12 +28,11 @@ public class ProblemDetailsServiceEndpointFilter : IEndpointFilter
 
         public ProblemDetails Value { get; }
 
-        object? IValueHttpResult.Value => Value;
+        object IValueHttpResult.Value => Value;
 
         public async Task ExecuteAsync(HttpContext httpContext)
         {
-            if (httpContext.RequestServices.GetService<IProblemDetailsService>() is IProblemDetailsService
-                problemDetailsService)
+            if (httpContext.RequestServices.GetService<IProblemDetailsService>() is { } problemDetailsService)
             {
                 if (_statusCode is { } statusCode)
                 {
