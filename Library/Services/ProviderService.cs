@@ -1,6 +1,6 @@
 namespace Library.Services;
 
-public class ProviderService(IRepository<ProviderEntity> providerRepository)
+public class ProviderService(IRepository<ProviderEntity> providerRepository) : IProviderService
 {
     public async Task<IEnumerable<ProviderEntity>> GetAllProviders()
     {

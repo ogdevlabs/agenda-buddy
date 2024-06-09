@@ -26,6 +26,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Services", "Services\Servic
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventsAndCommands.Tests", "EventsAndCommands.Tests\EventsAndCommands.Tests.csproj", "{414C7BA8-6B44-41C0-B37B-669D4850F7BE}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Calendar", "Calendar", "{1CDFDF3B-1B2E-4EE1-B4A5-8343189D071A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Calendar", "Calendar\Calendar.csproj", "{E1F42F09-B6B0-44B0-A0A0-BC68275320B9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,6 +43,7 @@ Global
 		{036AA7C5-EE15-4DDD-87B1-E8AB3E7B21BE} = {4273DC90-AB4D-4C8C-BD25-240F38DF6133}
 		{FDD40EF1-545F-40AD-A861-760E371242DE} = {6371886F-BEAC-4C9D-987E-4EE47A435746}
 		{414C7BA8-6B44-41C0-B37B-669D4850F7BE} = {3C051FBD-3D47-46A7-8531-785190666512}
+		{E1F42F09-B6B0-44B0-A0A0-BC68275320B9} = {1CDFDF3B-1B2E-4EE1-B4A5-8343189D071A}
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{49D2389C-97DF-4FE5-B080-F5252B2DDC9F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -69,5 +74,9 @@ Global
 		{414C7BA8-6B44-41C0-B37B-669D4850F7BE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{414C7BA8-6B44-41C0-B37B-669D4850F7BE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{414C7BA8-6B44-41C0-B37B-669D4850F7BE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E1F42F09-B6B0-44B0-A0A0-BC68275320B9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E1F42F09-B6B0-44B0-A0A0-BC68275320B9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E1F42F09-B6B0-44B0-A0A0-BC68275320B9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E1F42F09-B6B0-44B0-A0A0-BC68275320B9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
