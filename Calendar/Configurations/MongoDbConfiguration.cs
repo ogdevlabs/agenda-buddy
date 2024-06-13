@@ -1,5 +1,3 @@
-using MongoDB.Driver;
-
 namespace Calendar.Configurations;
 
 public class MongoDbConfiguration(IConfiguration configuration) : IMongoDbConfiguration

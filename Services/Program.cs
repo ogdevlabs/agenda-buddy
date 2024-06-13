@@ -2,10 +2,15 @@
 
 namespace Services;
 
+
 public class Program
 {
+    
     public static void Main(string[] args)
     {
+        ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls13;
+
+        
         var builder = WebApplication.CreateBuilder(args);
         // Add MongoDB
         builder.Services.AddMongoDbRepository(builder.Configuration);

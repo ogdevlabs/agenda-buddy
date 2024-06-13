@@ -9,7 +9,6 @@ services:
       - schema-registry
       - broker
    
-      
   zookeeper:
     image: confluentinc/cp-zookeeper:7.2.1
     hostname: zookeeper
@@ -40,18 +39,29 @@ services:
     depends_on:
       - kafka0
   
-  # provider-db:
-  #   image: postgres:latest
+  provider:
+    hostname: provider
+    container_name: provider
+    image: ${DOCKER_REGISTRY-}provider:latest
+    build:
+      context: .
+      dockerfile: Provider/Dockerfile
   
-  # provider:
-  #   hostname: provider
-  #   container_name: provider
-  #   image: ${DOCKER_REGISTRY-}provider:latest
+  # services-api:
+  #   hostname: services-api
+  #   container_name: services-api
+  #   image: ${DOCKER_REGISTRY-}services:latest
   #   build:
   #     context: .
-  #     dockerfile: Provider/Dockerfile
-  #   depends_on:
-  #     - provider-db
+  #     dockerfile: Services/Dockerfile
+
+  events:
+    hostname: events
+    container_name: events
+    image: ${DOCKER_REGISTRY-}eventandcommands:latest
+    build:
+      context: .
+      dockerfile: EventAndCommands/Dockerfile
   
   kafka-library:
       image: ${DOCKER_REGISTRY-}kafka:latest

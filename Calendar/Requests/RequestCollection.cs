@@ -1,18 +1,20 @@
-using EventAndCommands.Queries.Calendar;
-using Library.Entities;
-using Library.Services;
-using MediatR;
-
 namespace Calendar.Requests;
 
 public class RequestCollection : IRequestCollection
 {
-    public async Task<IEnumerable<AppointmentEntity>> GetProviderAvailability(IMediator mediator,
+    public async Task<IEnumerable<AppointmentEntity>> CheckCalendarAvailabilityRequest(IMediator mediator,
         ProviderService providerService, string email)
     {
         var result =
-            await new CheckAvailabilityQueryHandler(mediator, providerService, email).Handle(
-                new CheckAvailabilityQuery(), new CancellationToken());
+            await new CheckCalendarAvailabilityQueryHandler(mediator, providerService, email).Handle(
+                new CheckCalendarAvailabilityQuery(), new CancellationToken());
         return result;
+    }
+
+    public async Task<IEnumerable<AppointmentEntity>> CheckCalendarAppointmentsRequest(IMediator mediator, ProviderService providerService, string email)
+    {
+        // TODO 
+
+        return null;
     }
 }

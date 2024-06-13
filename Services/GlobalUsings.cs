@@ -1,6 +1,7 @@
 // Global using directives
 
 global using System.Diagnostics;
+global using System.Net;
 global using EventAndCommands.Commands.Services;
 global using EventAndCommands.Queries.Services;
 global using Library.Entities;
