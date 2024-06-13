@@ -10,7 +10,8 @@ public class CheckCalendarAvailabilityQueryHandler(IMediator mediator, ProviderS
     public async Task<List<AppointmentEntity>> Handle(CheckCalendarAvailabilityQuery request,
         CancellationToken cancellationToken)
     {
-        await mediator.Publish(new CheckCalendarAvailabilityEvent(){Email = email }, cancellationToken);
+        await mediator.Publish(new CheckCalendarAvailabilityEvent() { Email = email }, cancellationToken);
+
         var filter = SupportTools<ProviderEntity>.FilterByEmail(email);
         var providerEntity = await providerService.FindProviders(filter);
         if (providerEntity != null)
@@ -26,6 +27,7 @@ public class CheckCalendarAvailabilityQueryHandler(IMediator mediator, ProviderS
             await EventStore!.SaveAsync(@successEvent);
             return GetThirtyDaysCalendarAvailability(providerEntity);
         }
+
         var @failEvent = new Event()
         {
             Id = ObjectId.GenerateNewId(),
@@ -43,11 +45,10 @@ public class CheckCalendarAvailabilityQueryHandler(IMediator mediator, ProviderS
         var appointmentEntities = providerEntity.AppointmentEntities;
         DateTime now = DateTime.Now;
         DateTime thirtyDaysAgo = now.AddDays(+30);
-        
+
         var last30DaysAppointments = appointmentEntities
             .Where(appointment => appointment.Appointment >= thirtyDaysAgo)
             .ToList();
         return last30DaysAppointments;
-
     }
 }
