@@ -2,17 +2,18 @@ namespace Library.Services;
 
 public class CalendarService(IRepository<AppointmentEntity> appointmentRepository) : ICalendarService
 {
-    public async Task<IEnumerable<AppointmentEntity>> GetCalendarAppointments()
+    public async Task<IEnumerable<AppointmentEntity>> GetCalendarAppointments(BsonDocument filter)
     {
-        return await appointmentRepository.GetAllAsync();
+        return await appointmentRepository.FindAllAsync(filter);
     }
 
     public async Task<IEnumerable<AppointmentEntity>> CheckCalendarAvailability()
     {
+        // TODO
         return await appointmentRepository.GetAllAsync();
     }
 
-    public async Task<bool> BlockCalendarPeriod(DateTime startDate, DateTime endDate)
+    public async Task<bool> BlockCalendarPeriod(string emailProvider, DateTime startDate, DateTime endDate)
     {
         try
         {
@@ -26,8 +27,10 @@ public class CalendarService(IRepository<AppointmentEntity> appointmentRepositor
                 var blockDay = new AppointmentEntity
                 {
                     IsBooked = false,
-                    Appointment = DateTime.Today,
-                    DayOff = true
+                    Start = DateTime.Today,
+                    DayOff = true,
+                    EmailProvider = emailProvider,
+                    EmailCustomer = string.Empty,
                 };
                 await appointmentRepository.InsertAsync(blockDay);
             }

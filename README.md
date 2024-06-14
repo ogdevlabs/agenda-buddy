@@ -24,12 +24,12 @@ In a nutshell Agenda Buddy will include the following features:
 
 Leveraging docker compose to launch locally 
 
-Starting:
+Launch:
 
 ```
 docker compose -f docker-compose.yml -f docker-compose.override.yml up -d
 ```
-Terminating:
+Terminate:
 ```
 docker compose down
 ```

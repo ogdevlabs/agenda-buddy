@@ -1,5 +1,3 @@
-using Microsoft.Net.Http.Headers;
-
 namespace Calendar.Extensions;
 
 public static class HttpContextExtensions

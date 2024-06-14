@@ -1,12 +1,3 @@
-using System.Diagnostics;
-using Calendar.Events;
-using Calendar.Extensions;
-using Calendar.Requests;
-using Microsoft.AspNetCore.Diagnostics;
-using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.WebUtilities;
-
 namespace Calendar;
 
 public class Program
@@ -26,7 +17,7 @@ public class Program
         // Register Singleton instances
         builder.Services.AddSingleton<IMongoDbConfiguration, MongoDbConfiguration>();
         builder.Services.AddSingleton<IRequestCollection, RequestCollection>();
-        
+
         // Enable & configure JSON Problem Details error responses
         builder.Services.AddProblemDetails(options =>
             options.CustomizeProblemDetails =
@@ -90,32 +81,60 @@ public class Program
         app.UseAntiforgery();
         app.UseStatusCodePages();
         app.UseHttpsRedirection();
-        
+
         var calendar = app.MapGroup("api/v1/calendar")
             .WithTags("CalendarAPI")
             .WithOpenApi()
             .AddEndpointFilter<ProblemDetailsServiceEndpointFilter>();
-        
-        calendar.MapGet("/{email}",
+
+        calendar.MapGet("/availability/{email}",
+            async Task<Results<Ok<IEnumerable<DateTime>>, NotFound>> (
+                IMediator mediator,
+                string email,
+                ProviderService providerService,
+                CalendarService calendarService,
+                IRequestCollection requestCollection) =>
+            {
+                var dateTimesCollection =
+                    await EventHelper.CheckCalendarAvailabilityEvent(requestCollection, mediator, providerService,
+                        calendarService,
+                        email);
+                List<DateTime> enumerable = new List<DateTime>();
+                if ( dateTimesCollection!= null)
+                {
+                    foreach (var entity in dateTimesCollection) enumerable.Add(entity);
+                    if (enumerable.Any())
+                    {
+                        return TypedResults.Ok(dateTimesCollection);
+                    }
+                }
+
+                return TypedResults.NotFound();
+            }).WithName("CheckCalendarAvailability");
+
+        calendar.MapGet("/appointments/{email}",
             async Task<Results<Ok<IEnumerable<AppointmentEntity>>, NotFound>> (
                 IMediator mediator,
                 string email,
                 ProviderService providerService,
+                CalendarService calendarService,
                 IRequestCollection requestCollection) =>
             {
                 var appointmentEntities =
-                    await EventHelper.CheckCalendarAvailabilityEvent(requestCollection, mediator, providerService, email);
-                List<AppointmentEntity> enumerable = appointmentEntities.ToList();
-                if (enumerable.Any())
+                    await EventHelper.CheckCalendarAppointmentsEvent(requestCollection, mediator, providerService,
+                        calendarService,
+                        email);
+
+                if (appointmentEntities != null)
                 {
                     return TypedResults.Ok(appointmentEntities);
                 }
 
                 return TypedResults.NotFound();
-            }).WithName("CheckCalendarAvailability");
-        
+            }).WithName("CheckCalendarAppointments");
+
         app.Run();
-        
+
         // Functions and Methods
         void CustomizeProblemDetails(ProblemDetails problemDetails, HttpContext httpContext) =>
             problemDetails.Extensions["requestId"] = Activity.Current?.Id ?? httpContext.TraceIdentifier;

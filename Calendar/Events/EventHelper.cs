@@ -1,14 +1,22 @@
-using Calendar.Requests;
-
 namespace Calendar.Events;
 
 public static class EventHelper
 {
-    public static async Task<IEnumerable<AppointmentEntity>> CheckCalendarAvailabilityEvent(
-        IRequestCollection requestCollection, IMediator mediator, ProviderService providerService, string email)
+    public static async Task<IEnumerable<DateTime>> CheckCalendarAvailabilityEvent(
+        IRequestCollection requestCollection, IMediator mediator, ProviderService providerService,
+        CalendarService calendarService, string email)
     {
         var notificationResponse =
-            await requestCollection.CheckCalendarAvailabilityRequest(mediator, providerService, email);
+            await requestCollection.CheckCalendarAvailabilityRequest(mediator, providerService, calendarService, email);
+        return notificationResponse;
+    }
+
+    public static async Task<IEnumerable<AppointmentEntity>> CheckCalendarAppointmentsEvent(
+        IRequestCollection requestCollection, IMediator mediator, ProviderService providerService,
+        CalendarService calendarService, string email)
+    {
+        var notificationResponse =
+            await requestCollection.CheckCalendarAppointmentsRequest(mediator, providerService, calendarService, email);
         return notificationResponse;
     }
 }

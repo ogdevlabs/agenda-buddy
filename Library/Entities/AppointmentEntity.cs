@@ -2,9 +2,16 @@ namespace Library.Entities;
 
 public class AppointmentEntity
 {
-    [BsonElement("date_time")]
+    [BsonElement("email_provider")] public required string EmailProvider { get; set; } = string.Empty;
+    [BsonElement("email_customer")] public required string EmailCustomer { get; set; } = string.Empty;
+
+    [BsonElement("start")]
     [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
-    public DateTime Appointment { get; set; }
+    public DateTime Start { get; set; }
+
+    [BsonElement("end")]
+    [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
+    public DateTime End { get; set; }
 
     [BsonElement("is_booked")] public bool IsBooked { get; set; } = false;
     [BsonElement("day_off")] public bool DayOff { get; set; } = false;
@@ -13,9 +20,12 @@ public class AppointmentEntity
     {
     }
 
-    public AppointmentEntity(DateTime appointment, bool isBooked, bool dayOff)
+    public AppointmentEntity(string emailProvider, string emailCustomer, DateTime start, DateTime end, bool isBooked, bool dayOff)
     {
-        Appointment = appointment;
+        EmailProvider = emailProvider;
+        EmailCustomer = emailCustomer;
+        Start = start;
+        End = end;
         IsBooked = isBooked;
         DayOff = dayOff;
     }

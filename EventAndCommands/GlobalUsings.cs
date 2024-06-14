@@ -1,7 +1,9 @@
 // Global using directives
 
+global using System.Net;
 global using System.Reflection;
 global using System.Text.Json;
+global using EventAndCommands.Events.Calendar;
 global using EventAndCommands.Events.Provider;
 global using EventAndCommands.Events.Services;
 global using EventAndCommands.Persitency;

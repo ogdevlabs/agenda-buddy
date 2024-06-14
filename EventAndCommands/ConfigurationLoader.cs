@@ -1,5 +1,3 @@
-using System.Net;
-
 namespace EventAndCommands;
 
 public static class ConfigurationLoader

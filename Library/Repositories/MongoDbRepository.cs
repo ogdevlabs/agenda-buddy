@@ -54,4 +54,9 @@ public class MongoDbRepository<TEntity> : IRepository<TEntity> where TEntity : c
     {
         return await _collection.Find(filter).FirstOrDefaultAsync();
     }
+
+    public async Task<IEnumerable<TEntity>> FindAllAsync(BsonDocument filter)
+    {
+        return await _collection.Find(filter).ToListAsync();
+    }
 }
