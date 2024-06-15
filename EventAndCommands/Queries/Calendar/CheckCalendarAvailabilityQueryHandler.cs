@@ -43,6 +43,6 @@ public class CheckCalendarAvailabilityQueryHandler(
             Data = JsonSerializer.Serialize(new ProviderEntity())
         };
         await EventStore!.SaveAsync(@failEvent);
-        return [];
+        return null!;
     }
 }

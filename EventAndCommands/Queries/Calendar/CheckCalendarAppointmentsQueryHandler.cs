@@ -39,6 +39,6 @@ public class
             Data = JsonSerializer.Serialize(new List<AppointmentEntity>())
         };
         await EventStore!.SaveAsync(@failEvent);
-        return [];
+        return null!;
     }
 }
