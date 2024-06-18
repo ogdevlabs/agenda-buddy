@@ -2,7 +2,7 @@ namespace Library.Services;
 
 public interface IBookingService
 {
-    Task<AppointmentEntity> BookAppointment(AppointmentEntity appointmentEntity);
-    Task<AppointmentEntity> UpdateAppointment(AppointmentEntity appointmentEntity);
-    Task<AppointmentEntity> CancelAppointment(AppointmentEntity appointmentEntity);
+    Task BookAppointment(AppointmentEntity appointmentEntity);
+    Task<bool> UpdateAppointment(string id, AppointmentEntity appointmentEntity);
+    Task<bool> CancelAppointment(string id);
 }

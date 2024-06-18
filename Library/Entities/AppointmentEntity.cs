@@ -16,11 +16,13 @@ public class AppointmentEntity
     [BsonElement("is_booked")] public bool IsBooked { get; set; } = false;
     [BsonElement("day_off")] public bool DayOff { get; set; } = false;
 
+    [BsonElement("delivered")] public bool Delivered {get;set;}= false;
+
     public AppointmentEntity()
     {
     }
 
-    public AppointmentEntity(string emailProvider, string emailCustomer, DateTime start, DateTime end, bool isBooked, bool dayOff)
+    public AppointmentEntity(string emailProvider, string emailCustomer, DateTime start, DateTime end, bool isBooked, bool dayOff, bool delivered)
     {
         EmailProvider = emailProvider;
         EmailCustomer = emailCustomer;
@@ -28,5 +30,6 @@ public class AppointmentEntity
         End = end;
         IsBooked = isBooked;
         DayOff = dayOff;
+        Delivered = delivered;
     }
 }
