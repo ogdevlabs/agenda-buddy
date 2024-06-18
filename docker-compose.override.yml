@@ -10,6 +10,8 @@ services:
       KAFKA_CLUSTERS_0_AUDIT_CONSOLEAUDITENABLED: 'true'
     ports:
       - 8080:8080
+    networks:
+      - kafka-net
 
   zookeeper:
     ports:
@@ -17,6 +19,8 @@ services:
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - kafka-net
 
   broker:
     ports:
@@ -26,7 +30,7 @@ services:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker:29092,PLAINTEXT_HOST://127.0.0.1:9092
       KAFKA_METRIC_REPORTERS: io.confluent.metrics.reporter.ConfluentMetricsReporter
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
@@ -46,6 +50,8 @@ services:
       interval: 10s
       timeout: 15s
       retries: 15
+    networks:
+      - kafka-net
 
   schema-registry:
     ports:
@@ -54,10 +60,13 @@ services:
       SCHEMA_REGISTRY_HOST_NAME: schema-registry
       SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: 'broker:29092'
       SCHEMA_REGISTRY_LISTENERS: http://schema-registry:8081
+    networks:
+      - kafka-net
 
   kafka0:
     command: ["tail", "-f", "/dev/null"]
-    network_mode: "host"
+    networks:
+      - kafka-net
 
   kafka-init-topics:
     volumes:
@@ -66,40 +75,50 @@ services:
                cub kafka-ready -b broker:29092 1 30 && \
                kafka-topics --create --topic agenda-buddy-topic --partitions 1 --replication-factor 1 --if-not-exists --bootstrap-server broker:29092 && \
                kafka-console-producer --bootstrap-server broker:29092 --topic agenda-buddy-topic < /data/message.json'"
+    networks:
+      - kafka-net
 
-  # provider-db:
-  #   restart: always
-  #   environment:
-  #     - POSTGRES_USER=postgres
-  #     - POSTGRES_PASSWORD=Admin123
-  #     - POSTGRES_DB=ProviderDB
-  #     - PGUSER=postgres
-  #   ports:
-  #     - "1032:5432"
-  #   command: postgres
-  #   healthcheck:
-  #     test: ["CMD-SHELL", "pg_isready"]
-  #     interval: 30s
-  #     timeout: 5s
-  #     retries: 5
-  #   volumes:
-  #     - provider-data:/var/lib/postgres/data
-
-  # provider:
+  provider:
+      restart: always
+      environment:
+        - ASPNETCORE_ENVIRONMENT=Development
+        - Kestrel__Endpoints__HTTP__Url=http://0.0.0.0:80
+        - Kestrel__Endpoints__GRPC__Url=http://0.0.0.0:81
+        - Kestrel__Endpoints__GRPC__Protocols=Http2
+        - ConnectionStrings=mongodb+srv://agenda_buddy:zufa26pHneUCGol9@cluster-agenda-buddy.rqtcadc.mongodb.net/?retryWrites=true&w=majority&appName=cluster-agenda-buddy
+        - PATH_BASE=/provider
+      ports:
+        - "6030:80"
+        - "7030:81"
+      networks:
+        - kafka-net
+  
+  # services-api:
   #   restart: always
   #   environment:
   #     - ASPNETCORE_ENVIRONMENT=Development
   #     - Kestrel__Endpoints__HTTP__Url=http://0.0.0.0:80
   #     - Kestrel__Endpoints__GRPC__Url=http://0.0.0.0:81
   #     - Kestrel__Endpoints__GRPC__Protocols=Http2
-  #     - ConnectionStrings__ProviderDB=Host=provider-db;Port=5432;Database=ProviderDB;Username=postgres;Password=Admin123
-  #     - UseCustomizationData=true
-  #     - PATH_BASE=/provider
+  #     - ConnectionStrings=mongodb+srv://agenda_buddy:zufa26pHneUCGol9@cluster-agenda-buddy.rqtcadc.mongodb.net/?retryWrites=true&w=majority&appName=cluster-agenda-buddy
+  #     - PATH_BASE=/services-api
   #   ports:
-  #     - "8300:80"
-  #     - "8301:81"
+  #     - "6031:80"
+  #     - "7031:81"
 
+  events:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings=mongodb+srv://agenda_buddy:zufa26pHneUCGol9@cluster-agenda-buddy.rqtcadc.mongodb.net/?retryWrites=true&w=majority&appName=cluster-agenda-buddy
+      - PATH_BASE=/events
+    networks:
+      - kafka-net
+   
 # volumes:
   # provider-data:
   #   driver: local
   #   external: false
+
+networks:
+  kafka-net:
+    driver: bridge

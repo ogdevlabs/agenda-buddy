@@ -1,3 +1,8 @@
+using System.Net;
+
+ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls13;
+
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add MongoDB

@@ -1,17 +1,13 @@
-#pragma warning disable CS8321 // Local function is declared but never used
-
-namespace Services;
-
+namespace Calendar;
 
 public class Program
 {
-    
     public static void Main(string[] args)
     {
-        ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls13;
-
-        
         var builder = WebApplication.CreateBuilder(args);
+
+        // Add services to the container.
+        builder.Services.AddAuthorization();
         // Add MongoDB
         builder.Services.AddMongoDbRepository(builder.Configuration);
         // Add MediatR
@@ -86,78 +82,61 @@ public class Program
         app.UseStatusCodePages();
         app.UseHttpsRedirection();
 
-        var services = app.MapGroup("api/v1/services")
-            .WithTags("ServiceAPI")
+        var calendar = app.MapGroup("api/v1/calendar")
+            .WithTags("CalendarAPI")
             .WithOpenApi()
             .AddEndpointFilter<ProblemDetailsServiceEndpointFilter>();
 
-        services.MapGet("/{email}",
-            async Task<Results<Ok<IEnumerable<ServiceEntity>>, NotFound>> (
+        calendar.MapGet("/availability/{email}",
+            async Task<Results<Ok<IEnumerable<DateTime>>, NotFound>> (
                 IMediator mediator,
                 string email,
                 ProviderService providerService,
+                CalendarService calendarService,
                 IRequestCollection requestCollection) =>
             {
-                var serviceEntities =
-                    await EventHelper.GetServicesFromProviderEvent(requestCollection, mediator, providerService, email);
-                if (serviceEntities != null)
+                var dateTimesCollection =
+                    await EventHelper.CheckCalendarAvailabilityEvent(requestCollection, mediator, providerService,
+                        calendarService,
+                        email);
+                List<DateTime> enumerable = new List<DateTime>();
+                if ( dateTimesCollection!= null)
                 {
-                    return TypedResults.Ok(serviceEntities);
+                    foreach (var entity in dateTimesCollection) enumerable.Add(entity);
+                    if (enumerable.Any())
+                    {
+                        return TypedResults.Ok(dateTimesCollection);
+                    }
                 }
 
                 return TypedResults.NotFound();
-            }).WithName("GetServicesFromProvider");
+            }).WithName("CheckCalendarAvailability");
 
-        services.MapPut("/{email}",
-            async Task<Results<ValidationProblem, NotFound, Ok<ProviderEntity>>> (IMediator mediator,
-                ProviderService providerService, IRequestCollection requestCollection,
-                [FromBody]List<ServiceEntity> serviceEntities, string email) =>
+        calendar.MapGet("/appointments/{email}",
+            async Task<Results<Ok<IEnumerable<AppointmentEntity>>, NotFound>> (
+                IMediator mediator,
+                string email,
+                ProviderService providerService,
+                CalendarService calendarService,
+                IRequestCollection requestCollection) =>
             {
-                if (!MiniValidator.TryValidate(serviceEntities, out var errors))
-                    return TypedResults.ValidationProblem(errors);
-                
-                var providerEntity = 
-                    await EventHelper.AddServicesToProviderEvent(requestCollection, mediator,
-                    providerService, serviceEntities, email);
+                var appointmentEntities =
+                    await EventHelper.CheckCalendarAppointmentsEvent(requestCollection, mediator, providerService,
+                        calendarService,
+                        email);
 
-                if (providerEntity != null)
+                if (appointmentEntities != null)
                 {
-                    return TypedResults.Ok(providerEntity);
+                    return TypedResults.Ok(appointmentEntities);
                 }
 
                 return TypedResults.NotFound();
-            }).WithName("AddServicesToProvider");
-        
-        services.MapPatch("/{email}",
-            async Task<Results<ValidationProblem, NotFound, Ok<ProviderEntity>>> (IMediator mediator,
-                ProviderService providerService, IRequestCollection requestCollection,
-                [FromBody]List<ServiceEntity> serviceEntities, string email) =>
-            {
-                if (!MiniValidator.TryValidate(serviceEntities, out var errors))
-                    return TypedResults.ValidationProblem(errors);
-                
-                var providerEntity = 
-                    await EventHelper.UpdateServicesFromProviderEvent(requestCollection, mediator,
-                        providerService, serviceEntities, email);
-
-                if (providerEntity != null)
-                {
-                    return TypedResults.Ok(providerEntity);
-                }
-
-                return TypedResults.NotFound();
-            }).WithName("UpdateServicesFromProvider");
+            }).WithName("CheckCalendarAppointments");
 
         app.Run();
 
         // Functions and Methods
         void CustomizeProblemDetails(ProblemDetails problemDetails, HttpContext httpContext) =>
             problemDetails.Extensions["requestId"] = Activity.Current?.Id ?? httpContext.TraceIdentifier;
-
-        Dictionary<string, string[]> GenerateErrorMessage(string key, string[] values)
-        {
-            var dictionary = new Dictionary<string, string[]> { { key, values } };
-            return dictionary;
-        }
     }
 }

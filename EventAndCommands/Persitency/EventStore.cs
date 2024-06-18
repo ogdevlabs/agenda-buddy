@@ -4,6 +4,13 @@ public class EventStore : IEventStore
 {
     private readonly IMongoCollection<Event> _eventCollection;
 
+    public EventStore(IConfiguration configuration)
+    {
+        var client = new MongoClient(configuration.GetSection("MongoDB")["ConnectionString"]);
+        var database = client.GetDatabase(configuration.GetSection("MongoDB")["DatabaseName"]);
+        _eventCollection = database.GetCollection<Event>(configuration.GetSection("MongoDB")["CollectionName"]);
+    }
+    
     public EventStore()
     {
         var librarySettings = ConfigurationLoader.LoadConfiguration() ?? throw new ArgumentException(nameof(LibrarySettings));

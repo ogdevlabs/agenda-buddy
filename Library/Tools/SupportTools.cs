@@ -21,4 +21,25 @@ public static class SupportTools<TEntity> where TEntity : class
 
         return dataCollection;
     }
+    
+    public static List<DateTime> GetThirtyDaysCalendarAvailability(ProviderEntity providerEntity)
+    {
+        var appointments = providerEntity.AppointmentEntities;
+        DateTime today = DateTime.Today;
+        DateTime endDate = today.AddDays(30);
+
+        var allTimeSlots = new List<DateTime>();
+
+        for (DateTime date = today; date <= endDate; date = date.AddDays(1))
+        {
+            for (int hour = 9; hour < 20; hour++)
+            {
+                allTimeSlots.Add(date.AddHours(hour));
+            }
+        }
+
+        var bookedTimeSlots = appointments.Select(a => a.Start).ToHashSet();
+        var availableTimeSlots = allTimeSlots.Where(slot => !bookedTimeSlots.Contains(slot)).ToList();
+        return availableTimeSlots;
+    }
 }
