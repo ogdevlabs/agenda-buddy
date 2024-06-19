@@ -1,11 +1,13 @@
 // Global using directives
 
 global using System.Diagnostics;
+global using System.Net;
 global using EventAndCommands.Commands.Provider;
 global using EventAndCommands.Queries.Provider;
 global using Kafka;
 global using Library.Entities;
 global using Library.Repositories;
+global using Library.Services;
 global using Library.Tools;
 global using MediatR;
 global using Microsoft.AspNetCore.Diagnostics;

@@ -1,4 +1,6 @@
 
+using System.Runtime.CompilerServices;
+
 namespace Library.Services;
 
 public class BookingService(IRepository<AppointmentEntity> appointmentRepository) : IBookingService
@@ -9,13 +11,13 @@ public class BookingService(IRepository<AppointmentEntity> appointmentRepository
         await appointmentRepository.InsertAsync(appointmentEntity);
     }
 
-    public async Task<bool> UpdateAppointment(string id, AppointmentEntity appointmentEntity)
+    public async Task<bool> UpdateAppointment(string identifier, AppointmentEntity appointmentEntity)
     {
-        return await appointmentRepository.UpdateAsync(id, appointmentEntity);
+        return await appointmentRepository.UpdateAsync(identifier, appointmentEntity);
     }
 
-    public async Task<bool> CancelAppointment(string id)
+    public async Task<bool> CancelAppointment(string identifier)
     {
-        return await appointmentRepository.DeleteAsync(id);
+        return await appointmentRepository.DeleteAsync(identifier);
     }
 }

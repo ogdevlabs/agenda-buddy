@@ -26,6 +26,7 @@ public class CalendarService(IRepository<AppointmentEntity> appointmentRepositor
             {
                 var blockDay = new AppointmentEntity
                 {
+                    Identifier = new Guid().ToString(),
                     IsBooked = false,
                     Start = DateTime.Today,
                     DayOff = true,

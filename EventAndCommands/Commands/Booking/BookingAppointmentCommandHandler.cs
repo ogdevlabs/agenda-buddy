@@ -1,12 +1,13 @@
+using System.Diagnostics;
 using EventAndCommands.Events.Booking;
 
 namespace EventAndCommands.Commands.Booking;
 
 public class BookingAppointmentCommandHandler(
     IMediator mediator,
-    KafkaClient kafkaClient,
+    KafkaClient? kafkaClient,
     ProviderService providerService,
-    CalendarService calendarService,
+    BookingService bookingService,
     AppointmentEntity appointmentEntity)
     : IRequestHandler<BookAppointmentCommand, string>
 {
@@ -15,8 +16,30 @@ public class BookingAppointmentCommandHandler(
     public async Task<string> Handle(BookAppointmentCommand request, CancellationToken cancellationToken)
     {
         await mediator.Publish(new BookAppointmentEvent { AppointmentEntity = appointmentEntity }, cancellationToken);
-        var provider = await providerService.FindProviders(GetFilterByEmail(appointmentEntity.EmailProvider));
-        throw new NotImplementedException();
+        if (await UpdateProviderAppointments())
+        {
+            await AddAppointmentToCalendar();
+            var @successEvent = new Event()
+                {
+                    Id = ObjectId.GenerateNewId(),
+                    TimeStamp = DateTime.UtcNow,
+                    Status = "Success",
+                    Type = "BookAppointmentCommand",
+                    Data = JsonSerializer.Serialize(appointmentEntity)
+                };
+                await EventStore!.SaveAsync(@successEvent);
+                return await Task.FromResult(appointmentEntity.ToJson());
+        }
+        var @failEvent = new Event()
+        {
+            Id = ObjectId.GenerateNewId(),
+            TimeStamp = DateTime.UtcNow,
+            Status = "Failed",
+            Type = "BookAppointmentCommand",
+            Data = JsonSerializer.Serialize(appointmentEntity)
+        };
+        await EventStore!.SaveAsync(@failEvent);
+        return null!;
     }
 
     private static BsonDocument GetFilterByEmail(string email)
@@ -24,13 +47,25 @@ public class BookingAppointmentCommandHandler(
         return SupportTools<ProviderEntity>.FilterByEmail(email);
     }
 
-    private static void UpdateProviderAppointments()
+    private async Task<bool> UpdateProviderAppointments()
     {
-        
+        try
+        {
+            var provider = await providerService.FindProviders(GetFilterByEmail(appointmentEntity.EmailProvider));
+            if (provider.Email == appointmentEntity.EmailProvider)
+            {
+                return await providerService.UpdateProvider(provider.Id.ToString(), provider);
+            }
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+        return false;
     }
 
-    private static async Task AddAppointmentToCalendar(AppointmentEntity appointmentEntity, CalendarService calendarService)
+    private async Task AddAppointmentToCalendar()
     {
-        
+        await bookingService.BookAppointment(appointmentEntity);
     }
 }
