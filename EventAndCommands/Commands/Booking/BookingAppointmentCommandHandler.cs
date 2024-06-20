@@ -16,20 +16,22 @@ public class BookingAppointmentCommandHandler(
     public async Task<string> Handle(BookAppointmentCommand request, CancellationToken cancellationToken)
     {
         await mediator.Publish(new BookAppointmentEvent { AppointmentEntity = appointmentEntity }, cancellationToken);
+        
         if (await UpdateProviderAppointments())
         {
             await AddAppointmentToCalendar();
             var @successEvent = new Event()
-                {
-                    Id = ObjectId.GenerateNewId(),
-                    TimeStamp = DateTime.UtcNow,
-                    Status = "Success",
-                    Type = "BookAppointmentCommand",
-                    Data = JsonSerializer.Serialize(appointmentEntity)
-                };
-                await EventStore!.SaveAsync(@successEvent);
-                return await Task.FromResult(appointmentEntity.ToJson());
+            {
+                Id = ObjectId.GenerateNewId(),
+                TimeStamp = DateTime.UtcNow,
+                Status = "Success",
+                Type = "BookAppointmentCommand",
+                Data = JsonSerializer.Serialize(appointmentEntity)
+            };
+            await EventStore!.SaveAsync(@successEvent);
+            return await Task.FromResult(appointmentEntity.ToJson());
         }
+
         var @failEvent = new Event()
         {
             Id = ObjectId.GenerateNewId(),
@@ -42,25 +44,17 @@ public class BookingAppointmentCommandHandler(
         return null!;
     }
 
-    private static BsonDocument GetFilterByEmail(string email)
-    {
-        return SupportTools<ProviderEntity>.FilterByEmail(email);
-    }
-
     private async Task<bool> UpdateProviderAppointments()
     {
-        try
+        var filter = SupportTools<ProviderEntity>.FilterByEmail(appointmentEntity.EmailProvider);
+        var providerEntity = await providerService.FindProviders(filter);
+        if (providerEntity == null) return false;
+        if (providerEntity.Email == appointmentEntity.EmailProvider)
         {
-            var provider = await providerService.FindProviders(GetFilterByEmail(appointmentEntity.EmailProvider));
-            if (provider.Email == appointmentEntity.EmailProvider)
-            {
-                return await providerService.UpdateProvider(provider.Id.ToString(), provider);
-            }
+            providerEntity.AppointmentEntities.Add(appointmentEntity);
+            return await providerService.UpdateProvider(providerEntity.Id.ToString(), providerEntity);
         }
-        catch (Exception)
-        {
-            return false;
-        }
+
         return false;
     }
 

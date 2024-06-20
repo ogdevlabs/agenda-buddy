@@ -2,7 +2,7 @@ namespace Library.Entities;
 
 public class AppointmentEntity
 {
-    [BsonElement("identifier")] public string Identifier { get; init; } = new Guid().ToString();
+    [BsonElement("identifier")] public string Identifier { get; init; } = Guid.NewGuid().ToString();
 
     [BsonElement("email_provider")]
     [EmailAddress]
