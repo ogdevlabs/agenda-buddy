@@ -1,6 +1,4 @@
 
-using System.Runtime.CompilerServices;
-
 namespace Library.Services;
 
 public class BookingService(IRepository<AppointmentEntity> appointmentRepository) : IBookingService

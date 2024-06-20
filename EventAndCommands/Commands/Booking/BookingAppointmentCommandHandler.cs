@@ -1,8 +1,6 @@
-using System.Diagnostics;
-using EventAndCommands.Events.Booking;
-
 namespace EventAndCommands.Commands.Booking;
 
+[RegisterService(ServiceLifetime.Scoped)]
 public class BookingAppointmentCommandHandler(
     IMediator mediator,
     KafkaClient? kafkaClient,
@@ -16,7 +14,7 @@ public class BookingAppointmentCommandHandler(
     public async Task<string> Handle(BookAppointmentCommand request, CancellationToken cancellationToken)
     {
         await mediator.Publish(new BookAppointmentEvent { AppointmentEntity = appointmentEntity }, cancellationToken);
-        
+
         if (await UpdateProviderAppointments())
         {
             await AddAppointmentToCalendar();

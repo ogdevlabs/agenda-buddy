@@ -11,6 +11,11 @@ public static class SupportTools<TEntity> where TEntity : class
     {
         return new BsonDocument("email", email);
     }
+    
+    public static BsonDocument FilterByEmailProvider(string email)
+    {
+        return new BsonDocument("email_provider", email);
+    }
 
     public static List<ServiceEntity> GenerateIdForRecord(List<ServiceEntity> dataCollection)
     {

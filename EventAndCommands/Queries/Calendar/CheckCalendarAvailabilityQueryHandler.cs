@@ -1,5 +1,6 @@
 namespace EventAndCommands.Queries.Calendar;
 
+[RegisterService(ServiceLifetime.Scoped)]
 public class CheckCalendarAvailabilityQueryHandler(
     IMediator mediator,
     ProviderService providerService,

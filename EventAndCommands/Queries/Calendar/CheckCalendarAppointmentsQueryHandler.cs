@@ -1,5 +1,7 @@
 namespace EventAndCommands.Queries.Calendar;
 
+[RegisterService(ServiceLifetime.Scoped)]
+    
 public class
     CheckCalendarAppointmentsQueryHandler(IMediator mediator,
         ProviderService providerService,
@@ -12,9 +14,11 @@ public class
     {
         await mediator.Publish(new CheckCalendarAppointmentsEvent { Email = email }, cancellationToken);
 
-        var filterCalendar = SupportTools<AppointmentEntity>.FilterByEmail(email);
-        var filterProvider = SupportTools<ProviderEntity>.FilterByEmail(email);
+        var allAppointments = await calendarService.GetAllAppointments();
+        var filterCalendar = SupportTools<AppointmentEntity>.FilterByEmailProvider(email);
         var calendarEntityCollection = await calendarService.GetCalendarAppointments(filterCalendar);
+        
+        var filterProvider = SupportTools<ProviderEntity>.FilterByEmail(email);
         var providerEntity = await providerService.FindProviders(filterProvider);
         if (calendarEntityCollection != null && providerEntity != null)
         {

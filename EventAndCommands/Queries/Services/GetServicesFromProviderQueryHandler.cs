@@ -1,5 +1,6 @@
 namespace EventAndCommands.Queries.Services;
 
+[RegisterService(ServiceLifetime.Scoped)]
 public class GetServicesFromProviderQueryHandler(
     IMediator mediator, 
     ProviderService providerService, 

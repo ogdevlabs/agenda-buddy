@@ -1,5 +1,6 @@
 namespace EventAndCommands.Commands.Services;
 
+[RegisterService(ServiceLifetime.Scoped)]
 public class UpdateServicesFromProviderCommandHandler(
     IMediator mediator,
     ProviderService providerService,

@@ -1,7 +1,13 @@
+using System.Collections;
+
 namespace Library.Services;
 
 public class CalendarService(IRepository<AppointmentEntity> appointmentRepository) : ICalendarService
 {
+    public async Task<IEnumerable<AppointmentEntity>> GetAllAppointments()
+    {
+        return await appointmentRepository.GetAllAsync();
+    }
     public async Task<IEnumerable<AppointmentEntity>> GetCalendarAppointments(BsonDocument filter)
     {
         return await appointmentRepository.FindAllAsync(filter);
