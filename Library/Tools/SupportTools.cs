@@ -11,7 +11,7 @@ public static class SupportTools<TEntity> where TEntity : class
     {
         return new BsonDocument("email", email);
     }
-    
+
     public static BsonDocument FilterByEmailProvider(string email)
     {
         return new BsonDocument("email_provider", email);
@@ -26,7 +26,7 @@ public static class SupportTools<TEntity> where TEntity : class
 
         return dataCollection;
     }
-    
+
     public static List<DateTime> GetThirtyDaysCalendarAvailability(ProviderEntity providerEntity)
     {
         var appointments = providerEntity.AppointmentEntities;
@@ -37,7 +37,15 @@ public static class SupportTools<TEntity> where TEntity : class
 
         for (DateTime date = today; date <= endDate; date = date.AddDays(1))
         {
-            for (int hour = 9; hour < 20; hour++)
+            int aux = 9;
+            if (today == date)
+            {
+                aux = GetTodayAvailableTime();
+                if (aux == 0) continue;
+                aux = 19 - aux;
+            }
+
+            for (int hour = aux; hour <= 19; hour++)
             {
                 allTimeSlots.Add(date.AddHours(hour));
             }
@@ -46,5 +54,30 @@ public static class SupportTools<TEntity> where TEntity : class
         var bookedTimeSlots = appointments.Select(a => a.Start).ToHashSet();
         var availableTimeSlots = allTimeSlots.Where(slot => !bookedTimeSlots.Contains(slot)).ToList();
         return availableTimeSlots;
+    }
+
+    private static int GetTodayAvailableTime()
+    {
+        DateTime currentTime = DateTime.Now;
+        DateTime startOfAvailability = currentTime.Date.AddHours(9); // 9 AM
+        DateTime endOfAvailability = currentTime.Date.AddHours(19); // 7 PM
+        
+        if (currentTime < startOfAvailability)
+        {
+            currentTime = startOfAvailability;
+        }
+        else if (currentTime >= endOfAvailability.AddHours(-4))
+        {
+            return 0;
+        }
+        
+        TimeSpan remainingTime = endOfAvailability - currentTime;
+        
+        if (remainingTime.TotalHours < 4)
+        {
+            return 0;
+        }
+        
+        return (int)Math.Floor(remainingTime.TotalHours);
     }
 }

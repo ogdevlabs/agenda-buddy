@@ -78,20 +78,20 @@ services:
     networks:
       - kafka-net
 
-  provider:
-      restart: always
-      environment:
-        - ASPNETCORE_ENVIRONMENT=Development
-        - Kestrel__Endpoints__HTTP__Url=http://0.0.0.0:80
-        - Kestrel__Endpoints__GRPC__Url=http://0.0.0.0:81
-        - Kestrel__Endpoints__GRPC__Protocols=Http2
-        - ConnectionStrings=mongodb+srv://agenda_buddy:zufa26pHneUCGol9@cluster-agenda-buddy.rqtcadc.mongodb.net/?retryWrites=true&w=majority&appName=cluster-agenda-buddy
-        - PATH_BASE=/provider
-      ports:
-        - "6030:80"
-        - "7030:81"
-      networks:
-        - kafka-net
+  # provider:
+  #     restart: always
+  #     environment:
+  #       - ASPNETCORE_ENVIRONMENT=Development
+  #       - Kestrel__Endpoints__HTTP__Url=http://0.0.0.0:80
+  #       - Kestrel__Endpoints__GRPC__Url=http://0.0.0.0:81
+  #       - Kestrel__Endpoints__GRPC__Protocols=Http2
+  #       - ConnectionStrings=mongodb+srv://agenda_buddy:zufa26pHneUCGol9@cluster-agenda-buddy.rqtcadc.mongodb.net/?retryWrites=true&w=majority&appName=cluster-agenda-buddy
+  #       - PATH_BASE=/provider
+  #     ports:
+  #       - "6030:80"
+  #       - "7030:81"
+  #     networks:
+  #       - kafka-net
   
   # services-api:
   #   restart: always

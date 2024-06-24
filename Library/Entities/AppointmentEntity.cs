@@ -1,3 +1,5 @@
+using Library.Tools;
+
 namespace Library.Entities;
 
 public class AppointmentEntity
@@ -21,25 +23,64 @@ public class AppointmentEntity
     [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
     public DateTime End { get; set; }
 
-    [BsonElement("is_booked")] public bool IsBooked { get; set; } = false;
-    [BsonElement("day_off")] public bool DayOff { get; set; } = false;
+    [BsonElement("appointment_status")]
+    public AppointmentStatus AppointmentStatus { get; set; } = AppointmentStatus.Requested;
 
-    [BsonElement("delivered")] public bool Delivered { get; set; } = false;
+    [BsonElement("appointment_description")]
+    public string AppointmentDescription { get; set; } =
+        EnumHelper<AppointmentStatus>.GetEnumDescription(AppointmentStatus.Requested);
+
+    [BsonElement("day_off")] public bool DayOff { get; set; } = false;
 
     public AppointmentEntity()
     {
     }
 
     public AppointmentEntity(string identifier, string emailProvider, string emailCustomer, DateTime start,
-        DateTime end, bool isBooked, bool dayOff, bool delivered)
+        DateTime end, bool dayOff, AppointmentStatus appointmentStatus = AppointmentStatus.Requested)
     {
         Identifier = identifier;
         EmailProvider = emailProvider;
         EmailCustomer = emailCustomer;
         Start = start;
         End = end;
-        IsBooked = isBooked;
         DayOff = dayOff;
-        Delivered = delivered;
+        AppointmentStatus = AppointmentStatus.Requested;
+    }
+
+    public void Book()
+    {
+        if (AppointmentStatus == AppointmentStatus.Requested)
+        {
+            AppointmentStatus = AppointmentStatus.Booked;
+        }
+        else
+        {
+            throw new InvalidOperationException("Only requested appointments can be booked.");
+        }
+    }
+
+    public void Cancel()
+    {
+        if (AppointmentStatus == AppointmentStatus.Requested || AppointmentStatus == AppointmentStatus.Booked)
+        {
+            AppointmentStatus = AppointmentStatus.Cancelled;
+        }
+        else
+        {
+            throw new InvalidOperationException("Only requested or booked appointments can be cancelled.");
+        }
+    }
+
+    public void Complete()
+    {
+        if (AppointmentStatus == AppointmentStatus.Booked)
+        {
+            AppointmentStatus = AppointmentStatus.Completed;
+        }
+        else
+        {
+            throw new InvalidOperationException("Only booked appointments can be completed.");
+        }
     }
 }

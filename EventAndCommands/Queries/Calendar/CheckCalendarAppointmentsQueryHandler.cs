@@ -13,16 +13,11 @@ public class
     public async Task<List<AppointmentEntity>> Handle(CheckCalendarAppointmentsQuery request, CancellationToken cancellationToken)
     {
         await mediator.Publish(new CheckCalendarAppointmentsEvent { Email = email }, cancellationToken);
-
-        var allAppointments = await calendarService.GetAllAppointments();
-        var filterCalendar = SupportTools<AppointmentEntity>.FilterByEmailProvider(email);
-        var calendarEntityCollection = await calendarService.GetCalendarAppointments(filterCalendar);
-        
         var filterProvider = SupportTools<ProviderEntity>.FilterByEmail(email);
         var providerEntity = await providerService.FindProviders(filterProvider);
-        if (calendarEntityCollection != null && providerEntity != null)
+        if (providerEntity != null)
         {
-            var appointmentEntities = calendarEntityCollection.ToList();
+            var providerAppointmentCollection = providerEntity.AppointmentEntities;
             var @successEvent = new Event()
             {
                 Id = ObjectId.GenerateNewId(),
@@ -32,7 +27,7 @@ public class
                 Data = JsonSerializer.Serialize(providerEntity)
             };
             await EventStore!.SaveAsync(@successEvent);
-            return appointmentEntities.ToList();
+            return providerAppointmentCollection;
         }
         var @failEvent = new Event()
         {
