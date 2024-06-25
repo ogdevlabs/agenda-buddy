@@ -8,10 +8,10 @@ public interface IRequestCollection
         BookingService bookingService,
         AppointmentEntity appointmentEntity);
 
-    public Task<bool> UpdateAppointmentRequest(IMediator mediator, ProviderService providerService,
+    public Task<string> UpdateAppointmentRequest(IMediator mediator, ProviderService providerService,
         BookingService bookingService, string identifier,
         AppointmentEntity appointmentEntity);
 
-    public Task<bool> CancelAppointment(IMediator mediator, ProviderService providerService,
+    public Task<string> CancelAppointmentRequest(IMediator mediator, ProviderService providerService,
         BookingService bookingService, string identifier);
 }

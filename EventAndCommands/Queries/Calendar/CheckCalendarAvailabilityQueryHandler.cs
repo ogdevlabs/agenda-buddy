@@ -4,7 +4,6 @@ namespace EventAndCommands.Queries.Calendar;
 public class CheckCalendarAvailabilityQueryHandler(
     IMediator mediator,
     ProviderService providerService,
-    CalendarService calendarService,
     string email)
     : IRequestHandler<CheckCalendarAvailabilityQuery, List<DateTime>>
 {

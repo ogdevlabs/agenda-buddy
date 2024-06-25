@@ -59,19 +59,7 @@ public class AppointmentEntity
             throw new InvalidOperationException("Only requested appointments can be booked.");
         }
     }
-
-    public void Cancel()
-    {
-        if (AppointmentStatus == AppointmentStatus.Requested || AppointmentStatus == AppointmentStatus.Booked)
-        {
-            AppointmentStatus = AppointmentStatus.Cancelled;
-        }
-        else
-        {
-            throw new InvalidOperationException("Only requested or booked appointments can be cancelled.");
-        }
-    }
-
+    
     public void Complete()
     {
         if (AppointmentStatus == AppointmentStatus.Booked)

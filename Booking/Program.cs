@@ -116,7 +116,59 @@ booking.MapPost("/appointments",
                     "No record match found error", new string[] { "No provider", $"{appointmentEntity.EmailProvider}" }));
             }
         })
-    .WithName("BookAppoinment");
+    .WithName("BookAppointment");
+
+booking.MapPut("/appointments/",
+        async Task<Results<ValidationProblem, Accepted<AppointmentEntity>, BadRequest>> (IMediator mediator,
+            ProviderService providerService, BookingService bookingService, AppointmentEntity appointmentEntity,
+            IRequestCollection requestCollection) =>
+        {
+            if (!MiniValidator.TryValidate(appointmentEntity, out var errors))
+                return TypedResults.ValidationProblem(errors);
+
+            var index = appointmentEntity.EmailProvider.IndexOf('@');
+            var topicName = appointmentEntity.EmailProvider.Substring(0, index).ToLower() + "-topic";
+
+            var eventResponse = await EventsHelper.UpdateAppointmentEvent(requestCollection, mediator, providerService, bookingService,
+                appointmentEntity);
+            
+            if (!string.IsNullOrEmpty(eventResponse) && !eventResponse.ToLower().StartsWith("exception"))
+            {
+                return TypedResults.Accepted($"/api/v1/appointments/{appointmentEntity.Identifier}", appointmentEntity);
+            }
+            else
+            {
+                return TypedResults.ValidationProblem(GenerateErrorMessage(
+                    "Update Appointment Error", new string[] { "Error when trying to update appointment identifier:", $"{appointmentEntity.Identifier}" }));
+            }
+        })
+    .WithName("UpdateAppointment");
+
+booking.MapDelete("/appointments/",
+        async Task<Results<ValidationProblem, NoContent, BadRequest>> (IMediator mediator,
+            ProviderService providerService, BookingService bookingService, [FromBody] AppointmentEntity appointmentEntity,
+            IRequestCollection requestCollection) =>
+        {
+            if (!MiniValidator.TryValidate(appointmentEntity, out var errors))
+                return TypedResults.ValidationProblem(errors);
+
+            var index = appointmentEntity.EmailProvider.IndexOf('@');
+            var topicName = appointmentEntity.EmailProvider.Substring(0, index).ToLower() + "-topic";
+
+            var eventResponse = await EventsHelper.CancelAppointmentEvent(requestCollection, mediator, providerService, bookingService,
+                appointmentEntity);
+            
+            if (!string.IsNullOrEmpty(eventResponse) && !eventResponse.ToLower().StartsWith("exception"))
+            {
+                return TypedResults.NoContent();
+            }
+            else
+            {
+                return TypedResults.ValidationProblem(GenerateErrorMessage(
+                    "Cancel Appointment Error", new string[] { "Error when trying to cancel appointment identifier:", $"{appointmentEntity.Identifier}" }));
+            }
+        })
+    .WithName("CancelAppointment");
 
 app.Run();
 

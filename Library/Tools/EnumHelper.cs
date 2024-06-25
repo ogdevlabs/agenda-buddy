@@ -7,8 +7,8 @@ public static class EnumHelper<TEnum> where TEnum : Enum
 {
     public static string GetEnumDescription(Enum value)
     {
-        FieldInfo field = value.GetType().GetField(value.ToString());
-        DescriptionAttribute attribute = field.GetCustomAttribute<DescriptionAttribute>();
+        FieldInfo field = value.GetType().GetField(value.ToString())!;
+        DescriptionAttribute attribute = field.GetCustomAttribute<DescriptionAttribute>()!;
 
         return attribute == null ? value.ToString() : attribute.Description;
     }
@@ -21,14 +21,18 @@ public static class EnumHelper<TEnum> where TEnum : Enum
             {
                 if (attribute.Description == description)
                 {
-                    return (T)field.GetValue(null);
+#pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
+                    return ((T)field.GetValue(null))!;
+#pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
                 }
             }
             else
             {
                 if (field.Name == description)
                 {
-                    return (T)field.GetValue(null);
+#pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
+                    return ((T)field.GetValue(null))!;
+#pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
                 }
             }
         }

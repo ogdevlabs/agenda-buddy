@@ -15,9 +15,8 @@ public class BookingAppointmentCommandHandler(
     {
         await mediator.Publish(new BookAppointmentEvent { AppointmentEntity = appointmentEntity }, cancellationToken);
 
-        if (await UpdateProviderAppointments())
+        if (await SearchAndUpdateProviderAppointments())
         {
-            await AddAppointmentToCalendar();
             var @successEvent = new Event()
             {
                 Id = ObjectId.GenerateNewId(),
@@ -42,14 +41,15 @@ public class BookingAppointmentCommandHandler(
         return null!;
     }
 
-    private async Task<bool> UpdateProviderAppointments()
+    private async Task<bool> SearchAndUpdateProviderAppointments()
     {
         var filter = SupportTools<ProviderEntity>.FilterByEmail(appointmentEntity.EmailProvider);
         var providerEntity = await providerService.FindProviders(filter);
         if (providerEntity == null) return false;
         if (providerEntity.Email == appointmentEntity.EmailProvider)
         {
-            providerEntity.AppointmentEntities.Add(appointmentEntity);
+            await AddAppointmentToCalendar();
+            providerEntity.AppointmentEntities.Add(await bookingService.SearchAppointment(appointmentEntity.Identifier));
             return await providerService.UpdateProvider(providerEntity.Id.ToString(), providerEntity);
         }
 

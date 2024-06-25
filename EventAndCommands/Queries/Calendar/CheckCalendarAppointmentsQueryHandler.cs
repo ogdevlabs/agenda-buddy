@@ -5,7 +5,6 @@ namespace EventAndCommands.Queries.Calendar;
 public class
     CheckCalendarAppointmentsQueryHandler(IMediator mediator,
         ProviderService providerService,
-        CalendarService calendarService,
         string email) : IRequestHandler<CheckCalendarAppointmentsQuery, List<AppointmentEntity>>
 {
     [InjectService] private IEventStore? EventStore { get; } = new EventStore();

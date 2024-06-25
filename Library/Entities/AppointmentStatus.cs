@@ -8,8 +8,6 @@ public enum AppointmentStatus
     Requested,
     [Description("Appointment Booked")]
     Booked,
-    [Description("Appointment Cancelled")]
-    Cancelled,
     [Description("Appointment Completed")]
     Completed
 }
