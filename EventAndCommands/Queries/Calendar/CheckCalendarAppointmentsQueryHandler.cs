@@ -1,9 +1,10 @@
 namespace EventAndCommands.Queries.Calendar;
 
+[RegisterService(ServiceLifetime.Scoped)]
+    
 public class
     CheckCalendarAppointmentsQueryHandler(IMediator mediator,
         ProviderService providerService,
-        CalendarService calendarService,
         string email) : IRequestHandler<CheckCalendarAppointmentsQuery, List<AppointmentEntity>>
 {
     [InjectService] private IEventStore? EventStore { get; } = new EventStore();
@@ -11,14 +12,11 @@ public class
     public async Task<List<AppointmentEntity>> Handle(CheckCalendarAppointmentsQuery request, CancellationToken cancellationToken)
     {
         await mediator.Publish(new CheckCalendarAppointmentsEvent { Email = email }, cancellationToken);
-
-        var filterCalendar = SupportTools<AppointmentEntity>.FilterByEmail(email);
         var filterProvider = SupportTools<ProviderEntity>.FilterByEmail(email);
-        var calendarEntityCollection = await calendarService.GetCalendarAppointments(filterCalendar);
         var providerEntity = await providerService.FindProviders(filterProvider);
-        if (calendarEntityCollection != null && providerEntity != null)
+        if (providerEntity != null)
         {
-            var appointmentEntities = calendarEntityCollection.ToList();
+            var providerAppointmentCollection = providerEntity.AppointmentEntities;
             var @successEvent = new Event()
             {
                 Id = ObjectId.GenerateNewId(),
@@ -28,7 +26,7 @@ public class
                 Data = JsonSerializer.Serialize(providerEntity)
             };
             await EventStore!.SaveAsync(@successEvent);
-            return appointmentEntities.ToList();
+            return providerAppointmentCollection;
         }
         var @failEvent = new Event()
         {

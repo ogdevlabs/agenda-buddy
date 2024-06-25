@@ -23,7 +23,7 @@ public static class ConfigurationLoader
                 .GetSection("MongoDB")["DatabaseName"]!,
             CollectionName = configuration
                 .GetSection("LibrarySettings")
-                .GetSection("MongoDB")["CollectionName"]!
+                .GetSection("MongoDB")["EventsName"]!
         };
         var librarySettings = new LibrarySettings
         {

@@ -6,7 +6,7 @@ public class RequestCollection : IRequestCollection
         ProviderService providerService, CalendarService calendarService, string email)
     {
         var result =
-            await new CheckCalendarAvailabilityQueryHandler(mediator, providerService, calendarService, email)
+            await new CheckCalendarAvailabilityQueryHandler(mediator, providerService, email)
                 .Handle(new CheckCalendarAvailabilityQuery(), new CancellationToken());
         return result;
     }
@@ -15,7 +15,7 @@ public class RequestCollection : IRequestCollection
         ProviderService providerService, CalendarService calendarService, string email)
     {
         var result =
-            await new CheckCalendarAppointmentsQueryHandler(mediator, providerService, calendarService, email)
+            await new CheckCalendarAppointmentsQueryHandler(mediator, providerService, email)
                 .Handle(new CheckCalendarAppointmentsQuery(), new CancellationToken());
         return result;
     }

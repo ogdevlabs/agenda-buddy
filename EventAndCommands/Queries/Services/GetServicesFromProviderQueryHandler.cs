@@ -1,6 +1,10 @@
 namespace EventAndCommands.Queries.Services;
 
-public class GetServicesFromProviderQueryHandler(IMediator mediator, ProviderService providerService, string email)
+[RegisterService(ServiceLifetime.Scoped)]
+public class GetServicesFromProviderQueryHandler(
+    IMediator mediator, 
+    ProviderService providerService, 
+    string email)
     : IRequestHandler<GetServicesFromProviderQuery, IEnumerable<ServiceEntity>>
 {
 

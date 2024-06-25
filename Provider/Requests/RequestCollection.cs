@@ -1,5 +1,3 @@
-using Library.Services;
-
 namespace Provider.Requests;
 
 public class RequestCollection(IKafkaClient kafkaClient) : IRequestCollection

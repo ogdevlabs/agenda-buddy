@@ -1,7 +1,13 @@
+using System.Collections;
+
 namespace Library.Services;
 
 public class CalendarService(IRepository<AppointmentEntity> appointmentRepository) : ICalendarService
 {
+    public async Task<IEnumerable<AppointmentEntity>> GetAllAppointments()
+    {
+        return await appointmentRepository.GetAllAsync();
+    }
     public async Task<IEnumerable<AppointmentEntity>> GetCalendarAppointments(BsonDocument filter)
     {
         return await appointmentRepository.FindAllAsync(filter);
@@ -26,7 +32,8 @@ public class CalendarService(IRepository<AppointmentEntity> appointmentRepositor
             {
                 var blockDay = new AppointmentEntity
                 {
-                    IsBooked = false,
+                    Identifier = new Guid().ToString(),
+                    AppointmentStatus = AppointmentStatus.Requested,
                     Start = DateTime.Today,
                     DayOff = true,
                     EmailProvider = emailProvider,

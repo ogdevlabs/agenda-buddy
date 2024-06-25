@@ -39,13 +39,13 @@ services:
     depends_on:
       - kafka0
   
-  provider:
-    hostname: provider
-    container_name: provider
-    image: ${DOCKER_REGISTRY-}provider:latest
-    build:
-      context: .
-      dockerfile: Provider/Dockerfile
+  # provider:
+  #   hostname: provider
+  #   container_name: provider
+  #   image: ${DOCKER_REGISTRY-}provider:latest
+  #   build:
+  #     context: .
+  #     dockerfile: Provider/Dockerfile
   
   # services-api:
   #   hostname: services-api
