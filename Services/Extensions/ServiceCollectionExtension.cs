@@ -11,7 +11,7 @@ public static class ServiceCollectionExtension
         serviceCollection.AddScoped<IRepository<ProviderEntity>>(
             _ => new MongoDbRepository<ProviderEntity>(database,
                 configuration.GetSection("MongoDB")["ProvidersName"]!));
-        
+
         serviceCollection.AddScoped<IRepository<ServiceEntity>>(
             _ => new MongoDbRepository<ServiceEntity>(database,
                 configuration.GetSection("MongoDB")["ServicesName"]!));

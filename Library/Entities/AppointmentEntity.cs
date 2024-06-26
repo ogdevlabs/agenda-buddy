@@ -1,9 +1,25 @@
-using Library.Tools;
-
 namespace Library.Entities;
 
+[ExcludeFromCodeCoverage]
 public class AppointmentEntity
 {
+    public AppointmentEntity()
+        
+    {
+    }
+
+    public AppointmentEntity(string identifier, string emailProvider, string emailCustomer, DateTime start,
+        DateTime end, bool dayOff, AppointmentStatus appointmentStatus = AppointmentStatus.Requested)
+    {
+        Identifier = identifier;
+        EmailProvider = emailProvider;
+        EmailCustomer = emailCustomer;
+        Start = start;
+        End = end;
+        DayOff = dayOff;
+        AppointmentStatus = AppointmentStatus.Requested;
+    }
+
     [BsonElement("_id")] public ObjectId Id { get; set; }
     [BsonElement("identifier")] public string Identifier { get; init; } = Guid.NewGuid().ToString();
 
@@ -30,45 +46,21 @@ public class AppointmentEntity
     public string AppointmentDescription { get; set; } =
         EnumHelper<AppointmentStatus>.GetEnumDescription(AppointmentStatus.Requested);
 
-    [BsonElement("day_off")] public bool DayOff { get; set; } = false;
-
-    public AppointmentEntity()
-    {
-    }
-
-    public AppointmentEntity(string identifier, string emailProvider, string emailCustomer, DateTime start,
-        DateTime end, bool dayOff, AppointmentStatus appointmentStatus = AppointmentStatus.Requested)
-    {
-        Identifier = identifier;
-        EmailProvider = emailProvider;
-        EmailCustomer = emailCustomer;
-        Start = start;
-        End = end;
-        DayOff = dayOff;
-        AppointmentStatus = AppointmentStatus.Requested;
-    }
+    [BsonElement("day_off")] public bool DayOff { get; set; }
 
     public void Book()
     {
         if (AppointmentStatus == AppointmentStatus.Requested)
-        {
             AppointmentStatus = AppointmentStatus.Booked;
-        }
         else
-        {
             throw new InvalidOperationException("Only requested appointments can be booked.");
-        }
     }
-    
+
     public void Complete()
     {
         if (AppointmentStatus == AppointmentStatus.Booked)
-        {
             AppointmentStatus = AppointmentStatus.Completed;
-        }
         else
-        {
             throw new InvalidOperationException("Only booked appointments can be completed.");
-        }
     }
 }

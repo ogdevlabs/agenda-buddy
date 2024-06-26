@@ -2,15 +2,13 @@
 
 namespace Services;
 
-
 public class Program
 {
-    
     public static void Main(string[] args)
     {
         ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls13;
 
-        
+
         var builder = WebApplication.CreateBuilder(args);
         // Add MongoDB
         builder.Services.AddMongoDbRepository(builder.Configuration);
@@ -50,16 +48,14 @@ public class Program
                     var exceptionHandlerFeature = exceptionContext.Features.Get<IExceptionHandlerFeature>();
 
                     if (exceptionHandlerFeature?.Error is BadHttpRequestException badRequestEx)
-                    {
                         exceptionContext.Response.StatusCode = badRequestEx.StatusCode;
-                    }
 
                     if (exceptionContext.Request.AcceptsJson()
                         && exceptionContext.RequestServices.GetRequiredService<IProblemDetailsService>() is
                             { } problemDetailsService)
                     {
                         // Write as JSON problem details
-                        await problemDetailsService.WriteAsync(new()
+                        await problemDetailsService.WriteAsync(new ProblemDetailsContext
                         {
                             HttpContext = exceptionContext,
                             AdditionalMetadata = exceptionHandlerFeature?.Endpoint?.Metadata,
@@ -100,10 +96,7 @@ public class Program
             {
                 var serviceEntities =
                     await EventHelper.GetServicesFromProviderEvent(requestCollection, mediator, providerService, email);
-                if (serviceEntities != null)
-                {
-                    return TypedResults.Ok(serviceEntities);
-                }
+                if (serviceEntities != null) return TypedResults.Ok(serviceEntities);
 
                 return TypedResults.NotFound();
             }).WithName("GetServicesFromProvider");
@@ -111,39 +104,33 @@ public class Program
         services.MapPut("/{email}",
             async Task<Results<ValidationProblem, NotFound, Ok<ProviderEntity>>> (IMediator mediator,
                 ProviderService providerService, IRequestCollection requestCollection,
-                [FromBody]List<ServiceEntity> serviceEntities, string email) =>
+                [FromBody] List<ServiceEntity> serviceEntities, string email) =>
             {
                 if (!MiniValidator.TryValidate(serviceEntities, out var errors))
                     return TypedResults.ValidationProblem(errors);
-                
-                var providerEntity = 
-                    await EventHelper.AddServicesToProviderEvent(requestCollection, mediator,
-                    providerService, serviceEntities, email);
 
-                if (providerEntity != null)
-                {
-                    return TypedResults.Ok(providerEntity);
-                }
+                var providerEntity =
+                    await EventHelper.AddServicesToProviderEvent(requestCollection, mediator,
+                        providerService, serviceEntities, email);
+
+                if (providerEntity != null) return TypedResults.Ok(providerEntity);
 
                 return TypedResults.NotFound();
             }).WithName("AddServicesToProvider");
-        
+
         services.MapPatch("/{email}",
             async Task<Results<ValidationProblem, NotFound, Ok<ProviderEntity>>> (IMediator mediator,
                 ProviderService providerService, IRequestCollection requestCollection,
-                [FromBody]List<ServiceEntity> serviceEntities, string email) =>
+                [FromBody] List<ServiceEntity> serviceEntities, string email) =>
             {
                 if (!MiniValidator.TryValidate(serviceEntities, out var errors))
                     return TypedResults.ValidationProblem(errors);
-                
-                var providerEntity = 
+
+                var providerEntity =
                     await EventHelper.UpdateServicesFromProviderEvent(requestCollection, mediator,
                         providerService, serviceEntities, email);
 
-                if (providerEntity != null)
-                {
-                    return TypedResults.Ok(providerEntity);
-                }
+                if (providerEntity != null) return TypedResults.Ok(providerEntity);
 
                 return TypedResults.NotFound();
             }).WithName("UpdateServicesFromProvider");
@@ -151,8 +138,10 @@ public class Program
         app.Run();
 
         // Functions and Methods
-        void CustomizeProblemDetails(ProblemDetails problemDetails, HttpContext httpContext) =>
+        void CustomizeProblemDetails(ProblemDetails problemDetails, HttpContext httpContext)
+        {
             problemDetails.Extensions["requestId"] = Activity.Current?.Id ?? httpContext.TraceIdentifier;
+        }
 
         Dictionary<string, string[]> GenerateErrorMessage(string key, string[] values)
         {

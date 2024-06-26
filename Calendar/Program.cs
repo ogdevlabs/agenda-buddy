@@ -46,16 +46,14 @@ public class Program
                     var exceptionHandlerFeature = exceptionContext.Features.Get<IExceptionHandlerFeature>();
 
                     if (exceptionHandlerFeature?.Error is BadHttpRequestException badRequestEx)
-                    {
                         exceptionContext.Response.StatusCode = badRequestEx.StatusCode;
-                    }
 
                     if (exceptionContext.Request.AcceptsJson()
                         && exceptionContext.RequestServices.GetRequiredService<IProblemDetailsService>() is
                             { } problemDetailsService)
                     {
                         // Write as JSON problem details
-                        await problemDetailsService.WriteAsync(new()
+                        await problemDetailsService.WriteAsync(new ProblemDetailsContext
                         {
                             HttpContext = exceptionContext,
                             AdditionalMetadata = exceptionHandlerFeature?.Endpoint?.Metadata,
@@ -99,14 +97,11 @@ public class Program
                     await EventHelper.CheckCalendarAvailabilityEvent(requestCollection, mediator, providerService,
                         calendarService,
                         email);
-                List<DateTime> enumerable = new List<DateTime>();
-                if ( dateTimesCollection!= null)
+                var enumerable = new List<DateTime>();
+                if (dateTimesCollection != null)
                 {
                     foreach (var entity in dateTimesCollection) enumerable.Add(entity);
-                    if (enumerable.Any())
-                    {
-                        return TypedResults.Ok(dateTimesCollection);
-                    }
+                    if (enumerable.Any()) return TypedResults.Ok(dateTimesCollection);
                 }
 
                 return TypedResults.NotFound();
@@ -125,10 +120,7 @@ public class Program
                         calendarService,
                         email);
 
-                if (appointmentEntities != null)
-                {
-                    return TypedResults.Ok(appointmentEntities);
-                }
+                if (appointmentEntities != null) return TypedResults.Ok(appointmentEntities);
 
                 return TypedResults.NotFound();
             }).WithName("CheckCalendarAppointments");
@@ -136,7 +128,9 @@ public class Program
         app.Run();
 
         // Functions and Methods
-        void CustomizeProblemDetails(ProblemDetails problemDetails, HttpContext httpContext) =>
+        void CustomizeProblemDetails(ProblemDetails problemDetails, HttpContext httpContext)
+        {
             problemDetails.Extensions["requestId"] = Activity.Current?.Id ?? httpContext.TraceIdentifier;
+        }
     }
 }

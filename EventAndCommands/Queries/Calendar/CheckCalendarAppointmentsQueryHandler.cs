@@ -1,15 +1,16 @@
 namespace EventAndCommands.Queries.Calendar;
 
 [RegisterService(ServiceLifetime.Scoped)]
-    
 public class
-    CheckCalendarAppointmentsQueryHandler(IMediator mediator,
+    CheckCalendarAppointmentsQueryHandler(
+        IMediator mediator,
         ProviderService providerService,
         string email) : IRequestHandler<CheckCalendarAppointmentsQuery, List<AppointmentEntity>>
 {
     [InjectService] private IEventStore? EventStore { get; } = new EventStore();
-    
-    public async Task<List<AppointmentEntity>> Handle(CheckCalendarAppointmentsQuery request, CancellationToken cancellationToken)
+
+    public async Task<List<AppointmentEntity>> Handle(CheckCalendarAppointmentsQuery request,
+        CancellationToken cancellationToken)
     {
         await mediator.Publish(new CheckCalendarAppointmentsEvent { Email = email }, cancellationToken);
         var filterProvider = SupportTools<ProviderEntity>.FilterByEmail(email);
@@ -17,7 +18,7 @@ public class
         if (providerEntity != null)
         {
             var providerAppointmentCollection = providerEntity.AppointmentEntities;
-            var @successEvent = new Event()
+            var successEvent = new Event
             {
                 Id = ObjectId.GenerateNewId(),
                 TimeStamp = DateTime.UtcNow,
@@ -25,10 +26,11 @@ public class
                 Type = "CheckCalendarAppointmentsQuery",
                 Data = JsonSerializer.Serialize(providerEntity)
             };
-            await EventStore!.SaveAsync(@successEvent);
+            await EventStore!.SaveAsync(successEvent);
             return providerAppointmentCollection;
         }
-        var @failEvent = new Event()
+
+        var failEvent = new Event
         {
             Id = ObjectId.GenerateNewId(),
             TimeStamp = DateTime.UtcNow,
@@ -36,7 +38,7 @@ public class
             Type = "CheckCalendarAppointmentsQuery",
             Data = JsonSerializer.Serialize(new List<AppointmentEntity>())
         };
-        await EventStore!.SaveAsync(@failEvent);
+        await EventStore!.SaveAsync(failEvent);
         return null!;
     }
 }

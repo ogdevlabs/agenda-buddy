@@ -22,7 +22,7 @@ public class KafkaClient : IKafkaClient
                 NumPartitions = 1,
                 ReplicationFactor = 1
             };
-            await adminClient.CreateTopicsAsync(new[] { topic }, new CreateTopicsOptions()
+            await adminClient.CreateTopicsAsync(new[] { topic }, new CreateTopicsOptions
             {
                 OperationTimeout = TimeSpan.FromSeconds(5),
                 RequestTimeout = TimeSpan.FromSeconds(10)
@@ -33,9 +33,7 @@ public class KafkaClient : IKafkaClient
         catch (CreateTopicsException e)
         {
             if (e.Results[0].Error.Code == ErrorCode.TopicAlreadyExists)
-            {
                 return $"Exception Topic '{topicName}' already exists.";
-            }
         }
         catch (Exception e)
         {

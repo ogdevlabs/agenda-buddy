@@ -41,7 +41,7 @@ public class MongoDbRepository<TEntity> : IRepository<TEntity> where TEntity : c
         var result = await _collection.ReplaceOneAsync(filter, entity);
         return result.IsAcknowledged && result.ModifiedCount > 0;
     }
-    
+
     public async Task<bool> UpdateByIdentifierAsync(string identifier, TEntity entity)
     {
         var filter = Builders<TEntity>.Filter.Eq("identifier", identifier);
@@ -56,7 +56,7 @@ public class MongoDbRepository<TEntity> : IRepository<TEntity> where TEntity : c
         var result = await _collection.DeleteOneAsync(filter);
         return result.IsAcknowledged && result.DeletedCount > 0;
     }
-    
+
     public async Task<bool> DeleteByIdentifierAsync(string identifier)
     {
         var filter = Builders<TEntity>.Filter.Eq("identifier", identifier);

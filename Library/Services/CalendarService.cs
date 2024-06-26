@@ -1,5 +1,3 @@
-using System.Collections;
-
 namespace Library.Services;
 
 public class CalendarService(IRepository<AppointmentEntity> appointmentRepository) : ICalendarService
@@ -8,6 +6,7 @@ public class CalendarService(IRepository<AppointmentEntity> appointmentRepositor
     {
         return await appointmentRepository.GetAllAsync();
     }
+
     public async Task<IEnumerable<AppointmentEntity>> GetCalendarAppointments(BsonDocument filter)
     {
         return await appointmentRepository.FindAllAsync(filter);
@@ -37,7 +36,7 @@ public class CalendarService(IRepository<AppointmentEntity> appointmentRepositor
                     Start = DateTime.Today,
                     DayOff = true,
                     EmailProvider = emailProvider,
-                    EmailCustomer = string.Empty,
+                    EmailCustomer = string.Empty
                 };
                 await appointmentRepository.InsertAsync(blockDay);
             }

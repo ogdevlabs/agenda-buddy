@@ -25,8 +25,9 @@ public class RequestCollection : IRequestCollection
         string email)
     {
         var result =
-            await new UpdateServicesFromProviderCommandHandler(mediator, providerService, serviceEntities, email).Handle(
-                new UpdateServicesFromProviderCommand(), new CancellationToken());
+            await new UpdateServicesFromProviderCommandHandler(mediator, providerService, serviceEntities, email)
+                .Handle(
+                    new UpdateServicesFromProviderCommand(), new CancellationToken());
         return result;
     }
 }

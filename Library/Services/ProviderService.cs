@@ -20,10 +20,7 @@ public class ProviderService(IRepository<ProviderEntity> providerRepository) : I
     public async Task<bool> UpdateProvider(string id, ProviderEntity provider)
     {
         var existingProvider = await providerRepository.GetByIdAsync(id);
-        if (existingProvider == null)
-        {
-            throw new ArgumentException("Provider not found");
-        }
+        if (existingProvider == null) throw new ArgumentException("Provider not found");
 
         return await providerRepository.UpdateAsync(id, provider);
     }

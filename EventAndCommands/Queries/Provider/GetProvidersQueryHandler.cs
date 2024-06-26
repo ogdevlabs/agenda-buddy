@@ -16,7 +16,7 @@ public class GetProvidersQueryHandler(IMediator mediator, ProviderService provid
         var providerEntities = providerList.ToList();
         if (providerEntities.Count != 0)
         {
-            var @successEvent = new Event()
+            var successEvent = new Event
             {
                 Id = ObjectId.GenerateNewId(),
                 TimeStamp = DateTime.UtcNow,
@@ -24,12 +24,12 @@ public class GetProvidersQueryHandler(IMediator mediator, ProviderService provid
                 Type = "GetProvidersQuery",
                 Data = JsonSerializer.Serialize(providerEntities)
             };
-            await EventStore!.SaveAsync(@successEvent);
+            await EventStore!.SaveAsync(successEvent);
             return await Task.FromResult(providerEntities);
         }
 
 
-        var @failEvent = new Event()
+        var failEvent = new Event
         {
             Id = ObjectId.GenerateNewId(),
             TimeStamp = DateTime.UtcNow,
@@ -37,7 +37,7 @@ public class GetProvidersQueryHandler(IMediator mediator, ProviderService provid
             Type = "GetProvidersQuery",
             Data = JsonSerializer.Serialize(new List<ProviderEntity>())
         };
-        await EventStore!.SaveAsync(@failEvent);
+        await EventStore!.SaveAsync(failEvent);
         return await Task.FromResult(new List<ProviderEntity>());
     }
 }

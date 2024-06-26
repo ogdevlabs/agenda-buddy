@@ -9,8 +9,8 @@ public class Customer
     public int Id { get; set; }
     public required string FirstName { get; set; }
     public required string LastName { get; set; }
-    [EmailAddress]
-    public required string Email { get; set; }
-    [Phone]
-    public string? Phone { get; set; }
+
+    [EmailAddress] public required string Email { get; set; }
+
+    [Phone] public string? Phone { get; set; }
 }

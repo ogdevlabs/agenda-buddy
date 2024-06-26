@@ -45,16 +45,14 @@ if (app.Environment.IsDevelopment())
             var exceptionHandlerFeature = exceptionContext.Features.Get<IExceptionHandlerFeature>();
 
             if (exceptionHandlerFeature?.Error is BadHttpRequestException badRequestEx)
-            {
                 exceptionContext.Response.StatusCode = badRequestEx.StatusCode;
-            }
 
             if (exceptionContext.Request.AcceptsJson()
                 && exceptionContext.RequestServices.GetRequiredService<IProblemDetailsService>() is
                     { } problemDetailsService)
             {
                 // Write as JSON problem details
-                await problemDetailsService.WriteAsync(new()
+                await problemDetailsService.WriteAsync(new ProblemDetailsContext
                 {
                     HttpContext = exceptionContext,
                     AdditionalMetadata = exceptionHandlerFeature?.Endpoint?.Metadata,
@@ -107,7 +105,7 @@ providers.MapPost("/", async Task<Results<ValidationProblem, Created<ProviderEnt
 
         if (existingProvider != null)
             return TypedResults.ValidationProblem(GenerateErrorMessage(
-                "Existing record found", new string[]
+                "Existing record found", new[]
                 {
                     $"Email:{providerEntity.Email}"
                 }));
@@ -115,12 +113,10 @@ providers.MapPost("/", async Task<Results<ValidationProblem, Created<ProviderEnt
         var eventResponse =
             await EventsHelper.AddProviderEvent(requestCollection, mediator, providerService, providerEntity);
         if (!string.IsNullOrEmpty(eventResponse) && !eventResponse.ToLower().StartsWith("exception"))
-        {
             return TypedResults.Created($"/api/v1/providers/{providerEntity.Id}", providerEntity);
-        }
 
         return TypedResults.ValidationProblem(GenerateErrorMessage(
-            "Kafka Error", new string[] { "Kafka Topic", $"{topicName}" })
+            "Kafka Error", new[] { "Kafka Topic", $"{topicName}" })
         );
     })
     .WithName("CreateProvider");
@@ -142,13 +138,8 @@ providers.MapGet("/{email}", async Task<Results<Ok<ProviderEntity>, NotFound>> (
 {
     var record = await EventsHelper.GetProviderByEmail(requestCollection, mediator, providerService, email);
     if (record != null)
-    {
         return TypedResults.Ok(record);
-    }
-    else
-    {
-        return TypedResults.NotFound();
-    }
+    return TypedResults.NotFound();
 }).WithName("GetProviderByEmail");
 
 
@@ -166,10 +157,7 @@ providers.MapPut("/{email}", async Task<Results<ValidationProblem, NotFound, Acc
     var eventResponse =
         await EventsHelper.UpdateProviderEvent(email, requestCollection, mediator, providerService, providerEntity);
 
-    if (!string.IsNullOrEmpty(eventResponse))
-    {
-        return TypedResults.Accepted("api/v1/providers");
-    }
+    if (!string.IsNullOrEmpty(eventResponse)) return TypedResults.Accepted("api/v1/providers");
 
     return TypedResults.NotFound();
 }).WithName("UpdateProvider");
@@ -178,8 +166,10 @@ app.Run();
 
 
 // Functions and Methods
-void CustomizeProblemDetails(ProblemDetails problemDetails, HttpContext httpContext) =>
+void CustomizeProblemDetails(ProblemDetails problemDetails, HttpContext httpContext)
+{
     problemDetails.Extensions["requestId"] = Activity.Current?.Id ?? httpContext.TraceIdentifier;
+}
 
 Dictionary<string, string[]> GenerateErrorMessage(string key, string[] values)
 {

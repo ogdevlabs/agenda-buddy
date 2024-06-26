@@ -11,11 +11,11 @@ public class UpdateAppointmentCommandHandler(
 
     public async Task<string> Handle(UpdateAppointmentCommand request, CancellationToken cancellationToken)
     {
-        await mediator.Publish(new UpdateAppointmentEvent() { AppointmentEntity = appointmentEntity },
+        await mediator.Publish(new UpdateAppointmentEvent { AppointmentEntity = appointmentEntity },
             cancellationToken);
         if (await SearchAndUpdateAppointment())
         {
-            var @successEvent = new Event()
+            var successEvent = new Event
             {
                 Id = ObjectId.GenerateNewId(),
                 TimeStamp = DateTime.UtcNow,
@@ -23,10 +23,11 @@ public class UpdateAppointmentCommandHandler(
                 Type = "UpdateAppointmentCommand",
                 Data = JsonSerializer.Serialize(appointmentEntity)
             };
-            await EventStore!.SaveAsync(@successEvent);
+            await EventStore!.SaveAsync(successEvent);
             return await Task.FromResult(appointmentEntity.ToJson());
         }
-        var @failEvent = new Event()
+
+        var failEvent = new Event
         {
             Id = ObjectId.GenerateNewId(),
             TimeStamp = DateTime.UtcNow,
@@ -34,7 +35,7 @@ public class UpdateAppointmentCommandHandler(
             Type = "UpdateAppointmentCommand",
             Data = JsonSerializer.Serialize(appointmentEntity)
         };
-        await EventStore!.SaveAsync(@failEvent);
+        await EventStore!.SaveAsync(failEvent);
         return null!;
     }
 

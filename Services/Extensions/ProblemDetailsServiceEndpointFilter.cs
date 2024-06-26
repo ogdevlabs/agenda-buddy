@@ -1,13 +1,15 @@
 namespace Services.Extensions;
 
 /// <summary>
-/// Defines an endpoint filter that modifies <see cref="ProblemHttpResult"/> instances returned by route handler delegates
-/// using the <see cref="IProblemDetailsService"/>.
+///     Defines an endpoint filter that modifies <see cref="ProblemHttpResult" /> instances returned by route handler
+///     delegates
+///     using the <see cref="IProblemDetailsService" />.
 /// </summary>
 public class ProblemDetailsServiceEndpointFilter : IEndpointFilter
 {
     public async ValueTask<object?> InvokeAsync(EndpointFilterInvocationContext context, EndpointFilterDelegate next)
-        => await next(context) switch
+    {
+        return await next(context) switch
         {
             ProblemHttpResult problemHttpResult => new ProblemDetailsServiceAwareResult(problemHttpResult.StatusCode,
                 problemHttpResult.ProblemDetails),
@@ -15,6 +17,7 @@ public class ProblemDetailsServiceEndpointFilter : IEndpointFilter
             { } result => result,
             null => null
         };
+    }
 
     private class ProblemDetailsServiceAwareResult : IResult, IValueHttpResult, IValueHttpResult<ProblemDetails>
     {
@@ -26,18 +29,11 @@ public class ProblemDetailsServiceEndpointFilter : IEndpointFilter
             Value = problemDetails;
         }
 
-        public ProblemDetails Value { get; }
-
-        object IValueHttpResult.Value => Value;
-
         public async Task ExecuteAsync(HttpContext httpContext)
         {
             if (httpContext.RequestServices.GetService<IProblemDetailsService>() is { } problemDetailsService)
             {
-                if (_statusCode is { } statusCode)
-                {
-                    httpContext.Response.StatusCode = statusCode;
-                }
+                if (_statusCode is { } statusCode) httpContext.Response.StatusCode = statusCode;
 
                 await problemDetailsService.WriteAsync(new ProblemDetailsContext
                 {
@@ -46,5 +42,9 @@ public class ProblemDetailsServiceEndpointFilter : IEndpointFilter
                 });
             }
         }
+
+        object IValueHttpResult.Value => Value;
+
+        public ProblemDetails Value { get; }
     }
 }

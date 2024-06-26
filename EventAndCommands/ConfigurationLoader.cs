@@ -7,10 +7,10 @@ public static class ConfigurationLoader
         ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls13;
 
         var basePath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-        
+
         var builder = new ConfigurationBuilder()
             .SetBasePath(basePath!)
-            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+            .AddJsonFile("appsettings.json", false, true);
 
         IConfiguration configuration = builder.Build();
         var mongoDbSettings = new MongoDbSettings

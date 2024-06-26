@@ -17,7 +17,7 @@ public class BookingAppointmentCommandHandler(
 
         if (await SearchAndUpdateProviderAppointments())
         {
-            var @successEvent = new Event()
+            var successEvent = new Event
             {
                 Id = ObjectId.GenerateNewId(),
                 TimeStamp = DateTime.UtcNow,
@@ -25,11 +25,11 @@ public class BookingAppointmentCommandHandler(
                 Type = "BookAppointmentCommand",
                 Data = JsonSerializer.Serialize(appointmentEntity)
             };
-            await EventStore!.SaveAsync(@successEvent);
+            await EventStore!.SaveAsync(successEvent);
             return await Task.FromResult(appointmentEntity.ToJson());
         }
 
-        var @failEvent = new Event()
+        var failEvent = new Event
         {
             Id = ObjectId.GenerateNewId(),
             TimeStamp = DateTime.UtcNow,
@@ -37,7 +37,7 @@ public class BookingAppointmentCommandHandler(
             Type = "BookAppointmentCommand",
             Data = JsonSerializer.Serialize(appointmentEntity)
         };
-        await EventStore!.SaveAsync(@failEvent);
+        await EventStore!.SaveAsync(failEvent);
         return null!;
     }
 
@@ -49,7 +49,8 @@ public class BookingAppointmentCommandHandler(
         if (providerEntity.Email == appointmentEntity.EmailProvider)
         {
             await AddAppointmentToCalendar();
-            providerEntity.AppointmentEntities.Add(await bookingService.SearchAppointment(appointmentEntity.Identifier));
+            providerEntity.AppointmentEntities.Add(
+                await bookingService.SearchAppointment(appointmentEntity.Identifier));
             return await providerService.UpdateProvider(providerEntity.Id.ToString(), providerEntity);
         }
 
