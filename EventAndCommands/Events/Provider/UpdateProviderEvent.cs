@@ -1,6 +1,7 @@
 namespace EventAndCommands.Events.Provider;
 
-public class UpdateProviderEvent: INotification
+[ExcludeFromCodeCoverage]
+public class UpdateProviderEvent : INotification
 {
-    public ProviderEntity? ProviderEntity  { get; set; }
+    public ProviderEntity? ProviderEntity { get; set; }
 }

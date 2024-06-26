@@ -32,7 +32,7 @@ public class UpdateServicesFromProviderCommandHandler(
         var updateResult = await providerService.UpdateProvider(existingProvider.Id.ToString(), existingProvider);
         if (updateResult)
         {
-            var @successEvent = new Event()
+            var successEvent = new Event
             {
                 Id = ObjectId.GenerateNewId(),
                 TimeStamp = DateTime.UtcNow,
@@ -40,21 +40,19 @@ public class UpdateServicesFromProviderCommandHandler(
                 Type = "UpdateServicesFromProviderCommand",
                 Data = JsonSerializer.Serialize(existingProvider)
             };
-            await EventStore!.SaveAsync(@successEvent);
+            await EventStore!.SaveAsync(successEvent);
             return await Task.FromResult(existingProvider);
         }
-        else
+
+        var failEvent = new Event
         {
-            var @failEvent = new Event()
-            {
-                Id = ObjectId.GenerateNewId(),
-                TimeStamp = DateTime.UtcNow,
-                Status = "Failed",
-                Type = "UpdateServicesFromProviderCommand",
-                Data = JsonSerializer.Serialize(new ProviderEntity())
-            };
-            await EventStore!.SaveAsync(@failEvent);
-            return null!;
-        }
+            Id = ObjectId.GenerateNewId(),
+            TimeStamp = DateTime.UtcNow,
+            Status = "Failed",
+            Type = "UpdateServicesFromProviderCommand",
+            Data = JsonSerializer.Serialize(new ProviderEntity())
+        };
+        await EventStore!.SaveAsync(failEvent);
+        return null!;
     }
 }

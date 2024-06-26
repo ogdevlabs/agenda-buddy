@@ -5,28 +5,28 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-      <UserSecretsId>6db805c5-96b9-4f49-a51f-ff1757b59ca5</UserSecretsId>
-  </PropertyGroup>
+        <UserSecretsId>6db805c5-96b9-4f49-a51f-ff1757b59ca5</UserSecretsId>
+    </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="MediatR" Version="12.2.0" />
-      <PackageReference Include="Microsoft.Extensions.Configuration" Version="8.0.0" />
-      <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.0" />
-      <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
-      <PackageReference Include="MongoDB.Bson" Version="2.25.0" />
-      <PackageReference Include="MongoDB.Driver" Version="2.25.0" />
-      <PackageReference Include="Quickwire" Version="1.3.2" />
+        <PackageReference Include="MediatR" Version="12.2.0"/>
+        <PackageReference Include="Microsoft.Extensions.Configuration" Version="8.0.0"/>
+        <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.0"/>
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0"/>
+        <PackageReference Include="MongoDB.Bson" Version="2.25.0"/>
+        <PackageReference Include="MongoDB.Driver" Version="2.25.0"/>
+        <PackageReference Include="Quickwire" Version="1.3.2"/>
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Kafka\Kafka.csproj" />
-      <ProjectReference Include="..\Library\Library.csproj" />
+        <ProjectReference Include="..\Kafka\Kafka.csproj"/>
+        <ProjectReference Include="..\Library\Library.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
-      <None Update="appsettings.json">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
+        <None Update="appsettings.json">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
     </ItemGroup>
 
 </Project>

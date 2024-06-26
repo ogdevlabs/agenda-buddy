@@ -1,5 +1,3 @@
-using EventAndCommands;
-
 namespace EventsAndCommands.Tests;
 
 public class ConfigurationLoaderTests

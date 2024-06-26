@@ -10,15 +10,16 @@ public class EventStore : IEventStore
         var database = client.GetDatabase(configuration.GetSection("MongoDB")["DatabaseName"]);
         _eventCollection = database.GetCollection<Event>(configuration.GetSection("MongoDB")["CollectionName"]);
     }
-    
+
     public EventStore()
     {
-        var librarySettings = ConfigurationLoader.LoadConfiguration() ?? throw new ArgumentException(nameof(LibrarySettings));
+        var librarySettings = ConfigurationLoader.LoadConfiguration() ??
+                              throw new ArgumentException(nameof(LibrarySettings));
         var client = new MongoClient(librarySettings.MongoDbSettings!.ConnectionString);
         var database = client.GetDatabase(librarySettings.MongoDbSettings.DatabaseName);
         _eventCollection = database.GetCollection<Event>(librarySettings.MongoDbSettings.CollectionName);
     }
-    
+
     public async Task SaveAsync(Event @event)
     {
         await _eventCollection.InsertOneAsync(@event);

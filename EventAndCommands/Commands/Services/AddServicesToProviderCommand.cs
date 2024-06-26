@@ -1,5 +1,6 @@
 namespace EventAndCommands.Commands.Services;
 
+[ExcludeFromCodeCoverage]
 public class AddServicesToProviderCommand : IRequest<ProviderEntity>
 {
     public string? Email { get; set; }

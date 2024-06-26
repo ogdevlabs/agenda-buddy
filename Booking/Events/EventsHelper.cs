@@ -22,7 +22,7 @@ public static class EventsHelper
                 appointmentEntity);
         return notificationResponse;
     }
-    
+
     public static async Task<string> CancelAppointmentEvent(IRequestCollection requestCollection, IMediator mediator,
         ProviderService providerService, BookingService bookingService, AppointmentEntity appointmentEntity)
     {

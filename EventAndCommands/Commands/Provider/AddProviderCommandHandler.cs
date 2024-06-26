@@ -14,10 +14,10 @@ public class AddProviderCommandHandler(
     {
         await mediator.Publish(new AddProviderEvent { ProviderName = request.TopicName }, cancellationToken);
         var kafkaTopic = await kafkaClient.CreateTopicIfNotExist(request.TopicName);
-        if (!string.IsNullOrEmpty(kafkaTopic) && (!kafkaTopic.ToLower().StartsWith("exception")))
+        if (!string.IsNullOrEmpty(kafkaTopic) && !kafkaTopic.ToLower().StartsWith("exception"))
         {
             await providerService.AddProvider(providerEntity);
-            var @succesEvent = new Event()
+            var succesEvent = new Event
             {
                 Id = providerEntity.Id,
                 TimeStamp = DateTime.UtcNow,
@@ -25,13 +25,13 @@ public class AddProviderCommandHandler(
                 Type = "AddProviderCommand",
                 Data = JsonSerializer.Serialize(providerEntity)
             };
-            await EventStore.SaveAsync(@succesEvent);
+            await EventStore.SaveAsync(succesEvent);
             return await Task.FromResult(request.TopicName);
         }
 
         if (kafkaTopic.ToLower().StartsWith("exception"))
         {
-            var @failEvent = new Event()
+            var failEvent = new Event
             {
                 Id = providerEntity.Id,
                 TimeStamp = DateTime.UtcNow,
@@ -39,9 +39,10 @@ public class AddProviderCommandHandler(
                 Type = $"AddProviderCommand - {kafkaTopic}",
                 Data = JsonSerializer.Serialize(providerEntity)
             };
-            await EventStore.SaveAsync(@failEvent);
+            await EventStore.SaveAsync(failEvent);
             return await Task.FromResult(kafkaTopic);
         }
+
         return await Task.FromResult(string.Empty);
     }
 }

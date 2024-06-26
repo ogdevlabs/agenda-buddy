@@ -1,9 +1,7 @@
-
 namespace Library.Services;
 
 public class BookingService(IRepository<AppointmentEntity> appointmentRepository) : IBookingService
 {
-    
     public async Task BookAppointment(AppointmentEntity appointmentEntity)
     {
         await appointmentRepository.InsertAsync(appointmentEntity);

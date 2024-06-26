@@ -24,10 +24,7 @@ public static class SupportTools<TEntity> where TEntity : class
 
     public static List<ServiceEntity> GenerateIdForRecord(List<ServiceEntity> dataCollection)
     {
-        foreach (var service in dataCollection)
-        {
-            service.Id = ObjectId.GenerateNewId();
-        }
+        foreach (var service in dataCollection) service.Id = ObjectId.GenerateNewId();
 
         return dataCollection;
     }
@@ -35,14 +32,14 @@ public static class SupportTools<TEntity> where TEntity : class
     public static List<DateTime> GetThirtyDaysCalendarAvailability(ProviderEntity providerEntity)
     {
         var appointments = providerEntity.AppointmentEntities;
-        DateTime today = DateTime.Today;
-        DateTime endDate = today.AddDays(30);
+        var today = DateTime.Today;
+        var endDate = today.AddDays(30);
 
         var allTimeSlots = new List<DateTime>();
 
-        for (DateTime date = today; date <= endDate; date = date.AddDays(1))
+        for (var date = today; date <= endDate; date = date.AddDays(1))
         {
-            int aux = 9;
+            var aux = 9;
             if (today == date)
             {
                 aux = GetTodayAvailableTime();
@@ -50,10 +47,7 @@ public static class SupportTools<TEntity> where TEntity : class
                 aux = 19 - aux;
             }
 
-            for (int hour = aux; hour <= 19; hour++)
-            {
-                allTimeSlots.Add(date.AddHours(hour));
-            }
+            for (var hour = aux; hour <= 19; hour++) allTimeSlots.Add(date.AddHours(hour));
         }
 
         var bookedTimeSlots = appointments.Select(a => a.Start).ToHashSet();
@@ -63,26 +57,18 @@ public static class SupportTools<TEntity> where TEntity : class
 
     private static int GetTodayAvailableTime()
     {
-        DateTime currentTime = DateTime.Now;
-        DateTime startOfAvailability = currentTime.Date.AddHours(9); // 9 AM
-        DateTime endOfAvailability = currentTime.Date.AddHours(19); // 7 PM
-        
+        var currentTime = DateTime.Now;
+        var startOfAvailability = currentTime.Date.AddHours(9); // 9 AM
+        var endOfAvailability = currentTime.Date.AddHours(19); // 7 PM
+
         if (currentTime < startOfAvailability)
-        {
             currentTime = startOfAvailability;
-        }
-        else if (currentTime >= endOfAvailability.AddHours(-4))
-        {
-            return 0;
-        }
-        
-        TimeSpan remainingTime = endOfAvailability - currentTime;
-        
-        if (remainingTime.TotalHours < 4)
-        {
-            return 0;
-        }
-        
+        else if (currentTime >= endOfAvailability.AddHours(-4)) return 0;
+
+        var remainingTime = endOfAvailability - currentTime;
+
+        if (remainingTime.TotalHours < 4) return 0;
+
         return (int)Math.Floor(remainingTime.TotalHours);
     }
 }

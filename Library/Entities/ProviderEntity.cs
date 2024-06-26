@@ -2,8 +2,24 @@
 
 namespace Library.Entities;
 
+[ExcludeFromCodeCoverage]
 public class ProviderEntity
 {
+    public ProviderEntity(string firstName, string lastName, string email, string? kafkaTopic,
+        List<ServiceEntity> serviceEntities, List<AppointmentEntity> appointmentEntities)
+    {
+        FirstName = firstName;
+        LastName = lastName;
+        Email = email;
+        KafkaTopic = kafkaTopic;
+        ServiceEntities = serviceEntities;
+        AppointmentEntities = appointmentEntities;
+    }
+
+    public ProviderEntity()
+    {
+    }
+
     [BsonElement("_id")] public ObjectId Id { get; set; }
 
     [Required] [BsonElement("first_name")] public string FirstName { get; set; }
@@ -20,19 +36,4 @@ public class ProviderEntity
     [BsonElement("services")] public List<ServiceEntity> ServiceEntities { get; set; } = [];
 
     [BsonElement("appointments")] public List<AppointmentEntity> AppointmentEntities { get; set; } = [];
-
-    public ProviderEntity(string firstName, string lastName, string email, string? kafkaTopic,
-        List<ServiceEntity> serviceEntities, List<AppointmentEntity> appointmentEntities)
-    {
-        FirstName = firstName;
-        LastName = lastName;
-        Email = email;
-        KafkaTopic = kafkaTopic;
-        ServiceEntities = serviceEntities;
-        AppointmentEntities = appointmentEntities;
-    }
-
-    public ProviderEntity()
-    {
-    }
 }
