@@ -1,5 +1,3 @@
-using MediatR;
-
 namespace Booking.Events;
 
 public static class EventsHelper

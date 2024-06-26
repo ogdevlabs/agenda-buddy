@@ -1,5 +1,6 @@
 namespace Booking.Extensions;
 
+[ExcludeFromCodeCoverage]
 public static class ServiceCollectionExtension
 {
     public static IServiceCollection AddMongoDbRepository(this IServiceCollection serviceCollection,
@@ -10,11 +11,11 @@ public static class ServiceCollectionExtension
 
         serviceCollection.AddScoped<IRepository<ProviderEntity>>(
             _ => new MongoDbRepository<ProviderEntity>(database,
-                configuration.GetSection("MongoDB")["ProvidersName"]!));
+                configuration.GetSection("MongoDB")["ProvidersCollection"]!));
 
         serviceCollection.AddScoped<IRepository<AppointmentEntity>>(
             _ => new MongoDbRepository<AppointmentEntity>(database,
-                configuration.GetSection("MongoDB")["AppointmentsName"]!));
+                configuration.GetSection("MongoDB")["AppointmentsCollection"]!));
 
         serviceCollection.AddScoped<ProviderService>();
         serviceCollection.AddScoped<BookingService>();

@@ -1,8 +1,6 @@
-using EventAndCommands.Commands.Booking;
-using MediatR;
-
 namespace Booking.Requests;
 
+[ExcludeFromCodeCoverage]
 public class RequestCollection(IKafkaClient kafkaClient) : IRequestCollection
 {
     public async Task<string> BookAppointmentRequest(IMediator mediator, ProviderService providerService,

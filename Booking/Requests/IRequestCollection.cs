@@ -1,5 +1,3 @@
-using MediatR;
-
 namespace Booking.Requests;
 
 public interface IRequestCollection
