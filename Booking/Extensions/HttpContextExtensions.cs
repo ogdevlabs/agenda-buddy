@@ -1,5 +1,6 @@
 namespace Booking.Extensions;
 
+[ExcludeFromCodeCoverage]
 public static class HttpContextExtensions
 {
     private static readonly MediaTypeHeaderValue JsonMediaType = new("application/json");

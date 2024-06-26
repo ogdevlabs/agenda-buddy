@@ -1,10 +1,3 @@
-using System.Diagnostics;
-using Booking.Events;
-using MediatR;
-using Microsoft.AspNetCore.Diagnostics;
-using Microsoft.AspNetCore.WebUtilities;
-using MiniValidation;
-
 ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls13;
 
 var builder = WebApplication.CreateBuilder(args);

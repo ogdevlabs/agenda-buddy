@@ -5,6 +5,7 @@ namespace Booking.Extensions;
 ///     delegates
 ///     using the <see cref="IProblemDetailsService" />.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class ProblemDetailsServiceEndpointFilter : IEndpointFilter
 {
     public async ValueTask<object?> InvokeAsync(EndpointFilterInvocationContext context, EndpointFilterDelegate next)
