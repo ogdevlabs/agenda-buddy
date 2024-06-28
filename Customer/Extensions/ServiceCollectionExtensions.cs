@@ -17,6 +17,7 @@ public static class ServiceCollectionExtensions
                 configuration.GetSection("MongoDB")["CustomersCollection"]!));
 
         serviceCollection.AddScoped<ProviderService>();
+        serviceCollection.AddScoped<CustomerService>();
 
         return serviceCollection;
     }

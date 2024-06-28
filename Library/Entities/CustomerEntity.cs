@@ -3,17 +3,19 @@ namespace Library.Entities;
 [ExcludeFromCodeCoverage]
 public class CustomerEntity
 {
-    public CustomerEntity(ObjectId id, string? firstName, string? lastName, string? email)
+    public CustomerEntity(ObjectId id, string? firstName, string? lastName, string? email,
+        List<string> subscribedProviderCollection, List<string> appointmentCollection)
     {
         Id = id;
         FirstName = firstName;
         LastName = lastName;
         Email = email;
+        SubscribedProviderCollection = subscribedProviderCollection;
+        AppointmentCollection = appointmentCollection;
     }
 
     public CustomerEntity()
     {
-        
     }
 
     [BsonElement("_id")] public ObjectId Id { get; set; }
@@ -25,8 +27,8 @@ public class CustomerEntity
     [Required]
     public string? Email { get; set; }
 
-    [BsonElement("providers")] public List<ProviderEntity>? ProviderCollection { get; set; } = [];
-    [BsonElement("appointments")] public List<AppointmentEntity>? AppointmentCollection { get; set; } = [];
+    [BsonElement("subscribed_provider_collection")]
+    public List<string>? SubscribedProviderCollection { get; set; } = [];
 
-    
+    [BsonElement("appointment_identifier_collection")] public List<string>? AppointmentCollection { get; set; } = [];
 }

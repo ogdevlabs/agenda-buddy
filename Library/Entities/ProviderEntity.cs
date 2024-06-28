@@ -7,7 +7,7 @@ public class ProviderEntity
 {
     public ProviderEntity(string firstName, string lastName, string email, string? kafkaTopic,
         List<ServiceEntity> serviceEntities, List<AppointmentEntity> appointmentEntities,
-        List<CustomerEntity> customerEntities)
+        List<string> subscribedCustomerCollection)
     {
         FirstName = firstName;
         LastName = lastName;
@@ -15,7 +15,7 @@ public class ProviderEntity
         KafkaTopic = kafkaTopic;
         ServiceEntities = serviceEntities;
         AppointmentEntities = appointmentEntities;
-        CustomerEntities = customerEntities;
+        SubscribedCustomerCollection = subscribedCustomerCollection;
     }
 
     public ProviderEntity()
@@ -39,5 +39,5 @@ public class ProviderEntity
 
     [BsonElement("appointments")] public List<AppointmentEntity> AppointmentEntities { get; set; } = [];
 
-    [BsonElement("customers")] public List<CustomerEntity> CustomerEntities { get; set; } = [];
+    [BsonElement("subscribed_customer_collection")] public List<string> SubscribedCustomerCollection { get; set; } = [];
 }

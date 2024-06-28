@@ -8,7 +8,7 @@ public class EventStore : IEventStore
     {
         var client = new MongoClient(configuration.GetSection("MongoDB")["ConnectionString"]);
         var database = client.GetDatabase(configuration.GetSection("MongoDB")["DatabaseName"]);
-        _eventCollection = database.GetCollection<Event>(configuration.GetSection("MongoDB")["CollectionName"]);
+        _eventCollection = database.GetCollection<Event>(configuration.GetSection("MongoDB")["EventsCollection"]);
     }
 
     public EventStore()
