@@ -4,10 +4,17 @@ namespace Kafka.Support;
 
 public class KafkaHelper
 {
-    public static string CreateTopicName(string email)
+    public static string CreateCustomerTopicName(string email)
     {
         var iLength = email.IndexOf('@');
-        var topicName = email.Substring(0, iLength).ToLower() + "-topic";
+        var topicName = "customer_"+email.Substring(0, iLength).ToLower() + "-topic";
+        return topicName;
+    }
+    
+    public static string CreateProviderTopicName(string email)
+    {
+        var iLength = email.IndexOf('@');
+        var topicName = "provider_"+email.Substring(0, iLength).ToLower() + "-topic";
         return topicName;
     }
 }

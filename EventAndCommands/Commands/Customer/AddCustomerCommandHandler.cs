@@ -20,13 +20,14 @@ public class AddCustomerCommandHandler(
         var kafkaTopic = await CreateTopic(email: customerEntity.Email!);
         if (!string.IsNullOrEmpty(kafkaTopic) && !kafkaTopic.ToLower().StartsWith("exception"))
         {
+            customerEntity.KafkaTopic = TopicName;
             await customerService.AddCustomer(customerEntity);
             var succesEvent = new Event
             {
                 Id = customerEntity.Id,
                 TimeStamp = DateTime.UtcNow,
                 Status = "Success",
-                Type = "AddProviderCommand",
+                Type = "AddCustomerCommand",
                 Data = JsonSerializer.Serialize(customerEntity)
             };
             await EventStore.SaveAsync(succesEvent);
@@ -39,7 +40,7 @@ public class AddCustomerCommandHandler(
                 Id = customerEntity.Id,
                 TimeStamp = DateTime.UtcNow,
                 Status = "Failed",
-                Type = $"AddProviderCommand - {kafkaTopic}",
+                Type = $"AddCustomerCommand - {kafkaTopic}",
                 Data = JsonSerializer.Serialize(customerEntity)
             };
             await EventStore.SaveAsync(failEvent);
@@ -50,7 +51,7 @@ public class AddCustomerCommandHandler(
 
     private async Task<string> CreateTopic(string email)
     {
-        TopicName= KafkaHelper.CreateTopicName(email);
+        TopicName= KafkaHelper.CreateCustomerTopicName(email);
         return await kafkaClient.CreateTopicIfNotExist(TopicName);
     }
 }

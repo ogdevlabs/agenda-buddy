@@ -1,3 +1,5 @@
+using Kafka.Support;
+
 namespace EventAndCommands.Commands.Provider;
 
 [RegisterService(ServiceLifetime.Scoped)]
@@ -10,12 +12,15 @@ public class AddProviderCommandHandler(
 {
     [InjectService] private IEventStore EventStore { get; } = new EventStore();
 
+    private string TopicName { get; set; } = string.Empty;
+
     public async Task<string> Handle(AddProviderCommand request, CancellationToken cancellationToken)
     {
-        await mediator.Publish(new AddProviderEvent { ProviderName = request.TopicName }, cancellationToken);
-        var kafkaTopic = await kafkaClient.CreateTopicIfNotExist(request.TopicName);
+        var kafkaTopic = await CreateTopic(email: providerEntity.Email!);
+        await mediator.Publish(new AddProviderEvent { ProviderName = TopicName }, cancellationToken);
         if (!string.IsNullOrEmpty(kafkaTopic) && !kafkaTopic.ToLower().StartsWith("exception"))
         {
+            providerEntity.KafkaTopic = TopicName;
             await providerService.AddProvider(providerEntity);
             var succesEvent = new Event
             {
@@ -26,7 +31,7 @@ public class AddProviderCommandHandler(
                 Data = JsonSerializer.Serialize(providerEntity)
             };
             await EventStore.SaveAsync(succesEvent);
-            return await Task.FromResult(request.TopicName);
+            return await Task.FromResult(TopicName);
         }
 
         if (kafkaTopic.ToLower().StartsWith("exception"))
@@ -44,5 +49,11 @@ public class AddProviderCommandHandler(
         }
 
         return await Task.FromResult(string.Empty);
+    }
+
+    private async Task<string> CreateTopic(string email)
+    {
+        TopicName = KafkaHelper.CreateProviderTopicName(email);
+        return await kafkaClient.CreateTopicIfNotExist(TopicName);
     }
 }

@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.WebUtilities;
 using System.Diagnostics;
 using Customer.Events;
+using Kafka.Support;
 using Library.Tools;
 using MiniValidation;
 
@@ -99,6 +100,7 @@ customers.MapPost("/", async Task<Results<ValidationProblem, Created<CustomerEnt
     var filter =
         SupportTools<CustomerEntity>.FilterByNameAndLastName(customerEntity.FirstName, customerEntity.LastName);
     var existingCustomer = await customerService.FindCustomer(filter);
+    var topicName = KafkaHelper.CreateCustomerTopicName(customerEntity.Email!);
     if (existingCustomer != null)
         return TypedResults.ValidationProblem(GenerateErrorMessage(
             "Existing record found", new[]
@@ -112,7 +114,7 @@ customers.MapPost("/", async Task<Results<ValidationProblem, Created<CustomerEnt
         return TypedResults.Created($"/api/v1/customers/{customerEntity.Id}", customerEntity);
     
     return TypedResults.ValidationProblem(GenerateErrorMessage(
-        "Kafka Error", new[] { "Kafka Topic", "Error in topic creation" })
+        "Kafka Error", new[] { "Kafka Topic", $"{topicName}" })
     );
 });
 

@@ -10,7 +10,7 @@ public class RequestCollection(IKafkaClient kafkaClient) : IRequestCollection
     {
         var result = await new AddCustomerCommandHandler(
                 mediator, 
-                (kafkaClient as KafkaClient), 
+                ((kafkaClient as KafkaClient)!), 
                 customerService, 
                 customerEntity)
             .Handle(
