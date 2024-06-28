@@ -19,4 +19,10 @@
         </Content>
     </ItemGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\EventAndCommands\EventAndCommands.csproj" />
+      <ProjectReference Include="..\Kafka\Kafka.csproj" />
+      <ProjectReference Include="..\Library\Library.csproj" />
+    </ItemGroup>
+
 </Project>
