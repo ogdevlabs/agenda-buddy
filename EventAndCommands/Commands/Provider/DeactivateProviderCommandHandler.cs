@@ -15,7 +15,7 @@ public class DeactivateProviderCommandHandler(IMediator mediator)
         {
             var successEvent = new Event
             {
-                Id = new ObjectId(),
+                Id = ObjectId.GenerateNewId(),
                 TimeStamp = DateTime.UtcNow,
                 Status = "Success",
                 Type = "DeactivateProviderCommand",
@@ -28,7 +28,7 @@ public class DeactivateProviderCommandHandler(IMediator mediator)
         {
             var failEvent = new Event
             {
-                Id = new ObjectId(),
+                Id = ObjectId.GenerateNewId(),
                 TimeStamp = DateTime.UtcNow,
                 Status = "Failed",
                 Type = "DeactivateProviderCommand",

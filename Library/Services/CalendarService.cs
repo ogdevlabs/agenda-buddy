@@ -2,23 +2,23 @@ namespace Library.Services;
 
 public class CalendarService(IRepository<AppointmentEntity> appointmentRepository) : ICalendarService
 {
-    public async Task<IEnumerable<AppointmentEntity>> GetAllAppointments()
+    public async Task<IEnumerable<AppointmentEntity>> GetAllAppointmentsAsync()
     {
         return await appointmentRepository.GetAllAsync();
     }
 
-    public async Task<IEnumerable<AppointmentEntity>> GetCalendarAppointments(BsonDocument filter)
+    public async Task<IEnumerable<AppointmentEntity>> GetCalendarAppointmentsAsync(BsonDocument filter)
     {
         return await appointmentRepository.FindAllAsync(filter);
     }
 
-    public async Task<IEnumerable<AppointmentEntity>> CheckCalendarAvailability()
+    public async Task<IEnumerable<AppointmentEntity>> CheckCalendarAvailabilityAsync()
     {
         // TODO
         return await appointmentRepository.GetAllAsync();
     }
 
-    public async Task<bool> BlockCalendarPeriod(string emailProvider, DateTime startDate, DateTime endDate)
+    public async Task<bool> BlockCalendarPeriodAsync(string emailProvider, DateTime startDate, DateTime endDate)
     {
         try
         {

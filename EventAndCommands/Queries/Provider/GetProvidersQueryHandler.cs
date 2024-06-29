@@ -12,7 +12,7 @@ public class GetProvidersQueryHandler(IMediator mediator, ProviderService provid
     {
         await mediator.Publish(new GetAllProvidersEvent(), cancellationToken);
 
-        var providerList = await providerService.GetAllProviders();
+        var providerList = await providerService.GetAllProvidersAsync();
         var providerEntities = providerList.ToList();
         if (providerEntities.Count != 0)
         {

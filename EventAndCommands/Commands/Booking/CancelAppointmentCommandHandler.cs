@@ -13,7 +13,7 @@ public class CancelAppointmentCommandHandler(
     {
         await mediator.Publish(new CancelAppointmentEvent { Identifier = appointmentIdentifier },
             cancellationToken);
-        var appointmentEntity = await bookingService.SearchAppointment(appointmentIdentifier);
+        var appointmentEntity = await bookingService.SearchAppointmentAsync(appointmentIdentifier);
         if (appointmentEntity != null)
             if (await SearchAndCancelAppointment(appointmentIdentifier))
             {
@@ -47,23 +47,23 @@ public class CancelAppointmentCommandHandler(
 
     private async Task<bool> SearchAndCancelAppointment(string identifier)
     {
-        var appointment = await bookingService.SearchAppointment(identifier);
+        var appointment = await bookingService.SearchAppointmentAsync(identifier);
         var filter = SupportTools<ProviderEntity>.FilterByEmail(appointment.EmailProvider);
-        var provider = await providerService.FindProviders(filter);
+        var provider = await providerService.FindProvidersAsync(filter);
         if (provider == null) return false;
         var appointmentToRemove = provider.AppointmentEntities.SingleOrDefault(ap => ap.Identifier == identifier);
         if (appointmentToRemove == null) return false;
         var cancelAppointment = await CancelAppointment(identifier);
         if (!cancelAppointment) return false;
         provider.AppointmentEntities.Remove(appointmentToRemove);
-        return await providerService.UpdateProvider(provider.Id.ToString(), provider);
+        return await providerService.UpdateProviderAsync(provider.Id.ToString(), provider);
     }
 
     private async Task<bool> CancelAppointment(string identifier)
     {
-        var appointment = await bookingService.SearchAppointment(identifier);
+        var appointment = await bookingService.SearchAppointmentAsync(identifier);
         if (appointment.AppointmentStatus == AppointmentStatus.Booked) return false;
         if (appointment.AppointmentStatus == AppointmentStatus.Completed) return false;
-        return await bookingService.CancelAppointment(identifier);
+        return await bookingService.CancelAppointmentAsync(identifier);
     }
 }

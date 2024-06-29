@@ -18,11 +18,11 @@ public class AddServicesToProviderCommandHandler(
             ServiceEntities = serviceEntities
         }, cancellationToken);
 
-        var provider = await providerService.FindProviders(SupportTools<ProviderEntity>.FilterByEmail(email));
+        var provider = await providerService.FindProvidersAsync(SupportTools<ProviderEntity>.FilterByEmail(email));
         if (provider != null)
         {
             provider.ServiceEntities.AddRange(SupportTools<ServiceEntity>.GenerateIdForRecord(serviceEntities));
-            var updateResult = await providerService.UpdateProvider(provider.Id.ToString(), provider);
+            var updateResult = await providerService.UpdateProviderAsync(provider.Id.ToString(), provider);
             if (updateResult)
             {
                 var successEvent = new Event

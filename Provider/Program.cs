@@ -1,3 +1,5 @@
+using Kafka.Support;
+
 ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls13;
 
 
@@ -95,14 +97,10 @@ providers.MapPost("/", async Task<Results<ValidationProblem, Created<ProviderEnt
     {
         if (!MiniValidator.TryValidate(providerEntity, out var errors))
             return TypedResults.ValidationProblem(errors);
-
-        var iLength = providerEntity.Email.IndexOf('@');
-        var topicName = providerEntity.Email.Substring(0, iLength).ToLower() + "-topic";
-        providerEntity.KafkaTopic = topicName;
         var filter =
             SupportTools<ProviderEntity>.FilterByNameAndLastName(providerEntity.FirstName, providerEntity.LastName);
-        var existingProvider = await providerService.FindProviders(filter);
-
+        var existingProvider = await providerService.FindProvidersAsync(filter);
+        var topicName = KafkaHelper.CreateProviderTopicName(providerEntity.Email!);
         if (existingProvider != null)
             return TypedResults.ValidationProblem(GenerateErrorMessage(
                 "Existing record found", new[]

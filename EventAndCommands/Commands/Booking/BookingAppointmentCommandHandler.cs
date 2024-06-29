@@ -44,14 +44,14 @@ public class BookingAppointmentCommandHandler(
     private async Task<bool> SearchAndUpdateProviderAppointments()
     {
         var filter = SupportTools<ProviderEntity>.FilterByEmail(appointmentEntity.EmailProvider);
-        var providerEntity = await providerService.FindProviders(filter);
+        var providerEntity = await providerService.FindProvidersAsync(filter);
         if (providerEntity == null) return false;
         if (providerEntity.Email == appointmentEntity.EmailProvider)
         {
             await AddAppointmentToCalendar();
             providerEntity.AppointmentEntities.Add(
-                await bookingService.SearchAppointment(appointmentEntity.Identifier));
-            return await providerService.UpdateProvider(providerEntity.Id.ToString(), providerEntity);
+                await bookingService.SearchAppointmentAsync(appointmentEntity.Identifier));
+            return await providerService.UpdateProviderAsync(providerEntity.Id.ToString(), providerEntity);
         }
 
         return false;
@@ -59,6 +59,6 @@ public class BookingAppointmentCommandHandler(
 
     private async Task AddAppointmentToCalendar()
     {
-        await bookingService.BookAppointment(appointmentEntity);
+        await bookingService.BookAppointmentAsync(appointmentEntity);
     }
 }
