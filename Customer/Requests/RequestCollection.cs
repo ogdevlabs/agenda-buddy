@@ -1,40 +1,47 @@
-using EventAndCommands.Commands.Customer;
-using Kafka;
-
 namespace Customer.Requests;
 
+[ExcludeFromCodeCoverage]
 public class RequestCollection(IKafkaClient kafkaClient) : IRequestCollection
 {
     public async Task<string> AddCustomerRequest(IMediator mediator, CustomerService customerService,
         CustomerEntity customerEntity)
     {
         var result = await new AddCustomerCommandHandler(
-                mediator, 
-                ((kafkaClient as KafkaClient)!), 
-                customerService, 
+                mediator,
+                ((kafkaClient as KafkaClient)!),
+                customerService,
                 customerEntity)
             .Handle(
-                new AddCustomerCommand { CustomerEntity = customerEntity},
+                new AddCustomerCommand { CustomerEntity = customerEntity },
                 new CancellationToken());
 
         return result;
     }
 
-    public async Task<string> UpdateCustomerRequest(IMediator mediator, CustomerService customerService,
+    public async Task<string> UpdateCustomerRequest(string email, IMediator mediator, CustomerService customerService,
         CustomerEntity customerEntity)
     {
-        throw new NotImplementedException();
+        var result =
+            await new UpdateCustomerCommandHandler(email, mediator, customerService, customerEntity).Handle(
+                new UpdateCustomerCommand { CustomerEntity = customerEntity }, new CancellationToken());
+        return result;
     }
 
     public async Task<IEnumerable<CustomerEntity>> GetCustomersRequest(IMediator mediator,
-        CustomerService customerService, CustomerEntity customerEntity)
+        CustomerService customerService)
     {
-        throw new NotImplementedException();
+        var result =
+            await new GetCustomersQueryHandler(mediator, customerService).Handle(new GetCustomersQuery(),
+                new CancellationToken());
+        return result;
     }
 
     public async Task<CustomerEntity> GetCustomerByEmail(IMediator mediator, CustomerService customerService,
         string email)
     {
-        throw new NotImplementedException();
+        var result =
+            await new GetCustomerByEmailQueryHandler(mediator, customerService, email).Handle(
+                new GetCustomerByEmailQuery(), new CancellationToken());
+        return result;
     }
 }

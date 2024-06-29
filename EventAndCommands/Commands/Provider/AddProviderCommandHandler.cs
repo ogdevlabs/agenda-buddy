@@ -1,5 +1,3 @@
-using Kafka.Support;
-
 namespace EventAndCommands.Commands.Provider;
 
 [RegisterService(ServiceLifetime.Scoped)]
@@ -24,7 +22,7 @@ public class AddProviderCommandHandler(
             await providerService.AddProvider(providerEntity);
             var succesEvent = new Event
             {
-                Id = providerEntity.Id,
+                Id = ObjectId.GenerateNewId(),
                 TimeStamp = DateTime.UtcNow,
                 Status = "Success",
                 Type = "AddProviderCommand",
@@ -38,7 +36,7 @@ public class AddProviderCommandHandler(
         {
             var failEvent = new Event
             {
-                Id = providerEntity.Id,
+                Id = ObjectId.GenerateNewId(),
                 TimeStamp = DateTime.UtcNow,
                 Status = "Failed",
                 Type = $"AddProviderCommand - {kafkaTopic}",

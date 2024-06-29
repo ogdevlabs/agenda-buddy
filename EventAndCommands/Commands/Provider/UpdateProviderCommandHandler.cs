@@ -26,7 +26,7 @@ public class UpdateProviderCommandHandler(
             {
                 var successEvent = new Event
                 {
-                    Id = providerEntity.Id,
+                    Id = ObjectId.GenerateNewId(),
                     TimeStamp = DateTime.UtcNow,
                     Status = "Success",
                     Type = "UpdateProviderCommand",
@@ -40,7 +40,7 @@ public class UpdateProviderCommandHandler(
         {
             var failEvent = new Event
             {
-                Id = providerEntity.Id,
+                Id = ObjectId.GenerateNewId(),
                 TimeStamp = DateTime.UtcNow,
                 Status = "Failed",
                 Type = "UpdateProviderCommand",

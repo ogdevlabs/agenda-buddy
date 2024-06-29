@@ -10,11 +10,11 @@ public static class ServiceCollectionExtension
 
         serviceCollection.AddScoped<IRepository<ProviderEntity>>(
             _ => new MongoDbRepository<ProviderEntity>(database,
-                configuration.GetSection("MongoDB")["ProvidersName"]!));
+                configuration.GetSection("MongoDB")["ProvidersCollection"]!));
 
         serviceCollection.AddScoped<IRepository<ServiceEntity>>(
             _ => new MongoDbRepository<ServiceEntity>(database,
-                configuration.GetSection("MongoDB")["ServicesName"]!));
+                configuration.GetSection("MongoDB")["ServicesCollection"]!));
 
         serviceCollection.AddScoped<ProviderService>();
         serviceCollection.AddScoped<ServiceService>();

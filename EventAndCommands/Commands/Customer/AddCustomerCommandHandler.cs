@@ -1,7 +1,3 @@
-using EventAndCommands.Events.Customer;
-using Kafka.Support;
-using Library.Entities;
-
 namespace EventAndCommands.Commands.Customer;
 
 [RegisterService(ServiceLifetime.Scoped)]
@@ -24,7 +20,7 @@ public class AddCustomerCommandHandler(
             await customerService.AddCustomer(customerEntity);
             var succesEvent = new Event
             {
-                Id = customerEntity.Id,
+                Id = ObjectId.GenerateNewId(),
                 TimeStamp = DateTime.UtcNow,
                 Status = "Success",
                 Type = "AddCustomerCommand",
@@ -37,7 +33,7 @@ public class AddCustomerCommandHandler(
         {
             var failEvent = new Event
             {
-                Id = customerEntity.Id,
+                Id = ObjectId.GenerateNewId(),
                 TimeStamp = DateTime.UtcNow,
                 Status = "Failed",
                 Type = $"AddCustomerCommand - {kafkaTopic}",

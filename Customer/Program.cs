@@ -1,14 +1,3 @@
-using Customer.Extensions;
-using Kafka;
-using Library.Entities;
-using Microsoft.AspNetCore.Diagnostics;
-using Microsoft.AspNetCore.WebUtilities;
-using System.Diagnostics;
-using Customer.Events;
-using Kafka.Support;
-using Library.Tools;
-using MiniValidation;
-
 var builder = WebApplication.CreateBuilder(args);
 
 // Add MongoDB
@@ -107,16 +96,49 @@ customers.MapPost("/", async Task<Results<ValidationProblem, Created<CustomerEnt
             {
                 $"Email:{customerEntity.Email}"
             }));
-    
+
     var eventResponse =
         await EventsHelper.AddCustomerEvent(requestCollection, mediator, customerService, customerEntity);
     if (!string.IsNullOrEmpty(eventResponse) && !eventResponse.ToLower().StartsWith("exception"))
         return TypedResults.Created($"/api/v1/customers/{customerEntity.Id}", customerEntity);
-    
+
     return TypedResults.ValidationProblem(GenerateErrorMessage(
         "Kafka Error", new[] { "Kafka Topic", $"{topicName}" })
     );
-});
+}).WithName("CreateCustomer");
+
+customers.MapPut("/{email}",
+    async Task<Results<ValidationProblem, NotFound, Accepted>> (string email, IMediator mediator,
+        CustomerService customerService, CustomerEntity customerEntity, IRequestCollection requestCollection) =>
+    {
+        if (!MiniValidator.TryValidate(customerEntity, out var errors))
+            return TypedResults.ValidationProblem(errors);
+
+        var eventResponse =
+            await EventsHelper.UpdateCustomerEvent(email, requestCollection, mediator, customerService, customerEntity);
+
+        if (!string.IsNullOrEmpty(eventResponse)) return TypedResults.Accepted("api/v1/customers");
+
+        return TypedResults.NotFound();
+    }).WithName("UpdateCustomer");
+
+customers.MapGet("",
+    async Task<Results<Ok<IEnumerable<CustomerEntity>>, NoContent>> (IMediator mediator,
+        CustomerService customerService, IRequestCollection requestCollection) =>
+    {
+        var customerCollection =
+            await EventsHelper.GetCustomersEvent(requestCollection, mediator, customerService);
+        return TypedResults.Ok(customerCollection);
+    }).WithName("GetAllCustomers");
+
+customers.MapGet("/{email}", async Task<Results<Ok<CustomerEntity>, NotFound>> (IMediator mediator, string email,
+    CustomerService customerService, IRequestCollection requestCollection) =>
+{
+    var customer = await EventsHelper.GetCustomerByEmailEvent(requestCollection, mediator, customerService, email);
+    if (customer != null)
+        return TypedResults.Ok(customer);
+    return TypedResults.NotFound();
+}).WithName("GetCustomerByEmail");
 
 app.Run();
 

@@ -1,5 +1,5 @@
 namespace Customer.Extensions;
-
+[ExcludeFromCodeCoverage]
 public static class HttpContextExtensions
 {
     private static readonly MediaTypeHeaderValue _jsonMediaType = new("application/json");

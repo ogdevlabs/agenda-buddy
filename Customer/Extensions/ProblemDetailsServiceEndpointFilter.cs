@@ -1,5 +1,6 @@
 namespace Customer.Extensions;
 
+[ExcludeFromCodeCoverage]
 /// <summary>
 ///     Defines an endpoint filter that modifies <see cref="ProblemHttpResult" /> instances returned by route handler
 ///     delegates

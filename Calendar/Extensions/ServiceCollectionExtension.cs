@@ -10,14 +10,19 @@ public static class ServiceCollectionExtension
 
         serviceCollection.AddScoped<IRepository<ProviderEntity>>(
             _ => new MongoDbRepository<ProviderEntity>(database,
-                configuration.GetSection("MongoDB")["ProvidersName"]!));
+                configuration.GetSection("MongoDB")["ProvidersCollection"]!));
 
         serviceCollection.AddScoped<IRepository<AppointmentEntity>>(
             _ => new MongoDbRepository<AppointmentEntity>(database,
-                configuration.GetSection("MongoDB")["AppointmentsName"]!));
+                configuration.GetSection("MongoDB")["AppointmentsCollection"]!));
+
+        serviceCollection.AddScoped<IRepository<CustomerEntity>>(
+            _ => new MongoDbRepository<CustomerEntity>(database,
+                configuration.GetSection("MongoDB")["CustomersCollection"]!));
 
         serviceCollection.AddScoped<ProviderService>();
         serviceCollection.AddScoped<CalendarService>();
+        serviceCollection.AddScoped<CustomerService>();
 
         return serviceCollection;
     }
