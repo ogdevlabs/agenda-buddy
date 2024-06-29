@@ -4,7 +4,7 @@ public class ProfessionService(IRepository<ProfessionEntity> professionRepositor
 {
     public async Task<ProfessionEntity> GetProfessionAsync(string name)
     {
-        var filterByName = new BsonDocument("name", name);
+        var filterByName = SupportTools<ProviderEntity>.FilterByName(name);
         var profession = await professionRepository.Find(filterByName);
         if (profession == null) return null!;
         return profession;

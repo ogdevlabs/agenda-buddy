@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <UserSecretsId>dotnet-Profession-FB9A8FBA-510D-481A-BAD1-6E7C0DAC5E1C</UserSecretsId>
+        <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <Content Include="..\.dockerignore">
+        <Link>.dockerignore</Link>
+      </Content>
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="MediatR" Version="12.3.0" />
+      <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.6" />
+      <PackageReference Include="MiniValidation" Version="0.9.1" />
+      <PackageReference Include="MongoDB.Driver" Version="2.25.0" />
+      <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Library\Library.csproj" />
+    </ItemGroup>
+</Project>
