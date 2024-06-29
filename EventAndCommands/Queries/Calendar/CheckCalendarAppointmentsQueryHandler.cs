@@ -14,7 +14,7 @@ public class
     {
         await mediator.Publish(new CheckCalendarAppointmentsEvent { Email = email }, cancellationToken);
         var filterProvider = SupportTools<ProviderEntity>.FilterByEmail(email);
-        var providerEntity = await providerService.FindProviders(filterProvider);
+        var providerEntity = await providerService.FindProvidersAsync(filterProvider);
         if (providerEntity != null)
         {
             var providerAppointmentCollection = providerEntity.AppointmentEntities;

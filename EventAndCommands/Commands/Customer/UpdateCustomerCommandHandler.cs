@@ -11,7 +11,7 @@ public class UpdateCustomerCommandHandler(
     public async Task<string> Handle(UpdateCustomerCommand request, CancellationToken cancellationToken)
     {
         await mediator.Publish(new UpdateCustomerEvent { CustomerEntity = request.CustomerEntity }, cancellationToken);
-        var customer = await customerService.FindCustomer(SupportTools<CustomerEntity>.FilterByEmail(email));
+        var customer = await customerService.FindCustomerAsync(SupportTools<CustomerEntity>.FilterByEmail(email));
         if (customer != null)
         {
             customerEntity.Id = customer.Id;
@@ -19,7 +19,7 @@ public class UpdateCustomerCommandHandler(
             customerEntity.SubscribedProviderCollection = customer.SubscribedProviderCollection;
             customerEntity.AppointmentCollection = customer.AppointmentCollection;
             
-            var updateResult = await customerService.UpdateCustomer(customer.Id.ToString(), customerEntity);
+            var updateResult = await customerService.UpdateCustomerAsync(customer.Id.ToString(), customerEntity);
             if (updateResult)
             {
                 var successEvent = new Event

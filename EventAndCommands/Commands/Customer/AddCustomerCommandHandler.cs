@@ -17,7 +17,7 @@ public class AddCustomerCommandHandler(
         if (!string.IsNullOrEmpty(kafkaTopic) && !kafkaTopic.ToLower().StartsWith("exception"))
         {
             customerEntity.KafkaTopic = TopicName;
-            await customerService.AddCustomer(customerEntity);
+            await customerService.AddCustomerAsync(customerEntity);
             var succesEvent = new Event
             {
                 Id = ObjectId.GenerateNewId(),

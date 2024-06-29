@@ -43,7 +43,7 @@ public class UpdateAppointmentCommandHandler(
     {
         var identifier = appointmentEntity.Identifier;
         var filter = SupportTools<ProviderEntity>.FilterByEmail(appointmentEntity.EmailProvider);
-        var provider = await providerService.FindProviders(filter);
+        var provider = await providerService.FindProvidersAsync(filter);
         if (provider == null) return false;
         var appointment = provider.AppointmentEntities.FirstOrDefault(ap => ap.Identifier == identifier);
         if (appointment == null) return false;
@@ -53,11 +53,11 @@ public class UpdateAppointmentCommandHandler(
         appointment.End = appointmentEntity.End;
         var updateAppointment = await UpdateAppointment(identifier, appointment);
         if (!updateAppointment) return false;
-        return await providerService.UpdateProvider(provider.Id.ToString(), provider);
+        return await providerService.UpdateProviderAsync(provider.Id.ToString(), provider);
     }
 
     private async Task<bool> UpdateAppointment(string identifier, AppointmentEntity appointment)
     {
-        return await bookingService.UpdateAppointment(identifier, appointment);
+        return await bookingService.UpdateAppointmentAsync(identifier, appointment);
     }
 }

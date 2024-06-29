@@ -17,11 +17,11 @@ public class UpdateProviderCommandHandler(
             ProviderEntity = request.ProviderEntity
         }, cancellationToken);
         var record = await providerService
-            .FindProviders(SupportTools<ProviderEntity>.FilterByEmail(email));
+            .FindProvidersAsync(SupportTools<ProviderEntity>.FilterByEmail(email));
         if (record != null)
         {
             providerEntity.Id = record.Id;
-            var updateResult = await providerService.UpdateProvider(record.Id.ToString(), providerEntity);
+            var updateResult = await providerService.UpdateProviderAsync(record.Id.ToString(), providerEntity);
             if (updateResult)
             {
                 var successEvent = new Event

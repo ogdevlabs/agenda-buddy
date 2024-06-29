@@ -19,7 +19,7 @@ public class AddProviderCommandHandler(
         if (!string.IsNullOrEmpty(kafkaTopic) && !kafkaTopic.ToLower().StartsWith("exception"))
         {
             providerEntity.KafkaTopic = TopicName;
-            await providerService.AddProvider(providerEntity);
+            await providerService.AddProviderAsync(providerEntity);
             var succesEvent = new Event
             {
                 Id = ObjectId.GenerateNewId(),

@@ -10,7 +10,7 @@ public class GetCustomerByEmailQueryHandler(IMediator mediator, CustomerService 
     {
         await mediator.Publish(new GetCustomerByEmailEvent(), cancellationToken);
         var filterByEmail = SupportTools<CustomerEntity>.FilterByEmail(email);
-        var matchedCustomer = await customerService.FindCustomer(filterByEmail);
+        var matchedCustomer = await customerService.FindCustomerAsync(filterByEmail);
         if (matchedCustomer != null)
         {
             var successEvent = new Event

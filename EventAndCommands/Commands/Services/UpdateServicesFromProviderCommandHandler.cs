@@ -17,7 +17,7 @@ public class UpdateServicesFromProviderCommandHandler(
             Email = email,
             ServiceEntities = serviceEntities
         }, cancellationToken);
-        var existingProvider = await providerService.FindProviders(SupportTools<ProviderEntity>.FilterByEmail(email));
+        var existingProvider = await providerService.FindProvidersAsync(SupportTools<ProviderEntity>.FilterByEmail(email));
         if (existingProvider == null) return null!;
         var updatedServices = serviceEntities;
         foreach (var updatedService in updatedServices)
@@ -29,7 +29,7 @@ public class UpdateServicesFromProviderCommandHandler(
             serviceMatch.FeeType = updatedService.FeeType;
         }
 
-        var updateResult = await providerService.UpdateProvider(existingProvider.Id.ToString(), existingProvider);
+        var updateResult = await providerService.UpdateProviderAsync(existingProvider.Id.ToString(), existingProvider);
         if (updateResult)
         {
             var successEvent = new Event

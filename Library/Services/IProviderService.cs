@@ -2,10 +2,10 @@ namespace Library.Services;
 
 public interface IProviderService
 {
-    Task<IEnumerable<ProviderEntity>> GetAllProviders();
-    Task<ProviderEntity> GetProviderById(string id);
-    Task AddProvider(ProviderEntity provider);
-    Task<bool> UpdateProvider(string id, ProviderEntity provider);
-    Task DeleteProvider(string id);
-    Task<ProviderEntity> FindProviders(BsonDocument filter);
+    Task<IEnumerable<ProviderEntity>> GetAllProvidersAsync();
+    Task<ProviderEntity> GetProviderByIdAsync(string id);
+    Task AddProviderAsync(ProviderEntity provider);
+    Task<bool> UpdateProviderAsync(string id, ProviderEntity provider);
+    Task DeleteProviderAsync(string id);
+    Task<ProviderEntity> FindProvidersAsync(BsonDocument filter);
 }

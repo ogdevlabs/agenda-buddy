@@ -15,7 +15,7 @@ public class CheckCalendarAvailabilityQueryHandler(
         await mediator.Publish(new CheckCalendarAvailabilityEvent { Email = email }, cancellationToken);
 
         var filterProvider = SupportTools<ProviderEntity>.FilterByEmail(email);
-        var providerEntity = await providerService.FindProviders(filterProvider);
+        var providerEntity = await providerService.FindProvidersAsync(filterProvider);
         if (providerEntity != null)
         {
             var successEvent = new Event

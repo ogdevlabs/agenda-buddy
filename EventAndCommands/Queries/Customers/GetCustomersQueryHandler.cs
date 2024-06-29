@@ -9,7 +9,7 @@ public class GetCustomersQueryHandler(IMediator mediator, CustomerService custom
         CancellationToken cancellationToken)
     {
         await mediator.Publish(new GetAllCustomersEvent(), cancellationToken);
-        var customerList = await customerService.GetAllCustomers();
+        var customerList = await customerService.GetAllCustomersAsync();
         var customerEntities = customerList.ToList();
         if (customerEntities.ToList().Count != 0)
         {

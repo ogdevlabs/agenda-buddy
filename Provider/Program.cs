@@ -99,7 +99,7 @@ providers.MapPost("/", async Task<Results<ValidationProblem, Created<ProviderEnt
             return TypedResults.ValidationProblem(errors);
         var filter =
             SupportTools<ProviderEntity>.FilterByNameAndLastName(providerEntity.FirstName, providerEntity.LastName);
-        var existingProvider = await providerService.FindProviders(filter);
+        var existingProvider = await providerService.FindProvidersAsync(filter);
         var topicName = KafkaHelper.CreateProviderTopicName(providerEntity.Email!);
         if (existingProvider != null)
             return TypedResults.ValidationProblem(GenerateErrorMessage(

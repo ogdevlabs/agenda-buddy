@@ -11,7 +11,7 @@ public class GetProviderByEmailQueryHandler(IMediator mediator, ProviderService 
         await mediator.Publish(new GetProviderByEmailEvent { Email = email }, cancellationToken);
 
         var filter = SupportTools<ProviderEntity>.FilterByEmail(email);
-        var providerEntity = await providerService.FindProviders(filter);
+        var providerEntity = await providerService.FindProvidersAsync(filter);
         if (providerEntity != null)
         {
             var successEvent = new Event
