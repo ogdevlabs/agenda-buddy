@@ -1,14 +1,3 @@
-using System.Diagnostics;
-using Customer.Extensions;
-using Library.Tools;
-using MediatR;
-using Microsoft.AspNetCore.Diagnostics;
-using Microsoft.AspNetCore.WebUtilities;
-using MiniValidation;
-using Profession.Events;
-using Profession.Extensions;
-using Profession.Requests;
-
 var builder = WebApplication.CreateBuilder(args);
 
 // Add MongoDB
@@ -22,6 +11,7 @@ builder.Services.AddMvcCore();
 
 // Register Singleton instances
 builder.Services.AddSingleton<IMongoDbConfiguration, MongoDbConfiguration>();
+builder.Services.AddSingleton<IRequestCollection, RequestCollection>();
 
 // Enable & configure JSON Problem Details error responses
 builder.Services.AddProblemDetails(options =>
@@ -109,12 +99,20 @@ professions.MapPost("/",
 
         if (eventResponse != null)
             return TypedResults.Created($"api/v1/professions/{professionEntity.Id}", professionEntity);
-        
+
         return TypedResults.ValidationProblem(GenerateErrorMessage(
             "Error", ["Error adding profession:", $"{professionEntity.Name}"])
         );
-        
     }).WithName("CreateProfession");
+
+professions.MapGet("",
+    async Task<Results<Ok<IEnumerable<ProfessionEntity>>, NoContent>> (IRequestCollection requestCollection,
+        IMediator mediator, ProfessionService professionService) =>
+    {
+        var professionCollection =
+            await EventsHelper.GetAllProfessionsEvent(requestCollection, mediator, professionService);
+        return TypedResults.Ok(professionCollection);
+    }).WithName("GetProfesssions");
 
 app.Run();
 

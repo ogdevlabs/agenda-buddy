@@ -1,6 +1,3 @@
-using MediatR;
-using Profession.Requests;
-
 namespace Profession.Events;
 
 public static class EventsHelper
@@ -12,5 +9,12 @@ public static class EventsHelper
             await requestCollection.AddProfessionRequest(mediator, professionService, professionEntity);
         return notificationResponse;
     }
-    
+
+    public static async Task<IEnumerable<ProfessionEntity>> GetAllProfessionsEvent(IRequestCollection requestCollection,
+        IMediator mediator, ProfessionService professionService)
+    {
+        var notificationResponse =
+            await requestCollection.GetProfessionsRequest(mediator, professionService);
+        return notificationResponse;
+    }
 }

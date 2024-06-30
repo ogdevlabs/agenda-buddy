@@ -1,11 +1,25 @@
-using MediatR;
-
 namespace Profession.Requests;
 
 public class RequestCollection : IRequestCollection
 {
-    public async Task<ProfessionEntity> AddProfessionRequest(IMediator mediator, ProfessionService professionService, ProfessionEntity professionEntity)
+    public async Task<ProfessionEntity> AddProfessionRequest(IMediator mediator, ProfessionService professionService,
+        ProfessionEntity professionEntity)
     {
-        throw new NotImplementedException();
+        var result = await new AddProfessionCommandHandler(
+                mediator,
+                professionService,
+                professionEntity)
+            .Handle(
+                new AddProfessionCommand() { ProfessionEntity = professionEntity }, new CancellationToken());
+        return result;
+    }
+
+    public async Task<IEnumerable<ProfessionEntity>> GetProfessionsRequest(IMediator mediator,
+        ProfessionService professionService)
+    {
+        var result =
+            await new GetProfessionsQueryHandler(mediator, professionService).Handle(new GetProfessionsQuery(),
+                new CancellationToken());
+        return result;
     }
 }

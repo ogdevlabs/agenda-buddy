@@ -23,6 +23,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\EventAndCommands\EventAndCommands.csproj" />
       <ProjectReference Include="..\Library\Library.csproj" />
     </ItemGroup>
 </Project>

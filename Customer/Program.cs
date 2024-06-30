@@ -87,7 +87,7 @@ customers.MapPost("/", async Task<Results<ValidationProblem, Created<CustomerEnt
     if (!MiniValidator.TryValidate(customerEntity, out var errors))
         return TypedResults.ValidationProblem(errors);
     var filter =
-        SupportTools<CustomerEntity>.FilterByNameAndLastName(customerEntity.FirstName, customerEntity.LastName);
+        SupportTools<CustomerEntity>.FilterByNameAndLastName(customerEntity.FirstName!, customerEntity.LastName!);
     var existingCustomer = await customerService.FindCustomerAsync(filter);
     var topicName = KafkaHelper.CreateCustomerTopicName(customerEntity.Email!);
     if (existingCustomer != null)
