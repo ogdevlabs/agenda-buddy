@@ -1,5 +1,6 @@
 namespace Profession.Requests;
 
+[ExcludeFromCodeCoverage]
 public class RequestCollection : IRequestCollection
 {
     public async Task<ProfessionEntity> AddProfessionRequest(IMediator mediator, ProfessionService professionService,
@@ -20,6 +21,15 @@ public class RequestCollection : IRequestCollection
         var result =
             await new GetProfessionsQueryHandler(mediator, professionService).Handle(new GetProfessionsQuery(),
                 new CancellationToken());
+        return result;
+    }
+
+    public async Task<ProfessionEntity> GetProfessionByNameRequest(IMediator mediator, ProfessionService professionService,
+        string name)
+    {
+        var result =
+            await new GetProfessionByNameQueryHandler(mediator, professionService, name).Handle(
+                new GetProfessionByNameQuery { Name = name }, new CancellationToken());
         return result;
     }
 }

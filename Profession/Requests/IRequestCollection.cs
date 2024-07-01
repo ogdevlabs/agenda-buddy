@@ -7,4 +7,7 @@ public interface IRequestCollection
 
     public Task<IEnumerable<ProfessionEntity>> GetProfessionsRequest(IMediator mediator,
         ProfessionService professionService);
+
+    public Task<ProfessionEntity> GetProfessionByNameRequest(IMediator mediator, ProfessionService professionService,
+        string name);
 }

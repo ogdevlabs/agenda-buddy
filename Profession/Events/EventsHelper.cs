@@ -17,4 +17,11 @@ public static class EventsHelper
             await requestCollection.GetProfessionsRequest(mediator, professionService);
         return notificationResponse;
     }
+
+    public static async Task<ProfessionEntity> GetProfessionByNameEvent(IRequestCollection requestCollection,
+        IMediator mediator, ProfessionService professionService, string name)
+    {
+        var notificationResponse = await requestCollection.GetProfessionByNameRequest(mediator, professionService, name);
+        return notificationResponse;
+    }
 }

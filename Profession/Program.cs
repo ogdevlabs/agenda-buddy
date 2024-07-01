@@ -111,8 +111,20 @@ professions.MapGet("",
     {
         var professionCollection =
             await EventsHelper.GetAllProfessionsEvent(requestCollection, mediator, professionService);
-        return TypedResults.Ok(professionCollection);
+        if (professionCollection != null) return TypedResults.Ok(professionCollection);
+        return TypedResults.NoContent();
     }).WithName("GetProfesssions");
+
+professions.MapGet("/{name}", async Task<Results<Ok<ProfessionEntity>, NotFound>> (
+    IRequestCollection requestCollection,
+    IMediator mediator,
+    ProfessionService professionService,
+    string name) =>
+{
+    var profession = await EventsHelper.GetProfessionByNameEvent(requestCollection, mediator, professionService, name);
+    if (profession != null) return TypedResults.Ok(profession);
+    return TypedResults.NotFound();
+}).WithName("GetProfessionByName");
 
 app.Run();
 
