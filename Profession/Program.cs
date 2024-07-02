@@ -11,7 +11,6 @@ builder.Services.AddMvcCore();
 
 // Register Singleton instances
 builder.Services.AddSingleton<IMongoDbConfiguration, MongoDbConfiguration>();
-builder.Services.AddSingleton<IKafkaClient, KafkaClient>();
 builder.Services.AddSingleton<IRequestCollection, RequestCollection>();
 
 // Enable & configure JSON Problem Details error responses
@@ -73,72 +72,59 @@ app.UseAntiforgery();
 app.UseStatusCodePages();
 app.UseHttpsRedirection();
 
-var customers = app.MapGroup("/api/v1/customers")
-    .WithTags("CustomerAPI")
+var professions = app.MapGroup("api/v1/professions")
+    .WithTags("ProfessionAPI")
     .WithOpenApi()
     .AddEndpointFilter<ProblemDetailsServiceEndpointFilter>();
 
-customers.MapPost("/", async Task<Results<ValidationProblem, Created<CustomerEntity>>> (
-    IMediator mediator,
-    CustomerService customerService,
-    CustomerEntity customerEntity,
-    IRequestCollection requestCollection) =>
-{
-    if (!MiniValidator.TryValidate(customerEntity, out var errors))
-        return TypedResults.ValidationProblem(errors);
-    var filter =
-        SupportTools<CustomerEntity>.FilterByNameAndLastName(customerEntity.FirstName!, customerEntity.LastName!);
-    var existingCustomer = await customerService.FindCustomerAsync(filter);
-    var topicName = KafkaHelper.CreateCustomerTopicName(customerEntity.Email!);
-    if (existingCustomer != null)
-        return TypedResults.ValidationProblem(GenerateErrorMessage(
-            "Existing record found", new[]
-            {
-                $"Email:{customerEntity.Email}"
-            }));
-
-    var eventResponse =
-        await EventsHelper.AddCustomerEvent(requestCollection, mediator, customerService, customerEntity);
-    if (!string.IsNullOrEmpty(eventResponse) && !eventResponse.ToLower().StartsWith("exception"))
-        return TypedResults.Created($"/api/v1/customers/{customerEntity.Id}", customerEntity);
-
-    return TypedResults.ValidationProblem(GenerateErrorMessage(
-        "Kafka Error", new[] { "Kafka Topic", $"{topicName}" })
-    );
-}).WithName("CreateCustomer");
-
-customers.MapPut("/{email}",
-    async Task<Results<ValidationProblem, NotFound, Accepted>> (string email, IMediator mediator,
-        CustomerService customerService, CustomerEntity customerEntity, IRequestCollection requestCollection) =>
+professions.MapPost("/",
+    async Task<Results<ValidationProblem, Created<ProfessionEntity>>> (IMediator mediator,
+        ProfessionService professionService, ProfessionEntity professionEntity,
+        IRequestCollection requestCollection) =>
     {
-        if (!MiniValidator.TryValidate(customerEntity, out var errors))
+        if (!MiniValidator.TryValidate(professionEntity, out var errors))
             return TypedResults.ValidationProblem(errors);
+        var profession = await professionService.GetProfessionAsync(professionEntity.Name);
+        if (profession != null)
+        {
+            return TypedResults.ValidationProblem(GenerateErrorMessage(
+                "Existing record found", new[]
+                {
+                    $"Name:{professionEntity.Name}"
+                }));
+        }
 
         var eventResponse =
-            await EventsHelper.UpdateCustomerEvent(email, requestCollection, mediator, customerService, customerEntity);
+            await EventsHelper.AddProfessionEvent(requestCollection, mediator, professionService, professionEntity);
 
-        if (!string.IsNullOrEmpty(eventResponse)) return TypedResults.Accepted("api/v1/customers");
+        if (eventResponse != null)
+            return TypedResults.Created($"api/v1/professions/{professionEntity.Id}", professionEntity);
 
-        return TypedResults.NotFound();
-    }).WithName("UpdateCustomer");
+        return TypedResults.ValidationProblem(GenerateErrorMessage(
+            "Error", ["Error adding profession:", $"{professionEntity.Name}"])
+        );
+    }).WithName("CreateProfession");
 
-customers.MapGet("",
-    async Task<Results<Ok<IEnumerable<CustomerEntity>>, NoContent>> (IMediator mediator,
-        CustomerService customerService, IRequestCollection requestCollection) =>
+professions.MapGet("",
+    async Task<Results<Ok<IEnumerable<ProfessionEntity>>, NoContent>> (IRequestCollection requestCollection,
+        IMediator mediator, ProfessionService professionService) =>
     {
-        var customerCollection =
-            await EventsHelper.GetCustomersEvent(requestCollection, mediator, customerService);
-        return TypedResults.Ok(customerCollection);
-    }).WithName("GetAllCustomers");
+        var professionCollection =
+            await EventsHelper.GetAllProfessionsEvent(requestCollection, mediator, professionService);
+        if (professionCollection != null) return TypedResults.Ok(professionCollection);
+        return TypedResults.NoContent();
+    }).WithName("GetProfesssions");
 
-customers.MapGet("/{email}", async Task<Results<Ok<CustomerEntity>, NotFound>> (IMediator mediator, string email,
-    CustomerService customerService, IRequestCollection requestCollection) =>
+professions.MapGet("/{name}", async Task<Results<Ok<ProfessionEntity>, NotFound>> (
+    IRequestCollection requestCollection,
+    IMediator mediator,
+    ProfessionService professionService,
+    string name) =>
 {
-    var customer = await EventsHelper.GetCustomerByEmailEvent(requestCollection, mediator, customerService, email);
-    if (customer != null)
-        return TypedResults.Ok(customer);
+    var profession = await EventsHelper.GetProfessionByNameEvent(requestCollection, mediator, professionService, name);
+    if (profession != null) return TypedResults.Ok(profession);
     return TypedResults.NotFound();
-}).WithName("GetCustomerByEmail");
+}).WithName("GetProfessionByName");
 
 app.Run();
 

@@ -1,0 +1,25 @@
+// Global using directives
+
+global using System.Diagnostics;
+global using System.Diagnostics.CodeAnalysis;
+global using Customer.Extensions;
+global using EventAndCommands.Commands.Profession;
+global using EventAndCommands.Queries.Professions;
+global using Library.Entities;
+global using Library.Repositories;
+global using Library.Services;
+global using Library.Tools;
+global using MediatR;
+global using Microsoft.AspNetCore.Builder;
+global using Microsoft.AspNetCore.Diagnostics;
+global using Microsoft.AspNetCore.Http;
+global using Microsoft.AspNetCore.Http.HttpResults;
+global using Microsoft.AspNetCore.Mvc;
+global using Microsoft.AspNetCore.WebUtilities;
+global using Microsoft.Net.Http.Headers;
+global using MiniValidation;
+global using MongoDB.Driver;
+global using Profession.Configurations;
+global using Profession.Events;
+global using Profession.Extensions;
+global using Profession.Requests;
