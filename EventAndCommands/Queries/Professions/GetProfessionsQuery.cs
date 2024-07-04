@@ -1,7 +1,7 @@
 namespace EventAndCommands.Queries.Professions;
 
 [ExcludeFromCodeCoverage]
-public class GetProfessionsQuery : IRequest<IEnumerable<ProfessionEntity>>
+public class GetProfessionsQuery : IRequest<List<ProfessionEntity>>
 {
-    public IEnumerable<ProfessionEntity>? ProfessionEntities { get; set; }
+    public List<ProfessionEntity>? ProfessionEntities { get; set; }
 }

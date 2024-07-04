@@ -1,11 +1,11 @@
 namespace EventAndCommands.Queries.Customers;
 
 public class GetCustomersQueryHandler(IMediator mediator, CustomerService customerService)
-    : IRequestHandler<GetCustomersQuery, IEnumerable<CustomerEntity>>
+    : IRequestHandler<GetCustomersQuery, List<CustomerEntity>>
 {
     [InjectService] private IEventStore? EventStore { get; } = new EventStore();
 
-    public async Task<IEnumerable<CustomerEntity>> Handle(GetCustomersQuery request,
+    public async Task<List<CustomerEntity>> Handle(GetCustomersQuery request,
         CancellationToken cancellationToken)
     {
         await mediator.Publish(new GetAllCustomersEvent(), cancellationToken);

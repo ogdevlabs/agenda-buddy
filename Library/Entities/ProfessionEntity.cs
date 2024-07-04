@@ -1,6 +1,6 @@
 namespace Library.Entities;
 
-public class ProfessionEntity
+public sealed class ProfessionEntity
 {
     public ProfessionEntity(ObjectId id, string name, string description)
     {

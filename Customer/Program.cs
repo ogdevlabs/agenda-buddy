@@ -1,7 +1,12 @@
+using Microsoft.Extensions.Caching.Distributed;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add MongoDB
 builder.Services.AddMongoDbRepository(builder.Configuration);
+
+// Add Distributed Cache
+builder.Services.AddDistributedMemoryCache();
 
 // Add MediatR
 builder.Services.AddMediatR(cfg => { cfg.RegisterServicesFromAssembly(typeof(Program).Assembly); });
@@ -123,20 +128,30 @@ customers.MapPut("/{email}",
     }).WithName("UpdateCustomer");
 
 customers.MapGet("",
-    async Task<Results<Ok<IEnumerable<CustomerEntity>>, NoContent>> (IMediator mediator,
-        CustomerService customerService, IRequestCollection requestCollection) =>
+    async Task<Results<Ok<List<CustomerEntity>>, NoContent>> (IMediator mediator,
+        CustomerService customerService, IRequestCollection requestCollection, IDistributedCache cache) =>
     {
-        var customerCollection =
-            await EventsHelper.GetCustomersEvent(requestCollection, mediator, customerService);
-        return TypedResults.Ok(customerCollection);
+        var key = $"customers";
+        var customerCollection = await cache.GetOrCreateAsync(key,
+            async token => await EventsHelper.GetCustomersEvent(requestCollection, mediator, customerService));
+
+        if (customerCollection is not null)
+            return TypedResults.Ok(customerCollection);
+
+        return TypedResults.NoContent();
     }).WithName("GetAllCustomers");
 
 customers.MapGet("/{email}", async Task<Results<Ok<CustomerEntity>, NotFound>> (IMediator mediator, string email,
-    CustomerService customerService, IRequestCollection requestCollection) =>
+    CustomerService customerService, IRequestCollection requestCollection, IDistributedCache cache) =>
 {
-    var customer = await EventsHelper.GetCustomerByEmailEvent(requestCollection, mediator, customerService, email);
-    if (customer != null)
+    var key = $"customers-{email}";
+
+    var customer = await cache.GetOrCreateAsync(key,
+        async token => await EventsHelper.GetCustomerByEmailEvent(requestCollection, mediator, customerService, email));
+    
+    if (customer is not null)
         return TypedResults.Ok(customer);
+    
     return TypedResults.NotFound();
 }).WithName("GetCustomerByEmail");
 

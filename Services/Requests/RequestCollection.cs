@@ -2,7 +2,7 @@ namespace Services.Requests;
 
 public class RequestCollection : IRequestCollection
 {
-    public async Task<IEnumerable<ServiceEntity>> GetServicesFromProvider(IMediator mediator,
+    public async Task<List<ServiceEntity>> GetServicesFromProvider(IMediator mediator,
         ProviderService providerService, string email)
     {
         var result =

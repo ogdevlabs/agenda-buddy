@@ -5,11 +5,11 @@ public class GetServicesFromProviderQueryHandler(
     IMediator mediator,
     ProviderService providerService,
     string email)
-    : IRequestHandler<GetServicesFromProviderQuery, IEnumerable<ServiceEntity>>
+    : IRequestHandler<GetServicesFromProviderQuery, List<ServiceEntity>>
 {
     [InjectService] private IEventStore? EventStore { get; } = new EventStore();
 
-    public async Task<IEnumerable<ServiceEntity>> Handle(GetServicesFromProviderQuery request,
+    public async Task<List<ServiceEntity>> Handle(GetServicesFromProviderQuery request,
         CancellationToken cancellationToken)
     {
         await mediator.Publish(new GetServicesFromProviderEvent { Email = email }, cancellationToken);

@@ -10,7 +10,7 @@ public static class EventsHelper
         return notificationResponse;
     }
 
-    public static async Task<IEnumerable<ProfessionEntity>> GetAllProfessionsEvent(IRequestCollection requestCollection,
+    public static async Task<List<ProfessionEntity>> GetAllProfessionsEvent(IRequestCollection requestCollection,
         IMediator mediator, ProfessionService professionService)
     {
         var notificationResponse =

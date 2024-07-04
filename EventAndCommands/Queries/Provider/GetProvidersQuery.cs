@@ -1,7 +1,7 @@
 namespace EventAndCommands.Queries.Provider;
 
 [ExcludeFromCodeCoverage]
-public class GetProvidersQuery : IRequest<IEnumerable<ProviderEntity>>
+public class GetProvidersQuery : IRequest<List<ProviderEntity>>
 {
-    public IEnumerable<ProviderEntity>? ProviderEntities { get; }
+    public List<ProviderEntity>? ProviderEntities { get; }
 }

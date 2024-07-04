@@ -2,7 +2,7 @@ namespace Calendar.Requests;
 
 public class RequestCollection : IRequestCollection
 {
-    public async Task<IEnumerable<DateTime>> CheckCalendarAvailabilityRequest(IMediator mediator,
+    public async Task<List<DateTime>> CheckCalendarAvailabilityRequest(IMediator mediator,
         ProviderService providerService, CalendarService calendarService, string email)
     {
         var result =
@@ -11,7 +11,7 @@ public class RequestCollection : IRequestCollection
         return result;
     }
 
-    public async Task<IEnumerable<AppointmentEntity>> CheckCalendarAppointmentsRequest(IMediator mediator,
+    public async Task<List<AppointmentEntity>> CheckCalendarAppointmentsRequest(IMediator mediator,
         ProviderService providerService, CalendarService calendarService, string email)
     {
         var result =

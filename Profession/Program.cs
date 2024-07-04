@@ -1,7 +1,13 @@
+using System.Net;
+
+ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls13;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add MongoDB
 builder.Services.AddMongoDbRepository(builder.Configuration);
+
+// Add Cache
+builder.Services.AddDistributedMemoryCache();
 
 // Add MediatR
 builder.Services.AddMediatR(cfg => { cfg.RegisterServicesFromAssembly(typeof(Program).Assembly); });
@@ -106,23 +112,33 @@ professions.MapPost("/",
     }).WithName("CreateProfession");
 
 professions.MapGet("",
-    async Task<Results<Ok<IEnumerable<ProfessionEntity>>, NoContent>> (IRequestCollection requestCollection,
-        IMediator mediator, ProfessionService professionService) =>
+    async Task<Results<Ok<List<ProfessionEntity>>, NoContent>> (IRequestCollection requestCollection,
+        IMediator mediator, ProfessionService professionService, IDistributedCache cache) =>
     {
-        var professionCollection =
-            await EventsHelper.GetAllProfessionsEvent(requestCollection, mediator, professionService);
+        var key = $"professions";
+
+        var professionCollection = await cache.GetOrCreateAsync(key,
+            async token => await EventsHelper.GetAllProfessionsEvent(requestCollection, mediator, professionService));
+
         if (professionCollection != null) return TypedResults.Ok(professionCollection);
         return TypedResults.NoContent();
-    }).WithName("GetProfesssions");
+    }).WithName("GetProfessionList");
 
 professions.MapGet("/{name}", async Task<Results<Ok<ProfessionEntity>, NotFound>> (
     IRequestCollection requestCollection,
     IMediator mediator,
     ProfessionService professionService,
-    string name) =>
+    string name, IDistributedCache cache) =>
 {
-    var profession = await EventsHelper.GetProfessionByNameEvent(requestCollection, mediator, professionService, name);
-    if (profession != null) return TypedResults.Ok(profession);
+    var key = $"profession-{name}";
+
+    var profession = await cache.GetOrCreateAsync(key,
+        async token =>
+            await EventsHelper.GetProfessionByNameEvent(requestCollection, mediator, professionService, name));
+
+    if (profession != null)
+        return TypedResults.Ok(profession);
+
     return TypedResults.NotFound();
 }).WithName("GetProfessionByName");
 

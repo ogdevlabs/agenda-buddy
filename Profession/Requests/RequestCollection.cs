@@ -15,7 +15,7 @@ public class RequestCollection : IRequestCollection
         return result;
     }
 
-    public async Task<IEnumerable<ProfessionEntity>> GetProfessionsRequest(IMediator mediator,
+    public async Task<List<ProfessionEntity>> GetProfessionsRequest(IMediator mediator,
         ProfessionService professionService)
     {
         var result =
