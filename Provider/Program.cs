@@ -1,5 +1,3 @@
-using Kafka.Support;
-
 ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls13;
 
 
@@ -7,6 +5,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add MongoDB
 builder.Services.AddMongoDbRepository(builder.Configuration);
+
+// Add distributed cache
+builder.Services.AddDistributedMemoryCache();
 
 // Add MediatR
 builder.Services.AddMediatR(cfg => { cfg.RegisterServicesFromAssembly(typeof(Program).Assembly); });
@@ -101,7 +102,7 @@ providers.MapPost("/", async Task<Results<ValidationProblem, Created<ProviderEnt
             SupportTools<ProviderEntity>.FilterByNameAndLastName(providerEntity.FirstName, providerEntity.LastName);
         var existingProvider = await providerService.FindProvidersAsync(filter);
         var topicName = KafkaHelper.CreateProviderTopicName(providerEntity.Email!);
-        if (existingProvider != null)
+        if (existingProvider is not null)
             return TypedResults.ValidationProblem(GenerateErrorMessage(
                 "Existing record found", new[]
                 {
@@ -120,23 +121,40 @@ providers.MapPost("/", async Task<Results<ValidationProblem, Created<ProviderEnt
     .WithName("CreateProvider");
 
 // Get provider list
-providers.MapGet("", async Task<Results<Ok<IEnumerable<ProviderEntity>>, NoContent>> (IMediator mediator,
+providers.MapGet("", async Task<Results<Ok<List<ProviderEntity>>, NoContent>> (IMediator mediator,
     ProviderService providerService,
-    IRequestCollection requestCollection) =>
+    IRequestCollection requestCollection, IDistributedCache cache) =>
 {
-    var providerCollection = await EventsHelper.GetProvidersEvent(requestCollection, mediator, providerService);
-    return TypedResults.Ok(providerCollection);
+    var key = $"providers";
+    var providerCollection = await cache.GetOrCreateAsync(key, async token =>
+    {
+        var listProviders = await EventsHelper.GetProvidersEvent(requestCollection, mediator, providerService);
+        return listProviders;
+    });
+
+    if (providerCollection is not null)
+        return TypedResults.Ok(providerCollection);
+
+    return TypedResults.NoContent();
 }).WithName("GetAllProviders");
 
 // Get provider by Email
 providers.MapGet("/{email}", async Task<Results<Ok<ProviderEntity>, NotFound>> (IMediator mediator,
     string email,
     ProviderService providerService,
-    IRequestCollection requestCollection) =>
+    IRequestCollection requestCollection, IDistributedCache cache) =>
 {
-    var record = await EventsHelper.GetProviderByEmail(requestCollection, mediator, providerService, email);
-    if (record != null)
-        return TypedResults.Ok(record);
+    var key = $"providers-{email}";
+
+    var providerEntity = await cache.GetOrCreateAsync(key, async token =>
+    {
+        var provider = await EventsHelper.GetProviderByEmail(requestCollection, mediator, providerService, email);
+        return provider;
+    });
+
+    if (providerEntity is not null)
+        return TypedResults.Ok(providerEntity);
+
     return TypedResults.NotFound();
 }).WithName("GetProviderByEmail");
 

@@ -2,7 +2,7 @@ namespace Services.Events;
 
 public static class EventHelper
 {
-    public static async Task<IEnumerable<ServiceEntity>> GetServicesFromProviderEvent(
+    public static async Task<List<ServiceEntity>> GetServicesFromProviderEvent(
         IRequestCollection requestCollection, IMediator mediator, ProviderService providerService, string email)
     {
         var notificationResponse =

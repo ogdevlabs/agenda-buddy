@@ -1,7 +1,7 @@
 namespace EventAndCommands.Queries.Services;
 
 [ExcludeFromCodeCoverage]
-public class GetServicesFromProviderQuery : IRequest<IEnumerable<ServiceEntity>>
+public class GetServicesFromProviderQuery : IRequest<List<ServiceEntity>>
 {
-    public IEnumerable<ServiceEntity>? ServiceEntities { get; set; }
+    public List<ServiceEntity>? ServiceEntities { get; set; }
 }

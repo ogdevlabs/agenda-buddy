@@ -2,9 +2,9 @@ namespace Calendar.Requests;
 
 public interface IRequestCollection
 {
-    public Task<IEnumerable<DateTime>> CheckCalendarAvailabilityRequest(IMediator mediator,
+    public Task<List<DateTime>> CheckCalendarAvailabilityRequest(IMediator mediator,
         ProviderService providerService, CalendarService calendarService, string email);
 
-    public Task<IEnumerable<AppointmentEntity>> CheckCalendarAppointmentsRequest(IMediator mediator,
+    public Task<List<AppointmentEntity>> CheckCalendarAppointmentsRequest(IMediator mediator,
         ProviderService providerService, CalendarService calendarService, string email);
 }

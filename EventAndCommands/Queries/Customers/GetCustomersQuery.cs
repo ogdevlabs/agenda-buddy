@@ -1,7 +1,7 @@
 namespace EventAndCommands.Queries.Customers;
 
 [ExcludeFromCodeCoverage]
-public class GetCustomersQuery : IRequest<IEnumerable<CustomerEntity>>
+public class GetCustomersQuery : IRequest<List<CustomerEntity>>
 {
-    public IEnumerable<CustomerEntity>? CustomerEntities { get; }
+    public List<CustomerEntity>? CustomerEntities { get; }
 }

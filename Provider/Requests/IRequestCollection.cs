@@ -13,7 +13,7 @@ public interface IRequestCollection
         ProviderService providerService,
         ProviderEntity providerEntity);
 
-    public Task<IEnumerable<ProviderEntity>> GetProvidersRequest(IMediator mediator, ProviderService providerService);
+    public Task<List<ProviderEntity>?> GetProvidersRequest(IMediator mediator, ProviderService providerService);
 
     public Task<ProviderEntity> GetProviderByEmail(IMediator mediator, ProviderService providerService, string email);
 }

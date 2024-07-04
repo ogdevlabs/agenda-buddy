@@ -16,6 +16,7 @@ global using Microsoft.AspNetCore.Http;
 global using Microsoft.AspNetCore.Http.HttpResults;
 global using Microsoft.AspNetCore.Mvc;
 global using Microsoft.AspNetCore.WebUtilities;
+global using Microsoft.Extensions.Caching.Distributed;
 global using Microsoft.Net.Http.Headers;
 global using MiniValidation;
 global using MongoDB.Driver;

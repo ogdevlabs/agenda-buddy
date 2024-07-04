@@ -19,7 +19,7 @@ public static class EventsHelper
         return notificationResponse;
     }
 
-    public static async Task<IEnumerable<CustomerEntity>> GetCustomersEvent(IRequestCollection requestCollection,
+    public static async Task<List<CustomerEntity>> GetCustomersEvent(IRequestCollection requestCollection,
         IMediator mediator,
         CustomerService customerService)
     {

@@ -27,7 +27,7 @@ public class RequestCollection(IKafkaClient kafkaClient) : IRequestCollection
         return result;
     }
 
-    public async Task<IEnumerable<CustomerEntity>> GetCustomersRequest(IMediator mediator,
+    public async Task<List<CustomerEntity>> GetCustomersRequest(IMediator mediator,
         CustomerService customerService)
     {
         var result =

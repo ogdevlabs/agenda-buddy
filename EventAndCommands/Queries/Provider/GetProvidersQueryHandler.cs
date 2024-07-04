@@ -2,12 +2,12 @@ namespace EventAndCommands.Queries.Provider;
 
 [RegisterService(ServiceLifetime.Scoped)]
 public class GetProvidersQueryHandler(IMediator mediator, ProviderService providerService)
-    : IRequestHandler<GetProvidersQuery, IEnumerable<ProviderEntity>>
+    : IRequestHandler<GetProvidersQuery, List<ProviderEntity>>
 {
     [InjectService] private IEventStore? EventStore { get; } = new EventStore();
 
 
-    public async Task<IEnumerable<ProviderEntity>> Handle(GetProvidersQuery request,
+    public async Task<List<ProviderEntity>> Handle(GetProvidersQuery request,
         CancellationToken cancellationToken)
     {
         await mediator.Publish(new GetAllProvidersEvent(), cancellationToken);

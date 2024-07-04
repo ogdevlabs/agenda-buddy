@@ -3,11 +3,11 @@ using EventAndCommands.Events.Profession;
 namespace EventAndCommands.Queries.Professions;
 
 public class GetProfessionsQueryHandler(IMediator mediator, ProfessionService professionService)
-    : IRequestHandler<GetProfessionsQuery, IEnumerable<ProfessionEntity>>
+    : IRequestHandler<GetProfessionsQuery, List<ProfessionEntity>>
 {
     [InjectService] private IEventStore? EventStore { get; } = new EventStore();
 
-    public async Task<IEnumerable<ProfessionEntity>> Handle(GetProfessionsQuery request,
+    public async Task<List<ProfessionEntity>> Handle(GetProfessionsQuery request,
         CancellationToken cancellationToken)
     {
         await mediator.Publish(new GetProfessionsEvent(), cancellationToken);
