@@ -1,3 +1,5 @@
+using Library.Data;
+
 namespace Library.Repositories;
 
 public class MongoDbRepository<TEntity> : IRepository<TEntity> where TEntity : class

@@ -11,9 +11,8 @@ public class GetProfessionsQueryHandler(IMediator mediator, ProfessionService pr
         CancellationToken cancellationToken)
     {
         await mediator.Publish(new GetProfessionsEvent(), cancellationToken);
-        var professionCollection = await professionService.GetProfessionsAsync() ?? new List<ProfessionEntity>();
-        var professsionList = professionCollection.ToList();
-        if (professsionList.Count != 0)
+        var professionList = await professionService.GetProfessionCollectionAsync();
+        if (professionList.Count != 0)
         {
             var successEvent = new Event
             {
@@ -21,10 +20,10 @@ public class GetProfessionsQueryHandler(IMediator mediator, ProfessionService pr
                 TimeStamp = DateTime.UtcNow,
                 Status = "Success",
                 Type = "GetProfessionsQuery",
-                Data = JsonSerializer.Serialize(professsionList)
+                Data = JsonSerializer.Serialize(professionList)
             };
             await EventStore!.SaveAsync(successEvent);
-            return await Task.FromResult(professsionList);
+            return await Task.FromResult(professionList);
         }
         else
         {
@@ -34,7 +33,7 @@ public class GetProfessionsQueryHandler(IMediator mediator, ProfessionService pr
                 TimeStamp = DateTime.UtcNow,
                 Status = "Failed",
                 Type = "GetProfessionsQuery",
-                Data = JsonSerializer.Serialize(professsionList)
+                Data = JsonSerializer.Serialize(professionList)
             };
             await EventStore!.SaveAsync(successEvent);
             return null!;
