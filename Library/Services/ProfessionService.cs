@@ -7,16 +7,15 @@ public class ProfessionService(IRepository<ProfessionEntity> professionRepositor
         await professionRepository.InsertAsync(professionEntity);
     }
 
-    public async Task<IEnumerable<ProfessionEntity>> GetProfessionsAsync()
+    public async Task<List<ProfessionEntity>> GetProfessionCollectionAsync()
     {
-        return await professionRepository.GetAllAsync();
+        return (List<ProfessionEntity>)await professionRepository.GetAllAsync();
     }
 
     public async Task<ProfessionEntity> GetProfessionAsync(string name)
     {
         var filterByName = SupportTools<ProfessionEntity>.FilterByName(name);
         var profession = await professionRepository.Find(filterByName);
-        if (profession == null) return null!;
         return profession;
     }
 }

@@ -20,7 +20,19 @@ public static class ServiceCollectionExtensions
 
         serviceCollection.AddScoped<ProfessionService>();
         serviceCollection.AddScoped<ProviderService>();
+
+        SeedDataAsync(database, configuration).Wait();
         
         return serviceCollection;
+    }
+
+    private static async Task SeedDataAsync(IMongoDatabase mongoDatabase, IConfiguration configuration)
+    {
+        var collectionName = configuration.GetSection("MongoDB")["ProfessionsCollection"];
+        var collection = mongoDatabase.GetCollection<ProfessionEntity>(collectionName);
+        if (!await collection.Find(_ => true).AnyAsync())
+        {
+            await collection.InsertManyAsync(ProfessionSeedData.SeedData());
+        }
     }
 }

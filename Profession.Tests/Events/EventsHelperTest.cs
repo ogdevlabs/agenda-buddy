@@ -26,8 +26,7 @@ public class EventsHelperTest
         _professionEntity = new ProfessionEntity
         {
             Id = default,
-            Name = "AnyName",
-            Description = "AnyDescription"
+            Name = "AnyName"
         };
     }
 
@@ -37,8 +36,7 @@ public class EventsHelperTest
         // Arrange
         var expectedResponse = new ProfessionEntity
         {
-            Name = "A profession name",
-            Description = "A profession description"
+            Name = "A profession name"
         };
         _mockRequestCollection.Setup(rc =>
                 rc.AddProfessionRequest(It.IsAny<IMediator>(), It.IsAny<ProfessionService>(),
@@ -59,8 +57,7 @@ public class EventsHelperTest
         // Arrange
         var expectedResponse = new ProfessionEntity
         {
-            Name = "A profession name",
-            Description = "A profession description"
+            Name = "A profession name"
         };
         _mockRequestCollection.Setup(rc =>
                 rc.GetProfessionByNameRequest(It.IsAny<IMediator>(), It.IsAny<ProfessionService>(),
@@ -84,7 +81,6 @@ public class EventsHelperTest
             new ProfessionEntity
             {
                 Name = "A profession name",
-                Description = "A profession description"
             }
         };
         _mockRequestCollection.Setup(rc =>

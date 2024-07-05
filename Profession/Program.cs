@@ -1,5 +1,3 @@
-using System.Net;
-
 ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls13;
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,6 +17,7 @@ builder.Services.AddMvcCore();
 builder.Services.AddSingleton<IMongoDbConfiguration, MongoDbConfiguration>();
 builder.Services.AddSingleton<IRequestCollection, RequestCollection>();
 
+
 // Enable & configure JSON Problem Details error responses
 builder.Services.AddProblemDetails(options =>
     options.CustomizeProblemDetails = context => CustomizeProblemDetails(context.ProblemDetails, context.HttpContext));
@@ -28,6 +27,7 @@ builder.Services.AddAntiforgery();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
