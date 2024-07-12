@@ -21,4 +21,11 @@ public static class ServiceCollectionExtensions
 
         return serviceCollection;
     }
+
+    public static IServiceCollection AddKafkaBootstrap(this IServiceCollection serviceCollection,
+        IConfiguration configuration)
+    {
+        serviceCollection.AddSingleton<KafkaProducer>(sp => new KafkaProducer(configuration.GetSection("Kafka")["BootstrapServers"]!));
+        return serviceCollection;
+    }
 }

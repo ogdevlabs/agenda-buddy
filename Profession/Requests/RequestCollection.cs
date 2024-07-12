@@ -32,4 +32,14 @@ public class RequestCollection : IRequestCollection
                 new GetProfessionByNameQuery { Name = name }, new CancellationToken());
         return result;
     }
+
+    public async Task<ProviderEntity> UpdateProfessionsFromProvider(IMediator mediator, ProviderService providerService,
+        List<ProfessionEntity> professionEntities,
+        string email)
+    {
+        var result =
+            await new AddProfessionToProviderCommandHandler(mediator, providerService, email, professionEntities)
+                .Handle(new AddProfessionsToProviderCommand(), new CancellationToken());
+        return result;
+    }
 }

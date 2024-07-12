@@ -83,6 +83,22 @@ var professions = app.MapGroup("api/v1/professions")
     .WithOpenApi()
     .AddEndpointFilter<ProblemDetailsServiceEndpointFilter>();
 
+professions.MapPatch("provider/{email}",
+    async Task<Results<ValidationProblem, NotFound, Ok<ProviderEntity>>> (IMediator mediator, ProviderService providerService,
+        IRequestCollection requestCollection, List<ProfessionEntity> professionEntities, string email) =>
+    {
+        if (!MiniValidator.TryValidate(professionEntities, out var errors))
+            return TypedResults.ValidationProblem(errors);
+
+        var providerEntity = await EventsHelper.UpdateProfessionsFromProviderEvent(requestCollection, mediator,
+            providerService, professionEntities, email);
+        
+        if (providerEntity != null)
+            return TypedResults.Ok(providerEntity);
+        
+        return TypedResults.NotFound();
+    }).WithName("AddProfessionsToProvider");
+
 professions.MapPost("/",
     async Task<Results<ValidationProblem, Created<ProfessionEntity>>> (IMediator mediator,
         ProfessionService professionService, ProfessionEntity professionEntity,

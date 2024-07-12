@@ -44,4 +44,16 @@ public class RequestCollection(IKafkaClient kafkaClient) : IRequestCollection
                 new GetCustomerByEmailQuery(), new CancellationToken());
         return result;
     }
+
+    public async Task<string> SubscribeToProvider(IMediator mediator, CustomerSubscribedToProviderEntity customerSubscribedToProviderEntity,
+        KafkaProducer kafkaProducer)
+    {
+        var result =
+            await new SubscribeToProviderCommandHandler(mediator, customerSubscribedToProviderEntity, kafkaProducer).Handle(
+                new SubscribeToProviderCommand
+                {
+                    CustomerSubscribedToProviderEntity = customerSubscribedToProviderEntity
+                }, new CancellationToken());
+        return result;
+    }
 }

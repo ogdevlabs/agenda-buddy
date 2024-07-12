@@ -33,6 +33,13 @@ public static class SupportTools<TEntity> where TEntity : class
 
         return dataCollection;
     }
+    
+    public static List<ProfessionEntity> GenerateIdForRecord(List<ProfessionEntity> dataCollection)
+    {
+        foreach (var profession in dataCollection) profession.Id = ObjectId.GenerateNewId();
+
+        return dataCollection;
+    }
 
     public static List<DateTime> GetThirtyDaysCalendarAvailability(ProviderEntity providerEntity)
     {

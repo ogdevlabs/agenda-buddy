@@ -1,5 +1,3 @@
-using EventAndCommands.Events.Profession;
-
 namespace EventAndCommands.Queries.Professions;
 
 public class GetProfessionsQueryHandler(IMediator mediator, ProfessionService professionService)

@@ -11,4 +11,7 @@ public interface IRequestCollection
     public Task<List<CustomerEntity>> GetCustomersRequest(IMediator mediator, CustomerService customerService);
 
     public Task<CustomerEntity> GetCustomerByEmail(IMediator mediator, CustomerService customerService, string email);
+
+    public Task<string> SubscribeToProvider(IMediator mediator, CustomerSubscribedToProviderEntity customerSubscribedToProviderEntity,
+        KafkaProducer kafkaProducer);
 }

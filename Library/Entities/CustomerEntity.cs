@@ -4,15 +4,15 @@ namespace Library.Entities;
 public class CustomerEntity
 {
     public CustomerEntity(ObjectId id, string? firstName, string? lastName, string? email,
-        string? kafkaTopic, List<string>? subscribedProviderCollection, List<string> appointmentCollection)
+        string? kafkaTopic, List<string>? subscribedEmailProviderCollection, List<string> appointmentIdentifierCollection)
     {
         Id = id;
         FirstName = firstName;
         LastName = lastName;
         Email = email;
         KafkaTopic = kafkaTopic;
-        SubscribedProviderCollection = subscribedProviderCollection;
-        AppointmentCollection = appointmentCollection;
+        SubscribedEmailProviderCollection = subscribedEmailProviderCollection;
+        AppointmentIdentifierCollection = appointmentIdentifierCollection;
     }
 
     public CustomerEntity()
@@ -30,9 +30,9 @@ public class CustomerEntity
 
     [BsonElement("kafka_topic")] public string? KafkaTopic { get; set; }
 
-    [BsonElement("subscribed_provider_collection")]
-    public List<string>? SubscribedProviderCollection { get; set; } = [];
+    [BsonElement("subscribed_email_provider_collection")]
+    public List<string>? SubscribedEmailProviderCollection { get; set; } = [];
 
     [BsonElement("appointment_identifier_collection")]
-    public List<string>? AppointmentCollection { get; set; } = [];
+    public List<string>? AppointmentIdentifierCollection { get; set; } = [];
 }

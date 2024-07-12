@@ -34,4 +34,12 @@ public static class EventsHelper
         var notificationResponse = await requestCollection.GetCustomerByEmail(mediator, customerService, email);
         return notificationResponse;
     }
+
+    public static async Task<string> SubscribeToProviderEvent(IRequestCollection requestCollection, IMediator mediator,
+        CustomerSubscribedToProviderEntity customerSubscribedToProviderEntity, KafkaProducer kafkaProducer)
+    {
+        var notificationResponse =
+            await requestCollection.SubscribeToProvider(mediator, customerSubscribedToProviderEntity, kafkaProducer);
+        return notificationResponse;
+    }
 }

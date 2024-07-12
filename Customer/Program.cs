@@ -1,5 +1,3 @@
-using Microsoft.Extensions.Caching.Distributed;
-
 var builder = WebApplication.CreateBuilder(args);
 
 // Add MongoDB
@@ -16,8 +14,11 @@ builder.Services.AddMvcCore();
 
 // Register Singleton instances
 builder.Services.AddSingleton<IMongoDbConfiguration, MongoDbConfiguration>();
-builder.Services.AddSingleton<IKafkaClient, KafkaClient>();
 builder.Services.AddSingleton<IRequestCollection, RequestCollection>();
+
+// Kafka
+builder.Services.AddSingleton<IKafkaClient, KafkaClient>();
+builder.Services.AddKafkaBootstrap(builder.Configuration);
 
 // Enable & configure JSON Problem Details error responses
 builder.Services.AddProblemDetails(options =>
@@ -148,12 +149,28 @@ customers.MapGet("/{email}", async Task<Results<Ok<CustomerEntity>, NotFound>> (
 
     var customer = await cache.GetOrCreateAsync(key,
         async token => await EventsHelper.GetCustomerByEmailEvent(requestCollection, mediator, customerService, email));
-    
+
     if (customer is not null)
         return TypedResults.Ok(customer);
-    
+
     return TypedResults.NotFound();
 }).WithName("GetCustomerByEmail");
+
+customers.MapPost("/subscribe",
+    async Task<Results<ValidationProblem, NotFound, Accepted>> (IRequestCollection requestCollection,
+        IMediator mediator, [FromBody] CustomerSubscribedToProviderEntity customerSubscribedToProviderEntity,
+        KafkaProducer kafkaProducer) =>
+    {
+        if (!MiniValidator.TryValidate(customerSubscribedToProviderEntity, out var errors))
+            return TypedResults.ValidationProblem(errors);
+        var message =
+            await EventsHelper.SubscribeToProviderEvent(requestCollection, mediator, customerSubscribedToProviderEntity,
+                kafkaProducer);
+
+        if (!string.IsNullOrEmpty(message)) return TypedResults.Accepted("api/v1/customers");
+
+        return TypedResults.NotFound();
+    }).WithName("SubscribeToProvider");
 
 app.Run();
 

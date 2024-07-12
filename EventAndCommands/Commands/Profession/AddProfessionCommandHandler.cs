@@ -1,5 +1,3 @@
-using EventAndCommands.Events.Profession;
-
 namespace EventAndCommands.Commands.Profession;
 
 [RegisterService(ServiceLifetime.Scoped)]

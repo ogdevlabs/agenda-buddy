@@ -1,3 +1,5 @@
+using EventAndCommands.Commands.Profession;
+
 namespace Services.Requests;
 
 public class RequestCollection : IRequestCollection

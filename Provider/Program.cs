@@ -18,6 +18,7 @@ builder.Services.AddMvcCore();
 // Register Singleton instances
 builder.Services.AddSingleton<IMongoDbConfiguration, MongoDbConfiguration>();
 builder.Services.AddSingleton<IKafkaClient, KafkaClient>();
+builder.Services.AddKafkaBootstrap(builder.Configuration);
 builder.Services.AddSingleton<IRequestCollection, RequestCollection>();
 
 // Enable & configure JSON Problem Details error responses
