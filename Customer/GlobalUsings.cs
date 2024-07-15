@@ -2,11 +2,14 @@
 
 global using System.Diagnostics;
 global using System.Diagnostics.CodeAnalysis;
+global using Confluent.Kafka;
 global using Customer.Configurations;
 global using Customer.Events;
 global using Customer.Extensions;
 global using Customer.Requests;
 global using EventAndCommands.Commands.Customer;
+global using EventAndCommands.Commands.Kafka;
+global using EventAndCommands.Events.Kafka;
 global using EventAndCommands.Queries.Customers;
 global using Kafka;
 global using Kafka.Producer;

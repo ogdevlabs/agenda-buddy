@@ -1,7 +1,4 @@
 namespace EventAndCommands.Events.Customer;
 
 [ExcludeFromCodeCoverage]
-public class AddCustomerEvent : INotification
-{
-    public CustomerEntity? CustomerEntity { get; set; }
-}
+public class AddCustomerEvent : INotification;

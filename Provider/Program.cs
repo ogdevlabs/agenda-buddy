@@ -17,9 +17,14 @@ builder.Services.AddMvcCore();
 
 // Register Singleton instances
 builder.Services.AddSingleton<IMongoDbConfiguration, MongoDbConfiguration>();
-builder.Services.AddSingleton<IKafkaClient, KafkaClient>();
+
+// Kafka
 builder.Services.AddKafkaBootstrap(builder.Configuration);
+builder.Services.AddKakfaServices(builder.Configuration);
+
+// Singleton Services
 builder.Services.AddSingleton<IRequestCollection, RequestCollection>();
+builder.Services.AddSingleton<IKafkaRequestCollection, KafkaRequestCollection>();
 
 // Enable & configure JSON Problem Details error responses
 builder.Services.AddProblemDetails(options =>
@@ -95,14 +100,16 @@ providers.MapPost("/", async Task<Results<ValidationProblem, Created<ProviderEnt
         IMediator mediator,
         ProviderService providerService,
         ProviderEntity providerEntity,
-        IRequestCollection requestCollection) =>
+        IRequestCollection requestCollection,
+        IKafkaRequestCollection kafkaRequestCollection,
+        IProducer<Null, string> producer) =>
     {
         if (!MiniValidator.TryValidate(providerEntity, out var errors))
             return TypedResults.ValidationProblem(errors);
         var filter =
             SupportTools<ProviderEntity>.FilterByNameAndLastName(providerEntity.FirstName, providerEntity.LastName);
+
         var existingProvider = await providerService.FindProvidersAsync(filter);
-        var topicName = KafkaHelper.CreateProviderTopicName(providerEntity.Email!);
         if (existingProvider is not null)
             return TypedResults.ValidationProblem(GenerateErrorMessage(
                 "Existing record found", new[]
@@ -110,13 +117,26 @@ providers.MapPost("/", async Task<Results<ValidationProblem, Created<ProviderEnt
                     $"Email:{providerEntity.Email}"
                 }));
 
+        // Create Kafka Provider Topic
+        var @event = new ProviderCreatedEvent { Email = providerEntity.Email };
+        var topicResponse =
+            await KafkaEvents.CreateProviderTopicEvent(mediator, @event, kafkaRequestCollection, providerEntity.Email,
+                true);
+        if (!string.IsNullOrEmpty(topicResponse))
+        {
+            providerEntity.KafkaTopic = topicResponse;
+            var message = JsonSerializer.Serialize(@event);
+            var response = await producer.ProduceAsync(topicResponse, new Message<Null, string> { Value = message });
+        }
+
+        // Create Provider
         var eventResponse =
-            await EventsHelper.AddProviderEvent(requestCollection, mediator, providerService, providerEntity);
+            await ProviderEvents.AddProviderEvent(requestCollection, mediator, providerService, providerEntity);
         if (!string.IsNullOrEmpty(eventResponse) && !eventResponse.ToLower().StartsWith("exception"))
             return TypedResults.Created($"/api/v1/providers/{providerEntity.Id}", providerEntity);
 
         return TypedResults.ValidationProblem(GenerateErrorMessage(
-            "Kafka Error", new[] { "Kafka Topic", $"{topicName}" })
+            "Kafka Error", new[] { "Kafka Topic", $"{topicResponse}" })
         );
     })
     .WithName("CreateProvider");
@@ -129,7 +149,7 @@ providers.MapGet("", async Task<Results<Ok<List<ProviderEntity>>, NoContent>> (I
     var key = $"providers";
     var providerCollection = await cache.GetOrCreateAsync(key, async token =>
     {
-        var listProviders = await EventsHelper.GetProvidersEvent(requestCollection, mediator, providerService);
+        var listProviders = await ProviderEvents.GetProvidersEvent(requestCollection, mediator, providerService);
         return listProviders;
     });
 
@@ -149,7 +169,7 @@ providers.MapGet("/{email}", async Task<Results<Ok<ProviderEntity>, NotFound>> (
 
     var providerEntity = await cache.GetOrCreateAsync(key, async token =>
     {
-        var provider = await EventsHelper.GetProviderByEmail(requestCollection, mediator, providerService, email);
+        var provider = await ProviderEvents.GetProviderByEmail(requestCollection, mediator, providerService, email);
         return provider;
     });
 
@@ -172,7 +192,7 @@ providers.MapPut("/{email}", async Task<Results<ValidationProblem, NotFound, Acc
         return TypedResults.ValidationProblem(errors);
 
     var eventResponse =
-        await EventsHelper.UpdateProviderEvent(email, requestCollection, mediator, providerService, providerEntity);
+        await ProviderEvents.UpdateProviderEvent(email, requestCollection, mediator, providerService, providerEntity);
 
     if (!string.IsNullOrEmpty(eventResponse)) return TypedResults.Accepted("api/v1/providers");
 

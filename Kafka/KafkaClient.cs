@@ -1,6 +1,3 @@
-using Confluent.Kafka;
-using Confluent.Kafka.Admin;
-
 namespace Kafka;
 
 public class KafkaClient : IKafkaClient

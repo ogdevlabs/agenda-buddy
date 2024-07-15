@@ -1,19 +1,17 @@
 namespace Customer.Requests;
 
 [ExcludeFromCodeCoverage]
-public class RequestCollection(IKafkaClient kafkaClient) : IRequestCollection
+public class RequestCollection: IRequestCollection
 {
     public async Task<string> AddCustomerRequest(IMediator mediator, CustomerService customerService,
         CustomerEntity customerEntity)
     {
         var result = await new AddCustomerCommandHandler(
                 mediator,
-                ((kafkaClient as KafkaClient)!),
                 customerService,
                 customerEntity)
             .Handle(
-                new AddCustomerCommand { CustomerEntity = customerEntity },
-                new CancellationToken());
+                new AddCustomerCommand(), new CancellationToken());
 
         return result;
     }

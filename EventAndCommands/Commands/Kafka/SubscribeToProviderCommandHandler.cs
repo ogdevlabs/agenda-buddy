@@ -1,6 +1,4 @@
-using Kafka.Producer;
-
-namespace EventAndCommands.Commands.Customer;
+namespace EventAndCommands.Commands.Kafka;
 
 public class SubscribeToProviderCommandHandler(
     IMediator mediator,

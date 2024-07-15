@@ -54,6 +54,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Profession", "Profession\Pr
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Profession.Tests", "Profession.Tests\Profession.Tests.csproj", "{C329E6EA-10EF-4645-88DB-1DA3DB57DA05}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KakfaService", "KafkaService\KakfaService\KakfaService.csproj", "{3D5A8005-B6CF-4D5D-836C-170BA3C91B65}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -78,6 +80,7 @@ Global
 		{4DCDB713-81A8-4C66-B836-CEAE61794EC6} = {EF5C5557-E1D0-4E8B-830B-B2B0C22940BD}
 		{C2A02334-C503-4274-A884-674FA7A45504} = {EDBB591F-1A12-4026-9329-798F8A04E029}
 		{C329E6EA-10EF-4645-88DB-1DA3DB57DA05} = {EDBB591F-1A12-4026-9329-798F8A04E029}
+		{3D5A8005-B6CF-4D5D-836C-170BA3C91B65} = {4273DC90-AB4D-4C8C-BD25-240F38DF6133}
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{49D2389C-97DF-4FE5-B080-F5252B2DDC9F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -152,5 +155,9 @@ Global
 		{C329E6EA-10EF-4645-88DB-1DA3DB57DA05}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C329E6EA-10EF-4645-88DB-1DA3DB57DA05}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C329E6EA-10EF-4645-88DB-1DA3DB57DA05}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3D5A8005-B6CF-4D5D-836C-170BA3C91B65}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3D5A8005-B6CF-4D5D-836C-170BA3C91B65}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3D5A8005-B6CF-4D5D-836C-170BA3C91B65}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3D5A8005-B6CF-4D5D-836C-170BA3C91B65}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

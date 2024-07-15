@@ -2,8 +2,8 @@ using Provider.Events;
 
 namespace Provier.Tests.Events;
 
-[TestSubject(typeof(EventsHelper))]
-public class EventsHelperTest
+[TestSubject(typeof(ProviderEvents))]
+public class ProviderEventsTest
 {
 
     [Fact]

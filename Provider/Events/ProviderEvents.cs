@@ -1,6 +1,6 @@
 namespace Provider.Events;
 
-public static class EventsHelper
+public static class ProviderEvents
 {
     public static async Task<string> AddProviderEvent(
         IRequestCollection requestCollection,

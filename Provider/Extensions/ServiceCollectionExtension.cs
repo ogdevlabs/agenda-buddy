@@ -1,5 +1,3 @@
-using Kafka.Producer;
-
 namespace Provider.Extensions;
 
 public static class ServiceCollectionExtension
@@ -21,7 +19,7 @@ public static class ServiceCollectionExtension
         serviceCollection.AddScoped<IRepository<ProfessionEntity>>(
             _ => new MongoDbRepository<ProfessionEntity>(database,
                 configuration.GetSection("MongoDB")["ProfessionsCollection"]!));
-
+        
         serviceCollection.AddScoped<ProviderService>();
         serviceCollection.AddScoped<ServiceService>();
         serviceCollection.AddScoped<ProfessionService>();
@@ -33,6 +31,20 @@ public static class ServiceCollectionExtension
         IConfiguration configuration)
     {
         serviceCollection.AddSingleton<KafkaProducer>(sp => new KafkaProducer(configuration.GetSection("Kafka")["BootstrapServers"]!));
+        return serviceCollection;
+    }
+
+
+    public static IServiceCollection AddKakfaServices(this IServiceCollection serviceCollection,
+        IConfiguration configuration)
+    {
+        serviceCollection.AddSingleton<IProducer<Null, string>>(sp =>
+        {
+            var getKafkaConfig = configuration.GetSection("Kafka")["BootstrapServers"]!;
+            var config = new ProducerConfig { BootstrapServers = getKafkaConfig };
+            return new ProducerBuilder<Null, string>(config).Build();
+        });
+
         return serviceCollection;
     }
 }

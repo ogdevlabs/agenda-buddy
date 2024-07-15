@@ -28,4 +28,18 @@ public static class ServiceCollectionExtensions
         serviceCollection.AddSingleton<KafkaProducer>(sp => new KafkaProducer(configuration.GetSection("Kafka")["BootstrapServers"]!));
         return serviceCollection;
     }
+
+
+    public static IServiceCollection AddKakfaServices(this IServiceCollection serviceCollection,
+        IConfiguration configuration)
+    {
+        serviceCollection.AddSingleton<IProducer<Null, string>>(sp =>
+        {
+            var getKafkaConfig = configuration.GetSection("Kafka")["BootstrapServers"]!;
+            var config = new ProducerConfig { BootstrapServers = getKafkaConfig };
+            return new ProducerBuilder<Null, string>(config).Build();
+        });
+
+        return serviceCollection;
+    }
 }

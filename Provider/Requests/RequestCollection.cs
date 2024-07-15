@@ -1,6 +1,6 @@
 namespace Provider.Requests;
 
-public class RequestCollection(IKafkaClient kafkaClient) : IRequestCollection
+public class RequestCollection : IRequestCollection
 {
     public async Task<string> AddProviderRequest(
         IMediator mediator,
@@ -9,12 +9,9 @@ public class RequestCollection(IKafkaClient kafkaClient) : IRequestCollection
     {
         var result = await new AddProviderCommandHandler(
                 mediator,
-                (kafkaClient as KafkaClient)!,
                 providerService,
                 providerEntity)
-            .Handle(
-                new AddProviderCommand { TopicName = providerEntity.KafkaTopic! },
-                new CancellationToken());
+            .Handle(new AddProviderCommand(), new CancellationToken());
         return result;
     }
 

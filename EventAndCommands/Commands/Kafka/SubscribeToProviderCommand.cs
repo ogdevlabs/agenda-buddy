@@ -1,6 +1,6 @@
-namespace EventAndCommands.Events.Customer;
+namespace EventAndCommands.Commands.Kafka;
 
-public class SubscribeToProviderEvent : INotification
+public class SubscribeToProviderCommand : IRequest<string>
 {
     public required CustomerSubscribedToProviderEntity CustomerSubscribedToProviderEntity { get; set; }
 }

@@ -1,3 +1,5 @@
+using System.Text.Json;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add MongoDB
@@ -15,10 +17,11 @@ builder.Services.AddMvcCore();
 // Register Singleton instances
 builder.Services.AddSingleton<IMongoDbConfiguration, MongoDbConfiguration>();
 builder.Services.AddSingleton<IRequestCollection, RequestCollection>();
+builder.Services.AddSingleton<IKafkaRequestCollection, KafkaRequestCollection>();
 
 // Kafka
-builder.Services.AddSingleton<IKafkaClient, KafkaClient>();
 builder.Services.AddKafkaBootstrap(builder.Configuration);
+builder.Services.AddKakfaServices(builder.Configuration);
 
 // Enable & configure JSON Problem Details error responses
 builder.Services.AddProblemDetails(options =>
@@ -88,28 +91,43 @@ customers.MapPost("/", async Task<Results<ValidationProblem, Created<CustomerEnt
     IMediator mediator,
     CustomerService customerService,
     CustomerEntity customerEntity,
-    IRequestCollection requestCollection) =>
+    IRequestCollection requestCollection,
+    IKafkaRequestCollection kafkaRequestCollection,
+    IProducer<Null, string> producer) =>
 {
     if (!MiniValidator.TryValidate(customerEntity, out var errors))
         return TypedResults.ValidationProblem(errors);
     var filter =
         SupportTools<CustomerEntity>.FilterByNameAndLastName(customerEntity.FirstName!, customerEntity.LastName!);
     var existingCustomer = await customerService.FindCustomerAsync(filter);
-    var topicName = KafkaHelper.CreateCustomerTopicName(customerEntity.Email!);
+    
     if (existingCustomer != null)
         return TypedResults.ValidationProblem(GenerateErrorMessage(
             "Existing record found", new[]
             {
                 $"Email:{customerEntity.Email}"
             }));
-
+    
+    // Create Kafka Customer Topic 
+    var @event = new CustomerCreatedEvent { Email = customerEntity.Email! };
+    var topicResponse =
+        await KafkaEvents.CreateCustomerTopicEvent(mediator, @event, kafkaRequestCollection, customerEntity.Email!,
+            false);
+    if (!string.IsNullOrEmpty(topicResponse))
+    {
+        customerEntity.KafkaTopic = topicResponse;
+        var message = JsonSerializer.Serialize(@event);
+        var response = await producer.ProduceAsync(topicResponse, new Message<Null, string> { Value = message });
+    }
+    
+    // Create customer
     var eventResponse =
         await EventsHelper.AddCustomerEvent(requestCollection, mediator, customerService, customerEntity);
     if (!string.IsNullOrEmpty(eventResponse) && !eventResponse.ToLower().StartsWith("exception"))
         return TypedResults.Created($"/api/v1/customers/{customerEntity.Id}", customerEntity);
 
     return TypedResults.ValidationProblem(GenerateErrorMessage(
-        "Kafka Error", new[] { "Kafka Topic", $"{topicName}" })
+        "Kafka Error", new[] { "Kafka Topic", $"{topicResponse}" })
     );
 }).WithName("CreateCustomer");
 
