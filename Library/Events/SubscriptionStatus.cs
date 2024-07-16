@@ -1,3 +1,3 @@
 namespace Library.Events;
 
-public record SubscriptionStatus();
+public record SubscriptionStatus(string ConsumerEmail, string Status);

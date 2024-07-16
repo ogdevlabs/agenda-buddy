@@ -1,6 +1,7 @@
 // Global using directives
 
 global using System.Diagnostics;
+global using System.Diagnostics.CodeAnalysis;
 global using System.Net;
 global using System.Text.Json;
 global using System.Text.Json.Serialization;
@@ -8,10 +9,14 @@ global using Confluent.Kafka;
 global using EventAndCommands.Commands.Kafka;
 global using EventAndCommands.Commands.Provider;
 global using EventAndCommands.Events.Kafka;
+global using EventAndCommands.Messages;
 global using EventAndCommands.Queries.Provider;
 global using Kafka;
 global using Kafka.Producer;
 global using Kafka.Support;
+global using KafkaFlow;
+global using KafkaFlow.Producers;
+global using KafkaFlow.Serializer;
 global using Library.Entities;
 global using Library.Repositories;
 global using Library.Services;
@@ -29,4 +34,5 @@ global using Provider.Configurations;
 global using Provider.Events;
 global using Provider.Extensions;
 global using Provider.Requests;
+global using Acks = KafkaFlow.Acks;
 global using ProviderService = Library.Services.ProviderService;

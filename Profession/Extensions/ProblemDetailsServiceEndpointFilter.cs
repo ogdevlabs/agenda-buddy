@@ -1,11 +1,6 @@
-namespace Customer.Extensions;
+namespace Profession.Extensions;
 
 [ExcludeFromCodeCoverage]
-/// <summary>
-///     Defines an endpoint filter that modifies <see cref="ProblemHttpResult" /> instances returned by route handler
-///     delegates
-///     using the <see cref="IProblemDetailsService" />.
-/// </summary>
 public class ProblemDetailsServiceEndpointFilter : IEndpointFilter
 {
     public async ValueTask<object?> InvokeAsync(EndpointFilterInvocationContext context, EndpointFilterDelegate next)

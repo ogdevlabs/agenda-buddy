@@ -2,6 +2,6 @@ namespace Customer.Requests;
 
 public interface IKafkaRequestCollection
 {
-    public Task<string> CreateCustomerTopic(IMediator mediator, CustomerCreatedEvent @event, string customerEmail,
-        bool providerFlag);
+    public Task<string> GenerateSubscriptionMessage(IProducerAccessor producerAccessor,
+        CustomerSubscribedToProviderEntity customerSubscribedToProviderEntity, string producerName);
 }

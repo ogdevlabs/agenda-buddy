@@ -1,5 +1,3 @@
-using System.Text.Json;
-
 var builder = WebApplication.CreateBuilder(args);
 
 // Add MongoDB
@@ -20,8 +18,7 @@ builder.Services.AddSingleton<IRequestCollection, RequestCollection>();
 builder.Services.AddSingleton<IKafkaRequestCollection, KafkaRequestCollection>();
 
 // Kafka
-builder.Services.AddKafkaBootstrap(builder.Configuration);
-builder.Services.AddKakfaServices(builder.Configuration);
+builder.Services.AddKafkaCustomerConfiguration(builder.Configuration);
 
 // Enable & configure JSON Problem Details error responses
 builder.Services.AddProblemDetails(options =>
@@ -87,48 +84,34 @@ var customers = app.MapGroup("/api/v1/customers")
     .WithOpenApi()
     .AddEndpointFilter<ProblemDetailsServiceEndpointFilter>();
 
-customers.MapPost("/", async Task<Results<ValidationProblem, Created<CustomerEntity>>> (
+customers.MapPost("/", async Task<Results<ValidationProblem, Created<CustomerEntity>, BadRequest>> (
     IMediator mediator,
     CustomerService customerService,
     CustomerEntity customerEntity,
-    IRequestCollection requestCollection,
-    IKafkaRequestCollection kafkaRequestCollection,
-    IProducer<Null, string> producer) =>
+    IRequestCollection requestCollection) =>
 {
     if (!MiniValidator.TryValidate(customerEntity, out var errors))
         return TypedResults.ValidationProblem(errors);
     var filter =
         SupportTools<CustomerEntity>.FilterByNameAndLastName(customerEntity.FirstName!, customerEntity.LastName!);
     var existingCustomer = await customerService.FindCustomerAsync(filter);
-    
+
     if (existingCustomer != null)
         return TypedResults.ValidationProblem(GenerateErrorMessage(
             "Existing record found", new[]
             {
                 $"Email:{customerEntity.Email}"
             }));
-    
-    // Create Kafka Customer Topic 
-    var @event = new CustomerCreatedEvent { Email = customerEntity.Email! };
-    var topicResponse =
-        await KafkaEvents.CreateCustomerTopicEvent(mediator, @event, kafkaRequestCollection, customerEntity.Email!,
-            false);
-    if (!string.IsNullOrEmpty(topicResponse))
-    {
-        customerEntity.KafkaTopic = topicResponse;
-        var message = JsonSerializer.Serialize(@event);
-        var response = await producer.ProduceAsync(topicResponse, new Message<Null, string> { Value = message });
-    }
-    
+
     // Create customer
     var eventResponse =
         await EventsHelper.AddCustomerEvent(requestCollection, mediator, customerService, customerEntity);
-    if (!string.IsNullOrEmpty(eventResponse) && !eventResponse.ToLower().StartsWith("exception"))
+    if (!string.IsNullOrEmpty(eventResponse))
+    {
         return TypedResults.Created($"/api/v1/customers/{customerEntity.Id}", customerEntity);
+    }
 
-    return TypedResults.ValidationProblem(GenerateErrorMessage(
-        "Kafka Error", new[] { "Kafka Topic", $"{topicResponse}" })
-    );
+    return TypedResults.BadRequest();
 }).WithName("CreateCustomer");
 
 customers.MapPut("/{email}",
@@ -174,21 +157,14 @@ customers.MapGet("/{email}", async Task<Results<Ok<CustomerEntity>, NotFound>> (
     return TypedResults.NotFound();
 }).WithName("GetCustomerByEmail");
 
-customers.MapPost("/subscribe",
-    async Task<Results<ValidationProblem, NotFound, Accepted>> (IRequestCollection requestCollection,
-        IMediator mediator, [FromBody] CustomerSubscribedToProviderEntity customerSubscribedToProviderEntity,
-        KafkaProducer kafkaProducer) =>
-    {
-        if (!MiniValidator.TryValidate(customerSubscribedToProviderEntity, out var errors))
-            return TypedResults.ValidationProblem(errors);
-        var message =
-            await EventsHelper.SubscribeToProviderEvent(requestCollection, mediator, customerSubscribedToProviderEntity,
-                kafkaProducer);
-
-        if (!string.IsNullOrEmpty(message)) return TypedResults.Accepted("api/v1/customers");
-
-        return TypedResults.NotFound();
-    }).WithName("SubscribeToProvider");
+customers.MapPost("/subscribeToProvider", async (IKafkaRequestCollection kafkaRequestCollection,
+    [FromBody] CustomerSubscribedToProviderEntity customerSubscribedToProviderEntity,
+    IProducerAccessor producerAccessor) =>
+{
+    await KafkaEvents.SubscribeToProviderEvent(kafkaRequestCollection, producerAccessor, customerSubscribedToProviderEntity,
+        "agenda-buddy-customer-producer");
+    return Results.Ok();
+}).WithName("SubscribeToProvider");
 
 app.Run();
 

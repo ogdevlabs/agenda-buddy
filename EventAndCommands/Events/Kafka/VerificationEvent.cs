@@ -1,6 +1,6 @@
 namespace EventAndCommands.Events.Kafka;
 
-public class VerificationEvent
+public class VerificationEvent : INotification
 {
-    
+    public Verification? Verification;
 }

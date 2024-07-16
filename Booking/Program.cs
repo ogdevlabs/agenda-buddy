@@ -13,8 +13,10 @@ builder.Services.AddMvcCore();
 
 // Register Singleton instances
 builder.Services.AddSingleton<IMongoDbConfiguration, MongoDbConfiguration>();
-builder.Services.AddSingleton<IKafkaClient, KafkaClient>();
 builder.Services.AddSingleton<IRequestCollection, RequestCollection>();
+
+// Add Kafka
+builder.Services.AddKafkaCustomerConfiguration(builder.Configuration);
 
 // Enable & configure JSON Problem Details error responses
 builder.Services.AddProblemDetails(options =>
@@ -91,17 +93,15 @@ booking.MapPost("/appointments",
             if (!MiniValidator.TryValidate(appointmentEntity, out var errors))
                 return TypedResults.ValidationProblem(errors);
 
-            var index = appointmentEntity.EmailProvider.IndexOf('@');
-            var topicName = appointmentEntity.EmailProvider.Substring(0, index).ToLower() + "-topic";
-
             var eventResponse = await EventsHelper.BookAppointmentEvent(requestCollection, mediator, providerService,
                 bookingService,
                 appointmentEntity);
 
             if (!string.IsNullOrEmpty(eventResponse) && !eventResponse.ToLower().StartsWith("exception"))
                 return TypedResults.Created($"/api/v1/appointments/{appointmentEntity.Identifier}", appointmentEntity);
+
             return TypedResults.ValidationProblem(GenerateErrorMessage(
-                "No record match found error", new[] { "No provider", $"{appointmentEntity.EmailProvider}" }));
+                "No record match found error", ["No provider", $"{appointmentEntity.EmailProvider}"]));
         })
     .WithName("BookAppointment");
 
@@ -113,18 +113,16 @@ booking.MapPut("/appointments/",
             if (!MiniValidator.TryValidate(appointmentEntity, out var errors))
                 return TypedResults.ValidationProblem(errors);
 
-            var index = appointmentEntity.EmailProvider.IndexOf('@');
-            var topicName = appointmentEntity.EmailProvider.Substring(0, index).ToLower() + "-topic";
-
             var eventResponse = await EventsHelper.UpdateAppointmentEvent(requestCollection, mediator, providerService,
                 bookingService,
                 appointmentEntity);
 
             if (!string.IsNullOrEmpty(eventResponse) && !eventResponse.ToLower().StartsWith("exception"))
                 return TypedResults.Accepted($"/api/v1/appointments/{appointmentEntity.Identifier}", appointmentEntity);
+
             return TypedResults.ValidationProblem(GenerateErrorMessage(
                 "Update Appointment Error",
-                new[] { "Error when trying to update appointment identifier:", $"{appointmentEntity.Identifier}" }));
+                [$"Error when trying to update appointment identifier:, {appointmentEntity.Identifier}"]));
         })
     .WithName("UpdateAppointment");
 
@@ -137,18 +135,16 @@ booking.MapDelete("/appointments/",
             if (!MiniValidator.TryValidate(appointmentEntity, out var errors))
                 return TypedResults.ValidationProblem(errors);
 
-            var index = appointmentEntity.EmailProvider.IndexOf('@');
-            var topicName = appointmentEntity.EmailProvider.Substring(0, index).ToLower() + "-topic";
-
             var eventResponse = await EventsHelper.CancelAppointmentEvent(requestCollection, mediator, providerService,
                 bookingService,
                 appointmentEntity);
 
             if (!string.IsNullOrEmpty(eventResponse) && !eventResponse.ToLower().StartsWith("exception"))
                 return TypedResults.NoContent();
+
             return TypedResults.ValidationProblem(GenerateErrorMessage(
                 "Cancel Appointment Error",
-                new[] { "Error when trying to cancel appointment identifier:", $"{appointmentEntity.Identifier}" }));
+                [$"Error when trying to cancel appointment identifier:, {appointmentEntity.Identifier}"]));
         })
     .WithName("CancelAppointment");
 

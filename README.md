@@ -33,3 +33,12 @@ Terminate:
 ```
 docker compose down
 ```
+
+## Services Ports
+- Customer : 6034
+- Provider : 6030
+- Profession : 6035
+- Booking : 6033
+- Calendar : 6032
+- Services : 6031
+- Kafka : 6036

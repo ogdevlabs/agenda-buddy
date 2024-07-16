@@ -1,3 +1,3 @@
 namespace Library.Events;
 
-public record Verification();
+public record Verification(string Message);

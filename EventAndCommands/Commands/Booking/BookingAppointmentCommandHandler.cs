@@ -3,7 +3,6 @@ namespace EventAndCommands.Commands.Booking;
 [RegisterService(ServiceLifetime.Scoped)]
 public class BookingAppointmentCommandHandler(
     IMediator mediator,
-    KafkaClient? kafkaClient,
     ProviderService providerService,
     BookingService bookingService,
     AppointmentEntity appointmentEntity)

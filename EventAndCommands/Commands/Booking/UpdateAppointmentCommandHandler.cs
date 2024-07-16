@@ -2,7 +2,6 @@ namespace EventAndCommands.Commands.Booking;
 
 public class UpdateAppointmentCommandHandler(
     IMediator mediator,
-    KafkaClient? kafkaClient,
     ProviderService providerService,
     BookingService bookingService,
     AppointmentEntity appointmentEntity) : IRequestHandler<UpdateAppointmentCommand, string>

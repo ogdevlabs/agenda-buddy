@@ -110,10 +110,9 @@ professions.MapPost("/",
         if (profession != null)
         {
             return TypedResults.ValidationProblem(GenerateErrorMessage(
-                "Existing record found", new[]
-                {
+                "Existing record found", [
                     $"Name:{professionEntity.Name}"
-                }));
+                ]));
         }
 
         var eventResponse =
@@ -131,10 +130,10 @@ professions.MapGet("",
     async Task<Results<Ok<List<ProfessionEntity>>, NoContent>> (IRequestCollection requestCollection,
         IMediator mediator, ProfessionService professionService, IDistributedCache cache) =>
     {
-        var key = $"professions";
+        const string key = $"professions";
 
         var professionCollection = await cache.GetOrCreateAsync(key,
-            async token => await EventsHelper.GetAllProfessionsEvent(requestCollection, mediator, professionService));
+            async _ => await EventsHelper.GetAllProfessionsEvent(requestCollection, mediator, professionService));
 
         if (professionCollection != null) return TypedResults.Ok(professionCollection);
         return TypedResults.NoContent();
@@ -149,7 +148,7 @@ professions.MapGet("/{name}", async Task<Results<Ok<ProfessionEntity>, NotFound>
     var key = $"profession-{name}";
 
     var profession = await cache.GetOrCreateAsync(key,
-        async token =>
+        async _ =>
             await EventsHelper.GetProfessionByNameEvent(requestCollection, mediator, professionService, name));
 
     if (profession != null)

@@ -1,4 +1,7 @@
 using System.Diagnostics;
+using System.Text.Json;
+using EventAndCommands.Persitency;
+using Library.Events;
 using MiniValidation;
 
 ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls13;
@@ -38,10 +41,10 @@ message.MapPost("/create-provider-topic", async (IAdminClient adminClient, Provi
 {
     if (!MiniValidator.TryValidate(@event, out var errors))
         return TypedResults.ValidationProblem(errors);
-    
+
     var topicName = KafkaHelper.CreateProviderTopicName(@event.Email);
-    await adminClient.CreateTopicsAsync(new[]
-        { new TopicSpecification { Name = topicName, NumPartitions = 1, ReplicationFactor = 1 } });
+    await adminClient.CreateTopicsAsync(new[] { CreateTopicSpecification(topicName) });
+
     return Results.Ok();
 });
 
@@ -49,10 +52,29 @@ message.MapPost("/create-customer-topic", async (IAdminClient adminClient, Custo
 {
     if (!MiniValidator.TryValidate(@event, out var errors))
         return TypedResults.ValidationProblem(errors);
-    
+
     var topicName = KafkaHelper.CreateCustomerTopicName(@event.Email);
-    await adminClient.CreateTopicsAsync(new[]
-        { new TopicSpecification { Name = topicName, NumPartitions = 1, ReplicationFactor = 1 } });
+    await adminClient.CreateTopicsAsync(new[] { CreateTopicSpecification(topicName) });
+
+    return Results.Ok();
+});
+
+message.MapPost("/subscribe", async (IProducer<Null, string> producer, SubscriptionEvent @event) =>
+{
+    if (!MiniValidator.TryValidate(@event, out var errors))
+        return TypedResults.ValidationProblem(errors);
+    var topicName = @event.Subscription!.TopicToSubscribe;
+    var consumerEmail = @event.Subscription!.ConsumerEmail;
+    var subscriberTopic = @event.Subscription.ConsumerTopic;
+
+    // Provide subscription status to a topic
+    var statusMessage = JsonSerializer.Serialize(new SubscriptionStatus(consumerEmail, "Subscribed"));
+    await producer.ProduceAsync(subscriberTopic, new Message<Null, string> { Value = statusMessage });
+
+    // Notify topic of the new subscription
+    var verificationMessage = JsonSerializer.Serialize(new Verification("Consumer subscribed"));
+    await producer.ProduceAsync(topicName, new Message<Null, string> { Value = verificationMessage });
+
     return Results.Ok();
 });
 
@@ -62,4 +84,14 @@ app.Run();
 void CustomizeProblemDetails(ProblemDetails problemDetails, HttpContext httpContext)
 {
     problemDetails.Extensions["requestId"] = Activity.Current?.Id ?? httpContext.TraceIdentifier;
+}
+
+TopicSpecification CreateTopicSpecification(string topicName)
+{
+    return new TopicSpecification()
+    {
+        Name = topicName,
+        NumPartitions = 1,
+        ReplicationFactor = 1
+    };
 }

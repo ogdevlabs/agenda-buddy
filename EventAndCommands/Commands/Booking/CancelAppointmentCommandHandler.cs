@@ -2,7 +2,6 @@ namespace EventAndCommands.Commands.Booking;
 
 public class CancelAppointmentCommandHandler(
     IMediator mediator,
-    KafkaClient? kafkaClient,
     ProviderService providerService,
     BookingService bookingService,
     string appointmentIdentifier) : IRequestHandler<CancelAppointmentCommand, string>

@@ -63,11 +63,6 @@ services:
       context: .
       dockerfile: EventAndCommands/Dockerfile
   
-  kafka-library:
-      image: ${DOCKER_REGISTRY-}kafka:latest
-      build:
-        context: .
-        dockerfile: Kafka/Dockerfile
 
   common-library:
       image: ${DOCKER_REGISTRY-}library:latest

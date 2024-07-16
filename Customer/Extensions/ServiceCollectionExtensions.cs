@@ -22,24 +22,37 @@ public static class ServiceCollectionExtensions
         return serviceCollection;
     }
 
-    public static IServiceCollection AddKafkaBootstrap(this IServiceCollection serviceCollection,
+    public static IServiceCollection AddKafkaCustomerConfiguration(this IServiceCollection serviceCollection,
         IConfiguration configuration)
     {
-        serviceCollection.AddSingleton<KafkaProducer>(sp => new KafkaProducer(configuration.GetSection("Kafka")["BootstrapServers"]!));
-        return serviceCollection;
-    }
-
-
-    public static IServiceCollection AddKakfaServices(this IServiceCollection serviceCollection,
-        IConfiguration configuration)
-    {
-        serviceCollection.AddSingleton<IProducer<Null, string>>(sp =>
-        {
-            var getKafkaConfig = configuration.GetSection("Kafka")["BootstrapServers"]!;
-            var config = new ProducerConfig { BootstrapServers = getKafkaConfig };
-            return new ProducerBuilder<Null, string>(config).Build();
-        });
-
+        serviceCollection.AddKafka(kafka => kafka
+            .UseConsoleLog()
+            .AddCluster(cluster => cluster
+                .WithBrokers(new[] { configuration.GetSection("Kafka")["BootstrapServers"] })
+                .AddProducer("agenda-buddy-customer-producer", producer => producer
+                    .DefaultTopic("agenda-buddy-provider-topic")
+                    .WithAcks(Acks.All)
+                    .AddMiddlewares(middlewares => middlewares
+                        .AddSerializer<JsonCoreSerializer>()
+                    )
+                    .WithCompression(CompressionType.Gzip)
+                    .WithLingerMs(5)
+                )
+                .AddConsumer(consumer => consumer
+                    .Topic("agenda-buddy-customer-topic")
+                    .WithGroupId("customer-consumer-group")
+                    .WithBufferSize(100)
+                    .WithWorkersCount(3)
+                    .AddMiddlewares(middlewares => middlewares
+                        .AddDeserializer<JsonCoreDeserializer>()
+                        .AddTypedHandlers(handlers => handlers
+                            .AddHandler<NotificationMessageHandler>()
+                        )
+                    )
+                    .WithAutoCommitIntervalMs(5000)
+                )
+            )
+        );
         return serviceCollection;
     }
 }

@@ -8,13 +8,9 @@ public class AddProviderCommandHandler(
     : IRequestHandler<AddProviderCommand, string>
 {
     [InjectService] private IEventStore EventStore { get; } = new EventStore();
-
-    private string TopicName { get; set; } = string.Empty;
-
     public async Task<string> Handle(AddProviderCommand request, CancellationToken cancellationToken)
     {
         await mediator.Publish(new AddProviderEvent(), cancellationToken);
-        TopicName = providerEntity.KafkaTopic!;
         await providerService.AddProviderAsync(providerEntity);
         var successEvent = new Event
         {
@@ -25,6 +21,6 @@ public class AddProviderCommandHandler(
             Data = JsonSerializer.Serialize(providerEntity)
         };
         await EventStore.SaveAsync(successEvent);
-        return await Task.FromResult(TopicName);
+        return await Task.FromResult(providerEntity.Email);
     }
 }

@@ -146,9 +146,3 @@ void CustomizeProblemDetails(ProblemDetails problemDetails, HttpContext httpCont
 {
     problemDetails.Extensions["requestId"] = Activity.Current?.Id ?? httpContext.TraceIdentifier;
 }
-
-Dictionary<string, string[]> GenerateErrorMessage(string key, string[] values)
-{
-    var dictionary = new Dictionary<string, string[]> { { key, values } };
-    return dictionary;
-}

@@ -1,5 +1,3 @@
-using System.ComponentModel.DataAnnotations;
-
 namespace EventAndCommands.Events.Kafka;
 
 public class CustomerCreatedEvent : INotification

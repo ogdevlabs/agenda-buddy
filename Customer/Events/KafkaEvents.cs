@@ -2,10 +2,11 @@ namespace Customer.Events;
 
 public static class KafkaEvents
 {
-    public static async Task<string> CreateCustomerTopicEvent(IMediator mediator, CustomerCreatedEvent @event,
-        IKafkaRequestCollection kafkaRequestCollection, string email, bool flag)
+    public static async Task<string> SubscribeToProviderEvent(IKafkaRequestCollection kafkaRequestCollection,
+        IProducerAccessor producerAccessor, CustomerSubscribedToProviderEntity customerSubscribedToProviderEntity, string producerName)
     {
-        var notificationResponse = await kafkaRequestCollection.CreateCustomerTopic(mediator, @event, email, flag);
+        var notificationResponse =
+            await kafkaRequestCollection.GenerateSubscriptionMessage(producerAccessor, customerSubscribedToProviderEntity, producerName);
         return notificationResponse;
     }
 }

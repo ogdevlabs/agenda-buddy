@@ -31,4 +31,9 @@
       <ProjectReference Include="..\Library\Library.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Consumer\" />
+      <Folder Include="Extensions\" />
+    </ItemGroup>
+
 </Project>

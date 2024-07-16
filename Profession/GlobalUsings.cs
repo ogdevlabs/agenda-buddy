@@ -3,7 +3,6 @@
 global using System.Diagnostics;
 global using System.Diagnostics.CodeAnalysis;
 global using System.Net;
-global using Customer.Extensions;
 global using EventAndCommands.Commands.Profession;
 global using EventAndCommands.Queries.Professions;
 global using Library.Data;

@@ -2,7 +2,7 @@ namespace Profession.Extensions;
 [ExcludeFromCodeCoverage]
 public static class HttpContextExtensions
 {
-    private static readonly MediaTypeHeaderValue _jsonMediaType = new("application/json");
+    private static readonly MediaTypeHeaderValue JsonMediaType = new("application/json");
 
     /// <summary>
     ///     Determines if the request accepts responses formatted as JSON via the <c>Accepts</c> header.
@@ -11,7 +11,7 @@ public static class HttpContextExtensions
     /// <returns><c>true</c> if the <c>Accept</c> header contains a media type compatible with "application/json".</returns>
     public static bool AcceptsJson(this HttpRequest httpRequest)
     {
-        return Accepts(httpRequest, _jsonMediaType);
+        return Accepts(httpRequest, JsonMediaType);
     }
 
     /// <summary>
@@ -34,7 +34,7 @@ public static class HttpContextExtensions
     public static bool Accepts(this HttpRequest httpRequest, MediaTypeHeaderValue mediaType)
     {
         if (httpRequest.GetTypedHeaders().Accept is { Count: > 0 } acceptHeader)
-            return acceptHeader.Any(acceptHeaderValue => mediaType.IsSubsetOf(acceptHeaderValue));
+            return acceptHeader.Any(mediaType.IsSubsetOf);
 
         return false;
     }

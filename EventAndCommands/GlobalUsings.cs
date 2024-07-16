@@ -1,5 +1,6 @@
 // Global using directives
 
+global using System.ComponentModel.DataAnnotations;
 global using System.Diagnostics.CodeAnalysis;
 global using System.Net;
 global using System.Reflection;
@@ -16,7 +17,9 @@ global using EventAndCommands.Persitency;
 global using Kafka;
 global using Kafka.Producer;
 global using Kafka.Support;
+global using KafkaFlow;
 global using Library.Entities;
+global using Library.Events;
 global using Library.Services;
 global using Library.Tools;
 global using MediatR;

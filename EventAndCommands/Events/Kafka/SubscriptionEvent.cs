@@ -1,6 +1,6 @@
 namespace EventAndCommands.Events.Kafka;
 
-public class SubscriptionEvent
+public class SubscriptionEvent : INotification
 {
-    
+    public Subscription? Subscription;
 }

@@ -1,14 +1,14 @@
 namespace Booking.Requests;
 
 [ExcludeFromCodeCoverage]
-public class RequestCollection(IKafkaClient kafkaClient) : IRequestCollection
+public class RequestCollection : IRequestCollection
 {
     public async Task<string> BookAppointmentRequest(IMediator mediator, ProviderService providerService,
         BookingService bookingService,
         AppointmentEntity appointmentEntity)
     {
         var result =
-            await new BookingAppointmentCommandHandler(mediator, kafkaClient as KafkaClient, providerService,
+            await new BookingAppointmentCommandHandler(mediator, providerService,
                 bookingService,
                 appointmentEntity).Handle(new BookAppointmentCommand { AppointmentEntity = appointmentEntity },
                 new CancellationToken());
@@ -20,7 +20,7 @@ public class RequestCollection(IKafkaClient kafkaClient) : IRequestCollection
         AppointmentEntity appointmentEntity)
     {
         var result =
-            await new UpdateAppointmentCommandHandler(mediator, kafkaClient as KafkaClient, providerService,
+            await new UpdateAppointmentCommandHandler(mediator, providerService,
                 bookingService,
                 appointmentEntity).Handle(new UpdateAppointmentCommand { AppointmentEntity = appointmentEntity },
                 new CancellationToken());
@@ -30,7 +30,7 @@ public class RequestCollection(IKafkaClient kafkaClient) : IRequestCollection
     public async Task<string> CancelAppointmentRequest(IMediator mediator, ProviderService providerService,
         BookingService bookingService, string identifier)
     {
-        var result = await new CancelAppointmentCommandHandler(mediator, kafkaClient as KafkaClient, providerService,
+        var result = await new CancelAppointmentCommandHandler(mediator, providerService,
                 bookingService, identifier)
             .Handle(new CancelAppointmentCommand { Identifier = identifier }, new CancellationToken());
         return result;

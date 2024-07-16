@@ -19,12 +19,12 @@ builder.Services.AddMvcCore();
 builder.Services.AddSingleton<IMongoDbConfiguration, MongoDbConfiguration>();
 
 // Kafka
-builder.Services.AddKafkaBootstrap(builder.Configuration);
-builder.Services.AddKakfaServices(builder.Configuration);
+builder.Services.AddKafkaProviderConfiguration(builder.Configuration);
+//builder.Services.AddKakfaServices(builder.Configuration);
 
 // Singleton Services
 builder.Services.AddSingleton<IRequestCollection, RequestCollection>();
-builder.Services.AddSingleton<IKafkaRequestCollection, KafkaRequestCollection>();
+//builder.Services.AddSingleton<IKafkaRequestCollection, KafkaRequestCollection>();
 
 // Enable & configure JSON Problem Details error responses
 builder.Services.AddProblemDetails(options =>
@@ -96,16 +96,16 @@ var providers = app.MapGroup("/api/v1/providers")
 
 // Create a Provider, verifying for duplicate record
 // create a Topic for the provider
-providers.MapPost("/", async Task<Results<ValidationProblem, Created<ProviderEntity>>> (
+providers.MapPost("/", async Task<Results<ValidationProblem, Created<ProviderEntity>, BadRequest>> (
         IMediator mediator,
         ProviderService providerService,
         ProviderEntity providerEntity,
         IRequestCollection requestCollection,
-        IKafkaRequestCollection kafkaRequestCollection,
-        IProducer<Null, string> producer) =>
+        IProducerAccessor producerAccessor) =>
     {
         if (!MiniValidator.TryValidate(providerEntity, out var errors))
             return TypedResults.ValidationProblem(errors);
+
         var filter =
             SupportTools<ProviderEntity>.FilterByNameAndLastName(providerEntity.FirstName, providerEntity.LastName);
 
@@ -117,27 +117,19 @@ providers.MapPost("/", async Task<Results<ValidationProblem, Created<ProviderEnt
                     $"Email:{providerEntity.Email}"
                 }));
 
-        // Create Kafka Provider Topic
-        var @event = new ProviderCreatedEvent { Email = providerEntity.Email };
-        var topicResponse =
-            await KafkaEvents.CreateProviderTopicEvent(mediator, @event, kafkaRequestCollection, providerEntity.Email,
-                true);
-        if (!string.IsNullOrEmpty(topicResponse))
-        {
-            providerEntity.KafkaTopic = topicResponse;
-            var message = JsonSerializer.Serialize(@event);
-            var response = await producer.ProduceAsync(topicResponse, new Message<Null, string> { Value = message });
-        }
-
         // Create Provider
         var eventResponse =
             await ProviderEvents.AddProviderEvent(requestCollection, mediator, providerService, providerEntity);
-        if (!string.IsNullOrEmpty(eventResponse) && !eventResponse.ToLower().StartsWith("exception"))
+        if (!string.IsNullOrEmpty(eventResponse) &&
+            !eventResponse.StartsWith("exception", StringComparison.CurrentCultureIgnoreCase))
+        {
+            var producer = producerAccessor.GetProducer("agenda-buddy-provider-producer");
+            await producer.ProduceAsync("agenda-buddy-provider-producer",
+                $"Provider was created, email: {providerEntity.Email}");
             return TypedResults.Created($"/api/v1/providers/{providerEntity.Id}", providerEntity);
+        }
 
-        return TypedResults.ValidationProblem(GenerateErrorMessage(
-            "Kafka Error", new[] { "Kafka Topic", $"{topicResponse}" })
-        );
+        return TypedResults.BadRequest();
     })
     .WithName("CreateProvider");
 
