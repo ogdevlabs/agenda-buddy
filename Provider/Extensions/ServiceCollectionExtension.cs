@@ -1,3 +1,5 @@
+using KafkaFlow.Retry;
+
 namespace Provider.Extensions;
 
 [ExcludeFromCodeCoverage]
@@ -53,6 +55,14 @@ public static class ServiceCollectionExtension
                         .AddDeserializer<JsonCoreDeserializer>()
                         .AddTypedHandlers(handlers => handlers
                             .AddHandler<NotificationMessageHandler>()
+                        )
+                        .RetrySimple(
+                            (config) => config
+                                .HandleAnyException()
+                                .TryTimes(3)
+                                .WithTimeBetweenTriesPlan(
+                                    (retryCount) => TimeSpan.FromMilliseconds(Math.Pow(2, retryCount) * 1000)
+                                )
                         )
                     )
                     .WithAutoCommitIntervalMs(5000)

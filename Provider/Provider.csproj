@@ -10,6 +10,7 @@
 
     <ItemGroup>
         <PackageReference Include="KafkaFlow" Version="3.0.9" />
+        <PackageReference Include="KafkaFlow.Retry" Version="3.0.1" />
         <PackageReference Include="KafkaFlow.TypedHandler" Version="2.5.1" />
         <PackageReference Include="MediatR" Version="12.2.0"/>
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.3"/>
