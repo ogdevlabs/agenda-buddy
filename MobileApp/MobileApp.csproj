@@ -1,0 +1,44 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <!--
+            CI or local dev without MAUI workloads: pass /p:MobileWorkloads=false to build on net10.0.
+            Full mobile build (iOS + Android): requires 'dotnet workload install maui' or CI with workloads.
+            Default is mobile TFMs so Visual Studio / Rider picks up the correct build.
+        -->
+        <MobileWorkloads Condition="'$(MobileWorkloads)' == ''">true</MobileWorkloads>
+        <TargetFrameworks Condition="'$(MobileWorkloads)' == 'true'">net10.0-android;net10.0-ios</TargetFrameworks>
+        <TargetFrameworks Condition="'$(MobileWorkloads)' != 'true'">net10.0</TargetFrameworks>
+        <UseMaui Condition="'$(MobileWorkloads)' == 'true'">true</UseMaui>
+        <UseMaui Condition="'$(MobileWorkloads)' != 'true'">false</UseMaui>
+        <RootNamespace>MobileApp</RootNamespace>
+        <AssemblyName>MobileApp</AssemblyName>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <SingleProject Condition="'$(MobileWorkloads)' == 'true'">true</SingleProject>
+        <DefineConstants Condition="'$(UseMaui)' == 'true'">$(DefineConstants);MOBILE</DefineConstants>
+        <ApplicationTitle>Agenda Buddy</ApplicationTitle>
+        <ApplicationId>com.fererelabs.agendabuddy</ApplicationId>
+        <ApplicationVersion>1</ApplicationVersion>
+        <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="CommunityToolkit.Maui" Version="9.1.1" Condition="'$(UseMaui)' == 'true'" />
+        <PackageReference Include="CommunityToolkit.Mvvm" Version="8.3.2" />
+        <PackageReference Include="Plugin.Firebase.CloudMessaging" Version="2.0.11" Condition="'$(UseMaui)' == 'true'" />
+        <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Library\Library.csproj" />
+    </ItemGroup>
+
+    <!-- App resources (only when building MAUI targets) -->
+    <ItemGroup Condition="'$(UseMaui)' == 'true'">
+        <MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" Color="#512BD4" />
+        <MauiSplashScreen Include="Resources\Splash\splash.svg" Color="#512BD4" BaseSize="128,128" />
+        <MauiFont Include="Resources\Fonts\*" />
+    </ItemGroup>
+
+</Project>

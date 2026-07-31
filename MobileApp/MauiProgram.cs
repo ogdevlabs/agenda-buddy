@@ -1,0 +1,59 @@
+#if MOBILE
+using CommunityToolkit.Maui;
+using Microsoft.Extensions.Logging;
+using MobileApp.Infrastructure;
+using MobileApp.Services;
+using MobileApp.ViewModels;
+using MobileApp.Views;
+
+namespace MobileApp;
+
+public static class MauiProgram
+{
+    public static MauiApp CreateMauiApp()
+    {
+        var builder = MauiApp.CreateBuilder();
+
+        builder
+            .UseMauiApp<App>()
+            .UseMauiCommunityToolkit();
+
+        builder.Configuration.AddJsonFile("appsettings.json", optional: true, reloadOnChange: false);
+
+#if DEBUG
+        builder.Configuration.AddJsonFile("appsettings.Development.json", optional: true, reloadOnChange: false);
+        builder.Logging.AddDebug();
+#endif
+
+        // HTTP client with named client and JWT delegating handler
+        builder.Services.AddTransient<JwtDelegatingHandler>();
+        builder.Services.AddHttpClient("AgendaBuddyApi", client =>
+        {
+            client.BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"] ?? "https://localhost");
+        }).AddHttpMessageHandler<JwtDelegatingHandler>();
+
+        // API services
+        builder.Services.AddTransient<IAuthService, AuthService>();
+        builder.Services.AddTransient<IBookingApiService, BookingApiService>();
+        builder.Services.AddTransient<ICalendarApiService, CalendarApiService>();
+        builder.Services.AddTransient<ICustomerApiService, CustomerApiService>();
+        builder.Services.AddTransient<IMessagingApiService, MessagingApiService>();
+        builder.Services.AddTransient<INotificationApiService, NotificationApiService>();
+
+        // ViewModels
+        builder.Services.AddTransient<LoginViewModel>();
+        builder.Services.AddTransient<DashboardViewModel>();
+        builder.Services.AddTransient<AppointmentDetailViewModel>();
+        builder.Services.AddTransient<CalendarViewModel>();
+        builder.Services.AddTransient<CustomersViewModel>();
+        builder.Services.AddTransient<MessagingViewModel>();
+        builder.Services.AddTransient<MessageThreadViewModel>();
+        builder.Services.AddTransient<NotificationsViewModel>();
+
+        // Views
+        builder.Services.AddTransient<LoginPage>();
+
+        return builder.Build();
+    }
+}
+#endif
