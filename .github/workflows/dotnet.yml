@@ -1,33 +1,58 @@
-# This workflow will build a .NET project
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
-
-name: .NET
+name: .NET CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 jobs:
-  build:
-
-    runs-on: ubuntu-latest
+  build-and-test:
+    runs-on: ubuntu-24.04
 
     steps:
       - uses: actions/checkout@v4
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 8.0.x
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
       - name: Restore dependencies
         run: dotnet restore
+
       - name: Build
-        run: dotnet build --no-restore
-      - name: Run tests with coverage
-        run: dotnet test --no-build --collect:"XPlat Code Coverage"
-      - name: Publish code coverage
+        run: dotnet build --no-restore --configuration Release
+
+      - name: Test
+        run: >
+          dotnet test
+          --no-build
+          --configuration Release
+          --collect:"XPlat Code Coverage"
+          --logger "trx;LogFileName=test-results.trx"
+          --results-directory ./TestResults
+
+      - name: Publish test results
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: .NET Tests
+          path: "**/TestResults/*.trx"
+          reporter: dotnet-trx
+
+      - name: Upload coverage
         uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: code-coverage
-          path: '**/coverage.cobertura.xml'
+          path: "**/coverage.cobertura.xml"
+          if-no-files-found: warn
