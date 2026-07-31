@@ -115,7 +115,9 @@ professions.MapPost("/",
         return TypedResults.ValidationProblem(GenerateErrorMessage(
             "Error", ["Error adding profession:", $"{professionEntity.Name}"])
         );
-    }).WithName("CreateProfession");
+    })
+    .WithName("CreateProfession")
+    .RequireAuthorization();
 
 professions.MapGet("",
     async Task<Results<Ok<List<ProfessionEntity>>, NoContent>> (IRequestCollection requestCollection,
