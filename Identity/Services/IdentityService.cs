@@ -215,7 +215,7 @@ public class IdentityService(
         return (accessToken, refreshOpaque, refreshHash);
     }
 
-    internal static string HashToken(string token)
+    public static string HashToken(string token)
     {
         var bytes = System.Text.Encoding.UTF8.GetBytes(token);
         var hash = SHA256.HashData(bytes);

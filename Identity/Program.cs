@@ -111,7 +111,7 @@ auth.MapPost("/login", async (LoginRequest req, IdentityService svc) =>
         var result = await svc.LoginAsync(req.Email, req.Password);
         return Results.Ok(new { accessToken = result!.AccessToken, refreshToken = result.RefreshToken });
     }
-    catch (UnauthorizedException ex) { return Results.Unauthorized(); }
+    catch (UnauthorizedException) { return Results.Unauthorized(); }
     catch (ServiceUnavailableException ex) { return Results.Problem(detail: ex.Message, statusCode: 503, title: "service_unavailable"); }
 }).WithName("Login");
 
@@ -124,7 +124,7 @@ auth.MapPost("/refresh", async (RefreshRequest req, IdentityService svc) =>
         var result = await svc.RefreshAsync(req.RefreshToken);
         return Results.Ok(new { accessToken = result!.AccessToken, refreshToken = result.RefreshToken });
     }
-    catch (UnauthorizedException ex) { return Results.Unauthorized(); }
+    catch (UnauthorizedException) { return Results.Unauthorized(); }
     catch (ServiceUnavailableException ex) { return Results.Problem(detail: ex.Message, statusCode: 503, title: "service_unavailable"); }
 }).WithName("RefreshToken");
 
