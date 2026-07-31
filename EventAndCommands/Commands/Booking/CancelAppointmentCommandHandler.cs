@@ -1,3 +1,4 @@
+#pragma warning disable CS9113 // Primary constructor parameter unused — kafkaClient reserved for future Kafka publishing
 namespace EventAndCommands.Commands.Booking;
 
 public class CancelAppointmentCommandHandler(

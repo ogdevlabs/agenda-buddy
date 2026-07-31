@@ -27,6 +27,8 @@
         <SingleProject Condition="'$(MobileWorkloads)' == 'true'">true</SingleProject>
         <!-- MOBILE is true only for the actual mobile TFMs, not the net10.0 fallback slice -->
         <DefineConstants Condition="'$(TargetFramework)' == 'net10.0-android' OR '$(TargetFramework)' == 'net10.0-ios'">$(DefineConstants);MOBILE</DefineConstants>
+        <!-- Suppress MA002: explicit package refs are managed via Directory.Build.props overrides -->
+        <SkipValidateMauiImplicitPackageReferences>true</SkipValidateMauiImplicitPackageReferences>
         <ApplicationTitle>Agenda Buddy</ApplicationTitle>
         <ApplicationId>com.fererelabs.agendabuddy</ApplicationId>
         <ApplicationVersion>1</ApplicationVersion>
@@ -36,7 +38,7 @@
     <ItemGroup>
         <PackageReference Include="CommunityToolkit.Maui" Version="9.1.1" Condition="'$(UseMaui)' == 'true'" />
         <PackageReference Include="CommunityToolkit.Mvvm" Version="8.3.2" />
-        <PackageReference Include="Plugin.Firebase.CloudMessaging" Version="2.0.11" Condition="'$(UseMaui)' == 'true'" />
+        <PackageReference Include="Plugin.Firebase.CloudMessaging" Version="3.0.0" Condition="'$(UseMaui)' == 'true'" />
         <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.0" />
     </ItemGroup>
 
