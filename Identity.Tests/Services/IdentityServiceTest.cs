@@ -10,6 +10,7 @@ using Xunit;
 
 namespace Identity.Tests.Services;
 
+[Collection("Sequential")]
 public class IdentityServiceTest : IDisposable
 {
     private readonly string _publicKeyPem;
