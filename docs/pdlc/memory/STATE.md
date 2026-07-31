@@ -5,35 +5,35 @@
      Claude reads this file at the start of every session to auto-resume from the last checkpoint.
      If this file is missing or empty, PDLC will prompt you to run /pdlc init. -->
 
-**Last updated:** 2026-07-31T08:30:00Z
+**Last updated:** 2026-07-30T22:00:00Z
 
 ---
 
 ## Current Phase
 
-Construction
+Inception
 
 ---
 
 ## Current Feature
 
-auth-and-identity
+upgrade-to-net10
 
 ---
 
 ## Active Beads Task
 
-None — all 10 F-001 tasks complete
+agenda-buddy-6iu — upgrade-to-net10
 
 ---
 
 ## Roadmap Claim
 
-- **Feature ID:** F-001
-- **Beads task:** agenda-buddy-fmb
+- **Feature ID:** F-011
+- **Beads task:** agenda-buddy-6iu
 - **Claimed by:** oscargarcia@ogdevlabs.onmicrosoft.com
-- **Claimed at:** 2026-07-30T00:02:00Z
-- **Branch:** feature/auth-and-identity
+- **Claimed at:** 2026-07-30T22:00:00Z
+- **Branch:** (will be set at build pre-flight)
 
 ---
 
@@ -45,13 +45,13 @@ _None active. Run `/night-shift <F-NNN>` to start an autonomous run (requires by
 
 ## Current Sub-phase
 
-Wrap-Up
+Discover
 
 ---
 
 ## Last Checkpoint
 
-Construction / Wrap-Up / 2026-07-31T08:30:00Z
+Inception / Discover / 2026-07-30T22:00:00Z
 
 ---
 
