@@ -1,7 +1,7 @@
 # Roadmap
 
 **Project:** Agenda Buddy
-**Last updated:** 2026-07-30
+**Last updated:** 2026-07-30T22:00:00Z
 
 ---
 
@@ -30,6 +30,7 @@
 | F-008 | journal-and-notes | Provider can attach private session notes to each appointment; visible only to the provider | 8 | Planned | — | — | — |
 | F-009 | reporting-dashboard | Provider sees their booking volume, revenue summary (from service fees), and customer retention metrics | 9 | Planned | — | — | — |
 | F-010 | payment-integration | Connect a payment gateway (Stripe) so providers can collect fees at booking time | 10 | Planned | — | — | — |
+| F-011 | upgrade-to-net10 | Upgrade all projects from .NET 8 to .NET 10 LTS — TFMs, NuGet packages, Docker base images, CI workflow | 11 | In Progress | oscargarcia@ogdevlabs.onmicrosoft.com | — | — |
 
 ---
 
