@@ -56,3 +56,78 @@ jobs:
           name: code-coverage
           path: "**/coverage.cobertura.xml"
           if-no-files-found: warn
+
+  # ---------------------------------------------------------------------------
+  # Mobile builds — build verification only (v1).
+  # No code signing, no App Store upload. These jobs are independent of the
+  # main .NET backend build and do not block each other.
+  # ---------------------------------------------------------------------------
+
+  build-android:
+    name: "Mobile — Android Build"
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Install MAUI Android workload
+        run: dotnet workload install maui-android
+
+      - name: Restore MobileApp dependencies
+        run: dotnet restore MobileApp/MobileApp.csproj
+
+      # Build-only — no code signing or APK upload for CI v1
+      - name: Build Android (Release)
+        run: dotnet build MobileApp/MobileApp.csproj -f net10.0-android -c Release --no-restore
+
+  build-ios:
+    name: "Mobile — iOS Build"
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Install MAUI iOS workload
+        run: dotnet workload install maui-ios
+
+      - name: Restore MobileApp dependencies
+        run: dotnet restore MobileApp/MobileApp.csproj
+
+      # macOS runner required for Xcode toolchain.
+      # Build-only — no code signing or App Store upload for CI v1
+      # (PRD Known Risk: code signing deferred to a future milestone).
+      - name: Build iOS (Release)
+        run: dotnet build MobileApp/MobileApp.csproj -f net10.0-ios -c Release --no-restore
+
+  build-mobile-tests:
+    name: "Mobile — ViewModel / Service Unit Tests"
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore MobileApp.Tests dependencies
+        run: dotnet restore MobileApp.Tests/MobileApp.Tests.csproj
+
+      # Run unit tests without mobile workloads — exercises ViewModels and
+      # service logic that does not require a device or MAUI runtime.
+      - name: Test MobileApp (no mobile workloads)
+        run: >
+          dotnet test MobileApp.Tests/MobileApp.Tests.csproj
+          /p:MobileWorkloads=false
+          --collect:"XPlat Code Coverage"
