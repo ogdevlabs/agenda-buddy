@@ -1,11 +1,32 @@
 #if MOBILE
+using MobileApp.Infrastructure;
+using MobileApp.ViewModels;
+
 namespace MobileApp.Views;
 
 public partial class LoginPage : ContentPage
 {
-    public LoginPage()
+    private readonly LoginViewModel _vm;
+
+    public LoginPage(LoginViewModel vm)
     {
         InitializeComponent();
+        _vm = vm;
+        BindingContext = vm;
+
+        vm.LoginSucceeded += OnLoginSucceeded;
+        JwtDelegatingHandler.UnauthorizedAccess += OnUnauthorizedAccess;
+    }
+
+    private async void OnLoginSucceeded(object? sender, EventArgs e)
+    {
+        await Shell.Current.GoToAsync("//dashboard");
+    }
+
+    private async void OnUnauthorizedAccess(object? sender, EventArgs e)
+    {
+        _vm.ErrorMessage = "Your session expired. Please sign in again.";
+        await Shell.Current.GoToAsync("//LoginPage");
     }
 }
 #endif
