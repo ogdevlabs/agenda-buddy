@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             x:Class="MobileApp.Views.MessageThreadPage"
+             Title="{Binding RecipientEmail}">
+
+    <ContentPage.Resources>
+        <toolkit:InvertedBoolConverter x:Key="InvertedBoolConverter" />
+    </ContentPage.Resources>
+
+    <Grid RowDefinitions="Auto,*,Auto">
+
+        <!-- Error banner (UX F-002) -->
+        <Grid Grid.Row="0"
+              BackgroundColor="#FDECEA"
+              Padding="16,8"
+              IsVisible="{Binding HasError}">
+            <Label Text="{Binding ErrorMessage}"
+                   TextColor="#B00020"
+                   VerticalOptions="Center" />
+        </Grid>
+
+        <!-- Loading indicator -->
+        <ActivityIndicator Grid.Row="1"
+                           IsRunning="{Binding IsLoading}"
+                           IsVisible="{Binding IsLoading}"
+                           HorizontalOptions="Center"
+                           VerticalOptions="Center" />
+
+        <!-- Messages list (chronological order) -->
+        <CollectionView Grid.Row="1"
+                        ItemsSource="{Binding Messages}"
+                        IsVisible="{Binding IsLoading, Converter={StaticResource InvertedBoolConverter}}"
+                        SelectionMode="None">
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <VerticalStackLayout Padding="16,8" Spacing="2">
+                        <Label Text="{Binding SenderEmail}"
+                               FontAttributes="Bold"
+                               FontSize="13"
+                               TextColor="Gray" />
+                        <Label Text="{Binding Body}"
+                               FontSize="15" />
+                        <Label Text="{Binding SentAt, StringFormat='{0:g}'}"
+                               FontSize="11"
+                               TextColor="LightGray"
+                               HorizontalOptions="End" />
+                    </VerticalStackLayout>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <!-- Compose bar -->
+        <Grid Grid.Row="2"
+              ColumnDefinitions="*,Auto"
+              Padding="8"
+              BackgroundColor="#F5F5F5">
+            <Entry Grid.Column="0"
+                   Placeholder="Type a message..."
+                   Text="{Binding NewMessageBody}"
+                   ReturnType="Send"
+                   ReturnCommand="{Binding SendCommand}"
+                   AutomationId="MessageEntry" />
+            <Button Grid.Column="1"
+                    Text="Send"
+                    Command="{Binding SendCommand}"
+                    AutomationId="SendButton">
+                <SemanticProperties.Description>Send message</SemanticProperties.Description>
+            </Button>
+        </Grid>
+
+    </Grid>
+
+</ContentPage>

@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             x:Class="MobileApp.Views.MessagingPage"
+             Title="Messages">
+
+    <ContentPage.Resources>
+        <toolkit:InvertedBoolConverter x:Key="InvertedBoolConverter" />
+    </ContentPage.Resources>
+
+    <Grid RowDefinitions="Auto,*">
+
+        <!-- Error banner (UX F-002) -->
+        <Grid Grid.Row="0"
+              BackgroundColor="#FDECEA"
+              Padding="16,8"
+              IsVisible="{Binding HasError}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <Label Grid.Column="0"
+                   Text="{Binding ErrorMessage}"
+                   TextColor="#B00020"
+                   VerticalOptions="Center" />
+            <Button Grid.Column="1"
+                    Text="Retry"
+                    Command="{Binding LoadCommand}"
+                    BackgroundColor="Transparent"
+                    TextColor="#B00020" />
+        </Grid>
+
+        <!-- Loading indicator -->
+        <ActivityIndicator Grid.Row="1"
+                           IsRunning="{Binding IsLoading}"
+                           IsVisible="{Binding IsLoading}"
+                           HorizontalOptions="Center"
+                           VerticalOptions="Center" />
+
+        <!-- Empty state (UX F-006) -->
+        <Label Grid.Row="1"
+               Text="No messages yet — your conversations with clients will appear here."
+               IsVisible="{Binding IsEmpty}"
+               HorizontalOptions="Center"
+               VerticalOptions="Center"
+               HorizontalTextAlignment="Center"
+               Margin="32"
+               FontSize="16"
+               TextColor="Gray" />
+
+        <!-- Thread list -->
+        <CollectionView Grid.Row="1"
+                        ItemsSource="{Binding Threads}"
+                        IsVisible="{Binding IsLoading, Converter={StaticResource InvertedBoolConverter}}"
+                        SelectionMode="None">
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Grid Padding="16,12" ColumnDefinitions="*,Auto">
+                        <Grid.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnThreadTapped"
+                                                  CommandParameter="{Binding .}" />
+                        </Grid.GestureRecognizers>
+
+                        <VerticalStackLayout Grid.Column="0" Spacing="4">
+                            <Label Text="{Binding OtherPartyEmail}"
+                                   FontAttributes="Bold"
+                                   FontSize="15" />
+                            <Label Text="{Binding LastMessageBody}"
+                                   FontSize="13"
+                                   TextColor="Gray"
+                                   LineBreakMode="TailTruncation"
+                                   MaxLines="1" />
+                        </VerticalStackLayout>
+
+                        <Label Grid.Column="1"
+                               Text="{Binding UnreadCount}"
+                               IsVisible="{Binding UnreadCount}"
+                               BackgroundColor="#512BD4"
+                               TextColor="White"
+                               FontSize="12"
+                               Padding="6,2"
+                               VerticalOptions="Start"
+                               HorizontalOptions="End" />
+                    </Grid>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+    </Grid>
+
+</ContentPage>
