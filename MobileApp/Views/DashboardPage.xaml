@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="MobileApp.Views.DashboardPage"
+             Title="Today's Appointments">
+
+    <Grid RowDefinitions="Auto,Auto,*,Auto">
+
+        <!-- Error banner -->
+        <Label Grid.Row="0"
+               Text="{Binding ErrorMessage}"
+               TextColor="White"
+               BackgroundColor="Red"
+               Padding="12,8"
+               IsVisible="{Binding HasError}"
+               AutomationId="ErrorBanner" />
+
+        <!-- Try Again button (visible only when there's an error) -->
+        <Button Grid.Row="1"
+                Text="Try again"
+                Command="{Binding LoadCommand}"
+                IsVisible="{Binding HasError}"
+                HorizontalOptions="Start"
+                Margin="12,4"
+                AutomationId="TryAgainButton" />
+
+        <!-- Loading indicator -->
+        <ActivityIndicator Grid.Row="2"
+                           IsRunning="{Binding IsLoading}"
+                           IsVisible="{Binding IsLoading}"
+                           HorizontalOptions="Center"
+                           VerticalOptions="Center" />
+
+        <!-- Empty state -->
+        <Label Grid.Row="2"
+               Text="No appointments today — check your calendar for upcoming sessions."
+               IsVisible="{Binding IsEmpty}"
+               HorizontalOptions="Center"
+               VerticalOptions="Center"
+               HorizontalTextAlignment="Center"
+               Padding="24"
+               AutomationId="EmptyStateLabel" />
+
+        <!-- Appointments list -->
+        <CollectionView Grid.Row="2"
+                        ItemsSource="{Binding Appointments}"
+                        SelectionMode="Single"
+                        SelectionChanged="OnAppointmentSelected"
+                        AutomationId="AppointmentsCollection">
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Grid Padding="16,8" ColumnDefinitions="*,Auto">
+                        <VerticalStackLayout Grid.Column="0" Spacing="2">
+                            <Label Text="{Binding CustomerEmail}"
+                                   FontAttributes="Bold"
+                                   FontSize="16" />
+                            <Label Text="{Binding Status}"
+                                   FontSize="13"
+                                   TextColor="Gray" />
+                            <Label Text="{Binding ScheduledAt, StringFormat='{0:MMM d, yyyy h:mm tt}'}"
+                                   FontSize="13"
+                                   TextColor="Gray" />
+                        </VerticalStackLayout>
+                    </Grid>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+    </Grid>
+
+</ContentPage>

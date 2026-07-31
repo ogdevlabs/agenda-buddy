@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="MobileApp.Views.AppointmentDetailPage"
+             Title="Appointment">
+
+    <Grid RowDefinitions="Auto,Auto,Auto,*,Auto">
+
+        <!-- Error banner (UX F-002) -->
+        <Label Grid.Row="0"
+               Text="{Binding ErrorMessage}"
+               TextColor="White"
+               BackgroundColor="Red"
+               Padding="12,8"
+               IsVisible="{Binding HasError}"
+               AutomationId="ErrorBanner" />
+
+        <!-- Try again button (UX F-002: retry) -->
+        <Button Grid.Row="1"
+                Text="Try again"
+                Command="{Binding LoadCommand}"
+                IsVisible="{Binding HasError}"
+                HorizontalOptions="Start"
+                Margin="12,4"
+                AutomationId="TryAgainButton"
+                SemanticProperties.Description="Retry loading the appointment" />
+
+        <!-- Loading indicator -->
+        <ActivityIndicator Grid.Row="2"
+                           IsRunning="{Binding IsLoading}"
+                           IsVisible="{Binding IsLoading}"
+                           HorizontalOptions="Center"
+                           Margin="0,8" />
+
+        <!-- Details -->
+        <VerticalStackLayout Grid.Row="3"
+                             Padding="16"
+                             Spacing="8"
+                             IsVisible="{Binding HasAppointment}">
+            <Label Text="Customer" FontAttributes="Bold" />
+            <Label Text="{Binding Appointment.CustomerEmail}" AutomationId="CustomerEmailLabel" />
+
+            <Label Text="Scheduled at" FontAttributes="Bold" Margin="0,12,0,0" />
+            <Label Text="{Binding Appointment.ScheduledAt, StringFormat='{0:MMM d, yyyy h:mm tt}'}"
+                   AutomationId="ScheduledAtLabel" />
+
+            <Label Text="Status" FontAttributes="Bold" Margin="0,12,0,0" />
+            <Label Text="{Binding Appointment.Status}" AutomationId="StatusLabel" />
+        </VerticalStackLayout>
+
+        <!-- Action buttons (UX F-004: accessibility descriptions) -->
+        <VerticalStackLayout Grid.Row="4" Padding="16" Spacing="8">
+            <Button Text="Confirm"
+                    Command="{Binding ConfirmCommand}"
+                    IsEnabled="{Binding IsNotLoading}"
+                    AutomationId="ConfirmButton"
+                    SemanticProperties.Description="Confirm this appointment" />
+
+            <Button Text="Cancel appointment"
+                    Command="{Binding CancelCommand}"
+                    IsEnabled="{Binding IsNotLoading}"
+                    AutomationId="CancelButton"
+                    SemanticProperties.Description="Cancel this appointment" />
+
+            <Button Text="Mark complete"
+                    Command="{Binding CompleteCommand}"
+                    IsEnabled="{Binding IsNotLoading}"
+                    AutomationId="CompleteButton"
+                    SemanticProperties.Description="Mark this appointment complete" />
+        </VerticalStackLayout>
+
+    </Grid>
+
+</ContentPage>

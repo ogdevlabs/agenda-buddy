@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             x:Class="MobileApp.Views.LoginPage"
+             Title="Sign In">
+
+    <ContentPage.Resources>
+        <toolkit:InvertedBoolConverter x:Key="InvertedBoolConverter" />
+    </ContentPage.Resources>
+
+    <ScrollView>
+        <VerticalStackLayout Padding="32" Spacing="16" VerticalOptions="Center">
+
+            <Label Text="Agenda Buddy"
+                   FontSize="28"
+                   FontAttributes="Bold"
+                   HorizontalOptions="Center" />
+
+            <Label Text="Sign in to your account"
+                   FontSize="16"
+                   HorizontalOptions="Center"
+                   Margin="0,0,0,16" />
+
+            <!-- Email -->
+            <Label Text="Email" FontAttributes="Bold" />
+            <Entry x:Name="EmailEntry"
+                   Placeholder="you@example.com"
+                   Keyboard="Email"
+                   Text="{Binding Email}"
+                   AutomationId="EmailEntry" />
+
+            <!-- Password -->
+            <Label Text="Password" FontAttributes="Bold" />
+            <Entry x:Name="PasswordEntry"
+                   Placeholder="Password"
+                   IsPassword="True"
+                   Text="{Binding Password}"
+                   AutomationId="PasswordEntry" />
+
+            <!-- Error message -->
+            <Label x:Name="ErrorLabel"
+                   Text="{Binding ErrorMessage}"
+                   TextColor="Red"
+                   IsVisible="{Binding HasError}"
+                   AutomationId="ErrorLabel" />
+
+            <!-- Sign in button + activity indicator -->
+            <Grid>
+                <Button Text="Sign In"
+                        Command="{Binding SignInCommand}"
+                        IsVisible="{Binding IsLoading, Converter={StaticResource InvertedBoolConverter}}"
+                        AutomationId="SignInButton" />
+                <ActivityIndicator IsRunning="{Binding IsLoading}"
+                                   IsVisible="{Binding IsLoading}"
+                                   HorizontalOptions="Center" />
+            </Grid>
+
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>

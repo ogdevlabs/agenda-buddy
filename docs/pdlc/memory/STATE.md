@@ -5,35 +5,35 @@
      Claude reads this file at the start of every session to auto-resume from the last checkpoint.
      If this file is missing or empty, PDLC will prompt you to run /pdlc init. -->
 
-**Last updated:** 2026-07-30T22:00:00Z
+**Last updated:** 2026-07-31T11:40:00Z
 
 ---
 
 ## Current Phase
 
-Inception
+Construction
 
 ---
 
 ## Current Feature
 
-upgrade-to-net10
+mobile-app
 
 ---
 
 ## Active Beads Task
 
-agenda-buddy-6iu — upgrade-to-net10
+<!-- none — all 14 tasks closed -->
 
 ---
 
 ## Roadmap Claim
 
-- **Feature ID:** F-011
-- **Beads task:** agenda-buddy-6iu
+- **Feature ID:** F-012
+- **Beads task:** agenda-buddy-tcj
 - **Claimed by:** oscargarcia@ogdevlabs.onmicrosoft.com
-- **Claimed at:** 2026-07-30T22:00:00Z
-- **Branch:** (will be set at build pre-flight)
+- **Claimed at:** 2026-07-31T10:00:00Z
+- **Branch:** feature/mobile-app
 
 ---
 
@@ -45,13 +45,13 @@ _None active. Run `/night-shift <F-NNN>` to start an autonomous run (requires by
 
 ## Current Sub-phase
 
-Discover
+Build
 
 ---
 
 ## Last Checkpoint
 
-Inception / Discover / 2026-07-30T22:00:00Z
+Construction / Build / 2026-07-31T11:40:00Z
 
 ---
 
@@ -71,13 +71,13 @@ none
 
 ```json
 {
-  "triggered_at": null,
+  "triggered_at": "2026-07-31T11:40:00Z",
   "active_task": null,
-  "sub_phase": null,
-  "step": null,
+  "sub_phase": "Build",
+  "step": "complete",
   "skill_file": null,
   "work_in_progress": null,
-  "next_action": null,
+  "next_action": "Run /pdlc ship mobile-app to open PR, or run /pdlc build to continue with next feature",
   "files_open": []
 }
 ```
@@ -88,27 +88,53 @@ none
 
 ```json
 {
-  "phase_completed": "Inception / Plan",
-  "next_phase": "Construction / Build",
-  "feature": "auth-and-identity",
+  "phase_completed": "Construction / Build",
+  "next_phase": "Ship",
+  "feature": "mobile-app",
+  "branch": "feature/mobile-app",
   "key_outputs": [
-    "docs/pdlc/prds/PRD_auth-and-identity_2026-07-30.md",
-    "docs/pdlc/design/auth-and-identity/ARCHITECTURE.md",
-    "docs/pdlc/design/auth-and-identity/data-model.md",
-    "docs/pdlc/design/auth-and-identity/api-contracts.md",
-    "docs/pdlc/design/auth-and-identity/threat-model.md",
-    "docs/pdlc/prds/plans/plan_auth-and-identity_2026-07-30.md"
+    "MobileApp/MobileApp.csproj",
+    "MobileApp/MauiProgram.cs",
+    "MobileApp/AppShell.xaml",
+    "MobileApp/Infrastructure/JwtDelegatingHandler.cs",
+    "MobileApp/Infrastructure/ISecureStorageService.cs",
+    "MobileApp/Services/AuthService.cs",
+    "MobileApp/Services/BookingApiService.cs",
+    "MobileApp/Services/CalendarApiService.cs",
+    "MobileApp/Services/CustomerApiService.cs",
+    "MobileApp/Services/MessagingApiService.cs",
+    "MobileApp/Services/NotificationApiService.cs",
+    "MobileApp/Services/PushNotificationService.cs",
+    "MobileApp/ViewModels/LoginViewModel.cs",
+    "MobileApp/ViewModels/DashboardViewModel.cs",
+    "MobileApp/ViewModels/CalendarViewModel.cs",
+    "MobileApp/ViewModels/CustomersViewModel.cs",
+    "MobileApp/ViewModels/AppointmentDetailViewModel.cs",
+    "MobileApp/ViewModels/MessagingViewModel.cs",
+    "MobileApp/ViewModels/MessageThreadViewModel.cs",
+    "MobileApp/ViewModels/NotificationsViewModel.cs",
+    "Library/Entities/DeviceTokenEntity.cs",
+    "Library/Services/DeviceTokenService.cs",
+    "Identity/Program.cs (POST /identity/device-token)",
+    "Identity.Tests/Security/LoginLogSanitizationTest.cs",
+    ".github/workflows/dotnet.yml (Android + iOS CI jobs)"
   ],
+  "test_counts": {
+    "MobileApp.Tests": 63,
+    "Library.Tests": 74
+  },
   "decisions_made": [
-    "10 tasks in 5 waves — Wave 1 parallel (CredentialEntity + Library extension), Wave 3 parallel (endpoints + wiring + migration + OwnershipGuard)",
-    "ADRs 008-012 recorded: RSA signing, passive logout, single role, no rate limiting v1, email-as-sub",
-    "Threat model Full (3/3): 5 mitigate-now items baked into Wave 1-3 tasks, 3 accepted/deferred with ADRs"
+    "All 14 plan tasks completed across 7 waves",
+    "AppointmentStatus enum extended with Confirmed + Cancelled values",
+    "Shell navigation: 5 tabs + login non-tab root + appointmentDetail + messageThread stack routes",
+    "Cancel/Complete use ActionSheet (bottom sheet) not DisplayAlert (UX F-005 fix)",
+    "All error banners include Try again button (UX F-002 fix)",
+    "Push payload body is PII-free generic text (T-002 mitigation)",
+    "POST /identity/device-token requires JWT auth; no device token logged (CONSTITUTION §4)",
+    "MobileWorkloads=false fallback TFM for local dev + CI unit tests"
   ],
-  "next_action": "Start Construction — run /build or read skills/build/SKILL.md",
-  "pending_questions": [
-    "Threat model open Q1: regulatory exposure (GDPR/CCPA) — affects T-001 triage if platform expands to EU/regulated markets",
-    "Threat model open Q2: threat-actor profile — affects whether T-001 rate limiting should be promoted before public launch"
-  ]
+  "next_action": "Run /pdlc ship mobile-app to open PR",
+  "pending_questions": []
 }
 ```
 
@@ -124,3 +150,6 @@ none
 | 2026-07-30T04:20:00Z | prd_approved | PRD Approved | Define | auth-and-identity |
 | 2026-07-30T04:45:00Z | design_approved | Design Approved | Design | auth-and-identity |
 | 2026-07-31T05:05:00Z | inception_complete | Inception Complete | Plan | auth-and-identity |
+| 2026-07-31T11:00:00Z | inception_complete | Inception Complete | Plan | mobile-app |
+| 2026-07-31T11:05:00Z | construction_start | Construction Started | Build | mobile-app |
+| 2026-07-31T11:40:00Z | construction_complete | Construction Complete | Build | mobile-app |

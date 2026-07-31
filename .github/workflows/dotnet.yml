@@ -27,10 +27,10 @@ jobs:
             ${{ runner.os }}-nuget-
 
       - name: Restore dependencies
-        run: dotnet restore
+        run: dotnet restore /p:MobileWorkloads=false
 
       - name: Build
-        run: dotnet build --no-restore --configuration Release
+        run: dotnet build --no-restore --configuration Release /p:MobileWorkloads=false
 
       - name: Test
         run: >
@@ -56,3 +56,70 @@ jobs:
           name: code-coverage
           path: "**/coverage.cobertura.xml"
           if-no-files-found: warn
+
+  # ---------------------------------------------------------------------------
+  # Mobile builds — build verification only (v1).
+  # No code signing, no App Store upload. These jobs are independent of the
+  # main .NET backend build and do not block each other.
+  # ---------------------------------------------------------------------------
+
+  build-android:
+    name: "Mobile — Android Build"
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Install MAUI Android workload
+        run: dotnet workload install maui-android
+
+      # MobilePlatform=android restricts MobileApp TFMs to net10.0-android only (defined in csproj).
+      # This avoids cascading TargetFrameworks override to Library.csproj (which targets net10.0).
+      - name: Build Android (Release)
+        run: dotnet build MobileApp/MobileApp.csproj /p:MobilePlatform=android -c Release
+
+  build-ios:
+    name: "Mobile — iOS Build"
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Install MAUI iOS workload
+        run: dotnet workload install maui-ios
+
+      # macOS runner required for Xcode toolchain. Build-only — no code signing (PRD Known Risk).
+      # MobilePlatform=ios restricts MobileApp TFMs to net10.0-ios only (defined in csproj).
+      # This avoids cascading TargetFrameworks override to Library.csproj (which targets net10.0).
+      - name: Build iOS (Release)
+        run: dotnet build MobileApp/MobileApp.csproj /p:MobilePlatform=ios -c Release
+
+  build-mobile-tests:
+    name: "Mobile — ViewModel / Service Unit Tests"
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      # dotnet test handles restore implicitly; /p:MobileWorkloads=false scopes MobileApp
+      # to net10.0 only so no MAUI workload is required on this runner.
+      - name: Test MobileApp (no mobile workloads)
+        run: >
+          dotnet test MobileApp.Tests/MobileApp.Tests.csproj
+          /p:MobileWorkloads=false
+          --collect:"XPlat Code Coverage"

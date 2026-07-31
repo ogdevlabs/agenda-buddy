@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             x:Class="MobileApp.Views.CustomersPage"
+             Title="Customers">
+
+    <ContentPage.Resources>
+        <toolkit:InvertedBoolConverter x:Key="InvertedBoolConverter" />
+    </ContentPage.Resources>
+
+    <Grid RowDefinitions="Auto,Auto,*">
+
+        <!-- Loading indicator -->
+        <ActivityIndicator Grid.Row="0"
+                           IsRunning="{Binding IsLoading}"
+                           IsVisible="{Binding IsLoading}"
+                           HorizontalOptions="Center"
+                           Margin="0,16,0,0" />
+
+        <!-- Error banner -->
+        <VerticalStackLayout Grid.Row="1"
+                             IsVisible="{Binding HasError}"
+                             BackgroundColor="#FFEBEE"
+                             Padding="16,8"
+                             Spacing="8">
+            <Label Text="{Binding ErrorMessage}"
+                   TextColor="#B71C1C"
+                   AutomationId="ErrorLabel" />
+            <Button Text="Retry"
+                    Command="{Binding LoadCommand}"
+                    AutomationId="RetryButton"
+                    HorizontalOptions="Start" />
+        </VerticalStackLayout>
+
+        <!-- Empty state -->
+        <Label Grid.Row="2"
+               Text="No customers yet — once a client books a session with you, they will appear here."
+               IsVisible="{Binding IsEmpty}"
+               HorizontalOptions="Center"
+               VerticalOptions="Center"
+               HorizontalTextAlignment="Center"
+               Margin="32,0"
+               TextColor="Gray"
+               AutomationId="EmptyStateLabel" />
+
+        <!-- Customer list -->
+        <CollectionView Grid.Row="2"
+                        ItemsSource="{Binding Customers}"
+                        IsVisible="{Binding IsEmpty, Converter={StaticResource InvertedBoolConverter}}"
+                        AutomationId="CustomersCollectionView">
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <VerticalStackLayout Padding="16,12" Spacing="4">
+                        <Label Text="{Binding FullName}"
+                               FontAttributes="Bold"
+                               FontSize="16"
+                               AutomationId="CustomerFullName" />
+                        <Label Text="{Binding Email}"
+                               FontSize="14"
+                               TextColor="Gray"
+                               AutomationId="CustomerEmail" />
+                    </VerticalStackLayout>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+    </Grid>
+
+</ContentPage>
