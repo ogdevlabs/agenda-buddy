@@ -74,3 +74,11 @@ services:
       build:
         context: .
         dockerfile: Library/Dockerfile
+
+  identity:
+    hostname: identity
+    container_name: identity
+    image: ${DOCKER_REGISTRY-}identity:latest
+    build:
+      context: .
+      dockerfile: Identity/Dockerfile
