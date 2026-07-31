@@ -9,6 +9,7 @@ global using EventAndCommands.Queries.Provider;
 global using Kafka;
 global using Kafka.Support;
 global using Library.Entities;
+global using Library.Extensions;
 global using Library.Repositories;
 global using Library.Services;
 global using Library.Tools;

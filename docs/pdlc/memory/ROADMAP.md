@@ -1,0 +1,42 @@
+# Roadmap
+
+**Project:** Agenda Buddy
+**Last updated:** 2026-07-30
+
+---
+
+## Build Strategy
+
+**Approach:** Layered
+**Rationale:** Brownfield project with an established microservices architecture — build each feature fully within existing patterns before moving to the next; foundational features first.
+
+---
+
+## Feature Backlog
+
+<!-- Claimed by: git user email of the dev holding the roadmap-level Beads claim.
+     This column is a cache of Beads assignees — if it disagrees with `bd list
+     --label roadmap`, Beads wins (rendered on next /ship or /diagnose). -->
+
+| ID | Feature | Description | Priority | Status | Claimed by | Shipped | Episode |
+|----|---------|-------------|----------|--------|------------|---------|---------|
+| F-001 | auth-and-identity | Authentication and authorization layer — protect all API endpoints with JWT-based auth so providers and customers log in and only see their own data | 1 | In Progress | oscargarcia@ogdevlabs.onmicrosoft.com | — | — |
+| F-002 | provider-onboarding-flow | End-to-end provider registration flow — a provider signs up, defines their profession, adds their first service, and is ready to accept bookings | 2 | Planned | — | — | — |
+| F-003 | customer-onboarding-flow | End-to-end customer registration flow — a customer signs up, discovers providers, and subscribes to one | 3 | Planned | — | — | — |
+| F-004 | appointment-lifecycle | Complete appointment lifecycle — book, confirm, update, cancel, and complete; with status transitions and validation rules enforced end-to-end | 4 | Planned | — | — | — |
+| F-005 | provider-availability-schedule | Provider sets their available hours/days so customers can only book slots that are genuinely open | 5 | Planned | — | — | — |
+| F-006 | booking-notifications | Email or in-app notifications for appointment created, confirmed, updated, and cancelled — sent to both provider and customer | 6 | Planned | — | — | — |
+| F-007 | provider-customer-messaging | In-app messaging between provider and customer using the existing Kafka infrastructure | 7 | Planned | — | — | — |
+| F-008 | journal-and-notes | Provider can attach private session notes to each appointment; visible only to the provider | 8 | Planned | — | — | — |
+| F-009 | reporting-dashboard | Provider sees their booking volume, revenue summary (from service fees), and customer retention metrics | 9 | Planned | — | — | — |
+| F-010 | payment-integration | Connect a payment gateway (Stripe) so providers can collect fees at booking time | 10 | Planned | — | — | — |
+
+---
+
+## Status Key
+
+- **Planned** — Not yet started
+- **In Progress** — Currently in brainstorm, build, or ship
+- **Shipped** — Completed and deployed (date + episode link filled in)
+- **Deferred** — Deprioritized or postponed
+- **Dropped** — Removed from roadmap (reason noted)

@@ -1,0 +1,7 @@
+{
+  "database": "dolt",
+  "backend": "dolt",
+  "dolt_mode": "embedded",
+  "dolt_database": "agenda_buddy",
+  "project_id": "658db4e7-dc27-4815-937c-ebf71d2620ca"
+}

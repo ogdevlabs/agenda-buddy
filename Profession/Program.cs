@@ -25,6 +25,10 @@ builder.Services.AddProblemDetails(options =>
 // Add Anti-CSRF/XSRF services
 builder.Services.AddAntiforgery();
 
+// JWT Bearer authentication (reads JWT_PUBLIC_KEY env var — fails fast if absent)
+builder.Services.AddAgendaBuddyAuthentication();
+builder.Services.AddAuthorization();
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -75,6 +79,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseAntiforgery();
+app.UseAuthentication();
+app.UseAuthorization();
 app.UseStatusCodePages();
 app.UseHttpsRedirection();
 
