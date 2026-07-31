@@ -27,10 +27,10 @@ jobs:
             ${{ runner.os }}-nuget-
 
       - name: Restore dependencies
-        run: dotnet restore
+        run: dotnet restore /p:MobileWorkloads=false
 
       - name: Build
-        run: dotnet build --no-restore --configuration Release
+        run: dotnet build --no-restore --configuration Release /p:MobileWorkloads=false
 
       - name: Test
         run: >
@@ -79,7 +79,7 @@ jobs:
         run: dotnet workload install maui-android
 
       - name: Restore MobileApp dependencies
-        run: dotnet restore MobileApp/MobileApp.csproj
+        run: dotnet restore MobileApp/MobileApp.csproj -f net10.0-android
 
       # Build-only — no code signing or APK upload for CI v1
       - name: Build Android (Release)
@@ -101,7 +101,7 @@ jobs:
         run: dotnet workload install maui-ios
 
       - name: Restore MobileApp dependencies
-        run: dotnet restore MobileApp/MobileApp.csproj
+        run: dotnet restore MobileApp/MobileApp.csproj -f net10.0-ios
 
       # macOS runner required for Xcode toolchain.
       # Build-only — no code signing or App Store upload for CI v1
@@ -122,7 +122,7 @@ jobs:
           dotnet-version: '10.0.x'
 
       - name: Restore MobileApp.Tests dependencies
-        run: dotnet restore MobileApp.Tests/MobileApp.Tests.csproj
+        run: dotnet restore MobileApp.Tests/MobileApp.Tests.csproj /p:MobileWorkloads=false
 
       # Run unit tests without mobile workloads — exercises ViewModels and
       # service logic that does not require a device or MAUI runtime.
