@@ -3,6 +3,7 @@
 global using System.Diagnostics;
 global using System.Diagnostics.CodeAnalysis;
 global using System.Net;
+global using System.Security.Claims;
 global using Booking.Configuration;
 global using Booking.Events;
 global using Booking.Extensions;
@@ -11,6 +12,7 @@ global using EventAndCommands.Commands.Booking;
 global using Kafka;
 global using Library.Entities;
 global using Library.Extensions;
+global using Library.Tools;
 global using Library.Repositories;
 global using Library.Services;
 global using MediatR;

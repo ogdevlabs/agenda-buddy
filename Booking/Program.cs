@@ -90,41 +90,45 @@ var booking = app.MapGroup("api/v1/booking")
     .AddEndpointFilter<ProblemDetailsServiceEndpointFilter>();
 
 booking.MapPost("/appointments",
-        async Task<Results<ValidationProblem, Created<AppointmentEntity>, BadRequest>> (IMediator mediator,
+        async Task<Results<ValidationProblem, ForbidHttpResult, Created<AppointmentEntity>, BadRequest>> (
+            IMediator mediator,
+            ClaimsPrincipal user,
             ProviderService providerService, BookingService bookingService, AppointmentEntity appointmentEntity,
             IRequestCollection requestCollection) =>
         {
             if (!MiniValidator.TryValidate(appointmentEntity, out var errors))
                 return TypedResults.ValidationProblem(errors);
 
-            var index = appointmentEntity.EmailProvider.IndexOf('@');
-            var topicName = appointmentEntity.EmailProvider.Substring(0, index).ToLower() + "-topic";
+            // Either the provider or customer booking on behalf of themselves
+            try { OwnershipGuard.AssertOwnerAny(user, appointmentEntity.EmailProvider, appointmentEntity.EmailCustomer); }
+            catch (ForbiddenException) { return TypedResults.Forbid(); }
 
             var eventResponse = await EventsHelper.BookAppointmentEvent(requestCollection, mediator, providerService,
-                bookingService,
-                appointmentEntity);
+                bookingService, appointmentEntity);
 
             if (!string.IsNullOrEmpty(eventResponse) && !eventResponse.ToLower().StartsWith("exception"))
                 return TypedResults.Created($"/api/v1/appointments/{appointmentEntity.Identifier}", appointmentEntity);
             return TypedResults.ValidationProblem(GenerateErrorMessage(
                 "No record match found error", new[] { "No provider", $"{appointmentEntity.EmailProvider}" }));
         })
-    .WithName("BookAppointment");
+    .WithName("BookAppointment")
+    .RequireAuthorization();
 
 booking.MapPut("/appointments/",
-        async Task<Results<ValidationProblem, Accepted<AppointmentEntity>, BadRequest>> (IMediator mediator,
+        async Task<Results<ValidationProblem, ForbidHttpResult, Accepted<AppointmentEntity>, BadRequest>> (
+            IMediator mediator,
+            ClaimsPrincipal user,
             ProviderService providerService, BookingService bookingService, AppointmentEntity appointmentEntity,
             IRequestCollection requestCollection) =>
         {
             if (!MiniValidator.TryValidate(appointmentEntity, out var errors))
                 return TypedResults.ValidationProblem(errors);
 
-            var index = appointmentEntity.EmailProvider.IndexOf('@');
-            var topicName = appointmentEntity.EmailProvider.Substring(0, index).ToLower() + "-topic";
+            try { OwnershipGuard.AssertOwnerAny(user, appointmentEntity.EmailProvider, appointmentEntity.EmailCustomer); }
+            catch (ForbiddenException) { return TypedResults.Forbid(); }
 
             var eventResponse = await EventsHelper.UpdateAppointmentEvent(requestCollection, mediator, providerService,
-                bookingService,
-                appointmentEntity);
+                bookingService, appointmentEntity);
 
             if (!string.IsNullOrEmpty(eventResponse) && !eventResponse.ToLower().StartsWith("exception"))
                 return TypedResults.Accepted($"/api/v1/appointments/{appointmentEntity.Identifier}", appointmentEntity);
@@ -132,10 +136,12 @@ booking.MapPut("/appointments/",
                 "Update Appointment Error",
                 new[] { "Error when trying to update appointment identifier:", $"{appointmentEntity.Identifier}" }));
         })
-    .WithName("UpdateAppointment");
+    .WithName("UpdateAppointment")
+    .RequireAuthorization();
 
 booking.MapDelete("/appointments/",
-        async Task<Results<ValidationProblem, NoContent, BadRequest>> (IMediator mediator,
+        async Task<Results<ValidationProblem, ForbidHttpResult, NoContent, BadRequest>> (IMediator mediator,
+            ClaimsPrincipal user,
             ProviderService providerService, BookingService bookingService,
             [FromBody] AppointmentEntity appointmentEntity,
             IRequestCollection requestCollection) =>
@@ -143,12 +149,11 @@ booking.MapDelete("/appointments/",
             if (!MiniValidator.TryValidate(appointmentEntity, out var errors))
                 return TypedResults.ValidationProblem(errors);
 
-            var index = appointmentEntity.EmailProvider.IndexOf('@');
-            var topicName = appointmentEntity.EmailProvider.Substring(0, index).ToLower() + "-topic";
+            try { OwnershipGuard.AssertOwnerAny(user, appointmentEntity.EmailProvider, appointmentEntity.EmailCustomer); }
+            catch (ForbiddenException) { return TypedResults.Forbid(); }
 
             var eventResponse = await EventsHelper.CancelAppointmentEvent(requestCollection, mediator, providerService,
-                bookingService,
-                appointmentEntity);
+                bookingService, appointmentEntity);
 
             if (!string.IsNullOrEmpty(eventResponse) && !eventResponse.ToLower().StartsWith("exception"))
                 return TypedResults.NoContent();
@@ -156,7 +161,8 @@ booking.MapDelete("/appointments/",
                 "Cancel Appointment Error",
                 new[] { "Error when trying to cancel appointment identifier:", $"{appointmentEntity.Identifier}" }));
         })
-    .WithName("CancelAppointment");
+    .WithName("CancelAppointment")
+    .RequireAuthorization();
 
 app.Run();
 
