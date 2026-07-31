@@ -74,6 +74,12 @@ if (app.Environment.IsDevelopment())
     });
 }
 
+// SECURITY (T-001): UseHttpLogging is intentionally NOT registered.
+// Request/response body logging is absent to prevent plaintext passwords and
+// JWT bearer tokens (which carry the email as the 'sub' claim — PII per CONSTITUTION §4)
+// from appearing in log output. Do not add UseHttpLogging or any request body
+// logging middleware without first excluding POST /api/v1/auth/login and
+// POST /api/v1/auth/device-token from the logged paths.
 // Identity is API-only — no HTML forms, no antiforgery
 app.UseAuthentication();
 app.UseAuthorization();

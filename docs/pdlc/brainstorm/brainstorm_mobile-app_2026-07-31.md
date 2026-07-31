@@ -1,11 +1,11 @@
 ---
 feature: mobile-app
 date: 2026-07-31
-status: in-progress
-last-updated: 2026-07-31T10:12:00Z
-approved-by:
-approved-date:
-prd:
+status: inception-complete
+last-updated: 2026-07-31T11:00:00Z
+approved-by: ogdevlabs
+approved-date: 2026-07-31T11:00:00Z
+prd: docs/pdlc/prds/PRD_mobile-app_2026-07-31.md
 ---
 
 # Brainstorm Log: Mobile App
@@ -65,6 +65,20 @@ _Not run._
 
 ## External Context
 _None ingested._
+
+## Threat Modeling Triage
+
+- Trust boundary changes: yes — new mobile client (untrusted); new `POST /identity/device-token` endpoint; FCM/APNs egress
+- Regulated data: yes — JWT (credential), email addresses (PII per CONSTITUTION.md §4), device tokens linked to user identity
+- New attack surface: yes — `POST /identity/device-token`; FCM token registration flow; mobile JWT storage surface; push notification payload
+- Triage tier: Full (3/3) — party convened; 5 threats identified (1 HIGH, 2 MEDIUM, 2 LOW); 2 mitigate-now, 1 accept-with-test
+
+## Design-Laws Audit Triage
+
+- UI surface: yes — 8 new screens (LoginPage, DashboardPage, CalendarPage, CustomersPage, MessagingPage, NotificationsPage, AppointmentDetailPage, MessageThreadPage)
+- New flow / pattern: yes — provider login → dashboard → confirm flow; messaging inbox + thread; push notification UX; Shell tab navigation
+- First-experience pathway: yes — login, post-login Dashboard empty state, push permission prompt
+- Triage tier: Full (3/3) — Roundtable convened; 6 findings (0 P0, 3 P1, 3 P2); 3 fix-now, 3 mitigate-later; heuristic total 29/40 (Good)
 
 ## Discovery Summary
 
