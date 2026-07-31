@@ -25,12 +25,21 @@ public static class MauiProgram
         builder.Logging.AddDebug();
 #endif
 
+        // Secure storage abstraction
+        builder.Services.AddTransient<ISecureStorageService, MauiSecureStorageService>();
+
         // HTTP client with named client and JWT delegating handler
         builder.Services.AddTransient<JwtDelegatingHandler>();
         builder.Services.AddHttpClient("AgendaBuddyApi", client =>
         {
             client.BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"] ?? "https://localhost");
         }).AddHttpMessageHandler<JwtDelegatingHandler>();
+
+        // No-auth client for login (no JWT handler — token doesn't exist yet)
+        builder.Services.AddHttpClient("AgendaBuddyApiNoAuth", client =>
+        {
+            client.BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"] ?? "https://localhost");
+        });
 
         // API services
         builder.Services.AddTransient<IAuthService, AuthService>();

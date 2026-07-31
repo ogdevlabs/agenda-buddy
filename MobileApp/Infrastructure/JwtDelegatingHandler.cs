@@ -1,15 +1,36 @@
+using System.Net;
+using System.Net.Http.Headers;
+
 namespace MobileApp.Infrastructure;
 
-/// <summary>
-/// Stub delegating handler — attaches JWT Bearer token to outbound API requests.
-/// Real implementation added in agenda-buddy-tn7.
-/// </summary>
 public class JwtDelegatingHandler : DelegatingHandler
 {
-    protected override Task<HttpResponseMessage> SendAsync(
-        HttpRequestMessage request,
-        CancellationToken cancellationToken)
+    public const string JwtKey = "jwt";
+
+    private readonly ISecureStorageService _secureStorage;
+
+    public JwtDelegatingHandler(ISecureStorageService secureStorage)
     {
-        return base.SendAsync(request, cancellationToken);
+        _secureStorage = secureStorage;
     }
+
+    protected override async Task<HttpResponseMessage> SendAsync(
+        HttpRequestMessage request, CancellationToken cancellationToken)
+    {
+        var token = await _secureStorage.GetAsync(JwtKey);
+        if (!string.IsNullOrEmpty(token))
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var response = await base.SendAsync(request, cancellationToken);
+
+        if (response.StatusCode == HttpStatusCode.Unauthorized)
+        {
+            _secureStorage.Remove(JwtKey);
+            UnauthorizedAccess?.Invoke(this, EventArgs.Empty);
+        }
+
+        return response;
+    }
+
+    public static event EventHandler? UnauthorizedAccess;
 }
