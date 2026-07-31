@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using Library.Entities;
 using MobileApp.Models;
 
 namespace MobileApp.Services;
@@ -31,10 +32,22 @@ public class BookingApiService : IBookingApiService
                ?? new List<AppointmentSummary>();
     }
 
-    public async Task<AppointmentSummary?> UpdateStatusAsync(string id, string status, CancellationToken ct = default)
+    public async Task<AppointmentDetail?> GetAppointmentAsync(string id, CancellationToken ct = default)
     {
         var client = _httpClientFactory.CreateClient("AgendaBuddyApi");
-        var body = JsonSerializer.Serialize(new { status }, JsonOptions);
+        var response = await client.GetAsync($"booking/{id}", ct);
+
+        if (!response.IsSuccessStatusCode)
+            return null;
+
+        var json = await response.Content.ReadAsStringAsync(ct);
+        return JsonSerializer.Deserialize<AppointmentDetail>(json, JsonOptions);
+    }
+
+    public async Task<AppointmentDetail?> UpdateStatusAsync(string id, AppointmentStatus status, CancellationToken ct = default)
+    {
+        var client = _httpClientFactory.CreateClient("AgendaBuddyApi");
+        var body = JsonSerializer.Serialize(new { status = status.ToString() }, JsonOptions);
         var content = new StringContent(body, Encoding.UTF8, "application/json");
 
         var response = await client.PutAsync($"booking/{id}", content, ct);
@@ -43,6 +56,6 @@ public class BookingApiService : IBookingApiService
             return null;
 
         var json = await response.Content.ReadAsStringAsync(ct);
-        return JsonSerializer.Deserialize<AppointmentSummary>(json, JsonOptions);
+        return JsonSerializer.Deserialize<AppointmentDetail>(json, JsonOptions);
     }
 }

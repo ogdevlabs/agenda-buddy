@@ -11,7 +11,7 @@ public partial class AppShell : Shell
         InitializeComponent();
 
         Routing.RegisterRoute("messageThread", typeof(MessageThreadPage));
-        // TODO: register "appointmentDetail" once AppointmentDetailPage view is added.
+        Routing.RegisterRoute("appointmentDetail", typeof(AppointmentDetailPage));
 
         JwtDelegatingHandler.UnauthorizedAccess += async (_, _) =>
             await Shell.Current.GoToAsync("//login");

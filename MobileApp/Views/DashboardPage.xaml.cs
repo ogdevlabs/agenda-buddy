@@ -29,7 +29,7 @@ public partial class DashboardPage : ContentPage
         if (sender is CollectionView cv)
             cv.SelectedItem = null;
 
-        await Shell.Current.GoToAsync($"AppointmentDetailPage?id={selected.Id}");
+        await Shell.Current.GoToAsync($"appointmentDetail?appointmentId={selected.Id}");
     }
 }
 #endif

@@ -1,7 +1,6 @@
 using System.Net;
 using System.Text;
 using Library.Entities;
-using MobileApp.Models;
 using MobileApp.Services;
 using Moq;
 using Xunit;
@@ -62,6 +61,37 @@ public class BookingApiServiceTests
     }
 
     // ---------------------------------------------------------------------------
+    // GetAppointmentAsync tests
+    // ---------------------------------------------------------------------------
+
+    [Fact]
+    public async Task GetAppointment_Returns200_DeserializesAppointment()
+    {
+        var json = """
+            {"id":"a1","customerEmail":"alice@example.com","providerEmail":"prov@example.com","scheduledAt":"2026-07-31T09:00:00Z","status":1,"serviceId":"s1"}
+            """;
+
+        var sut = new BookingApiService(CreateFactory(HttpStatusCode.OK, json));
+
+        var result = await sut.GetAppointmentAsync("a1");
+
+        Assert.NotNull(result);
+        Assert.Equal("a1", result!.Id);
+        Assert.Equal("alice@example.com", result.CustomerEmail);
+        Assert.Equal(AppointmentStatus.Booked, result.Status);
+    }
+
+    [Fact]
+    public async Task GetAppointment_Returns404_ReturnsNull()
+    {
+        var sut = new BookingApiService(CreateFactory(HttpStatusCode.NotFound));
+
+        var result = await sut.GetAppointmentAsync("does-not-exist");
+
+        Assert.Null(result);
+    }
+
+    // ---------------------------------------------------------------------------
     // UpdateStatusAsync tests
     // ---------------------------------------------------------------------------
 
@@ -74,11 +104,22 @@ public class BookingApiServiceTests
 
         var sut = new BookingApiService(CreateFactory(HttpStatusCode.OK, json));
 
-        var result = await sut.UpdateStatusAsync("a1", "Booked");
+        var result = await sut.UpdateStatusAsync("a1", AppointmentStatus.Booked);
 
         Assert.NotNull(result);
         Assert.Equal("a1", result!.Id);
         Assert.Equal(AppointmentStatus.Booked, result.Status);
+    }
+
+    [Fact]
+    public async Task UpdateStatus_Returns400_ReturnsNull()
+    {
+        // T-003: invalid status → API returns 400 → service returns null.
+        var sut = new BookingApiService(CreateFactory(HttpStatusCode.BadRequest));
+
+        var result = await sut.UpdateStatusAsync("a1", AppointmentStatus.Confirmed);
+
+        Assert.Null(result);
     }
 
     // ---------------------------------------------------------------------------
