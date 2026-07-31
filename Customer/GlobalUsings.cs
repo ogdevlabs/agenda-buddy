@@ -2,6 +2,7 @@
 
 global using System.Diagnostics;
 global using System.Diagnostics.CodeAnalysis;
+global using System.Security.Claims;
 global using Customer.Configurations;
 global using Customer.Events;
 global using Customer.Extensions;

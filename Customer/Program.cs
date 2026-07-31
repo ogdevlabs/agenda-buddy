@@ -116,14 +116,21 @@ customers.MapPost("/", async Task<Results<ValidationProblem, Created<CustomerEnt
     return TypedResults.ValidationProblem(GenerateErrorMessage(
         "Kafka Error", new[] { "Kafka Topic", $"{topicName}" })
     );
-}).WithName("CreateCustomer");
+})
+.WithName("CreateCustomer")
+.RequireAuthorization();
 
 customers.MapPut("/{email}",
-    async Task<Results<ValidationProblem, NotFound, Accepted>> (string email, IMediator mediator,
+    async Task<Results<ValidationProblem, ForbidHttpResult, NotFound, Accepted>> (string email,
+        ClaimsPrincipal user,
+        IMediator mediator,
         CustomerService customerService, CustomerEntity customerEntity, IRequestCollection requestCollection) =>
     {
         if (!MiniValidator.TryValidate(customerEntity, out var errors))
             return TypedResults.ValidationProblem(errors);
+
+        try { OwnershipGuard.AssertOwner(user, email); }
+        catch (ForbiddenException) { return TypedResults.Forbid(); }
 
         var eventResponse =
             await EventsHelper.UpdateCustomerEvent(email, requestCollection, mediator, customerService, customerEntity);
@@ -131,7 +138,9 @@ customers.MapPut("/{email}",
         if (!string.IsNullOrEmpty(eventResponse)) return TypedResults.Accepted("api/v1/customers");
 
         return TypedResults.NotFound();
-    }).WithName("UpdateCustomer");
+    })
+    .WithName("UpdateCustomer")
+    .RequireAuthorization();
 
 customers.MapGet("",
     async Task<Results<Ok<List<CustomerEntity>>, NoContent>> (IMediator mediator,
