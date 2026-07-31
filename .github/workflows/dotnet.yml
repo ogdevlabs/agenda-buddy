@@ -27,7 +27,7 @@ jobs:
       - name: Run tests with coverage
         run: dotnet test --no-build --collect:"XPlat Code Coverage"
       - name: Publish code coverage
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: code-coverage
           path: '**/coverage.cobertura.xml'
