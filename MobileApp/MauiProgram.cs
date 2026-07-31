@@ -61,6 +61,16 @@ public static class MauiProgram
 
         // Views
         builder.Services.AddTransient<LoginPage>();
+        builder.Services.AddTransient<DashboardPage>();
+        builder.Services.AddTransient<CalendarPage>();
+        builder.Services.AddTransient<CustomersPage>();
+        builder.Services.AddTransient<MessagingPage>();
+        builder.Services.AddTransient<MessageThreadPage>();
+        builder.Services.AddTransient<NotificationsPage>();
+        // TODO: register AppointmentDetailPage once the view is added.
+
+        // Shell
+        builder.Services.AddSingleton<AppShell>();
 
         return builder.Build();
     }

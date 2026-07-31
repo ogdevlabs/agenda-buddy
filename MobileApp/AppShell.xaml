@@ -6,8 +6,36 @@
        Title="Agenda Buddy">
 
     <ShellContent
-        Title="Login"
+        Route="login"
         ContentTemplate="{DataTemplate views:LoginPage}"
-        Route="LoginPage" />
+        Shell.TabBarIsVisible="False" />
+
+    <TabBar>
+        <Tab Title="Dashboard" Icon="dashboard_icon.png">
+            <ShellContent
+                Route="dashboard"
+                ContentTemplate="{DataTemplate views:DashboardPage}" />
+        </Tab>
+        <Tab Title="Calendar" Icon="calendar_icon.png">
+            <ShellContent
+                Route="calendar"
+                ContentTemplate="{DataTemplate views:CalendarPage}" />
+        </Tab>
+        <Tab Title="Customers" Icon="customers_icon.png">
+            <ShellContent
+                Route="customers"
+                ContentTemplate="{DataTemplate views:CustomersPage}" />
+        </Tab>
+        <Tab Title="Messages" Icon="messages_icon.png">
+            <ShellContent
+                Route="messages"
+                ContentTemplate="{DataTemplate views:MessagingPage}" />
+        </Tab>
+        <Tab Title="Notifications" Icon="notifications_icon.png">
+            <ShellContent
+                Route="notifications"
+                ContentTemplate="{DataTemplate views:NotificationsPage}" />
+        </Tab>
+    </TabBar>
 
 </Shell>
