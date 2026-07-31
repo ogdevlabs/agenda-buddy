@@ -78,10 +78,14 @@ jobs:
       - name: Install MAUI Android workload
         run: dotnet workload install maui-android
 
-      # /p:TargetFrameworks overrides the multi-TFM list so restore+build only touch android,
+      # Restore Library and other non-MAUI dependencies first (they target net10.0)
+      - name: Restore non-MAUI projects
+        run: dotnet restore /p:MobileWorkloads=false
+
+      # /p:TargetFrameworks overrides the multi-TFM list so only android is restored+built,
       # preventing NETSDK1178 from the iOS SDK not being installed on this ubuntu runner.
       - name: Build Android (Release)
-        run: dotnet build MobileApp/MobileApp.csproj /p:TargetFrameworks=net10.0-android -c Release
+        run: dotnet build MobileApp/MobileApp.csproj /p:TargetFrameworks=net10.0-android -c Release --no-restore
 
   build-ios:
     name: "Mobile — iOS Build"
@@ -98,11 +102,15 @@ jobs:
       - name: Install MAUI iOS workload
         run: dotnet workload install maui-ios
 
+      # Restore Library and other non-MAUI dependencies first (they target net10.0)
+      - name: Restore non-MAUI projects
+        run: dotnet restore /p:MobileWorkloads=false
+
       # macOS runner required for Xcode toolchain. Build-only — no code signing (PRD Known Risk).
-      # /p:TargetFrameworks overrides the multi-TFM list so restore+build only touch ios,
+      # /p:TargetFrameworks overrides the multi-TFM list so only ios is restored+built,
       # preventing NETSDK1147 from the Android workload not being installed on this macos runner.
       - name: Build iOS (Release)
-        run: dotnet build MobileApp/MobileApp.csproj /p:TargetFrameworks=net10.0-ios -c Release
+        run: dotnet build MobileApp/MobileApp.csproj /p:TargetFrameworks=net10.0-ios -c Release --no-restore
 
   build-mobile-tests:
     name: "Mobile — ViewModel / Service Unit Tests"
