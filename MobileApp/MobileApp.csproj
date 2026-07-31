@@ -8,12 +8,16 @@
         -->
         <MobileWorkloads Condition="'$(MobileWorkloads)' == ''">true</MobileWorkloads>
         <!--
-            When workloads are present: build android + ios + net10.0 so MobileApp.Tests (net10.0) can
-            always resolve a compatible TFM from this project reference without needing /p:MobileWorkloads=false.
+            MobilePlatform: set to 'android' or 'ios' from CI to restrict the build to one platform
+            without cascading a TargetFrameworks override to project references (Library.csproj).
+            When workloads are present and no platform is pinned: build android + ios + net10.0
+            so MobileApp.Tests (net10.0) can resolve the project reference.
             When workloads are absent: net10.0 only.
         -->
-        <TargetFrameworks Condition="'$(MobileWorkloads)' == 'true'">net10.0-android;net10.0-ios;net10.0</TargetFrameworks>
         <TargetFrameworks Condition="'$(MobileWorkloads)' != 'true'">net10.0</TargetFrameworks>
+        <TargetFrameworks Condition="'$(MobileWorkloads)' == 'true' AND '$(MobilePlatform)' == 'android'">net10.0-android</TargetFrameworks>
+        <TargetFrameworks Condition="'$(MobileWorkloads)' == 'true' AND '$(MobilePlatform)' == 'ios'">net10.0-ios</TargetFrameworks>
+        <TargetFrameworks Condition="'$(MobileWorkloads)' == 'true' AND '$(MobilePlatform)' == ''">net10.0-android;net10.0-ios;net10.0</TargetFrameworks>
         <UseMaui Condition="'$(MobileWorkloads)' == 'true'">true</UseMaui>
         <UseMaui Condition="'$(MobileWorkloads)' != 'true'">false</UseMaui>
         <RootNamespace>MobileApp</RootNamespace>
