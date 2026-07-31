@@ -110,12 +110,16 @@ services.MapGet("/{email}",
     }).WithName("GetServicesFromProvider");
 
 services.MapPut("/{email}",
-    async Task<Results<ValidationProblem, NotFound, Ok<ProviderEntity>>> (IMediator mediator,
+    async Task<Results<ValidationProblem, ForbidHttpResult, NotFound, Ok<ProviderEntity>>> (IMediator mediator,
+        ClaimsPrincipal user,
         ProviderService providerService, IRequestCollection requestCollection,
         [FromBody] List<ServiceEntity> serviceEntities, string email) =>
     {
         if (!MiniValidator.TryValidate(serviceEntities, out var errors))
             return TypedResults.ValidationProblem(errors);
+
+        try { OwnershipGuard.AssertOwner(user, email); }
+        catch (ForbiddenException) { return TypedResults.Forbid(); }
 
         var providerEntity =
             await EventHelper.AddServicesToProviderEvent(requestCollection, mediator,
@@ -125,15 +129,21 @@ services.MapPut("/{email}",
             return TypedResults.Ok(providerEntity);
 
         return TypedResults.NotFound();
-    }).WithName("AddServicesToProvider");
+    })
+    .WithName("AddServicesToProvider")
+    .RequireAuthorization();
 
 services.MapPatch("/{email}",
-    async Task<Results<ValidationProblem, NotFound, Ok<ProviderEntity>>> (IMediator mediator,
+    async Task<Results<ValidationProblem, ForbidHttpResult, NotFound, Ok<ProviderEntity>>> (IMediator mediator,
+        ClaimsPrincipal user,
         ProviderService providerService, IRequestCollection requestCollection,
         [FromBody] List<ServiceEntity> serviceEntities, string email) =>
     {
         if (!MiniValidator.TryValidate(serviceEntities, out var errors))
             return TypedResults.ValidationProblem(errors);
+
+        try { OwnershipGuard.AssertOwner(user, email); }
+        catch (ForbiddenException) { return TypedResults.Forbid(); }
 
         var providerEntity =
             await EventHelper.UpdateServicesFromProviderEvent(requestCollection, mediator,
@@ -143,7 +153,9 @@ services.MapPatch("/{email}",
             return TypedResults.Ok(providerEntity);
 
         return TypedResults.NotFound();
-    }).WithName("UpdateServicesFromProvider");
+    })
+    .WithName("UpdateServicesFromProvider")
+    .RequireAuthorization();
 
 app.Run();
 

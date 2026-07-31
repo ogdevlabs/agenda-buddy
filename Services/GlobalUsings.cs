@@ -2,6 +2,7 @@
 
 global using System.Diagnostics;
 global using System.Net;
+global using System.Security.Claims;
 global using EventAndCommands.Commands.Services;
 global using EventAndCommands.Queries.Services;
 global using Library.Entities;

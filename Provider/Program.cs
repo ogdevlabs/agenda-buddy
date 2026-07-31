@@ -124,7 +124,8 @@ providers.MapPost("/", async Task<Results<ValidationProblem, Created<ProviderEnt
             "Kafka Error", new[] { "Kafka Topic", $"{topicName}" })
         );
     })
-    .WithName("CreateProvider");
+    .WithName("CreateProvider")
+    .RequireAuthorization();
 
 // Get provider list
 providers.MapGet("", async Task<Results<Ok<List<ProviderEntity>>, NoContent>> (IMediator mediator,
@@ -166,8 +167,9 @@ providers.MapGet("/{email}", async Task<Results<Ok<ProviderEntity>, NotFound>> (
 
 
 // Update a provider, using email for search of the record
-providers.MapPut("/{email}", async Task<Results<ValidationProblem, NotFound, Accepted>> (
+providers.MapPut("/{email}", async Task<Results<ValidationProblem, ForbidHttpResult, NotFound, Accepted>> (
     string email,
+    ClaimsPrincipal user,
     IMediator mediator,
     ProviderService providerService,
     ProviderEntity providerEntity,
@@ -176,13 +178,18 @@ providers.MapPut("/{email}", async Task<Results<ValidationProblem, NotFound, Acc
     if (!MiniValidator.TryValidate(providerEntity, out var errors))
         return TypedResults.ValidationProblem(errors);
 
+    try { OwnershipGuard.AssertOwner(user, email); }
+    catch (ForbiddenException) { return TypedResults.Forbid(); }
+
     var eventResponse =
         await EventsHelper.UpdateProviderEvent(email, requestCollection, mediator, providerService, providerEntity);
 
     if (!string.IsNullOrEmpty(eventResponse)) return TypedResults.Accepted("api/v1/providers");
 
     return TypedResults.NotFound();
-}).WithName("UpdateProvider");
+})
+.WithName("UpdateProvider")
+.RequireAuthorization();
 
 app.Run();
 
