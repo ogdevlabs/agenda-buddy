@@ -7,7 +7,12 @@
             Default is mobile TFMs so Visual Studio / Rider picks up the correct build.
         -->
         <MobileWorkloads Condition="'$(MobileWorkloads)' == ''">true</MobileWorkloads>
-        <TargetFrameworks Condition="'$(MobileWorkloads)' == 'true'">net10.0-android;net10.0-ios</TargetFrameworks>
+        <!--
+            When workloads are present: build android + ios + net10.0 so MobileApp.Tests (net10.0) can
+            always resolve a compatible TFM from this project reference without needing /p:MobileWorkloads=false.
+            When workloads are absent: net10.0 only.
+        -->
+        <TargetFrameworks Condition="'$(MobileWorkloads)' == 'true'">net10.0-android;net10.0-ios;net10.0</TargetFrameworks>
         <TargetFrameworks Condition="'$(MobileWorkloads)' != 'true'">net10.0</TargetFrameworks>
         <UseMaui Condition="'$(MobileWorkloads)' == 'true'">true</UseMaui>
         <UseMaui Condition="'$(MobileWorkloads)' != 'true'">false</UseMaui>
@@ -16,7 +21,8 @@
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <SingleProject Condition="'$(MobileWorkloads)' == 'true'">true</SingleProject>
-        <DefineConstants Condition="'$(UseMaui)' == 'true'">$(DefineConstants);MOBILE</DefineConstants>
+        <!-- MOBILE is true only for the actual mobile TFMs, not the net10.0 fallback slice -->
+        <DefineConstants Condition="'$(TargetFramework)' == 'net10.0-android' OR '$(TargetFramework)' == 'net10.0-ios'">$(DefineConstants);MOBILE</DefineConstants>
         <ApplicationTitle>Agenda Buddy</ApplicationTitle>
         <ApplicationId>com.fererelabs.agendabuddy</ApplicationId>
         <ApplicationVersion>1</ApplicationVersion>

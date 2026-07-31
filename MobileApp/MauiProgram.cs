@@ -18,10 +18,7 @@ public static class MauiProgram
             .UseMauiApp<App>()
             .UseMauiCommunityToolkit();
 
-        builder.Configuration.AddJsonFile("appsettings.json", optional: true, reloadOnChange: false);
-
 #if DEBUG
-        builder.Configuration.AddJsonFile("appsettings.Development.json", optional: true, reloadOnChange: false);
         builder.Logging.AddDebug();
 #endif
 
