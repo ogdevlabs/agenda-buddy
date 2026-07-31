@@ -8,6 +8,7 @@ global using EventAndCommands.Commands.Profession;
 global using EventAndCommands.Queries.Professions;
 global using Library.Data;
 global using Library.Entities;
+global using Library.Extensions;
 global using Library.Repositories;
 global using Library.Services;
 global using Library.Tools;

@@ -10,5 +10,7 @@ public interface IRepository<TEntity> where TEntity : class
     Task<bool> DeleteAsync(string id);
     Task<bool> DeleteByIdentifierAsync(string identifier);
     Task<TEntity> Find(BsonDocument filter);
+    Task<TEntity?> FindOneAsync(BsonDocument filter);
+    Task<TEntity?> FindOneAndDeleteAsync(BsonDocument filter);
     Task<IEnumerable<TEntity>> FindAllAsync(BsonDocument filter);
 }

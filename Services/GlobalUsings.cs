@@ -5,6 +5,7 @@ global using System.Net;
 global using EventAndCommands.Commands.Services;
 global using EventAndCommands.Queries.Services;
 global using Library.Entities;
+global using Library.Extensions;
 global using Library.Repositories;
 global using Library.Services;
 global using MediatR;
