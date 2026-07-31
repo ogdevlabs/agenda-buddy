@@ -113,7 +113,9 @@ calendar.MapGet("/availability/{email}",
             return TypedResults.Ok(dateTimesCollection);
 
         return TypedResults.NotFound();
-    }).WithName("CheckCalendarAvailability");
+    })
+    .WithName("CheckCalendarAvailability")
+    .RequireAuthorization();
 
 calendar.MapGet("/appointments/{email}",
     async Task<Results<Ok<List<AppointmentEntity>>, NotFound>> (
@@ -129,11 +131,13 @@ calendar.MapGet("/appointments/{email}",
             await EventHelper.CheckCalendarAppointmentsEvent(requestCollection, mediator, providerService,
                 calendarService,
                 email));
-        
+
         if (appointmentEntities is not null) return TypedResults.Ok(appointmentEntities);
 
         return TypedResults.NotFound();
-    }).WithName("CheckCalendarAppointments");
+    })
+    .WithName("CheckCalendarAppointments")
+    .RequireAuthorization();
 
 app.Run();
 
