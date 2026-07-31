@@ -13,6 +13,9 @@ public static class ServiceCollectionExtension
             _ => new MongoDbRepository<CredentialEntity>(database,
                 configuration.GetSection("MongoDbSettings")["CollectionName"]!));
 
+        services.AddScoped<IRepository<DeviceTokenEntity>>(
+            _ => new MongoDbRepository<DeviceTokenEntity>(database, "device_tokens"));
+
         return services;
     }
 }

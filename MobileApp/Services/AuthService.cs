@@ -9,11 +9,16 @@ public class AuthService : IAuthService
 {
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ISecureStorageService _secureStorage;
+    private readonly PushNotificationService? _pushNotificationService;
 
-    public AuthService(IHttpClientFactory httpClientFactory, ISecureStorageService secureStorage)
+    public AuthService(
+        IHttpClientFactory httpClientFactory,
+        ISecureStorageService secureStorage,
+        PushNotificationService? pushNotificationService = null)
     {
         _httpClientFactory = httpClientFactory;
         _secureStorage = secureStorage;
+        _pushNotificationService = pushNotificationService;
     }
 
     public async Task<bool> LoginAsync(string email, string password, CancellationToken ct = default)
@@ -34,6 +39,10 @@ public class AuthService : IAuthService
             return false;
 
         await _secureStorage.SetAsync(JwtDelegatingHandler.JwtKey, loginResponse.Token);
+
+        if (_pushNotificationService is not null)
+            await _pushNotificationService.InitializeAsync();
+
         return true;
     }
 

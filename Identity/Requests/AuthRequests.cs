@@ -22,3 +22,8 @@ public record LogoutRequest(
 );
 
 public record TokenResponse(string AccessToken, string RefreshToken);
+
+public record RegisterDeviceTokenRequest(
+    [Required] string Token,
+    [Required] string Platform
+);

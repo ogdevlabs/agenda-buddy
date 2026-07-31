@@ -1,5 +1,8 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using Identity.Requests;
 using Identity.Services;
+using Library.Services;
 using Library.Tools;
 
 ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls13;
@@ -19,6 +22,7 @@ builder.Services.AddMvcCore();
 builder.Services.AddSingleton<IMongoDbConfiguration, MongoDbConfiguration>();
 builder.Services.AddSingleton<IDateTimeProvider, SystemDateTimeProvider>();
 builder.Services.AddScoped<IdentityService>();
+builder.Services.AddScoped<IDeviceTokenService, DeviceTokenService>();
 
 // JWT Bearer authentication (reads JWT_PUBLIC_KEY env var — fails fast if absent)
 builder.Services.AddAgendaBuddyAuthentication();
@@ -145,6 +149,24 @@ auth.MapPost("/logout", async (LogoutRequest req, IdentityService svc) =>
     }
     catch (ServiceUnavailableException ex) { return Results.Problem(detail: ex.Message, statusCode: 503, title: "service_unavailable"); }
 }).WithName("Logout");
+
+app.MapPost("/device-token", async (RegisterDeviceTokenRequest request, ClaimsPrincipal user, IDeviceTokenService svc) =>
+{
+    if (request is null || string.IsNullOrWhiteSpace(request.Token) || string.IsNullOrWhiteSpace(request.Platform))
+        return Results.BadRequest(new { error = "validation_error", message = "Token and platform are required." });
+
+    if (request.Platform is not "android" and not "ios")
+        return Results.BadRequest(new { error = "validation_error", message = "Platform must be 'android' or 'ios'." });
+
+    var email = user.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                ?? user.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+
+    if (string.IsNullOrWhiteSpace(email))
+        return Results.Unauthorized();
+
+    await svc.UpsertAsync(email, request.Token, request.Platform);
+    return Results.Ok();
+}).RequireAuthorization().WithName("RegisterDeviceToken");
 
 app.Run();
 
