@@ -1,13 +1,12 @@
 namespace EventAndCommands.Queries.Calendar;
 
-[RegisterService(ServiceLifetime.Scoped)]
 public class CheckCalendarAvailabilityQueryHandler(
     IMediator mediator,
     ProviderService providerService,
-    string email)
+    string email,
+    IEventStore eventStore)
     : IRequestHandler<CheckCalendarAvailabilityQuery, List<DateTime>>
 {
-    [InjectService] private IEventStore? EventStore { get; } = new EventStore();
 
     public async Task<List<DateTime>> Handle(CheckCalendarAvailabilityQuery request,
         CancellationToken cancellationToken)
@@ -26,7 +25,7 @@ public class CheckCalendarAvailabilityQueryHandler(
                 Type = "CheckCalendarAvailabilityQuery",
                 Data = JsonSerializer.Serialize(providerEntity)
             };
-            await EventStore!.SaveAsync(successEvent);
+            await eventStore.SaveAsync(successEvent);
             var res = SupportTools<ProviderEntity>.GetThirtyDaysCalendarAvailability(providerEntity);
             res.ForEach(timeslot => Console.WriteLine(timeslot));
             return res;
@@ -40,7 +39,7 @@ public class CheckCalendarAvailabilityQueryHandler(
             Type = "CheckCalendarAvailabilityQuery",
             Data = JsonSerializer.Serialize(new ProviderEntity())
         };
-        await EventStore!.SaveAsync(failEvent);
+        await eventStore.SaveAsync(failEvent);
         return null!;
     }
 }

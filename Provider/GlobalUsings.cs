@@ -27,4 +27,5 @@ global using Provider.Configurations;
 global using Provider.Events;
 global using Provider.Extensions;
 global using Provider.Requests;
-global using ProviderService = Library.Services.ProviderService;
+global using ProviderService = Library.Services.ProviderService;global using EventAndCommands;
+global using EventAndCommands.Persitency;

@@ -2,13 +2,12 @@ using EventAndCommands.Events.Profession;
 
 namespace EventAndCommands.Commands.Profession;
 
-[RegisterService(ServiceLifetime.Scoped)]
 public class AddProfessionCommandHandler(
     IMediator mediator,
     ProfessionService professionService,
-    ProfessionEntity professionEntity) : IRequestHandler<AddProfessionCommand, ProfessionEntity>
+    ProfessionEntity professionEntity,
+    IEventStore eventStore) : IRequestHandler<AddProfessionCommand, ProfessionEntity>
 {
-    [InjectService] private IEventStore EventStore { get; } = new EventStore();
 
     public async Task<ProfessionEntity> Handle(AddProfessionCommand request, CancellationToken cancellationToken)
     {
@@ -24,7 +23,7 @@ public class AddProfessionCommandHandler(
                 Type = "AddProfessionCommand",
                 Data = JsonSerializer.Serialize(professionEntity)
             };
-            await EventStore!.SaveAsync(successEvent);
+            await eventStore.SaveAsync(successEvent);
             return await Task.FromResult(professionEntity);
         }
         catch (Exception)
@@ -37,7 +36,7 @@ public class AddProfessionCommandHandler(
                 Type = "AddProfessionCommand",
                 Data = JsonSerializer.Serialize(professionEntity)
             };
-            await EventStore!.SaveAsync(successEvent);
+            await eventStore.SaveAsync(successEvent);
             return await Task.FromResult(professionEntity);
         }
     }

@@ -1,10 +1,8 @@
 namespace EventAndCommands.Commands.Provider;
 
-[RegisterService(ServiceLifetime.Scoped)]
-public class DeactivateProviderCommandHandler(IMediator mediator)
+public class DeactivateProviderCommandHandler(IMediator mediator, IEventStore eventStore)
     : IRequestHandler<DeactivateProviderCommand, string>
 {
-    [InjectService] private IEventStore? EventStore { get; } = new EventStore();
 
     //TODO
     //Pending of implementation
@@ -21,7 +19,7 @@ public class DeactivateProviderCommandHandler(IMediator mediator)
                 Type = "DeactivateProviderCommand",
                 Data = JsonSerializer.Serialize(new ProviderEntity())
             };
-            await EventStore!.SaveAsync(successEvent);
+            await eventStore.SaveAsync(successEvent);
             return await Task.FromResult(request.ToJson());
         }
         catch
@@ -34,7 +32,7 @@ public class DeactivateProviderCommandHandler(IMediator mediator)
                 Type = "DeactivateProviderCommand",
                 Data = JsonSerializer.Serialize(new ProviderEntity())
             };
-            await EventStore!.SaveAsync(failEvent);
+            await eventStore.SaveAsync(failEvent);
             return await Task.FromResult(request.ToJson());
         }
     }

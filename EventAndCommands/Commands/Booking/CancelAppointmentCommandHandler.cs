@@ -6,9 +6,9 @@ public class CancelAppointmentCommandHandler(
     KafkaClient? kafkaClient,
     ProviderService providerService,
     BookingService bookingService,
-    string appointmentIdentifier) : IRequestHandler<CancelAppointmentCommand, string>
+    string appointmentIdentifier,
+    IEventStore eventStore) : IRequestHandler<CancelAppointmentCommand, string>
 {
-    [InjectService] private IEventStore EventStore { get; } = new EventStore();
 
     public async Task<string> Handle(CancelAppointmentCommand request, CancellationToken cancellationToken)
     {
@@ -26,7 +26,7 @@ public class CancelAppointmentCommandHandler(
                     Type = "CancelAppointmentCommand",
                     Data = JsonSerializer.Serialize(appointmentEntity)
                 };
-                await EventStore!.SaveAsync(successEvent);
+                await eventStore.SaveAsync(successEvent);
                 return await Task.FromResult(appointmentEntity.ToJson());
             }
 
@@ -42,7 +42,7 @@ public class CancelAppointmentCommandHandler(
                 EmailCustomer = ""
             })
         };
-        await EventStore!.SaveAsync(failEvent);
+        await eventStore.SaveAsync(failEvent);
         return null!;
     }
 

@@ -1,14 +1,13 @@
 namespace EventAndCommands.Commands.Provider;
 
-[RegisterService(ServiceLifetime.Scoped)]
 public class AddProviderCommandHandler(
     IMediator mediator,
     KafkaClient kafkaClient,
     ProviderService providerService,
-    ProviderEntity providerEntity)
+    ProviderEntity providerEntity,
+    IEventStore eventStore)
     : IRequestHandler<AddProviderCommand, string>
 {
-    [InjectService] private IEventStore EventStore { get; } = new EventStore();
 
     private string TopicName { get; set; } = string.Empty;
 
@@ -28,7 +27,7 @@ public class AddProviderCommandHandler(
                 Type = "AddProviderCommand",
                 Data = JsonSerializer.Serialize(providerEntity)
             };
-            await EventStore.SaveAsync(succesEvent);
+            await eventStore.SaveAsync(succesEvent);
             return await Task.FromResult(TopicName);
         }
 
@@ -42,7 +41,7 @@ public class AddProviderCommandHandler(
                 Type = $"AddProviderCommand - {kafkaTopic}",
                 Data = JsonSerializer.Serialize(providerEntity)
             };
-            await EventStore.SaveAsync(failEvent);
+            await eventStore.SaveAsync(failEvent);
             return await Task.FromResult(kafkaTopic);
         }
 

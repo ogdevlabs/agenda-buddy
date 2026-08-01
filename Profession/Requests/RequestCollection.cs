@@ -1,7 +1,7 @@
 namespace Profession.Requests;
 
 [ExcludeFromCodeCoverage]
-public class RequestCollection : IRequestCollection
+public class RequestCollection(IEventStore eventStore) : IRequestCollection
 {
     public async Task<ProfessionEntity> AddProfessionRequest(IMediator mediator, ProfessionService professionService,
         ProfessionEntity professionEntity)
@@ -9,7 +9,8 @@ public class RequestCollection : IRequestCollection
         var result = await new AddProfessionCommandHandler(
                 mediator,
                 professionService,
-                professionEntity)
+                professionEntity,
+                eventStore)
             .Handle(
                 new AddProfessionCommand() { ProfessionEntity = professionEntity }, new CancellationToken());
         return result;
@@ -19,7 +20,7 @@ public class RequestCollection : IRequestCollection
         ProfessionService professionService)
     {
         var result =
-            await new GetProfessionsQueryHandler(mediator, professionService).Handle(new GetProfessionsQuery(),
+            await new GetProfessionsQueryHandler(mediator, professionService, eventStore).Handle(new GetProfessionsQuery(),
                 new CancellationToken());
         return result;
     }
@@ -28,7 +29,7 @@ public class RequestCollection : IRequestCollection
         string name)
     {
         var result =
-            await new GetProfessionByNameQueryHandler(mediator, professionService, name).Handle(
+            await new GetProfessionByNameQueryHandler(mediator, professionService, name, eventStore).Handle(
                 new GetProfessionByNameQuery { Name = name }, new CancellationToken());
         return result;
     }

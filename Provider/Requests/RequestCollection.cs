@@ -1,6 +1,6 @@
 namespace Provider.Requests;
 
-public class RequestCollection(IKafkaClient kafkaClient) : IRequestCollection
+public class RequestCollection(IKafkaClient kafkaClient, IEventStore eventStore) : IRequestCollection
 {
     public async Task<string> AddProviderRequest(
         IMediator mediator,
@@ -11,7 +11,8 @@ public class RequestCollection(IKafkaClient kafkaClient) : IRequestCollection
                 mediator,
                 (kafkaClient as KafkaClient)!,
                 providerService,
-                providerEntity)
+                providerEntity,
+                eventStore)
             .Handle(
                 new AddProviderCommand { TopicName = providerEntity.KafkaTopic! },
                 new CancellationToken());
@@ -28,7 +29,8 @@ public class RequestCollection(IKafkaClient kafkaClient) : IRequestCollection
                 email,
                 mediator,
                 providerService,
-                providerEntity)
+                providerEntity,
+                eventStore)
             .Handle(
                 new UpdateProviderCommand { ProviderEntity = providerEntity },
                 new CancellationToken());
@@ -39,7 +41,7 @@ public class RequestCollection(IKafkaClient kafkaClient) : IRequestCollection
         ProviderService providerService)
     {
         var result =
-            await new GetProvidersQueryHandler(mediator, providerService).Handle(new GetProvidersQuery(),
+            await new GetProvidersQueryHandler(mediator, providerService, eventStore).Handle(new GetProvidersQuery(),
                 new CancellationToken());
         return result;
     }
@@ -48,7 +50,7 @@ public class RequestCollection(IKafkaClient kafkaClient) : IRequestCollection
         string email)
     {
         var result =
-            await new GetProviderByEmailQueryHandler(mediator, providerService, email).Handle(
+            await new GetProviderByEmailQueryHandler(mediator, providerService, email, eventStore).Handle(
                 new GetProviderByEmailQuery(), new CancellationToken());
         return result;
     }

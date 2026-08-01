@@ -1,10 +1,8 @@
 namespace EventAndCommands.Queries.Customers;
 
-[RegisterService(ServiceLifetime.Scoped)]
-public class GetCustomerByEmailQueryHandler(IMediator mediator, CustomerService customerService, string email)
+public class GetCustomerByEmailQueryHandler(IMediator mediator, CustomerService customerService, string email, IEventStore eventStore)
     : IRequestHandler<GetCustomerByEmailQuery, CustomerEntity>
 {
-    [InjectService] private IEventStore? EventStore { get; } = new EventStore();
 
     public async Task<CustomerEntity> Handle(GetCustomerByEmailQuery request, CancellationToken cancellationToken)
     {
@@ -21,7 +19,7 @@ public class GetCustomerByEmailQueryHandler(IMediator mediator, CustomerService 
                 Type = "GetCustomerByEmailQuery",
                 Data = JsonSerializer.Serialize(matchedCustomer)
             };
-            await EventStore!.SaveAsync(successEvent);
+            await eventStore.SaveAsync(successEvent);
             return matchedCustomer;
         }
         var failedEvent = new Event
@@ -32,7 +30,7 @@ public class GetCustomerByEmailQueryHandler(IMediator mediator, CustomerService 
             Type = "GetCustomerByEmailQuery",
             Data = JsonSerializer.Serialize(new CustomerEntity())
         };
-        await EventStore!.SaveAsync(failedEvent);
+        await eventStore.SaveAsync(failedEvent);
         return null!;
     }
 }

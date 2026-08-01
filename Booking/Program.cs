@@ -7,6 +7,7 @@ builder.Services.AddMongoDbRepository(builder.Configuration);
 
 // Add MediatR
 builder.Services.AddMediatR(cfg => { cfg.RegisterServicesFromAssembly(typeof(Program).Assembly); });
+builder.Services.AddEventStore();
 
 // Add services required to support using MVC's model binders
 builder.Services.AddMvcCore();

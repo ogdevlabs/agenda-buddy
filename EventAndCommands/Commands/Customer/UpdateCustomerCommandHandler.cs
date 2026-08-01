@@ -4,9 +4,9 @@ public class UpdateCustomerCommandHandler(
     string email,
     IMediator mediator,
     CustomerService customerService,
-    CustomerEntity customerEntity) : IRequestHandler<UpdateCustomerCommand, string>
+    CustomerEntity customerEntity,
+    IEventStore eventStore) : IRequestHandler<UpdateCustomerCommand, string>
 {
-    [InjectService] private IEventStore? EventStore { get; } = new EventStore();
 
     public async Task<string> Handle(UpdateCustomerCommand request, CancellationToken cancellationToken)
     {
@@ -30,7 +30,7 @@ public class UpdateCustomerCommandHandler(
                     Type = "UpdateCustomerCommand",
                     Data = JsonSerializer.Serialize(customerEntity)
                 };
-                await EventStore!.SaveAsync(successEvent);
+                await eventStore.SaveAsync(successEvent);
                 return await Task.FromResult(customerEntity.ToJson());
             }
             else
@@ -43,7 +43,7 @@ public class UpdateCustomerCommandHandler(
                     Type = "UpdateProviderCommand",
                     Data = JsonSerializer.Serialize(customerEntity)
                 };
-                await EventStore!.SaveAsync(failEvent);
+                await eventStore.SaveAsync(failEvent);
             }
         }
         else
@@ -56,7 +56,7 @@ public class UpdateCustomerCommandHandler(
                 Type = "UpdateProviderCommand",
                 Data = JsonSerializer.Serialize(customerEntity)
             };
-            await EventStore!.SaveAsync(failEvent);
+            await eventStore.SaveAsync(failEvent);
         }
 
         return await Task.FromResult(string.Empty);
