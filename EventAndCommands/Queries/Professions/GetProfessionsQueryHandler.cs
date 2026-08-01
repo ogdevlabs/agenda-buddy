@@ -26,7 +26,7 @@ public class GetProfessionsQueryHandler(IMediator mediator, ProfessionService pr
         }
         else
         {
-            var successEvent = new Event
+            var failEvent = new Event
             {
                 Id = ObjectId.GenerateNewId(),
                 TimeStamp = DateTime.UtcNow,
@@ -34,7 +34,7 @@ public class GetProfessionsQueryHandler(IMediator mediator, ProfessionService pr
                 Type = "GetProfessionsQuery",
                 Data = JsonSerializer.Serialize(professionList)
             };
-            await eventStore.SaveAsync(successEvent);
+            await eventStore.SaveAsync(failEvent);
             return null!;
         }
     }

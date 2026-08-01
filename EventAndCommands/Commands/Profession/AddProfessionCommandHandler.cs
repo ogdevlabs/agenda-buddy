@@ -28,7 +28,7 @@ public class AddProfessionCommandHandler(
         }
         catch (Exception)
         {
-            var successEvent = new Event
+            var failEvent = new Event
             {
                 Id = ObjectId.GenerateNewId(),
                 TimeStamp = DateTime.UtcNow,
@@ -36,7 +36,7 @@ public class AddProfessionCommandHandler(
                 Type = "AddProfessionCommand",
                 Data = JsonSerializer.Serialize(professionEntity)
             };
-            await eventStore.SaveAsync(successEvent);
+            await eventStore.SaveAsync(failEvent);
             return await Task.FromResult(professionEntity);
         }
     }

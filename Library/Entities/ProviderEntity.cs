@@ -40,4 +40,6 @@ public class ProviderEntity
     [BsonElement("appointments")] public List<AppointmentEntity> AppointmentEntities { get; set; } = [];
 
     [BsonElement("subscribed_customer_collection")] public List<string> SubscribedCustomerCollection { get; set; } = [];
+
+    [BsonElement("is_active")] public bool IsActive { get; set; } = true;
 }
