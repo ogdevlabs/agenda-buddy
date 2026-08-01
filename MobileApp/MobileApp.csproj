@@ -20,6 +20,8 @@
         <TargetFrameworks Condition="'$(MobileWorkloads)' == 'true' AND '$(MobilePlatform)' == ''">net10.0-android;net10.0-ios;net10.0</TargetFrameworks>
         <UseMaui Condition="'$(MobileWorkloads)' == 'true'">true</UseMaui>
         <UseMaui Condition="'$(MobileWorkloads)' != 'true'">false</UseMaui>
+        <!-- Exe is required to package/launch on the mobile TFMs; net10.0 stays Library so MobileApp.Tests can reference it. -->
+        <OutputType Condition="'$(TargetFramework)' == 'net10.0-android' OR '$(TargetFramework)' == 'net10.0-ios'">Exe</OutputType>
         <RootNamespace>MobileApp</RootNamespace>
         <AssemblyName>MobileApp</AssemblyName>
         <Nullable>enable</Nullable>
@@ -40,7 +42,24 @@
         <PackageReference Include="CommunityToolkit.Mvvm" Version="8.3.2" />
         <PackageReference Include="Plugin.Firebase.CloudMessaging" Version="3.0.0" Condition="'$(UseMaui)' == 'true'" />
         <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.0" Condition="'$(Configuration)' == 'Debug'" />
     </ItemGroup>
+
+    <!-- Library's Microsoft.AspNetCore.Authentication.JwtBearer reference (server-side JWT validation,
+         see Library/Extensions/AuthenticationExtensions.cs) transitively adds a FrameworkReference to
+         Microsoft.AspNetCore.App. No runtime pack exists for that framework on mobile RIDs, and MobileApp
+         never calls into that server-only code, so drop it for the mobile TFMs. The SDK injects this
+         FrameworkReference via the AddTransitiveFrameworkReferences target during the build, so a plain
+         ItemGroup Remove (evaluated too early) has no effect — it must be removed from a target that
+         runs after that injection and before ResolveFrameworkReferences consumes it. -->
+    <Target Name="RemoveAspNetCoreFrameworkReferenceForMobile"
+            AfterTargets="AddTransitiveFrameworkReferences"
+            BeforeTargets="ResolveFrameworkReferences"
+            Condition="'$(TargetFramework)' == 'net10.0-android' OR '$(TargetFramework)' == 'net10.0-ios'">
+        <ItemGroup>
+            <FrameworkReference Remove="Microsoft.AspNetCore.App" />
+        </ItemGroup>
+    </Target>
 
     <ItemGroup>
         <ProjectReference Include="..\Library\Library.csproj" />
