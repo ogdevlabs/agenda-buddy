@@ -33,7 +33,7 @@ public class AddServicesToProviderCommandHandler(
                     Data = JsonSerializer.Serialize(provider)
                 };
                 await eventStore.SaveAsync(successEvent);
-                return await Task.FromResult(provider);
+                return provider;
             }
         }
         else

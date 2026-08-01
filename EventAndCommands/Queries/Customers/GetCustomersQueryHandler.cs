@@ -21,7 +21,7 @@ public class GetCustomersQueryHandler(IMediator mediator, CustomerService custom
                 Data = JsonSerializer.Serialize(customerEntities.ToList())
             };
             await eventStore.SaveAsync(successEvent);
-            return await Task.FromResult(customerEntities);
+            return customerEntities;
         }
 
         var failEvent = new Event
@@ -33,6 +33,6 @@ public class GetCustomersQueryHandler(IMediator mediator, CustomerService custom
             Data = JsonSerializer.Serialize(customerEntities.ToList())
         };
         await eventStore.SaveAsync(failEvent);
-        return await Task.FromResult(customerEntities);
+        return customerEntities;
     }
 }

@@ -26,7 +26,7 @@ public class AddCustomerCommandHandler(
                 Data = JsonSerializer.Serialize(customerEntity)
             };
             await eventStore.SaveAsync(succesEvent);
-            return await Task.FromResult(TopicName);
+            return TopicName;
         }
         if (kafkaTopic.ToLower().StartsWith("exception"))
         {
@@ -39,9 +39,9 @@ public class AddCustomerCommandHandler(
                 Data = JsonSerializer.Serialize(customerEntity)
             };
             await eventStore.SaveAsync(failEvent);
-            return await Task.FromResult(kafkaTopic);
+            return kafkaTopic;
         }
-        return await Task.FromResult(string.Empty);
+        return string.Empty;
     }
 
     private async Task<string> CreateTopic(string email)

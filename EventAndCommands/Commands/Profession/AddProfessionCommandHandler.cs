@@ -24,7 +24,7 @@ public class AddProfessionCommandHandler(
                 Data = JsonSerializer.Serialize(professionEntity)
             };
             await eventStore.SaveAsync(successEvent);
-            return await Task.FromResult(professionEntity);
+            return professionEntity;
         }
         catch (Exception)
         {
@@ -37,7 +37,7 @@ public class AddProfessionCommandHandler(
                 Data = JsonSerializer.Serialize(professionEntity)
             };
             await eventStore.SaveAsync(failEvent);
-            return await Task.FromResult(professionEntity);
+            return professionEntity;
         }
     }
 }

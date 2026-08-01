@@ -23,7 +23,7 @@ public class GetProvidersQueryHandler(IMediator mediator, ProviderService provid
                 Data = JsonSerializer.Serialize(providerEntities)
             };
             await eventStore.SaveAsync(successEvent);
-            return await Task.FromResult(providerEntities);
+            return providerEntities;
         }
 
 
@@ -36,6 +36,6 @@ public class GetProvidersQueryHandler(IMediator mediator, ProviderService provid
             Data = JsonSerializer.Serialize(new List<ProviderEntity>())
         };
         await eventStore.SaveAsync(failEvent);
-        return await Task.FromResult(new List<ProviderEntity>());
+        return new List<ProviderEntity>();
     }
 }

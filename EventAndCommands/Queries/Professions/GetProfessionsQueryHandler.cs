@@ -22,7 +22,7 @@ public class GetProfessionsQueryHandler(IMediator mediator, ProfessionService pr
                 Data = JsonSerializer.Serialize(professionList)
             };
             await eventStore.SaveAsync(successEvent);
-            return await Task.FromResult(professionList);
+            return professionList;
         }
         else
         {

@@ -21,7 +21,7 @@ public class GetProfessionByNameQueryHandler(IMediator mediator, ProfessionServi
                 Data = JsonSerializer.Serialize(profession)
             };
             await eventStore.SaveAsync(successEvent);
-            return await Task.FromResult(profession);
+            return profession;
         }
         else
         {

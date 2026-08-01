@@ -32,7 +32,7 @@ public class UpdateProviderCommandHandler(
                     Data = JsonSerializer.Serialize(providerEntity)
                 };
                 await eventStore.SaveAsync(successEvent);
-                return await Task.FromResult(providerEntity.ToJson());
+                return providerEntity.ToJson();
             }
         }
         else
@@ -48,6 +48,6 @@ public class UpdateProviderCommandHandler(
             await eventStore.SaveAsync(failEvent);
         }
 
-        return await Task.FromResult(string.Empty);
+        return string.Empty;
     }
 }

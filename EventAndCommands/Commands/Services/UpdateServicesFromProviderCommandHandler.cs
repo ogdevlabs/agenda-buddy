@@ -40,7 +40,7 @@ public class UpdateServicesFromProviderCommandHandler(
                 Data = JsonSerializer.Serialize(existingProvider)
             };
             await eventStore.SaveAsync(successEvent);
-            return await Task.FromResult(existingProvider);
+            return existingProvider;
         }
 
         var failEvent = new Event

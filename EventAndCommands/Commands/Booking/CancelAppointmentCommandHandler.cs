@@ -27,7 +27,7 @@ public class CancelAppointmentCommandHandler(
                     Data = JsonSerializer.Serialize(appointmentEntity)
                 };
                 await eventStore.SaveAsync(successEvent);
-                return await Task.FromResult(appointmentEntity.ToJson());
+                return appointmentEntity.ToJson();
             }
 
         var failEvent = new Event
