@@ -45,22 +45,6 @@
         <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.0" Condition="'$(Configuration)' == 'Debug'" />
     </ItemGroup>
 
-    <!-- Library's Microsoft.AspNetCore.Authentication.JwtBearer reference (server-side JWT validation,
-         see Library/Extensions/AuthenticationExtensions.cs) transitively adds a FrameworkReference to
-         Microsoft.AspNetCore.App. No runtime pack exists for that framework on mobile RIDs, and MobileApp
-         never calls into that server-only code, so drop it for the mobile TFMs. The SDK injects this
-         FrameworkReference via the AddTransitiveFrameworkReferences target during the build, so a plain
-         ItemGroup Remove (evaluated too early) has no effect — it must be removed from a target that
-         runs after that injection and before ResolveFrameworkReferences consumes it. -->
-    <Target Name="RemoveAspNetCoreFrameworkReferenceForMobile"
-            AfterTargets="AddTransitiveFrameworkReferences"
-            BeforeTargets="ResolveFrameworkReferences"
-            Condition="'$(TargetFramework)' == 'net10.0-android' OR '$(TargetFramework)' == 'net10.0-ios'">
-        <ItemGroup>
-            <FrameworkReference Remove="Microsoft.AspNetCore.App" />
-        </ItemGroup>
-    </Target>
-
     <ItemGroup>
         <ProjectReference Include="..\Library\Library.csproj" />
     </ItemGroup>
@@ -74,6 +58,13 @@
         <MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" Color="#512BD4" />
         <MauiSplashScreen Include="Resources\Splash\splash.svg" Color="#512BD4" BaseSize="128,128" />
         <MauiFont Include="Resources\Fonts\*" />
+    </ItemGroup>
+
+    <!-- The Maui SDK normally auto-excludes non-matching Platforms/<X> folders per TFM, but that
+         only activates when UseMaui=true. The net10.0 fallback slice (MobileWorkloads=false) has
+         UseMaui=false, so the plain SDK glob would otherwise pull in Android/iOS-only code. -->
+    <ItemGroup Condition="'$(UseMaui)' != 'true'">
+        <Compile Remove="Platforms\**\*.cs" />
     </ItemGroup>
 
 </Project>
