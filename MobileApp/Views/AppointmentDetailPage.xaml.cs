@@ -42,7 +42,7 @@ public partial class AppointmentDetailPage : ContentPage
 
             case ActionType.Cancel:
                 // UX F-005: destructive action → bottom sheet (DisplayActionSheet), NOT modal alert.
-                var cancelChoice = await DisplayActionSheet(
+                var cancelChoice = await DisplayActionSheetAsync(
                     "Cancel this appointment?",
                     "Keep it",
                     null,
@@ -52,7 +52,7 @@ public partial class AppointmentDetailPage : ContentPage
                 break;
 
             case ActionType.Complete:
-                var completeChoice = await DisplayActionSheet(
+                var completeChoice = await DisplayActionSheetAsync(
                     "Mark this appointment as complete?",
                     "Go back",
                     null,
