@@ -34,13 +34,14 @@ public class AuthServiceTests
         var storage = new Mock<ISecureStorageService>();
         storage.Setup(s => s.SetAsync(It.IsAny<string>(), It.IsAny<string>())).Returns(Task.CompletedTask);
 
-        var factory = CreateFactory(HttpStatusCode.OK, """{"token":"abc123"}""");
+        var factory = CreateFactory(HttpStatusCode.OK, """{"accessToken":"abc123","refreshToken":"rt456"}""");
         var sut = new AuthService(factory, storage.Object);
 
         var result = await sut.LoginAsync("user@example.com", "password123");
 
         Assert.True(result);
         storage.Verify(s => s.SetAsync(JwtDelegatingHandler.JwtKey, "abc123"), Times.Once);
+        storage.Verify(s => s.SetAsync(AuthService.RefreshTokenKey, "rt456"), Times.Once);
     }
 
     [Fact]
@@ -64,13 +65,14 @@ public class AuthServiceTests
         storage.Setup(s => s.SetAsync(It.IsAny<string>(), It.IsAny<string>())).Returns(Task.CompletedTask);
 
         // Pre-populate so there is a token to clear
-        var factory = CreateFactory(HttpStatusCode.OK, """{"token":"tok-xyz"}""");
+        var factory = CreateFactory(HttpStatusCode.OK, """{"accessToken":"tok-xyz","refreshToken":"rt-abc"}""");
         var sut = new AuthService(factory, storage.Object);
         await sut.LoginAsync("u@test.com", "p");
 
         await sut.LogoutAsync();
 
         storage.Verify(s => s.Remove(JwtDelegatingHandler.JwtKey), Times.Once);
+        storage.Verify(s => s.Remove(AuthService.RefreshTokenKey), Times.Once);
     }
 
     // ---------------------------------------------------------------------------

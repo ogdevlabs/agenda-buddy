@@ -10,6 +10,11 @@
         ContentTemplate="{DataTemplate views:LoginPage}"
         Shell.TabBarIsVisible="False" />
 
+    <ShellContent
+        Route="register"
+        ContentTemplate="{DataTemplate views:RegisterPage}"
+        Shell.TabBarIsVisible="False" />
+
     <TabBar>
         <Tab Title="Dashboard" Icon="dashboard_icon.png">
             <ShellContent

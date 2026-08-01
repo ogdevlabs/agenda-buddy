@@ -26,7 +26,12 @@ public partial class LoginPage : ContentPage
     private async void OnUnauthorizedAccess(object? sender, EventArgs e)
     {
         _vm.ErrorMessage = "Your session expired. Please sign in again.";
-        await Shell.Current.GoToAsync("//LoginPage");
+        await Shell.Current.GoToAsync("//login");
+    }
+
+    private async void OnCreateAccountTapped(object? sender, EventArgs e)
+    {
+        await Shell.Current.GoToAsync("//register");
     }
 }
 #endif

@@ -61,7 +61,7 @@ public class PushNotificationService
             var body = new { token, platform };
             var json = JsonSerializer.Serialize(body);
             using var content = new StringContent(json, Encoding.UTF8, "application/json");
-            await client.PostAsync("identity/device-token", content);
+            await client.PostAsync("device-token", content);
         }
         catch (Exception)
         {

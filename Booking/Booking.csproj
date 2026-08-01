@@ -11,9 +11,9 @@
         <PackageReference Include="MediatR" Version="12.3.0"/>
         <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.0"/>
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.0"/>
-        <PackageReference Include="MiniValidation" Version="0.8.0"/>
+        <PackageReference Include="MiniValidation" Version="0.9.1"/>
         <PackageReference Include="MongoDB.Driver" Version="2.25.0"/>
-        <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0"/>
+        <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2"/>
     </ItemGroup>
 
     <ItemGroup>

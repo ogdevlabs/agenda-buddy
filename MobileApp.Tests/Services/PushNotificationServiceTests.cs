@@ -27,7 +27,7 @@ public class PushNotificationServiceTests
 
         Assert.NotNull(handler.LastRequest);
         Assert.Equal(HttpMethod.Post, handler.LastRequest!.Method);
-        Assert.Equal("identity/device-token", handler.LastRequest.RequestUri!.ToString().Replace("https://localhost/", ""));
+        Assert.Equal("device-token", handler.LastRequest.RequestUri!.ToString().Replace("https://localhost/", ""));
 
         Assert.NotNull(handler.LastRequestBody);
         using var doc = JsonDocument.Parse(handler.LastRequestBody!);

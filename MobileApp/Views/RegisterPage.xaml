@@ -2,8 +2,8 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
-             x:Class="MobileApp.Views.LoginPage"
-             Title="Sign In">
+             x:Class="MobileApp.Views.RegisterPage"
+             Title="Create Account">
 
     <ContentPage.Resources>
         <toolkit:InvertedBoolConverter x:Key="InvertedBoolConverter" />
@@ -17,55 +17,69 @@
                    FontAttributes="Bold"
                    HorizontalOptions="Center" />
 
-            <Label Text="Sign in to your account"
+            <Label Text="Create your account"
                    FontSize="16"
                    HorizontalOptions="Center"
                    Margin="0,0,0,16" />
 
             <!-- Email -->
             <Label Text="Email" FontAttributes="Bold" />
-            <Entry x:Name="EmailEntry"
-                   Placeholder="you@example.com"
+            <Entry Placeholder="you@example.com"
                    Keyboard="Email"
                    Text="{Binding Email}"
-                   AutomationId="EmailEntry" />
+                   AutomationId="RegisterEmailEntry" />
 
             <!-- Password -->
             <Label Text="Password" FontAttributes="Bold" />
-            <Entry x:Name="PasswordEntry"
-                   Placeholder="Password"
+            <Entry Placeholder="At least 8 characters"
                    IsPassword="True"
                    Text="{Binding Password}"
-                   AutomationId="PasswordEntry" />
+                   AutomationId="RegisterPasswordEntry" />
+
+            <!-- Confirm Password -->
+            <Label Text="Confirm Password" FontAttributes="Bold" />
+            <Entry Placeholder="Re-enter your password"
+                   IsPassword="True"
+                   Text="{Binding ConfirmPassword}"
+                   AutomationId="RegisterConfirmPasswordEntry" />
+
+            <!-- Role selection -->
+            <Label Text="I am a..." FontAttributes="Bold" Margin="0,8,0,0" />
+            <HorizontalStackLayout Spacing="16">
+                <RadioButton Content="Service Provider"
+                             IsChecked="{Binding IsProvider}"
+                             AutomationId="ProviderRadio" />
+                <RadioButton Content="Customer"
+                             AutomationId="CustomerRadio" />
+            </HorizontalStackLayout>
 
             <!-- Error message -->
-            <Label x:Name="ErrorLabel"
-                   Text="{Binding ErrorMessage}"
+            <Label Text="{Binding ErrorMessage}"
                    TextColor="Red"
                    IsVisible="{Binding HasError}"
-                   AutomationId="ErrorLabel" />
+                   AutomationId="RegisterErrorLabel" />
 
-            <!-- Sign in button + activity indicator -->
+            <!-- Register button + activity indicator -->
             <Grid>
-                <Button Text="Sign In"
-                        Command="{Binding SignInCommand}"
+                <Button Text="Create Account"
+                        Command="{Binding RegisterCommand}"
                         IsVisible="{Binding IsLoading, Converter={StaticResource InvertedBoolConverter}}"
-                        AutomationId="SignInButton" />
+                        AutomationId="RegisterButton" />
                 <ActivityIndicator IsRunning="{Binding IsLoading}"
                                    IsVisible="{Binding IsLoading}"
                                    HorizontalOptions="Center" />
             </Grid>
 
-            <!-- Navigate to registration -->
+            <!-- Navigate to login -->
             <Label HorizontalOptions="Center" Margin="0,8,0,0">
                 <Label.FormattedText>
                     <FormattedString>
-                        <Span Text="Don't have an account? " />
-                        <Span Text="Create Account"
+                        <Span Text="Already have an account? " />
+                        <Span Text="Sign In"
                               TextColor="{StaticResource Primary}"
                               TextDecorations="Underline">
                             <Span.GestureRecognizers>
-                                <TapGestureRecognizer Tapped="OnCreateAccountTapped" />
+                                <TapGestureRecognizer Tapped="OnSignInTapped" />
                             </Span.GestureRecognizers>
                         </Span>
                     </FormattedString>
