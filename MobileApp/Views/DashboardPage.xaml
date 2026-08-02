@@ -182,13 +182,16 @@
                                     <VerticalStackLayout Grid.Column="1"
                                                          Spacing="4"
                                                          VerticalOptions="Center">
-                                        <Label Text="{Binding CustomerEmail}"
+                                        <Label Text="{Binding CustomerName}"
                                                FontAttributes="Bold"
                                                FontSize="15"
                                                TextColor="{StaticResource TextPrimary}"
                                                LineBreakMode="TailTruncation" />
-                                        <Label Text="{Binding ScheduledAt, StringFormat='{0:h:mm tt} - {0:MMM d}'}"
+                                        <Label Text="{Binding ServiceName}"
                                                FontSize="13"
+                                               TextColor="{StaticResource TextSecondary}" />
+                                        <Label Text="{Binding ScheduledAt, StringFormat='{0:h:mm tt} · {0:MMM d}'}"
+                                               FontSize="12"
                                                TextColor="{StaticResource TextMuted}" />
                                     </VerticalStackLayout>
 

@@ -126,57 +126,85 @@ public partial class DashboardViewModel : ObservableObject
             {
                 Id = "seed-1",
                 CustomerEmail = "alex.chen@agendabuddy.dev",
+                CustomerName = "Alex Chen",
+                CustomerPhone = "+1 (415) 555-0142",
                 ProviderEmail = "sarah.mitchell@agendabuddy.dev",
                 ScheduledAt = today.AddHours(9),
-                Status = AppointmentStatus.Confirmed
+                Status = AppointmentStatus.Confirmed,
+                ServiceName = "Personal Training",
+                CustomerNotes = "Focus on upper body today, shoulder has been tight"
             },
             new AppointmentSummary
             {
                 Id = "seed-2",
                 CustomerEmail = "priya.sharma@agendabuddy.dev",
+                CustomerName = "Priya Sharma",
+                CustomerPhone = "+1 (628) 555-0198",
                 ProviderEmail = "sarah.mitchell@agendabuddy.dev",
                 ScheduledAt = today.AddHours(10),
-                Status = AppointmentStatus.Confirmed
+                Status = AppointmentStatus.Confirmed,
+                ServiceName = "Yoga Session",
+                CustomerNotes = "Beginner level, working on flexibility"
             },
             new AppointmentSummary
             {
                 Id = "seed-3",
                 CustomerEmail = "david.thompson@agendabuddy.dev",
+                CustomerName = "David Thompson",
+                CustomerPhone = "+1 (510) 555-0267",
                 ProviderEmail = "sarah.mitchell@agendabuddy.dev",
                 ScheduledAt = today.AddHours(14),
-                Status = AppointmentStatus.Requested
+                Status = AppointmentStatus.Requested,
+                ServiceName = "HIIT Coaching",
+                CustomerNotes = "First session — wants to discuss goals"
             },
             new AppointmentSummary
             {
                 Id = "seed-4",
                 CustomerEmail = "priya.sharma@agendabuddy.dev",
+                CustomerName = "Priya Sharma",
+                CustomerPhone = "+1 (628) 555-0198",
                 ProviderEmail = "sarah.mitchell@agendabuddy.dev",
                 ScheduledAt = today.AddHours(15).AddMinutes(30),
-                Status = AppointmentStatus.Confirmed
+                Status = AppointmentStatus.Confirmed,
+                ServiceName = "Meditation",
+                CustomerNotes = ""
             },
             new AppointmentSummary
             {
                 Id = "seed-5",
                 CustomerEmail = "alex.chen@agendabuddy.dev",
+                CustomerName = "Alex Chen",
+                CustomerPhone = "+1 (415) 555-0142",
                 ProviderEmail = "sarah.mitchell@agendabuddy.dev",
                 ScheduledAt = today.AddDays(1).AddHours(9),
-                Status = AppointmentStatus.Confirmed
+                Status = AppointmentStatus.Confirmed,
+                ServiceName = "Personal Training",
+                CustomerNotes = "Leg day, bring knee brace"
             },
             new AppointmentSummary
             {
                 Id = "seed-6",
                 CustomerEmail = "david.thompson@agendabuddy.dev",
+                CustomerName = "David Thompson",
+                CustomerPhone = "+1 (510) 555-0267",
                 ProviderEmail = "sarah.mitchell@agendabuddy.dev",
                 ScheduledAt = today.AddDays(1).AddHours(11),
-                Status = AppointmentStatus.Requested
+                Status = AppointmentStatus.Requested,
+                ServiceName = "HIIT Coaching",
+                CustomerNotes = "Can we do outdoor if weather is good?"
             },
             new AppointmentSummary
             {
                 Id = "seed-7",
                 CustomerEmail = "priya.sharma@agendabuddy.dev",
+                CustomerName = "Priya Sharma",
+                CustomerPhone = "+1 (628) 555-0198",
                 ProviderEmail = "sarah.mitchell@agendabuddy.dev",
                 ScheduledAt = today.AddDays(2).AddHours(10),
-                Status = AppointmentStatus.Confirmed
+                Status = AppointmentStatus.Confirmed,
+                ServiceName = "Yoga Session",
+                CustomerNotes = "Wants to try hot yoga format"
             }
         ];
     }

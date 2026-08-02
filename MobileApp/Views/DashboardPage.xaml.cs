@@ -32,10 +32,12 @@ public partial class DashboardPage : ContentPage
         {
             ["appointmentId"] = selected.Id,
             ["customerEmail"] = selected.CustomerEmail,
-            ["providerEmail"] = selected.ProviderEmail,
+            ["customerName"] = selected.CustomerName,
+            ["customerPhone"] = selected.CustomerPhone,
             ["scheduledAt"] = selected.ScheduledAt.ToString("O"),
             ["status"] = selected.Status.ToString(),
-            ["serviceId"] = selected.ServiceId ?? ""
+            ["serviceName"] = selected.ServiceName,
+            ["customerNotes"] = selected.CustomerNotes ?? ""
         };
 
         await Shell.Current.GoToAsync("appointmentDetail", nav);
