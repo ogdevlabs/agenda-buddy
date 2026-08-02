@@ -243,6 +243,15 @@
                     </CollectionView.ItemTemplate>
                 </CollectionView>
 
+                <!-- Logout -->
+                <Button Text="Sign Out"
+                        BackgroundColor="Transparent"
+                        TextColor="{StaticResource TextMuted}"
+                        FontSize="14"
+                        HorizontalOptions="Center"
+                        Margin="0,24,0,8"
+                        Clicked="OnLogoutClicked" />
+
             </VerticalStackLayout>
         </ScrollView>
 

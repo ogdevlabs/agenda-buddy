@@ -1,4 +1,5 @@
 #if MOBILE
+using MobileApp.Infrastructure;
 using MobileApp.Models;
 using MobileApp.ViewModels;
 
@@ -7,11 +8,13 @@ namespace MobileApp.Views;
 public partial class DashboardPage : ContentPage
 {
     private readonly DashboardViewModel _viewModel;
+    private readonly ISecureStorageService _secureStorage;
 
-    public DashboardPage(DashboardViewModel viewModel)
+    public DashboardPage(DashboardViewModel viewModel, ISecureStorageService secureStorage)
     {
         InitializeComponent();
         _viewModel = viewModel;
+        _secureStorage = secureStorage;
         BindingContext = _viewModel;
     }
 
@@ -39,6 +42,12 @@ public partial class DashboardPage : ContentPage
         };
 
         await Shell.Current.GoToAsync("appointmentDetail", nav);
+    }
+
+    private async void OnLogoutClicked(object? sender, EventArgs e)
+    {
+        _secureStorage.Remove(JwtDelegatingHandler.JwtKey);
+        await Shell.Current.GoToAsync("//LoginPage");
     }
 }
 #endif
