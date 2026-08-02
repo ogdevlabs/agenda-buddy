@@ -52,11 +52,29 @@ public partial class CustomersViewModel : ObservableObject
         }
     }
 
+    [RelayCommand]
+    private void ToggleCustomer(CustomerSummary customer)
+    {
+        customer.IsExpanded = !customer.IsExpanded;
+    }
+
     private static List<CustomerSummary> SeedCustomers() =>
     [
-        new CustomerSummary { Id = "seed-c1", FullName = "Alex Chen", Email = "alex.chen@agendabuddy.dev" },
-        new CustomerSummary { Id = "seed-c2", FullName = "Priya Sharma", Email = "priya.sharma@agendabuddy.dev" },
-        new CustomerSummary { Id = "seed-c3", FullName = "David Thompson", Email = "david.thompson@agendabuddy.dev" }
+        new CustomerSummary
+        {
+            Id = "seed-c1", FullName = "Alex Chen", Email = "alex.chen@agendabuddy.dev",
+            Phone = "+1 (415) 555-0142", LastSession = "Personal Training", TotalSessions = 12
+        },
+        new CustomerSummary
+        {
+            Id = "seed-c2", FullName = "Priya Sharma", Email = "priya.sharma@agendabuddy.dev",
+            Phone = "+1 (628) 555-0198", LastSession = "Yoga Session", TotalSessions = 8
+        },
+        new CustomerSummary
+        {
+            Id = "seed-c3", FullName = "David Thompson", Email = "david.thompson@agendabuddy.dev",
+            Phone = "+1 (510) 555-0267", LastSession = "HIIT Coaching", TotalSessions = 3
+        }
     ];
 
     partial void OnErrorMessageChanged(string value)

@@ -13,7 +13,7 @@
                BackgroundColor="{StaticResource Primary}"
                CornerRadius="0"
                BorderColor="Transparent"
-               HasShadow="True"
+               HasShadow="False"
                Padding="24,20">
             <VerticalStackLayout HorizontalOptions="Center" Spacing="4">
                 <Label Text="This Week"
@@ -69,9 +69,9 @@
                             <Grid Margin="0,0,0,12">
                                 <Frame CornerRadius="20"
                                        Padding="16"
-                                       BorderColor="#E2E8F0"
+                                       BorderColor="#F1F5F9"
                                        BackgroundColor="White"
-                                       HasShadow="True">
+                                       HasShadow="False">
                                     <Frame.GestureRecognizers>
                                         <TapGestureRecognizer
                                             Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.ToggleDayCommand}"

@@ -30,7 +30,7 @@
                            BackgroundColor="{StaticResource Primary}"
                            CornerRadius="16"
                            BorderColor="Transparent"
-                           HasShadow="True"
+                           HasShadow="False"
                            Padding="20">
                         <VerticalStackLayout Spacing="8">
                             <Label Text="TODAY"
@@ -53,7 +53,7 @@
                            BackgroundColor="{StaticResource AccentLight}"
                            CornerRadius="16"
                            BorderColor="Transparent"
-                           HasShadow="True"
+                           HasShadow="False"
                            Padding="20">
                         <VerticalStackLayout Spacing="8">
                             <Label Text="THIS WEEK"

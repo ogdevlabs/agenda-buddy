@@ -128,6 +128,20 @@ public partial class NotificationsViewModel : ObservableObject
     private void ToggleNotification(NotificationSummary notification)
     {
         notification.IsExpanded = !notification.IsExpanded;
+
+        if (notification.IsExpanded && !notification.IsRead)
+            ScheduleMarkRead(notification);
+    }
+
+    private async void ScheduleMarkRead(NotificationSummary notification)
+    {
+        await Task.Delay(2000);
+        if (!notification.IsExpanded || notification.IsRead)
+            return;
+
+        notification.IsRead = true;
+        Notifications = new List<NotificationSummary>(Notifications);
+        UnreadCount = Math.Max(0, UnreadCount - 1);
     }
 
     partial void OnErrorMessageChanged(string value)

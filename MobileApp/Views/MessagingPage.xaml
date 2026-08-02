@@ -82,7 +82,7 @@
                            CornerRadius="16"
                            BorderColor="{StaticResource Divider}"
                            Padding="16"
-                           HasShadow="True"
+                           HasShadow="False"
                            Margin="0,0,0,10">
                         <Frame.GestureRecognizers>
                             <TapGestureRecognizer
