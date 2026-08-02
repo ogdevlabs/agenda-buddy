@@ -14,18 +14,44 @@
                CornerRadius="0"
                BorderColor="Transparent"
                HasShadow="False"
-               Padding="24,20">
-            <VerticalStackLayout HorizontalOptions="Center" Spacing="4">
-                <Label Text="This Week"
+               Padding="24,16">
+            <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="Auto,*,Auto">
+                <Label Grid.Row="0" Grid.ColumnSpan="3"
+                       Text="This Week"
                        FontSize="22"
                        FontAttributes="Bold"
                        TextColor="{StaticResource TextOnPrimary}"
-                       HorizontalOptions="Center" />
-                <Label Text="{Binding WeekLabel}"
+                       HorizontalOptions="Center"
+                       Margin="0,0,0,4" />
+                <Button Grid.Row="1" Grid.Column="0"
+                        Text="&#x25C0;"
+                        Command="{Binding PreviousPageCommand}"
+                        IsEnabled="{Binding CanGoBack}"
+                        BackgroundColor="#FFFFFF20"
+                        TextColor="White"
+                        FontSize="14"
+                        CornerRadius="14"
+                        WidthRequest="36"
+                        HeightRequest="36"
+                        Padding="0" />
+                <Label Grid.Row="1" Grid.Column="1"
+                       Text="{Binding WeekLabel}"
                        FontSize="13"
                        TextColor="#C7D2FE"
-                       HorizontalOptions="Center" />
-            </VerticalStackLayout>
+                       HorizontalOptions="Center"
+                       VerticalOptions="Center" />
+                <Button Grid.Row="1" Grid.Column="2"
+                        Text="&#x25B6;"
+                        Command="{Binding NextPageCommand}"
+                        IsEnabled="{Binding CanGoForward}"
+                        BackgroundColor="#FFFFFF20"
+                        TextColor="White"
+                        FontSize="14"
+                        CornerRadius="14"
+                        WidthRequest="36"
+                        HeightRequest="36"
+                        Padding="0" />
+            </Grid>
         </Frame>
 
         <!-- Activity indicator -->
@@ -63,9 +89,7 @@
         <CollectionView Grid.Row="3"
                         ItemsSource="{Binding Days}"
                         SelectionMode="None"
-                        Margin="16,12,16,24"
-                        HeightRequest="340"
-                        VerticalOptions="Start"
+                        Margin="16,8,16,0"
                         ItemSizingStrategy="MeasureAllItems">
                     <CollectionView.ItemTemplate>
                         <DataTemplate>

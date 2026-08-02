@@ -8,6 +8,9 @@ namespace MobileApp.ViewModels;
 public partial class CalendarViewModel : ObservableObject
 {
     private readonly ICalendarApiService _calendarApiService;
+    private List<CalendarDaySummary> _allDays = new();
+    private int _pageIndex;
+    private const int PageSize = 4;
 
     [ObservableProperty]
     private List<CalendarDaySummary> _days = new();
@@ -20,6 +23,12 @@ public partial class CalendarViewModel : ObservableObject
 
     [ObservableProperty]
     private string _weekLabel = string.Empty;
+
+    [ObservableProperty]
+    private bool _canGoBack;
+
+    [ObservableProperty]
+    private bool _canGoForward;
 
     public bool HasError => !string.IsNullOrEmpty(ErrorMessage);
 
@@ -41,7 +50,9 @@ public partial class CalendarViewModel : ObservableObject
             if (result.Count == 0)
                 result = GenerateSeedWeek();
 
-            Days = result;
+            _allDays = result;
+            _pageIndex = 0;
+            UpdatePage();
 
             var startDate = DateTime.Today;
             var endDate = startDate.AddDays(6);
@@ -49,7 +60,10 @@ public partial class CalendarViewModel : ObservableObject
         }
         catch (HttpRequestException)
         {
-            Days = GenerateSeedWeek();
+            _allDays = GenerateSeedWeek();
+            _pageIndex = 0;
+            UpdatePage();
+
             var startDate = DateTime.Today;
             var endDate = startDate.AddDays(6);
             WeekLabel = $"{startDate:MMM d} — {endDate:MMM d, yyyy}";
@@ -58,6 +72,29 @@ public partial class CalendarViewModel : ObservableObject
         {
             IsLoading = false;
         }
+    }
+
+    [RelayCommand]
+    private void NextPage()
+    {
+        if (!CanGoForward) return;
+        _pageIndex++;
+        UpdatePage();
+    }
+
+    [RelayCommand]
+    private void PreviousPage()
+    {
+        if (!CanGoBack) return;
+        _pageIndex--;
+        UpdatePage();
+    }
+
+    private void UpdatePage()
+    {
+        Days = _allDays.Skip(_pageIndex * PageSize).Take(PageSize).ToList();
+        CanGoBack = _pageIndex > 0;
+        CanGoForward = (_pageIndex + 1) * PageSize < _allDays.Count;
     }
 
     private static List<CalendarDaySummary> GenerateSeedWeek()
