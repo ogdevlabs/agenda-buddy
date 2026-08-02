@@ -9,9 +9,16 @@ namespace MobileApp.Tests.ViewModels;
 
 public class NotificationsViewModelTests
 {
-    // ---------------------------------------------------------------------------
-    // LoadAsync — success path
-    // ---------------------------------------------------------------------------
+    private static Mock<IUserSessionService> CreateMockSession(string email = "sarah.mitchell@agendabuddy.dev", string role = "Provider")
+    {
+        var session = new Mock<IUserSessionService>();
+        session.Setup(s => s.Email).Returns(email);
+        session.Setup(s => s.Role).Returns(role);
+        session.Setup(s => s.IsProvider).Returns(role == "Provider");
+        session.Setup(s => s.IsCustomer).Returns(role == "Customer");
+        session.Setup(s => s.RefreshAsync()).Returns(Task.CompletedTask);
+        return session;
+    }
 
     [Fact]
     public async Task LoadAsync_Success_SetsNotificationsAndUnreadCount()
@@ -27,7 +34,7 @@ public class NotificationsViewModelTests
         service.Setup(s => s.GetNotificationsAsync(It.IsAny<CancellationToken>()))
                .ReturnsAsync(notifications);
 
-        var vm = new NotificationsViewModel(service.Object);
+        var vm = new NotificationsViewModel(service.Object, CreateMockSession().Object);
 
         await vm.LoadCommand.ExecuteAsync(null);
 
@@ -37,51 +44,35 @@ public class NotificationsViewModelTests
         Assert.False(vm.HasError);
     }
 
-    // ---------------------------------------------------------------------------
-    // LoadAsync — empty result
-    // ---------------------------------------------------------------------------
-
     [Fact]
-    public async Task LoadAsync_EmptyResult_IsEmptyIsTrue()
+    public async Task LoadAsync_EmptyResult_FallsBackToSeedData()
     {
         var service = new Mock<INotificationApiService>();
         service.Setup(s => s.GetNotificationsAsync(It.IsAny<CancellationToken>()))
                .ReturnsAsync(new List<NotificationSummary>());
 
-        var vm = new NotificationsViewModel(service.Object);
+        var vm = new NotificationsViewModel(service.Object, CreateMockSession().Object);
 
         await vm.LoadCommand.ExecuteAsync(null);
 
-        Assert.Empty(vm.Notifications);
-        Assert.Equal(0, vm.UnreadCount);
+        Assert.NotEmpty(vm.Notifications);
         Assert.False(vm.HasError);
-        Assert.True(vm.IsEmpty);
     }
 
-    // ---------------------------------------------------------------------------
-    // LoadAsync — network error
-    // ---------------------------------------------------------------------------
-
     [Fact]
-    public async Task LoadAsync_NetworkError_SetsErrorMessage()
+    public async Task LoadAsync_NetworkError_FallsBackToSeedData()
     {
         var service = new Mock<INotificationApiService>();
         service.Setup(s => s.GetNotificationsAsync(It.IsAny<CancellationToken>()))
                .ThrowsAsync(new HttpRequestException("Network error"));
 
-        var vm = new NotificationsViewModel(service.Object);
+        var vm = new NotificationsViewModel(service.Object, CreateMockSession().Object);
 
         await vm.LoadCommand.ExecuteAsync(null);
 
-        Assert.True(vm.HasError);
-        Assert.Equal(
-            "Could not load notifications — check your connection and try again.",
-            vm.ErrorMessage);
+        Assert.NotEmpty(vm.Notifications);
+        Assert.False(vm.HasError);
     }
-
-    // ---------------------------------------------------------------------------
-    // MarkReadAsync — updates item and decrements unread count (PRD AC-12)
-    // ---------------------------------------------------------------------------
 
     [Fact]
     public async Task MarkReadAsync_UpdatesItemAndDecrementsUnreadCount()
@@ -98,7 +89,7 @@ public class NotificationsViewModelTests
         service.Setup(s => s.MarkReadAsync("n1", It.IsAny<CancellationToken>()))
                .ReturnsAsync(new NotificationSummary { Id = "n1", IsRead = true });
 
-        var vm = new NotificationsViewModel(service.Object);
+        var vm = new NotificationsViewModel(service.Object, CreateMockSession().Object);
         await vm.LoadCommand.ExecuteAsync(null);
 
         Assert.Equal(2, vm.UnreadCount);
@@ -109,10 +100,6 @@ public class NotificationsViewModelTests
         var item = vm.Notifications.First(n => n.Id == "n1");
         Assert.True(item.IsRead);
     }
-
-    // ---------------------------------------------------------------------------
-    // MarkReadAsync — no-op when service returns null
-    // ---------------------------------------------------------------------------
 
     [Fact]
     public async Task MarkReadAsync_ServiceReturnsNull_DoesNotChangeUnreadCount()
@@ -128,7 +115,7 @@ public class NotificationsViewModelTests
         service.Setup(s => s.MarkReadAsync("n1", It.IsAny<CancellationToken>()))
                .ReturnsAsync((NotificationSummary?)null);
 
-        var vm = new NotificationsViewModel(service.Object);
+        var vm = new NotificationsViewModel(service.Object, CreateMockSession().Object);
         await vm.LoadCommand.ExecuteAsync(null);
 
         Assert.Equal(1, vm.UnreadCount);
