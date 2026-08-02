@@ -1,7 +1,7 @@
 using System.Text;
 using System.Text.Json;
 using MobileApp.Infrastructure;
-#if MOBILE
+#if FIREBASE
 using Microsoft.Maui.Devices;
 using Plugin.Firebase.CloudMessaging;
 #endif
@@ -29,7 +29,7 @@ public class PushNotificationService
         string? token = null;
         string platform = "android";
 
-#if MOBILE
+#if FIREBASE
         try
         {
             var messaging = CrossFirebaseCloudMessaging.Current;
