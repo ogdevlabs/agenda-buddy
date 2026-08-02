@@ -49,7 +49,7 @@ public partial class DashboardPage : ContentPage
     private async void OnLogoutClicked(object? sender, EventArgs e)
     {
         _secureStorage.Remove(JwtDelegatingHandler.JwtKey);
-        await Shell.Current.GoToAsync("//LoginPage");
+        await Shell.Current.GoToAsync("//login");
     }
 }
 #endif
