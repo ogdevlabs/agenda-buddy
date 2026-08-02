@@ -20,6 +20,8 @@ public static class AuthenticationExtensions
                 $"Required environment variable '{PublicKeyEnvVar}' is not set. " +
                 "Provide the RSA public key in PEM format before starting the service.");
 
+        publicKeyPem = publicKeyPem.Replace("\\n", "\n");
+
         var rsa = RSA.Create();
         rsa.ImportFromPem(publicKeyPem);
         var rsaKey = new RsaSecurityKey(rsa);

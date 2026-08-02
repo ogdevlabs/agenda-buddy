@@ -82,3 +82,8 @@ services:
     build:
       context: .
       dockerfile: Identity/Dockerfile
+
+  mongo:
+    hostname: mongo
+    container_name: mongo
+    image: mongo:7

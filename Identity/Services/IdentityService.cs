@@ -190,6 +190,8 @@ public class IdentityService(
             ?? throw new ApplicationException(
                 $"Required environment variable '{PrivateKeyEnvVar}' is not set.");
 
+        privateKeyPem = privateKeyPem.Replace("\\n", "\n");
+
         var rsa = RSA.Create();
         rsa.ImportFromPem(privateKeyPem);
         var signingKey = new RsaSecurityKey(rsa);
