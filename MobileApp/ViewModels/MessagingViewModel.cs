@@ -80,6 +80,12 @@ public partial class MessagingViewModel : ObservableObject
         ];
     }
 
+    [RelayCommand]
+    private void ToggleThread(MessageThreadStub thread)
+    {
+        thread.IsExpanded = !thread.IsExpanded;
+    }
+
     partial void OnErrorMessageChanged(string value)
     {
         OnPropertyChanged(nameof(HasError));

@@ -209,6 +209,12 @@ public partial class DashboardViewModel : ObservableObject
         ];
     }
 
+    [RelayCommand]
+    private void ToggleAppointment(AppointmentSummary item)
+    {
+        item.IsExpanded = !item.IsExpanded;
+    }
+
     partial void OnErrorMessageChanged(string value)
     {
         OnPropertyChanged(nameof(HasError));

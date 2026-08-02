@@ -79,51 +79,46 @@
             <CollectionView.ItemTemplate>
                 <DataTemplate>
                     <Frame BackgroundColor="{StaticResource BackgroundCard}"
-                           CornerRadius="12"
+                           CornerRadius="16"
                            BorderColor="{StaticResource Divider}"
                            Padding="16"
-                           HasShadow="False"
-                           Margin="0,0,0,8">
+                           HasShadow="True"
+                           Margin="0,0,0,10">
                         <Frame.GestureRecognizers>
-                            <TapGestureRecognizer Tapped="OnThreadTapped"
-                                                  CommandParameter="{Binding .}" />
+                            <TapGestureRecognizer
+                                Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.ToggleThreadCommand}"
+                                CommandParameter="{Binding .}" />
                         </Frame.GestureRecognizers>
 
-                        <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="14">
+                        <VerticalStackLayout Spacing="0">
 
-                            <!-- Avatar circle -->
-                            <Frame Grid.Column="0"
-                                   Style="{StaticResource AvatarCircle}">
-                                <Label Text="{Binding OtherPartyEmail, StringFormat='{0[0]}'}"
-                                       FontSize="18"
-                                       FontAttributes="Bold"
-                                       TextColor="{StaticResource Primary}"
-                                       HorizontalOptions="Center"
-                                       VerticalOptions="Center"
-                                       TextTransform="Uppercase" />
-                            </Frame>
+                            <!-- Collapsed row -->
+                            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="14">
+                                <Frame Grid.Column="0"
+                                       Style="{StaticResource AvatarCircle}">
+                                    <Label Text="{Binding Initial}"
+                                           FontSize="18"
+                                           FontAttributes="Bold"
+                                           TextColor="{StaticResource Primary}"
+                                           HorizontalOptions="Center"
+                                           VerticalOptions="Center" />
+                                </Frame>
 
-                            <!-- Thread info -->
-                            <VerticalStackLayout Grid.Column="1"
-                                                 Spacing="4"
-                                                 VerticalOptions="Center">
-                                <Label Text="{Binding OtherPartyEmail}"
-                                       FontAttributes="Bold"
-                                       FontSize="15"
-                                       TextColor="{StaticResource TextPrimary}"
-                                       LineBreakMode="TailTruncation" />
-                                <Label Text="{Binding LastMessageBody}"
-                                       Style="{StaticResource Caption}"
-                                       LineBreakMode="TailTruncation"
-                                       MaxLines="1" />
-                            </VerticalStackLayout>
+                                <VerticalStackLayout Grid.Column="1"
+                                                     Spacing="2"
+                                                     VerticalOptions="Center">
+                                    <Label Text="{Binding SenderName}"
+                                           FontAttributes="Bold"
+                                           FontSize="15"
+                                           TextColor="{StaticResource TextPrimary}"
+                                           LineBreakMode="TailTruncation" />
+                                    <Label Text="{Binding TimeAgo}"
+                                           FontSize="12"
+                                           TextColor="{StaticResource TextMuted}" />
+                                </VerticalStackLayout>
 
-                            <!-- Unread badge -->
-                            <VerticalStackLayout Grid.Column="2"
-                                                 VerticalOptions="Center"
-                                                 Spacing="6"
-                                                 HorizontalOptions="End">
-                                <Frame IsVisible="{Binding UnreadCount}"
+                                <Frame Grid.Column="2"
+                                       IsVisible="{Binding UnreadCount}"
                                        BackgroundColor="{StaticResource Primary}"
                                        CornerRadius="12"
                                        WidthRequest="24"
@@ -131,7 +126,7 @@
                                        Padding="0"
                                        HasShadow="False"
                                        BorderColor="Transparent"
-                                       HorizontalOptions="Center">
+                                       VerticalOptions="Center">
                                     <Label Text="{Binding UnreadCount}"
                                            FontSize="11"
                                            FontAttributes="Bold"
@@ -139,9 +134,31 @@
                                            HorizontalOptions="Center"
                                            VerticalOptions="Center" />
                                 </Frame>
+                            </Grid>
+
+                            <!-- Expanded content -->
+                            <VerticalStackLayout Spacing="8"
+                                                 Margin="0,12,0,0"
+                                                 IsVisible="{Binding IsExpanded}">
+                                <BoxView HeightRequest="1" Color="#E2E8F0" />
+                                <Frame BackgroundColor="{StaticResource PrimarySubtle}"
+                                       CornerRadius="12"
+                                       Padding="12"
+                                       HasShadow="False"
+                                       BorderColor="Transparent"
+                                       Margin="0,4,0,0">
+                                    <Label Text="{Binding LastMessageBody}"
+                                           FontSize="14"
+                                           TextColor="{StaticResource TextPrimary}"
+                                           LineBreakMode="WordWrap" />
+                                </Frame>
+                                <Label Text="{Binding OtherPartyEmail}"
+                                       FontSize="12"
+                                       TextColor="{StaticResource TextMuted}"
+                                       Margin="4,0,0,0" />
                             </VerticalStackLayout>
 
-                        </Grid>
+                        </VerticalStackLayout>
                     </Frame>
                 </DataTemplate>
             </CollectionView.ItemTemplate>

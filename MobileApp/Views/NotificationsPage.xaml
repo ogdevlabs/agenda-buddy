@@ -76,82 +76,96 @@
         <CollectionView Grid.Row="2"
                         ItemsSource="{Binding Notifications}"
                         IsVisible="{Binding IsEmpty, Converter={StaticResource InvertedBoolConverter}}"
+                        SelectionMode="None"
                         Margin="24,8,24,24">
             <CollectionView.ItemTemplate>
                 <DataTemplate>
                     <Frame BackgroundColor="{StaticResource BackgroundCard}"
-                           CornerRadius="14"
+                           CornerRadius="16"
                            Padding="0"
                            HasShadow="True"
                            BorderColor="{StaticResource BorderLight}"
                            Margin="0,0,0,10">
+                        <Frame.GestureRecognizers>
+                            <TapGestureRecognizer
+                                Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.ToggleNotificationCommand}"
+                                CommandParameter="{Binding .}" />
+                        </Frame.GestureRecognizers>
 
-                        <Grid ColumnDefinitions="5,Auto,*,Auto"
-                              Padding="0"
-                              ColumnSpacing="0">
+                        <VerticalStackLayout Spacing="0">
 
-                            <!-- Unread accent bar (left edge) -->
-                            <BoxView Grid.Column="0"
-                                     Color="{Binding IsRead, Converter={toolkit:BoolToObjectConverter TrueObject=Transparent, FalseObject=#4F46E5}}"
-                                     WidthRequest="5"
-                                     VerticalOptions="Fill" />
+                            <!-- Collapsed row -->
+                            <Grid ColumnDefinitions="5,Auto,*,Auto"
+                                  Padding="0"
+                                  ColumnSpacing="0">
 
-                            <!-- Type icon circle -->
-                            <Frame Grid.Column="1"
-                                   BackgroundColor="{StaticResource PrimarySubtle}"
-                                   CornerRadius="18"
-                                   WidthRequest="36"
-                                   HeightRequest="36"
-                                   Padding="0"
-                                   HasShadow="False"
-                                   BorderColor="Transparent"
-                                   Margin="12,16,0,16"
-                                   VerticalOptions="Center">
-                                <Label Text="&#x1F514;"
-                                       FontSize="16"
-                                       HorizontalOptions="Center"
+                                <!-- Unread accent bar -->
+                                <BoxView Grid.Column="0"
+                                         Color="{Binding IsRead, Converter={toolkit:BoolToObjectConverter TrueObject=Transparent, FalseObject=#4F46E5}}"
+                                         WidthRequest="5"
+                                         VerticalOptions="Fill" />
+
+                                <!-- Type icon -->
+                                <Frame Grid.Column="1"
+                                       BackgroundColor="{StaticResource PrimarySubtle}"
+                                       CornerRadius="18"
+                                       WidthRequest="36"
+                                       HeightRequest="36"
+                                       Padding="0"
+                                       HasShadow="False"
+                                       BorderColor="Transparent"
+                                       Margin="12,14,0,14"
+                                       VerticalOptions="Center">
+                                    <Label Text="&#x1F514;"
+                                           FontSize="16"
+                                           HorizontalOptions="Center"
+                                           VerticalOptions="Center" />
+                                </Frame>
+
+                                <!-- Summary -->
+                                <VerticalStackLayout Grid.Column="2"
+                                                     Spacing="2"
+                                                     Padding="12,14"
+                                                     VerticalOptions="Center">
+                                    <Label Text="{Binding TypeLabel}"
+                                           FontAttributes="{Binding IsRead, Converter={toolkit:BoolToObjectConverter TrueObject=None, FalseObject=Bold}}"
+                                           FontSize="14"
+                                           TextColor="{StaticResource TextPrimary}" />
+                                    <Label Text="{Binding TimeAgo}"
+                                           FontSize="12"
+                                           TextColor="{StaticResource TextMuted}" />
+                                </VerticalStackLayout>
+
+                                <!-- Unread dot -->
+                                <Frame Grid.Column="3"
+                                       IsVisible="{Binding IsRead, Converter={StaticResource InvertedBoolConverter}}"
+                                       BackgroundColor="{StaticResource Primary}"
+                                       CornerRadius="5"
+                                       WidthRequest="10"
+                                       HeightRequest="10"
+                                       Padding="0"
+                                       HasShadow="False"
+                                       BorderColor="Transparent"
+                                       Margin="0,0,16,0"
                                        VerticalOptions="Center" />
-                            </Frame>
+                            </Grid>
 
-                            <!-- Content -->
-                            <VerticalStackLayout Grid.Column="2"
-                                                 Spacing="4"
-                                                 Padding="12,16"
-                                                 VerticalOptions="Center">
-                                <Label Text="{Binding NotificationType}"
-                                       FontAttributes="{Binding IsRead, Converter={toolkit:BoolToObjectConverter TrueObject=None, FalseObject=Bold}}"
-                                       FontSize="14"
-                                       TextColor="{StaticResource TextPrimary}" />
+                            <!-- Expanded content -->
+                            <VerticalStackLayout Spacing="8"
+                                                 Margin="16,0,16,14"
+                                                 IsVisible="{Binding IsExpanded}">
+                                <BoxView HeightRequest="1" Color="#E2E8F0" />
                                 <Label Text="{Binding Message}"
-                                       FontSize="13"
-                                       TextColor="{StaticResource TextSecondary}"
-                                       LineBreakMode="TailTruncation"
-                                       MaxLines="2" />
+                                       FontSize="14"
+                                       TextColor="{StaticResource TextPrimary}"
+                                       LineBreakMode="WordWrap"
+                                       Margin="0,4,0,0" />
                                 <Label Text="{Binding CreatedAt, StringFormat='{0:MMM d, h:mm tt}'}"
-                                       Style="{StaticResource Caption}" />
+                                       FontSize="12"
+                                       TextColor="{StaticResource TextMuted}" />
                             </VerticalStackLayout>
 
-                            <!-- Mark as read button -->
-                            <ImageButton Grid.Column="3"
-                                         Source="envelope_open.png"
-                                         IsVisible="{Binding IsRead, Converter={StaticResource InvertedBoolConverter}}"
-                                         Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.MarkReadCommand}"
-                                         CommandParameter="{Binding Id}"
-                                         WidthRequest="28"
-                                         HeightRequest="28"
-                                         Margin="0,0,16,0"
-                                         VerticalOptions="Center">
-                                <SemanticProperties.Description>Mark as read</SemanticProperties.Description>
-                            </ImageButton>
-
-                            <!-- Tap gesture for the whole row -->
-                            <Grid.GestureRecognizers>
-                                <TapGestureRecognizer
-                                    Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.MarkReadCommand}"
-                                    CommandParameter="{Binding Id}" />
-                            </Grid.GestureRecognizers>
-                        </Grid>
-
+                        </VerticalStackLayout>
                     </Frame>
                 </DataTemplate>
             </CollectionView.ItemTemplate>

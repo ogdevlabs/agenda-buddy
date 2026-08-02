@@ -1,4 +1,5 @@
 #if MOBILE
+using MobileApp.Models;
 using MobileApp.ViewModels;
 
 namespace MobileApp.Views;
@@ -20,13 +21,10 @@ public partial class DashboardPage : ContentPage
         _viewModel.LoadCommand.Execute(null);
     }
 
-    private async void OnAppointmentSelected(object sender, SelectionChangedEventArgs e)
+    private async void OnViewDetailsClicked(object? sender, EventArgs e)
     {
-        if (e.CurrentSelection.FirstOrDefault() is not MobileApp.Models.AppointmentSummary selected)
+        if (sender is not Button btn || btn.CommandParameter is not AppointmentSummary selected)
             return;
-
-        if (sender is CollectionView cv)
-            cv.SelectedItem = null;
 
         var nav = new Dictionary<string, object>
         {

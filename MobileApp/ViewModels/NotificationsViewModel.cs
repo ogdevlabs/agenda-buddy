@@ -124,6 +124,12 @@ public partial class NotificationsViewModel : ObservableObject
         }
     }
 
+    [RelayCommand]
+    private void ToggleNotification(NotificationSummary notification)
+    {
+        notification.IsExpanded = !notification.IsExpanded;
+    }
+
     partial void OnErrorMessageChanged(string value)
     {
         OnPropertyChanged(nameof(HasError));

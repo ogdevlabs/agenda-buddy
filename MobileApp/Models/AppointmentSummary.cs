@@ -1,8 +1,9 @@
+using CommunityToolkit.Mvvm.ComponentModel;
 using Library.Entities;
 
 namespace MobileApp.Models;
 
-public class AppointmentSummary
+public partial class AppointmentSummary : ObservableObject
 {
     public string Id { get; set; } = string.Empty;
     public string CustomerEmail { get; set; } = string.Empty;
@@ -14,4 +15,7 @@ public class AppointmentSummary
     public string ServiceId { get; set; } = string.Empty;
     public string ServiceName { get; set; } = string.Empty;
     public string CustomerNotes { get; set; } = string.Empty;
+
+    [ObservableProperty]
+    private bool _isExpanded;
 }
