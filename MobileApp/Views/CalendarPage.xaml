@@ -63,7 +63,9 @@
         <CollectionView Grid.Row="3"
                         ItemsSource="{Binding Days}"
                         SelectionMode="None"
-                        Margin="16,12,16,16"
+                        Margin="16,12,16,24"
+                        HeightRequest="340"
+                        VerticalOptions="Start"
                         ItemSizingStrategy="MeasureAllItems">
                     <CollectionView.ItemTemplate>
                         <DataTemplate>
