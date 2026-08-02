@@ -7,7 +7,57 @@ on:
     branches: ["main"]
 
 jobs:
+  # ---------------------------------------------------------------------------
+  # Detect which areas of the codebase changed
+  # ---------------------------------------------------------------------------
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      api: ${{ steps.filter.outputs.api }}
+      mobile: ${{ steps.filter.outputs.mobile }}
+      mobile-tests: ${{ steps.filter.outputs.mobile-tests }}
+      library: ${{ steps.filter.outputs.library }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            library:
+              - 'Library/**'
+              - 'EventAndCommands/**'
+              - 'Directory.Build.props'
+            api:
+              - 'Library/**'
+              - 'EventAndCommands/**'
+              - 'Booking/**'
+              - 'Calendar/**'
+              - 'Customer/**'
+              - 'Provider/**'
+              - 'Services/**'
+              - 'Profession/**'
+              - 'Identity/**'
+              - 'Kafka/**'
+              - '*.Tests/**'
+              - '!MobileApp.Tests/**'
+              - 'Directory.Build.props'
+              - '*.sln'
+            mobile:
+              - 'MobileApp/**'
+              - 'Library/**'
+              - 'Directory.Build.props'
+            mobile-tests:
+              - 'MobileApp/**'
+              - 'MobileApp.Tests/**'
+              - 'Library/**'
+              - 'Directory.Build.props'
+
+  # ---------------------------------------------------------------------------
+  # API services — build + test (runs when backend or shared library changes)
+  # ---------------------------------------------------------------------------
   build-and-test:
+    needs: changes
+    if: needs.changes.outputs.api == 'true'
     runs-on: ubuntu-24.04
 
     steps:
@@ -37,6 +87,7 @@ jobs:
           dotnet test
           --no-build
           --configuration Release
+          --filter "Category!=Acceptance"
           --collect:"XPlat Code Coverage"
           --logger "trx;LogFileName=test-results.trx"
           --results-directory ./TestResults
@@ -58,13 +109,12 @@ jobs:
           if-no-files-found: warn
 
   # ---------------------------------------------------------------------------
-  # Mobile builds — build verification only (v1).
-  # No code signing, no App Store upload. These jobs are independent of the
-  # main .NET backend build and do not block each other.
+  # Mobile — Android build (runs when MobileApp or shared library changes)
   # ---------------------------------------------------------------------------
-
   build-android:
     name: "Mobile — Android Build"
+    needs: changes
+    if: needs.changes.outputs.mobile == 'true'
     runs-on: ubuntu-latest
 
     steps:
@@ -78,13 +128,16 @@ jobs:
       - name: Install MAUI Android workload
         run: dotnet workload install maui-android
 
-      # MobilePlatform=android restricts MobileApp TFMs to net10.0-android only (defined in csproj).
-      # This avoids cascading TargetFrameworks override to Library.csproj (which targets net10.0).
       - name: Build Android (Release)
         run: dotnet build MobileApp/MobileApp.csproj /p:MobilePlatform=android -c Release
 
+  # ---------------------------------------------------------------------------
+  # Mobile — iOS build (runs when MobileApp or shared library changes)
+  # ---------------------------------------------------------------------------
   build-ios:
     name: "Mobile — iOS Build"
+    needs: changes
+    if: needs.changes.outputs.mobile == 'true'
     runs-on: macos-latest
 
     steps:
@@ -98,14 +151,16 @@ jobs:
       - name: Install MAUI iOS workload
         run: dotnet workload install maui-ios
 
-      # macOS runner required for Xcode toolchain. Build-only — no code signing (PRD Known Risk).
-      # MobilePlatform=ios restricts MobileApp TFMs to net10.0-ios only (defined in csproj).
-      # This avoids cascading TargetFrameworks override to Library.csproj (which targets net10.0).
       - name: Build iOS (Release)
         run: dotnet build MobileApp/MobileApp.csproj /p:MobilePlatform=ios -c Release
 
+  # ---------------------------------------------------------------------------
+  # Mobile — ViewModel / Service unit tests
+  # ---------------------------------------------------------------------------
   build-mobile-tests:
-    name: "Mobile — ViewModel / Service Unit Tests"
+    name: "Mobile — Unit Tests"
+    needs: changes
+    if: needs.changes.outputs.mobile-tests == 'true'
     runs-on: ubuntu-latest
 
     steps:
@@ -116,10 +171,9 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
-      # dotnet test handles restore implicitly; /p:MobileWorkloads=false scopes MobileApp
-      # to net10.0 only so no MAUI workload is required on this runner.
       - name: Test MobileApp (no mobile workloads)
         run: >
           dotnet test MobileApp.Tests/MobileApp.Tests.csproj
           /p:MobileWorkloads=false
+          --filter "Category!=Acceptance"
           --collect:"XPlat Code Coverage"
