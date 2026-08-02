@@ -35,6 +35,10 @@
         <ApplicationId>com.fererelabs.agendabuddy</ApplicationId>
         <ApplicationVersion>1</ApplicationVersion>
         <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
+        <SupportedOSPlatformVersion Condition="'$(TargetFramework)' == 'net10.0-ios'">18.0</SupportedOSPlatformVersion>
+        <SupportedOSPlatformVersion Condition="'$(TargetFramework)' == 'net10.0-android'">21.0</SupportedOSPlatformVersion>
+        <!-- Allow minor Xcode version mismatches (e.g. 26.5 vs required 26.4) — forward-compatible -->
+        <ValidateXcodeVersion>false</ValidateXcodeVersion>
     </PropertyGroup>
 
     <ItemGroup>

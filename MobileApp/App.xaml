@@ -4,6 +4,7 @@
              x:Class="MobileApp.App">
     <Application.Resources>
         <ResourceDictionary>
+            <Color x:Key="Primary">#512BD4</Color>
         </ResourceDictionary>
     </Application.Resources>
 </Application>
