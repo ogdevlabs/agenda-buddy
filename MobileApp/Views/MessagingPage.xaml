@@ -3,86 +3,146 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
              x:Class="MobileApp.Views.MessagingPage"
-             Title="Messages">
+             Title="Messages"
+             BackgroundColor="{StaticResource BackgroundPage}">
 
     <ContentPage.Resources>
         <toolkit:InvertedBoolConverter x:Key="InvertedBoolConverter" />
     </ContentPage.Resources>
 
-    <Grid RowDefinitions="Auto,*">
+    <Grid RowDefinitions="Auto,Auto,*">
 
-        <!-- Error banner (UX F-002) -->
-        <Grid Grid.Row="0"
-              BackgroundColor="#FDECEA"
-              Padding="16,8"
-              IsVisible="{Binding HasError}">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
-            <Label Grid.Column="0"
-                   Text="{Binding ErrorMessage}"
-                   TextColor="#B00020"
-                   VerticalOptions="Center" />
-            <Button Grid.Column="1"
-                    Text="Retry"
-                    Command="{Binding LoadCommand}"
-                    BackgroundColor="Transparent"
-                    TextColor="#B00020" />
-        </Grid>
+        <!-- Error banner -->
+        <Frame Grid.Row="0"
+               Style="{StaticResource ErrorBannerStyle}"
+               IsVisible="{Binding HasError}"
+               Margin="24,12">
+            <Grid ColumnDefinitions="*,Auto">
+                <Label Grid.Column="0"
+                       Text="{Binding ErrorMessage}"
+                       TextColor="{StaticResource Error}"
+                       FontSize="14"
+                       VerticalOptions="Center" />
+                <Button Grid.Column="1"
+                        Text="Retry"
+                        Command="{Binding LoadCommand}"
+                        BackgroundColor="Transparent"
+                        TextColor="{StaticResource Error}"
+                        FontAttributes="Bold"
+                        FontSize="13" />
+            </Grid>
+        </Frame>
 
         <!-- Loading indicator -->
         <ActivityIndicator Grid.Row="1"
                            IsRunning="{Binding IsLoading}"
                            IsVisible="{Binding IsLoading}"
+                           Color="{StaticResource Primary}"
                            HorizontalOptions="Center"
-                           VerticalOptions="Center" />
+                           VerticalOptions="Center"
+                           Margin="0,24" />
 
-        <!-- Empty state (UX F-006) -->
-        <Label Grid.Row="1"
-               Text="No messages yet — your conversations with clients will appear here."
-               IsVisible="{Binding IsEmpty}"
-               HorizontalOptions="Center"
-               VerticalOptions="Center"
-               HorizontalTextAlignment="Center"
-               Margin="32"
-               FontSize="16"
-               TextColor="Gray" />
+        <!-- Empty state -->
+        <VerticalStackLayout Grid.Row="2"
+                             IsVisible="{Binding IsEmpty}"
+                             VerticalOptions="Center"
+                             HorizontalOptions="Center"
+                             Spacing="16"
+                             Padding="40">
+            <Frame BackgroundColor="{StaticResource PrimarySubtle}"
+                   CornerRadius="40"
+                   WidthRequest="80"
+                   HeightRequest="80"
+                   Padding="0"
+                   HasShadow="False"
+                   BorderColor="Transparent"
+                   HorizontalOptions="Center">
+                <Label Text="&#x1F4AC;"
+                       FontSize="36"
+                       HorizontalOptions="Center"
+                       VerticalOptions="Center" />
+            </Frame>
+            <Label Text="No messages yet"
+                   Style="{StaticResource TitleSmall}"
+                   HorizontalOptions="Center" />
+            <Label Text="Your conversations with clients will appear here."
+                   Style="{StaticResource BodySecondary}"
+                   HorizontalTextAlignment="Center" />
+        </VerticalStackLayout>
 
         <!-- Thread list -->
-        <CollectionView Grid.Row="1"
+        <CollectionView Grid.Row="2"
                         ItemsSource="{Binding Threads}"
                         IsVisible="{Binding IsLoading, Converter={StaticResource InvertedBoolConverter}}"
-                        SelectionMode="None">
+                        SelectionMode="None"
+                        Margin="24,8,24,24">
             <CollectionView.ItemTemplate>
                 <DataTemplate>
-                    <Grid Padding="16,12" ColumnDefinitions="*,Auto">
-                        <Grid.GestureRecognizers>
+                    <Frame BackgroundColor="{StaticResource BackgroundCard}"
+                           CornerRadius="12"
+                           BorderColor="{StaticResource Divider}"
+                           Padding="16"
+                           HasShadow="False"
+                           Margin="0,0,0,8">
+                        <Frame.GestureRecognizers>
                             <TapGestureRecognizer Tapped="OnThreadTapped"
                                                   CommandParameter="{Binding .}" />
-                        </Grid.GestureRecognizers>
+                        </Frame.GestureRecognizers>
 
-                        <VerticalStackLayout Grid.Column="0" Spacing="4">
-                            <Label Text="{Binding OtherPartyEmail}"
-                                   FontAttributes="Bold"
-                                   FontSize="15" />
-                            <Label Text="{Binding LastMessageBody}"
-                                   FontSize="13"
-                                   TextColor="Gray"
-                                   LineBreakMode="TailTruncation"
-                                   MaxLines="1" />
-                        </VerticalStackLayout>
+                        <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="14">
 
-                        <Label Grid.Column="1"
-                               Text="{Binding UnreadCount}"
-                               IsVisible="{Binding UnreadCount}"
-                               BackgroundColor="#512BD4"
-                               TextColor="White"
-                               FontSize="12"
-                               Padding="6,2"
-                               VerticalOptions="Start"
-                               HorizontalOptions="End" />
-                    </Grid>
+                            <!-- Avatar circle -->
+                            <Frame Grid.Column="0"
+                                   Style="{StaticResource AvatarCircle}">
+                                <Label Text="{Binding OtherPartyEmail, StringFormat='{0[0]}'}"
+                                       FontSize="18"
+                                       FontAttributes="Bold"
+                                       TextColor="{StaticResource Primary}"
+                                       HorizontalOptions="Center"
+                                       VerticalOptions="Center"
+                                       TextTransform="Uppercase" />
+                            </Frame>
+
+                            <!-- Thread info -->
+                            <VerticalStackLayout Grid.Column="1"
+                                                 Spacing="4"
+                                                 VerticalOptions="Center">
+                                <Label Text="{Binding OtherPartyEmail}"
+                                       FontAttributes="Bold"
+                                       FontSize="15"
+                                       TextColor="{StaticResource TextPrimary}"
+                                       LineBreakMode="TailTruncation" />
+                                <Label Text="{Binding LastMessageBody}"
+                                       Style="{StaticResource Caption}"
+                                       LineBreakMode="TailTruncation"
+                                       MaxLines="1" />
+                            </VerticalStackLayout>
+
+                            <!-- Unread badge -->
+                            <VerticalStackLayout Grid.Column="2"
+                                                 VerticalOptions="Center"
+                                                 Spacing="6"
+                                                 HorizontalOptions="End">
+                                <Frame IsVisible="{Binding UnreadCount}"
+                                       BackgroundColor="{StaticResource Primary}"
+                                       CornerRadius="12"
+                                       WidthRequest="24"
+                                       HeightRequest="24"
+                                       Padding="0"
+                                       HasShadow="False"
+                                       BorderColor="Transparent"
+                                       HorizontalOptions="Center">
+                                    <Label Text="{Binding UnreadCount}"
+                                           FontSize="11"
+                                           FontAttributes="Bold"
+                                           TextColor="White"
+                                           HorizontalOptions="Center"
+                                           VerticalOptions="Center" />
+                                </Frame>
+                            </VerticalStackLayout>
+
+                        </Grid>
+                    </Frame>
                 </DataTemplate>
             </CollectionView.ItemTemplate>
         </CollectionView>

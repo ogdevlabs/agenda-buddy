@@ -1,71 +1,188 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:System="clr-namespace:System;assembly=netstandard"
              x:Class="MobileApp.Views.DashboardPage"
-             Title="Today's Appointments">
+             Title="Dashboard"
+             BackgroundColor="{StaticResource BackgroundPage}"
+             Shell.NavBarIsVisible="False">
 
-    <Grid RowDefinitions="Auto,Auto,*,Auto">
+    <RefreshView Command="{Binding LoadCommand}"
+                 IsRefreshing="{Binding IsLoading}">
 
-        <!-- Error banner -->
-        <Label Grid.Row="0"
-               Text="{Binding ErrorMessage}"
-               TextColor="White"
-               BackgroundColor="Red"
-               Padding="12,8"
-               IsVisible="{Binding HasError}"
-               AutomationId="ErrorBanner" />
+        <ScrollView>
+            <VerticalStackLayout Padding="24,16" Spacing="0">
 
-        <!-- Try Again button (visible only when there's an error) -->
-        <Button Grid.Row="1"
-                Text="Try again"
-                Command="{Binding LoadCommand}"
-                IsVisible="{Binding HasError}"
-                HorizontalOptions="Start"
-                Margin="12,4"
-                AutomationId="TryAgainButton" />
+                <!-- Greeting Header -->
+                <VerticalStackLayout Spacing="4" Margin="0,16,0,24">
+                    <Label Text="Good morning"
+                           Style="{StaticResource TitleLarge}"
+                           TextColor="{StaticResource TextPrimary}" />
+                    <Label Text="{Binding Source={x:Static System:DateTime.Now}, StringFormat='{0:dddd, MMMM d}'}"
+                           Style="{StaticResource BodySecondary}" />
+                </VerticalStackLayout>
 
-        <!-- Loading indicator -->
-        <ActivityIndicator Grid.Row="2"
-                           IsRunning="{Binding IsLoading}"
-                           IsVisible="{Binding IsLoading}"
-                           HorizontalOptions="Center"
-                           VerticalOptions="Center" />
+                <!-- Summary Cards Row -->
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="12" Margin="0,0,0,24">
 
-        <!-- Empty state -->
-        <Label Grid.Row="2"
-               Text="No appointments today — check your calendar for upcoming sessions."
-               IsVisible="{Binding IsEmpty}"
-               HorizontalOptions="Center"
-               VerticalOptions="Center"
-               HorizontalTextAlignment="Center"
-               Padding="24"
-               AutomationId="EmptyStateLabel" />
-
-        <!-- Appointments list -->
-        <CollectionView Grid.Row="2"
-                        ItemsSource="{Binding Appointments}"
-                        SelectionMode="Single"
-                        SelectionChanged="OnAppointmentSelected"
-                        AutomationId="AppointmentsCollection">
-            <CollectionView.ItemTemplate>
-                <DataTemplate>
-                    <Grid Padding="16,8" ColumnDefinitions="*,Auto">
-                        <VerticalStackLayout Grid.Column="0" Spacing="2">
-                            <Label Text="{Binding CustomerEmail}"
+                    <!-- Today's Sessions Card -->
+                    <Frame Grid.Column="0"
+                           BackgroundColor="{StaticResource Primary}"
+                           CornerRadius="16"
+                           BorderColor="Transparent"
+                           HasShadow="True"
+                           Padding="20">
+                        <VerticalStackLayout Spacing="8">
+                            <Label Text="TODAY"
+                                   FontSize="11"
+                                   CharacterSpacing="1.5"
+                                   TextTransform="Uppercase"
+                                   TextColor="#C7D2FE" />
+                            <Label Text="{Binding Appointments.Count}"
+                                   FontSize="32"
                                    FontAttributes="Bold"
-                                   FontSize="16" />
-                            <Label Text="{Binding Status}"
-                                   FontSize="13"
-                                   TextColor="Gray" />
-                            <Label Text="{Binding ScheduledAt, StringFormat='{0:MMM d, yyyy h:mm tt}'}"
-                                   FontSize="13"
-                                   TextColor="Gray" />
+                                   TextColor="{StaticResource TextOnPrimary}" />
+                            <Label Text="Sessions"
+                                   FontSize="14"
+                                   TextColor="#C7D2FE" />
                         </VerticalStackLayout>
-                    </Grid>
-                </DataTemplate>
-            </CollectionView.ItemTemplate>
-        </CollectionView>
+                    </Frame>
 
-    </Grid>
+                    <!-- This Week Card -->
+                    <Frame Grid.Column="1"
+                           BackgroundColor="{StaticResource AccentLight}"
+                           CornerRadius="16"
+                           BorderColor="Transparent"
+                           HasShadow="True"
+                           Padding="20">
+                        <VerticalStackLayout Spacing="8">
+                            <Label Text="THIS WEEK"
+                                   FontSize="11"
+                                   CharacterSpacing="1.5"
+                                   TextTransform="Uppercase"
+                                   TextColor="{StaticResource AccentDark}" />
+                            <Label Text="{Binding Appointments.Count}"
+                                   FontSize="32"
+                                   FontAttributes="Bold"
+                                   TextColor="{StaticResource TextPrimary}" />
+                            <Label Text="Upcoming"
+                                   FontSize="14"
+                                   TextColor="{StaticResource AccentDark}" />
+                        </VerticalStackLayout>
+                    </Frame>
+
+                </Grid>
+
+                <!-- Error banner -->
+                <Frame Style="{StaticResource ErrorBannerStyle}"
+                       IsVisible="{Binding HasError}">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <Label Grid.Column="0"
+                               Text="{Binding ErrorMessage}"
+                               TextColor="{StaticResource Error}"
+                               FontSize="14"
+                               VerticalOptions="Center"
+                               AutomationId="ErrorBanner" />
+                        <Button Grid.Column="1"
+                                Text="Retry"
+                                Command="{Binding LoadCommand}"
+                                BackgroundColor="{StaticResource Error}"
+                                TextColor="White"
+                                CornerRadius="16"
+                                FontSize="13"
+                                Padding="12,6"
+                                HeightRequest="36"
+                                AutomationId="TryAgainButton" />
+                    </Grid>
+                </Frame>
+
+                <!-- Section Header -->
+                <Label Text="Today's Appointments"
+                       Style="{StaticResource TitleSmall}"
+                       Margin="0,0,0,12" />
+
+                <!-- Loading indicator -->
+                <ActivityIndicator IsRunning="{Binding IsLoading}"
+                                   IsVisible="{Binding IsLoading}"
+                                   Color="{StaticResource Primary}"
+                                   HorizontalOptions="Center"
+                                   Margin="0,24" />
+
+                <!-- Empty state -->
+                <Frame Style="{StaticResource CardStyle}"
+                       IsVisible="{Binding IsEmpty}"
+                       Margin="0,8">
+                    <VerticalStackLayout Spacing="12" HorizontalOptions="Center" Padding="16">
+                        <Label Text="&#x1F4C5;"
+                               FontSize="48"
+                               HorizontalOptions="Center" />
+                        <Label Text="No appointments today"
+                               Style="{StaticResource TitleSmall}"
+                               HorizontalOptions="Center" />
+                        <Label Text="Check your calendar for upcoming sessions."
+                               Style="{StaticResource BodySecondary}"
+                               HorizontalTextAlignment="Center"
+                               AutomationId="EmptyStateLabel" />
+                    </VerticalStackLayout>
+                </Frame>
+
+                <!-- Appointments list -->
+                <CollectionView ItemsSource="{Binding Appointments}"
+                                SelectionMode="Single"
+                                SelectionChanged="OnAppointmentSelected"
+                                AutomationId="AppointmentsCollection">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <Frame Style="{StaticResource CardCompact}"
+                                   Margin="0,0,0,10">
+                                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="14">
+
+                                    <!-- Avatar circle -->
+                                    <Frame Grid.Column="0"
+                                           Style="{StaticResource AvatarCircle}">
+                                        <Label Text="{Binding CustomerEmail, StringFormat='{0[0]}'}"
+                                               FontSize="18"
+                                               FontAttributes="Bold"
+                                               TextColor="{StaticResource Primary}"
+                                               HorizontalOptions="Center"
+                                               VerticalOptions="Center"
+                                               TextTransform="Uppercase" />
+                                    </Frame>
+
+                                    <!-- Details -->
+                                    <VerticalStackLayout Grid.Column="1"
+                                                         Spacing="4"
+                                                         VerticalOptions="Center">
+                                        <Label Text="{Binding CustomerEmail}"
+                                               FontAttributes="Bold"
+                                               FontSize="15"
+                                               TextColor="{StaticResource TextPrimary}"
+                                               LineBreakMode="TailTruncation" />
+                                        <Label Text="{Binding ScheduledAt, StringFormat='{0:h:mm tt} - {0:MMM d}'}"
+                                               FontSize="13"
+                                               TextColor="{StaticResource TextMuted}" />
+                                    </VerticalStackLayout>
+
+                                    <!-- Status chip -->
+                                    <Frame Grid.Column="2"
+                                           Style="{StaticResource BadgeStyle}"
+                                           BackgroundColor="{StaticResource SuccessLight}"
+                                           VerticalOptions="Center">
+                                        <Label Text="{Binding Status}"
+                                               FontSize="11"
+                                               FontAttributes="Bold"
+                                               TextColor="{StaticResource Success}" />
+                                    </Frame>
+
+                                </Grid>
+                            </Frame>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+
+            </VerticalStackLayout>
+        </ScrollView>
+
+    </RefreshView>
 
 </ContentPage>

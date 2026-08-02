@@ -3,64 +3,146 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
              x:Class="MobileApp.Views.CustomersPage"
-             Title="Customers">
+             Title="Customers"
+             BackgroundColor="{StaticResource BackgroundPage}">
 
     <ContentPage.Resources>
         <toolkit:InvertedBoolConverter x:Key="InvertedBoolConverter" />
     </ContentPage.Resources>
 
-    <Grid RowDefinitions="Auto,Auto,*">
+    <Grid RowDefinitions="Auto,Auto,Auto,*">
+
+        <!-- Search bar -->
+        <Frame Grid.Row="0"
+               BackgroundColor="{StaticResource BackgroundCard}"
+               CornerRadius="12"
+               BorderColor="{StaticResource BorderLight}"
+               Padding="16,4"
+               HasShadow="False"
+               Margin="24,16,24,8">
+            <Grid ColumnDefinitions="Auto,*">
+                <Label Grid.Column="0"
+                       Text="&#x1F50D;"
+                       FontSize="16"
+                       VerticalOptions="Center"
+                       Margin="0,0,8,0" />
+                <Entry Grid.Column="1"
+                       Placeholder="Search customers..."
+                       Style="{StaticResource InputStyle}"
+                       FontSize="15"
+                       BackgroundColor="Transparent" />
+            </Grid>
+        </Frame>
 
         <!-- Loading indicator -->
-        <ActivityIndicator Grid.Row="0"
+        <ActivityIndicator Grid.Row="1"
                            IsRunning="{Binding IsLoading}"
                            IsVisible="{Binding IsLoading}"
+                           Color="{StaticResource Primary}"
                            HorizontalOptions="Center"
                            Margin="0,16,0,0" />
 
         <!-- Error banner -->
-        <VerticalStackLayout Grid.Row="1"
-                             IsVisible="{Binding HasError}"
-                             BackgroundColor="#FFEBEE"
-                             Padding="16,8"
-                             Spacing="8">
-            <Label Text="{Binding ErrorMessage}"
-                   TextColor="#B71C1C"
-                   AutomationId="ErrorLabel" />
-            <Button Text="Retry"
-                    Command="{Binding LoadCommand}"
-                    AutomationId="RetryButton"
-                    HorizontalOptions="Start" />
-        </VerticalStackLayout>
+        <Frame Grid.Row="2"
+               Style="{StaticResource ErrorBannerStyle}"
+               IsVisible="{Binding HasError}"
+               Margin="24,8">
+            <Grid ColumnDefinitions="*,Auto">
+                <Label Grid.Column="0"
+                       Text="{Binding ErrorMessage}"
+                       TextColor="{StaticResource Error}"
+                       FontSize="14"
+                       VerticalOptions="Center"
+                       AutomationId="ErrorLabel" />
+                <Button Grid.Column="1"
+                        Text="Retry"
+                        Command="{Binding LoadCommand}"
+                        BackgroundColor="{StaticResource Error}"
+                        TextColor="White"
+                        CornerRadius="16"
+                        FontSize="13"
+                        Padding="12,6"
+                        HeightRequest="36"
+                        AutomationId="RetryButton" />
+            </Grid>
+        </Frame>
 
         <!-- Empty state -->
-        <Label Grid.Row="2"
-               Text="No customers yet — once a client books a session with you, they will appear here."
-               IsVisible="{Binding IsEmpty}"
-               HorizontalOptions="Center"
-               VerticalOptions="Center"
-               HorizontalTextAlignment="Center"
-               Margin="32,0"
-               TextColor="Gray"
-               AutomationId="EmptyStateLabel" />
+        <VerticalStackLayout Grid.Row="3"
+                             IsVisible="{Binding IsEmpty}"
+                             VerticalOptions="Center"
+                             HorizontalOptions="Center"
+                             Spacing="16"
+                             Padding="40">
+            <Frame BackgroundColor="{StaticResource PrimarySubtle}"
+                   CornerRadius="40"
+                   WidthRequest="80"
+                   HeightRequest="80"
+                   Padding="0"
+                   HasShadow="False"
+                   BorderColor="Transparent"
+                   HorizontalOptions="Center">
+                <Label Text="&#x1F465;"
+                       FontSize="36"
+                       HorizontalOptions="Center"
+                       VerticalOptions="Center" />
+            </Frame>
+            <Label Text="No customers yet"
+                   Style="{StaticResource TitleSmall}"
+                   HorizontalOptions="Center" />
+            <Label Text="Once a client books a session with you, they will appear here."
+                   Style="{StaticResource BodySecondary}"
+                   HorizontalTextAlignment="Center"
+                   AutomationId="EmptyStateLabel" />
+        </VerticalStackLayout>
 
         <!-- Customer list -->
-        <CollectionView Grid.Row="2"
+        <CollectionView Grid.Row="3"
                         ItemsSource="{Binding Customers}"
                         IsVisible="{Binding IsEmpty, Converter={StaticResource InvertedBoolConverter}}"
+                        Margin="24,8,24,24"
                         AutomationId="CustomersCollectionView">
             <CollectionView.ItemTemplate>
                 <DataTemplate>
-                    <VerticalStackLayout Padding="16,12" Spacing="4">
-                        <Label Text="{Binding FullName}"
-                               FontAttributes="Bold"
-                               FontSize="16"
-                               AutomationId="CustomerFullName" />
-                        <Label Text="{Binding Email}"
-                               FontSize="14"
-                               TextColor="Gray"
-                               AutomationId="CustomerEmail" />
-                    </VerticalStackLayout>
+                    <Frame Style="{StaticResource CardCompact}"
+                           Margin="0,0,0,8">
+                        <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="14">
+
+                            <!-- Avatar circle with initials -->
+                            <Frame Grid.Column="0"
+                                   Style="{StaticResource AvatarCircle}">
+                                <Label Text="{Binding FullName, StringFormat='{0[0]}'}"
+                                       FontSize="18"
+                                       FontAttributes="Bold"
+                                       TextColor="{StaticResource Primary}"
+                                       HorizontalOptions="Center"
+                                       VerticalOptions="Center"
+                                       TextTransform="Uppercase" />
+                            </Frame>
+
+                            <!-- Name and email -->
+                            <VerticalStackLayout Grid.Column="1"
+                                                 Spacing="4"
+                                                 VerticalOptions="Center">
+                                <Label Text="{Binding FullName}"
+                                       FontAttributes="Bold"
+                                       FontSize="15"
+                                       TextColor="{StaticResource TextPrimary}"
+                                       AutomationId="CustomerFullName" />
+                                <Label Text="{Binding Email}"
+                                       Style="{StaticResource Caption}"
+                                       AutomationId="CustomerEmail" />
+                            </VerticalStackLayout>
+
+                            <!-- Chevron -->
+                            <Label Grid.Column="2"
+                                   Text="&#x203A;"
+                                   FontSize="24"
+                                   TextColor="{StaticResource TextMuted}"
+                                   VerticalOptions="Center" />
+
+                        </Grid>
+                    </Frame>
                 </DataTemplate>
             </CollectionView.ItemTemplate>
         </CollectionView>

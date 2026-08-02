@@ -2,72 +2,189 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="MobileApp.Views.AppointmentDetailPage"
-             Title="Appointment">
+             Title="Appointment"
+             BackgroundColor="{StaticResource BackgroundPage}">
 
-    <Grid RowDefinitions="Auto,Auto,Auto,*,Auto">
+    <Grid RowDefinitions="Auto,Auto,*,Auto">
 
-        <!-- Error banner (UX F-002) -->
-        <Label Grid.Row="0"
-               Text="{Binding ErrorMessage}"
-               TextColor="White"
-               BackgroundColor="Red"
-               Padding="12,8"
+        <!-- Hero section with status -->
+        <Frame Grid.Row="0"
+               BackgroundColor="{StaticResource Primary}"
+               CornerRadius="0"
+               BorderColor="Transparent"
+               HasShadow="True"
+               Padding="24,32">
+            <VerticalStackLayout Spacing="12" HorizontalOptions="Center">
+                <!-- Status badge -->
+                <Frame BackgroundColor="#FFFFFF30"
+                       CornerRadius="16"
+                       Padding="16,8"
+                       HasShadow="False"
+                       BorderColor="Transparent"
+                       HorizontalOptions="Center">
+                    <Label Text="{Binding Appointment.Status}"
+                           FontSize="14"
+                           FontAttributes="Bold"
+                           TextColor="White"
+                           TextTransform="Uppercase"
+                           HorizontalOptions="Center"
+                           AutomationId="StatusLabel" />
+                </Frame>
+                <Label Text="Appointment Details"
+                       FontSize="20"
+                       FontAttributes="Bold"
+                       TextColor="White"
+                       HorizontalOptions="Center" />
+            </VerticalStackLayout>
+        </Frame>
+
+        <!-- Error banner -->
+        <Frame Grid.Row="1"
+               Style="{StaticResource ErrorBannerStyle}"
                IsVisible="{Binding HasError}"
-               AutomationId="ErrorBanner" />
-
-        <!-- Try again button (UX F-002: retry) -->
-        <Button Grid.Row="1"
-                Text="Try again"
-                Command="{Binding LoadCommand}"
-                IsVisible="{Binding HasError}"
-                HorizontalOptions="Start"
-                Margin="12,4"
-                AutomationId="TryAgainButton"
-                SemanticProperties.Description="Retry loading the appointment" />
+               Margin="24,12">
+            <Grid ColumnDefinitions="*,Auto">
+                <Label Grid.Column="0"
+                       Text="{Binding ErrorMessage}"
+                       TextColor="{StaticResource Error}"
+                       FontSize="14"
+                       VerticalOptions="Center"
+                       AutomationId="ErrorBanner" />
+                <Button Grid.Column="1"
+                        Text="Retry"
+                        Command="{Binding LoadCommand}"
+                        BackgroundColor="{StaticResource Error}"
+                        TextColor="White"
+                        CornerRadius="16"
+                        FontSize="13"
+                        Padding="12,6"
+                        HeightRequest="36"
+                        AutomationId="TryAgainButton"
+                        SemanticProperties.Description="Retry loading the appointment" />
+            </Grid>
+        </Frame>
 
         <!-- Loading indicator -->
         <ActivityIndicator Grid.Row="2"
                            IsRunning="{Binding IsLoading}"
                            IsVisible="{Binding IsLoading}"
+                           Color="{StaticResource Primary}"
                            HorizontalOptions="Center"
-                           Margin="0,8" />
+                           VerticalOptions="Center"
+                           Margin="0,24" />
 
-        <!-- Details -->
-        <VerticalStackLayout Grid.Row="3"
-                             Padding="16"
-                             Spacing="8"
-                             IsVisible="{Binding HasAppointment}">
-            <Label Text="Customer" FontAttributes="Bold" />
-            <Label Text="{Binding Appointment.CustomerEmail}" AutomationId="CustomerEmailLabel" />
+        <!-- Detail cards -->
+        <ScrollView Grid.Row="2"
+                    IsVisible="{Binding HasAppointment}">
+            <VerticalStackLayout Padding="24,20" Spacing="0">
 
-            <Label Text="Scheduled at" FontAttributes="Bold" Margin="0,12,0,0" />
-            <Label Text="{Binding Appointment.ScheduledAt, StringFormat='{0:MMM d, yyyy h:mm tt}'}"
-                   AutomationId="ScheduledAtLabel" />
+                <!-- Customer info card -->
+                <Frame Style="{StaticResource CardStyle}">
+                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="16">
+                        <!-- Avatar -->
+                        <Frame Grid.Column="0"
+                               Style="{StaticResource AvatarCircle}">
+                            <Label Text="{Binding Appointment.CustomerEmail, StringFormat='{0[0]}'}"
+                                   FontSize="18"
+                                   FontAttributes="Bold"
+                                   TextColor="{StaticResource Primary}"
+                                   HorizontalOptions="Center"
+                                   VerticalOptions="Center"
+                                   TextTransform="Uppercase" />
+                        </Frame>
 
-            <Label Text="Status" FontAttributes="Bold" Margin="0,12,0,0" />
-            <Label Text="{Binding Appointment.Status}" AutomationId="StatusLabel" />
-        </VerticalStackLayout>
+                        <VerticalStackLayout Grid.Column="1"
+                                             Spacing="4"
+                                             VerticalOptions="Center">
+                            <Label Text="CUSTOMER"
+                                   Style="{StaticResource Overline}" />
+                            <Label Text="{Binding Appointment.CustomerEmail}"
+                                   FontSize="16"
+                                   FontAttributes="Bold"
+                                   TextColor="{StaticResource TextPrimary}"
+                                   AutomationId="CustomerEmailLabel" />
+                        </VerticalStackLayout>
+                    </Grid>
+                </Frame>
 
-        <!-- Action buttons (UX F-004: accessibility descriptions) -->
-        <VerticalStackLayout Grid.Row="4" Padding="16" Spacing="8">
-            <Button Text="Confirm"
-                    Command="{Binding ConfirmCommand}"
-                    IsEnabled="{Binding IsNotLoading}"
-                    AutomationId="ConfirmButton"
-                    SemanticProperties.Description="Confirm this appointment" />
+                <!-- Schedule info card -->
+                <Frame Style="{StaticResource CardStyle}">
+                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="16">
+                        <!-- Calendar icon circle -->
+                        <Frame Grid.Column="0"
+                               BackgroundColor="{StaticResource AccentLight}"
+                               CornerRadius="22"
+                               WidthRequest="44"
+                               HeightRequest="44"
+                               Padding="0"
+                               HasShadow="False"
+                               BorderColor="Transparent">
+                            <Label Text="&#x1F4C5;"
+                                   FontSize="20"
+                                   HorizontalOptions="Center"
+                                   VerticalOptions="Center" />
+                        </Frame>
 
-            <Button Text="Cancel appointment"
-                    Command="{Binding CancelCommand}"
-                    IsEnabled="{Binding IsNotLoading}"
-                    AutomationId="CancelButton"
-                    SemanticProperties.Description="Cancel this appointment" />
+                        <VerticalStackLayout Grid.Column="1"
+                                             Spacing="4"
+                                             VerticalOptions="Center">
+                            <Label Text="SCHEDULED"
+                                   Style="{StaticResource Overline}" />
+                            <Label Text="{Binding Appointment.ScheduledAt, StringFormat='{0:dddd, MMMM d, yyyy}'}"
+                                   FontSize="15"
+                                   FontAttributes="Bold"
+                                   TextColor="{StaticResource TextPrimary}"
+                                   AutomationId="ScheduledAtLabel" />
+                            <Label Text="{Binding Appointment.ScheduledAt, StringFormat='{0:h:mm tt}'}"
+                                   FontSize="14"
+                                   TextColor="{StaticResource TextSecondary}" />
+                        </VerticalStackLayout>
+                    </Grid>
+                </Frame>
 
-            <Button Text="Mark complete"
-                    Command="{Binding CompleteCommand}"
-                    IsEnabled="{Binding IsNotLoading}"
-                    AutomationId="CompleteButton"
-                    SemanticProperties.Description="Mark this appointment complete" />
-        </VerticalStackLayout>
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <!-- Action buttons -->
+        <Frame Grid.Row="3"
+               BackgroundColor="{StaticResource BackgroundCard}"
+               CornerRadius="0"
+               BorderColor="{StaticResource BorderLight}"
+               HasShadow="True"
+               Padding="24,16">
+            <Grid ColumnDefinitions="*,*,*" ColumnSpacing="10">
+
+                <!-- Confirm button -->
+                <Button Grid.Column="0"
+                        Text="Confirm"
+                        Style="{StaticResource SuccessButton}"
+                        Command="{Binding ConfirmCommand}"
+                        IsEnabled="{Binding IsNotLoading}"
+                        AutomationId="ConfirmButton"
+                        SemanticProperties.Description="Confirm this appointment" />
+
+                <!-- Cancel button -->
+                <Button Grid.Column="1"
+                        Text="Cancel"
+                        Style="{StaticResource DangerButton}"
+                        Command="{Binding CancelCommand}"
+                        IsEnabled="{Binding IsNotLoading}"
+                        AutomationId="CancelButton"
+                        SemanticProperties.Description="Cancel this appointment" />
+
+                <!-- Complete button -->
+                <Button Grid.Column="2"
+                        Text="Complete"
+                        Style="{StaticResource PrimaryButton}"
+                        FontSize="14"
+                        Padding="12,14"
+                        Command="{Binding CompleteCommand}"
+                        IsEnabled="{Binding IsNotLoading}"
+                        AutomationId="CompleteButton"
+                        SemanticProperties.Description="Mark this appointment complete" />
+
+            </Grid>
+        </Frame>
 
     </Grid>
 

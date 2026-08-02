@@ -3,76 +3,132 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
              x:Class="MobileApp.Views.LoginPage"
-             Title="Sign In">
+             Title="Sign In"
+             BackgroundColor="{StaticResource BackgroundDark}"
+             Shell.NavBarIsVisible="False">
 
     <ContentPage.Resources>
         <toolkit:InvertedBoolConverter x:Key="InvertedBoolConverter" />
     </ContentPage.Resources>
 
     <ScrollView>
-        <VerticalStackLayout Padding="32" Spacing="16" VerticalOptions="Center">
+        <Grid VerticalOptions="Center" Padding="24">
 
-            <Label Text="Agenda Buddy"
-                   FontSize="28"
-                   FontAttributes="Bold"
-                   HorizontalOptions="Center" />
+            <!-- Main card -->
+            <Frame BackgroundColor="{StaticResource BackgroundCard}"
+                   CornerRadius="24"
+                   BorderColor="Transparent"
+                   HasShadow="True"
+                   Padding="32">
 
-            <Label Text="Sign in to your account"
-                   FontSize="16"
-                   HorizontalOptions="Center"
-                   Margin="0,0,0,16" />
+                <VerticalStackLayout Spacing="8">
 
-            <!-- Email -->
-            <Label Text="Email" FontAttributes="Bold" />
-            <Entry x:Name="EmailEntry"
-                   Placeholder="you@example.com"
-                   Keyboard="Email"
-                   Text="{Binding Email}"
-                   AutomationId="EmailEntry" />
+                    <!-- Logo / Brand area -->
+                    <VerticalStackLayout Spacing="4" Margin="0,0,0,24">
+                        <Frame BackgroundColor="{StaticResource PrimarySubtle}"
+                               CornerRadius="20"
+                               WidthRequest="64"
+                               HeightRequest="64"
+                               Padding="0"
+                               HasShadow="False"
+                               BorderColor="Transparent"
+                               HorizontalOptions="Center"
+                               Margin="0,0,0,16">
+                            <Label Text="AB"
+                                   FontSize="24"
+                                   FontAttributes="Bold"
+                                   TextColor="{StaticResource Primary}"
+                                   HorizontalOptions="Center"
+                                   VerticalOptions="Center" />
+                        </Frame>
 
-            <!-- Password -->
-            <Label Text="Password" FontAttributes="Bold" />
-            <Entry x:Name="PasswordEntry"
-                   Placeholder="Password"
-                   IsPassword="True"
-                   Text="{Binding Password}"
-                   AutomationId="PasswordEntry" />
+                        <Label Text="Agenda Buddy"
+                               Style="{StaticResource TitleLarge}"
+                               HorizontalOptions="Center" />
 
-            <!-- Error message -->
-            <Label x:Name="ErrorLabel"
-                   Text="{Binding ErrorMessage}"
-                   TextColor="Red"
-                   IsVisible="{Binding HasError}"
-                   AutomationId="ErrorLabel" />
+                        <Label Text="Your scheduling companion"
+                               Style="{StaticResource BodySecondary}"
+                               HorizontalOptions="Center"
+                               Margin="0,4,0,0" />
+                    </VerticalStackLayout>
 
-            <!-- Sign in button + activity indicator -->
-            <Grid>
-                <Button Text="Sign In"
-                        Command="{Binding SignInCommand}"
-                        IsVisible="{Binding IsLoading, Converter={StaticResource InvertedBoolConverter}}"
-                        AutomationId="SignInButton" />
-                <ActivityIndicator IsRunning="{Binding IsLoading}"
-                                   IsVisible="{Binding IsLoading}"
-                                   HorizontalOptions="Center" />
-            </Grid>
+                    <!-- Email field -->
+                    <Label Text="Email"
+                           Style="{StaticResource Caption}"
+                           FontAttributes="Bold"
+                           TextColor="{StaticResource TextSecondary}"
+                           Margin="4,0,0,0" />
+                    <Frame Style="{StaticResource InputFrame}">
+                        <Entry x:Name="EmailEntry"
+                               Placeholder="you@example.com"
+                               Keyboard="Email"
+                               Text="{Binding Email}"
+                               Style="{StaticResource InputStyle}"
+                               AutomationId="EmailEntry" />
+                    </Frame>
 
-            <!-- Navigate to registration -->
-            <Label HorizontalOptions="Center" Margin="0,8,0,0">
-                <Label.FormattedText>
-                    <FormattedString>
-                        <Span Text="Don't have an account? " />
-                        <Span Text="Create Account"
-                              TextColor="{StaticResource Primary}"
-                              TextDecorations="Underline">
-                            <Span.GestureRecognizers>
-                                <TapGestureRecognizer Tapped="OnCreateAccountTapped" />
-                            </Span.GestureRecognizers>
-                        </Span>
-                    </FormattedString>
-                </Label.FormattedText>
-            </Label>
+                    <!-- Password field -->
+                    <Label Text="Password"
+                           Style="{StaticResource Caption}"
+                           FontAttributes="Bold"
+                           TextColor="{StaticResource TextSecondary}"
+                           Margin="4,8,0,0" />
+                    <Frame Style="{StaticResource InputFrame}">
+                        <Entry x:Name="PasswordEntry"
+                               Placeholder="Enter your password"
+                               IsPassword="True"
+                               Text="{Binding Password}"
+                               Style="{StaticResource InputStyle}"
+                               AutomationId="PasswordEntry" />
+                    </Frame>
 
-        </VerticalStackLayout>
+                    <!-- Error message -->
+                    <Frame Style="{StaticResource ErrorBannerStyle}"
+                           IsVisible="{Binding HasError}">
+                        <Label x:Name="ErrorLabel"
+                               Text="{Binding ErrorMessage}"
+                               TextColor="{StaticResource Error}"
+                               FontSize="14"
+                               AutomationId="ErrorLabel" />
+                    </Frame>
+
+                    <!-- Sign in button + activity indicator -->
+                    <Grid Margin="0,16,0,0">
+                        <Button Text="Sign In"
+                                Style="{StaticResource PrimaryButton}"
+                                Command="{Binding SignInCommand}"
+                                IsVisible="{Binding IsLoading, Converter={StaticResource InvertedBoolConverter}}"
+                                AutomationId="SignInButton" />
+                        <ActivityIndicator IsRunning="{Binding IsLoading}"
+                                           IsVisible="{Binding IsLoading}"
+                                           Color="{StaticResource Primary}"
+                                           HorizontalOptions="Center"
+                                           VerticalOptions="Center" />
+                    </Grid>
+
+                    <!-- Navigate to registration -->
+                    <Label HorizontalOptions="Center" Margin="0,16,0,0">
+                        <Label.FormattedText>
+                            <FormattedString>
+                                <Span Text="Don't have an account? "
+                                      TextColor="{StaticResource TextMuted}"
+                                      FontSize="14" />
+                                <Span Text="Create Account"
+                                      TextColor="{StaticResource Primary}"
+                                      FontAttributes="Bold"
+                                      FontSize="14">
+                                    <Span.GestureRecognizers>
+                                        <TapGestureRecognizer Tapped="OnCreateAccountTapped" />
+                                    </Span.GestureRecognizers>
+                                </Span>
+                            </FormattedString>
+                        </Label.FormattedText>
+                    </Label>
+
+                </VerticalStackLayout>
+            </Frame>
+
+        </Grid>
     </ScrollView>
 
 </ContentPage>

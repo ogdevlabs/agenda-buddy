@@ -1,82 +1,176 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:System="clr-namespace:System;assembly=netstandard"
              x:Class="MobileApp.Views.CalendarPage"
-             Title="Calendar">
+             Title="Calendar"
+             BackgroundColor="{StaticResource BackgroundPage}">
 
-    <Grid RowDefinitions="Auto,Auto,*">
+    <Grid RowDefinitions="Auto,Auto,Auto,*">
 
-        <!-- Activity indicator -->
-        <ActivityIndicator Grid.Row="0"
-                           IsRunning="{Binding IsLoading}"
-                           IsVisible="{Binding IsLoading}"
-                           HorizontalOptions="Center"
-                           Margin="0,8" />
-
-        <!-- Error banner (UX F-002) -->
-        <Frame Grid.Row="1"
-               IsVisible="{Binding HasError}"
-               BackgroundColor="#FDECEA"
-               BorderColor="#F44336"
-               Padding="12"
-               Margin="16,4">
-            <VerticalStackLayout Spacing="8">
-                <Label Text="{Binding ErrorMessage}"
-                       TextColor="#B71C1C"
-                       FontSize="14" />
-                <Button Text="Retry"
-                        Command="{Binding LoadCommand}"
-                        BackgroundColor="#F44336"
-                        TextColor="White"
-                        HorizontalOptions="Start"
-                        Padding="12,6" />
-            </VerticalStackLayout>
+        <!-- Calendar Header -->
+        <Frame Grid.Row="0"
+               BackgroundColor="{StaticResource Primary}"
+               CornerRadius="0"
+               BorderColor="Transparent"
+               HasShadow="True"
+               Padding="24,20">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <Label Grid.Column="0"
+                       Text="&#x25C0;"
+                       FontSize="20"
+                       TextColor="{StaticResource TextOnPrimary}"
+                       VerticalOptions="Center" />
+                <VerticalStackLayout Grid.Column="1" HorizontalOptions="Center" Spacing="2">
+                    <Label Text="{Binding Source={x:Static System:DateTime.Now}, StringFormat='{0:MMMM yyyy}'}"
+                           FontSize="20"
+                           FontAttributes="Bold"
+                           TextColor="{StaticResource TextOnPrimary}"
+                           HorizontalOptions="Center" />
+                    <Label Text="Your availability"
+                           FontSize="12"
+                           TextColor="#C7D2FE"
+                           HorizontalOptions="Center" />
+                </VerticalStackLayout>
+                <Label Grid.Column="2"
+                       Text="&#x25B6;"
+                       FontSize="20"
+                       TextColor="{StaticResource TextOnPrimary}"
+                       VerticalOptions="Center" />
+            </Grid>
         </Frame>
 
+        <!-- Activity indicator -->
+        <ActivityIndicator Grid.Row="1"
+                           IsRunning="{Binding IsLoading}"
+                           IsVisible="{Binding IsLoading}"
+                           Color="{StaticResource Primary}"
+                           HorizontalOptions="Center"
+                           Margin="0,16" />
+
+        <!-- Error banner -->
+        <Frame Grid.Row="2"
+               Style="{StaticResource ErrorBannerStyle}"
+               IsVisible="{Binding HasError}"
+               Margin="24,12">
+            <Grid ColumnDefinitions="*,Auto">
+                <Label Grid.Column="0"
+                       Text="{Binding ErrorMessage}"
+                       TextColor="{StaticResource Error}"
+                       FontSize="14"
+                       VerticalOptions="Center" />
+                <Button Grid.Column="1"
+                        Text="Retry"
+                        Command="{Binding LoadCommand}"
+                        BackgroundColor="{StaticResource Error}"
+                        TextColor="White"
+                        CornerRadius="16"
+                        FontSize="13"
+                        Padding="12,6"
+                        HeightRequest="36" />
+            </Grid>
+        </Frame>
+
+        <!-- Legend -->
+        <HorizontalStackLayout Grid.Row="2"
+                               Spacing="20"
+                               HorizontalOptions="Center"
+                               Margin="0,12">
+            <HorizontalStackLayout Spacing="6">
+                <BoxView WidthRequest="12"
+                         HeightRequest="12"
+                         CornerRadius="6"
+                         Color="{StaticResource Primary}"
+                         VerticalOptions="Center" />
+                <Label Text="Available"
+                       Style="{StaticResource Caption}"
+                       VerticalOptions="Center" />
+            </HorizontalStackLayout>
+            <HorizontalStackLayout Spacing="6">
+                <BoxView WidthRequest="12"
+                         HeightRequest="12"
+                         CornerRadius="6"
+                         Color="{StaticResource Accent}"
+                         VerticalOptions="Center" />
+                <Label Text="Booked"
+                       Style="{StaticResource Caption}"
+                       VerticalOptions="Center" />
+            </HorizontalStackLayout>
+        </HorizontalStackLayout>
+
         <!-- Calendar days list -->
-        <CollectionView Grid.Row="2"
+        <CollectionView Grid.Row="3"
                         ItemsSource="{Binding Days}"
-                        Margin="16,4">
+                        Margin="24,8,24,24">
             <CollectionView.ItemTemplate>
                 <DataTemplate>
-                    <Frame Margin="0,4" Padding="12" BorderColor="#E0E0E0">
-                        <Grid ColumnDefinitions="*,Auto,Auto">
+                    <Frame Style="{StaticResource CardCompact}"
+                           Margin="0,0,0,10">
+                        <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="16">
 
-                            <!-- Date -->
-                            <Label Grid.Column="0"
-                                   Text="{Binding Date}"
-                                   FontAttributes="Bold"
-                                   VerticalOptions="Center" />
+                            <!-- Date display -->
+                            <Frame Grid.Column="0"
+                                   BackgroundColor="{StaticResource PrimarySubtle}"
+                                   CornerRadius="12"
+                                   WidthRequest="56"
+                                   HeightRequest="56"
+                                   Padding="0"
+                                   HasShadow="False"
+                                   BorderColor="Transparent">
+                                <VerticalStackLayout VerticalOptions="Center"
+                                                     HorizontalOptions="Center"
+                                                     Spacing="0">
+                                    <Label Text="{Binding Date, StringFormat='{0:dd}'}"
+                                           FontSize="20"
+                                           FontAttributes="Bold"
+                                           TextColor="{StaticResource Primary}"
+                                           HorizontalOptions="Center" />
+                                    <Label Text="{Binding Date, StringFormat='{0:ddd}'}"
+                                           FontSize="10"
+                                           TextColor="{StaticResource PrimaryDark}"
+                                           TextTransform="Uppercase"
+                                           HorizontalOptions="Center" />
+                                </VerticalStackLayout>
+                            </Frame>
 
-                            <!-- Available slots count -->
+                            <!-- Slot pills -->
                             <VerticalStackLayout Grid.Column="1"
-                                                 HorizontalOptions="Center"
-                                                 Margin="8,0">
-                                <Label Text="{Binding AvailableSlots.Count}"
-                                       FontSize="18"
-                                       FontAttributes="Bold"
-                                       TextColor="#2E7D32"
-                                       HorizontalOptions="Center" />
-                                <Label Text="Available"
-                                       FontSize="11"
-                                       TextColor="#2E7D32"
-                                       HorizontalOptions="Center" />
+                                                 VerticalOptions="Center"
+                                                 Spacing="6">
+                                <!-- Available -->
+                                <HorizontalStackLayout Spacing="6">
+                                    <Frame BackgroundColor="{StaticResource Primary}"
+                                           CornerRadius="10"
+                                           Padding="10,4"
+                                           HasShadow="False"
+                                           BorderColor="Transparent">
+                                        <Label Text="{Binding AvailableSlots.Count, StringFormat='{0} available'}"
+                                               FontSize="12"
+                                               FontAttributes="Bold"
+                                               TextColor="{StaticResource TextOnPrimary}" />
+                                    </Frame>
+                                </HorizontalStackLayout>
+                                <!-- Booked -->
+                                <HorizontalStackLayout Spacing="6">
+                                    <Frame BackgroundColor="{StaticResource Accent}"
+                                           CornerRadius="10"
+                                           Padding="10,4"
+                                           HasShadow="False"
+                                           BorderColor="Transparent">
+                                        <Label Text="{Binding BookedSlots.Count, StringFormat='{0} booked'}"
+                                               FontSize="12"
+                                               FontAttributes="Bold"
+                                               TextColor="White" />
+                                    </Frame>
+                                </HorizontalStackLayout>
                             </VerticalStackLayout>
 
-                            <!-- Booked slots count -->
-                            <VerticalStackLayout Grid.Column="2"
-                                                 HorizontalOptions="Center"
-                                                 Margin="8,0">
-                                <Label Text="{Binding BookedSlots.Count}"
-                                       FontSize="18"
-                                       FontAttributes="Bold"
-                                       TextColor="#C62828"
-                                       HorizontalOptions="Center" />
-                                <Label Text="Booked"
-                                       FontSize="11"
-                                       TextColor="#C62828"
-                                       HorizontalOptions="Center" />
-                            </VerticalStackLayout>
+                            <!-- Chevron -->
+                            <Label Grid.Column="2"
+                                   Text="&#x203A;"
+                                   FontSize="24"
+                                   TextColor="{StaticResource TextMuted}"
+                                   VerticalOptions="Center" />
 
                         </Grid>
                     </Frame>

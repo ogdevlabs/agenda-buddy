@@ -3,7 +3,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
              x:Class="MobileApp.Views.NotificationsPage"
-             Title="Notifications">
+             Title="Notifications"
+             BackgroundColor="{StaticResource BackgroundPage}">
 
     <ContentPage.Resources>
         <toolkit:InvertedBoolConverter x:Key="InvertedBoolConverter" />
@@ -15,92 +16,143 @@
         <ActivityIndicator Grid.Row="0"
                            IsRunning="{Binding IsLoading}"
                            IsVisible="{Binding IsLoading}"
+                           Color="{StaticResource Primary}"
                            HorizontalOptions="Center"
-                           Margin="0,8" />
+                           Margin="0,16" />
 
-        <!-- Error banner with retry button -->
-        <VerticalStackLayout Grid.Row="1"
-                             IsVisible="{Binding HasError}"
-                             BackgroundColor="#FFEBEE"
-                             Padding="16,8"
-                             Spacing="8">
-            <Label Text="{Binding ErrorMessage}"
-                   TextColor="#B71C1C"
-                   FontSize="14" />
-            <Button Text="Retry"
-                    Command="{Binding LoadCommand}"
-                    BackgroundColor="#B71C1C"
-                    TextColor="White"
-                    HorizontalOptions="Start"
-                    Padding="12,6" />
-        </VerticalStackLayout>
+        <!-- Error banner -->
+        <Frame Grid.Row="1"
+               Style="{StaticResource ErrorBannerStyle}"
+               IsVisible="{Binding HasError}"
+               Margin="24,8">
+            <Grid ColumnDefinitions="*,Auto">
+                <Label Grid.Column="0"
+                       Text="{Binding ErrorMessage}"
+                       TextColor="{StaticResource Error}"
+                       FontSize="14"
+                       VerticalOptions="Center" />
+                <Button Grid.Column="1"
+                        Text="Retry"
+                        Command="{Binding LoadCommand}"
+                        BackgroundColor="{StaticResource Error}"
+                        TextColor="White"
+                        CornerRadius="16"
+                        FontSize="13"
+                        Padding="12,6"
+                        HeightRequest="36" />
+            </Grid>
+        </Frame>
 
         <!-- Empty state -->
         <VerticalStackLayout Grid.Row="2"
                              IsVisible="{Binding IsEmpty}"
                              VerticalOptions="Center"
                              HorizontalOptions="Center"
-                             Spacing="8"
-                             Padding="32">
-            <Label Text="You are all caught up — new booking updates will appear here."
-                   HorizontalTextAlignment="Center"
-                   TextColor="Gray"
-                   FontSize="16" />
+                             Spacing="16"
+                             Padding="40">
+            <Frame BackgroundColor="{StaticResource SuccessLight}"
+                   CornerRadius="40"
+                   WidthRequest="80"
+                   HeightRequest="80"
+                   Padding="0"
+                   HasShadow="False"
+                   BorderColor="Transparent"
+                   HorizontalOptions="Center">
+                <Label Text="&#x2713;"
+                       FontSize="36"
+                       TextColor="{StaticResource Success}"
+                       HorizontalOptions="Center"
+                       VerticalOptions="Center" />
+            </Frame>
+            <Label Text="All caught up!"
+                   Style="{StaticResource TitleSmall}"
+                   HorizontalOptions="Center" />
+            <Label Text="New booking updates will appear here."
+                   Style="{StaticResource BodySecondary}"
+                   HorizontalTextAlignment="Center" />
         </VerticalStackLayout>
 
         <!-- Notifications list -->
         <CollectionView Grid.Row="2"
                         ItemsSource="{Binding Notifications}"
-                        IsVisible="{Binding IsEmpty, Converter={StaticResource InvertedBoolConverter}}">
+                        IsVisible="{Binding IsEmpty, Converter={StaticResource InvertedBoolConverter}}"
+                        Margin="24,8,24,24">
             <CollectionView.ItemTemplate>
                 <DataTemplate>
-                    <Grid Padding="16,12"
-                          ColumnDefinitions="*,Auto">
+                    <Frame BackgroundColor="{StaticResource BackgroundCard}"
+                           CornerRadius="14"
+                           Padding="0"
+                           HasShadow="True"
+                           BorderColor="{StaticResource BorderLight}"
+                           Margin="0,0,0,10">
 
-                        <!-- Unread indicator bar -->
-                        <BoxView Grid.Column="0"
-                                 Grid.RowSpan="1"
-                                 WidthRequest="4"
-                                 HeightRequest="40"
-                                 HorizontalOptions="Start"
-                                 VerticalOptions="Center"
-                                 Color="{Binding IsRead, Converter={toolkit:BoolToObjectConverter TrueObject=Transparent, FalseObject=#1976D2}}" />
+                        <Grid ColumnDefinitions="5,Auto,*,Auto"
+                              Padding="0"
+                              ColumnSpacing="0">
 
-                        <VerticalStackLayout Grid.Column="0"
-                                             Spacing="4"
-                                             Margin="12,0,0,0">
-                            <Label Text="{Binding NotificationType}"
-                                   FontAttributes="{Binding IsRead, Converter={toolkit:BoolToObjectConverter TrueObject=None, FalseObject=Bold}}"
-                                   FontSize="14" />
-                            <Label Text="{Binding Message}"
-                                   FontSize="13"
-                                   TextColor="Gray"
-                                   LineBreakMode="TailTruncation"
-                                   MaxLines="2" />
-                            <Label Text="{Binding CreatedAt, StringFormat='{0:MMM d, yyyy h:mm tt}'}"
-                                   FontSize="11"
-                                   TextColor="LightGray" />
-                        </VerticalStackLayout>
+                            <!-- Unread accent bar (left edge) -->
+                            <BoxView Grid.Column="0"
+                                     Color="{Binding IsRead, Converter={toolkit:BoolToObjectConverter TrueObject=Transparent, FalseObject=#4F46E5}}"
+                                     WidthRequest="5"
+                                     VerticalOptions="Fill" />
 
-                        <!-- Mark as read button -->
-                        <ImageButton Grid.Column="1"
-                                     Source="envelope_open.png"
-                                     IsVisible="{Binding IsRead, Converter={StaticResource InvertedBoolConverter}}"
-                                     Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.MarkReadCommand}"
-                                     CommandParameter="{Binding Id}"
-                                     WidthRequest="32"
-                                     HeightRequest="32"
-                                     VerticalOptions="Center">
-                            <SemanticProperties.Description>Mark as read</SemanticProperties.Description>
-                        </ImageButton>
+                            <!-- Type icon circle -->
+                            <Frame Grid.Column="1"
+                                   BackgroundColor="{StaticResource PrimarySubtle}"
+                                   CornerRadius="18"
+                                   WidthRequest="36"
+                                   HeightRequest="36"
+                                   Padding="0"
+                                   HasShadow="False"
+                                   BorderColor="Transparent"
+                                   Margin="12,16,0,16"
+                                   VerticalOptions="Center">
+                                <Label Text="&#x1F514;"
+                                       FontSize="16"
+                                       HorizontalOptions="Center"
+                                       VerticalOptions="Center" />
+                            </Frame>
 
-                        <!-- Tap gesture for the whole row -->
-                        <Grid.GestureRecognizers>
-                            <TapGestureRecognizer
-                                Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.MarkReadCommand}"
-                                CommandParameter="{Binding Id}" />
-                        </Grid.GestureRecognizers>
-                    </Grid>
+                            <!-- Content -->
+                            <VerticalStackLayout Grid.Column="2"
+                                                 Spacing="4"
+                                                 Padding="12,16"
+                                                 VerticalOptions="Center">
+                                <Label Text="{Binding NotificationType}"
+                                       FontAttributes="{Binding IsRead, Converter={toolkit:BoolToObjectConverter TrueObject=None, FalseObject=Bold}}"
+                                       FontSize="14"
+                                       TextColor="{StaticResource TextPrimary}" />
+                                <Label Text="{Binding Message}"
+                                       FontSize="13"
+                                       TextColor="{StaticResource TextSecondary}"
+                                       LineBreakMode="TailTruncation"
+                                       MaxLines="2" />
+                                <Label Text="{Binding CreatedAt, StringFormat='{0:MMM d, h:mm tt}'}"
+                                       Style="{StaticResource Caption}" />
+                            </VerticalStackLayout>
+
+                            <!-- Mark as read button -->
+                            <ImageButton Grid.Column="3"
+                                         Source="envelope_open.png"
+                                         IsVisible="{Binding IsRead, Converter={StaticResource InvertedBoolConverter}}"
+                                         Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.MarkReadCommand}"
+                                         CommandParameter="{Binding Id}"
+                                         WidthRequest="28"
+                                         HeightRequest="28"
+                                         Margin="0,0,16,0"
+                                         VerticalOptions="Center">
+                                <SemanticProperties.Description>Mark as read</SemanticProperties.Description>
+                            </ImageButton>
+
+                            <!-- Tap gesture for the whole row -->
+                            <Grid.GestureRecognizers>
+                                <TapGestureRecognizer
+                                    Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.MarkReadCommand}"
+                                    CommandParameter="{Binding Id}" />
+                            </Grid.GestureRecognizers>
+                        </Grid>
+
+                    </Frame>
                 </DataTemplate>
             </CollectionView.ItemTemplate>
         </CollectionView>
