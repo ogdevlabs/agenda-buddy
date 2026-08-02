@@ -9,6 +9,7 @@ namespace MobileApp.ViewModels;
 public partial class DashboardViewModel : ObservableObject
 {
     private readonly IBookingApiService _bookingApiService;
+    private readonly IUserSessionService _session;
     private List<AppointmentSummary> _allAppointments = new();
     private int _pageIndex;
     private const int PageSize = 4;
@@ -46,9 +47,10 @@ public partial class DashboardViewModel : ObservableObject
 
     public event EventHandler? AppointmentsLoaded;
 
-    public DashboardViewModel(IBookingApiService bookingApiService)
+    public DashboardViewModel(IBookingApiService bookingApiService, IUserSessionService session)
     {
         _bookingApiService = bookingApiService;
+        _session = session;
         Greeting = DateTime.Now.Hour switch
         {
             < 12 => "Good morning",
@@ -62,6 +64,14 @@ public partial class DashboardViewModel : ObservableObject
     {
         IsLoading = true;
         ErrorMessage = string.Empty;
+
+        await _session.RefreshAsync();
+        Greeting = DateTime.Now.Hour switch
+        {
+            < 12 => "Good morning",
+            < 17 => "Good afternoon",
+            _ => "Good evening"
+        };
 
         try
         {
@@ -117,12 +127,14 @@ public partial class DashboardViewModel : ObservableObject
         PageLabel = totalPages > 1 ? $"{_pageIndex + 1} / {totalPages}" : "";
     }
 
-    private static List<AppointmentSummary> GenerateSeedAppointments()
+    private List<AppointmentSummary> GenerateSeedAppointments()
     {
         var today = DateTime.Today;
-        return
-        [
-            new AppointmentSummary
+        var email = _session.Email;
+
+        var all = new List<AppointmentSummary>
+        {
+            new()
             {
                 Id = "seed-1",
                 CustomerEmail = "alex.chen@agendabuddy.dev",
@@ -134,7 +146,7 @@ public partial class DashboardViewModel : ObservableObject
                 ServiceName = "Personal Training",
                 CustomerNotes = "Focus on upper body today, shoulder has been tight"
             },
-            new AppointmentSummary
+            new()
             {
                 Id = "seed-2",
                 CustomerEmail = "priya.sharma@agendabuddy.dev",
@@ -146,7 +158,7 @@ public partial class DashboardViewModel : ObservableObject
                 ServiceName = "Yoga Session",
                 CustomerNotes = "Beginner level, working on flexibility"
             },
-            new AppointmentSummary
+            new()
             {
                 Id = "seed-3",
                 CustomerEmail = "david.thompson@agendabuddy.dev",
@@ -158,7 +170,7 @@ public partial class DashboardViewModel : ObservableObject
                 ServiceName = "HIIT Coaching",
                 CustomerNotes = "First session — wants to discuss goals"
             },
-            new AppointmentSummary
+            new()
             {
                 Id = "seed-4",
                 CustomerEmail = "priya.sharma@agendabuddy.dev",
@@ -170,7 +182,7 @@ public partial class DashboardViewModel : ObservableObject
                 ServiceName = "Meditation",
                 CustomerNotes = ""
             },
-            new AppointmentSummary
+            new()
             {
                 Id = "seed-5",
                 CustomerEmail = "alex.chen@agendabuddy.dev",
@@ -182,7 +194,7 @@ public partial class DashboardViewModel : ObservableObject
                 ServiceName = "Personal Training",
                 CustomerNotes = "Leg day, bring knee brace"
             },
-            new AppointmentSummary
+            new()
             {
                 Id = "seed-6",
                 CustomerEmail = "david.thompson@agendabuddy.dev",
@@ -194,7 +206,7 @@ public partial class DashboardViewModel : ObservableObject
                 ServiceName = "HIIT Coaching",
                 CustomerNotes = "Can we do outdoor if weather is good?"
             },
-            new AppointmentSummary
+            new()
             {
                 Id = "seed-7",
                 CustomerEmail = "priya.sharma@agendabuddy.dev",
@@ -206,7 +218,15 @@ public partial class DashboardViewModel : ObservableObject
                 ServiceName = "Yoga Session",
                 CustomerNotes = "Wants to try hot yoga format"
             }
-        ];
+        };
+
+        if (_session.IsProvider)
+            return all.Where(a => a.ProviderEmail.Equals(email, StringComparison.OrdinalIgnoreCase)).ToList();
+
+        if (_session.IsCustomer)
+            return all.Where(a => a.CustomerEmail.Equals(email, StringComparison.OrdinalIgnoreCase)).ToList();
+
+        return all;
     }
 
     [RelayCommand]

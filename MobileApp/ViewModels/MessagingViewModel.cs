@@ -8,6 +8,7 @@ namespace MobileApp.ViewModels;
 public partial class MessagingViewModel : ObservableObject
 {
     private readonly IMessagingApiService _messagingService;
+    private readonly IUserSessionService _session;
 
     [ObservableProperty]
     private List<MessageThreadStub> _threads = new();
@@ -21,9 +22,10 @@ public partial class MessagingViewModel : ObservableObject
     public bool HasError => !string.IsNullOrEmpty(ErrorMessage);
     public bool IsEmpty => !IsLoading && Threads.Count == 0 && !HasError;
 
-    public MessagingViewModel(IMessagingApiService messagingService)
+    public MessagingViewModel(IMessagingApiService messagingService, IUserSessionService session)
     {
         _messagingService = messagingService;
+        _session = session;
     }
 
     [RelayCommand]
@@ -31,6 +33,7 @@ public partial class MessagingViewModel : ObservableObject
     {
         IsLoading = true;
         ErrorMessage = string.Empty;
+        await _session.RefreshAsync();
 
         try
         {
@@ -48,9 +51,25 @@ public partial class MessagingViewModel : ObservableObject
         }
     }
 
-    private static List<MessageThreadStub> GenerateSeedThreads()
+    private List<MessageThreadStub> GenerateSeedThreads()
     {
         var now = DateTime.Now;
+
+        if (_session.IsCustomer)
+        {
+            return
+            [
+                new MessageThreadStub
+                {
+                    ThreadId = "thread-p1",
+                    OtherPartyEmail = "sarah.mitchell@agendabuddy.dev",
+                    LastMessageBody = "See you tomorrow at 9 AM! Don't forget to hydrate.",
+                    LastMessageAt = now.AddHours(-1),
+                    UnreadCount = 1
+                }
+            ];
+        }
+
         return
         [
             new MessageThreadStub

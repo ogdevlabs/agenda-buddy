@@ -9,6 +9,7 @@ namespace MobileApp.ViewModels;
 public partial class NotificationsViewModel : ObservableObject
 {
     private readonly INotificationApiService _notificationApiService;
+    private readonly IUserSessionService _session;
 
     [ObservableProperty]
     private List<NotificationSummary> _notifications = new();
@@ -26,9 +27,10 @@ public partial class NotificationsViewModel : ObservableObject
 
     public bool IsEmpty => !IsLoading && Notifications.Count == 0 && !HasError;
 
-    public NotificationsViewModel(INotificationApiService notificationApiService)
+    public NotificationsViewModel(INotificationApiService notificationApiService, IUserSessionService session)
     {
         _notificationApiService = notificationApiService;
+        _session = session;
     }
 
     [RelayCommand]
@@ -36,6 +38,7 @@ public partial class NotificationsViewModel : ObservableObject
     {
         IsLoading = true;
         ErrorMessage = string.Empty;
+        await _session.RefreshAsync();
 
         try
         {
@@ -56,9 +59,33 @@ public partial class NotificationsViewModel : ObservableObject
         }
     }
 
-    private static List<NotificationSummary> GenerateSeedNotifications()
+    private List<NotificationSummary> GenerateSeedNotifications()
     {
         var now = DateTime.Now;
+
+        if (_session.IsCustomer)
+        {
+            return
+            [
+                new NotificationSummary
+                {
+                    Id = "notif-c1",
+                    NotificationType = NotificationType.AppointmentBooked,
+                    Message = "Your session with Sarah Mitchell is confirmed for tomorrow at 9:00 AM",
+                    CreatedAt = now.AddMinutes(-30),
+                    IsRead = false
+                },
+                new NotificationSummary
+                {
+                    Id = "notif-c2",
+                    NotificationType = NotificationType.AppointmentUpdated,
+                    Message = "Sarah Mitchell rescheduled your Friday session to 2:30 PM",
+                    CreatedAt = now.AddHours(-4),
+                    IsRead = true
+                }
+            ];
+        }
+
         return
         [
             new NotificationSummary

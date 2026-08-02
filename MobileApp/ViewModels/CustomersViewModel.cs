@@ -8,6 +8,7 @@ namespace MobileApp.ViewModels;
 public partial class CustomersViewModel : ObservableObject
 {
     private readonly ICustomerApiService _customerApiService;
+    private readonly IUserSessionService _session;
 
     [ObservableProperty]
     private List<CustomerSummary> _customers = new();
@@ -22,9 +23,10 @@ public partial class CustomersViewModel : ObservableObject
 
     public bool IsEmpty => !IsLoading && Customers.Count == 0 && !HasError;
 
-    public CustomersViewModel(ICustomerApiService customerApiService)
+    public CustomersViewModel(ICustomerApiService customerApiService, IUserSessionService session)
     {
         _customerApiService = customerApiService;
+        _session = session;
     }
 
     [RelayCommand]
@@ -32,19 +34,20 @@ public partial class CustomersViewModel : ObservableObject
     {
         IsLoading = true;
         ErrorMessage = string.Empty;
+        await _session.RefreshAsync();
 
         try
         {
             var results = await _customerApiService.GetCustomersAsync();
 
             if (results.Count == 0)
-                results = SeedCustomers();
+                results = SeedContacts();
 
             Customers = results;
         }
         catch (HttpRequestException)
         {
-            Customers = SeedCustomers();
+            Customers = SeedContacts();
         }
         finally
         {
@@ -58,24 +61,39 @@ public partial class CustomersViewModel : ObservableObject
         customer.IsExpanded = !customer.IsExpanded;
     }
 
-    private static List<CustomerSummary> SeedCustomers() =>
-    [
-        new CustomerSummary
+    private List<CustomerSummary> SeedContacts()
+    {
+        if (_session.IsCustomer)
         {
-            Id = "seed-c1", FullName = "Alex Chen", Email = "alex.chen@agendabuddy.dev",
-            Phone = "+1 (415) 555-0142", LastSession = "Personal Training", TotalSessions = 12
-        },
-        new CustomerSummary
-        {
-            Id = "seed-c2", FullName = "Priya Sharma", Email = "priya.sharma@agendabuddy.dev",
-            Phone = "+1 (628) 555-0198", LastSession = "Yoga Session", TotalSessions = 8
-        },
-        new CustomerSummary
-        {
-            Id = "seed-c3", FullName = "David Thompson", Email = "david.thompson@agendabuddy.dev",
-            Phone = "+1 (510) 555-0267", LastSession = "HIIT Coaching", TotalSessions = 3
+            return
+            [
+                new CustomerSummary
+                {
+                    Id = "seed-p1", FullName = "Sarah Mitchell", Email = "sarah.mitchell@agendabuddy.dev",
+                    Phone = "+1 (415) 555-0101", LastSession = "Personal Training", TotalSessions = 0
+                }
+            ];
         }
-    ];
+
+        return
+        [
+            new CustomerSummary
+            {
+                Id = "seed-c1", FullName = "Alex Chen", Email = "alex.chen@agendabuddy.dev",
+                Phone = "+1 (415) 555-0142", LastSession = "Personal Training", TotalSessions = 12
+            },
+            new CustomerSummary
+            {
+                Id = "seed-c2", FullName = "Priya Sharma", Email = "priya.sharma@agendabuddy.dev",
+                Phone = "+1 (628) 555-0198", LastSession = "Yoga Session", TotalSessions = 8
+            },
+            new CustomerSummary
+            {
+                Id = "seed-c3", FullName = "David Thompson", Email = "david.thompson@agendabuddy.dev",
+                Phone = "+1 (510) 555-0267", LastSession = "HIIT Coaching", TotalSessions = 3
+            }
+        ];
+    }
 
     partial void OnErrorMessageChanged(string value)
     {

@@ -8,6 +8,7 @@ namespace MobileApp.ViewModels;
 public partial class CalendarViewModel : ObservableObject
 {
     private readonly ICalendarApiService _calendarApiService;
+    private readonly IUserSessionService _session;
     private List<CalendarDaySummary> _allDays = new();
     private int _pageIndex;
     private const int PageSize = 4;
@@ -32,9 +33,10 @@ public partial class CalendarViewModel : ObservableObject
 
     public bool HasError => !string.IsNullOrEmpty(ErrorMessage);
 
-    public CalendarViewModel(ICalendarApiService calendarApiService)
+    public CalendarViewModel(ICalendarApiService calendarApiService, IUserSessionService session)
     {
         _calendarApiService = calendarApiService;
+        _session = session;
     }
 
     [RelayCommand]
@@ -42,6 +44,7 @@ public partial class CalendarViewModel : ObservableObject
     {
         IsLoading = true;
         ErrorMessage = string.Empty;
+        await _session.RefreshAsync();
 
         try
         {
@@ -97,12 +100,14 @@ public partial class CalendarViewModel : ObservableObject
         CanGoForward = (_pageIndex + 1) * PageSize < _allDays.Count;
     }
 
-    private static List<CalendarDaySummary> GenerateSeedWeek()
+    private List<CalendarDaySummary> GenerateSeedWeek()
     {
         var today = DateTime.Today;
         var days = new List<CalendarDaySummary>();
+        var email = _session.Email;
 
-        string[][] seedBookings =
+        // Full provider schedule (Sarah Mitchell's view)
+        string[][] providerBookings =
         [
             ["9:00 AM — Alex Chen", "10:00 AM — Priya Sharma", "2:00 PM — David Thompson"],
             ["8:30 AM — Priya Sharma", "11:00 AM — Alex Chen"],
@@ -124,14 +129,28 @@ public partial class CalendarViewModel : ObservableObject
             ["9:00 AM", "9:30 AM", "10:00 AM", "10:30 AM", "11:00 AM", "1:00 PM", "2:00 PM", "3:00 PM", "4:00 PM"]
         ];
 
+        // For customers, filter bookings to only their sessions
+        var customerName = email switch
+        {
+            "alex.chen@agendabuddy.dev" => "Alex Chen",
+            "priya.sharma@agendabuddy.dev" => "Priya Sharma",
+            "david.thompson@agendabuddy.dev" => "David Thompson",
+            _ => ""
+        };
+
         for (var i = 0; i < 7; i++)
         {
             var date = today.AddDays(i);
+            var booked = providerBookings[i].ToList();
+
+            if (_session.IsCustomer && !string.IsNullOrEmpty(customerName))
+                booked = booked.Where(s => s.Contains(customerName)).ToList();
+
             days.Add(new CalendarDaySummary
             {
                 Date = date.ToString("yyyy-MM-dd"),
-                BookedSlots = seedBookings[i].ToList(),
-                AvailableSlots = seedAvailable[i].ToList()
+                BookedSlots = booked,
+                AvailableSlots = _session.IsProvider ? seedAvailable[i].ToList() : []
             });
         }
 
