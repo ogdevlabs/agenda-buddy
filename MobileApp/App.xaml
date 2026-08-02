@@ -23,6 +23,7 @@
             <!-- Semantic -->
             <Color x:Key="Success">#10B981</Color>
             <Color x:Key="SuccessLight">#D1FAE5</Color>
+            <Color x:Key="SuccessSubtle">#ECFDF5</Color>
             <Color x:Key="Error">#EF4444</Color>
             <Color x:Key="ErrorLight">#FEE2E2</Color>
             <Color x:Key="Warning">#F59E0B</Color>

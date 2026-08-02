@@ -15,7 +15,7 @@
 
                 <!-- Greeting Header -->
                 <VerticalStackLayout Spacing="4" Margin="0,16,0,24">
-                    <Label Text="Good morning"
+                    <Label Text="{Binding Greeting}"
                            Style="{StaticResource TitleLarge}"
                            TextColor="{StaticResource TextPrimary}" />
                     <Label Text="{Binding Source={x:Static System:DateTime.Now}, StringFormat='{0:dddd, MMMM d}'}"
@@ -38,7 +38,7 @@
                                    CharacterSpacing="1.5"
                                    TextTransform="Uppercase"
                                    TextColor="#C7D2FE" />
-                            <Label Text="{Binding Appointments.Count}"
+                            <Label Text="{Binding TodayCount}"
                                    FontSize="32"
                                    FontAttributes="Bold"
                                    TextColor="{StaticResource TextOnPrimary}" />
@@ -61,7 +61,7 @@
                                    CharacterSpacing="1.5"
                                    TextTransform="Uppercase"
                                    TextColor="{StaticResource AccentDark}" />
-                            <Label Text="{Binding Appointments.Count}"
+                            <Label Text="{Binding WeekCount}"
                                    FontSize="32"
                                    FontAttributes="Bold"
                                    TextColor="{StaticResource TextPrimary}" />
