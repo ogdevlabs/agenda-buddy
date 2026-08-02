@@ -88,7 +88,8 @@ if (app.Environment.IsDevelopment())
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseStatusCodePages();
-app.UseHttpsRedirection();
+if (!app.Environment.IsDevelopment())
+    app.UseHttpsRedirection();
 
 var auth = app.MapGroup("api/v1/auth")
     .WithTags("IdentityAPI")
