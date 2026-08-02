@@ -25,11 +25,20 @@ public partial class DashboardPage : ContentPage
         if (e.CurrentSelection.FirstOrDefault() is not MobileApp.Models.AppointmentSummary selected)
             return;
 
-        // Clear selection so the user can tap the same item again
         if (sender is CollectionView cv)
             cv.SelectedItem = null;
 
-        await Shell.Current.GoToAsync($"appointmentDetail?appointmentId={selected.Id}");
+        var nav = new Dictionary<string, object>
+        {
+            ["appointmentId"] = selected.Id,
+            ["customerEmail"] = selected.CustomerEmail,
+            ["providerEmail"] = selected.ProviderEmail,
+            ["scheduledAt"] = selected.ScheduledAt.ToString("O"),
+            ["status"] = selected.Status.ToString(),
+            ["serviceId"] = selected.ServiceId ?? ""
+        };
+
+        await Shell.Current.GoToAsync("appointmentDetail", nav);
     }
 }
 #endif
