@@ -1,30 +1,19 @@
 namespace EventAndCommands.Commands.Provider;
 
-[RegisterService(ServiceLifetime.Scoped)]
-public class DeactivateProviderCommandHandler(IMediator mediator)
+public class DeactivateProviderCommandHandler(
+    IMediator mediator,
+    ProviderService providerService,
+    IEventStore eventStore)
     : IRequestHandler<DeactivateProviderCommand, string>
 {
-    [InjectService] private IEventStore? EventStore { get; } = new EventStore();
-
-    //TODO
-    //Pending of implementation
     public async Task<string> Handle(DeactivateProviderCommand request, CancellationToken cancellationToken)
     {
         await mediator.Publish(request, cancellationToken);
-        try
-        {
-            var successEvent = new Event
-            {
-                Id = ObjectId.GenerateNewId(),
-                TimeStamp = DateTime.UtcNow,
-                Status = "Success",
-                Type = "DeactivateProviderCommand",
-                Data = JsonSerializer.Serialize(new ProviderEntity())
-            };
-            await EventStore!.SaveAsync(successEvent);
-            return await Task.FromResult(request.ToJson());
-        }
-        catch
+
+        var filter = SupportTools<ProviderEntity>.FilterByEmail(request.ProviderEntity.Email);
+        var provider = await providerService.FindProvidersAsync(filter);
+
+        if (provider is null)
         {
             var failEvent = new Event
             {
@@ -32,10 +21,24 @@ public class DeactivateProviderCommandHandler(IMediator mediator)
                 TimeStamp = DateTime.UtcNow,
                 Status = "Failed",
                 Type = "DeactivateProviderCommand",
-                Data = JsonSerializer.Serialize(new ProviderEntity())
+                Data = JsonSerializer.Serialize(request.ProviderEntity)
             };
-            await EventStore!.SaveAsync(failEvent);
-            return await Task.FromResult(request.ToJson());
+            await eventStore.SaveAsync(failEvent);
+            return null!;
         }
+
+        provider.IsActive = false;
+        await providerService.UpdateProviderAsync(provider.Id.ToString(), provider);
+
+        var successEvent = new Event
+        {
+            Id = ObjectId.GenerateNewId(),
+            TimeStamp = DateTime.UtcNow,
+            Status = "Success",
+            Type = "DeactivateProviderCommand",
+            Data = JsonSerializer.Serialize(provider)
+        };
+        await eventStore.SaveAsync(successEvent);
+        return provider.ToJson();
     }
 }

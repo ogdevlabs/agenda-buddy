@@ -1,7 +1,7 @@
 namespace Customer.Requests;
 
 [ExcludeFromCodeCoverage]
-public class RequestCollection(IKafkaClient kafkaClient) : IRequestCollection
+public class RequestCollection(IKafkaClient kafkaClient, IEventStore eventStore) : IRequestCollection
 {
     public async Task<string> AddCustomerRequest(IMediator mediator, CustomerService customerService,
         CustomerEntity customerEntity)
@@ -10,7 +10,8 @@ public class RequestCollection(IKafkaClient kafkaClient) : IRequestCollection
                 mediator,
                 ((kafkaClient as KafkaClient)!),
                 customerService,
-                customerEntity)
+                customerEntity,
+                eventStore)
             .Handle(
                 new AddCustomerCommand { CustomerEntity = customerEntity },
                 new CancellationToken());
@@ -22,7 +23,7 @@ public class RequestCollection(IKafkaClient kafkaClient) : IRequestCollection
         CustomerEntity customerEntity)
     {
         var result =
-            await new UpdateCustomerCommandHandler(email, mediator, customerService, customerEntity).Handle(
+            await new UpdateCustomerCommandHandler(email, mediator, customerService, customerEntity, eventStore).Handle(
                 new UpdateCustomerCommand { CustomerEntity = customerEntity }, new CancellationToken());
         return result;
     }
@@ -31,7 +32,7 @@ public class RequestCollection(IKafkaClient kafkaClient) : IRequestCollection
         CustomerService customerService)
     {
         var result =
-            await new GetCustomersQueryHandler(mediator, customerService).Handle(new GetCustomersQuery(),
+            await new GetCustomersQueryHandler(mediator, customerService, eventStore).Handle(new GetCustomersQuery(),
                 new CancellationToken());
         return result;
     }
@@ -40,7 +41,7 @@ public class RequestCollection(IKafkaClient kafkaClient) : IRequestCollection
         string email)
     {
         var result =
-            await new GetCustomerByEmailQueryHandler(mediator, customerService, email).Handle(
+            await new GetCustomerByEmailQueryHandler(mediator, customerService, email, eventStore).Handle(
                 new GetCustomerByEmailQuery(), new CancellationToken());
         return result;
     }

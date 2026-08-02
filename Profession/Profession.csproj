@@ -26,5 +26,6 @@
     <ItemGroup>
       <ProjectReference Include="..\EventAndCommands\EventAndCommands.csproj" />
       <ProjectReference Include="..\Library\Library.csproj" />
+      <ProjectReference Include="..\Library.ServerAuth\Library.ServerAuth.csproj" />
     </ItemGroup>
 </Project>

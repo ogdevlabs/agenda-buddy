@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             x:Class="MobileApp.Views.RegisterPage"
+             Title="Create Account">
+
+    <ContentPage.Resources>
+        <toolkit:InvertedBoolConverter x:Key="InvertedBoolConverter" />
+    </ContentPage.Resources>
+
+    <ScrollView>
+        <VerticalStackLayout Padding="32" Spacing="16" VerticalOptions="Center">
+
+            <Label Text="Agenda Buddy"
+                   FontSize="28"
+                   FontAttributes="Bold"
+                   HorizontalOptions="Center" />
+
+            <Label Text="Create your account"
+                   FontSize="16"
+                   HorizontalOptions="Center"
+                   Margin="0,0,0,16" />
+
+            <!-- Email -->
+            <Label Text="Email" FontAttributes="Bold" />
+            <Entry Placeholder="you@example.com"
+                   Keyboard="Email"
+                   Text="{Binding Email}"
+                   AutomationId="RegisterEmailEntry" />
+
+            <!-- Password -->
+            <Label Text="Password" FontAttributes="Bold" />
+            <Entry Placeholder="At least 8 characters"
+                   IsPassword="True"
+                   Text="{Binding Password}"
+                   AutomationId="RegisterPasswordEntry" />
+
+            <!-- Confirm Password -->
+            <Label Text="Confirm Password" FontAttributes="Bold" />
+            <Entry Placeholder="Re-enter your password"
+                   IsPassword="True"
+                   Text="{Binding ConfirmPassword}"
+                   AutomationId="RegisterConfirmPasswordEntry" />
+
+            <!-- Role selection -->
+            <Label Text="I am a..." FontAttributes="Bold" Margin="0,8,0,0" />
+            <HorizontalStackLayout Spacing="16">
+                <RadioButton Content="Service Provider"
+                             IsChecked="{Binding IsProvider}"
+                             AutomationId="ProviderRadio" />
+                <RadioButton Content="Customer"
+                             AutomationId="CustomerRadio" />
+            </HorizontalStackLayout>
+
+            <!-- Error message -->
+            <Label Text="{Binding ErrorMessage}"
+                   TextColor="Red"
+                   IsVisible="{Binding HasError}"
+                   AutomationId="RegisterErrorLabel" />
+
+            <!-- Register button + activity indicator -->
+            <Grid>
+                <Button Text="Create Account"
+                        Command="{Binding RegisterCommand}"
+                        IsVisible="{Binding IsLoading, Converter={StaticResource InvertedBoolConverter}}"
+                        AutomationId="RegisterButton" />
+                <ActivityIndicator IsRunning="{Binding IsLoading}"
+                                   IsVisible="{Binding IsLoading}"
+                                   HorizontalOptions="Center" />
+            </Grid>
+
+            <!-- Navigate to login -->
+            <Label HorizontalOptions="Center" Margin="0,8,0,0">
+                <Label.FormattedText>
+                    <FormattedString>
+                        <Span Text="Already have an account? " />
+                        <Span Text="Sign In"
+                              TextColor="{StaticResource Primary}"
+                              TextDecorations="Underline">
+                            <Span.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnSignInTapped" />
+                            </Span.GestureRecognizers>
+                        </Span>
+                    </FormattedString>
+                </Label.FormattedText>
+            </Label>
+
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>

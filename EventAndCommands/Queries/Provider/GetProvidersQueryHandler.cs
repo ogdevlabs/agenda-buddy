@@ -1,10 +1,8 @@
 namespace EventAndCommands.Queries.Provider;
 
-[RegisterService(ServiceLifetime.Scoped)]
-public class GetProvidersQueryHandler(IMediator mediator, ProviderService providerService)
+public class GetProvidersQueryHandler(IMediator mediator, ProviderService providerService, IEventStore eventStore)
     : IRequestHandler<GetProvidersQuery, List<ProviderEntity>>
 {
-    [InjectService] private IEventStore? EventStore { get; } = new EventStore();
 
 
     public async Task<List<ProviderEntity>> Handle(GetProvidersQuery request,
@@ -24,8 +22,8 @@ public class GetProvidersQueryHandler(IMediator mediator, ProviderService provid
                 Type = "GetProvidersQuery",
                 Data = JsonSerializer.Serialize(providerEntities)
             };
-            await EventStore!.SaveAsync(successEvent);
-            return await Task.FromResult(providerEntities);
+            await eventStore.SaveAsync(successEvent);
+            return providerEntities;
         }
 
 
@@ -37,7 +35,7 @@ public class GetProvidersQueryHandler(IMediator mediator, ProviderService provid
             Type = "GetProvidersQuery",
             Data = JsonSerializer.Serialize(new List<ProviderEntity>())
         };
-        await EventStore!.SaveAsync(failEvent);
-        return await Task.FromResult(new List<ProviderEntity>());
+        await eventStore.SaveAsync(failEvent);
+        return new List<ProviderEntity>();
     }
 }

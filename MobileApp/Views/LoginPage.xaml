@@ -56,6 +56,22 @@
                                    HorizontalOptions="Center" />
             </Grid>
 
+            <!-- Navigate to registration -->
+            <Label HorizontalOptions="Center" Margin="0,8,0,0">
+                <Label.FormattedText>
+                    <FormattedString>
+                        <Span Text="Don't have an account? " />
+                        <Span Text="Create Account"
+                              TextColor="{StaticResource Primary}"
+                              TextDecorations="Underline">
+                            <Span.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnCreateAccountTapped" />
+                            </Span.GestureRecognizers>
+                        </Span>
+                    </FormattedString>
+                </Label.FormattedText>
+            </Label>
+
         </VerticalStackLayout>
     </ScrollView>
 

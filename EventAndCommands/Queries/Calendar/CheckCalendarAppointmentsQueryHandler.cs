@@ -1,13 +1,12 @@
 namespace EventAndCommands.Queries.Calendar;
 
-[RegisterService(ServiceLifetime.Scoped)]
 public class
     CheckCalendarAppointmentsQueryHandler(
         IMediator mediator,
         ProviderService providerService,
-        string email) : IRequestHandler<CheckCalendarAppointmentsQuery, List<AppointmentEntity>>
+        string email,
+        IEventStore eventStore) : IRequestHandler<CheckCalendarAppointmentsQuery, List<AppointmentEntity>>
 {
-    [InjectService] private IEventStore? EventStore { get; } = new EventStore();
 
     public async Task<List<AppointmentEntity>> Handle(CheckCalendarAppointmentsQuery request,
         CancellationToken cancellationToken)
@@ -26,7 +25,7 @@ public class
                 Type = "CheckCalendarAppointmentsQuery",
                 Data = JsonSerializer.Serialize(providerEntity)
             };
-            await EventStore!.SaveAsync(successEvent);
+            await eventStore.SaveAsync(successEvent);
             return providerAppointmentCollection;
         }
 
@@ -38,7 +37,7 @@ public class
             Type = "CheckCalendarAppointmentsQuery",
             Data = JsonSerializer.Serialize(new List<AppointmentEntity>())
         };
-        await EventStore!.SaveAsync(failEvent);
+        await eventStore.SaveAsync(failEvent);
         return null!;
     }
 }

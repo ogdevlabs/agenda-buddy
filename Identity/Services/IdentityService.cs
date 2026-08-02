@@ -1,6 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
+using Identity.Requests;
 using Library.Entities;
 using Library.Repositories;
 using Library.Tools;
@@ -225,8 +226,6 @@ public class IdentityService(
     private static bool IsMongoDown(Exception ex) =>
         ex is MongoConnectionException or MongoException or TimeoutException;
 }
-
-public record TokenResponse(string AccessToken, string RefreshToken);
 
 public class AuthValidationException(string message) : Exception(message);
 public class ConflictException(string message) : Exception(message);

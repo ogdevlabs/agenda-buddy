@@ -1,10 +1,8 @@
 namespace EventAndCommands.Queries.Provider;
 
-[RegisterService(ServiceLifetime.Scoped)]
-public class GetProviderByEmailQueryHandler(IMediator mediator, ProviderService providerService, string email)
+public class GetProviderByEmailQueryHandler(IMediator mediator, ProviderService providerService, string email, IEventStore eventStore)
     : IRequestHandler<GetProviderByEmailQuery, ProviderEntity>
 {
-    [InjectService] private IEventStore? EventStore { get; } = new EventStore();
 
     public async Task<ProviderEntity> Handle(GetProviderByEmailQuery request, CancellationToken cancellationToken)
     {
@@ -22,7 +20,7 @@ public class GetProviderByEmailQueryHandler(IMediator mediator, ProviderService 
                 Type = "GetProviderByEmailQuery",
                 Data = JsonSerializer.Serialize(providerEntity)
             };
-            await EventStore!.SaveAsync(successEvent);
+            await eventStore.SaveAsync(successEvent);
             return providerEntity;
         }
 
@@ -34,7 +32,7 @@ public class GetProviderByEmailQueryHandler(IMediator mediator, ProviderService 
             Type = "GetProviderByEmailQuery",
             Data = JsonSerializer.Serialize(new ProviderEntity())
         };
-        await EventStore!.SaveAsync(failEvent);
+        await eventStore.SaveAsync(failEvent);
         return null!;
     }
 }

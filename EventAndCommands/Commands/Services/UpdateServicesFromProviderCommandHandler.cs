@@ -1,13 +1,12 @@
 namespace EventAndCommands.Commands.Services;
 
-[RegisterService(ServiceLifetime.Scoped)]
 public class UpdateServicesFromProviderCommandHandler(
     IMediator mediator,
     ProviderService providerService,
     List<ServiceEntity> serviceEntities,
-    string email) : IRequestHandler<UpdateServicesFromProviderCommand, ProviderEntity>
+    string email,
+    IEventStore eventStore) : IRequestHandler<UpdateServicesFromProviderCommand, ProviderEntity>
 {
-    [InjectService] private IEventStore? EventStore { get; } = new EventStore();
 
     public async Task<ProviderEntity> Handle(UpdateServicesFromProviderCommand request,
         CancellationToken cancellationToken)
@@ -40,8 +39,8 @@ public class UpdateServicesFromProviderCommandHandler(
                 Type = "UpdateServicesFromProviderCommand",
                 Data = JsonSerializer.Serialize(existingProvider)
             };
-            await EventStore!.SaveAsync(successEvent);
-            return await Task.FromResult(existingProvider);
+            await eventStore.SaveAsync(successEvent);
+            return existingProvider;
         }
 
         var failEvent = new Event
@@ -52,7 +51,7 @@ public class UpdateServicesFromProviderCommandHandler(
             Type = "UpdateServicesFromProviderCommand",
             Data = JsonSerializer.Serialize(new ProviderEntity())
         };
-        await EventStore!.SaveAsync(failEvent);
+        await eventStore.SaveAsync(failEvent);
         return null!;
     }
 }

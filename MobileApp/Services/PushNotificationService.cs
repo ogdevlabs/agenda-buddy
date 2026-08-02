@@ -1,7 +1,7 @@
 using System.Text;
 using System.Text.Json;
 using MobileApp.Infrastructure;
-#if MOBILE
+#if FIREBASE
 using Microsoft.Maui.Devices;
 using Plugin.Firebase.CloudMessaging;
 #endif
@@ -29,7 +29,7 @@ public class PushNotificationService
         string? token = null;
         string platform = "android";
 
-#if MOBILE
+#if FIREBASE
         try
         {
             var messaging = CrossFirebaseCloudMessaging.Current;
@@ -61,7 +61,7 @@ public class PushNotificationService
             var body = new { token, platform };
             var json = JsonSerializer.Serialize(body);
             using var content = new StringContent(json, Encoding.UTF8, "application/json");
-            await client.PostAsync("identity/device-token", content);
+            await client.PostAsync("device-token", content);
         }
         catch (Exception)
         {

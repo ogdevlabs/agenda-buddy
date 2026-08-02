@@ -1,9 +1,8 @@
 namespace EventAndCommands.Queries.Customers;
 
-public class GetCustomersQueryHandler(IMediator mediator, CustomerService customerService)
+public class GetCustomersQueryHandler(IMediator mediator, CustomerService customerService, IEventStore eventStore)
     : IRequestHandler<GetCustomersQuery, List<CustomerEntity>>
 {
-    [InjectService] private IEventStore? EventStore { get; } = new EventStore();
 
     public async Task<List<CustomerEntity>> Handle(GetCustomersQuery request,
         CancellationToken cancellationToken)
@@ -21,8 +20,8 @@ public class GetCustomersQueryHandler(IMediator mediator, CustomerService custom
                 Type = "GetCustomersQuery",
                 Data = JsonSerializer.Serialize(customerEntities.ToList())
             };
-            await EventStore!.SaveAsync(successEvent);
-            return await Task.FromResult(customerEntities);
+            await eventStore.SaveAsync(successEvent);
+            return customerEntities;
         }
 
         var failEvent = new Event
@@ -33,7 +32,7 @@ public class GetCustomersQueryHandler(IMediator mediator, CustomerService custom
             Type = "GetCustomersQuery",
             Data = JsonSerializer.Serialize(customerEntities.ToList())
         };
-        await EventStore!.SaveAsync(failEvent);
-        return await Task.FromResult(customerEntities);
+        await eventStore.SaveAsync(failEvent);
+        return customerEntities;
     }
 }

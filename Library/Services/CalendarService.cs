@@ -14,38 +14,29 @@ public class CalendarService(IRepository<AppointmentEntity> appointmentRepositor
 
     public async Task<IEnumerable<AppointmentEntity>> CheckCalendarAvailabilityAsync()
     {
-        // TODO
-        return await appointmentRepository.GetAllAsync();
+        var filter = new BsonDocument("day_off", false);
+        return await appointmentRepository.FindAllAsync(filter);
     }
 
     public async Task<bool> BlockCalendarPeriodAsync(string emailProvider, DateTime startDate, DateTime endDate)
     {
-        try
-        {
-            // Calculate the difference between the two dates
-            var difference = endDate - startDate;
+        var numberOfDays = (int)(endDate - startDate).TotalDays;
 
-            // Get the number of days
-            var numberOfDays = difference.TotalDays;
-            for (var i = 0; i < numberOfDays; i++)
+        for (var i = 0; i < numberOfDays; i++)
+        {
+            var blockDay = new AppointmentEntity
             {
-                var blockDay = new AppointmentEntity
-                {
-                    Identifier = new Guid().ToString(),
-                    AppointmentStatus = AppointmentStatus.Requested,
-                    Start = DateTime.Today,
-                    DayOff = true,
-                    EmailProvider = emailProvider,
-                    EmailCustomer = string.Empty
-                };
-                await appointmentRepository.InsertAsync(blockDay);
-            }
+                Identifier = Guid.NewGuid().ToString(),
+                AppointmentStatus = AppointmentStatus.Confirmed,
+                Start = startDate.AddDays(i),
+                End = startDate.AddDays(i + 1),
+                DayOff = true,
+                EmailProvider = emailProvider,
+                EmailCustomer = string.Empty
+            };
+            await appointmentRepository.InsertAsync(blockDay);
+        }
 
-            return true;
-        }
-        catch
-        {
-            return false;
-        }
+        return true;
     }
 }

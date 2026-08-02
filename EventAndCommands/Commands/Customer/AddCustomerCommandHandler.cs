@@ -1,13 +1,12 @@
 namespace EventAndCommands.Commands.Customer;
 
-[RegisterService(ServiceLifetime.Scoped)]
 public class AddCustomerCommandHandler(
     IMediator mediator,
     KafkaClient kafkaClient,
     CustomerService customerService,
-    CustomerEntity customerEntity) : IRequestHandler<AddCustomerCommand, string>
+    CustomerEntity customerEntity,
+    IEventStore eventStore) : IRequestHandler<AddCustomerCommand, string>
 {
-    [InjectService] private IEventStore EventStore { get; } = new EventStore();
     private string TopicName { get; set; } = string.Empty;
 
     public async Task<string> Handle(AddCustomerCommand request, CancellationToken cancellationToken)
@@ -26,8 +25,8 @@ public class AddCustomerCommandHandler(
                 Type = "AddCustomerCommand",
                 Data = JsonSerializer.Serialize(customerEntity)
             };
-            await EventStore.SaveAsync(succesEvent);
-            return await Task.FromResult(TopicName);
+            await eventStore.SaveAsync(succesEvent);
+            return TopicName;
         }
         if (kafkaTopic.ToLower().StartsWith("exception"))
         {
@@ -39,10 +38,10 @@ public class AddCustomerCommandHandler(
                 Type = $"AddCustomerCommand - {kafkaTopic}",
                 Data = JsonSerializer.Serialize(customerEntity)
             };
-            await EventStore.SaveAsync(failEvent);
-            return await Task.FromResult(kafkaTopic);
+            await eventStore.SaveAsync(failEvent);
+            return kafkaTopic;
         }
-        return await Task.FromResult(string.Empty);
+        return string.Empty;
     }
 
     private async Task<string> CreateTopic(string email)

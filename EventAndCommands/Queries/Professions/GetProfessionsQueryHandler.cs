@@ -2,10 +2,9 @@ using EventAndCommands.Events.Profession;
 
 namespace EventAndCommands.Queries.Professions;
 
-public class GetProfessionsQueryHandler(IMediator mediator, ProfessionService professionService)
+public class GetProfessionsQueryHandler(IMediator mediator, ProfessionService professionService, IEventStore eventStore)
     : IRequestHandler<GetProfessionsQuery, List<ProfessionEntity>>
 {
-    [InjectService] private IEventStore? EventStore { get; } = new EventStore();
 
     public async Task<List<ProfessionEntity>> Handle(GetProfessionsQuery request,
         CancellationToken cancellationToken)
@@ -22,12 +21,12 @@ public class GetProfessionsQueryHandler(IMediator mediator, ProfessionService pr
                 Type = "GetProfessionsQuery",
                 Data = JsonSerializer.Serialize(professionList)
             };
-            await EventStore!.SaveAsync(successEvent);
-            return await Task.FromResult(professionList);
+            await eventStore.SaveAsync(successEvent);
+            return professionList;
         }
         else
         {
-            var successEvent = new Event
+            var failEvent = new Event
             {
                 Id = ObjectId.GenerateNewId(),
                 TimeStamp = DateTime.UtcNow,
@@ -35,7 +34,7 @@ public class GetProfessionsQueryHandler(IMediator mediator, ProfessionService pr
                 Type = "GetProfessionsQuery",
                 Data = JsonSerializer.Serialize(professionList)
             };
-            await EventStore!.SaveAsync(successEvent);
+            await eventStore.SaveAsync(failEvent);
             return null!;
         }
     }

@@ -6,9 +6,9 @@ public class UpdateAppointmentCommandHandler(
     KafkaClient? kafkaClient,
     ProviderService providerService,
     BookingService bookingService,
-    AppointmentEntity appointmentEntity) : IRequestHandler<UpdateAppointmentCommand, string>
+    AppointmentEntity appointmentEntity,
+    IEventStore eventStore) : IRequestHandler<UpdateAppointmentCommand, string>
 {
-    [InjectService] private IEventStore EventStore { get; } = new EventStore();
 
     public async Task<string> Handle(UpdateAppointmentCommand request, CancellationToken cancellationToken)
     {
@@ -24,8 +24,8 @@ public class UpdateAppointmentCommandHandler(
                 Type = "UpdateAppointmentCommand",
                 Data = JsonSerializer.Serialize(appointmentEntity)
             };
-            await EventStore!.SaveAsync(successEvent);
-            return await Task.FromResult(appointmentEntity.ToJson());
+            await eventStore.SaveAsync(successEvent);
+            return appointmentEntity.ToJson();
         }
 
         var failEvent = new Event
@@ -36,7 +36,7 @@ public class UpdateAppointmentCommandHandler(
             Type = "UpdateAppointmentCommand",
             Data = JsonSerializer.Serialize(appointmentEntity)
         };
-        await EventStore!.SaveAsync(failEvent);
+        await eventStore.SaveAsync(failEvent);
         return null!;
     }
 

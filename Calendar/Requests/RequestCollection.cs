@@ -1,12 +1,12 @@
 namespace Calendar.Requests;
 
-public class RequestCollection : IRequestCollection
+public class RequestCollection(IEventStore eventStore) : IRequestCollection
 {
     public async Task<List<DateTime>> CheckCalendarAvailabilityRequest(IMediator mediator,
         ProviderService providerService, CalendarService calendarService, string email)
     {
         var result =
-            await new CheckCalendarAvailabilityQueryHandler(mediator, providerService, email)
+            await new CheckCalendarAvailabilityQueryHandler(mediator, providerService, email, eventStore)
                 .Handle(new CheckCalendarAvailabilityQuery(), new CancellationToken());
         return result;
     }
@@ -15,7 +15,7 @@ public class RequestCollection : IRequestCollection
         ProviderService providerService, CalendarService calendarService, string email)
     {
         var result =
-            await new CheckCalendarAppointmentsQueryHandler(mediator, providerService, email)
+            await new CheckCalendarAppointmentsQueryHandler(mediator, providerService, email, eventStore)
                 .Handle(new CheckCalendarAppointmentsQuery(), new CancellationToken());
         return result;
     }

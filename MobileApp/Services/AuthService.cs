@@ -11,6 +11,8 @@ public class AuthService : IAuthService
     private readonly ISecureStorageService _secureStorage;
     private readonly PushNotificationService? _pushNotificationService;
 
+    internal const string RefreshTokenKey = "refresh_token";
+
     public AuthService(
         IHttpClientFactory httpClientFactory,
         ISecureStorageService secureStorage,
@@ -26,7 +28,7 @@ public class AuthService : IAuthService
         var client = _httpClientFactory.CreateClient("AgendaBuddyApiNoAuth");
 
         var payload = new { email, password };
-        var response = await client.PostAsJsonAsync("identity/login", payload, ct);
+        var response = await client.PostAsJsonAsync("api/v1/auth/login", payload, ct);
 
         if (!response.IsSuccessStatusCode)
             return false;
@@ -35,10 +37,37 @@ public class AuthService : IAuthService
             new JsonSerializerOptions { PropertyNameCaseInsensitive = true },
             cancellationToken: ct);
 
-        if (loginResponse is null || string.IsNullOrEmpty(loginResponse.Token))
+        if (loginResponse is null || string.IsNullOrEmpty(loginResponse.AccessToken))
             return false;
 
-        await _secureStorage.SetAsync(JwtDelegatingHandler.JwtKey, loginResponse.Token);
+        await _secureStorage.SetAsync(JwtDelegatingHandler.JwtKey, loginResponse.AccessToken);
+        await _secureStorage.SetAsync(RefreshTokenKey, loginResponse.RefreshToken);
+
+        if (_pushNotificationService is not null)
+            await _pushNotificationService.InitializeAsync();
+
+        return true;
+    }
+
+    public async Task<bool> RegisterAsync(string email, string password, string role, CancellationToken ct = default)
+    {
+        var client = _httpClientFactory.CreateClient("AgendaBuddyApiNoAuth");
+
+        var payload = new { email, password, role };
+        var response = await client.PostAsJsonAsync("api/v1/auth/register", payload, ct);
+
+        if (!response.IsSuccessStatusCode)
+            return false;
+
+        var loginResponse = await response.Content.ReadFromJsonAsync<LoginResponse>(
+            new JsonSerializerOptions { PropertyNameCaseInsensitive = true },
+            cancellationToken: ct);
+
+        if (loginResponse is null || string.IsNullOrEmpty(loginResponse.AccessToken))
+            return false;
+
+        await _secureStorage.SetAsync(JwtDelegatingHandler.JwtKey, loginResponse.AccessToken);
+        await _secureStorage.SetAsync(RefreshTokenKey, loginResponse.RefreshToken);
 
         if (_pushNotificationService is not null)
             await _pushNotificationService.InitializeAsync();
@@ -49,6 +78,7 @@ public class AuthService : IAuthService
     public Task LogoutAsync()
     {
         _secureStorage.Remove(JwtDelegatingHandler.JwtKey);
+        _secureStorage.Remove(RefreshTokenKey);
         return Task.CompletedTask;
     }
 

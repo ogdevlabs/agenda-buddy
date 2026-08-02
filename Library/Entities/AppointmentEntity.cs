@@ -17,7 +17,7 @@ public class AppointmentEntity
         Start = start;
         End = end;
         DayOff = dayOff;
-        AppointmentStatus = AppointmentStatus.Requested;
+        AppointmentStatus = appointmentStatus;
     }
 
     [BsonElement("_id")] public ObjectId Id { get; set; }

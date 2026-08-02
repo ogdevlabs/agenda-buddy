@@ -1,16 +1,15 @@
 #pragma warning disable CS9113 // Primary constructor parameter unused — kafkaClient reserved for future Kafka publishing
 namespace EventAndCommands.Commands.Booking;
 
-[RegisterService(ServiceLifetime.Scoped)]
 public class BookingAppointmentCommandHandler(
     IMediator mediator,
     KafkaClient? kafkaClient,
     ProviderService providerService,
     BookingService bookingService,
-    AppointmentEntity appointmentEntity)
+    AppointmentEntity appointmentEntity,
+    IEventStore eventStore)
     : IRequestHandler<BookAppointmentCommand, string>
 {
-    [InjectService] private IEventStore EventStore { get; } = new EventStore();
 
     public async Task<string> Handle(BookAppointmentCommand request, CancellationToken cancellationToken)
     {
@@ -26,8 +25,8 @@ public class BookingAppointmentCommandHandler(
                 Type = "BookAppointmentCommand",
                 Data = JsonSerializer.Serialize(appointmentEntity)
             };
-            await EventStore!.SaveAsync(successEvent);
-            return await Task.FromResult(appointmentEntity.ToJson());
+            await eventStore.SaveAsync(successEvent);
+            return appointmentEntity.ToJson();
         }
 
         var failEvent = new Event
@@ -38,7 +37,7 @@ public class BookingAppointmentCommandHandler(
             Type = "BookAppointmentCommand",
             Data = JsonSerializer.Serialize(appointmentEntity)
         };
-        await EventStore!.SaveAsync(failEvent);
+        await eventStore.SaveAsync(failEvent);
         return null!;
     }
 

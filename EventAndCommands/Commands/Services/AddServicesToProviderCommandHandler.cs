@@ -1,14 +1,13 @@
 namespace EventAndCommands.Commands.Services;
 
-[RegisterService(ServiceLifetime.Scoped)]
 public class AddServicesToProviderCommandHandler(
     IMediator mediator,
     ProviderService providerService,
     List<ServiceEntity> serviceEntities,
-    string email)
+    string email,
+    IEventStore eventStore)
     : IRequestHandler<AddServicesToProviderCommand, ProviderEntity>
 {
-    [InjectService] private IEventStore? EventStore { get; } = new EventStore();
 
     public async Task<ProviderEntity> Handle(AddServicesToProviderCommand request, CancellationToken cancellationToken)
     {
@@ -33,8 +32,8 @@ public class AddServicesToProviderCommandHandler(
                     Type = "AddServicesToProviderCommand",
                     Data = JsonSerializer.Serialize(provider)
                 };
-                await EventStore!.SaveAsync(successEvent);
-                return await Task.FromResult(provider);
+                await eventStore.SaveAsync(successEvent);
+                return provider;
             }
         }
         else
@@ -47,7 +46,7 @@ public class AddServicesToProviderCommandHandler(
                 Type = "AddServicesToProviderCommand",
                 Data = JsonSerializer.Serialize(new ProviderEntity())
             };
-            await EventStore!.SaveAsync(failEvent);
+            await eventStore.SaveAsync(failEvent);
         }
 
         return null!;

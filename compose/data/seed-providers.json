@@ -1,0 +1,89 @@
+[
+  {
+    "first_name": "Sarah",
+    "last_name": "Mitchell",
+    "email": "sarah.mitchell@agendabuddy.dev",
+    "is_active": true,
+    "services": [
+      {
+        "name": "Personal Training Session",
+        "description": "One-on-one fitness coaching tailored to your goals",
+        "fee": 75.00,
+        "feeType": 0,
+        "isActive": true
+      },
+      {
+        "name": "Group Fitness Class",
+        "description": "High-energy group workout for up to 10 participants",
+        "fee": 25.00,
+        "feeType": 1,
+        "isActive": true
+      },
+      {
+        "name": "Monthly Coaching Plan",
+        "description": "4 sessions per month with nutrition guidance and progress tracking",
+        "fee": 250.00,
+        "feeType": 2,
+        "isActive": true
+      }
+    ]
+  },
+  {
+    "first_name": "James",
+    "last_name": "Okafor",
+    "email": "james.okafor@agendabuddy.dev",
+    "is_active": true,
+    "services": [
+      {
+        "name": "Python Tutoring",
+        "description": "Beginner to intermediate Python programming lessons",
+        "fee": 60.00,
+        "feeType": 0,
+        "isActive": true
+      },
+      {
+        "name": "Full-Stack Bootcamp Prep",
+        "description": "Intensive prep for coding bootcamp interviews and assessments",
+        "fee": 500.00,
+        "feeType": 1,
+        "isActive": true
+      },
+      {
+        "name": "Weekly Code Review",
+        "description": "Weekly 1:1 code review sessions with mentorship",
+        "fee": 200.00,
+        "feeType": 2,
+        "isActive": true
+      }
+    ]
+  },
+  {
+    "first_name": "Maria",
+    "last_name": "Gonzalez",
+    "email": "maria.gonzalez@agendabuddy.dev",
+    "is_active": true,
+    "services": [
+      {
+        "name": "Individual Therapy Session",
+        "description": "CBT-based therapy session for anxiety and stress management",
+        "fee": 120.00,
+        "feeType": 0,
+        "isActive": true
+      },
+      {
+        "name": "Couples Counseling",
+        "description": "Joint session focused on communication and relationship health",
+        "fee": 150.00,
+        "feeType": 0,
+        "isActive": true
+      },
+      {
+        "name": "Mindfulness Workshop",
+        "description": "90-minute guided mindfulness and meditation workshop",
+        "fee": 45.00,
+        "feeType": 1,
+        "isActive": true
+      }
+    ]
+  }
+]
