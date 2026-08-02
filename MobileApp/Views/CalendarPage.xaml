@@ -60,10 +60,11 @@
         </Frame>
 
         <!-- Week days list -->
-        <ScrollView Grid.Row="3" Margin="16,12,16,16">
-            <VerticalStackLayout Spacing="12">
-                <CollectionView ItemsSource="{Binding Days}"
-                                SelectionMode="None">
+        <CollectionView Grid.Row="3"
+                        ItemsSource="{Binding Days}"
+                        SelectionMode="None"
+                        Margin="16,12,16,16"
+                        ItemSizingStrategy="MeasureAllItems">
                     <CollectionView.ItemTemplate>
                         <DataTemplate>
                             <Grid Margin="0,0,0,12">
@@ -206,9 +207,7 @@
                             </Grid>
                         </DataTemplate>
                     </CollectionView.ItemTemplate>
-                </CollectionView>
-            </VerticalStackLayout>
-        </ScrollView>
+        </CollectionView>
 
     </Grid>
 

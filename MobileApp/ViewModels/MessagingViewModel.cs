@@ -84,6 +84,19 @@ public partial class MessagingViewModel : ObservableObject
     private void ToggleThread(MessageThreadStub thread)
     {
         thread.IsExpanded = !thread.IsExpanded;
+
+        if (thread.IsExpanded && thread.UnreadCount > 0)
+            ScheduleMarkRead(thread);
+    }
+
+    private async void ScheduleMarkRead(MessageThreadStub thread)
+    {
+        await Task.Delay(2000);
+        if (!thread.IsExpanded || thread.UnreadCount == 0)
+            return;
+
+        thread.UnreadCount = 0;
+        Threads = new List<MessageThreadStub>(Threads);
     }
 
     partial void OnErrorMessageChanged(string value)
