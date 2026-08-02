@@ -19,6 +19,18 @@ public partial class CustomersViewModel : ObservableObject
     [ObservableProperty]
     private string _errorMessage = string.Empty;
 
+    [ObservableProperty]
+    private string _pageTitle = "Customers";
+
+    [ObservableProperty]
+    private string _searchPlaceholder = "Search customers...";
+
+    [ObservableProperty]
+    private string _emptyTitle = "No customers yet";
+
+    [ObservableProperty]
+    private string _emptySubtitle = "Once a client books a session with you, they will appear here.";
+
     public bool HasError => !string.IsNullOrEmpty(ErrorMessage);
 
     public bool IsEmpty => !IsLoading && Customers.Count == 0 && !HasError;
@@ -35,6 +47,21 @@ public partial class CustomersViewModel : ObservableObject
         IsLoading = true;
         ErrorMessage = string.Empty;
         await _session.RefreshAsync();
+
+        if (_session.IsCustomer)
+        {
+            PageTitle = "Providers";
+            SearchPlaceholder = "Search providers...";
+            EmptyTitle = "No providers yet";
+            EmptySubtitle = "Browse and subscribe to providers to book appointments.";
+        }
+        else
+        {
+            PageTitle = "Customers";
+            SearchPlaceholder = "Search customers...";
+            EmptyTitle = "No customers yet";
+            EmptySubtitle = "Once a client books a session with you, they will appear here.";
+        }
 
         try
         {
@@ -70,7 +97,14 @@ public partial class CustomersViewModel : ObservableObject
                 new CustomerSummary
                 {
                     Id = "seed-p1", FullName = "Sarah Mitchell", Email = "sarah.mitchell@agendabuddy.dev",
-                    Phone = "+1 (415) 555-0101", LastSession = "Personal Training", TotalSessions = 0
+                    Phone = "+1 (415) 555-0101", LastSession = "Personal Training, Yoga, HIIT, Meditation",
+                    TotalSessions = 4, IsProvider = true, Availability = "Mon–Fri, 8am – 6pm"
+                },
+                new CustomerSummary
+                {
+                    Id = "seed-p2", FullName = "James Rodriguez", Email = "james.rodriguez@agendabuddy.dev",
+                    Phone = "+1 (415) 555-0203", LastSession = "Piano, Music Theory, Sight Reading",
+                    TotalSessions = 3, IsProvider = true, Availability = "Tue–Sat, 10am – 7pm"
                 }
             ];
         }

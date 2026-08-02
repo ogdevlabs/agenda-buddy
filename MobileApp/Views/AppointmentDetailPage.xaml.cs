@@ -10,6 +10,8 @@ namespace MobileApp.Views;
 [QueryProperty(nameof(CustomerEmail), "customerEmail")]
 [QueryProperty(nameof(CustomerName), "customerName")]
 [QueryProperty(nameof(CustomerPhone), "customerPhone")]
+[QueryProperty(nameof(ProviderName), "providerName")]
+[QueryProperty(nameof(DisplayName), "displayName")]
 [QueryProperty(nameof(ScheduledAtStr), "scheduledAt")]
 [QueryProperty(nameof(StatusStr), "status")]
 [QueryProperty(nameof(ServiceName), "serviceName")]
@@ -22,6 +24,8 @@ public partial class AppointmentDetailPage : ContentPage
     public string CustomerEmail { get; set; } = string.Empty;
     public string CustomerName { get; set; } = string.Empty;
     public string CustomerPhone { get; set; } = string.Empty;
+    public string ProviderName { get; set; } = string.Empty;
+    public string DisplayName { get; set; } = string.Empty;
     public string ScheduledAtStr { get; set; } = string.Empty;
     public string StatusStr { get; set; } = string.Empty;
     public string ServiceName { get; set; } = string.Empty;
@@ -48,6 +52,10 @@ public partial class AppointmentDetailPage : ContentPage
             CustomerEmail = CustomerEmail,
             CustomerName = CustomerName,
             CustomerPhone = CustomerPhone,
+            ProviderName = ProviderName,
+            DisplayName = string.IsNullOrEmpty(DisplayName) ? CustomerName : DisplayName,
+            ContactEmail = CustomerEmail,
+            ContactPhone = CustomerPhone,
             ScheduledAt = DateTime.TryParse(ScheduledAtStr, out var dt) ? dt : DateTime.Now,
             Status = Enum.TryParse<AppointmentStatus>(StatusStr, out var st) ? st : AppointmentStatus.Requested,
             ServiceName = ServiceName,

@@ -35,6 +35,8 @@ public partial class DashboardPage : ContentPage
             ["customerEmail"] = selected.CustomerEmail,
             ["customerName"] = selected.CustomerName,
             ["customerPhone"] = selected.CustomerPhone,
+            ["providerName"] = selected.ProviderName,
+            ["displayName"] = selected.DisplayName,
             ["scheduledAt"] = selected.ScheduledAt.ToString("O"),
             ["status"] = selected.Status.ToString(),
             ["serviceName"] = selected.ServiceName,

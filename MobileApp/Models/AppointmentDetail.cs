@@ -9,6 +9,10 @@ public class AppointmentDetail
     public string CustomerName { get; set; } = string.Empty;
     public string CustomerPhone { get; set; } = string.Empty;
     public string ProviderEmail { get; set; } = string.Empty;
+    public string ProviderName { get; set; } = string.Empty;
+    public string DisplayName { get; set; } = string.Empty;
+    public string ContactEmail { get; set; } = string.Empty;
+    public string ContactPhone { get; set; } = string.Empty;
     public DateTime ScheduledAt { get; set; }
     public AppointmentStatus Status { get; set; }
     public string ServiceId { get; set; } = string.Empty;

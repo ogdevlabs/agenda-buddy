@@ -3,7 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
              x:Class="MobileApp.Views.CustomersPage"
-             Title="Customers"
+             Title="{Binding PageTitle}"
              BackgroundColor="{StaticResource BackgroundPage}">
 
     <ContentPage.Resources>
@@ -27,7 +27,7 @@
                        VerticalOptions="Center"
                        Margin="0,0,8,0" />
                 <Entry Grid.Column="1"
-                       Placeholder="Search customers..."
+                       Placeholder="{Binding SearchPlaceholder}"
                        Style="{StaticResource InputStyle}"
                        FontSize="15"
                        BackgroundColor="Transparent" />
@@ -87,10 +87,10 @@
                        HorizontalOptions="Center"
                        VerticalOptions="Center" />
             </Frame>
-            <Label Text="No customers yet"
+            <Label Text="{Binding EmptyTitle}"
                    Style="{StaticResource TitleSmall}"
                    HorizontalOptions="Center" />
-            <Label Text="Once a client books a session with you, they will appear here."
+            <Label Text="{Binding EmptySubtitle}"
                    Style="{StaticResource BodySecondary}"
                    HorizontalTextAlignment="Center"
                    AutomationId="EmptyStateLabel" />
@@ -136,7 +136,8 @@
                                            AutomationId="CustomerFullName" />
                                     <Label Text="{Binding LastSession}"
                                            FontSize="12"
-                                           TextColor="{StaticResource TextMuted}" />
+                                           TextColor="{StaticResource TextMuted}"
+                                           LineBreakMode="TailTruncation" />
                                 </VerticalStackLayout>
 
                                 <Frame Grid.Column="2"
@@ -146,14 +147,14 @@
                                        HasShadow="False"
                                        BorderColor="Transparent"
                                        VerticalOptions="Center">
-                                    <Label Text="{Binding TotalSessions, StringFormat='{0} sessions'}"
+                                    <Label Text="{Binding SessionsLabel}"
                                            FontSize="11"
                                            FontAttributes="Bold"
                                            TextColor="{StaticResource Primary}" />
                                 </Frame>
                             </Grid>
 
-                            <!-- Expanded details -->
+                            <!-- Expanded details (provider view) -->
                             <VerticalStackLayout Spacing="8"
                                                  Margin="0,12,0,0"
                                                  IsVisible="{Binding IsExpanded}">
@@ -166,7 +167,37 @@
                                     <Label Grid.Column="0" Text="Phone:" FontSize="12" TextColor="{StaticResource TextMuted}" />
                                     <Label Grid.Column="1" Text="{Binding Phone}" FontSize="13" TextColor="{StaticResource TextPrimary}" />
                                 </Grid>
-                                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+                                <!-- Provider-specific: availability + actions -->
+                                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8"
+                                      IsVisible="{Binding IsProvider}">
+                                    <Label Grid.Column="0" Text="Hours:" FontSize="12" TextColor="{StaticResource TextMuted}" />
+                                    <Label Grid.Column="1" Text="{Binding Availability}" FontSize="13" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" />
+                                </Grid>
+                                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8"
+                                      IsVisible="{Binding IsProvider}">
+                                    <Label Grid.Column="0" Text="Services:" FontSize="12" TextColor="{StaticResource TextMuted}" />
+                                    <Label Grid.Column="1" Text="{Binding LastSession}" FontSize="13" TextColor="{StaticResource TextPrimary}" LineBreakMode="WordWrap" />
+                                </Grid>
+                                <HorizontalStackLayout Spacing="8" Margin="0,4,0,0"
+                                                       IsVisible="{Binding IsProvider}">
+                                    <Button Text="Book"
+                                            BackgroundColor="{StaticResource Primary}"
+                                            TextColor="White"
+                                            CornerRadius="14"
+                                            FontSize="13"
+                                            HeightRequest="36"
+                                            Padding="16,0" />
+                                    <Button Text="View Availability"
+                                            BackgroundColor="{StaticResource PrimarySubtle}"
+                                            TextColor="{StaticResource Primary}"
+                                            CornerRadius="14"
+                                            FontSize="13"
+                                            HeightRequest="36"
+                                            Padding="16,0" />
+                                </HorizontalStackLayout>
+                                <!-- Customer-specific: last session -->
+                                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8"
+                                      IsVisible="{Binding IsProvider, Converter={StaticResource InvertedBoolConverter}}">
                                     <Label Grid.Column="0" Text="Last:" FontSize="12" TextColor="{StaticResource TextMuted}" />
                                     <Label Grid.Column="1" Text="{Binding LastSession}" FontSize="13" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" />
                                 </Grid>

@@ -26,7 +26,7 @@
                 Route="calendar"
                 ContentTemplate="{DataTemplate views:CalendarPage}" />
         </Tab>
-        <Tab Title="Customers" Icon="customers_icon.png">
+        <Tab x:Name="ContactsTab" Title="Customers" Icon="customers_icon.png">
             <ShellContent
                 Route="customers"
                 ContentTemplate="{DataTemplate views:CustomersPage}" />

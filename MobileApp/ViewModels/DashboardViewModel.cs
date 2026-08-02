@@ -141,6 +141,7 @@ public partial class DashboardViewModel : ObservableObject
                 CustomerName = "Alex Chen",
                 CustomerPhone = "+1 (415) 555-0142",
                 ProviderEmail = "sarah.mitchell@agendabuddy.dev",
+                ProviderName = "Sarah Mitchell",
                 ScheduledAt = today.AddHours(9),
                 Status = AppointmentStatus.Confirmed,
                 ServiceName = "Personal Training",
@@ -153,6 +154,7 @@ public partial class DashboardViewModel : ObservableObject
                 CustomerName = "Priya Sharma",
                 CustomerPhone = "+1 (628) 555-0198",
                 ProviderEmail = "sarah.mitchell@agendabuddy.dev",
+                ProviderName = "Sarah Mitchell",
                 ScheduledAt = today.AddHours(10),
                 Status = AppointmentStatus.Confirmed,
                 ServiceName = "Yoga Session",
@@ -165,6 +167,7 @@ public partial class DashboardViewModel : ObservableObject
                 CustomerName = "David Thompson",
                 CustomerPhone = "+1 (510) 555-0267",
                 ProviderEmail = "sarah.mitchell@agendabuddy.dev",
+                ProviderName = "Sarah Mitchell",
                 ScheduledAt = today.AddHours(14),
                 Status = AppointmentStatus.Requested,
                 ServiceName = "HIIT Coaching",
@@ -177,6 +180,7 @@ public partial class DashboardViewModel : ObservableObject
                 CustomerName = "Priya Sharma",
                 CustomerPhone = "+1 (628) 555-0198",
                 ProviderEmail = "sarah.mitchell@agendabuddy.dev",
+                ProviderName = "Sarah Mitchell",
                 ScheduledAt = today.AddHours(15).AddMinutes(30),
                 Status = AppointmentStatus.Confirmed,
                 ServiceName = "Meditation",
@@ -189,6 +193,7 @@ public partial class DashboardViewModel : ObservableObject
                 CustomerName = "Alex Chen",
                 CustomerPhone = "+1 (415) 555-0142",
                 ProviderEmail = "sarah.mitchell@agendabuddy.dev",
+                ProviderName = "Sarah Mitchell",
                 ScheduledAt = today.AddDays(1).AddHours(9),
                 Status = AppointmentStatus.Confirmed,
                 ServiceName = "Personal Training",
@@ -201,6 +206,7 @@ public partial class DashboardViewModel : ObservableObject
                 CustomerName = "David Thompson",
                 CustomerPhone = "+1 (510) 555-0267",
                 ProviderEmail = "sarah.mitchell@agendabuddy.dev",
+                ProviderName = "Sarah Mitchell",
                 ScheduledAt = today.AddDays(1).AddHours(11),
                 Status = AppointmentStatus.Requested,
                 ServiceName = "HIIT Coaching",
@@ -213,6 +219,7 @@ public partial class DashboardViewModel : ObservableObject
                 CustomerName = "Priya Sharma",
                 CustomerPhone = "+1 (628) 555-0198",
                 ProviderEmail = "sarah.mitchell@agendabuddy.dev",
+                ProviderName = "Sarah Mitchell",
                 ScheduledAt = today.AddDays(2).AddHours(10),
                 Status = AppointmentStatus.Confirmed,
                 ServiceName = "Yoga Session",
@@ -220,13 +227,19 @@ public partial class DashboardViewModel : ObservableObject
             }
         };
 
+        List<AppointmentSummary> filtered;
+
         if (_session.IsProvider)
-            return all.Where(a => a.ProviderEmail.Equals(email, StringComparison.OrdinalIgnoreCase)).ToList();
+            filtered = all.Where(a => a.ProviderEmail.Equals(email, StringComparison.OrdinalIgnoreCase)).ToList();
+        else if (_session.IsCustomer)
+            filtered = all.Where(a => a.CustomerEmail.Equals(email, StringComparison.OrdinalIgnoreCase)).ToList();
+        else
+            filtered = all;
 
-        if (_session.IsCustomer)
-            return all.Where(a => a.CustomerEmail.Equals(email, StringComparison.OrdinalIgnoreCase)).ToList();
+        foreach (var a in filtered)
+            a.DisplayName = _session.IsCustomer ? a.ProviderName : a.CustomerName;
 
-        return all;
+        return filtered;
     }
 
     [RelayCommand]

@@ -1,5 +1,6 @@
-using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Text;
+using System.Text.Json;
 using MobileApp.Infrastructure;
 
 namespace MobileApp.Services;
@@ -37,12 +38,32 @@ public class UserSessionService : IUserSessionService
             return;
         }
 
-        var handler = new JwtSecurityTokenHandler();
-        if (!handler.CanReadToken(token))
+        var parts = token.Split('.');
+        if (parts.Length < 2)
             return;
 
-        var jwt = handler.ReadJwtToken(token);
-        Email = jwt.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Sub)?.Value ?? string.Empty;
-        Role = jwt.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role || c.Type == "role")?.Value ?? string.Empty;
+        var payload = parts[1];
+        // Fix base64url padding
+        payload = payload.Replace('-', '+').Replace('_', '/');
+        switch (payload.Length % 4)
+        {
+            case 2: payload += "=="; break;
+            case 3: payload += "="; break;
+        }
+
+        var json = Encoding.UTF8.GetString(Convert.FromBase64String(payload));
+        using var doc = JsonDocument.Parse(json);
+        var root = doc.RootElement;
+
+        Email = root.TryGetProperty("sub", out var sub) ? sub.GetString() ?? "" : "";
+
+        // Role claim can be under the full URI or just "role"
+        const string roleClaimUri = "http://schemas.microsoft.com/ws/2008/06/identity/claims/role";
+        if (root.TryGetProperty(roleClaimUri, out var roleClaim))
+            Role = roleClaim.GetString() ?? "";
+        else if (root.TryGetProperty("role", out var roleShort))
+            Role = roleShort.GetString() ?? "";
+        else
+            Role = "";
     }
 }

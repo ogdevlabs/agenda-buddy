@@ -174,7 +174,7 @@
                                     <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="14">
                                         <Frame Grid.Column="0"
                                                Style="{StaticResource AvatarCircle}">
-                                            <Label Text="{Binding CustomerName, StringFormat='{0[0]}'}"
+                                            <Label Text="{Binding DisplayName, StringFormat='{0[0]}'}"
                                                    FontSize="18"
                                                    FontAttributes="Bold"
                                                    TextColor="{StaticResource Primary}"
@@ -186,7 +186,7 @@
                                         <VerticalStackLayout Grid.Column="1"
                                                              Spacing="2"
                                                              VerticalOptions="Center">
-                                            <Label Text="{Binding CustomerName}"
+                                            <Label Text="{Binding DisplayName}"
                                                    FontAttributes="Bold"
                                                    FontSize="15"
                                                    TextColor="{StaticResource TextPrimary}"
