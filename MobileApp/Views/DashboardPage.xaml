@@ -96,10 +96,39 @@
                     </Grid>
                 </Frame>
 
-                <!-- Section Header -->
-                <Label Text="Today's Appointments"
-                       Style="{StaticResource TitleSmall}"
-                       Margin="0,0,0,12" />
+                <!-- Section Header with paging -->
+                <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,12">
+                    <Label Grid.Column="0"
+                           Text="Appointments"
+                           Style="{StaticResource TitleSmall}"
+                           VerticalOptions="Center" />
+                    <HorizontalStackLayout Grid.Column="1" Spacing="8" VerticalOptions="Center">
+                        <Button Text="&#x25C0;"
+                                Command="{Binding PreviousPageCommand}"
+                                IsEnabled="{Binding CanGoBack}"
+                                BackgroundColor="{StaticResource PrimarySubtle}"
+                                TextColor="{StaticResource Primary}"
+                                FontSize="14"
+                                CornerRadius="14"
+                                WidthRequest="36"
+                                HeightRequest="36"
+                                Padding="0" />
+                        <Label Text="{Binding PageLabel}"
+                               FontSize="12"
+                               TextColor="{StaticResource TextMuted}"
+                               VerticalOptions="Center" />
+                        <Button Text="&#x25B6;"
+                                Command="{Binding NextPageCommand}"
+                                IsEnabled="{Binding CanGoForward}"
+                                BackgroundColor="{StaticResource PrimarySubtle}"
+                                TextColor="{StaticResource Primary}"
+                                FontSize="14"
+                                CornerRadius="14"
+                                WidthRequest="36"
+                                HeightRequest="36"
+                                Padding="0" />
+                    </HorizontalStackLayout>
+                </Grid>
 
                 <!-- Loading indicator -->
                 <ActivityIndicator IsRunning="{Binding IsLoading}"

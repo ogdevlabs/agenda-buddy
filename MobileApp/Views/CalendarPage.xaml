@@ -72,6 +72,11 @@
                                        BorderColor="#E2E8F0"
                                        BackgroundColor="White"
                                        HasShadow="True">
+                                    <Frame.GestureRecognizers>
+                                        <TapGestureRecognizer
+                                            Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.ToggleDayCommand}"
+                                            CommandParameter="{Binding .}" />
+                                    </Frame.GestureRecognizers>
                                     <VerticalStackLayout Spacing="10">
 
                                         <!-- Day header pill -->
@@ -123,10 +128,10 @@
                                             </HorizontalStackLayout>
                                         </Grid>
 
-                                        <!-- Booked slots (30-min sessions) -->
+                                        <!-- Booked slots (30-min sessions) — collapsed by default -->
                                         <CollectionView ItemsSource="{Binding BookedSlots}"
                                                         SelectionMode="None"
-                                                        IsVisible="{Binding HasBookings}">
+                                                        IsVisible="{Binding ShowSlots}">
                                             <CollectionView.ItemsLayout>
                                                 <LinearItemsLayout Orientation="Vertical" ItemSpacing="6" />
                                             </CollectionView.ItemsLayout>
@@ -174,6 +179,20 @@
                                                 </DataTemplate>
                                             </CollectionView.ItemTemplate>
                                         </CollectionView>
+
+                                        <!-- Collapsed hint -->
+                                        <Label Text="Tap to expand sessions"
+                                               FontSize="12"
+                                               TextColor="{StaticResource TextMuted}"
+                                               IsVisible="{Binding ShowSlots, Converter={toolkit:InvertedBoolConverter}}"
+                                               Margin="4,0">
+                                            <Label.IsVisible>
+                                                <MultiBinding Converter="{toolkit:VariableMultiValueConverter ConditionType=All}">
+                                                    <Binding Path="HasBookings" />
+                                                    <Binding Path="IsExpanded" Converter="{toolkit:InvertedBoolConverter}" />
+                                                </MultiBinding>
+                                            </Label.IsVisible>
+                                        </Label>
 
                                         <!-- No bookings message -->
                                         <Label Text="No sessions — all day open"

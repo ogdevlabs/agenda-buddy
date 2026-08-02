@@ -9,6 +9,9 @@ namespace MobileApp.ViewModels;
 public partial class DashboardViewModel : ObservableObject
 {
     private readonly IBookingApiService _bookingApiService;
+    private List<AppointmentSummary> _allAppointments = new();
+    private int _pageIndex;
+    private const int PageSize = 4;
 
     [ObservableProperty]
     private List<AppointmentSummary> _appointments = new();
@@ -27,6 +30,15 @@ public partial class DashboardViewModel : ObservableObject
 
     [ObservableProperty]
     private string _greeting = string.Empty;
+
+    [ObservableProperty]
+    private bool _canGoBack;
+
+    [ObservableProperty]
+    private bool _canGoForward;
+
+    [ObservableProperty]
+    private string _pageLabel = string.Empty;
 
     public bool HasError => !string.IsNullOrEmpty(ErrorMessage);
 
@@ -58,7 +70,9 @@ public partial class DashboardViewModel : ObservableObject
             if (results.Count == 0)
                 results = GenerateSeedAppointments();
 
-            Appointments = results;
+            _allAppointments = results;
+            _pageIndex = 0;
+            UpdatePage();
             TodayCount = results.Count(a => a.ScheduledAt.Date == DateTime.Today);
             WeekCount = results.Count;
             AppointmentsLoaded?.Invoke(this, EventArgs.Empty);
@@ -66,7 +80,9 @@ public partial class DashboardViewModel : ObservableObject
         catch (HttpRequestException)
         {
             var seed = GenerateSeedAppointments();
-            Appointments = seed;
+            _allAppointments = seed;
+            _pageIndex = 0;
+            UpdatePage();
             TodayCount = seed.Count(a => a.ScheduledAt.Date == DateTime.Today);
             WeekCount = seed.Count;
         }
@@ -74,6 +90,31 @@ public partial class DashboardViewModel : ObservableObject
         {
             IsLoading = false;
         }
+    }
+
+    [RelayCommand]
+    private void NextPage()
+    {
+        if (!CanGoForward) return;
+        _pageIndex++;
+        UpdatePage();
+    }
+
+    [RelayCommand]
+    private void PreviousPage()
+    {
+        if (!CanGoBack) return;
+        _pageIndex--;
+        UpdatePage();
+    }
+
+    private void UpdatePage()
+    {
+        Appointments = _allAppointments.Skip(_pageIndex * PageSize).Take(PageSize).ToList();
+        CanGoBack = _pageIndex > 0;
+        CanGoForward = (_pageIndex + 1) * PageSize < _allAppointments.Count;
+        var totalPages = (int)Math.Ceiling((double)_allAppointments.Count / PageSize);
+        PageLabel = totalPages > 1 ? $"{_pageIndex + 1} / {totalPages}" : "";
     }
 
     private static List<AppointmentSummary> GenerateSeedAppointments()
@@ -110,15 +151,31 @@ public partial class DashboardViewModel : ObservableObject
                 Id = "seed-4",
                 CustomerEmail = "priya.sharma@agendabuddy.dev",
                 ProviderEmail = "sarah.mitchell@agendabuddy.dev",
-                ScheduledAt = today.AddDays(1).AddHours(11),
-                Status = AppointmentStatus.Requested
+                ScheduledAt = today.AddHours(15).AddMinutes(30),
+                Status = AppointmentStatus.Confirmed
             },
             new AppointmentSummary
             {
                 Id = "seed-5",
                 CustomerEmail = "alex.chen@agendabuddy.dev",
                 ProviderEmail = "sarah.mitchell@agendabuddy.dev",
-                ScheduledAt = today.AddDays(2).AddHours(9).AddMinutes(30),
+                ScheduledAt = today.AddDays(1).AddHours(9),
+                Status = AppointmentStatus.Confirmed
+            },
+            new AppointmentSummary
+            {
+                Id = "seed-6",
+                CustomerEmail = "david.thompson@agendabuddy.dev",
+                ProviderEmail = "sarah.mitchell@agendabuddy.dev",
+                ScheduledAt = today.AddDays(1).AddHours(11),
+                Status = AppointmentStatus.Requested
+            },
+            new AppointmentSummary
+            {
+                Id = "seed-7",
+                CustomerEmail = "priya.sharma@agendabuddy.dev",
+                ProviderEmail = "sarah.mitchell@agendabuddy.dev",
+                ScheduledAt = today.AddDays(2).AddHours(10),
                 Status = AppointmentStatus.Confirmed
             }
         ];

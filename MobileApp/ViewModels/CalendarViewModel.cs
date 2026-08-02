@@ -101,5 +101,11 @@ public partial class CalendarViewModel : ObservableObject
         return days;
     }
 
+    [RelayCommand]
+    private void ToggleDay(CalendarDaySummary day)
+    {
+        day.IsExpanded = !day.IsExpanded;
+    }
+
     partial void OnErrorMessageChanged(string value) => OnPropertyChanged(nameof(HasError));
 }
