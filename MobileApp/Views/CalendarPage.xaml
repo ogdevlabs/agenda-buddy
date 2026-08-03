@@ -4,55 +4,97 @@
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
              x:Class="MobileApp.Views.CalendarPage"
              Title="Calendar"
-             BackgroundColor="{StaticResource BackgroundPage}">
+             BackgroundColor="{StaticResource BackgroundPage}"
+             Shell.NavBarIsVisible="False">
 
     <Grid RowDefinitions="Auto,Auto,Auto,*">
 
-        <!-- Header -->
-        <Frame Grid.Row="0"
-               BackgroundColor="{StaticResource Primary}"
-               CornerRadius="0"
-               BorderColor="Transparent"
-               HasShadow="False"
-               Padding="24,16">
-            <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="Auto,*,Auto">
-                <Label Grid.Row="0" Grid.ColumnSpan="3"
-                       Text="This Week"
-                       FontSize="22"
-                       FontAttributes="Bold"
-                       TextColor="{StaticResource TextOnPrimary}"
-                       HorizontalOptions="Center"
-                       Margin="0,0,0,4" />
-                <Button Grid.Row="1" Grid.Column="0"
-                        Text="&#x25C0;"
-                        Command="{Binding PreviousPageCommand}"
-                        IsEnabled="{Binding CanGoBack}"
-                        BackgroundColor="#FFFFFF20"
-                        TextColor="White"
-                        FontSize="14"
-                        CornerRadius="14"
-                        WidthRequest="36"
-                        HeightRequest="36"
-                        Padding="0" />
-                <Label Grid.Row="1" Grid.Column="1"
-                       Text="{Binding WeekLabel}"
-                       FontSize="13"
-                       TextColor="#C7D2FE"
-                       HorizontalOptions="Center"
-                       VerticalOptions="Center" />
-                <Button Grid.Row="1" Grid.Column="2"
-                        Text="&#x25B6;"
-                        Command="{Binding NextPageCommand}"
-                        IsEnabled="{Binding CanGoForward}"
-                        BackgroundColor="#FFFFFF20"
-                        TextColor="White"
-                        FontSize="14"
-                        CornerRadius="14"
-                        WidthRequest="36"
-                        HeightRequest="36"
-                        Padding="0" />
-            </Grid>
-        </Frame>
+        <!-- Immersive Header with gradient feel -->
+        <Grid Grid.Row="0" Padding="0" BackgroundColor="{StaticResource BackgroundDark}">
+            <BoxView BackgroundColor="{StaticResource BackgroundDark}" />
+            <VerticalStackLayout Padding="24,20,24,24" Spacing="16">
+
+                <!-- Month & Year -->
+                <Grid ColumnDefinitions="*,Auto">
+                    <VerticalStackLayout Grid.Column="0" Spacing="2">
+                        <Label Text="{Binding MonthYear}"
+                               FontSize="26"
+                               FontAttributes="Bold"
+                               TextColor="White" />
+                        <Label Text="{Binding WeekLabel}"
+                               FontSize="13"
+                               TextColor="#A5B4FC"
+                               Opacity="0.85" />
+                    </VerticalStackLayout>
+                    <HorizontalStackLayout Grid.Column="1" Spacing="8" VerticalOptions="Center">
+                        <Button Text="&#x25C0;"
+                                Command="{Binding PreviousPageCommand}"
+                                IsEnabled="{Binding CanGoBack}"
+                                BackgroundColor="#FFFFFF15"
+                                TextColor="White"
+                                FontSize="13"
+                                CornerRadius="16"
+                                WidthRequest="34"
+                                HeightRequest="34"
+                                Padding="0" />
+                        <Button Text="&#x25B6;"
+                                Command="{Binding NextPageCommand}"
+                                IsEnabled="{Binding CanGoForward}"
+                                BackgroundColor="#FFFFFF15"
+                                TextColor="White"
+                                FontSize="13"
+                                CornerRadius="16"
+                                WidthRequest="34"
+                                HeightRequest="34"
+                                Padding="0" />
+                    </HorizontalStackLayout>
+                </Grid>
+
+                <!-- Horizontal day selector strip -->
+                <CollectionView ItemsSource="{Binding Days}"
+                                SelectionMode="Single"
+                                SelectedItem="{Binding SelectedDay}"
+                                HeightRequest="80"
+                                ItemSizingStrategy="MeasureFirstItem">
+                    <CollectionView.ItemsLayout>
+                        <LinearItemsLayout Orientation="Horizontal" ItemSpacing="10" />
+                    </CollectionView.ItemsLayout>
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <Frame WidthRequest="58"
+                                   HeightRequest="72"
+                                   CornerRadius="18"
+                                   Padding="0"
+                                   HasShadow="False"
+                                   BorderColor="Transparent"
+                                   BackgroundColor="{Binding IsSelected, Converter={toolkit:BoolToObjectConverter TrueObject={StaticResource Primary}, FalseObject=#FFFFFF12}}">
+                                <VerticalStackLayout VerticalOptions="Center"
+                                                     HorizontalOptions="Center"
+                                                     Spacing="4">
+                                    <Label Text="{Binding DayOfWeek}"
+                                           FontSize="11"
+                                           TextColor="{Binding IsSelected, Converter={toolkit:BoolToObjectConverter TrueObject=White, FalseObject=#A5B4FC}}"
+                                           HorizontalOptions="Center"
+                                           TextTransform="Uppercase" />
+                                    <Label Text="{Binding DayNumber}"
+                                           FontSize="20"
+                                           FontAttributes="Bold"
+                                           TextColor="White"
+                                           HorizontalOptions="Center" />
+                                    <!-- Dot indicator for bookings -->
+                                    <BoxView WidthRequest="6"
+                                             HeightRequest="6"
+                                             CornerRadius="3"
+                                             HorizontalOptions="Center"
+                                             Color="{Binding HasBookings, Converter={toolkit:BoolToObjectConverter TrueObject={StaticResource Accent}, FalseObject=Transparent}}" />
+                                </VerticalStackLayout>
+                            </Frame>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+
+            </VerticalStackLayout>
+        </Grid>
 
         <!-- Activity indicator -->
         <ActivityIndicator Grid.Row="1"
@@ -66,7 +108,7 @@
         <Frame Grid.Row="2"
                Style="{StaticResource ErrorBannerStyle}"
                IsVisible="{Binding HasError}"
-               Margin="24,12">
+               Margin="20,12">
             <Grid ColumnDefinitions="*,Auto">
                 <Label Grid.Column="0"
                        Text="{Binding ErrorMessage}"
@@ -85,155 +127,170 @@
             </Grid>
         </Frame>
 
-        <!-- Week days list -->
-        <CollectionView Grid.Row="3"
-                        ItemsSource="{Binding Days}"
-                        SelectionMode="None"
-                        Margin="16,8,16,0"
-                        ItemSizingStrategy="MeasureAllItems">
+        <!-- Day detail content -->
+        <ScrollView Grid.Row="3" Padding="20,16,20,0">
+            <VerticalStackLayout Spacing="12"
+                                 IsVisible="{Binding HasSelectedDay}">
+
+                <!-- Summary stats row -->
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="12" Margin="0,0,0,4">
+                    <Frame Grid.Column="0"
+                           BackgroundColor="{StaticResource PrimarySubtle}"
+                           CornerRadius="16"
+                           Padding="16,14"
+                           HasShadow="False"
+                           BorderColor="Transparent">
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="{Binding SelectedDay.BookedSlots.Count}"
+                                   FontSize="24"
+                                   FontAttributes="Bold"
+                                   TextColor="{StaticResource Primary}" />
+                            <Label Text="Sessions"
+                                   FontSize="12"
+                                   TextColor="{StaticResource TextSecondary}" />
+                        </VerticalStackLayout>
+                    </Frame>
+                    <Frame Grid.Column="1"
+                           BackgroundColor="{StaticResource SuccessSubtle}"
+                           CornerRadius="16"
+                           Padding="16,14"
+                           HasShadow="False"
+                           BorderColor="Transparent">
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="{Binding SelectedDay.AvailableSlots.Count}"
+                                   FontSize="24"
+                                   FontAttributes="Bold"
+                                   TextColor="{StaticResource Success}" />
+                            <Label Text="Available"
+                                   FontSize="12"
+                                   TextColor="{StaticResource TextSecondary}" />
+                        </VerticalStackLayout>
+                    </Frame>
+                </Grid>
+
+                <!-- Section: Booked sessions -->
+                <Label Text="BOOKED SESSIONS"
+                       Style="{StaticResource Overline}"
+                       Margin="4,8,0,0"
+                       IsVisible="{Binding SelectedDay.HasBookings}" />
+
+                <CollectionView ItemsSource="{Binding SelectedDay.BookedSlots}"
+                                SelectionMode="None"
+                                IsVisible="{Binding SelectedDay.HasBookings}">
+                    <CollectionView.ItemsLayout>
+                        <LinearItemsLayout Orientation="Vertical" ItemSpacing="10" />
+                    </CollectionView.ItemsLayout>
                     <CollectionView.ItemTemplate>
                         <DataTemplate>
-                            <Grid Margin="0,0,0,12">
-                                <Frame CornerRadius="20"
-                                       Padding="16"
-                                       BorderColor="#F1F5F9"
-                                       BackgroundColor="White"
-                                       HasShadow="False">
-                                    <Frame.GestureRecognizers>
-                                        <TapGestureRecognizer
-                                            Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.ToggleDayCommand}"
-                                            CommandParameter="{Binding .}" />
-                                    </Frame.GestureRecognizers>
-                                    <VerticalStackLayout Spacing="10">
-
-                                        <!-- Day header pill -->
-                                        <Grid ColumnDefinitions="Auto,*,Auto">
-                                            <!-- Day pill -->
-                                            <Frame Grid.Column="0"
-                                                   BackgroundColor="{Binding IsToday, Converter={toolkit:BoolToObjectConverter TrueObject={StaticResource Primary}, FalseObject={StaticResource PrimarySubtle}}}"
-                                                   CornerRadius="14"
-                                                   Padding="14,8"
-                                                   HasShadow="False"
-                                                   BorderColor="Transparent">
-                                                <HorizontalStackLayout Spacing="8">
-                                                    <Label Text="{Binding DayOfWeek}"
-                                                           FontSize="15"
-                                                           FontAttributes="Bold"
-                                                           TextColor="{Binding IsToday, Converter={toolkit:BoolToObjectConverter TrueObject=White, FalseObject={StaticResource Primary}}}"
-                                                           TextTransform="Uppercase" />
-                                                    <Label Text="{Binding DayNumber}"
-                                                           FontSize="15"
-                                                           FontAttributes="Bold"
-                                                           TextColor="{Binding IsToday, Converter={toolkit:BoolToObjectConverter TrueObject=White, FalseObject={StaticResource Primary}}}" />
-                                                </HorizontalStackLayout>
-                                            </Frame>
-
-                                            <!-- Session count -->
-                                            <HorizontalStackLayout Grid.Column="2"
-                                                                   Spacing="8"
-                                                                   VerticalOptions="Center">
-                                                <Frame BackgroundColor="{StaticResource Accent}"
-                                                       CornerRadius="10"
-                                                       Padding="8,4"
-                                                       HasShadow="False"
-                                                       BorderColor="Transparent">
-                                                    <Label Text="{Binding BookedSlots.Count, StringFormat='{0} sessions'}"
-                                                           FontSize="11"
-                                                           FontAttributes="Bold"
-                                                           TextColor="White" />
-                                                </Frame>
-                                                <Frame BackgroundColor="{StaticResource SuccessSubtle}"
-                                                       CornerRadius="10"
-                                                       Padding="8,4"
-                                                       HasShadow="False"
-                                                       BorderColor="Transparent">
-                                                    <Label Text="{Binding AvailableSlots.Count, StringFormat='{0} open'}"
-                                                           FontSize="11"
-                                                           FontAttributes="Bold"
-                                                           TextColor="{StaticResource Success}" />
-                                                </Frame>
-                                            </HorizontalStackLayout>
-                                        </Grid>
-
-                                        <!-- Booked slots (30-min sessions) — collapsed by default -->
-                                        <CollectionView ItemsSource="{Binding BookedSlots}"
-                                                        SelectionMode="None"
-                                                        IsVisible="{Binding ShowSlots}">
-                                            <CollectionView.ItemsLayout>
-                                                <LinearItemsLayout Orientation="Vertical" ItemSpacing="6" />
-                                            </CollectionView.ItemsLayout>
-                                            <CollectionView.ItemTemplate>
-                                                <DataTemplate>
-                                                    <Frame BackgroundColor="#FEF3C7"
-                                                           CornerRadius="12"
-                                                           Padding="12,8"
-                                                           HasShadow="False"
-                                                           BorderColor="#FCD34D">
-                                                        <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
-                                                            <!-- Time icon -->
-                                                            <Frame Grid.Column="0"
-                                                                   BackgroundColor="{StaticResource Accent}"
-                                                                   CornerRadius="10"
-                                                                   WidthRequest="20"
-                                                                   HeightRequest="20"
-                                                                   Padding="0"
-                                                                   HasShadow="False"
-                                                                   BorderColor="Transparent"
-                                                                   VerticalOptions="Center" />
-
-                                                            <!-- Slot text: "9:00 AM — Alex Chen" -->
-                                                            <Label Grid.Column="1"
-                                                                   Text="{Binding .}"
-                                                                   FontSize="13"
-                                                                   FontAttributes="Bold"
-                                                                   TextColor="#92400E"
-                                                                   VerticalOptions="Center" />
-
-                                                            <!-- Duration badge -->
-                                                            <Frame Grid.Column="2"
-                                                                   BackgroundColor="#FDE68A"
-                                                                   CornerRadius="8"
-                                                                   Padding="6,2"
-                                                                   HasShadow="False"
-                                                                   BorderColor="Transparent"
-                                                                   VerticalOptions="Center">
-                                                                <Label Text="30 min"
-                                                                       FontSize="10"
-                                                                       TextColor="#92400E" />
-                                                            </Frame>
-                                                        </Grid>
-                                                    </Frame>
-                                                </DataTemplate>
-                                            </CollectionView.ItemTemplate>
-                                        </CollectionView>
-
-                                        <!-- Collapsed hint -->
-                                        <Label Text="Tap to expand sessions"
-                                               FontSize="12"
-                                               TextColor="{StaticResource TextMuted}"
-                                               IsVisible="{Binding ShowSlots, Converter={toolkit:InvertedBoolConverter}}"
-                                               Margin="4,0">
-                                            <Label.IsVisible>
-                                                <MultiBinding Converter="{toolkit:VariableMultiValueConverter ConditionType=All}">
-                                                    <Binding Path="HasBookings" />
-                                                    <Binding Path="IsExpanded" Converter="{toolkit:InvertedBoolConverter}" />
-                                                </MultiBinding>
-                                            </Label.IsVisible>
-                                        </Label>
-
-                                        <!-- No bookings message -->
-                                        <Label Text="No sessions — all day open"
-                                               FontSize="13"
-                                               TextColor="{StaticResource TextMuted}"
-                                               IsVisible="{Binding HasBookings, Converter={toolkit:InvertedBoolConverter}}"
-                                               Margin="4,0" />
-
-                                    </VerticalStackLayout>
-                                </Frame>
-                            </Grid>
+                            <Frame CornerRadius="16"
+                                   Padding="0"
+                                   HasShadow="False"
+                                   BorderColor="#F1F5F9"
+                                   BackgroundColor="White">
+                                <Grid ColumnDefinitions="5,*" ColumnSpacing="0">
+                                    <!-- Accent left strip -->
+                                    <BoxView Grid.Column="0"
+                                             BackgroundColor="{StaticResource Accent}"
+                                             WidthRequest="5"
+                                             VerticalOptions="Fill"
+                                             HorizontalOptions="Start" />
+                                    <Grid Grid.Column="1"
+                                          ColumnDefinitions="Auto,*,Auto"
+                                          Padding="14,14,16,14"
+                                          ColumnSpacing="12">
+                                        <!-- Time circle -->
+                                        <Frame Grid.Column="0"
+                                               BackgroundColor="{StaticResource AccentLight}"
+                                               CornerRadius="20"
+                                               WidthRequest="40"
+                                               HeightRequest="40"
+                                               Padding="0"
+                                               HasShadow="False"
+                                               BorderColor="Transparent"
+                                               VerticalOptions="Center">
+                                            <Label Text="&#x1F552;"
+                                                   FontSize="18"
+                                                   HorizontalOptions="Center"
+                                                   VerticalOptions="Center" />
+                                        </Frame>
+                                        <!-- Session info -->
+                                        <VerticalStackLayout Grid.Column="1"
+                                                             VerticalOptions="Center"
+                                                             Spacing="2">
+                                            <Label Text="{Binding .}"
+                                                   FontSize="14"
+                                                   FontAttributes="Bold"
+                                                   TextColor="{StaticResource TextPrimary}" />
+                                            <Label Text="30 min session"
+                                                   FontSize="12"
+                                                   TextColor="{StaticResource TextMuted}" />
+                                        </VerticalStackLayout>
+                                        <!-- Status dot -->
+                                        <Frame Grid.Column="2"
+                                               BackgroundColor="{StaticResource Success}"
+                                               CornerRadius="6"
+                                               WidthRequest="12"
+                                               HeightRequest="12"
+                                               Padding="0"
+                                               HasShadow="False"
+                                               BorderColor="Transparent"
+                                               VerticalOptions="Center" />
+                                    </Grid>
+                                </Grid>
+                            </Frame>
                         </DataTemplate>
                     </CollectionView.ItemTemplate>
-        </CollectionView>
+                </CollectionView>
+
+                <!-- Section: Available slots -->
+                <Label Text="AVAILABLE SLOTS"
+                       Style="{StaticResource Overline}"
+                       Margin="4,8,0,0"
+                       IsVisible="{Binding HasAvailableSlots}" />
+
+                <FlexLayout BindableLayout.ItemsSource="{Binding SelectedDay.AvailableSlots}"
+                            Wrap="Wrap"
+                            JustifyContent="Start"
+                            AlignItems="Start"
+                            IsVisible="{Binding HasAvailableSlots}">
+                    <BindableLayout.ItemTemplate>
+                        <DataTemplate>
+                            <Frame BackgroundColor="{StaticResource SuccessSubtle}"
+                                   CornerRadius="12"
+                                   Padding="12,8"
+                                   Margin="0,0,8,8"
+                                   HasShadow="False"
+                                   BorderColor="{StaticResource Success}">
+                                <Label Text="{Binding .}"
+                                       FontSize="13"
+                                       FontAttributes="Bold"
+                                       TextColor="{StaticResource Success}" />
+                            </Frame>
+                        </DataTemplate>
+                    </BindableLayout.ItemTemplate>
+                </FlexLayout>
+
+                <!-- Empty state -->
+                <VerticalStackLayout Spacing="8"
+                                     HorizontalOptions="Center"
+                                     Margin="0,40"
+                                     IsVisible="{Binding SelectedDayIsEmpty}">
+                    <Label Text="&#x1F4AD;"
+                           FontSize="44"
+                           HorizontalOptions="Center" />
+                    <Label Text="No sessions scheduled"
+                           FontSize="16"
+                           FontAttributes="Bold"
+                           TextColor="{StaticResource TextSecondary}"
+                           HorizontalOptions="Center" />
+                    <Label Text="This day is wide open"
+                           FontSize="14"
+                           TextColor="{StaticResource TextMuted}"
+                           HorizontalOptions="Center" />
+                </VerticalStackLayout>
+
+            </VerticalStackLayout>
+        </ScrollView>
 
     </Grid>
 

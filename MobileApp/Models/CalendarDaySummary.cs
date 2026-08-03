@@ -11,6 +11,9 @@ public partial class CalendarDaySummary : ObservableObject
     [ObservableProperty]
     private bool _isExpanded;
 
+    [ObservableProperty]
+    private bool _isSelected;
+
     public string DayOfWeek => DateTime.TryParse(Date, out var dt) ? dt.ToString("ddd") : "";
     public string DayNumber => DateTime.TryParse(Date, out var dt) ? dt.Day.ToString() : "";
     public string MonthDay => DateTime.TryParse(Date, out var dt) ? dt.ToString("MMM d") : Date;

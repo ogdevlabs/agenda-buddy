@@ -11,7 +11,7 @@ public partial class CalendarViewModel : ObservableObject
     private readonly IUserSessionService _session;
     private List<CalendarDaySummary> _allDays = new();
     private int _pageIndex;
-    private const int PageSize = 4;
+    private const int PageSize = 7;
 
     [ObservableProperty]
     private List<CalendarDaySummary> _days = new();
@@ -26,12 +26,26 @@ public partial class CalendarViewModel : ObservableObject
     private string _weekLabel = string.Empty;
 
     [ObservableProperty]
+    private string _monthYear = string.Empty;
+
+    [ObservableProperty]
     private bool _canGoBack;
 
     [ObservableProperty]
     private bool _canGoForward;
 
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasSelectedDay))]
+    [NotifyPropertyChangedFor(nameof(HasAvailableSlots))]
+    [NotifyPropertyChangedFor(nameof(SelectedDayIsEmpty))]
+    private CalendarDaySummary? _selectedDay;
+
     public bool HasError => !string.IsNullOrEmpty(ErrorMessage);
+    public bool HasSelectedDay => SelectedDay is not null;
+    public bool HasAvailableSlots => SelectedDay?.AvailableSlots.Count > 0;
+    public bool SelectedDayIsEmpty => SelectedDay is not null
+                                     && !SelectedDay.HasBookings
+                                     && SelectedDay.AvailableSlots.Count == 0;
 
     public CalendarViewModel(ICalendarApiService calendarApiService, IUserSessionService session)
     {
@@ -56,20 +70,12 @@ public partial class CalendarViewModel : ObservableObject
             _allDays = result;
             _pageIndex = 0;
             UpdatePage();
-
-            var startDate = DateTime.Today;
-            var endDate = startDate.AddDays(6);
-            WeekLabel = $"{startDate:MMM d} — {endDate:MMM d, yyyy}";
         }
         catch (HttpRequestException)
         {
             _allDays = GenerateSeedWeek();
             _pageIndex = 0;
             UpdatePage();
-
-            var startDate = DateTime.Today;
-            var endDate = startDate.AddDays(6);
-            WeekLabel = $"{startDate:MMM d} — {endDate:MMM d, yyyy}";
         }
         finally
         {
@@ -95,9 +101,34 @@ public partial class CalendarViewModel : ObservableObject
 
     private void UpdatePage()
     {
+        // Clear selection state on all days
+        foreach (var d in _allDays)
+            d.IsSelected = false;
+
         Days = _allDays.Skip(_pageIndex * PageSize).Take(PageSize).ToList();
         CanGoBack = _pageIndex > 0;
         CanGoForward = (_pageIndex + 1) * PageSize < _allDays.Count;
+
+        // Update header labels
+        var startDate = DateTime.Today.AddDays(_pageIndex * PageSize);
+        var endDate = startDate.AddDays(Days.Count - 1);
+        MonthYear = startDate.ToString("MMMM yyyy");
+        WeekLabel = $"{startDate:MMM d} — {endDate:MMM d}";
+
+        // Auto-select today or first day
+        var today = Days.FirstOrDefault(d => d.IsToday) ?? Days.FirstOrDefault();
+        if (today is not null)
+        {
+            today.IsSelected = true;
+            SelectedDay = today;
+        }
+    }
+
+    partial void OnSelectedDayChanged(CalendarDaySummary? value)
+    {
+        // Deselect all, then select the new one
+        foreach (var d in Days)
+            d.IsSelected = d == value;
     }
 
     private List<CalendarDaySummary> GenerateSeedWeek()
@@ -106,7 +137,6 @@ public partial class CalendarViewModel : ObservableObject
         var days = new List<CalendarDaySummary>();
         var email = _session.Email;
 
-        // Full provider schedule (Sarah Mitchell's view)
         string[][] providerBookings =
         [
             ["9:00 AM — Alex Chen", "10:00 AM — Priya Sharma", "2:00 PM — David Thompson"],
@@ -129,7 +159,6 @@ public partial class CalendarViewModel : ObservableObject
             ["9:00 AM", "9:30 AM", "10:00 AM", "10:30 AM", "11:00 AM", "1:00 PM", "2:00 PM", "3:00 PM", "4:00 PM"]
         ];
 
-        // For customers, filter bookings to only their sessions
         var customerName = email switch
         {
             "alex.chen@agendabuddy.dev" => "Alex Chen",
