@@ -83,7 +83,7 @@ public class CustomersViewModelTests
         await vm.LoadCommand.ExecuteAsync(null);
 
         Assert.Equal("Providers", vm.PageTitle);
-        Assert.Equal("Search providers...", vm.SearchPlaceholder);
+        Assert.Equal("Search by name or service...", vm.SearchPlaceholder);
     }
 
     [Fact]

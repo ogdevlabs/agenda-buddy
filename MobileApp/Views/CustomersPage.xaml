@@ -49,11 +49,13 @@
                        VerticalOptions="Center"
                        Margin="0,0,8,0" />
                 <Entry Grid.Column="1"
+                       Text="{Binding SearchText}"
                        Placeholder="{Binding SearchPlaceholder}"
                        PlaceholderColor="{StaticResource iOSGray}"
                        FontSize="15"
                        TextColor="{StaticResource iOSLabel}"
-                       BackgroundColor="Transparent" />
+                       BackgroundColor="Transparent"
+                       ReturnType="Search" />
             </Grid>
         </Frame>
 

@@ -9,8 +9,10 @@ public partial class CustomersViewModel : ObservableObject
 {
     private readonly ICustomerApiService _customerApiService;
     private readonly IUserSessionService _session;
+    private List<CustomerSummary> _allContacts = new();
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsEmpty))]
     private List<CustomerSummary> _customers = new();
 
     [ObservableProperty]
@@ -31,6 +33,9 @@ public partial class CustomersViewModel : ObservableObject
     [ObservableProperty]
     private string _emptySubtitle = "Once a client books a session with you, they will appear here.";
 
+    [ObservableProperty]
+    private string _searchText = string.Empty;
+
     public bool HasError => !string.IsNullOrEmpty(ErrorMessage);
 
     public bool IsEmpty => !IsLoading && Customers.Count == 0 && !HasError;
@@ -39,6 +44,23 @@ public partial class CustomersViewModel : ObservableObject
     {
         _customerApiService = customerApiService;
         _session = session;
+    }
+
+    partial void OnSearchTextChanged(string value) => ApplyFilter();
+
+    private void ApplyFilter()
+    {
+        if (string.IsNullOrWhiteSpace(SearchText))
+        {
+            Customers = new List<CustomerSummary>(_allContacts);
+            return;
+        }
+
+        var query = SearchText.Trim();
+        Customers = _allContacts
+            .Where(c => c.FullName.Contains(query, StringComparison.OrdinalIgnoreCase)
+                        || c.LastSession.Contains(query, StringComparison.OrdinalIgnoreCase))
+            .ToList();
     }
 
     [RelayCommand]
@@ -51,7 +73,7 @@ public partial class CustomersViewModel : ObservableObject
         if (_session.IsCustomer)
         {
             PageTitle = "Providers";
-            SearchPlaceholder = "Search providers...";
+            SearchPlaceholder = "Search by name or service...";
             EmptyTitle = "No providers yet";
             EmptySubtitle = "Browse and subscribe to providers to book appointments.";
         }
@@ -70,15 +92,16 @@ public partial class CustomersViewModel : ObservableObject
             if (results.Count == 0)
                 results = SeedContacts();
 
-            Customers = results;
+            _allContacts = results;
         }
         catch (HttpRequestException)
         {
-            Customers = SeedContacts();
+            _allContacts = SeedContacts();
         }
         finally
         {
             IsLoading = false;
+            ApplyFilter();
         }
     }
 
@@ -151,6 +174,4 @@ public partial class CustomersViewModel : ObservableObject
     }
 
     partial void OnIsLoadingChanged(bool value) => OnPropertyChanged(nameof(IsEmpty));
-
-    partial void OnCustomersChanged(List<CustomerSummary> value) => OnPropertyChanged(nameof(IsEmpty));
 }
