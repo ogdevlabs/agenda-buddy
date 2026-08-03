@@ -70,6 +70,27 @@ public partial class AppointmentDetailViewModel : ObservableObject
     }
 
     [RelayCommand]
+    private async Task LoadWithFallbackAsync(AppointmentDetail? fallback)
+    {
+        IsLoading = true;
+        ErrorMessage = string.Empty;
+
+        try
+        {
+            var result = await _bookingApiService.GetAppointmentAsync(AppointmentId);
+            Appointment = result ?? fallback;
+        }
+        catch (HttpRequestException)
+        {
+            Appointment = fallback;
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    [RelayCommand]
     private void Confirm() =>
         ActionRequested?.Invoke(this, new AppointmentActionEventArgs(ActionType.Confirm));
 

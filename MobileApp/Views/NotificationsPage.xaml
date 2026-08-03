@@ -3,104 +3,184 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
              x:Class="MobileApp.Views.NotificationsPage"
-             Title="Notifications">
+             Title="Notifications"
+             BackgroundColor="#F2F2F7"
+             Shell.NavBarIsVisible="False">
 
     <ContentPage.Resources>
         <toolkit:InvertedBoolConverter x:Key="InvertedBoolConverter" />
+        <Color x:Key="iOSBlue">#007AFF</Color>
+        <Color x:Key="iOSRed">#FF3B30</Color>
+        <Color x:Key="iOSGray">#8E8E93</Color>
+        <Color x:Key="iOSGray5">#E5E5EA</Color>
+        <Color x:Key="iOSLabel">#000000</Color>
     </ContentPage.Resources>
 
-    <Grid RowDefinitions="Auto,Auto,*">
+    <Grid RowDefinitions="Auto,Auto,Auto,*">
 
-        <!-- Activity indicator -->
-        <ActivityIndicator Grid.Row="0"
+        <!-- Header -->
+        <Grid Grid.Row="0"
+              BackgroundColor="White"
+              Padding="20,16,20,12">
+            <Grid ColumnDefinitions="*,Auto">
+                <Label Grid.Column="0"
+                       Text="Notifications"
+                       FontSize="34"
+                       FontAttributes="Bold"
+                       TextColor="{StaticResource iOSLabel}" />
+                <Label Grid.Column="1"
+                       Text="{Binding UnreadCount, StringFormat='{0} unread'}"
+                       FontSize="13"
+                       TextColor="{StaticResource iOSGray}"
+                       VerticalOptions="End"
+                       Margin="0,0,0,4"
+                       IsVisible="{Binding UnreadCount}" />
+            </Grid>
+        </Grid>
+
+        <!-- Loading indicator -->
+        <ActivityIndicator Grid.Row="1"
                            IsRunning="{Binding IsLoading}"
                            IsVisible="{Binding IsLoading}"
+                           Color="{StaticResource iOSGray}"
                            HorizontalOptions="Center"
-                           Margin="0,8" />
+                           Margin="0,24" />
 
-        <!-- Error banner with retry button -->
-        <VerticalStackLayout Grid.Row="1"
-                             IsVisible="{Binding HasError}"
-                             BackgroundColor="#FFEBEE"
-                             Padding="16,8"
-                             Spacing="8">
-            <Label Text="{Binding ErrorMessage}"
-                   TextColor="#B71C1C"
-                   FontSize="14" />
-            <Button Text="Retry"
-                    Command="{Binding LoadCommand}"
-                    BackgroundColor="#B71C1C"
-                    TextColor="White"
-                    HorizontalOptions="Start"
-                    Padding="12,6" />
-        </VerticalStackLayout>
+        <!-- Error banner -->
+        <Frame Grid.Row="2"
+               BackgroundColor="#FFF2F2"
+               CornerRadius="10"
+               BorderColor="#FFD6D6"
+               Padding="14,10"
+               HasShadow="False"
+               IsVisible="{Binding HasError}"
+               Margin="16,8">
+            <Grid ColumnDefinitions="*,Auto">
+                <Label Grid.Column="0"
+                       Text="{Binding ErrorMessage}"
+                       TextColor="#FF3B30"
+                       FontSize="14"
+                       VerticalOptions="Center" />
+                <Button Grid.Column="1"
+                        Text="Retry"
+                        Command="{Binding LoadCommand}"
+                        BackgroundColor="Transparent"
+                        TextColor="{StaticResource iOSBlue}"
+                        FontAttributes="Bold"
+                        FontSize="14" />
+            </Grid>
+        </Frame>
 
         <!-- Empty state -->
-        <VerticalStackLayout Grid.Row="2"
+        <VerticalStackLayout Grid.Row="3"
                              IsVisible="{Binding IsEmpty}"
                              VerticalOptions="Center"
                              HorizontalOptions="Center"
                              Spacing="8"
-                             Padding="32">
-            <Label Text="You are all caught up — new booking updates will appear here."
-                   HorizontalTextAlignment="Center"
-                   TextColor="Gray"
-                   FontSize="16" />
+                             Padding="40">
+            <Label Text="No Notifications"
+                   FontSize="20"
+                   FontAttributes="Bold"
+                   TextColor="{StaticResource iOSLabel}"
+                   HorizontalOptions="Center" />
+            <Label Text="You're all caught up."
+                   FontSize="15"
+                   TextColor="{StaticResource iOSGray}"
+                   HorizontalTextAlignment="Center" />
         </VerticalStackLayout>
 
-        <!-- Notifications list -->
-        <CollectionView Grid.Row="2"
+        <!-- Notifications list (iOS Notification Center style) -->
+        <CollectionView Grid.Row="3"
                         ItemsSource="{Binding Notifications}"
-                        IsVisible="{Binding IsEmpty, Converter={StaticResource InvertedBoolConverter}}">
+                        IsVisible="{Binding IsEmpty, Converter={StaticResource InvertedBoolConverter}}"
+                        SelectionMode="None"
+                        Margin="16,8,16,16">
+            <CollectionView.ItemsLayout>
+                <LinearItemsLayout Orientation="Vertical" ItemSpacing="8" />
+            </CollectionView.ItemsLayout>
             <CollectionView.ItemTemplate>
                 <DataTemplate>
-                    <Grid Padding="16,12"
-                          ColumnDefinitions="*,Auto">
-
-                        <!-- Unread indicator bar -->
-                        <BoxView Grid.Column="0"
-                                 Grid.RowSpan="1"
-                                 WidthRequest="4"
-                                 HeightRequest="40"
-                                 HorizontalOptions="Start"
-                                 VerticalOptions="Center"
-                                 Color="{Binding IsRead, Converter={toolkit:BoolToObjectConverter TrueObject=Transparent, FalseObject=#1976D2}}" />
-
-                        <VerticalStackLayout Grid.Column="0"
-                                             Spacing="4"
-                                             Margin="12,0,0,0">
-                            <Label Text="{Binding NotificationType}"
-                                   FontAttributes="{Binding IsRead, Converter={toolkit:BoolToObjectConverter TrueObject=None, FalseObject=Bold}}"
-                                   FontSize="14" />
-                            <Label Text="{Binding Message}"
-                                   FontSize="13"
-                                   TextColor="Gray"
-                                   LineBreakMode="TailTruncation"
-                                   MaxLines="2" />
-                            <Label Text="{Binding CreatedAt, StringFormat='{0:MMM d, yyyy h:mm tt}'}"
-                                   FontSize="11"
-                                   TextColor="LightGray" />
-                        </VerticalStackLayout>
-
-                        <!-- Mark as read button -->
-                        <ImageButton Grid.Column="1"
-                                     Source="envelope_open.png"
-                                     IsVisible="{Binding IsRead, Converter={StaticResource InvertedBoolConverter}}"
-                                     Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.MarkReadCommand}"
-                                     CommandParameter="{Binding Id}"
-                                     WidthRequest="32"
-                                     HeightRequest="32"
-                                     VerticalOptions="Center">
-                            <SemanticProperties.Description>Mark as read</SemanticProperties.Description>
-                        </ImageButton>
-
-                        <!-- Tap gesture for the whole row -->
-                        <Grid.GestureRecognizers>
+                    <!-- Notification card (grouped card style like iOS) -->
+                    <Frame BackgroundColor="White"
+                           CornerRadius="14"
+                           Padding="0"
+                           HasShadow="False"
+                           BorderColor="Transparent">
+                        <Frame.GestureRecognizers>
                             <TapGestureRecognizer
-                                Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.MarkReadCommand}"
-                                CommandParameter="{Binding Id}" />
-                        </Grid.GestureRecognizers>
-                    </Grid>
+                                Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.ToggleNotificationCommand}"
+                                CommandParameter="{Binding .}" />
+                        </Frame.GestureRecognizers>
+
+                        <VerticalStackLayout Spacing="0">
+
+                            <!-- Header row: app icon + label + time -->
+                            <Grid ColumnDefinitions="Auto,*,Auto"
+                                  Padding="14,10,14,0"
+                                  ColumnSpacing="8">
+                                <!-- Small app icon -->
+                                <Grid Grid.Column="0"
+                                      WidthRequest="20"
+                                      HeightRequest="20"
+                                      VerticalOptions="Center">
+                                    <BoxView CornerRadius="5"
+                                             WidthRequest="20"
+                                             HeightRequest="20"
+                                             Color="{StaticResource iOSRed}" />
+                                    <Label Text="A"
+                                           FontSize="11"
+                                           FontAttributes="Bold"
+                                           TextColor="White"
+                                           HorizontalOptions="Center"
+                                           VerticalOptions="Center" />
+                                </Grid>
+                                <Label Grid.Column="1"
+                                       Text="AGENDA BUDDY"
+                                       FontSize="12"
+                                       TextColor="{StaticResource iOSGray}"
+                                       VerticalOptions="Center"
+                                       CharacterSpacing="0.5" />
+                                <Label Grid.Column="2"
+                                       Text="{Binding TimeAgo}"
+                                       FontSize="12"
+                                       TextColor="{StaticResource iOSGray}"
+                                       VerticalOptions="Center" />
+                            </Grid>
+
+                            <!-- Content -->
+                            <VerticalStackLayout Padding="14,6,14,14" Spacing="3">
+                                <Label Text="{Binding TypeLabel}"
+                                       FontSize="15"
+                                       FontAttributes="Bold"
+                                       TextColor="{StaticResource iOSLabel}" />
+                                <Label Text="{Binding Message}"
+                                       FontSize="14"
+                                       TextColor="{StaticResource iOSGray}"
+                                       LineBreakMode="TailTruncation"
+                                       MaxLines="{Binding IsExpanded, Converter={toolkit:BoolToObjectConverter TrueObject=10, FalseObject=2}}" />
+                            </VerticalStackLayout>
+
+                            <!-- Expanded details -->
+                            <VerticalStackLayout Spacing="4"
+                                                 Margin="14,0,14,14"
+                                                 IsVisible="{Binding IsExpanded}">
+                                <BoxView HeightRequest="0.5" Color="{StaticResource iOSGray5}" />
+                                <Label Text="{Binding CreatedAt, StringFormat='{0:MMMM d, yyyy · h:mm tt}'}"
+                                       FontSize="13"
+                                       TextColor="{StaticResource iOSGray}"
+                                       Margin="0,4,0,0" />
+                            </VerticalStackLayout>
+
+                            <!-- Unread indicator line at bottom -->
+                            <BoxView HeightRequest="3"
+                                     CornerRadius="1.5"
+                                     Color="{Binding IsRead, Converter={toolkit:BoolToObjectConverter TrueObject=Transparent, FalseObject={StaticResource iOSBlue}}}"
+                                     Margin="14,0,14,8"
+                                     HorizontalOptions="Start"
+                                     WidthRequest="40" />
+
+                        </VerticalStackLayout>
+                    </Frame>
                 </DataTemplate>
             </CollectionView.ItemTemplate>
         </CollectionView>

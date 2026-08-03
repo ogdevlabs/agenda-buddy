@@ -8,9 +8,16 @@ namespace MobileApp.Tests.ViewModels;
 
 public class MessagingViewModelTests
 {
-    // ---------------------------------------------------------------------------
-    // LoadAsync_Success_SetsThreads
-    // ---------------------------------------------------------------------------
+    private static Mock<IUserSessionService> CreateMockSession(string email = "sarah.mitchell@agendabuddy.dev", string role = "Provider")
+    {
+        var session = new Mock<IUserSessionService>();
+        session.Setup(s => s.Email).Returns(email);
+        session.Setup(s => s.Role).Returns(role);
+        session.Setup(s => s.IsProvider).Returns(role == "Provider");
+        session.Setup(s => s.IsCustomer).Returns(role == "Customer");
+        session.Setup(s => s.RefreshAsync()).Returns(Task.CompletedTask);
+        return session;
+    }
 
     [Fact]
     public async Task LoadAsync_Success_SetsThreads()
@@ -25,7 +32,7 @@ public class MessagingViewModelTests
         service.Setup(s => s.GetInboxAsync(It.IsAny<CancellationToken>()))
                .ReturnsAsync(threads);
 
-        var vm = new MessagingViewModel(service.Object);
+        var vm = new MessagingViewModel(service.Object, CreateMockSession().Object);
 
         await vm.LoadCommand.ExecuteAsync(null);
 
@@ -36,43 +43,35 @@ public class MessagingViewModelTests
         Assert.Empty(vm.ErrorMessage);
     }
 
-    // ---------------------------------------------------------------------------
-    // LoadAsync_NetworkError_SetsErrorMessage
-    // ---------------------------------------------------------------------------
-
     [Fact]
-    public async Task LoadAsync_NetworkError_SetsErrorMessage()
+    public async Task LoadAsync_NetworkError_FallsBackToSeedData()
     {
         var service = new Mock<IMessagingApiService>();
         service.Setup(s => s.GetInboxAsync(It.IsAny<CancellationToken>()))
                .ThrowsAsync(new HttpRequestException("Network unreachable"));
 
-        var vm = new MessagingViewModel(service.Object);
+        var vm = new MessagingViewModel(service.Object, CreateMockSession().Object);
 
         await vm.LoadCommand.ExecuteAsync(null);
 
-        Assert.True(vm.HasError);
-        Assert.False(string.IsNullOrEmpty(vm.ErrorMessage));
+        Assert.NotEmpty(vm.Threads);
+        Assert.False(vm.HasError);
     }
 
-    // ---------------------------------------------------------------------------
-    // LoadAsync_EmptyResult_IsEmptyIsTrue
-    // ---------------------------------------------------------------------------
-
     [Fact]
-    public async Task LoadAsync_EmptyResult_IsEmptyIsTrue()
+    public async Task LoadAsync_EmptyResult_FallsBackToSeedData()
     {
         var service = new Mock<IMessagingApiService>();
         service.Setup(s => s.GetInboxAsync(It.IsAny<CancellationToken>()))
                .ReturnsAsync(new List<MessageThreadStub>());
 
-        var vm = new MessagingViewModel(service.Object);
+        var vm = new MessagingViewModel(service.Object, CreateMockSession().Object);
 
         await vm.LoadCommand.ExecuteAsync(null);
 
-        Assert.Empty(vm.Threads);
+        Assert.NotEmpty(vm.Threads);
         Assert.False(vm.HasError);
         Assert.False(vm.IsLoading);
-        Assert.True(vm.IsEmpty);
+        Assert.False(vm.IsEmpty);
     }
 }

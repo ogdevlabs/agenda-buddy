@@ -20,6 +20,8 @@ public partial class LoginPage : ContentPage
 
     private async void OnLoginSucceeded(object? sender, EventArgs e)
     {
+        if (Shell.Current is AppShell appShell)
+            await appShell.UpdateForRoleAsync();
         await Shell.Current.GoToAsync("//dashboard");
     }
 

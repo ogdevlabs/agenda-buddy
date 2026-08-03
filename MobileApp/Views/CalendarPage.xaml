@@ -1,88 +1,225 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
              x:Class="MobileApp.Views.CalendarPage"
-             Title="Calendar">
+             Title="Calendar"
+             BackgroundColor="#F2F2F7"
+             Shell.NavBarIsVisible="False">
 
-    <Grid RowDefinitions="Auto,Auto,*">
+    <ContentPage.Resources>
+        <!-- iOS System Colors -->
+        <Color x:Key="iOSBlue">#007AFF</Color>
+        <Color x:Key="iOSRed">#FF3B30</Color>
+        <Color x:Key="iOSGray">#8E8E93</Color>
+        <Color x:Key="iOSGray2">#AEAEB2</Color>
+        <Color x:Key="iOSGray5">#E5E5EA</Color>
+        <Color x:Key="iOSGray6">#F2F2F7</Color>
+        <Color x:Key="iOSLabel">#000000</Color>
+        <Color x:Key="iOSSecondaryLabel">#3C3C4399</Color>
+        <Color x:Key="iOSTertiaryLabel">#3C3C434D</Color>
+        <Color x:Key="iOSGroupedBg">#FFFFFF</Color>
+        <Color x:Key="iOSOrange">#FF9500</Color>
+        <Color x:Key="iOSPurple">#AF52DE</Color>
+        <Color x:Key="iOSTeal">#5AC8FA</Color>
+    </ContentPage.Resources>
+
+    <Grid RowDefinitions="Auto,Auto,Auto,*">
+
+        <!-- Header -->
+        <Grid Grid.Row="0"
+              BackgroundColor="White"
+              Padding="20,16,20,12">
+            <Grid ColumnDefinitions="*,Auto">
+                <!-- Month & Year -->
+                <VerticalStackLayout Grid.Column="0" Spacing="2">
+                    <Label Text="{Binding MonthYear}"
+                           FontSize="28"
+                           FontAttributes="Bold"
+                           TextColor="{StaticResource iOSLabel}" />
+                    <Label Text="{Binding WeekLabel}"
+                           FontSize="13"
+                           TextColor="{StaticResource iOSGray}" />
+                </VerticalStackLayout>
+                <!-- Nav arrows -->
+                <HorizontalStackLayout Grid.Column="1" Spacing="4" VerticalOptions="Center">
+                    <Button Text="&#x276E;"
+                            Command="{Binding PreviousPageCommand}"
+                            IsEnabled="{Binding CanGoBack}"
+                            BackgroundColor="Transparent"
+                            TextColor="{StaticResource iOSBlue}"
+                            FontSize="18"
+                            WidthRequest="40"
+                            HeightRequest="40"
+                            Padding="0" />
+                    <Button Text="&#x276F;"
+                            Command="{Binding NextPageCommand}"
+                            IsEnabled="{Binding CanGoForward}"
+                            BackgroundColor="Transparent"
+                            TextColor="{StaticResource iOSBlue}"
+                            FontSize="18"
+                            WidthRequest="40"
+                            HeightRequest="40"
+                            Padding="0" />
+                </HorizontalStackLayout>
+            </Grid>
+        </Grid>
+
+        <!-- Day selector strip -->
+        <Grid Grid.Row="1" BackgroundColor="White" Padding="0,0,0,12">
+            <CollectionView ItemsSource="{Binding Days}"
+                            SelectionMode="Single"
+                            SelectedItem="{Binding SelectedDay}"
+                            HeightRequest="76"
+                            Margin="12,0">
+                <CollectionView.ItemsLayout>
+                    <LinearItemsLayout Orientation="Horizontal" ItemSpacing="0" />
+                </CollectionView.ItemsLayout>
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Grid WidthRequest="52" HeightRequest="72">
+                            <VerticalStackLayout VerticalOptions="Center"
+                                                 HorizontalOptions="Center"
+                                                 Spacing="4">
+                                <!-- Day of week label -->
+                                <Label Text="{Binding DayOfWeek}"
+                                       FontSize="11"
+                                       TextColor="{Binding IsToday, Converter={toolkit:BoolToObjectConverter TrueObject={StaticResource iOSRed}, FalseObject={StaticResource iOSGray}}}"
+                                       HorizontalOptions="Center"
+                                       TextTransform="Uppercase" />
+                                <!-- Day number circle -->
+                                <Grid WidthRequest="36" HeightRequest="36" HorizontalOptions="Center">
+                                    <BoxView CornerRadius="18"
+                                             WidthRequest="36"
+                                             HeightRequest="36"
+                                             Color="{Binding IsSelected, Converter={toolkit:BoolToObjectConverter TrueObject={StaticResource iOSRed}, FalseObject=Transparent}}"
+                                             HorizontalOptions="Center"
+                                             VerticalOptions="Center" />
+                                    <Label Text="{Binding DayNumber}"
+                                           FontSize="17"
+                                           FontAttributes="{Binding IsToday, Converter={toolkit:BoolToObjectConverter TrueObject=Bold, FalseObject=None}}"
+                                           TextColor="{Binding IsSelected, Converter={toolkit:BoolToObjectConverter TrueObject=White, FalseObject={StaticResource iOSLabel}}}"
+                                           HorizontalOptions="Center"
+                                           VerticalOptions="Center" />
+                                </Grid>
+                                <!-- Dot indicator for bookings -->
+                                <BoxView WidthRequest="5"
+                                         HeightRequest="5"
+                                         CornerRadius="2.5"
+                                         HorizontalOptions="Center"
+                                         Color="{Binding HasBookings, Converter={toolkit:BoolToObjectConverter TrueObject={StaticResource iOSGray2}, FalseObject=Transparent}}" />
+                            </VerticalStackLayout>
+                        </Grid>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+            <!-- Separator -->
+            <BoxView HeightRequest="0.5"
+                     Color="{StaticResource iOSGray5}"
+                     VerticalOptions="End" />
+        </Grid>
 
         <!-- Activity indicator -->
-        <ActivityIndicator Grid.Row="0"
+        <ActivityIndicator Grid.Row="2"
                            IsRunning="{Binding IsLoading}"
                            IsVisible="{Binding IsLoading}"
+                           Color="{StaticResource iOSGray}"
                            HorizontalOptions="Center"
-                           Margin="0,8" />
+                           Margin="0,24" />
 
-        <!-- Error banner (UX F-002) -->
-        <Frame Grid.Row="1"
-               IsVisible="{Binding HasError}"
-               BackgroundColor="#FDECEA"
-               BorderColor="#F44336"
-               Padding="12"
-               Margin="16,4">
-            <VerticalStackLayout Spacing="8">
-                <Label Text="{Binding ErrorMessage}"
-                       TextColor="#B71C1C"
-                       FontSize="14" />
-                <Button Text="Retry"
-                        Command="{Binding LoadCommand}"
-                        BackgroundColor="#F44336"
-                        TextColor="White"
-                        HorizontalOptions="Start"
-                        Padding="12,6" />
+        <!-- Day detail content -->
+        <ScrollView Grid.Row="3" Padding="0,8,0,0">
+            <VerticalStackLayout Spacing="0"
+                                 IsVisible="{Binding HasSelectedDay}">
+
+                <!-- Booked sessions list -->
+                <CollectionView ItemsSource="{Binding SelectedDay.BookedSlots}"
+                                SelectionMode="None"
+                                IsVisible="{Binding SelectedDay.HasBookings}">
+                    <CollectionView.ItemsLayout>
+                        <LinearItemsLayout Orientation="Vertical" ItemSpacing="0" />
+                    </CollectionView.ItemsLayout>
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Padding="20,0,20,0" HeightRequest="60">
+                                <Grid ColumnDefinitions="4,12,*" ColumnSpacing="0">
+                                    <!-- Color bar -->
+                                    <BoxView Grid.Column="0"
+                                             BackgroundColor="{StaticResource iOSRed}"
+                                             CornerRadius="2"
+                                             VerticalOptions="Fill"
+                                             Margin="0,6" />
+                                    <!-- Content -->
+                                    <VerticalStackLayout Grid.Column="2"
+                                                         VerticalOptions="Center"
+                                                         Spacing="2">
+                                        <Label Text="{Binding .}"
+                                               FontSize="15"
+                                               TextColor="{StaticResource iOSLabel}" />
+                                        <Label Text="30 min"
+                                               FontSize="13"
+                                               TextColor="{StaticResource iOSGray}" />
+                                    </VerticalStackLayout>
+                                </Grid>
+                                <!-- Bottom separator -->
+                                <BoxView HeightRequest="0.5"
+                                         Color="{StaticResource iOSGray5}"
+                                         VerticalOptions="End"
+                                         Margin="36,0,0,0" />
+                            </Grid>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+
+                <!-- Available slots section -->
+                <VerticalStackLayout IsVisible="{Binding HasAvailableSlots}"
+                                     Padding="20,16,20,0"
+                                     Spacing="10">
+                    <Label Text="Available"
+                           FontSize="13"
+                           FontAttributes="Bold"
+                           TextColor="{StaticResource iOSGray}"
+                           TextTransform="Uppercase"
+                           Margin="0,0,0,4" />
+                    <FlexLayout BindableLayout.ItemsSource="{Binding SelectedDay.AvailableSlots}"
+                                Wrap="Wrap"
+                                JustifyContent="Start"
+                                AlignItems="Start">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate>
+                                <Frame BackgroundColor="White"
+                                       CornerRadius="8"
+                                       Padding="10,6"
+                                       Margin="0,0,8,8"
+                                       HasShadow="False"
+                                       BorderColor="{StaticResource iOSGray5}">
+                                    <Label Text="{Binding .}"
+                                           FontSize="13"
+                                           TextColor="{StaticResource iOSBlue}" />
+                                </Frame>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </FlexLayout>
+                </VerticalStackLayout>
+
+                <!-- Empty state -->
+                <VerticalStackLayout Spacing="6"
+                                     HorizontalOptions="Center"
+                                     Margin="0,60"
+                                     IsVisible="{Binding SelectedDayIsEmpty}">
+                    <Label Text="No Events"
+                           FontSize="20"
+                           FontAttributes="Bold"
+                           TextColor="{StaticResource iOSLabel}"
+                           HorizontalOptions="Center" />
+                    <Label Text="Nothing scheduled for this day."
+                           FontSize="15"
+                           TextColor="{StaticResource iOSGray}"
+                           HorizontalOptions="Center" />
+                </VerticalStackLayout>
+
             </VerticalStackLayout>
-        </Frame>
-
-        <!-- Calendar days list -->
-        <CollectionView Grid.Row="2"
-                        ItemsSource="{Binding Days}"
-                        Margin="16,4">
-            <CollectionView.ItemTemplate>
-                <DataTemplate>
-                    <Frame Margin="0,4" Padding="12" BorderColor="#E0E0E0">
-                        <Grid ColumnDefinitions="*,Auto,Auto">
-
-                            <!-- Date -->
-                            <Label Grid.Column="0"
-                                   Text="{Binding Date}"
-                                   FontAttributes="Bold"
-                                   VerticalOptions="Center" />
-
-                            <!-- Available slots count -->
-                            <VerticalStackLayout Grid.Column="1"
-                                                 HorizontalOptions="Center"
-                                                 Margin="8,0">
-                                <Label Text="{Binding AvailableSlots.Count}"
-                                       FontSize="18"
-                                       FontAttributes="Bold"
-                                       TextColor="#2E7D32"
-                                       HorizontalOptions="Center" />
-                                <Label Text="Available"
-                                       FontSize="11"
-                                       TextColor="#2E7D32"
-                                       HorizontalOptions="Center" />
-                            </VerticalStackLayout>
-
-                            <!-- Booked slots count -->
-                            <VerticalStackLayout Grid.Column="2"
-                                                 HorizontalOptions="Center"
-                                                 Margin="8,0">
-                                <Label Text="{Binding BookedSlots.Count}"
-                                       FontSize="18"
-                                       FontAttributes="Bold"
-                                       TextColor="#C62828"
-                                       HorizontalOptions="Center" />
-                                <Label Text="Booked"
-                                       FontSize="11"
-                                       TextColor="#C62828"
-                                       HorizontalOptions="Center" />
-                            </VerticalStackLayout>
-
-                        </Grid>
-                    </Frame>
-                </DataTemplate>
-            </CollectionView.ItemTemplate>
-        </CollectionView>
+        </ScrollView>
 
     </Grid>
 

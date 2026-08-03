@@ -1,0 +1,30 @@
+name: agenda-buddy-seed
+
+services:
+  mongo:
+    image: mongo:7
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  mongo-seed:
+    image: mongo:7
+    depends_on:
+      mongo:
+        condition: service_healthy
+    volumes:
+      - ./seed-providers.json:/seed/seed-providers.json:ro
+      - ./seed-customers.json:/seed/seed-customers.json:ro
+      - ./seed-credentials.json:/seed/seed-credentials.json:ro
+      - ./seed-mongo.sh:/seed/seed-mongo.sh:ro
+    entrypoint: ["bash", "/seed/seed-mongo.sh"]
+
+volumes:
+  mongo-data:
+    driver: local

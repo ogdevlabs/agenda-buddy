@@ -38,6 +38,9 @@ public static class MauiProgram
             client.BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"] ?? "http://localhost:6036/");
         });
 
+        // User session (singleton — decoded JWT cached across pages)
+        builder.Services.AddSingleton<IUserSessionService, UserSessionService>();
+
         // API services
         builder.Services.AddTransient<IAuthService, AuthService>();
         builder.Services.AddTransient<IBookingApiService, BookingApiService>();

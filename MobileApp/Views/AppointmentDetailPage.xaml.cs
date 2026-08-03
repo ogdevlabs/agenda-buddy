@@ -1,19 +1,35 @@
 #if MOBILE
 using Library.Entities;
 using MobileApp.Infrastructure;
+using MobileApp.Models;
 using MobileApp.ViewModels;
 
 namespace MobileApp.Views;
 
 [QueryProperty(nameof(AppointmentId), "appointmentId")]
+[QueryProperty(nameof(CustomerEmail), "customerEmail")]
+[QueryProperty(nameof(CustomerName), "customerName")]
+[QueryProperty(nameof(CustomerPhone), "customerPhone")]
+[QueryProperty(nameof(ProviderName), "providerName")]
+[QueryProperty(nameof(DisplayName), "displayName")]
+[QueryProperty(nameof(ScheduledAtStr), "scheduledAt")]
+[QueryProperty(nameof(StatusStr), "status")]
+[QueryProperty(nameof(ServiceName), "serviceName")]
+[QueryProperty(nameof(CustomerNotes), "customerNotes")]
 public partial class AppointmentDetailPage : ContentPage
 {
     private readonly AppointmentDetailViewModel _viewModel;
 
-    public string AppointmentId
-    {
-        set => _viewModel.AppointmentId = value;
-    }
+    public string AppointmentId { get; set; } = string.Empty;
+    public string CustomerEmail { get; set; } = string.Empty;
+    public string CustomerName { get; set; } = string.Empty;
+    public string CustomerPhone { get; set; } = string.Empty;
+    public string ProviderName { get; set; } = string.Empty;
+    public string DisplayName { get; set; } = string.Empty;
+    public string ScheduledAtStr { get; set; } = string.Empty;
+    public string StatusStr { get; set; } = string.Empty;
+    public string ServiceName { get; set; } = string.Empty;
+    public string CustomerNotes { get; set; } = string.Empty;
 
     public AppointmentDetailPage(AppointmentDetailViewModel viewModel)
     {
@@ -28,7 +44,25 @@ public partial class AppointmentDetailPage : ContentPage
     protected override void OnAppearing()
     {
         base.OnAppearing();
-        _viewModel.LoadCommand.Execute(null);
+        _viewModel.AppointmentId = AppointmentId;
+
+        var fallback = new AppointmentDetail
+        {
+            Id = AppointmentId,
+            CustomerEmail = CustomerEmail,
+            CustomerName = CustomerName,
+            CustomerPhone = CustomerPhone,
+            ProviderName = ProviderName,
+            DisplayName = string.IsNullOrEmpty(DisplayName) ? CustomerName : DisplayName,
+            ContactEmail = CustomerEmail,
+            ContactPhone = CustomerPhone,
+            ScheduledAt = DateTime.TryParse(ScheduledAtStr, out var dt) ? dt : DateTime.Now,
+            Status = Enum.TryParse<AppointmentStatus>(StatusStr, out var st) ? st : AppointmentStatus.Requested,
+            ServiceName = ServiceName,
+            CustomerNotes = CustomerNotes
+        };
+
+        _viewModel.LoadWithFallbackCommand.Execute(fallback);
     }
 
     private async void OnActionRequested(object? sender, AppointmentActionEventArgs e)
@@ -36,12 +70,10 @@ public partial class AppointmentDetailPage : ContentPage
         switch (e.Action)
         {
             case ActionType.Confirm:
-                // UX F-005: confirming an appointment is affirmative — no bottom sheet needed.
                 await _viewModel.ExecuteStatusUpdateAsync(AppointmentStatus.Confirmed);
                 break;
 
             case ActionType.Cancel:
-                // UX F-005: destructive action → bottom sheet (DisplayActionSheet), NOT modal alert.
                 var cancelChoice = await DisplayActionSheetAsync(
                     "Cancel this appointment?",
                     "Keep it",
@@ -61,6 +93,11 @@ public partial class AppointmentDetailPage : ContentPage
                     await _viewModel.ExecuteStatusUpdateAsync(AppointmentStatus.Completed);
                 break;
         }
+    }
+
+    private async void OnBackClicked(object? sender, EventArgs e)
+    {
+        await Shell.Current.GoToAsync("..");
     }
 
     private void OnUnauthorizedAccess(object? sender, EventArgs e)

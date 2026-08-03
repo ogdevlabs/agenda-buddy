@@ -1,4 +1,6 @@
 #if MOBILE
+using MobileApp.Infrastructure;
+using MobileApp.Models;
 using MobileApp.ViewModels;
 
 namespace MobileApp.Views;
@@ -6,11 +8,13 @@ namespace MobileApp.Views;
 public partial class DashboardPage : ContentPage
 {
     private readonly DashboardViewModel _viewModel;
+    private readonly ISecureStorageService _secureStorage;
 
-    public DashboardPage(DashboardViewModel viewModel)
+    public DashboardPage(DashboardViewModel viewModel, ISecureStorageService secureStorage)
     {
         InitializeComponent();
         _viewModel = viewModel;
+        _secureStorage = secureStorage;
         BindingContext = _viewModel;
     }
 
@@ -20,16 +24,32 @@ public partial class DashboardPage : ContentPage
         _viewModel.LoadCommand.Execute(null);
     }
 
-    private async void OnAppointmentSelected(object sender, SelectionChangedEventArgs e)
+    private async void OnViewDetailsClicked(object? sender, EventArgs e)
     {
-        if (e.CurrentSelection.FirstOrDefault() is not MobileApp.Models.AppointmentSummary selected)
+        if (sender is not Button btn || btn.CommandParameter is not AppointmentSummary selected)
             return;
 
-        // Clear selection so the user can tap the same item again
-        if (sender is CollectionView cv)
-            cv.SelectedItem = null;
+        var nav = new Dictionary<string, object>
+        {
+            ["appointmentId"] = selected.Id,
+            ["customerEmail"] = selected.CustomerEmail,
+            ["customerName"] = selected.CustomerName,
+            ["customerPhone"] = selected.CustomerPhone,
+            ["providerName"] = selected.ProviderName,
+            ["displayName"] = selected.DisplayName,
+            ["scheduledAt"] = selected.ScheduledAt.ToString("O"),
+            ["status"] = selected.Status.ToString(),
+            ["serviceName"] = selected.ServiceName,
+            ["customerNotes"] = selected.CustomerNotes ?? ""
+        };
 
-        await Shell.Current.GoToAsync($"appointmentDetail?appointmentId={selected.Id}");
+        await Shell.Current.GoToAsync("appointmentDetail", nav);
+    }
+
+    private async void OnLogoutClicked(object? sender, EventArgs e)
+    {
+        _secureStorage.Remove(JwtDelegatingHandler.JwtKey);
+        await Shell.Current.GoToAsync("//login");
     }
 }
 #endif

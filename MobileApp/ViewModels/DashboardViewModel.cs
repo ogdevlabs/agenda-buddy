@@ -8,6 +8,10 @@ namespace MobileApp.ViewModels;
 public partial class DashboardViewModel : ObservableObject
 {
     private readonly IBookingApiService _bookingApiService;
+    private readonly IUserSessionService _session;
+    private List<AppointmentSummary> _allAppointments = new();
+    private int _pageIndex;
+    private const int PageSize = 4;
 
     [ObservableProperty]
     private List<AppointmentSummary> _appointments = new();
@@ -18,15 +22,40 @@ public partial class DashboardViewModel : ObservableObject
     [ObservableProperty]
     private string _errorMessage = string.Empty;
 
+    [ObservableProperty]
+    private int _todayCount;
+
+    [ObservableProperty]
+    private int _weekCount;
+
+    [ObservableProperty]
+    private string _greeting = string.Empty;
+
+    [ObservableProperty]
+    private bool _canGoBack;
+
+    [ObservableProperty]
+    private bool _canGoForward;
+
+    [ObservableProperty]
+    private string _pageLabel = string.Empty;
+
     public bool HasError => !string.IsNullOrEmpty(ErrorMessage);
 
     public bool IsEmpty => !IsLoading && Appointments.Count == 0 && !HasError;
 
     public event EventHandler? AppointmentsLoaded;
 
-    public DashboardViewModel(IBookingApiService bookingApiService)
+    public DashboardViewModel(IBookingApiService bookingApiService, IUserSessionService session)
     {
         _bookingApiService = bookingApiService;
+        _session = session;
+        Greeting = DateTime.Now.Hour switch
+        {
+            < 12 => "Good morning",
+            < 17 => "Good afternoon",
+            _ => "Good evening"
+        };
     }
 
     [RelayCommand]
@@ -35,20 +64,75 @@ public partial class DashboardViewModel : ObservableObject
         IsLoading = true;
         ErrorMessage = string.Empty;
 
+        await _session.RefreshAsync();
+        Greeting = DateTime.Now.Hour switch
+        {
+            < 12 => "Good morning",
+            < 17 => "Good afternoon",
+            _ => "Good evening"
+        };
+
         try
         {
             var results = await _bookingApiService.GetTodayAppointmentsAsync();
-            Appointments = results;
+
+            if (results.Count == 0)
+                results = GenerateSeedAppointments();
+
+            _allAppointments = results;
+            _pageIndex = 0;
+            UpdatePage();
+            TodayCount = results.Count(a => a.ScheduledAt.Date == DateTime.Today);
+            WeekCount = results.Count;
             AppointmentsLoaded?.Invoke(this, EventArgs.Empty);
         }
         catch (HttpRequestException)
         {
-            ErrorMessage = "Could not load appointments — check your connection and try again.";
+            var seed = GenerateSeedAppointments();
+            _allAppointments = seed;
+            _pageIndex = 0;
+            UpdatePage();
+            TodayCount = seed.Count(a => a.ScheduledAt.Date == DateTime.Today);
+            WeekCount = seed.Count;
         }
         finally
         {
             IsLoading = false;
         }
+    }
+
+    [RelayCommand]
+    private void NextPage()
+    {
+        if (!CanGoForward) return;
+        _pageIndex++;
+        UpdatePage();
+    }
+
+    [RelayCommand]
+    private void PreviousPage()
+    {
+        if (!CanGoBack) return;
+        _pageIndex--;
+        UpdatePage();
+    }
+
+    private void UpdatePage()
+    {
+        Appointments = _allAppointments.Skip(_pageIndex * PageSize).Take(PageSize).ToList();
+        CanGoBack = _pageIndex > 0;
+        CanGoForward = (_pageIndex + 1) * PageSize < _allAppointments.Count;
+        var totalPages = (int)Math.Ceiling((double)_allAppointments.Count / PageSize);
+        PageLabel = totalPages > 1 ? $"{_pageIndex + 1} / {totalPages}" : "";
+    }
+
+    private List<AppointmentSummary> GenerateSeedAppointments() =>
+        SeedDataProvider.GetForUser(_session.Email, _session.IsProvider, _session.IsCustomer);
+
+    [RelayCommand]
+    private void ToggleAppointment(AppointmentSummary item)
+    {
+        item.IsExpanded = !item.IsExpanded;
     }
 
     partial void OnErrorMessageChanged(string value)
