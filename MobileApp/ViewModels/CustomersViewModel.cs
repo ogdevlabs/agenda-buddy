@@ -88,6 +88,21 @@ public partial class CustomersViewModel : ObservableObject
         customer.IsExpanded = !customer.IsExpanded;
     }
 
+    [RelayCommand]
+    private async Task ShowSessionsAsync(CustomerSummary customer)
+    {
+        var title = customer.IsProvider
+            ? $"{customer.FullName}'s Services"
+            : $"Sessions with {customer.FullName}";
+
+        var body = customer.IsProvider
+            ? $"{customer.TotalSessions} services available\n\n{customer.LastSession}\n\nAvailable: {customer.Availability}"
+            : $"{customer.TotalSessions} total sessions\n\nLast: {customer.LastSession}\n\nContact: {customer.Phone}";
+
+        if (Application.Current?.Windows.FirstOrDefault()?.Page is { } page)
+            await page.DisplayAlertAsync(title, body, "OK");
+    }
+
     private List<CustomerSummary> SeedContacts()
     {
         if (_session.IsCustomer)
