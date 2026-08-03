@@ -16,6 +16,7 @@ public partial class MessageThreadStub : ObservableObject
     public string SenderName => OtherPartyEmail.Split('@')[0].Replace(".", " ");
     public string Initial => string.IsNullOrEmpty(OtherPartyEmail) ? "?" : OtherPartyEmail[0].ToString().ToUpper();
     public string TimeAgo => FormatTimeAgo(LastMessageAt);
+    public bool HasUnread => UnreadCount > 0;
 
     private static string FormatTimeAgo(DateTime dt)
     {

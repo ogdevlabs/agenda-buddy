@@ -13,7 +13,6 @@
         <Color x:Key="iOSGray">#8E8E93</Color>
         <Color x:Key="iOSGray5">#E5E5EA</Color>
         <Color x:Key="iOSLabel">#000000</Color>
-        <Color x:Key="iOSSecondaryLabel">#3C3C4399</Color>
     </ContentPage.Resources>
 
     <Grid RowDefinitions="Auto,Auto,Auto,*">
@@ -79,7 +78,7 @@
                    HorizontalTextAlignment="Center" />
         </VerticalStackLayout>
 
-        <!-- Thread list (iOS Messages style) -->
+        <!-- Thread list -->
         <CollectionView Grid.Row="3"
                         ItemsSource="{Binding Threads}"
                         IsVisible="{Binding IsLoading, Converter={StaticResource InvertedBoolConverter}}"
@@ -99,7 +98,7 @@
                                   Padding="16,12,16,12"
                                   ColumnSpacing="12">
 
-                                <!-- Avatar circle -->
+                                <!-- Avatar -->
                                 <Grid Grid.Column="0"
                                       WidthRequest="48"
                                       HeightRequest="48"
@@ -122,7 +121,7 @@
                                                      VerticalOptions="Center">
                                     <Label Text="{Binding SenderName}"
                                            FontSize="16"
-                                           FontAttributes="{Binding UnreadCount, Converter={toolkit:BoolToObjectConverter TrueObject=Bold, FalseObject=None}}"
+                                           FontAttributes="{Binding HasUnread, Converter={toolkit:BoolToObjectConverter TrueObject=Bold, FalseObject=None}}"
                                            TextColor="{StaticResource iOSLabel}"
                                            LineBreakMode="TailTruncation" />
                                     <Label Text="{Binding LastMessageBody}"
@@ -142,7 +141,7 @@
                                            TextColor="{StaticResource iOSGray}"
                                            HorizontalOptions="End" />
                                     <!-- Unread badge -->
-                                    <Grid IsVisible="{Binding UnreadCount}"
+                                    <Grid IsVisible="{Binding HasUnread}"
                                           HorizontalOptions="End">
                                         <BoxView CornerRadius="10"
                                                  WidthRequest="22"
