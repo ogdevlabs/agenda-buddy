@@ -20,4 +20,6 @@ public partial class AppointmentSummary : ObservableObject
 
     [ObservableProperty]
     private bool _isExpanded;
+
+    public bool IsPast => ScheduledAt < DateTime.Now;
 }
