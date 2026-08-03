@@ -1,9 +1,10 @@
 #!/bin/bash
 set -euo pipefail
 
-MONGO_HOST="mongo:27017"
+# MONGO_HOST can be overridden via env (e.g. "localhost:27017" for host-network mode)
+MONGO_HOST="${MONGO_HOST:-mongo:27017}"
 
-echo "==> Waiting for MongoDB to be ready..."
+echo "==> Waiting for MongoDB at $MONGO_HOST..."
 until mongosh --host "$MONGO_HOST" --eval "db.adminCommand('ping')" --quiet 2>/dev/null; do
   sleep 1
 done
