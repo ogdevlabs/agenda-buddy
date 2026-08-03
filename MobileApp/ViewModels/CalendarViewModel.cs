@@ -131,60 +131,8 @@ public partial class CalendarViewModel : ObservableObject
             d.IsSelected = d == value;
     }
 
-    private List<CalendarDaySummary> GenerateSeedWeek()
-    {
-        var today = DateTime.Today;
-        var days = new List<CalendarDaySummary>();
-        var email = _session.Email;
-
-        string[][] providerBookings =
-        [
-            ["9:00 AM — Alex Chen", "10:00 AM — Priya Sharma", "2:00 PM — David Thompson"],
-            ["8:30 AM — Priya Sharma", "11:00 AM — Alex Chen"],
-            ["9:30 AM — David Thompson", "1:00 PM — Alex Chen", "3:30 PM — Priya Sharma", "5:00 PM — David Thompson"],
-            ["10:00 AM — Priya Sharma"],
-            ["9:00 AM — Alex Chen", "11:30 AM — David Thompson", "4:00 PM — Priya Sharma"],
-            [],
-            []
-        ];
-
-        string[][] seedAvailable =
-        [
-            ["10:30 AM", "11:00 AM", "3:00 PM", "4:00 PM"],
-            ["9:00 AM", "9:30 AM", "10:00 AM", "1:00 PM", "2:00 PM", "3:00 PM"],
-            ["10:00 AM", "2:00 PM"],
-            ["8:30 AM", "9:00 AM", "9:30 AM", "11:00 AM", "1:00 PM", "2:00 PM", "3:00 PM", "4:00 PM"],
-            ["10:00 AM", "2:00 PM", "3:00 PM"],
-            ["9:00 AM", "9:30 AM", "10:00 AM", "10:30 AM", "11:00 AM", "1:00 PM", "2:00 PM", "3:00 PM", "4:00 PM"],
-            ["9:00 AM", "9:30 AM", "10:00 AM", "10:30 AM", "11:00 AM", "1:00 PM", "2:00 PM", "3:00 PM", "4:00 PM"]
-        ];
-
-        var customerName = email switch
-        {
-            "alex.chen@agendabuddy.dev" => "Alex Chen",
-            "priya.sharma@agendabuddy.dev" => "Priya Sharma",
-            "david.thompson@agendabuddy.dev" => "David Thompson",
-            _ => ""
-        };
-
-        for (var i = 0; i < 7; i++)
-        {
-            var date = today.AddDays(i);
-            var booked = providerBookings[i].ToList();
-
-            if (_session.IsCustomer && !string.IsNullOrEmpty(customerName))
-                booked = booked.Where(s => s.Contains(customerName)).ToList();
-
-            days.Add(new CalendarDaySummary
-            {
-                Date = date.ToString("yyyy-MM-dd"),
-                BookedSlots = booked,
-                AvailableSlots = _session.IsProvider ? seedAvailable[i].ToList() : []
-            });
-        }
-
-        return days;
-    }
+    private List<CalendarDaySummary> GenerateSeedWeek() =>
+        SeedDataProvider.GetCalendarWeek(_session.Email, _session.IsProvider, _session.IsCustomer);
 
     [RelayCommand]
     private void ToggleDay(CalendarDaySummary day)

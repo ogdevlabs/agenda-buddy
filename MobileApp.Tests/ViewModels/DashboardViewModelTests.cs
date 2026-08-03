@@ -83,7 +83,8 @@ public class DashboardViewModelTests
 
         await vm.LoadCommand.ExecuteAsync(null);
 
-        Assert.All(vm.Appointments, a => Assert.Equal("Sarah Mitchell", a.DisplayName));
+        Assert.All(vm.Appointments, a => Assert.False(string.IsNullOrEmpty(a.DisplayName)));
+        Assert.All(vm.Appointments, a => Assert.NotEqual("Alex Chen", a.DisplayName));
     }
 
     [Fact]

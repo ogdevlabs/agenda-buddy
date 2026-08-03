@@ -1,6 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Library.Entities;
 using MobileApp.Models;
 using MobileApp.Services;
 
@@ -127,120 +126,8 @@ public partial class DashboardViewModel : ObservableObject
         PageLabel = totalPages > 1 ? $"{_pageIndex + 1} / {totalPages}" : "";
     }
 
-    private List<AppointmentSummary> GenerateSeedAppointments()
-    {
-        var today = DateTime.Today;
-        var email = _session.Email;
-
-        var all = new List<AppointmentSummary>
-        {
-            new()
-            {
-                Id = "seed-1",
-                CustomerEmail = "alex.chen@agendabuddy.dev",
-                CustomerName = "Alex Chen",
-                CustomerPhone = "+1 (415) 555-0142",
-                ProviderEmail = "sarah.mitchell@agendabuddy.dev",
-                ProviderName = "Sarah Mitchell",
-                ScheduledAt = today.AddHours(9),
-                Status = AppointmentStatus.Confirmed,
-                ServiceName = "Personal Training",
-                CustomerNotes = "Focus on upper body today, shoulder has been tight"
-            },
-            new()
-            {
-                Id = "seed-2",
-                CustomerEmail = "priya.sharma@agendabuddy.dev",
-                CustomerName = "Priya Sharma",
-                CustomerPhone = "+1 (628) 555-0198",
-                ProviderEmail = "sarah.mitchell@agendabuddy.dev",
-                ProviderName = "Sarah Mitchell",
-                ScheduledAt = today.AddHours(10),
-                Status = AppointmentStatus.Confirmed,
-                ServiceName = "Yoga Session",
-                CustomerNotes = "Beginner level, working on flexibility"
-            },
-            new()
-            {
-                Id = "seed-3",
-                CustomerEmail = "david.thompson@agendabuddy.dev",
-                CustomerName = "David Thompson",
-                CustomerPhone = "+1 (510) 555-0267",
-                ProviderEmail = "sarah.mitchell@agendabuddy.dev",
-                ProviderName = "Sarah Mitchell",
-                ScheduledAt = today.AddHours(14),
-                Status = AppointmentStatus.Requested,
-                ServiceName = "HIIT Coaching",
-                CustomerNotes = "First session — wants to discuss goals"
-            },
-            new()
-            {
-                Id = "seed-4",
-                CustomerEmail = "priya.sharma@agendabuddy.dev",
-                CustomerName = "Priya Sharma",
-                CustomerPhone = "+1 (628) 555-0198",
-                ProviderEmail = "sarah.mitchell@agendabuddy.dev",
-                ProviderName = "Sarah Mitchell",
-                ScheduledAt = today.AddHours(15).AddMinutes(30),
-                Status = AppointmentStatus.Confirmed,
-                ServiceName = "Meditation",
-                CustomerNotes = ""
-            },
-            new()
-            {
-                Id = "seed-5",
-                CustomerEmail = "alex.chen@agendabuddy.dev",
-                CustomerName = "Alex Chen",
-                CustomerPhone = "+1 (415) 555-0142",
-                ProviderEmail = "sarah.mitchell@agendabuddy.dev",
-                ProviderName = "Sarah Mitchell",
-                ScheduledAt = today.AddDays(1).AddHours(9),
-                Status = AppointmentStatus.Confirmed,
-                ServiceName = "Personal Training",
-                CustomerNotes = "Leg day, bring knee brace"
-            },
-            new()
-            {
-                Id = "seed-6",
-                CustomerEmail = "david.thompson@agendabuddy.dev",
-                CustomerName = "David Thompson",
-                CustomerPhone = "+1 (510) 555-0267",
-                ProviderEmail = "sarah.mitchell@agendabuddy.dev",
-                ProviderName = "Sarah Mitchell",
-                ScheduledAt = today.AddDays(1).AddHours(11),
-                Status = AppointmentStatus.Requested,
-                ServiceName = "HIIT Coaching",
-                CustomerNotes = "Can we do outdoor if weather is good?"
-            },
-            new()
-            {
-                Id = "seed-7",
-                CustomerEmail = "priya.sharma@agendabuddy.dev",
-                CustomerName = "Priya Sharma",
-                CustomerPhone = "+1 (628) 555-0198",
-                ProviderEmail = "sarah.mitchell@agendabuddy.dev",
-                ProviderName = "Sarah Mitchell",
-                ScheduledAt = today.AddDays(2).AddHours(10),
-                Status = AppointmentStatus.Confirmed,
-                ServiceName = "Yoga Session",
-                CustomerNotes = "Wants to try hot yoga format"
-            }
-        };
-
-        List<AppointmentSummary> filtered;
-
-        if (_session.IsProvider)
-            filtered = all.Where(a => a.ProviderEmail.Equals(email, StringComparison.OrdinalIgnoreCase)).ToList();
-        else if (_session.IsCustomer)
-            filtered = all.Where(a => a.CustomerEmail.Equals(email, StringComparison.OrdinalIgnoreCase)).ToList();
-        else
-            filtered = all;
-
-        foreach (var a in filtered)
-            a.DisplayName = _session.IsCustomer ? a.ProviderName : a.CustomerName;
-
-        return filtered;
-    }
+    private List<AppointmentSummary> GenerateSeedAppointments() =>
+        SeedDataProvider.GetForUser(_session.Email, _session.IsProvider, _session.IsCustomer);
 
     [RelayCommand]
     private void ToggleAppointment(AppointmentSummary item)
