@@ -1,39 +1,43 @@
 # State
-<!-- pdlc-template-version: 2.4.0 -->
+<!-- pdlc-template-version: 3.0.0 -->
 <!-- This file is the live operational state of the PDLC workflow.
      It is written by PDLC hooks and commands — do not edit manually unless recovering from an error.
      Claude reads this file at the start of every session to auto-resume from the last checkpoint.
      If this file is missing or empty, PDLC will prompt you to run /pdlc init. -->
 
-**Last updated:** 2026-07-31T11:40:00Z
+**Last updated:** 2026-08-15T16:45:00Z
 
 ---
 
 ## Current Phase
 
-Construction
+Inception
 
 ---
 
 ## Current Feature
 
-mobile-app
+aspire-wiring
 
 ---
 
-## Active Beads Task
+## Active Task
+<!-- The task currently claimed by Claude, from the git-native task store.
+     Format: [task-id] — [task title]
+     Example: F-002-T03 — Add OAuth2 login with GitHub
+     Set to "none" when no task is active. -->
 
-<!-- none — all 14 tasks closed -->
+none
 
 ---
 
 ## Roadmap Claim
 
-- **Feature ID:** F-012
-- **Beads task:** agenda-buddy-tcj
+- **Feature ID:** F-013
+- **Feature record:** docs/pdlc/tasks/F-013/_feature.md
 - **Claimed by:** oscargarcia@ogdevlabs.onmicrosoft.com
-- **Claimed at:** 2026-07-31T10:00:00Z
-- **Branch:** feature/mobile-app
+- **Claimed at:** 2026-08-15T16:45:00Z
+- **Branch:** (will be set at build pre-flight)
 
 ---
 
@@ -45,13 +49,13 @@ _None active. Run `/night-shift <F-NNN>` to start an autonomous run (requires by
 
 ## Current Sub-phase
 
-Build
+Discover
 
 ---
 
 ## Last Checkpoint
 
-Construction / Build / 2026-07-31T11:40:00Z
+Inception / Discover / 2026-08-15T16:45:00Z
 
 ---
 
@@ -71,13 +75,13 @@ none
 
 ```json
 {
-  "triggered_at": "2026-07-31T11:40:00Z",
+  "triggered_at": "2026-08-15T16:45:00Z",
   "active_task": null,
-  "sub_phase": "Build",
-  "step": "complete",
-  "skill_file": null,
-  "work_in_progress": null,
-  "next_action": "Run /pdlc ship mobile-app to open PR, or run /pdlc build to continue with next feature",
+  "sub_phase": "Discover",
+  "step": "roadmap-claim-complete",
+  "skill_file": "skills/brainstorm/steps/01-discover.md",
+  "work_in_progress": "Inception for F-013 aspire-wiring — claim recorded, pre-flight in progress",
+  "next_action": "Hydrate deep code context, then run Discover for aspire-wiring",
   "files_open": []
 }
 ```
@@ -153,3 +157,4 @@ none
 | 2026-07-31T11:00:00Z | inception_complete | Inception Complete | Plan | mobile-app |
 | 2026-07-31T11:05:00Z | construction_start | Construction Started | Build | mobile-app |
 | 2026-07-31T11:40:00Z | construction_complete | Construction Complete | Build | mobile-app |
+| 2026-08-15T16:45:00Z | roadmap_claim | Inception | Discover | aspire-wiring |

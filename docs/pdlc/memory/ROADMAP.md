@@ -1,7 +1,7 @@
 # Roadmap
 
 **Project:** Agenda Buddy
-**Last updated:** 2026-07-31T10:45:00Z
+**Last updated:** 2026-08-15T16:45:00Z
 
 ---
 
@@ -31,7 +31,8 @@
 | F-009 | reporting-dashboard | Provider sees their booking volume, revenue summary (from service fees), and customer retention metrics | 9 | Shipped | oscargarcia@ogdevlabs.onmicrosoft.com | 2026-07-31 | PR #27 |
 | F-010 | payment-integration | Connect a payment gateway (Stripe) so providers can collect fees at booking time | 10 | Shipped | oscargarcia@ogdevlabs.onmicrosoft.com | 2026-07-31 | PR #28 |
 | F-011 | upgrade-to-net10 | Upgrade all projects from .NET 8 to .NET 10 LTS — TFMs, NuGet packages, Docker base images, CI workflow | 11 | Shipped | oscargarcia@ogdevlabs.onmicrosoft.com | 2026-07-31 | PR #29 |
-| F-012 | mobile-app | Cross-platform iOS and Android mobile client — providers and customers manage appointments, services, notifications, and messaging from a native mobile experience | 12 | In Progress | oscargarcia@ogdevlabs.onmicrosoft.com | — | — |
+| F-012 | mobile-app | Cross-platform iOS and Android mobile client — providers and customers manage appointments, services, notifications, and messaging from a native mobile experience | 12 | Shipped | oscargarcia@ogdevlabs.onmicrosoft.com | 2026-07-31 | PR #31 |
+| F-013 | aspire-wiring | Wire the solution as a .NET Aspire solution — AppHost orchestration for the six microservices plus Identity, ServiceDefaults for telemetry/health/resilience, and Aspire-managed MongoDB + Kafka resources for local development | 13 | In Progress | oscargarcia@ogdevlabs.onmicrosoft.com | — | — |
 
 ---
 
