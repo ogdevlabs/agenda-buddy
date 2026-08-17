@@ -42,10 +42,20 @@ jobs:
               - 'Profession/**'
               - 'Identity/**'
               - 'Kafka/**'
+              - 'AgendaBuddy.AppHost/**'
+              - 'AgendaBuddy.ServiceDefaults/**'
               - '*.Tests/**'
               - '!MobileApp.Tests/**'
               - 'Directory.Build.props'
               - '*.sln'
+              # Without these a change to only infrastructure ran zero jobs (R-8) — the same
+              # silent-merge gap that let the AppHost land untested.
+              - '*.slnf'
+              - 'global.json'
+              - 'Dockerfile*'
+              - '*/Dockerfile'
+              - 'docker-compose*.yml'
+              - '.github/workflows/**'
             mobile:
               - 'MobileApp/**'
               - 'Library/**'
@@ -80,21 +90,46 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nuget-
 
+      # agenda-buddy-backend.slnf is the solution minus MobileApp and MobileApp.Tests. Those are
+      # covered by the three mobile jobs below, and MobileApp currently does not compile under
+      # /p:MobileWorkloads=false (agenda-buddy-prr) — a pre-existing defect that would otherwise
+      # fail this job for a reason unrelated to the backend.
       - name: Restore dependencies
-        run: dotnet restore /p:MobileWorkloads=false
+        run: dotnet restore agenda-buddy-backend.slnf /p:MobileWorkloads=false
 
       - name: Build
-        run: dotnet build --no-restore --configuration Release /p:MobileWorkloads=false
+        run: dotnet build agenda-buddy-backend.slnf --no-restore --configuration Release /p:MobileWorkloads=false
 
       - name: Test
         run: >
-          dotnet test
+          dotnet test agenda-buddy-backend.slnf
           --no-build
           --configuration Release
           --filter "Category!=Acceptance"
           --collect:"XPlat Code Coverage"
           --logger "trx;LogFileName=test-results.trx"
           --results-directory ./TestResults
+
+      # ---- F-013 guards -----------------------------------------------------
+      # No `dotnet workload install aspire` step: no such workload exists. Aspire has been
+      # NuGet-only since 9.0, so restore is the only prerequisite (verified in F-013-T01).
+      - name: Build AppHost
+        run: dotnet build AgendaBuddy.AppHost/AgendaBuddy.AppHost.csproj --configuration Release /p:MobileWorkloads=false
+
+      - name: Assert AppHost does not reference MobileApp        # AC-1.5
+        run: |
+          if dotnet list AgendaBuddy.AppHost/AgendaBuddy.AppHost.csproj reference | grep -q MobileApp; then
+            echo "::error::AppHost must not reference MobileApp"; exit 1
+          fi
+
+      # AC-2.1 / AC-2.2. Narrow by design: this is one pattern, not a secret scanner. The
+      # CONSTITUTION section 7 dependency-audit and secret-scan gate remains open, deferred to
+      # F-017 — do not read this step as closing it.
+      - name: Assert no committed database credential
+        run: |
+          if git grep -nE 'mongodb(\+srv)?://[^ "/]+:[^@"]+@' -- . ':(exclude)docs/pdlc'; then
+            echo "::error::Credential found in tracked files"; exit 1
+          fi
 
       - name: Publish test results
         uses: dorny/test-reporter@v1

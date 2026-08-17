@@ -1,3 +1,4 @@
+#nullable enable
 using System.Collections.Generic;
 using System.Linq;
 using Provider.Extensions;
@@ -92,7 +93,7 @@ public class ServiceCollectionMongoResolutionTest
                                  && descriptor.ServiceType.GetGenericTypeDefinition() == typeof(IRepository<>))
             .ToList();
 
-        Assert.Equal(1, repositories.Count);
+        Assert.Single(repositories);
         Assert.All(repositories, descriptor => Assert.Equal(ServiceLifetime.Scoped, descriptor.Lifetime));
     }
 }
