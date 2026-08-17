@@ -125,9 +125,13 @@ jobs:
       # AC-2.1 / AC-2.2. Narrow by design: this is one pattern, not a secret scanner. The
       # CONSTITUTION section 7 dependency-audit and secret-scan gate remains open, deferred to
       # F-017 — do not read this step as closing it.
+      # Scans docs/pdlc too — two of the seventeen leaked copies lived in docs/pdlc/context,
+      # so excluding that tree would exempt the one directory with a proven record of ingesting
+      # secrets. Known redaction placeholders are filtered out instead.
       - name: Assert no committed database credential
         run: |
-          if git grep -nE 'mongodb(\+srv)?://[^ "/]+:[^@"]+@' -- . ':(exclude)docs/pdlc'; then
+          if git grep -nE 'mongodb(\+srv)?://[^ "/]+:[^@"]+@' -- . \
+              | grep -vE '<REDACTED-ROTATE-THIS>|<the-leaked-password>|<user>:<' ; then
             echo "::error::Credential found in tracked files"; exit 1
           fi
 

@@ -67,6 +67,7 @@ agent-teams
 
 ## Active Blockers
 
+- **⚠️ OPERATIONAL, HIGHEST RESIDUAL SEVERITY — rotate the `agenda_buddy` Atlas credential and review the cluster access log.** F-013 removed the credential from all tracked files, which does **not** remediate the disclosure: it remains in git history and stays valid until rotated at Atlas. Threat T-001 / PRD OQ-1. Merging F-013 does not close this. *(Raised by Phantom at Party Review — it was documented in four places but absent from the one list a handoff reader scans first.)*
 - **F-013-T14 — blocked on a container runtime.** Five acceptance criteria (AC-1.1, AC-1.2, AC-1.3, AC-2.3, AC-3.4) plus observing threat T-004 in exported spans require the AppHost to actually provision MongoDB and Kafka. The build machine has neither `docker` nor `podman` installed, so they could not be verified and are recorded as BLOCKED rather than passing. Needs a human on a machine with Docker Desktop or Podman running. Everything else is attested in `docs/pdlc/design/aspire-wiring/verification.md`.
   *(The task store has no `blocked` status, so T-014 remains `open`; it is not startable work for an agent in this environment.)*
 

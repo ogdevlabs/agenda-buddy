@@ -163,6 +163,17 @@ docker compose down
 
 Note the Compose path now needs `ConnectionStrings` supplied, for the reason above.
 
+### Health endpoints
+
+Every service exposes two anonymous endpoints, for orchestrator probes:
+
+| Path | Purpose | Healthy | Unhealthy |
+|---|---|---|---|
+| `/health` | **Readiness** — runs every check, including MongoDB connectivity | `200` `Healthy` | `503` `Unhealthy` |
+| `/alive` | **Liveness** — only checks tagged `live`; does **not** touch MongoDB | `200` `Healthy` | `503` `Unhealthy` |
+
+The split is deliberate: point your restart probe at `/alive` and your traffic probe at `/health`. When MongoDB is unreachable, `/health` goes `503` so the service stops receiving traffic while `/alive` stays `200`, so nothing restarts a process that is running correctly and merely waiting on its database. Response bodies are a bare status word — no check names or exception detail. `/health` results are cached for 5 seconds, so probing it in a loop does not multiply database round-trips.
+
 ### ⚠️ The dashboard is a sensitive surface
 
 The Aspire dashboard exposes environment variables, configuration, logs, and traces for every resource. Secret parameters are masked, but treat the dashboard as privileged: do not expose its port beyond localhost, and do not screenshot it into a public issue.
