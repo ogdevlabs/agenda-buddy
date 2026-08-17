@@ -174,3 +174,47 @@
 **Context:** All six services use email as the join key for ownership checks (`EmailProvider`, `EmailCustomer` on `AppointmentEntity`; `Provider.Email`; `Customer.Email`). An opaque sub would require a sub→email lookup on every ownership check in every handler, adding per-request DB calls. The email in the JWT payload is visible to the authenticated user (they own it). PII-in-logs prohibition in CONSTITUTION.md §4 is the guard against accidental exposure.
 
 **Known implication:** If a user changes their email in their profile (F-002/F-003), their existing access token carries the old `sub` until natural 60-minute expiry. Ownership checks fail for that window; user must re-login.
+
+---
+
+## ADR-013 — .NET Aspire for local orchestration (F-013) *(design decision)*
+
+**Date:** 2026-08-17
+**Status:** Accepted
+**Feature:** F-013 aspire-wiring
+**Risk reference:** R-1 (driver compatibility), threat T-001 (committed credential), T-002 (probe amplification), T-003 (dashboard exposure)
+
+**Decision:** Adopt .NET Aspire **13.4.6** for local orchestration: an `AgendaBuddy.AppHost` project that provisions MongoDB and Kafka as containers and launches all seven API services, plus an `AgendaBuddy.ServiceDefaults` library giving every service OpenTelemetry, health checks, service discovery, and HTTP resilience. Aspire's **hosting** packages only — the `Aspire.MongoDB.Driver` **client** integration is excluded.
+
+**Context:** The solution could not be started. Every service read `MongoDB:ConnectionString`, which existed only in `appsettings.Development.json`; there was no health model, no telemetry, and `EventStore` opened a new `MongoClient` per request scope. Starting the stack meant running seven projects by hand with an undocumented gitignored `.env`.
+
+**Per CONSTITUTION §9, the packages this adds:** `Aspire.AppHost.Sdk`, `Aspire.Hosting.AppHost`, `Aspire.Hosting.MongoDB`, `Aspire.Hosting.Kafka` (13.4.6, AppHost only); `Microsoft.Extensions.Http.Resilience` and `Microsoft.Extensions.ServiceDiscovery` (10.9.0) plus five `OpenTelemetry.*` (1.17.0) in ServiceDefaults; and `Microsoft.Extensions.Configuration.Abstractions` + `Microsoft.Extensions.Diagnostics.HealthChecks.Abstractions` (10.0.0) in `Library`, which had neither. All are first-party; no new vendor and no lock-in beyond Aspire itself, which is confined to the AppHost and ServiceDefaults.
+
+**R-1 outcome — the escape hatch was taken.** Established empirically in F-013-T01, not assumed:
+
+- `Aspire.MongoDB.Driver` 13.4.6 requires `MongoDB.Driver >= 3.9.0` on every target framework. Referencing it beside the pinned 2.25.0 fails restore with `NU1605` (warning-as-error).
+- The 2.x-era alternative does not help: Aspire 9.5.2's client integration requires `[2.30.0, 3.0.0)` — still a conflict — and would pin the orchestration stack two majors back on a .NET 10 SDK. `Aspire.MongoDB.Driver.v3` is retired.
+- Upgrading the driver was explicitly out of scope: it is a second migration hiding inside this one, and 2.25.0 is the reason for three CVE pins in `Directory.Build.props:18-28`.
+
+So services register `AddSingleton<IMongoClient>` over `MongoConnectionResolver.Resolve` and use a custom `MongoHealthCheck`. The hosting side is unaffected — `Aspire.Hosting.MongoDB` resolves driver 3.9.0 inside the AppHost's own graph while each service keeps 2.25.0, verified as a 0-warning build against the real `Directory.Build.props`. **The outcome is simpler than the conditional design it replaced:** one registration path, not two.
+
+**Alternatives rejected:**
+
+| Option | Why rejected |
+|---|---|
+| Fix Docker Compose instead | Cheapest route to "one command", but delivers no health model, no telemetry, no resilience, and no connection-string injection. The Development-only configuration defect would survive, so AC-4.1 fails. |
+| Project Tye | Archived. |
+| Shell script wrapping seven `dotnet run`s | No dependency provisioning, no health model, no telemetry; keeps every hardcoded port. |
+| Adopt `IOptions<T>` throughout | The right long-term fix for stringly-typed configuration, but touches far more than the three seams this feature owns. Deferred. |
+| Upgrade `MongoDB.Driver` to 3.x | Would retire three CVE pins, genuinely attractive — but it is a second migration. Excluded; revisit as its own feature. |
+
+**Consequences:**
+
+- **A container runtime is now a hard requirement** for the local path. Previously optional, now the stack does not start without it.
+- **Docker Compose is retained but superseded** (R-4, E-12), along with every legacy configuration key, so rollback is a single `git revert` with no loss of capability.
+- **Host ports are dynamic.** Aspire pinned them by two independent routes — the launch profile and `Kestrel:Endpoints` in `appsettings.json` — and both are neutralised in the AppHost. `scripts/seed/seed-mongo.sh` is consequently stale (it also targets databases no service reads); recorded, not fixed (E-8).
+- **Connection-pool behaviour changed**: from one client per request scope to one per process. This is the intended fix (AC-4.3), but it is a real runtime behaviour change, not a refactor.
+- **The committed Atlas credential was removed from tracked files, which does not remediate the disclosure.** It remains in git history and stays valid until rotated at Atlas. Rotation and a cluster access-log review are outstanding operational actions (threat T-001, PRD OQ-1); merging F-013 does not close them.
+- **The CONSTITUTION §7 security scan is still not implemented.** F-013's CI adds a single-pattern credential assertion, which is not a scanner. Deferred to F-017.
+- **No integration-test harness exists**, so AC-1.1, AC-1.2, AC-1.3, AC-3.2 and AC-4.1 are verified manually (E-7). F-013-T10 records that attestation.
+- F-014 … F-017 filed as follow-ups.
