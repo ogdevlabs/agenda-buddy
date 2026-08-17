@@ -55,7 +55,7 @@ Build
 
 ## Last Checkpoint
 
-Construction / Build / 2026-08-17T20:12:00Z
+Construction / Build / 2026-08-17T21:05:00Z
 
 ---
 
@@ -195,3 +195,7 @@ _Superseded handoff (F-012 mobile-app, shipped) retained for reference:_
 | 2026-08-15T17:30:00Z | inception_complete | Inception Complete | Plan | aspire-wiring |
 | 2026-08-17T19:51:11Z | construction_start | Construction Started | Build | aspire-wiring |
 | 2026-08-17T20:12:00Z | task_complete | F-013-T01 done — R-1 resolved, escape hatch taken | Build | aspire-wiring |
+| 2026-08-17T20:25:00Z | wave_kickoff | Wave 2 standup — 4 dep edges added, ARCHITECTURE §3.3/§3.5 corrected | Build | aspire-wiring |
+| 2026-08-17T20:45:00Z | task_complete | F-013-T03 done — MongoConnectionResolver + MongoHealthCheck, 22 tests | Build | aspire-wiring |
+| 2026-08-17T20:58:00Z | task_complete | F-013-T02 done — AgendaBuddy.ServiceDefaults, 9 tests | Build | aspire-wiring |
+| 2026-08-17T21:05:00Z | task_complete | F-013-T07 done — KafkaClient config-driven, 6 tests | Build | aspire-wiring |

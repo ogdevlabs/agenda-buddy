@@ -3,6 +3,20 @@ using Microsoft.Extensions.Caching.Distributed;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Aspire defaults: telemetry, health checks, service discovery, HttpClient resilience.
+builder.AddServiceDefaults();
+
+// One MongoDB client per process, shared by the repositories, IMongoDbConfiguration and the
+// EventStore. Aspire injects ConnectionStrings:mongodb; the resolver also accepts every legacy
+// shape, and fails with a message naming each key it tried rather than a null-argument throw.
+builder.Services.AddSingleton<IMongoClient>(_ =>
+    new MongoClient(MongoConnectionResolver.Resolve(builder.Configuration)));
+
+// Readiness probe. Singleton so the 5s result cache is process-wide.
+builder.Services.AddSingleton<MongoHealthCheck>();
+builder.Services.AddHealthChecks()
+    .AddCheck<MongoHealthCheck>("mongodb", tags: ["ready"]);
+
 // Add services to the container.
 builder.Services.AddAuthorization();
 // Add cache
@@ -15,7 +29,10 @@ builder.Services.AddEventStore();
 // Add services required to support using MVC's model binders
 builder.Services.AddMvcCore();
 // Register Singleton instances
-builder.Services.AddSingleton<IMongoDbConfiguration, MongoDbConfiguration>();
+// Explicit factory: MongoDbConfiguration now has both an IMongoClient and a legacy
+// IConfiguration constructor, and the container cannot choose between them on its own.
+builder.Services.AddSingleton<IMongoDbConfiguration>(serviceProvider =>
+    new MongoDbConfiguration(serviceProvider.GetRequiredService<IMongoClient>()));
 builder.Services.AddSingleton<IRequestCollection, RequestCollection>();
 
 // Enable & configure JSON Problem Details error responses
@@ -33,6 +50,10 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+
+// /health runs every check; /alive only the live-tagged ones, so a service waiting on MongoDB is
+// not restarted for being unready.
+app.MapDefaultEndpoints();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

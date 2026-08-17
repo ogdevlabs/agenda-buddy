@@ -9,6 +9,20 @@ ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProt
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Aspire defaults: telemetry, health checks, service discovery, HttpClient resilience.
+builder.AddServiceDefaults();
+
+// One MongoDB client per process, shared by the repositories, IMongoDbConfiguration and the
+// EventStore. Aspire injects ConnectionStrings:mongodb; the resolver also accepts every legacy
+// shape, and fails with a message naming each key it tried rather than a null-argument throw.
+builder.Services.AddSingleton<IMongoClient>(_ =>
+    new MongoClient(MongoConnectionResolver.Resolve(builder.Configuration)));
+
+// Readiness probe. Singleton so the 5s result cache is process-wide.
+builder.Services.AddSingleton<MongoHealthCheck>();
+builder.Services.AddHealthChecks()
+    .AddCheck<MongoHealthCheck>("mongodb", tags: ["ready"]);
+
 // Add MongoDB — IdentityDb / credentials collection
 builder.Services.AddMongoDbRepository(builder.Configuration);
 
@@ -19,7 +33,10 @@ builder.Services.AddMediatR(cfg => { cfg.RegisterServicesFromAssembly(typeof(Pro
 builder.Services.AddMvcCore();
 
 // Register instances
-builder.Services.AddSingleton<IMongoDbConfiguration, MongoDbConfiguration>();
+// Explicit factory: MongoDbConfiguration now has both an IMongoClient and a legacy
+// IConfiguration constructor, and the container cannot choose between them on its own.
+builder.Services.AddSingleton<IMongoDbConfiguration>(serviceProvider =>
+    new MongoDbConfiguration(serviceProvider.GetRequiredService<IMongoClient>()));
 builder.Services.AddSingleton<IDateTimeProvider, SystemDateTimeProvider>();
 builder.Services.AddScoped<IdentityService>();
 builder.Services.AddScoped<IDeviceTokenService, DeviceTokenService>();
@@ -36,6 +53,10 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+
+// /health runs every check; /alive only the live-tagged ones, so a service waiting on MongoDB is
+// not restarted for being unready.
+app.MapDefaultEndpoints();
 
 if (app.Environment.IsDevelopment())
 {
