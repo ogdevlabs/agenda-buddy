@@ -493,6 +493,8 @@ Full analysis in [threat-model.md](./threat-model.md). Architecture-level decisi
 | `AgendaBuddy.ServiceDefaults/**` | **new** | — |
 | `Library/Configuration/MongoConnectionResolver.cs` | **new** | ✅ not under `Library/Services/` |
 | `Library/Diagnostics/MongoHealthCheck.cs` | **new** | ✅ |
+| `Library/Library.csproj` | +2 first-party abstractions (see below) | ✅ |
+| `Library.Tests/Library.Tests.csproj` | +`Microsoft.Extensions.Configuration` (in-memory provider, test-only) | ✅ |
 | `{7}/Program.cs` | +3 lines each | ✅ |
 | `{6}/Configuration|Configurations/MongoDbConfiguration.cs` | ctor takes `IMongoClient` | ✅ |
 | `Identity/Configurations/MongoDbConfiguration.cs` | same | ✅ |
@@ -504,6 +506,16 @@ Full analysis in [threat-model.md](./threat-model.md). Architecture-level decisi
 | `.github/workflows/dotnet.yml` | filters + 3 steps | ✅ |
 | `{7} *.csproj` | +ServiceDefaults project reference (no Aspire client package — R-1, §3.4) | ✅ |
 | New tests in `{7} *.Tests/` | **new only** — no existing test edited | ✅ AC-5.2 |
+
+**Package additions to `Library` (T-03, not anticipated in the plan — CONSTITUTION §9 requires these be recorded, and ADR-013 must list them):** `Library` had **no** `IConfiguration` or health-check dependency, since it is a plain class library rather than a web project, so both are required for §3.3 and §3.5 to compile:
+
+| Package | Version | Why |
+|---|---|---|
+| `Microsoft.Extensions.Configuration.Abstractions` | 10.0.0 | `IConfiguration` for `MongoConnectionResolver` |
+| `Microsoft.Extensions.Diagnostics.HealthChecks.Abstractions` | 10.0.0 | `IHealthCheck` for `MongoHealthCheck` |
+| `Microsoft.Extensions.Configuration` *(Library.Tests only)* | 10.0.0 | in-memory configuration provider; testing key-fallback order through `Mock<IConfiguration>` would mean stubbing each indexer lookup, which asserts the mock rather than the resolver |
+
+All three are first-party abstraction packages already present transitively across the solution — no new vendor, no new lock-in, and none is on the CVE-pin list (`Directory.Build.props:18-28` covers Mongo and AspNetCore.OpenApi only).
 
 **Untouched:** all of `EventAndCommands/Commands/`, `EventAndCommands/Queries/`, `EventAndCommands/Events/`, `Library/Services/`, `Library/Entities/`, `Library/Repositories/`, `Library/Tools/`, `Library.ServerAuth/`, `MobileApp/`, all `Dockerfile`s, both `docker-compose*.yml`.
 
