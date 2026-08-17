@@ -55,13 +55,13 @@ Build
 
 ## Last Checkpoint
 
-Construction / Build / 2026-08-17T19:51:11Z
+Construction / Build / 2026-08-17T20:12:00Z
 
 ---
 
 ## Party Mode
 
-none
+agent-teams
 
 ---
 
@@ -194,3 +194,4 @@ _Superseded handoff (F-012 mobile-app, shipped) retained for reference:_
 | 2026-08-15T16:45:00Z | roadmap_claim | Inception | Discover | aspire-wiring |
 | 2026-08-15T17:30:00Z | inception_complete | Inception Complete | Plan | aspire-wiring |
 | 2026-08-17T19:51:11Z | construction_start | Construction Started | Build | aspire-wiring |
+| 2026-08-17T20:12:00Z | task_complete | F-013-T01 done — R-1 resolved, escape hatch taken | Build | aspire-wiring |

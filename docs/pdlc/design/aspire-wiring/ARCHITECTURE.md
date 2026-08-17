@@ -210,23 +210,57 @@ public static class MongoConnectionResolver
             "to run this service standalone set ConnectionStrings__mongodb.");
     }
 
-    /// <summary>Resolves a collection name with the same fallback discipline.</summary>
-    public static string ResolveSetting(IConfiguration configuration, string name, string @default) => /* … */;
+    /// <summary>
+    /// Resolves a named setting (database or collection name) with the same fallback
+    /// discipline, returning <paramref name="default"/> when no prefix yields a value.
+    /// </summary>
+    public static string ResolveSetting(IConfiguration configuration, string name, string @default)
+    {
+        foreach (var prefix in SettingPrefixes)          // "MongoDbSettings", "MongoDB",
+        {                                               // "LibrarySettings:MongoDB"
+            var value = configuration[$"{prefix}:{name}"];
+            if (!string.IsNullOrWhiteSpace(value)) return value;
+        }
+        return @default;
+    }
 }
 ```
+
+**`ResolveSetting`'s signature is pinned here because it is the contract T-04 tests and T-05 consumes** (standup finding — it was previously elided). Three rules it must honor:
+
+1. **`name` is per-call, never a fixed convention.** Identity reads `MongoDbSettings:CollectionName` (`Identity/Extensions/ServiceCollectionExtension.cs:12`) while the domain services read per-entity names such as `ProvidersCollection` and `ProfessionsCollection` (`Profession/Extensions/ServiceCollectionExtensions.cs:14`). A single hardcoded naming scheme breaks Identity and Profession.
+2. **It returns `@default`, it does not throw.** Only `Resolve` throws — a missing collection name has a sane default, a missing connection string does not.
+3. **Argument order is `(configuration, name, @default)`** — fixed, so T-04 and T-05 cannot diverge.
 
 This single class satisfies **AC-2.5** (named-key failure, never a null throw), **AC-4.1** (works in any environment), and **AC-4.2** (no possibly-null `MongoClient` construction) for all seven services at once.
 
-Each `MongoDbConfiguration` collapses to:
+Each `MongoDbConfiguration` gains an **additive** `IMongoClient` constructor. The existing `IConfiguration` constructor stays, body unchanged:
 
 ```csharp
-public class MongoDbConfiguration(IMongoClient client) : IMongoDbConfiguration
+public class MongoDbConfiguration : IMongoDbConfiguration
 {
-    public MongoClient MongoClient() => (MongoClient)client;   // signature preserved
+    private readonly MongoClient _client;
+
+    /// <summary>Injected path — the process-wide singleton client (new).</summary>
+    public MongoDbConfiguration(IMongoClient client) => _client = (MongoClient)client;
+
+    /// <summary>
+    /// Legacy path, retained verbatim so the three existing tests that construct this
+    /// class with a mocked IConfiguration keep compiling AND passing (AC-5.2).
+    /// </summary>
+    public MongoDbConfiguration(IConfiguration configuration)
+        => _client = new MongoClient(configuration.GetSection("MongoDB")["ConnectionString"]!);
+
+    public MongoClient MongoClient() => _client;   // signature preserved
 }
 ```
 
-⚠️ **`IMongoDbConfiguration.MongoClient()` returns the concrete `MongoClient`**, so the cast is required to keep the interface unchanged. Changing the return type to `IMongoClient` would be cleaner but touches the interface all six services and their tests depend on. **Decision: keep the signature, accept the cast**, and note it as debt. The six `MongoDbConfigurationTest.cs` files continue to compile.
+⚠️ **Corrected at the Wave 2 standup (2026-08-17) — the earlier version of this section was wrong.** It replaced the primary constructor with `MongoDbConfiguration(IMongoClient client)` and claimed "the six `MongoDbConfigurationTest.cs` files continue to compile." They do not. The coupling was never the interface — it is the **concrete constructor**. Three tests instantiate the class directly with a mocked `IConfiguration`: `Booking.Tests/Configuration/MongoDbConfigurationTest.cs:17`, `Customer.Tests/Configurations/MongoDbConfigurationTest.cs:17`, `Profession.Tests/Configurations/MongoDbConfigurationTest.cs:17`. (Calendar/Provider/Services' equivalents are empty `METHOD(){}` stubs that never instantiate it, so 3 of 6 are affected.) Swapping the ctor breaks their compile, which AC-5.2 forbids.
+
+Two further traps, both load-bearing for T-05:
+
+- **Do not route the legacy ctor through `MongoConnectionResolver`.** It would compile and still fail at runtime: those mocks stub only `GetSection("MongoDB")`, whereas the resolver uses indexer lookups (`configuration["MongoDB:ConnectionString"]`), which a bare `Mock<IConfiguration>` returns null for — so `Resolve` throws by design. The legacy body must keep its `GetSection` form character-for-character.
+- **`MongoClient()` still returns the concrete type**, so the `(MongoClient)` cast remains. Registering an `IMongoClient` test double anywhere in the DI graph would make it throw `InvalidCastException`. Accepted as debt (changing the return type to `IMongoClient` touches the interface and its dependents); T-04 must therefore inject a real `MongoClient`, not a mock, wherever it exercises this class.
 
 Each `ServiceCollectionExtension` changes only how it obtains the client and database:
 
@@ -245,6 +279,13 @@ public static IServiceCollection AddMongoDbRepository(this IServiceCollection se
 ```
 
 The `MongoDbRepository<T>(IMongoDatabase, string)` constructor (`Library/Repositories/MongoDbRepository.cs:15`) is already the one in use, so its signature is untouched.
+
+⚠️ **`Profession` is not a mechanical case — surfaced at the Wave 2 standup.** `Profession/Extensions/ServiceCollectionExtensions.cs:24` ends with `SeedDataAsync(database, configuration).Wait()` — a blocking sync-over-async seed executed at **DI-registration time**, against the eagerly-constructed `database`. Once the client is a lazily-resolved singleton there is no `IServiceProvider` in scope at that point, so the call cannot simply be rewritten in place. T-05 must relocate it. Options, in preference order:
+
+1. **Hosted service** (`IHostedService`/`BackgroundService`) registered here and run after `builder.Build()` — resolves `IMongoClient` from DI properly and makes the seed genuinely async. Preferred.
+2. **Explicit post-`Build()` call** in `Profession/Program.cs`, awaited before `app.Run()`. Simpler, but moves logic into the entry point.
+
+Either way the `.Wait()` disappears, which is an incidental fix to a real deadlock risk. This is the one place in T-05 where the refactor is a design decision rather than a substitution — budget for it.
 
 ### 3.4 Shared `IMongoClient` and the `EventStore` fix
 
@@ -311,6 +352,13 @@ app.MapDefaultEndpoints();   // /health (all checks) + /alive (live-tagged only)
 ```
 
 `MongoHealthCheck` (new, in `Library/Diagnostics/`) issues `db.adminCommand("ping")` via the injected `IMongoClient`.
+
+**Caching (threat T-002) — specified here, previously unspecified.** An unthrottled probe endpoint lets an anonymous caller drive one Mongo round-trip per request. The check therefore caches its last result for a **5-second** window. Constraints the standup established:
+
+- **Register it as a singleton** so the cache is process-wide. A per-request instance caches nothing.
+- **Do not use a `static` field and do not read the wall clock directly.** Take an injected `TimeProvider` (defaulting to `TimeProvider.System`) so the window is deterministic under xUnit's parallel execution.
+- **Fail open on the cache, not the probe:** a cached *unhealthy* result must still expire after 5s, or a recovered database keeps reporting unhealthy for as long as traffic continues.
+- **T-03 owns its test**, asserting via call-count that two probes inside the window produce exactly one `RunCommandAsync` — never by sleeping. Wall-clock assertions are what made `AvailabilityScheduleTest` timezone-fragile (`11-testing.md:105`).
 
 Separation matters (R-6, AC-3.2/3.3): `/alive` must stay healthy when Mongo is down, or an orchestrator would restart a process that is running correctly and merely waiting on its database. `/health` must go unhealthy so it stops receiving traffic.
 
