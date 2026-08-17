@@ -20,8 +20,21 @@ public class MongoDbConfiguration : IMongoDbConfiguration
     /// </summary>
     /// <param name="configuration">Configuration carrying the legacy connection string.</param>
     public MongoDbConfiguration(IConfiguration configuration)
-        => _client = new MongoDB.Driver.MongoClient(
-            configuration.GetSection("MongoDbSettings")["ConnectionString"]!);
+    {
+        var connectionString = configuration.GetSection("MongoDbSettings")["ConnectionString"];
+
+        // Guarded rather than null-forgiving: AC-4.2 forbids constructing a MongoClient from a
+        // possibly-null argument, and the original `!` here was exactly that. The message names
+        // the key so the failure is actionable.
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            throw new InvalidOperationException(
+                "No MongoDB connection string found at MongoDbSettings:ConnectionString. " +
+                "Run under AgendaBuddy.AppHost, or set ConnectionStrings__mongodb.");
+        }
+
+        _client = new MongoDB.Driver.MongoClient(connectionString);
+    }
 
     /// <summary>Returns the client this configuration wraps.</summary>
     public MongoClient MongoClient() => _client;
