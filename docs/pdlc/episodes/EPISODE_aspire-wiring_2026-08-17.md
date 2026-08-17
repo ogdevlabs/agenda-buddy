@@ -1,7 +1,7 @@
 # Episode — aspire-wiring (F-013)
 
 **Phase:** Construction (Build → Review) · **Date:** 2026-08-17 · **Branch:** `feat/F-013-aspire-wiring`
-**Commits:** 20 · **Tests:** 189 → **282 passing**, 0 failing, 0 warnings · **Tasks:** 13 of 14 done
+**Commits:** 20 · **Tests:** 189 → **286 passing**, 0 failing, 0 warnings · **Tasks:** 13 of 14 done
 
 ## What shipped
 

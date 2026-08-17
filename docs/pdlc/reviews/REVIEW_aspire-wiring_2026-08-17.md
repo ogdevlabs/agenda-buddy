@@ -9,14 +9,41 @@
 
 | Severity | Count |
 |---|---|
-| 🔴 Critical | **0** |
+| 🔴 Critical | **1** (Echo, reported late — **fixed**) |
 | 🟡 Important | 3 (2 already fixed during review) |
 | ⚪ Advisory | 9 |
 | Over-engineering (deletion opportunities) | 3 |
 
-**No Critical findings. No merge blockers from this review.**
+**One Critical, found and fixed after the initial gate.** Echo reported after the review file was first written and the approval gate had already been answered; its finding was correct and is resolved below.
 
-> ⚠️ **Reviewer gap — recorded, not glossed.** **Echo (test coverage) did not report.** The agent was spawned with full context, went idle without producing findings, and did not answer a follow-up request. Per the orchestrator's spawn-failure rule the round continued with 3 of 4 reviewers. **Consequence: this review carries no independent test-coverage verdict.** Coverage evidence therefore rests on Neo's own attestation in `verification.md` (AC→test mapping) and the blast-radius untested-path list — i.e. self-assessed, not independently audited. Anyone relying on this review should treat test adequacy as unreviewed. Re-running Echo alone would close it.
+> ⚠️ **Echo reported late** — after this file was first written and after the approval gate. Its report is incorporated below and it changed the outcome, which is the argument for not treating a silent reviewer as a clean bill of health. The original note read: **Echo (test coverage) did not report.** The agent was spawned with full context, went idle without producing findings, and did not answer a follow-up request. Per the orchestrator's spawn-failure rule the round continued with 3 of 4 reviewers. **Consequence: this review carries no independent test-coverage verdict.** Coverage evidence therefore rests on Neo's own attestation in `verification.md` (AC→test mapping) and the blast-radius untested-path list — i.e. self-assessed, not independently audited. Anyone relying on this review should treat test adequacy as unreviewed. Re-running Echo alone would close it.
+
+---
+
+## 🔴 Critical (Echo, late report — FIXED)
+
+**C-1 — Threat T-004 had no test, and the reasoning standing in for one was wrong.**
+`verification.md` recorded T-004 (PII in exported spans) as *"reasoned, not observed"*, justified by "instrumentation records `http.route` templates rather than raw paths" and deferred to a manual AppHost run. Echo rejected both halves: the deferral was a **false constraint** — `ServiceDefaultsExtensionsTest` already proves telemetry can be exercised in-process with no container runtime — and a security-relevant claim with no asserting test is Critical, not Advisory, under the escalation rule.
+
+**Echo was right, and writing the test proved the reasoning false.** With an in-memory exporter reading exactly what an OTLP collector would receive, the first run **failed**:
+
+```
+Spans carried the email in tags:
+  GET /api/v1/providers/{email}.url.path=/api/v1/providers/customer.pii@example.com
+```
+
+`http.route` *is* the template — but `url.path` carries the literal request path, and this system puts email addresses in paths (`GET /api/v1/providers/{email}`). Every request to a provider-by-email or customer-by-email endpoint was exporting PII to whatever collector was configured. `CONSTITUTION.md` §4 treats email as the PII of record.
+
+**Fix:** `AgendaBuddy.ServiceDefaults/PiiRedactingProcessor.cs` — a `BaseProcessor<Activity>` added last in the tracing pipeline, redacting email patterns from `url.path`, `url.query`, `url.full`, `http.url`, `http.target` and the display name on `OnEnd`, before any exporter sees the span. Redacts rather than drops, so the path shape stays debuggable. 4 tests in `TelemetryPiiTest` assert it **from the exporter's side** — a listener-based test would race the processor and could pass while real exports still leaked.
+
+**Why this one matters beyond itself:** it is the same failure mode this review flagged in others — a mitigation asserted by citation instead of code. It survived my own attestation, the blast radius, and Phantom's threat-model check, and was caught only because a reviewer refused the "needs Docker" excuse.
+
+### Also from Echo's late report
+
+- **[Important] The `IRequestCollection` Singleton→Scoped fix had no regression guard.** Correct: `ValidateScopes` runs only in `Development`, so a revert to `Singleton` would build and run in Staging and fail on the first audit write. **Fixed** with a CI step that starts all seven services in `Development` and fails the build if any does not reach "Now listening on" — the same method that caught the original defect, rather than a unit test that cannot see a composition root.
+- **[Advisory] The guarded legacy `MongoDbConfiguration(IConfiguration)` throw is untested** — the 3 existing tests only pass valid values. Genuine but low-risk: the production route is `MongoConnectionResolver.Resolve`, whose throw path *is* tested. Logged as debt.
+- **[Advisory] `ProfessionSeedHostedService.StartAsync` is untested** and swallows exceptions, so a seeding bug would surface only as an empty catalogue. Already on the blast-radius untested list. Logged as debt.
+- **Audited and cleared:** the BLOCKED verdicts were honest (it independently confirmed no container runtime was present), `AppHostWiringTest` is not false confidence, `ServiceDefaultsExtensionsTest` executes real behaviour, the 7 per-service resolution test files are genuinely per-service rather than padding (it diffed them), and the 282 count is exact.
 
 ---
 

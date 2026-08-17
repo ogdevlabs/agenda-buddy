@@ -9,7 +9,7 @@
 
 | Outcome | Count |
 |---|---|
-| ✅ Verified | 17 |
+| ✅ Verified | 18 |
 | ⛔ Blocked on a container runtime (→ F-013-T14) | 5 |
 
 The plan expected AC-1.1/1.2/1.3, AC-3.2/3.3, AC-3.4 and AC-4.1 to be manual (E-7). **Four of those were automated or executed instead** — AC-3.1, AC-3.2, AC-3.3 by probing a live service, and AC-4.1 by starting all seven.
@@ -60,7 +60,7 @@ The plan expected AC-1.1/1.2/1.3, AC-3.2/3.3, AC-3.4 and AC-4.1 to be manual (E-
 
 | AC | Outcome | Evidence |
 |---|---|---|
-| AC-5.1 | ✅ *restated* | **282 passing, 0 failing.** The plan's "all 256 pass" is unattestable: `MobileApp` does not compile under `/p:MobileWorkloads=false` (`agenda-buddy-prr`, pre-existing on main), so `MobileApp.Tests` never runs. Measured baseline before any change was **189 across 10 projects**; this feature adds **93** and breaks none. |
+| AC-5.1 | ✅ *restated* | **286 passing, 0 failing.** The plan's "all 256 pass" is unattestable: `MobileApp` does not compile under `/p:MobileWorkloads=false` (`agenda-buddy-prr`, pre-existing on main), so `MobileApp.Tests` never runs. Measured baseline before any change was **189 across 10 projects**; this feature adds **97** and breaks none. |
 | AC-5.2 | ✅ | No existing test source modified or deleted. `git diff main` on `*.Tests/*.cs` shows only new files; the only existing-file changes are `.csproj` package-version bumps. |
 | AC-5.3 | ✅ | `git diff main --name-only` touches nothing under `EventAndCommands/Commands/`, `/Queries/`, `/Events/`, `Library/Services/`, `Library/Entities/`, `Library/Repositories/` or `Library/Tools/`. The only `EventAndCommands` change is `Persitency/EventStore.cs`. |
 
@@ -70,7 +70,7 @@ The plan expected AC-1.1/1.2/1.3, AC-3.2/3.3, AC-3.4 and AC-4.1 to be manual (E-
 |---|---|
 | **T-002** — probe amplification | ✅ `MongoHealthCheck` caches for 5s behind a double-checked semaphore; asserted by call count (`Times.Once` across two in-window probes), and unhealthy results expire on the same schedule so recovery is reported. |
 | **T-003** — dashboard/secret exposure | ✅ Both JWT keys are `secret: true` parameters, asserted by `JwtKeyIsASecretParameter`; only Identity receives the private key. Dashboard sensitivity documented in the README. |
-| **T-004** — PII in exported spans | ⚠️ **Reasoned, not observed.** ASP.NET Core instrumentation records `http.route` templates rather than raw paths by default, and `MongoDB.Driver` 2.25.0 has no OTel instrumentation so query text is never exported. Confirming what actually lands in a collector needs a running AppHost → folded into F-013-T14. |
+| **T-004** — PII in exported spans | ✅ **Now mitigated and tested — the earlier entry here was wrong.** It claimed the threat was covered because instrumentation records `http.route` templates, and deferred observation to a manual AppHost run. Echo challenged both halves at Party Review and was right on both. An in-memory exporter observes exactly what an OTLP collector receives with **no container runtime**, and when that test was finally written it **failed**: `http.route` is indeed the template, but `url.path` carries the literal path — `url.path=/api/v1/providers/customer.pii@example.com`. Since this system puts email addresses in paths, every such request was exporting PII. Fixed by `PiiRedactingProcessor` in ServiceDefaults, which redacts email patterns from `url.path`/`url.query`/`url.full`/`http.url`/`http.target` and the display name before export, preserving path shape for debugging. 4 tests in `TelemetryPiiTest` assert it from the exporter's side (path case, query-string case, template preserved, shape preserved). |
 | **T-001** — committed credential | ⛔ **Not remediated, by design.** See below. |
 
 ## Outstanding — not closed by merging this feature

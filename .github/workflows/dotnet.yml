@@ -122,6 +122,34 @@ jobs:
             echo "::error::AppHost must not reference MobileApp"; exit 1
           fi
 
+      # Guards the captive-dependency class of bug (F-013-T13). DI validation runs only in
+      # Development, which is the environment the AppHost uses, so a singleton capturing a scoped
+      # service builds fine and fails at runtime. Six of seven services were broken this way and
+      # no unit test could see it — only starting the process could. Cheap: a few seconds each.
+      - name: Assert every service starts in Development
+        run: |
+          set -u
+          for svc in Booking Calendar Customer Provider Services Profession Identity; do
+            log=$(mktemp)
+            ASPNETCORE_ENVIRONMENT=Development \
+            ConnectionStrings__mongodb='mongodb://localhost:27017' \
+            JWT_PUBLIC_KEY="${{ secrets.CI_JWT_PUBLIC_KEY }}" \
+            JWT_PRIVATE_KEY="${{ secrets.CI_JWT_PRIVATE_KEY }}" \
+              dotnet run --project "$svc" --no-build -c Release --no-launch-profile > "$log" 2>&1 &
+            pid=$!
+            for _ in $(seq 1 40); do
+              sleep 1
+              grep -q "Now listening on" "$log" && break
+              kill -0 $pid 2>/dev/null || break
+            done
+            if grep -q "Now listening on" "$log"; then
+              echo "$svc: started"
+            else
+              echo "::error::$svc failed to start in Development"; tail -30 "$log"; exit 1
+            fi
+            kill $pid 2>/dev/null || true
+          done
+
       # AC-2.1 / AC-2.2. Narrow by design: this is one pattern, not a secret scanner. The
       # CONSTITUTION section 7 dependency-audit and secret-scan gate remains open, deferred to
       # F-017 — do not read this step as closing it.

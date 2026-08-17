@@ -94,7 +94,10 @@ public static class Extensions
                 .AddRuntimeInstrumentation())
             .WithTracing(tracing => tracing
                 .AddAspNetCoreInstrumentation()
-                .AddHttpClientInstrumentation());
+                .AddHttpClientInstrumentation()
+                // Threat T-004: url.path carries the literal request path, and this system puts
+                // email addresses in paths. Must be added last so it sees the final tag set.
+                .AddProcessor(new PiiRedactingProcessor()));
 
         builder.AddOpenTelemetryExporters();
 
