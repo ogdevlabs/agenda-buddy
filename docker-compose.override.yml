@@ -85,7 +85,7 @@ services:
   #       - Kestrel__Endpoints__HTTP__Url=http://0.0.0.0:80
   #       - Kestrel__Endpoints__GRPC__Url=http://0.0.0.0:81
   #       - Kestrel__Endpoints__GRPC__Protocols=Http2
-  #       - ConnectionStrings=mongodb+srv://agenda_buddy:zufa26pHneUCGol9@cluster-agenda-buddy.rqtcadc.mongodb.net/?retryWrites=true&w=majority&appName=cluster-agenda-buddy
+  #       - ConnectionStrings=
   #       # JWT_PUBLIC_KEY must be injected at deploy time — never in source
   #       - PATH_BASE=/provider
   #     ports:
@@ -101,7 +101,7 @@ services:
   #     - Kestrel__Endpoints__HTTP__Url=http://0.0.0.0:80
   #     - Kestrel__Endpoints__GRPC__Url=http://0.0.0.0:81
   #     - Kestrel__Endpoints__GRPC__Protocols=Http2
-  #     - ConnectionStrings=mongodb+srv://agenda_buddy:zufa26pHneUCGol9@cluster-agenda-buddy.rqtcadc.mongodb.net/?retryWrites=true&w=majority&appName=cluster-agenda-buddy
+  #     - ConnectionStrings=
   #     # JWT_PUBLIC_KEY must be injected at deploy time — never in source
   #     - PATH_BASE=/services-api
   #   ports:
@@ -111,7 +111,7 @@ services:
   events:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings=mongodb+srv://agenda_buddy:zufa26pHneUCGol9@cluster-agenda-buddy.rqtcadc.mongodb.net/?retryWrites=true&w=majority&appName=cluster-agenda-buddy
+      - ConnectionStrings=
       - PATH_BASE=/events
     networks:
       - kafka-net

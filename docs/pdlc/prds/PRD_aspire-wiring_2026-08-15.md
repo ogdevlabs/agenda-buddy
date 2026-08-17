@@ -105,7 +105,7 @@ Tier B of three options evaluated in the brainstorm log (Round 2): **Aspire, plu
 
 | ID | Criterion | Verification |
 |---|---|---|
-| AC-2.1 | `git grep 'zufa26pHneUCGol9'` returns **zero matches** in tracked files | Automated |
+| AC-2.1 | `git grep '<the-leaked-password>'` returns **zero matches** in tracked files | Automated |
 | AC-2.2 | No `mongodb+srv://` URI containing a password appears in any tracked file | Automated |
 | AC-2.3 | Every service still resolves a connection string when run under the AppHost | AC-1.1 |
 | AC-2.4 | Running a single service **outside** the AppHost with `ConnectionStrings__mongodb` set succeeds | Manual (E-1) |

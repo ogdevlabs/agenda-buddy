@@ -9,7 +9,7 @@
 ## ⚠️ P0 — A live database credential is committed to git
 
 ```
-mongodb+srv://agenda_buddy:zufa26pHneUCGol9@cluster-agenda-buddy.rqtcadc.mongodb.net/...
+mongodb+srv://<user>:<REDACTED-ROTATE-THIS>@<cluster>.mongodb.net/...
 ```
 
 Present in **14 tracked files**: 6 × `appsettings.json` + 6 × `appsettings.Development.json` (domain services), `Identity/appsettings.json:22`, `EventAndCommands/appsettings.json:11`, plus `docker-compose.override.yml:114` and two commented blocks (`:88`, `:104`). Full line-by-line table in `06-configuration.md`.

@@ -178,7 +178,7 @@ graph TD
 
 **Q2: How do we verify the credential removal?**
 
-**A:** `grep -r 'zufa26pHneUCGol9' -- . ` returns **zero matches in tracked files**, and each service still starts. Note the credential remains in git history — rotation at the Atlas end is a separate operational action, captured as an Open Question, not an acceptance criterion this feature can satisfy.
+**A:** `grep -r '<the-leaked-password>' -- . ` returns **zero matches in tracked files**, and each service still starts. Note the credential remains in git history — rotation at the Atlas end is a separate operational action, captured as an Open Question, not an acceptance criterion this feature can satisfy.
 
 **Q3: How do we verify non-Development startup?**
 

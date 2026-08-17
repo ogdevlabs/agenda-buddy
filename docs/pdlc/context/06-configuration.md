@@ -9,7 +9,7 @@
 The MongoDB Atlas connection string
 
 ```
-mongodb+srv://agenda_buddy:zufa26pHneUCGol9@cluster-agenda-buddy.rqtcadc.mongodb.net/?retryWrites=true&w=majority&appName=cluster-agenda-buddy
+mongodb+srv://<user>:<REDACTED-ROTATE-THIS>@<cluster>.mongodb.net/...
 ```
 
 appears verbatim in **14 committed files**:
