@@ -5,7 +5,7 @@
      Claude reads this file at the start of every session to auto-resume from the last checkpoint.
      If this file is missing or empty, PDLC will prompt you to run /pdlc init. -->
 
-**Last updated:** 2026-08-17T19:51:11Z
+**Last updated:** 2026-08-17T22:10:00Z
 
 ---
 
@@ -49,13 +49,13 @@ _None active. Run `/night-shift <F-NNN>` to start an autonomous run (requires by
 
 ## Current Sub-phase
 
-Build
+Review
 
 ---
 
 ## Last Checkpoint
 
-Construction / Build / 2026-08-17T21:05:00Z
+Construction / Review / 2026-08-17T22:10:00Z
 
 ---
 
@@ -67,7 +67,8 @@ agent-teams
 
 ## Active Blockers
 
-<!-- none -->
+- **F-013-T14 — blocked on a container runtime.** Five acceptance criteria (AC-1.1, AC-1.2, AC-1.3, AC-2.3, AC-3.4) plus observing threat T-004 in exported spans require the AppHost to actually provision MongoDB and Kafka. The build machine has neither `docker` nor `podman` installed, so they could not be verified and are recorded as BLOCKED rather than passing. Needs a human on a machine with Docker Desktop or Podman running. Everything else is attested in `docs/pdlc/design/aspire-wiring/verification.md`.
+  *(The task store has no `blocked` status, so T-014 remains `open`; it is not startable work for an agent in this environment.)*
 
 ---
 
@@ -77,11 +78,11 @@ agent-teams
 {
   "triggered_at": "2026-08-17T19:51:11Z",
   "active_task": null,
-  "sub_phase": "Build",
-  "step": "build-pre-flight-complete",
-  "skill_file": "skills/build/steps/02-build-loop.md",
-  "work_in_progress": "Construction for F-013 aspire-wiring — branch created, entering BUILD LOOP at F-013-T01",
-  "next_action": "Run BUILD LOOP Step 4 — ready queue returns F-013-T01 (spike, decision gate)",
+  "sub_phase": "Review",
+  "step": "build-loop-complete",
+  "skill_file": "skills/build/steps/03-review.md",
+  "work_in_progress": "F-013 aspire-wiring — 13 of 14 tasks done, 282 tests passing; T-014 blocked on a container runtime",
+  "next_action": "Run REVIEW (build step 12-14): Party Review, then Test, then Wrap-up",
   "files_open": []
 }
 ```
@@ -199,3 +200,11 @@ _Superseded handoff (F-012 mobile-app, shipped) retained for reference:_
 | 2026-08-17T20:45:00Z | task_complete | F-013-T03 done — MongoConnectionResolver + MongoHealthCheck, 22 tests | Build | aspire-wiring |
 | 2026-08-17T20:58:00Z | task_complete | F-013-T02 done — AgendaBuddy.ServiceDefaults, 9 tests | Build | aspire-wiring |
 | 2026-08-17T21:05:00Z | task_complete | F-013-T07 done — KafkaClient config-driven, 6 tests | Build | aspire-wiring |
+| 2026-08-17T21:20:00Z | task_complete | F-013-T04 done — 28 per-service resolution tests (red half) | Build | aspire-wiring |
+| 2026-08-17T21:35:00Z | task_complete | F-013-T05 done — shared IMongoClient across 7 services + EventStore | Build | aspire-wiring |
+| 2026-08-17T21:45:00Z | task_complete | F-013-T08 done — AppHost, 28 model tests | Build | aspire-wiring |
+| 2026-08-17T21:52:00Z | task_complete | F-013-T09 done — credential removed from 17 tracked files | Build | aspire-wiring |
+| 2026-08-17T21:58:00Z | task_complete | F-013-T06 done — CI filters, AppHost build, 2 guards | Build | aspire-wiring |
+| 2026-08-17T22:02:00Z | task_complete | F-013-T11 + T12 done — README, ADR-013 | Build | aspire-wiring |
+| 2026-08-17T22:06:00Z | task_complete | F-013-T13 done — captive dependency fixed, 7/7 services start | Build | aspire-wiring |
+| 2026-08-17T22:10:00Z | task_complete | F-013-T10 done — 17 ACs verified, 5 split to T14 (no container runtime) | Build | aspire-wiring |
