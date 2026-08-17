@@ -40,7 +40,8 @@ public static class ServiceCollectionExtensions
             new ProfessionSeedHostedService(
                 serviceProvider.GetRequiredService<IMongoClient>(),
                 databaseName,
-                professionsCollection));
+                professionsCollection,
+                serviceProvider.GetRequiredService<ILogger<ProfessionSeedHostedService>>()));
 
         return serviceCollection;
     }

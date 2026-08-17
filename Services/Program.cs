@@ -33,7 +33,11 @@ builder.Services.AddMvcCore();
 // IConfiguration constructor, and the container cannot choose between them on its own.
 builder.Services.AddSingleton<IMongoDbConfiguration>(serviceProvider =>
     new MongoDbConfiguration(serviceProvider.GetRequiredService<IMongoClient>()));
-builder.Services.AddSingleton<IRequestCollection, RequestCollection>();
+// Scoped, not Singleton: RequestCollection consumes the scoped IEventStore, and a
+// singleton capturing it fails DI validation — which is enabled in Development, the
+// environment the AppHost runs services in. RequestCollection is stateless, so request
+// scope is the correct lifetime rather than a workaround.
+builder.Services.AddScoped<IRequestCollection, RequestCollection>();
 
 // Enable & configure JSON Problem Details error responses
 builder.Services.AddProblemDetails(options =>

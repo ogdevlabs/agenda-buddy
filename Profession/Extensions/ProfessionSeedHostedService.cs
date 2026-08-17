@@ -15,23 +15,38 @@ namespace Profession.Extensions;
 public class ProfessionSeedHostedService(
     IMongoClient client,
     string databaseName,
-    string collectionName) : IHostedService
+    string collectionName,
+    ILogger<ProfessionSeedHostedService> logger) : IHostedService
 {
     /// <summary>
-    /// Inserts the seed data when the collection is empty. A seeding failure must not stop the
-    /// service from starting — the API is useful without a pre-populated catalogue, and the
-    /// readiness probe already reports an unreachable database.
+    /// Inserts the seed data when the collection is empty.
     /// </summary>
     /// <param name="cancellationToken">Token that aborts startup.</param>
+    /// <remarks>
+    /// A seeding failure is logged and swallowed rather than thrown. An exception out of
+    /// <c>StartAsync</c> aborts the host, which would mean an unreachable database prevents the
+    /// service from starting at all — the opposite of AC-4.1, and worse than the behaviour this
+    /// replaced. The API is still useful without a pre-populated catalogue, and the readiness
+    /// probe already reports the database as unreachable.
+    /// </remarks>
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        var collection = client.GetDatabase(databaseName)
-            .GetCollection<ProfessionEntity>(collectionName);
-
-        if (!await collection.Find(_ => true).AnyAsync(cancellationToken))
+        try
         {
-            await collection.InsertManyAsync(
-                ProfessionSeedData.SeedData(), cancellationToken: cancellationToken);
+            var collection = client.GetDatabase(databaseName)
+                .GetCollection<ProfessionEntity>(collectionName);
+
+            if (!await collection.Find(_ => true).AnyAsync(cancellationToken))
+            {
+                await collection.InsertManyAsync(
+                    ProfessionSeedData.SeedData(), cancellationToken: cancellationToken);
+            }
+        }
+        catch (Exception exception) when (!cancellationToken.IsCancellationRequested)
+        {
+            logger.LogError(exception,
+                "Seeding the profession catalogue failed. The service will start anyway; " +
+                "the readiness probe reports database availability.");
         }
     }
 
