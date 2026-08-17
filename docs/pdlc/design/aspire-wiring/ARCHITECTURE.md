@@ -158,7 +158,11 @@ Design notes:
 - **Two logical databases on one Mongo resource.** The catalog records `agenda_buddy` for the six domain services and `IdentityDb` for Identity (`05-data-model.md`). Modelling both preserves that split rather than silently merging it.
 - **`WaitFor(mongo)`** addresses E-6. It narrows but does not close the readiness window — the health check covers the remainder.
 - **JWT keys are `secret: true` parameters.** Aspire stores them in user secrets on first prompt, so they are supplied once per machine and never committed. This is what makes AC-1.1 achievable without an `.env` file (E-9).
-- **No port pinning** (E-4) — Aspire assigns host ports dynamically, which resolves AC-1.4. Consequence: `scripts/seed/seed-mongo.sh` assumes `mongo:27017` and will need the assigned port. Documented, not fixed (E-8).
+- **No port pinning** (E-4, AC-1.4) — but **not for free, contrary to this section's original claim** (corrected in T-08). Aspire pins each service's ports by *two* independent routes, and both had to be closed:
+  1. **The launch profile.** `AddProject<T>(name)` adopts `Properties/launchSettings.json`'s `applicationUrl`, so the `http` profile pins `localhost:603x`. Closed by passing `launchProfileName: null`.
+  2. **`Kestrel:Endpoints` in `appsettings.json`.** Aspire also adopts these, which re-pins the same `603x` port plus a `703x` gRPC one — this is what actually kept `booking` on 6033 after route 1 was closed. Those keys are deliberately retained for standalone and Compose runs (E-12), so rather than delete them the AppHost clears `Port` and `TargetPort` on each adopted `EndpointAnnotation`. `TargetPort` matters too: a project resource is a host process, so it binds the target port directly.
+
+  Asserted by `NoServiceBindsAHardcodedHostPort`, which fails if either route reopens. Consequence unchanged: `scripts/seed/seed-mongo.sh` assumes `mongo:27017` and will need the assigned port. Documented, not fixed (E-8).
 - **`MobileApp` is absent** by construction (AC-1.5).
 - **Resource names accept only ASCII letters, digits, and hyphens** — an underscore is a build **error** (`ASPIRE006`), not a warning. `AddDatabase("agenda_buddy")` therefore fails. `AddDatabase(name, databaseName)` separates the two: the resource is `agenda-buddy`, the physical Mongo database stays `agenda_buddy`, so nothing downstream changes. `IdentityDb` needs no change — mixed case is legal. Verified empirically in T-01.
 

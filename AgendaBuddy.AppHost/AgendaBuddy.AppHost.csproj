@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <Sdk Name="Aspire.AppHost.Sdk" Version="13.4.6" />
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <IsAspireHost>true</IsAspireHost>
+        <UserSecretsId>agenda-buddy-apphost</UserSecretsId>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Aspire.Hosting.AppHost" Version="13.4.6" />
+        <PackageReference Include="Aspire.Hosting.MongoDB" Version="13.4.6" />
+        <PackageReference Include="Aspire.Hosting.Kafka" Version="13.4.6" />
+    </ItemGroup>
+
+    <!-- The seven API services. MobileApp is absent by construction (AC-1.5) and CI asserts it
+         stays absent — a MAUI head has no place in a server orchestration graph. -->
+    <ItemGroup>
+        <ProjectReference Include="..\Booking\Booking.csproj" />
+        <ProjectReference Include="..\Calendar\Calendar.csproj" />
+        <ProjectReference Include="..\Customer\Customer.csproj" />
+        <ProjectReference Include="..\Identity\Identity.csproj" />
+        <ProjectReference Include="..\Profession\Profession.csproj" />
+        <ProjectReference Include="..\Provider\Provider.csproj" />
+        <ProjectReference Include="..\Services\Services.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="AgendaBuddy.AppHost.Tests" />
+    </ItemGroup>
+
+</Project>
