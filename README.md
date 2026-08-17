@@ -110,27 +110,62 @@ agenda-buddy/
 ### Prerequisites
 
 - [.NET 10 SDK](https://dotnet.microsoft.com/download)
-- [Docker Desktop](https://www.docker.com/products/docker-desktop)
+- **A running container runtime — [Docker Desktop](https://www.docker.com/products/docker-desktop) or Podman.** This is a hard requirement for the local path, not a convenience: the AppHost starts MongoDB and Kafka as containers. Nothing runs locally without it. *(No Aspire workload install is needed — Aspire ships as NuGet packages, so `dotnet restore` is the only other prerequisite.)*
 
 ### Run locally
 
-```bash
-# Start all services (Kafka, MongoDB, microservices)
-docker compose -f docker-compose.yml -f docker-compose.override.yml up -d
+One command starts everything — MongoDB, Kafka, and all seven API services:
 
-# Stop
+```bash
+dotnet run --project AgendaBuddy.AppHost
+```
+
+The Aspire dashboard opens with all nine resources, their health, logs, traces, and metrics. `Ctrl+C` stops everything.
+
+**On the first run** Aspire prompts for two values and stores them in [user secrets](https://learn.microsoft.com/aspnet/core/security/app-secrets), scoped to the AppHost:
+
+| Prompt | What to paste |
+|---|---|
+| `jwt-public-key` | RSA public key (PEM) used by every service to verify tokens |
+| `jwt-private-key` | RSA private key (PEM) used by Identity to sign them |
+
+They are asked for once per machine and never written to the repository — this replaces the undocumented gitignored `.env` file the services previously relied on. Because they are declared as secret parameters, the dashboard masks them.
+
+You do **not** need to set a MongoDB connection string: the AppHost injects it.
+
+### Troubleshooting the first run
+
+**"Docker is not running" / the resources never leave `Starting`.** The most common first-run failure by a wide margin. Start Docker Desktop (or `podman machine start`) and re-run. The AppHost cannot provision MongoDB or Kafka without it.
+
+**A service fails immediately with `No MongoDB connection string found. Set one of: …`.** You are running that service directly (`dotnet run --project Booking`) rather than through the AppHost. Either start the AppHost instead, or export the connection string yourself:
+
+```bash
+export ConnectionStrings__mongodb='mongodb://localhost:27017'
+```
+
+The committed Atlas credential has been removed from every `appsettings*.json`, and the keys were intentionally left in place as empty slots. So a standalone or Compose run now fails fast with that message instead of silently connecting to a shared cluster.
+
+### Ports
+
+The AppHost assigns host ports **dynamically** — services no longer bind the old hardcoded `localhost:603x`. Read the actual URL for a service from the dashboard. Two consequences:
+
+- Two people (or two branches) can run the stack simultaneously without colliding.
+- `scripts/seed/seed-mongo.sh` hardcodes `mongo:27017` and needs the assigned port to work. It also targets `ProviderDb` and `CustomerDb`, which no service reads. **Neither is fixed here** — treat that script as stale.
+
+### Docker Compose (retained, superseded)
+
+`docker-compose.yml` and `docker-compose.override.yml` still work and are kept deliberately, so reverting this feature is a single `git revert` with no loss of capability. They are no longer the recommended path — they provide no health model, no telemetry, and no connection-string injection:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.override.yml up -d
 docker compose down
 ```
 
-### Local service endpoints
+Note the Compose path now needs `ConnectionStrings` supplied, for the reason above.
 
-| Service | Port |
-|---------|------|
-| Identity | `http://localhost:80` (HTTP) / `http://localhost:81` (gRPC) |
-| EventAndCommands | internal |
-| Kafka broker | `localhost:9092` |
-| Schema Registry | `http://localhost:8081` |
-| Kafka UI | `http://localhost:8080` |
+### ⚠️ The dashboard is a sensitive surface
+
+The Aspire dashboard exposes environment variables, configuration, logs, and traces for every resource. Secret parameters are masked, but treat the dashboard as privileged: do not expose its port beyond localhost, and do not screenshot it into a public issue.
 
 ### Build & test
 
@@ -140,18 +175,26 @@ dotnet build --no-restore
 dotnet test --collect:"XPlat Code Coverage"
 ```
 
+`agenda-buddy-backend.slnf` is the solution minus the MAUI projects. CI builds and tests through it, and it is the faster loop locally when you are not touching `MobileApp`:
+
+```bash
+dotnet test agenda-buddy-backend.slnf
+```
+
 ---
 
 ## Environment Variables
 
-Secrets are never stored in source. Set these before running:
+Secrets are never stored in source. **Under the AppHost you do not need to set the JWT keys or the connection string** — Aspire prompts for the keys once and injects the connection string. The table below applies when running a service standalone or via Compose:
 
-| Variable | Service | Description |
-|----------|---------|-------------|
-| `JWT_PRIVATE_KEY` | Identity | RSA private key (PEM) for JWT signing |
-| `JWT_PUBLIC_KEY` | All services | RSA public key (PEM) for JWT verification |
-| `STRIPE_SECRET_KEY` | Booking / Library | Stripe secret key for payment intents |
-| `ConnectionStrings` | All services | MongoDB connection string |
+| Variable | Service | Description | Under the AppHost |
+|----------|---------|-------------|-------------------|
+| `JWT_PRIVATE_KEY` | Identity | RSA private key (PEM) for JWT signing | supplied from the `jwt-private-key` secret parameter |
+| `JWT_PUBLIC_KEY` | All services | RSA public key (PEM) for JWT verification | supplied from the `jwt-public-key` secret parameter |
+| `STRIPE_SECRET_KEY` | Booking / Library | Stripe secret key for payment intents | **still required** — set it yourself |
+| `ConnectionStrings__mongodb` | All services | MongoDB connection string | injected automatically |
+
+The connection string is resolved in this order, first non-empty winning: `ConnectionStrings:mongodb`, `MongoDbSettings:ConnectionString`, `MongoDB:ConnectionString`, `LibrarySettings:MongoDB:ConnectionString`. If none resolves, the service fails at startup with a message naming all four.
 
 ---
 
