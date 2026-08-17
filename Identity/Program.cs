@@ -12,8 +12,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Aspire defaults: telemetry, health checks, service discovery, HttpClient resilience.
 builder.AddServiceDefaults();
 
-// One MongoDB client per process, shared by the repositories, IMongoDbConfiguration and the
-// EventStore. Aspire injects ConnectionStrings:mongodb; the resolver also accepts every legacy
+// One MongoDB client per process, shared by the repositories and the EventStore. Aspire injects ConnectionStrings:mongodb; the resolver also accepts every legacy
 // shape, and fails with a message naming each key it tried rather than a null-argument throw.
 builder.Services.AddSingleton<IMongoClient>(_ =>
     new MongoClient(MongoConnectionResolver.Resolve(builder.Configuration)));
@@ -33,10 +32,6 @@ builder.Services.AddMediatR(cfg => { cfg.RegisterServicesFromAssembly(typeof(Pro
 builder.Services.AddMvcCore();
 
 // Register instances
-// Explicit factory: MongoDbConfiguration now has both an IMongoClient and a legacy
-// IConfiguration constructor, and the container cannot choose between them on its own.
-builder.Services.AddSingleton<IMongoDbConfiguration>(serviceProvider =>
-    new MongoDbConfiguration(serviceProvider.GetRequiredService<IMongoClient>()));
 builder.Services.AddSingleton<IDateTimeProvider, SystemDateTimeProvider>();
 builder.Services.AddScoped<IdentityService>();
 builder.Services.AddScoped<IDeviceTokenService, DeviceTokenService>();

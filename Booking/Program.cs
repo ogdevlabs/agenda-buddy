@@ -5,8 +5,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Aspire defaults: telemetry, health checks, service discovery, HttpClient resilience.
 builder.AddServiceDefaults();
 
-// One MongoDB client per process, shared by the repositories, IMongoDbConfiguration and the
-// EventStore. Aspire injects ConnectionStrings:mongodb; the resolver also accepts every legacy
+// One MongoDB client per process, shared by the repositories and the EventStore. Aspire injects ConnectionStrings:mongodb; the resolver also accepts every legacy
 // shape, and fails with a message naming each key it tried rather than a null-argument throw.
 builder.Services.AddSingleton<IMongoClient>(_ =>
     new MongoClient(MongoConnectionResolver.Resolve(builder.Configuration)));
@@ -27,10 +26,6 @@ builder.Services.AddEventStore();
 builder.Services.AddMvcCore();
 
 // Register Singleton instances
-// Explicit factory: MongoDbConfiguration now has both an IMongoClient and a legacy
-// IConfiguration constructor, and the container cannot choose between them on its own.
-builder.Services.AddSingleton<IMongoDbConfiguration>(serviceProvider =>
-    new MongoDbConfiguration(serviceProvider.GetRequiredService<IMongoClient>()));
 builder.Services.AddSingleton<IKafkaClient, KafkaClient>();
 // Scoped, not Singleton: RequestCollection consumes the scoped IEventStore, and a
 // singleton capturing it fails DI validation — which is enabled in Development, the
