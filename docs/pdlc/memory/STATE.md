@@ -5,13 +5,13 @@
      Claude reads this file at the start of every session to auto-resume from the last checkpoint.
      If this file is missing or empty, PDLC will prompt you to run /pdlc init. -->
 
-**Last updated:** 2026-08-15T16:45:00Z
+**Last updated:** 2026-08-17T19:51:11Z
 
 ---
 
 ## Current Phase
 
-Inception
+Construction
 
 ---
 
@@ -37,7 +37,7 @@ none
 - **Feature record:** docs/pdlc/tasks/F-013/_feature.md
 - **Claimed by:** oscargarcia@ogdevlabs.onmicrosoft.com
 - **Claimed at:** 2026-08-15T16:45:00Z
-- **Branch:** (will be set at build pre-flight)
+- **Branch:** feat/F-013-aspire-wiring
 
 ---
 
@@ -49,13 +49,13 @@ _None active. Run `/night-shift <F-NNN>` to start an autonomous run (requires by
 
 ## Current Sub-phase
 
-Discover
+Build
 
 ---
 
 ## Last Checkpoint
 
-Inception / Discover / 2026-08-15T16:45:00Z
+Construction / Build / 2026-08-17T19:51:11Z
 
 ---
 
@@ -75,13 +75,13 @@ none
 
 ```json
 {
-  "triggered_at": "2026-08-15T16:45:00Z",
+  "triggered_at": "2026-08-17T19:51:11Z",
   "active_task": null,
-  "sub_phase": "Discover",
-  "step": "roadmap-claim-complete",
-  "skill_file": "skills/brainstorm/steps/01-discover.md",
-  "work_in_progress": "Inception for F-013 aspire-wiring — claim recorded, pre-flight in progress",
-  "next_action": "Hydrate deep code context, then run Discover for aspire-wiring",
+  "sub_phase": "Build",
+  "step": "build-pre-flight-complete",
+  "skill_file": "skills/build/steps/02-build-loop.md",
+  "work_in_progress": "Construction for F-013 aspire-wiring — branch created, entering BUILD LOOP at F-013-T01",
+  "next_action": "Run BUILD LOOP Step 4 — ready queue returns F-013-T01 (spike, decision gate)",
   "files_open": []
 }
 ```
@@ -89,6 +89,40 @@ none
 ---
 
 ## Handoff
+
+```json
+{
+  "phase_completed": "Inception / Plan",
+  "next_phase": "Construction",
+  "feature": "aspire-wiring",
+  "branch": "feat/F-013-aspire-wiring",
+  "key_outputs": [
+    "docs/pdlc/brainstorm/brainstorm_aspire-wiring_2026-08-15.md",
+    "docs/pdlc/prds/PRD_aspire-wiring_2026-08-15.md",
+    "docs/pdlc/design/aspire-wiring/ARCHITECTURE.md",
+    "docs/pdlc/design/aspire-wiring/threat-model.md",
+    "docs/pdlc/prds/plans/PLAN_aspire-wiring_2026-08-15.md",
+    "docs/pdlc/tasks/F-013/F-013-T01.md … F-013-T12.md",
+    "docs/pdlc/tasks/F-014/_feature.md … F-017/_feature.md"
+  ],
+  "decisions_made": [
+    "Plan approved (pre-approved by user instruction) — 5 waves, 12 tasks",
+    "Wave 1 is a decision gate: F-013-T01 spike must resolve R-1 (Aspire vs MongoDB.Driver 2.25.0) before any other task starts",
+    "Escape hatch pre-authorized: plain AddSingleton<IMongoClient> + custom MongoHealthCheck if the Aspire MongoDB integration is incompatible with the pinned driver",
+    "docker-compose*.yml and all legacy configuration keys are retained (E-12, R-4) so revert is a single git revert",
+    "CONSTITUTION §7 security scan gap deliberately deferred to F-017 — not closed by this feature"
+  ],
+  "test_counts": {
+    "baseline_solution": 256
+  },
+  "next_action": "BUILD LOOP — claim F-013-T01",
+  "pending_questions": [
+    "OQ-1 (operational, not closed by merge): rotate the agenda_buddy Atlas credential and review the cluster access log"
+  ]
+}
+```
+
+_Superseded handoff (F-012 mobile-app, shipped) retained for reference:_
 
 ```json
 {
@@ -158,3 +192,5 @@ none
 | 2026-07-31T11:05:00Z | construction_start | Construction Started | Build | mobile-app |
 | 2026-07-31T11:40:00Z | construction_complete | Construction Complete | Build | mobile-app |
 | 2026-08-15T16:45:00Z | roadmap_claim | Inception | Discover | aspire-wiring |
+| 2026-08-15T17:30:00Z | inception_complete | Inception Complete | Plan | aspire-wiring |
+| 2026-08-17T19:51:11Z | construction_start | Construction Started | Build | aspire-wiring |
