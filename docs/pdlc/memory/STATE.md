@@ -77,13 +77,13 @@ agent-teams
 
 ```json
 {
-  "triggered_at": "2026-08-17T19:51:11Z",
+  "triggered_at": "2026-08-17T23:10:00Z",
   "active_task": null,
-  "sub_phase": "Review",
-  "step": "build-loop-complete",
-  "skill_file": "skills/build/steps/03-review.md",
-  "work_in_progress": "F-013 aspire-wiring — 13 of 14 tasks done, 282 tests passing; T-014 blocked on a container runtime",
-  "next_action": "Run REVIEW (build step 12-14): Party Review, then Test, then Wrap-up",
+  "sub_phase": "Wrap-up",
+  "step": "build-and-review-complete-ship-blocked",
+  "skill_file": "skills/build/steps/05-wrap-up.md",
+  "work_in_progress": "F-013 aspire-wiring — Build + Review complete, 286 tests passing, 0 warnings, branch PUSHED to origin. NOT ready to ship: ISSUE-001 blocks AC-1.1/1.2/1.3/2.3/3.4.",
+  "next_action": "Fix docs/issues/ISSUE-001-apphost-never-launches-services.md (~15 min bisection, Step 0-3 in that file). Then re-verify the 5 criteria, update verification.md, close F-013-T14, and only then run /ship.",
   "files_open": []
 }
 ```
@@ -94,33 +94,53 @@ agent-teams
 
 ```json
 {
-  "phase_completed": "Inception / Plan",
-  "next_phase": "Construction",
+  "phase_completed": "Construction / Build + Review",
+  "next_phase": "Construction / fix ISSUE-001, then Ship",
   "feature": "aspire-wiring",
+  "feature_id": "F-013",
   "branch": "feat/F-013-aspire-wiring",
-  "key_outputs": [
-    "docs/pdlc/brainstorm/brainstorm_aspire-wiring_2026-08-15.md",
-    "docs/pdlc/prds/PRD_aspire-wiring_2026-08-15.md",
-    "docs/pdlc/design/aspire-wiring/ARCHITECTURE.md",
-    "docs/pdlc/design/aspire-wiring/threat-model.md",
-    "docs/pdlc/prds/plans/PLAN_aspire-wiring_2026-08-15.md",
-    "docs/pdlc/tasks/F-013/F-013-T01.md … F-013-T12.md",
-    "docs/pdlc/tasks/F-014/_feature.md … F-017/_feature.md"
+  "branch_pushed": true,
+  "commits": 24,
+  "tests": "286 passing, 0 failing, 0 warnings (dotnet test agenda-buddy-backend.slnf)",
+  "baseline_before_feature": "189 passing across 10 projects",
+  "READ_FIRST": [
+    "docs/issues/ISSUE-001-apphost-never-launches-services.md — the blocker, with the full resolution path",
+    "docs/pdlc/design/aspire-wiring/verification.md — which acceptance criteria are verified vs unverified",
+    "docs/pdlc/reviews/REVIEW_aspire-wiring_2026-08-17.md — findings, incl. the Critical Echo caught late",
+    "docs/pdlc/episodes/EPISODE_aspire-wiring_2026-08-17.md — what the plan got wrong and why"
+  ],
+  "task_status": "13 of 14 done. F-013-T14 open (blocked by ISSUE-001). Check: node <plugin>/scripts/tasks.cjs list --json",
+  "next_action": "Fix ISSUE-001. It is a ~15 minute bisection from a known-good baseline — do NOT restart the investigation from scratch, and do NOT trust attempt 1's ruled-out list in F-013-T14 (those experiments used the broken overload, so they proved nothing).",
+  "do_not_redo": [
+    "Do not re-run the T-01 spike: R-1 is settled. Aspire.MongoDB.Driver is excluded, driver pinned at 2.25.0, Aspire 13.4.6 hosting-only, no workload exists.",
+    "Do not try to run the Nordstrom standards gate (Step 12.6): the six .nordstrom-standards/* repos do not resolve under this gh auth. Needs SSO or VPN.",
+    "Do not re-trust the dev certificate: already done, and it did not fix ISSUE-001.",
+    "Do not add MobileApp to CI's api job: it does not compile (agenda-buddy-prr). CI targets agenda-buddy-backend.slnf on purpose."
   ],
   "decisions_made": [
-    "Plan approved (pre-approved by user instruction) — 5 waves, 12 tasks",
-    "Wave 1 is a decision gate: F-013-T01 spike must resolve R-1 (Aspire vs MongoDB.Driver 2.25.0) before any other task starts",
-    "Escape hatch pre-authorized: plain AddSingleton<IMongoClient> + custom MongoHealthCheck if the Aspire MongoDB integration is incompatible with the pinned driver",
-    "docker-compose*.yml and all legacy configuration keys are retained (E-12, R-4) so revert is a single git revert",
-    "CONSTITUTION §7 security scan gap deliberately deferred to F-017 — not closed by this feature"
+    "R-1 escape hatch taken — no Aspire MongoDB client integration; AddSingleton<IMongoClient> + custom MongoHealthCheck",
+    "IRequestCollection registered Scoped — a pre-existing captive dependency stopped 6 of 7 services starting in Development",
+    "Profession seeding moved from DI-registration-time .Wait() to a hosted service",
+    "PiiRedactingProcessor added — url.path was exporting email addresses (threat T-004 was real, not theoretical)",
+    "Dead IMongoDbConfiguration registrations deleted (review I-3)",
+    "Atlas credential removed from 17 tracked files — removal is NOT remediation"
   ],
-  "test_counts": {
-    "baseline_solution": 256
-  },
-  "next_action": "BUILD LOOP — claim F-013-T01",
-  "pending_questions": [
-    "OQ-1 (operational, not closed by merge): rotate the agenda_buddy Atlas credential and review the cluster access log"
-  ]
+  "outstanding_not_closed_by_merge": [
+    "⚠️ ROTATE the agenda_buddy Atlas credential and review the cluster access log — still in git history, still valid (threat T-001 / OQ-1)",
+    "ISSUE-001 / F-013-T14 — AppHost does not launch the services",
+    "CONSTITUTION §7 dependency-audit + secret-scan gate still unimplemented — deferred to F-017",
+    "agenda-buddy-prr — MobileApp CS0103; also breaks the build-mobile-tests CI job",
+    "Echo's 2 advisory test gaps: the guarded legacy MongoDbConfiguration ctor throw, and ProfessionSeedHostedService.StartAsync",
+    "scripts/seed/seed-mongo.sh is stale — hardcodes mongo:27017 and targets databases no service reads"
+  ],
+  "environment_gotchas": [
+    "Rancher Desktop: docker lives at ~/.rd/bin and is NOT on PATH. Aspire shells out to docker — export PATH=\"$HOME/.rd/bin:$PATH\" first.",
+    "Rancher VM is 2 CPUs / 4.1 GB and already runs a k8s cluster. Mongo + Kafka + 7 services is tight.",
+    "AppHost JWT keys are in user secrets: dotnet user-secrets set \"Parameters:jwt-public-key\" ... --project AgendaBuddy.AppHost",
+    "Services run standalone with --no-launch-profile, else launchSettings forces Development and overrides ASPNETCORE_ENVIRONMENT.",
+    "macOS has no `timeout`; use background + sleep + kill."
+  ],
+  "pending_questions": []
 }
 ```
 
