@@ -14,11 +14,11 @@ summary.
 | Suite | Command | Result |
 |---|---|---|
 | Backend unit | `dotnet test agenda-buddy-backend.slnf` | **358 passing / 0 failing / 0 warnings**, 12 projects |
-| Integration | `dotnet test AgendaBuddy.IntegrationTests/AgendaBuddy.IntegrationTests.csproj` | **92 passing / 0 failing**, 1 m 13 s |
+| Integration | `dotnet test AgendaBuddy.IntegrationTests/AgendaBuddy.IntegrationTests.csproj` | **99 passing / 0 failing**, 1 m 17 s |
 | Mobile | `dotnet test MobileApp.Tests/MobileApp.Tests.csproj /p:MobileWorkloads=false` | **74 (67 passing, 7 skipped)** — untouched by F-016 |
 
 Baseline at feature start: **305 backend**. AC-19 requires "305 or more". Backend grew 305 → 358 (**+53**),
-and the integration suite went from **not existing** to 92 tests.
+and the integration suite went from **not existing** to 99 tests.
 
 ⚠️ **The integration suite is a separate command** and is *not* in `agenda-buddy-backend.slnf` (ADR-031), so
 `dotnet test agenda-buddy-backend.slnf` does **not** run it. It has no CI job until `F-016-T20`.
@@ -89,11 +89,17 @@ the T02 design selected.
 | 11 — `POST /providers` 403 for Customer role, and for a foreign email | `Harness/ProviderCreationGuardTest.cs` (3) | ✅ |
 | 12 | — | 🚫 **struck at the Plan readiness party**; contradicted ADR-025. Replaced by AC-26 |
 | 13 — a route with no local `try/catch` returns 403, not 500 | `Harness/CentralForbiddenTest.cs`, theory over Development **and** Production | ✅ |
-| 14 — the hand-written catch sites still return exactly one 403, body unchanged | `Harness/LocalCatchUnaffectedTest.cs` (2 cases) | ✅ ⚠️ *see note D* |
+| 14 — the hand-written catch sites still return exactly one 403, body unchanged | `Harness/LocalCatchUnaffectedTest.cs` (2) + `Harness/RemainingLocalCatchSitesTest.cs` (6) — **all 6 remaining sites** | ✅ ⚠️ *see note D* |
 | 15 — pagination, bounded page, total count, capped page size | `Harness/PaginationTest.cs` (9) + `Library.Tests/Dtos/PageRequestTest.cs` (15) | ✅ |
 | 16 — the paginated shape recorded as an ADR before the endpoint work closes | **ADR-023**, written at Design and annotated with T15's findings | ✅ |
 | 17 — the `events` document holds no provider/customer email or appointment record | `Harness/QueryAuditPayloadTest.cs` (3) + `EventsAndCommands.Tests` `QueryAuditTest` (6) | ✅ ⚠️ *see note E* |
 | 18 — both profession read routes still 200 anonymously | `Harness/ProfessionWriteRouteRemovedTest.cs` + `ProfessionHostTest.cs` | ✅ |
+
+> ✅ **Updated at the Review approval gate (fix cycle 1).** This criterion was originally verified on **1 of 6**
+> remaining catch sites; the Party Review raised that as finding I-3 and the maintainer chose to fix it.
+> `RemainingLocalCatchSitesTest` now covers the other five — Booking `:125`/`:149`/`:174` and Services
+> `:153`/`:177` — in `Production`, asserting a single well-formed ProblemDetails body plus an owner control.
+> **All 6 are now verified end-to-end.**
 
 **Note D — two count corrections, both verified by grep.**
 There were **7** hand-written `ForbiddenException` catch sites, not the **8** stated by AC-14 and

@@ -298,8 +298,33 @@ For `docs/pdlc/memory/CHANGELOG.md` — note the file is **there**, not at the r
 
 ---
 
-## Post-approval actions (Step 14 — pending human decision)
+## Approval outcome (Step 13 — decided 2026-08-18)
 
-- PR comments for non-accepted findings → PR #38.
-- Accepted Phantom warnings (A-1, A-3) and Echo gaps (A-4, A-5) → STATE Guardrail Log.
-- Deferred findings → Decision Registry via `/decide`, batched into one Decision Review Party.
+**Maintainer decision: fix I-3 and I-4, accept the rest.** Review-fix cycle **1 of 3**.
+
+| # | Severity | Outcome |
+|---|---|---|
+| **I-3** — AC-14 verified on 1 of 6 catch sites | Important | ✅ **FIXED.** `Harness/RemainingLocalCatchSitesTest.cs` covers the other five (Booking `:125`/`:149`/`:174`, Services `:153`/`:177`) in `Production`, asserting a single well-formed ProblemDetails body, plus an owner control proving `AssertOwnerAny` still admits either party. **All 6 now verified end-to-end.** Integration suite 93 → 99. |
+| **I-4** — `CLAUDE.md` stale | Important | ✅ **FIXED.** Test counts corrected (379/305 → **531** total: 358 backend + 99 integration + 74 mobile), the **missing integration command added** with the ADR-031 warning that the backend command does not run it, and a `## Key Files` entry added for `AgendaBuddy.IntegrationTests/`. `AGENTS.md` checked — it carries no test counts, so nothing to mirror. |
+| **I-1** — providers-list cache holds unprojected entities | Important | ⚠️ **ACCEPTED as a logged warning.** Correct today; the risk is a future edit returning the cached value directly. Logged in STATE's Guardrail Log. Phantom's recommended fix (project before caching, or a Calendar-style invariant test) is the right move for F-019/F-020, which rewrite this file. |
+| **I-2** — `/customers` returns full `CustomerEntity` to Provider-role callers | Important | ⚠️ **ACCEPTED as a logged warning.** Consistent with ADR-026's recorded decision to defer owner-scoping. Logged with the concrete payload list (`SubscribedProviderCollection`, `AppointmentCollection`, `KafkaTopic`) so the deferral is against what is actually exposed. F-021/F-024. |
+| **I-5** — catalog line still says "10 queries, 10 handlers" | Important | ⚠️ **ACCEPTED — scheduled.** Fixed by the `/ship` Reflect context refresh (16c-bis). Named explicitly in STATE so a hand-edit cannot miss it. |
+| A-1 … A-7 | Advisory | ⚠️ **ACCEPTED as logged warnings.** No action this feature. |
+
+Over-engineering one-liners: all three declined — each was judged a genuine trade, and the `METHOD()` stub
+deletion is blocked by AC-19 and belongs to F-017/F-019 as a batch.
+
+**Gates after the fix cycle:** backend **358** / integration **99** / mobile **74** — 0 failing, 0 warnings.
+
+---
+
+## Post-approval actions (Step 14 — done)
+
+- ✅ Accepted warnings logged in STATE's Guardrail Log: I-1, I-2, I-5 (Important) and A-1…A-7 (Advisory).
+- ✅ Two Important findings fixed and re-verified (I-3, I-4) — see the outcome table above.
+- **Nothing was "deferred"** in the Decision Registry sense: I-1/I-2/I-5 are *accepted warnings* with named
+  owners (F-019/F-020, F-021/F-024, Ship refresh), and I-2's deferral is already recorded as **ADR-026**. No
+  Decision Review Party convened, because a batched party that re-decides ADR-026 would duplicate a decision
+  the threat party already took with the maintainer present.
+- PR comments → **not pushed.** The build skill requires human approval before PR comments are posted, and
+  this review's findings are already visible in the branch (this file is committed to PR #38).
