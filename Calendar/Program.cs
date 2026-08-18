@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Library.Tools;
 using Microsoft.Extensions.Caching.Distributed;
 
@@ -124,11 +125,29 @@ var calendar = app.MapGroup("api/v1/calendar")
 calendar.MapGet("/availability/{email}",
     async Task<Results<Ok<List<DateTime>>, NotFound>> (
         IMediator mediator,
+        ClaimsPrincipal user,
         string email,
         ProviderService providerService,
         CalendarService calendarService,
         IRequestCollection requestCollection, IDistributedCache cache) =>
     {
+        // F-016 AC-10 / requirement 11 / threat T-006. A valid token proves the caller is SOMEBODY, not
+        // that {email} is theirs. Without this line any registered user could read any provider's full
+        // appointment list, including every customer email in it. Every sibling service already guarded
+        // (Provider:213, Customer:171, Services:153,:177); Calendar was the one family that forgot, and
+        // nothing could catch it because there was no integration test in the solution
+        // (11-testing.md:148).
+        //
+        // ⚠️ DESIGN INVARIANT, NOT AN IMPLEMENTATION DETAIL: this MUST stay ABOVE the cache read. The
+        // cache key is derived from {email} -- the request SUBJECT -- never the CALLER, so a cached value
+        // is not necessarily one the next caller may see. Ordering is the only thing that makes it safe.
+        // Reordering these lines, extracting a helper, or caching the RESPONSE instead of the DATA creates
+        // a cross-tenant leak, and F-019/F-020 will rewrite this exact file. Pinned by
+        // CalendarOwnershipTest.T006_AWarmCacheIsNotServedToADifferentPrincipal.
+        //
+        // No local try/catch: T08's AgendaBuddyExceptionHandler maps ForbiddenException to 403 centrally.
+        OwnershipGuard.AssertOwner(user, email);
+
         var key = $"availability-{email}";
 
         var dateTimesCollection = await cache.GetOrCreateAsync(key, async token =>
@@ -152,11 +171,29 @@ calendar.MapGet("/availability/{email}",
 calendar.MapGet("/appointments/{email}",
     async Task<Results<Ok<List<AppointmentEntity>>, NotFound>> (
         IMediator mediator,
+        ClaimsPrincipal user,
         string email,
         ProviderService providerService,
         CalendarService calendarService,
         IRequestCollection requestCollection, IDistributedCache cache) =>
     {
+        // F-016 AC-10 / requirement 11 / threat T-006. A valid token proves the caller is SOMEBODY, not
+        // that {email} is theirs. Without this line any registered user could read any provider's full
+        // appointment list, including every customer email in it. Every sibling service already guarded
+        // (Provider:213, Customer:171, Services:153,:177); Calendar was the one family that forgot, and
+        // nothing could catch it because there was no integration test in the solution
+        // (11-testing.md:148).
+        //
+        // ⚠️ DESIGN INVARIANT, NOT AN IMPLEMENTATION DETAIL: this MUST stay ABOVE the cache read. The
+        // cache key is derived from {email} -- the request SUBJECT -- never the CALLER, so a cached value
+        // is not necessarily one the next caller may see. Ordering is the only thing that makes it safe.
+        // Reordering these lines, extracting a helper, or caching the RESPONSE instead of the DATA creates
+        // a cross-tenant leak, and F-019/F-020 will rewrite this exact file. Pinned by
+        // CalendarOwnershipTest.T006_AWarmCacheIsNotServedToADifferentPrincipal.
+        //
+        // No local try/catch: T08's AgendaBuddyExceptionHandler maps ForbiddenException to 403 centrally.
+        OwnershipGuard.AssertOwner(user, email);
+
         var key = $"appointments-{email}";
 
         var appointmentEntities = await cache.GetOrCreateAsync(key, async token =>
