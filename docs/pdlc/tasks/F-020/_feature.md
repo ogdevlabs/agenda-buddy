@@ -2,8 +2,8 @@
 id: F-020
 title: api-refactor-rollout
 status: planned
-priority: 20
-labels: [roadmap, "priority:20"]
+priority: 21
+labels: [roadmap, "priority:21"]
 depends_on: [F-019]
 claimed_by: null
 created: 2026-08-18

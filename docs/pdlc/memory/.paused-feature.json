@@ -1,0 +1,37 @@
+{
+  "feature": "api-refactor-foundations",
+  "featureId": "F-018",
+  "phase": "Inception Complete — Ready for /build",
+  "subPhase": "Plan",
+  "activeTask": "none",
+  "lastCheckpoint": "Inception / Plan / 2026-08-18T17:45:00Z",
+  "partyMode": "agent-teams",
+  "featureBranch": "feat/F-018-api-refactor-foundations",
+  "pausedAt": "2026-08-18T17:37:14Z",
+  "pausedBy": "oscargarcia@ogdevlabs.onmicrosoft.com",
+  "handoff": true,
+  "pauseReason": "Construction ABORTED at the wave-1 standup, before any code was written, at the user's explicit request. F-014 through F-017 are to be delivered first. Not a blocker, not a failure — a roadmap resequencing.",
+  "resumeReadiness": "Resume needs NO re-planning. Inception is complete and merged (PR #37): PRD (27 reqs / 31 ACs / 9 stories), 5 design artifacts, 20 tasks in 7 waves, both gating spikes passed. `/continue` re-claims F-018 and re-enters Construction / Build at wave 1.",
+  "stateSnapshot": {
+    "currentPhaseAtPause": "Construction (rolled back to Inception Complete — no code was produced)",
+    "currentSubPhaseAtPause": "Build (wave-1 standup)",
+    "tasksTotal": 20,
+    "tasksDone": 0,
+    "commitsOnBranch": 0,
+    "workProduced": [
+      "docs/pdlc/mom/MOM_wave-1-kickoff_api-refactor-foundations_2026-08-18.md — the standup findings",
+      "3 dependency edges added to the task store (T01->T02, T03->T01, T03->T02) — KEEP THESE, they are real ordering constraints the plan missed"
+    ],
+    "readOnResume": [
+      "docs/pdlc/mom/MOM_wave-1-kickoff_api-refactor-foundations_2026-08-18.md — wave 1 is NOT 'fully parallel' as the plan claims; order is T02 -> T01 -> T03 -> T04 -> T19",
+      "docs/pdlc/prds/plans/plan_F-018_api-refactor-foundations_2026-08-18.md — Known gaps section names 6 things that will surprise the implementer",
+      "docs/pdlc/design/api-refactor-foundations/threat-model.md — 3 mitigate-now threats are [security] ACs on T06/T08"
+    ],
+    "scopeChangeCONFIRMED": "⚠️ CONFIRMED — F-016 Inception complete 2026-08-18. F-016 absorbs EIGHT of F-018's tasks: T01 (Persistence rename), T05 (test project + InternalsVisibleTo), T06 (CryptoSessionFixture), T07 (DockerPreflight), T08 (ServiceHostFixture), T09 (TokenFactory), T14 (401/403 auth-failure tests) and T18 (integration CI job — absorbed at F-016's Plan gate because the readiness party found the harness would otherwise be unenforced). Reason F-016 needed them: it changes endpoint authz across 5 services and NOTHING in this solution can verify that (11-testing.md:148 — Program.cs is not coverable, no integration test exists). ON RESUME F-018 IS ~12 TASKS: T02 constitution, T03 .editorconfig, T04 green-run counter, T10 Kafka fake, T11/T12/T13 tier sweep, T15 reaping, T16 OpenAPI, T17 spec drift, T19 mobile CI, T20 final verification. Its plan, dependency graph and AC set ALL need amending. DO NOT REBUILD A HARNESS THAT ALREADY EXISTS — F-016 built it, including the fail-closed container-identity guard that F-018's AC-28 called for.",
+    "openDecisionsAtPause": [
+      "TDD override for T02 (docs-only) and T04 (external tracker only) was ASKED AND NOT ANSWERED — the user aborted instead. Still owed on resume.",
+      "T19 needs a Step 9e split-and-defer: its CI-confirmation half is gated on a maintainer-pushed throwaway branch, which the dependency graph cannot express.",
+      "tasks.cjs check reports 3 expected security-ac-untested WARNINGs (T06 AC1 / T08 AC1 / T08 AC2). They clear only when Build links the tests."
+    ]
+  }
+}
