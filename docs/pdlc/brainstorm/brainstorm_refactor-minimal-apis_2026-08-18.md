@@ -1,11 +1,11 @@
 ---
 feature: refactor-minimal-apis
 date: 2026-08-18
-status: discover-complete
-last-updated: 2026-08-18T15:25:00Z
+status: prd-approved
+last-updated: 2026-08-18T16:10:00Z
 approved-by: ogdevlabs
 approved-date: 2026-08-18T15:25:00Z
-prd:
+prd: docs/pdlc/prds/PRD_F-018_api-refactor-foundations_2026-08-18.md
 ---
 
 # Brainstorm Log: API Refactor Program (F-018 → F-019 → F-020)

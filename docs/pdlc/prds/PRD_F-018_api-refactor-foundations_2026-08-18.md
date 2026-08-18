@@ -2,7 +2,7 @@
 <!-- pdlc-template-version: 2.4.0 -->
 
 **Date:** 2026-08-18
-**Status:** Draft
+**Status:** Approved
 **Feature slug:** api-refactor-foundations
 **Episode:** <!-- assigned after delivery -->
 
@@ -87,12 +87,14 @@ Relative to INTENT.md's personas: no effect on the Independent Service Provider 
 20. A red integration job MUST **block the PR from its first run**. The "10 consecutive green runs" count governs only *when CONSTITUTION §7 is formally amended*, never whether failures may be ignored.
 21. The integration job MUST report its wall-clock duration and fail or warn explicitly above **10 minutes**.
 22. The three existing mobile CI jobs (`build-android`, `build-ios`, `build-mobile-tests`) MUST be confirmed passing on a real run, and the project's headline test count MUST be reported as **379** (305 backend + 74 mobile).
+23. The "10 consecutive green runs" milestone MUST have a **named owner and a durable counter**, not just a definition. F-018 creates a beads issue — *"Amend CONSTITUTION §7 to require the integration gate (after 10 consecutive green runs)"* — assigned to the maintainer, whose notes field records the running count and the run URLs. Without this, "stable" is as unenforceable as the undefined version it replaced, which is the specific defect this requirement exists to close.
 
 **Governance**
 
-23. CONSTITUTION MUST be amended: §1 (.NET 8 → `net10.0`), §4 (`MiniValidator` → `Validot`), §9 (the five packages approved; the stale `Persitency` prohibition removed).
-24. ADR-014 through ADR-017 MUST be recorded (program shape, packages, validation change, harness).
-25. The system MAY adopt an `.editorconfig`, since the v0.1.0 ship fixed 69 whitespace findings with nothing preventing their return.
+24. CONSTITUTION MUST be amended: §1 (.NET 8 → `net10.0`), §4 (`MiniValidator` → `Validot`), §9 (the five packages approved; the stale `Persitency` prohibition removed).
+25. ADR-014 through ADR-017 MUST be recorded (program shape, packages, validation change, harness).
+26. The system SHOULD adopt an `.editorconfig` and enforce it in CI. The v0.1.0 ship fixed 69 whitespace findings with nothing preventing their return, and F-019/F-020 rewrite every endpoint file — formatting drift during a large refactor is noise that hides real changes in review. *(Promoted from MAY: a MAY with no acceptance criterion is a requirement that never happens.)*
+27. `Identity/Program.cs`'s comment claiming the process-wide Mongo client is "shared by the repositories and the EventStore" MUST be corrected — Identity registers no EventStore. Comment-only, no behaviour change; found while verifying AC-7.
 
 ---
 
@@ -101,7 +103,8 @@ Relative to INTENT.md's personas: no effect on the Independent Service Provider 
 - **Testcontainers can be made to work against Rancher Desktop.** This is the load-bearing assumption of the entire feature and is currently **unverified** — Rancher's socket is `~/.rd/docker.sock`, not the Docker Desktop default. If false, F-018's approach needs rethinking, not patching.
 - **`WebApplicationFactory` can host these services once `InternalsVisibleTo` is added.** The services use top-level statements with local functions; nothing else is assumed to block hosting.
 - **GitHub `ubuntu-latest` runners provide a usable Docker daemon** for Testcontainers with no additional runner setup.
-- **Query handlers persist audit events, not only command handlers** — `GetAllCustomersEvent` and siblings exist. This is what makes tier 3 applicable to the read-only `Calendar` service.
+- ~~**Query handlers persist audit events, not only command handlers.**~~ **VERIFIED 2026-08-18 — no longer an assumption.** `CheckCalendarAppointmentsQueryHandler.cs:28,40` and `CheckCalendarAvailabilityQueryHandler.cs:28,42` both call `eventStore.SaveAsync` on the success *and* failure paths, as do the Customer and Provider query handlers. This is what makes tier 3 applicable to the read-only `Calendar` service.
+- ~~**All seven services have an audit trail.**~~ **DISPROVEN 2026-08-18.** `Identity` registers `AddEventStore` **zero** times (each of the other six registers it once) and uses its own `IdentityDb`. Tier 3 is inapplicable to Identity — see AC-7. This corrected a factual error in the first draft of this PRD, which claimed tier 3 applied "for each service".
 - **A deterministic OpenAPI generation path exists** without adding a sixth dependency. If `Microsoft.Extensions.ApiDescription.Server` turns out to be required, that is a new package needing its own decision.
 - **The five approved packages are compatible with `net10.0` and with `MongoDB.Driver` pinned at 2.25.0.** F-013 was bitten by exactly this class of assumption (`Aspire.MongoDB.Driver` required driver ≥ 3.9.0 and failed restore with `NU1605`).
 - **No test currently depends on the `Persitency` spelling** beyond the 11 measured references.
@@ -116,8 +119,8 @@ Relative to INTENT.md's personas: no effect on the Independent Service Provider 
 4. The MongoDB connection string reaches each host as `ConnectionStrings:mongodb` with **zero changes to production source**. 🧪 test-first
 5. **Tier 1 — route contract:** each of the seven services has a test asserting a real request returns the expected HTTP status. 🧪 test-first
 6. **Tier 2 — persistence round-trip:** for each of the six services with write endpoints (Booking, Customer, Provider, Services, Profession, Identity), a write followed by a read returns the written data from a real MongoDB. `Calendar` satisfies this by seeding then reading. 🧪 test-first
-7. **Tier 3 — audit fired:** for each service, a test asserts the expected EventStore event was persisted. 🧪 test-first
-8. `Identity` has full tier coverage across all five of its write endpoints (`/register`, `/login`, `/refresh`, `/logout`, `/device-token`) — not route-contract only. 🧪 test-first
+7. **Tier 3 — audit fired:** for each of the **six** services that register `AddEventStore` (Booking, Calendar, Customer, Provider, Services, Profession), a test asserts the expected EventStore event was persisted. **`Identity` is excluded — it has no audit trail** (0 occurrences of `AddEventStore` versus 1 in each of the other six, and it uses its own `IdentityDb`). Tier 3 is inapplicable to it, not merely unwritten. 🧪 test-first
+8. `Identity` has **tier 1 and tier 2** coverage across all five of its write endpoints (`/register`, `/login`, `/refresh`, `/logout`, `/device-token`) — route contract and persistence round-trip, not route-contract alone. Tier 3 is excluded per AC-7. 🧪 test-first
 9. The token factory produces a valid token, an **expired** token that yields 401, and a **foreign-subject** token that yields 403 on an ownership-guarded route. 🧪 test-first
 10. With the Docker daemon stopped, the suite fails with a message naming Rancher Desktop and the `~/.rd/bin` PATH requirement. 🧪 test-first
 11. A simulated image-pull failure is reported as an infrastructure error, distinguishable from an assertion failure. 🧪 test-first
@@ -128,12 +131,21 @@ Relative to INTENT.md's personas: no effect on the Independent Service Provider 
 16. `EventAndCommands/Persistence/` exists, `git grep Persitency` returns **zero** matches in tracked source, all 379 tests pass, and the rename is an isolated commit that precedes the first integration test commit. 🧪 test-first
 17. An OpenAPI spec is committed for each of the seven services, generated by a documented command that does not require manually starting the app in `Development`. 🧪 test-first
 18. Spec generation exits non-zero and leaves the committed spec untouched when a service cannot boot. 🧪 test-first
-19. CI fails when a route is changed without regenerating the committed spec — demonstrated by deliberately changing one route and observing the failure. 🧪 test-first
-20. A separate CI job runs the integration tests on every PR, and a deliberately failing integration test blocks the PR on its first run. 🧪 test-first
+19. CI fails when a route is changed without regenerating the committed spec — demonstrated by deliberately changing one route and observing the failure. **Verified on a throwaway branch (see the CI-verification note below), not on `main`.** 🧪 test-first
+20. A separate CI job runs the integration tests on every PR, and a deliberately failing integration test blocks the PR on its first run. **Verified on the same throwaway branch.** 🧪 test-first
 21. The integration job prints its wall-clock duration, and exceeding 10 minutes produces an explicit failure or warning rather than passing silently. 🧪 test-first
-22. `build-android`, `build-ios` and `build-mobile-tests` are confirmed green on a real CI run, and the headline test count is reported as 379. 🧪 test-first
+22. `build-android`, `build-ios` and `build-mobile-tests` are confirmed green on a real CI run, and the headline test count is reported as 379. **Verified on the same throwaway branch.** 🧪 test-first
 23. CONSTITUTION §1, §4 and §9 are amended, and ADR-014 through ADR-017 exist in DECISIONS.md. 🧪 test-first
-24. All 379 pre-existing tests still pass and **no test has been deleted**. 🧪 test-first
+24. All 379 pre-existing tests still pass, and **no test file has been deleted**. Test files **may be modified only** by the `Persistence` namespace rename (which touches six `GlobalUsings.cs` files); no test body, assertion, or `[Fact]`/`[Theory]` is changed, removed, or skipped. 🧪 test-first
+25. `Identity/Program.cs`'s comment claiming the shared Mongo client is "shared by the repositories and the EventStore" is corrected — Identity has no EventStore. Comment-only; no behaviour change. 🧪 test-first
+26. An `.editorconfig` exists at the repo root, and `dotnet format agenda-buddy-backend.slnf --verify-no-changes` passes against it in CI. 🧪 test-first
+27. A beads issue exists titled *"Amend CONSTITUTION §7 to require the integration gate (after 10 consecutive green runs)"*, assigned to the maintainer, with a notes field recording the running green-run count. The count is therefore tracked somewhere durable rather than in someone's memory. 🧪 test-first
+
+> ### CI-verification note (AC-19, AC-20, AC-22)
+>
+> These three cannot be proven without a real CI run, and `main` is PR-protected with direct pushes disallowed. They are verified on a **short-lived throwaway branch pushed by the maintainer on request**: PDLC prepares the exact commits and commands, the maintainer pushes the branch and opens a PR, the three behaviours are observed on that PR, evidence is recorded in the verification document, and the branch is deleted. **Nothing lands on `main` outside a reviewed PR.**
+>
+> This is deliberately *not* downgraded to "the commands pass locally" — running the command locally proves the command works, not that CI is wired to run it. That distinction is precisely what let F-013's CI credential guard sit unexecuted until it first failed on PR #35.
 
 ---
 
@@ -195,12 +207,21 @@ And the job reports its wall-clock duration
 And exceeding ten minutes surfaces explicitly rather than passing silently
 
 **F-018-US-08: The deferred cleanups land safely**
-*Acceptance criteria: 16, 22, 23*
+*Acceptance criteria: 16, 22, 23, 24, 25, 26*
 Given `Persitency` is a known typo whose rename prohibition has expired
 When the rename lands as an isolated commit before any integration test is authored
 Then `git grep Persitency` returns zero matches in tracked source
-And all 379 tests still pass
+And all 379 tests still pass with no test file deleted and no test body altered
 And CONSTITUTION §1, §4 and §9 reflect reality
+And an `.editorconfig` prevents the whitespace drift returning during F-019/F-020
+And `Identity/Program.cs`'s comment no longer claims an EventStore that does not exist
+
+**F-018-US-09: The gate promise is trackable**
+*Acceptance criteria: 27*
+Given "stable" was defined as 10 consecutive green integration runs
+When F-018 ships
+Then a beads issue owned by the maintainer records the running count and run URLs
+And the §7 amendment is triggered by a tracked number rather than by someone remembering
 
 ---
 
@@ -292,6 +313,6 @@ The build loop enforces this at a mandatory **TDD gate** (build Step 9a-bis): im
 
 ## Approval
 
-**Approved by:** <!-- pending -->
-**Date approved:** <!-- pending -->
-**Notes:** <!-- pending -->
+**Approved by:** ogdevlabs
+**Date approved:** 2026-08-18
+**Notes:** Approved after a walkthrough that found and fixed five defects in the draft — most importantly AC-7, which claimed the EventStore audit tier applied to all seven services when `Identity` has no audit trail at all. Two conditions attached: (a) AC-19, AC-20 and AC-22 are verified on a short-lived throwaway branch pushed by the maintainer on request — nothing lands on `main` outside a reviewed PR; (b) the Testcontainers-on-Rancher spike and the OpenAPI-generation spike are the first two tasks, because every other acceptance criterion depends on them and neither approach is proven.
