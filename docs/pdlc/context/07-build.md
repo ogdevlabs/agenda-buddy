@@ -1,5 +1,12 @@
 # 07 — Build
 
+> **⚠️ F-013 delta (2026-08-18, `v0.1.0`) — this file was written 2026-08-15 and has NOT been re-read since.**
+>
+> **Stale counts.** 25 `.csproj` now, not 23 — `AgendaBuddy.AppHost` and `AgendaBuddy.ServiceDefaults` were added. A solution filter `agenda-buddy-backend.slnf` is now the build/test target for CI and local runs; it **excludes `MobileApp`**, which does not compile under `/p:MobileWorkloads=false` (`agenda-buddy-prr`). Aspire is pinned at 13.4.6, hosting-only — there is no Aspire workload to install, and `Aspire.MongoDB.Driver` must not be added (needs driver ≥ 3.9.0 vs the pinned 2.25.0 → `NU1605`).
+>
+> `file:line` anchors below may have shifted. Authoritative sources for the change: `docs/pdlc/design/aspire-wiring/ARCHITECTURE.md`, `docs/pdlc/episodes/EPISODE_aspire-wiring_2026-08-17.md`. A full targeted rehydration is queued as the first step of F-018.
+
+
 **Files:** `agenda-buddy.sln`, `global.json`, `Directory.Build.props`, 23 `*.csproj`.
 
 ---

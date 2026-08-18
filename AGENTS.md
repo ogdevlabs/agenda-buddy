@@ -1,5 +1,7 @@
 # Agent Instructions
 
+> **Project context lives in [CLAUDE.md](CLAUDE.md)** — tech stack, project structure, architecture, coding conventions, key files, and the local-run gotchas (Aspire AppHost, the three required user secrets, Rancher's off-PATH `docker`). Read it before touching code. This file covers issue tracking only.
+
 This project uses **bd** (beads) for issue tracking. Run `bd prime` for full workflow context.
 
 > **Architecture in one line:** Issues live in a local Dolt database

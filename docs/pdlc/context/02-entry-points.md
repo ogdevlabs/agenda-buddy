@@ -1,5 +1,12 @@
 # 02 — Entry Points
 
+> **⚠️ F-013 delta (2026-08-18, `v0.1.0`) — this file was written 2026-08-15 and has NOT been re-read since.**
+>
+> **Stale.** Every one of the seven `Program.cs` files now calls `builder.AddServiceDefaults()` as one of its first statements and `app.MapDefaultEndpoints()` near the end — present exactly once in each (Booking:6,55 · Calendar:7,55 · Customer:6,56 · Provider:7,59 · Services:10,56 · Profession:5,56 · Identity:13,54). Two DI changes matter: `IRequestCollection` is now **Scoped** (as a Singleton consuming a Scoped `IEventStore` it was a captive dependency that DI validation rejected — and validation runs only in `Development`, so six of seven services could not start there); and Profession's seeding moved out of DI-registration-time `.Wait()` into `ProfessionSeedHostedService`.
+>
+> `file:line` anchors below may have shifted. Authoritative sources for the change: `docs/pdlc/design/aspire-wiring/ARCHITECTURE.md`, `docs/pdlc/episodes/EPISODE_aspire-wiring_2026-08-17.md`. A full targeted rehydration is queued as the first step of F-018.
+
+
 **Files:** `Booking/Program.cs`, `Calendar/Program.cs`, `Customer/Program.cs`, `Provider/Program.cs`, `Services/Program.cs`, `Profession/Program.cs`, `Identity/Program.cs`, `MobileApp/MauiProgram.cs`.
 
 All seven server entry points are C# **top-level statements** (no `Program` class body) using `WebApplication.CreateBuilder(args)`. There is no `Startup.cs` anywhere. Route registration lives inline in `Program.cs` — see `01-api-surface.md` for the routes themselves; this file documents the **wiring**.

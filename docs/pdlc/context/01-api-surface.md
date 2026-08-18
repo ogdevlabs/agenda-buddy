@@ -1,5 +1,12 @@
 # 01 — API Surface
 
+> **⚠️ F-013 delta (2026-08-18, `v0.1.0`) — this file was written 2026-08-15 and has NOT been re-read since.**
+>
+> Routes themselves are unchanged, but **every service gained two endpoints** not documented here: `GET /health` (readiness — 200 `Healthy` / 503 `Unhealthy`, includes a 5s-cached MongoDB check) and `GET /alive` (liveness — stays 200 when MongoDB is down, by design). Both are anonymous. Ports are now **dynamically assigned by the Aspire AppHost**, so any 603x port numbers here are wrong under the AppHost.
+>
+> `file:line` anchors below may have shifted. Authoritative sources for the change: `docs/pdlc/design/aspire-wiring/ARCHITECTURE.md`, `docs/pdlc/episodes/EPISODE_aspire-wiring_2026-08-17.md`. A full targeted rehydration is queued as the first step of F-018.
+
+
 **Source of truth:** the route registrations in each service's `Program.cs`. There is **no committed OpenAPI/Swagger spec file** — Swashbuckle 10.2.3 generates one at runtime, and only in `Development` (`Booking/Program.cs:38-41` and the equivalent block in each service).
 
 **Files:** `Booking/Program.cs`, `Calendar/Program.cs`, `Customer/Program.cs`, `Provider/Program.cs`, `Services/Program.cs`, `Profession/Program.cs`, `Identity/Program.cs`.

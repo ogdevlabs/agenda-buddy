@@ -1,39 +1,61 @@
 # Agenda Buddy
 
-Agenda Buddy is a scheduling and appointment management platform for independent service providers (fitness coaches, tutors, therapists, software instructors, etc.) who need to manage clients, services, and appointments in one place. It is built as event-driven microservices on .NET 8.
+Agenda Buddy is a scheduling and appointment management platform for independent service providers (fitness coaches, tutors, therapists, software instructors, etc.) who need to manage clients, services, and appointments in one place. It is built as event-driven microservices on .NET 10, orchestrated locally with .NET Aspire.
 
 ## Tech Stack
 
-- **Language:** C# 12 / .NET 8
-- **Framework:** ASP.NET Core 8 Minimal APIs (one service per domain)
-- **Database:** MongoDB (MongoDB.Driver 2.25)
-- **Messaging:** Kafka (Confluent) + MediatR 12 (CQRS)
+- **Language:** C# / .NET 10 (`net10.0`)
+- **Framework:** ASP.NET Core Minimal APIs (one service per domain)
+- **Orchestration:** .NET Aspire 13.4.6, **hosting-only** — `AgendaBuddy.AppHost` + `AgendaBuddy.ServiceDefaults`
+- **Database:** MongoDB (MongoDB.Driver **pinned at 2.25.0** — see the Aspire caveat below)
+- **Messaging:** Kafka (Confluent) + MediatR (CQRS)
 - **Caching:** IDistributedCache (cache-aside pattern, 5-min TTL)
-- **Testing:** xUnit
-- **Infrastructure:** Docker + Docker Compose; GitHub Actions CI
+- **Observability:** OpenTelemetry traces/metrics/logs via ServiceDefaults, exported to the Aspire dashboard
+- **Testing:** xUnit — 305 tests across 12 projects
+- **Infrastructure:** Aspire AppHost (primary local) · Docker + Docker Compose (legacy fallback) · GitHub Actions CI
+
+> **Aspire caveat:** do **not** add `Aspire.MongoDB.Driver`. It requires MongoDB.Driver ≥ 3.9.0 against the pinned 2.25.0 and fails restore with `NU1605`. The project registers `AddSingleton<IMongoClient>` with a custom `MongoHealthCheck` instead (ADR-013). There is no Aspire workload to install.
 
 ## Project Structure
 
-- `Library/` — shared domain entities, `IRepository<T>` / `MongoDbRepository<T>`, all domain services, tools (CacheAside, EnumHelper, SupportTools), profession seed data
+- `AgendaBuddy.AppHost/` — Aspire composition root: declares MongoDB + Kafka containers and all 7 service projects
+- `AgendaBuddy.ServiceDefaults/` — shared cross-cutting setup referenced by every service (OpenTelemetry, health/liveness, service discovery, HTTP resilience, `PiiRedactingProcessor`)
+- `Library/` — shared domain entities, `IRepository<T>` / `MongoDbRepository<T>`, all domain services, tools (CacheAside, EnumHelper, SupportTools), `MongoConnectionResolver`, `MongoHealthCheck`, profession seed data
+- `Library.ServerAuth/` — server-side auth primitives (JWT validation, ownership guards)
 - `EventAndCommands/` — CQRS kernel: all commands, queries, handlers, events, and EventStore persistence
-- `Kafka/` — `KafkaClient` for topic creation (Confluent.Kafka)
-- `Booking/`, `Calendar/`, `Customer/`, `Provider/`, `Services/`, `Profession/` — six independent ASP.NET Minimal API microservices, each with its own MongoDB config and Dockerfile
+- `Kafka/` — `KafkaClient` for topic creation (Confluent.Kafka); broker address is configuration-driven
+- `Booking/`, `Calendar/`, `Customer/`, `Provider/`, `Services/`, `Profession/`, `Identity/` — seven independent ASP.NET Minimal API microservices
+- `MobileApp/` — .NET MAUI client. **Excluded from `agenda-buddy-backend.slnf`** because it does not compile under `/p:MobileWorkloads=false` (`agenda-buddy-prr`)
 - `*.Tests/` projects mirror the service they test (e.g., `Library.Tests/`, `EventsAndCommands.Tests/`)
 - `compose/` — Docker Compose data fixtures
 
 ## Development
 
 - **Install:** `dotnet restore`
-- **Dev server:** `docker compose -f docker-compose.yml -f docker-compose.override.yml up -d`
+- **Dev server (primary):** `dotnet run --project AgendaBuddy.AppHost` — starts MongoDB, Kafka, and all 7 services
+- **Dev server (legacy):** `docker compose -f docker-compose.yml -f docker-compose.override.yml up -d`
 - **Build:** `dotnet build --no-restore`
-- **Test:** `dotnet test --collect:"XPlat Code Coverage"`
-- **Stop:** `docker compose down`
+- **Test:** `dotnet test agenda-buddy-backend.slnf --collect:"XPlat Code Coverage"` — use the solution filter; the full solution includes MobileApp, which does not build
+- **Format:** `dotnet format agenda-buddy-backend.slnf` — there is no `.editorconfig`, so this applies built-in defaults
+- **Stop:** `Ctrl-C` on the AppHost (legacy: `docker compose down`)
+
+### Local-run gotchas
+
+- **`docker` is not on PATH** under Rancher Desktop — it lives at `~/.rd/bin`. Aspire shells out to docker, so `export PATH="$HOME/.rd/bin:$PATH"` first.
+- **Never delete `AgendaBuddy.AppHost/Properties/launchSettings.json`.** It sets `DOTNET_ENVIRONMENT=Development`; without it the AppHost runs as `Production`, user secrets never load, every secret parameter goes `ValueMissing`, and all 7 services park in `Waiting` **with nothing logged**.
+- **Three AppHost secrets** must exist in user secrets: `Parameters:mongodb-password`, `Parameters:jwt-public-key`, `Parameters:jwt-private-key`. See the README for provisioning on a new machine.
+- **Debug the app model** with `Logging__LogLevel__Aspire=Debug` — resource state transitions and parameter states are Debug-level only.
+- **MongoDB uses a persistent volume**, so its password must stay stable. If auth breaks: `docker volume rm agendabuddy.apphost-<hash>-mongodb-data`.
+- **Running a service standalone** needs `--no-launch-profile`, else launchSettings overrides `ASPNETCORE_ENVIRONMENT`.
+- macOS has no `timeout` — use background + sleep + kill.
 
 ## Architecture
 
-Six independent ASP.NET Minimal API microservices (Booking, Calendar, Customer, Provider, Services, Profession) each own their MongoDB collection and expose REST endpoints. All domain entities and services live in the shared `Library` project. Business logic flows through `EventAndCommands` (CQRS via MediatR): API handlers dispatch commands/queries to handlers, which call Library services and persist audit events to the MongoDB EventStore. Kafka provides async provider-to-customer messaging via per-provider topics.
+Seven independent ASP.NET Minimal API microservices (Booking, Calendar, Customer, Provider, Services, Profession, Identity) each own their MongoDB collection and expose REST endpoints. All domain entities and services live in the shared `Library` project. Business logic flows through `EventAndCommands` (CQRS via MediatR): API handlers dispatch commands/queries to handlers, which call Library services and persist audit events to the MongoDB EventStore. Kafka provides async provider-to-customer messaging via per-provider topics.
 
-See [.claude/docs/architecture.md](.claude/docs/architecture.md) for full architecture details.
+Locally, `AgendaBuddy.AppHost` is the composition root — it declares the infrastructure and every service, assigning ports dynamically (no hardcoded host ports). Every service calls `builder.AddServiceDefaults()` exactly once, which supplies OpenTelemetry, `/health` (readiness, including a 5-second-cached MongoDB check) and `/alive` (liveness), service discovery, and HTTP resilience. **One `IMongoClient` singleton is shared process-wide** by all services and `EventStore`.
+
+See [docs/pdlc/design/aspire-wiring/ARCHITECTURE.md](docs/pdlc/design/aspire-wiring/ARCHITECTURE.md) for the Aspire design and [docs/pdlc/context/](docs/pdlc/context/) for a `file:line`-anchored map of the codebase.
 
 ## Coding Conventions
 
@@ -50,14 +72,24 @@ See [.claude/docs/architecture.md](.claude/docs/architecture.md) for full archit
 - `Library/Repositories/MongoDbRepository.cs` — generic MongoDB CRUD implementation
 - `Library/Tools/CacheAside.cs` — distributed cache-aside extension (use this for all cached reads)
 - `EventAndCommands/ConfigurationLoader.cs` — MongoDB config bootstrap for EventAndCommands
-- `EventAndCommands/Persitency/EventStore.cs` — audit event persistence (note: "Persitency" is a known typo)
+- `EventAndCommands/Persitency/EventStore.cs` — audit event persistence (note: "Persitency" is a known typo). Takes an injected `IMongoClient`; it no longer builds one per request scope
 - `Booking/Program.cs` — representative Minimal API entry point showing the full wiring pattern
-- `docker-compose.yml` — Kafka + Zookeeper + Schema Registry + EventAndCommands + Library services
-- `.github/workflows/dotnet.yml` — CI pipeline: restore → build → test → coverage upload
+- `AgendaBuddy.AppHost/Program.cs` + `AgendaBuddy.AppHost/AppHostWiring.cs` — the Aspire app model: every resource, reference, and the run/publish (`DeploymentTarget`) split
+- `AgendaBuddy.ServiceDefaults/Extensions.cs` — `AddServiceDefaults()` / `MapDefaultEndpoints()`, called by all 7 services
+- `AgendaBuddy.ServiceDefaults/PiiRedactingProcessor.cs` — strips email addresses from span attributes before export. **Do not remove:** `url.path` was leaking real customer emails (threat T-004)
+- `Library/MongoConnectionResolver.cs` — resolves the Mongo connection string (Aspire → environment → appsettings) with an actionable failure message
+- `agenda-buddy-backend.slnf` — the solution filter CI and local test runs target; excludes MobileApp
+- `azure.yaml` + `.github/workflows/deploy.yml` — cloud deploy path. **Written, unit-tested, never executed**
+- `docker-compose.yml` — legacy Kafka + Zookeeper + Schema Registry + service definitions
+- `.github/workflows/dotnet.yml` — CI pipeline: restore → build → test → coverage upload, plus AppHost build and startup guards
 
 ---
 
 **PDLC memory:** `docs/pdlc/memory/` — CONSTITUTION.md, INTENT.md, OVERVIEW.md, DECISIONS.md, ROADMAP.md, STATE.md
+
+## ⚠️ Open risk you should know about
+
+The `agenda_buddy` MongoDB Atlas credential was committed and **is still in git history and still valid** — it was removed from the working tree in F-013, which is not the same as rotating it. The cluster holds client names, emails, phone numbers and appointment records, and has no backups. Rotation is a human-only action and is the hard prerequisite for any cloud deployment. See `docs/issues/ISSUE-002-atlas-credential-rotation.md`.
 
 
 <!-- BEGIN BEADS INTEGRATION v:1 profile:minimal hash:46cd31e7 -->

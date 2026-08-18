@@ -1,5 +1,12 @@
 # 08 — CI/CD and Deployment
 
+> **⚠️ F-013 delta (2026-08-18, `v0.1.0`) — this file was written 2026-08-15 and has NOT been re-read since.**
+>
+> **Stale.** CI gained path filters, an AppHost build step, a guard that every service starts in `Development`, and a credential-pattern guard that now **includes** `docs/pdlc` (it previously excluded the one tree that had already ingested the credential). The startup guard generates a throwaway JWT keypair in-step rather than consuming repository secrets. `azure.yaml` and `.github/workflows/deploy.yml` were added for an Azure Container Apps target — **written and unit-tested, never executed.** The three broken class-library Dockerfiles (finding 4) are **not** fixed; F-017 owns them.
+>
+> `file:line` anchors below may have shifted. Authoritative sources for the change: `docs/pdlc/design/aspire-wiring/ARCHITECTURE.md`, `docs/pdlc/episodes/EPISODE_aspire-wiring_2026-08-17.md`. A full targeted rehydration is queued as the first step of F-018.
+
+
 **Source of truth:** `.github/workflows/dotnet.yml` (the only workflow file), 8 `Dockerfile`s, `docker-compose.yml` + `docker-compose.override.yml`, `.dockerignore`, `scripts/seed/`.
 
 ---

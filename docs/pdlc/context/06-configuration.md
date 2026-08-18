@@ -1,5 +1,12 @@
 # 06 — Configuration
 
+> **⚠️ F-013 delta (2026-08-18, `v0.1.0`) — this file was written 2026-08-15 and has NOT been re-read since.**
+>
+> **Stale in its central finding.** The root-`MongoDB`-section read is gone; `Library/MongoConnectionResolver.cs` resolves the connection string from Aspire → environment → appsettings and throws naming every key tried rather than returning null. Empty and whitespace values count as absent. The committed Atlas credential is **out of the working tree** (17 files cleaned) but **remains in git history and remains valid** — see finding 1 in `00-overview.md`. Three new AppHost secrets live in user secrets and load **only in Development**: `Parameters:mongodb-password`, `Parameters:jwt-public-key`, `Parameters:jwt-private-key`.
+>
+> `file:line` anchors below may have shifted. Authoritative sources for the change: `docs/pdlc/design/aspire-wiring/ARCHITECTURE.md`, `docs/pdlc/episodes/EPISODE_aspire-wiring_2026-08-17.md`. A full targeted rehydration is queued as the first step of F-018.
+
+
 **Files:** 17 `appsettings*.json`, 7 `Properties/launchSettings.json`, `docker-compose.yml`, `docker-compose.override.yml`, `global.json`, `Directory.Build.props`, `EventAndCommands/ConfigurationLoader.cs`, `EventAndCommands/LibrarySettings.cs`, the 7 `MongoDbConfiguration.cs` classes.
 
 ---

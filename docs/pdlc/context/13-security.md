@@ -1,5 +1,12 @@
 # 13 — Security
 
+> **⚠️ F-013 delta (2026-08-18, `v0.1.0`) — this file was written 2026-08-15 and has NOT been re-read since.**
+>
+> **Stale.** The committed Atlas credential is out of the working tree (17 files) but **still in git history and still valid** — removal is not rotation; see finding 1 in `00-overview.md` and `docs/issues/ISSUE-002-atlas-credential-rotation.md`. New: JWT keys are Aspire `secret: true` parameters and only Identity receives the private key; spans are PII-redacted (`PiiRedactingProcessor.cs`) because `url.path` was exporting customer emails. **Unchanged and still open:** the anonymous `GET /api/v1/providers` full-record exposure, and Calendar's authenticated-but-not-ownership-guarded IDOR. F-016 owns both.
+>
+> `file:line` anchors below may have shifted. Authoritative sources for the change: `docs/pdlc/design/aspire-wiring/ARCHITECTURE.md`, `docs/pdlc/episodes/EPISODE_aspire-wiring_2026-08-17.md`. A full targeted rehydration is queued as the first step of F-018.
+
+
 **Files:** `Library.ServerAuth/AuthenticationExtensions.cs`, `Library.ServerAuth/Tools/OwnershipGuard.cs`, `Identity/Services/IdentityService.cs`, `Library/Entities/CredentialEntity.cs`, all 7 `Program.cs` pipelines, all `appsettings*.json`, `docker-compose.override.yml`, `MobileApp/Infrastructure/*`.
 
 **Reference:** `CONSTITUTION.md` §4 is the applicable standard. Threat IDs (`T-001`, `T-002`, `T-005`) referenced in code comments come from the F-001 `auth-and-identity` threat model.

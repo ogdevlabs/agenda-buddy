@@ -1,5 +1,12 @@
 # 12 — Observability
 
+> **⚠️ F-013 delta (2026-08-18, `v0.1.0`) — this file was written 2026-08-15 and has NOT been re-read since.**
+>
+> **WHOLLY SUPERSEDED — do not read this file as current.** Every finding in it is a negative one ("no health checks, no OpenTelemetry, no metrics, no tracing") and all of them are now false. `AgendaBuddy.ServiceDefaults/Extensions.cs` provides OpenTelemetry traces and metrics, `/health` and `/alive`, service discovery, and HTTP resilience across all seven services. `PiiRedactingProcessor.cs` strips email addresses from span attributes before export — enabling telemetry revealed `url.path` was exporting real customer emails.
+>
+> `file:line` anchors below may have shifted. Authoritative sources for the change: `docs/pdlc/design/aspire-wiring/ARCHITECTURE.md`, `docs/pdlc/episodes/EPISODE_aspire-wiring_2026-08-17.md`. A full targeted rehydration is queued as the first step of F-018.
+
+
 **Summary: one of the four pillars exists, and only in its default form.**
 
 | Pillar | Status |

@@ -50,22 +50,24 @@ _No tasks._
 
 _No tasks._
 
-## F-013 — aspire-wiring  `planned` — claimed by oscargarcia@ogdevlabs.onmicrosoft.com
+## F-013 — aspire-wiring  `shipped`
 
 | ID | Title | Status | Prio | Depends on |
 |----|-------|--------|------|------------|
-| F-013-T01 | Spike: resolve Aspire version + MongoDB.Driver 2.25.0 compatibility (R-1, OQ-3) | open | 1 | — |
-| F-013-T02 | Create AgendaBuddy.ServiceDefaults project | open | 2 | F-013-T01 |
-| F-013-T03 | Add Library/Configuration/MongoConnectionResolver + MongoHealthCheck | open | 2 | F-013-T01 |
-| F-013-T04 | Add connection-resolution tests for all 7 services (R-3) | open | 2 | F-013-T03 |
-| F-013-T05 | Refactor Mongo wiring in all 7 services + EventStore | open | 3 | F-013-T03, F-013-T04 |
-| F-013-T06 | Update CI: path filters, AppHost build, guard assertions (R-8) | open | 3 | F-013-T02 |
-| F-013-T07 | Make KafkaClient.BootstrapServers configuration-driven (AC-5.5) | open | 3 | F-013-T01 |
-| F-013-T08 | Create AgendaBuddy.AppHost and wire 9 resources | open | 4 | F-013-T02, F-013-T05, F-013-T07 |
-| F-013-T09 | Remove the committed Atlas credential from all 14 files (AC-2.1/2.2) | open | 4 | F-013-T05, F-013-T08 |
-| F-013-T10 | Verify acceptance criteria and document the run (AC-1.x, AC-3.x, AC-4.1) | open | 5 | F-013-T08, F-013-T09 |
-| F-013-T11 | Document the AppHost workflow in README | open | 5 | F-013-T08 |
-| F-013-T12 | Record ADR-013 (Aspire adoption) in DECISIONS.md | open | 5 | F-013-T01 |
+| F-013-T01 | Spike: resolve Aspire version + MongoDB.Driver 2.25.0 compatibility (R-1, OQ-3) | done | 1 | — |
+| F-013-T02 | Create AgendaBuddy.ServiceDefaults project | done | 2 | F-013-T01 |
+| F-013-T03 | Add Library/Configuration/MongoConnectionResolver + MongoHealthCheck | done | 2 | F-013-T01 |
+| F-013-T04 | Add connection-resolution tests for all 7 services (R-3) | done | 2 | F-013-T03 |
+| F-013-T05 | Refactor Mongo wiring in all 7 services + EventStore | done | 3 | F-013-T03, F-013-T04 |
+| F-013-T06 | Update CI: path filters, AppHost build, guard assertions (R-8) | done | 3 | F-013-T02, F-013-T08 |
+| F-013-T07 | Make KafkaClient.BootstrapServers configuration-driven (AC-5.5) | done | 3 | F-013-T01 |
+| F-013-T08 | Create AgendaBuddy.AppHost and wire 9 resources | done | 4 | F-013-T02, F-013-T05, F-013-T07 |
+| F-013-T09 | Remove the committed Atlas credential from all 14 files (AC-2.1/2.2) | done | 4 | F-013-T05, F-013-T08 |
+| F-013-T13 | Fix captive dependency blocking startup in Development (AC-1.1/AC-1.3) | done | 4 | — |
+| F-013-T10 | Verify acceptance criteria and document the run (AC-1.x, AC-3.x, AC-4.1) | done | 5 | F-013-T08, F-013-T09 |
+| F-013-T11 | Document the AppHost workflow in README | done | 5 | F-013-T08 |
+| F-013-T12 | Record ADR-013 (Aspire adoption) in DECISIONS.md | done | 5 | F-013-T01, F-013-T02, F-013-T03, F-013-T07 |
+| F-013-T14 | Manual AppHost run attestation — 5 criteria blocked on a container runtime | done | 5 | — |
 
 ## F-014 — wire-unreached-services  `planned`
 
@@ -80,6 +82,10 @@ _No tasks._
 _No tasks._
 
 ## F-017 — container-and-cd-hardening  `planned`
+
+_No tasks._
+
+## F-018 — refactor-minimal-apis  `planned` — claimed by oscargarcia@ogdevlabs.onmicrosoft.com
 
 _No tasks._
 

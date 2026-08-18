@@ -1,7 +1,7 @@
 # Roadmap
 
 **Project:** Agenda Buddy
-**Last updated:** 2026-08-15T16:45:00Z
+**Last updated:** 2026-08-18T13:20:00Z
 
 ---
 
@@ -32,7 +32,16 @@
 | F-010 | payment-integration | Connect a payment gateway (Stripe) so providers can collect fees at booking time | 10 | Shipped | oscargarcia@ogdevlabs.onmicrosoft.com | 2026-07-31 | PR #28 |
 | F-011 | upgrade-to-net10 | Upgrade all projects from .NET 8 to .NET 10 LTS — TFMs, NuGet packages, Docker base images, CI workflow | 11 | Shipped | oscargarcia@ogdevlabs.onmicrosoft.com | 2026-07-31 | PR #29 |
 | F-012 | mobile-app | Cross-platform iOS and Android mobile client — providers and customers manage appointments, services, notifications, and messaging from a native mobile experience | 12 | Shipped | oscargarcia@ogdevlabs.onmicrosoft.com | 2026-07-31 | PR #31 |
-| F-013 | aspire-wiring | Wire the solution as a .NET Aspire solution — AppHost orchestration for the six microservices plus Identity, ServiceDefaults for telemetry/health/resilience, and Aspire-managed MongoDB + Kafka resources for local development | 13 | In Progress | oscargarcia@ogdevlabs.onmicrosoft.com | — | — |
+| F-013 | aspire-wiring | Wire the solution as a .NET Aspire solution — AppHost orchestration for the six microservices plus Identity, ServiceDefaults for telemetry/health/resilience, and Aspire-managed MongoDB + Kafka resources for local development | 13 | Shipped | — | 2026-08-18 | [EPISODE_aspire-wiring_2026-08-17.md](../episodes/EPISODE_aspire-wiring_2026-08-17.md) (`v0.1.0`, PR #35) |
+| F-014 | wire-unreached-services | Register and route the six shipped-but-unreachable capabilities: NotificationService, MessageService, NoteService, PaymentService, ReportingService, DeactivateProviderCommand. All six have domain implementations and unit tests but no DI registration, no configured collection, and no HTTP route — so F-006 through F-010 are marked Shipped while being unreachable | 14 | Planned | — | — | — |
+| F-015 | api-gateway-and-mobile-contract | Make the mobile client actually reach the backend: add the missing `api/v1/` prefixes, introduce a gateway so one base URL can address seven services, fix the three wrong base URLs, wire the unused refresh-token flow, and make LogoutAsync call the server | 15 | Planned | — | — | — |
+| F-016 | secure-public-endpoints | Close the PII exposure: six anonymous endpoints leak data (worst is `GET /api/v1/providers`, which returns every provider's full record including customer emails, unauthenticated and unpaginated); ownership-guard both Calendar routes (IDOR); actually call `OwnershipGuard.AssertRole`; paginate list endpoints; map ForbiddenException to 403 centrally | 16 | Planned | — | — | — |
+| F-017 | container-and-cd-hardening | Fix the container and CI story: three Dockerfiles publish net10.0 output onto a dotnet/runtime:8.0 base and cannot run; delete the three class-library Dockerfiles and their Compose services; implement the CONSTITUTION §7 dependency-audit + secret-scan gate; add image build/scan/push to CI; build a WebApplicationFactory integration-test capability | 17 | Planned | — | — | — |
+| F-018 | refactor-minimal-apis | Restructure the Minimal API layer following the [Gramli/AuthApi](https://github.com/Gramli/AuthApi) reference — endpoint organisation, validation, and result handling — replacing the current `RequestCollection` hand-wiring | 18 | In Progress | oscargarcia@ogdevlabs.onmicrosoft.com | — | — |
+
+> **Roadmap drift repaired 2026-08-18.** F-014 through F-017 existed as feature records in `docs/pdlc/tasks/` since 2026-08-15 but were never added to this table, which stopped at F-013. They are now listed. Also note F-001–F-012 are marked `Shipped` but predate PDLC ship tracking — they have no episode files, no CHANGELOG entries and no tags; `v0.1.0` is the first PDLC-tracked release.
+>
+> **F-018 is being worked ahead of F-014–F-017** at the user's explicit request — a structural refactor of every endpoint is cheaper before those four add more endpoints to it.
 
 ---
 

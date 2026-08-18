@@ -5,12 +5,25 @@
 
 > **2026-08-18 update.** The five criteria previously blocked on a container runtime are now **verified** against Rancher Desktop, after ISSUE-001 was root-caused and fixed (missing `launchSettings.json` → AppHost ran as `Production` → user secrets never loaded → every secret parameter `ValueMissing` → all seven services parked in `Waiting`). Two items inside AC-3.4 remain a visual check in the dashboard and are marked as such rather than claimed. See `docs/issues/ISSUE-001-apphost-never-launches-services.md`.
 
+> **2026-08-18 second update — the three visual checks are now DONE (Ship / Verify, v0.1.0).** The AppHost was started again under Rancher Desktop, all seven services reported `/health` = `Healthy` and `/alive` = 200, and traffic was generated (21× `/health`, 21× `/alive`, plus five deliberately email-bearing requests using `customer.pii@example.com`, one of which returned 200 via `?email=`). A human then inspected the dashboard and confirmed all three:
+>
+> | Check | Outcome |
+> |---|---|
+> | **AC-3.4 rendering** — traces, metrics and structured logs for all 7 services | ✅ **verified by inspection.** All seven appear with data in all three views. |
+> | **Threat T-004** — span inspection | ✅ **verified by inspection.** `http.route` renders as a template; `url.path` shows the email **redacted**. The literal `customer.pii@example.com` was not visible in any span attribute despite being sent five times, including on a 200 response. `PiiRedactingProcessor` holds up against live traffic, not just the in-memory exporter test. |
+> | **Review finding A-3** — JWT parameter masking | ✅ **verified by inspection.** `jwt-public-key` and `jwt-private-key` render masked on the `identity` resource, not as readable key material. |
+>
+> **Nothing in F-013 is now recorded as unverified.** Item 6 under "Outstanding" is closed; `agenda-buddy-e7e` is closed.
+>
+> *Operational note observed during this run:* killing the AppHost with `SIGTERM` left six orphan service processes and required a second `pkill`. The two containers were cleaned up correctly. A normal `Ctrl-C` may behave differently; this was not investigated further.
+
 ## Summary
 
 | Outcome | Count |
 |---|---|
-| ✅ Verified | 23 |
+| ✅ Verified | 23 of 23 ACs, plus all 3 dashboard visual checks |
 | ⛔ Blocked | 0 |
+| ⚠️ Unverified | 0 |
 
 The plan expected AC-1.1/1.2/1.3, AC-3.2/3.3, AC-3.4 and AC-4.1 to be manual (E-7). **Four of those were automated or executed instead** — AC-3.1, AC-3.2, AC-3.3 by probing a live service, and AC-4.1 by starting all seven.
 
@@ -80,4 +93,10 @@ The plan expected AC-1.1/1.2/1.3, AC-3.2/3.3, AC-3.4 and AC-4.1 to be manual (E-
 3. **`agenda-buddy-prr`** — `MobileApp` compile failure; also breaks the `build-mobile-tests` CI job.
 4. **`scripts/seed/seed-mongo.sh`** is stale: it hardcodes `mongo:27017` and targets `ProviderDb`/`CustomerDb`, which no service reads. Documented, not fixed (E-8).
 5. **No integration-test harness** exists (E-7). The five criteria above were verified by hand against a live AppHost, so nothing in CI would catch a regression in orchestrated startup. `AppHostWiringTest` asserts the model, not the run.
-6. **Three visual checks in the dashboard** remain: AC-3.4's rendering of traces/metrics/logs for all 7, threat **T-004**'s span inspection (`http.route` templates rather than raw paths containing an email), and review finding **A-3** (JWT parameters masked). The stack was left running with traffic already generated, including an email-bearing path.
+6. ~~**Three visual checks in the dashboard** remain: AC-3.4's rendering of traces/metrics/logs for all 7, threat **T-004**'s span inspection (`http.route` templates rather than raw paths containing an email), and review finding **A-3** (JWT parameters masked).~~ **CLOSED 2026-08-18 at Ship / Verify (v0.1.0).** All three inspected and confirmed against a live AppHost — see the second update at the top of this file. `agenda-buddy-e7e` closed.
+
+### Still outstanding after v0.1.0
+
+Items 1–5 above remain open. Item 1 (rotate the Atlas credential) is the highest residual risk and is the hard prerequisite for any cloud deployment — it is human-only and tracked as `docs/issues/ISSUE-002-atlas-credential-rotation.md` / `agenda-buddy-41s`.
+
+Partial progress on item 2, recorded at the Ship gate rather than claimed as done: the v0.1.0 ship **did** run both halves of the §7 scan by hand — `dotnet list package --vulnerable --include-transitive` returned **0 vulnerable packages across all 25 projects**, and a pattern-based secret scan found the working tree clean (all `mongodb+srv://` hits are placeholders or explicit redaction markers) while confirming **9 commits still carry the credential in history**. Neither `gitleaks` nor `trufflehog` is installed, so this was greps, not a scanner, and it ran manually rather than in CI. F-017 still owns making it a real, automated gate.

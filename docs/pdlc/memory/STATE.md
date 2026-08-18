@@ -5,13 +5,13 @@
      Claude reads this file at the start of every session to auto-resume from the last checkpoint.
      If this file is missing or empty, PDLC will prompt you to run /pdlc init. -->
 
-**Last updated:** 2026-08-18T03:00:00Z
+**Last updated:** 2026-08-18T12:44:29Z
 
 ---
 
 ## Current Phase
 
-Construction
+Operation
 
 ---
 
@@ -49,19 +49,28 @@ _None active. Run `/night-shift <F-NNN>` to start an autonomous run (requires by
 
 ## Current Sub-phase
 
-Wrap-up
+Reflect
 
 ---
 
 ## Last Checkpoint
 
-Construction / Wrap-up / 2026-08-18T03:00:00Z
+Operation / Reflect / 2026-08-18T13:20:00Z
 
 ---
 
 ## Party Mode
 
 agent-teams
+
+---
+
+## Guardrail Log
+
+| Timestamp | Guardrail | Detail |
+|-----------|-----------|--------|
+| 2026-08-18T12:44:29Z | ship_phase_mismatch | `/ship` started with Current Phase `Construction` (sub-phase Wrap-up), not `Construction Complete`. User confirmed: F-013's branch is merged to main and 14/14 tasks are done; the phase marker was never advanced after the ISSUE-001 fix. Bookkeeping gap, not unfinished work. |
+| 2026-08-18T12:44:29Z | required_gate_unmet | CONSTITUTION §7 `Security scan (dependency audit + secret scan)` is marked always-required and un-uncheckable but is not implemented — CI has a single credential grep, not a scanner. Pre-existing project-wide gap, not introduced by F-013; owned by F-017. User authorized shipping with the gate unmet. Unit-test gate verified empirically: 305 passing / 0 failing / 0 warnings across 12 projects. |
 
 ---
 
@@ -129,6 +138,39 @@ recorded as unverified rather than claimed. Start the AppHost, hit any service, 
 ---
 
 ## Handoff
+
+```json
+{
+  "phase_completed": "Operation / Ship",
+  "next_phase": "Operation / Verify",
+  "feature": "aspire-wiring",
+  "feature_id": "F-013",
+  "version": "v0.1.0",
+  "key_outputs": [
+    "docs/pdlc/memory/CHANGELOG.md",
+    "docs/pdlc/memory/DEPLOYMENTS.md",
+    "docs/pdlc/episodes/EPISODE_aspire-wiring_2026-08-17.md"
+  ],
+  "decisions_made": [
+    "Tagged v0.1.0 at c86bca9 and pushed — the repo had zero tags despite 13 features marked Shipped, so Step 6's initial-tag rule applied",
+    "Did NOT run scripts/ship-merge.sh — it hardcodes 'feature/<name>' but the branch is 'feat/F-013-aspire-wiring', and there was nothing to merge (PR #35 already merged it)",
+    "Two '!' breaking commits (c6b70b6 PII span redaction, d00b87f credential removal) recorded under Breaking Changes rather than forcing v1.0.0, since this is a pre-1.0 project",
+    "Applied dotnet format across agenda-buddy-backend.slnf — 69 pre-existing WHITESPACE findings, committed as a separate 'style:' commit AFTER the v0.1.0 tag; 305 tests pass before and after",
+    "Left the v0.1.0 tag at c86bca9 rather than force-updating an already-pushed tag to include the style commit",
+    "DEPLOY SKIPPED — recorded as skipped-with-reason in DEPLOYMENTS.md, not as a deployment",
+    "Registered 'cloud' (Azure) in DEPLOYMENTS.md as a known-but-never-deployed environment so the unexercised capability is visible"
+  ],
+  "deploy_skipped_because": [
+    "The unrotated agenda_buddy Atlas credential is a hard prerequisite — still in git history, still valid (ISSUE-002 / agenda-buddy-41s)",
+    "No Azure subscription is wired to this machine",
+    "The first azd up must be interactive to discover parameter names before AZD_ENV_VARS can be set"
+  ],
+  "next_action": "Verify sub-phase. There is no deployment to smoke-test; the only outstanding verification is the 3 local dashboard visual checks (agenda-buddy-e7e).",
+  "pending_questions": []
+}
+```
+
+_Superseded Construction handoff (F-013), retained because its gotchas and do-not-redo list are still live:_
 
 ```json
 {
