@@ -198,8 +198,8 @@ customers.MapGet("",
         // F-016 AC-15 / ADR-023. See Provider/Program.cs for why clamping rather than rejecting.
         var pageRequest = PageRequest.Clamp(page, pageSize);
 
-    // ⚠️ The cache key carries the page, or page 2 would serve page 1's entry. Cheap to get wrong and
-    // invisible in a single-page test.
+        // ⚠️ The cache key carries the page, or page 2 would serve page 1's entry. Cheap to get wrong and
+        // invisible in a single-page test.
         var key = $"customers-p{pageRequest.Page}-s{pageRequest.PageSize}";
         var customerCollection = await cache.GetOrCreateAsync(key,
             async token => await EventsHelper.GetCustomersEvent(
