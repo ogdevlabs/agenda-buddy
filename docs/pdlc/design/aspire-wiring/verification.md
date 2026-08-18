@@ -1,16 +1,16 @@
 # Acceptance Criteria Verification — F-013 aspire-wiring
 
-**Attested by:** Claude (Neo, Construction lead) · **Date:** 2026-08-17
+**Attested by:** Claude (Neo, Construction lead) · **Date:** 2026-08-17, updated **2026-08-18**
 **Branch:** `feat/F-013-aspire-wiring` · **SDK:** 10.0.400 · **Aspire:** 13.4.6
 
-> **Environment limitation, stated up front.** This machine has **no container runtime** — neither `docker` nor `podman` is installed. Five criteria depend on the AppHost actually provisioning MongoDB and Kafka, so they **could not be verified here** and are carved into **F-013-T14** for someone with Docker. They are listed as `BLOCKED`, not as passing. Nothing below is attested from inspection alone unless its Verification column says "code review".
+> **2026-08-18 update.** The five criteria previously blocked on a container runtime are now **verified** against Rancher Desktop, after ISSUE-001 was root-caused and fixed (missing `launchSettings.json` → AppHost ran as `Production` → user secrets never loaded → every secret parameter `ValueMissing` → all seven services parked in `Waiting`). Two items inside AC-3.4 remain a visual check in the dashboard and are marked as such rather than claimed. See `docs/issues/ISSUE-001-apphost-never-launches-services.md`.
 
 ## Summary
 
 | Outcome | Count |
 |---|---|
-| ✅ Verified | 18 |
-| ⛔ Blocked on a container runtime (→ F-013-T14) | 5 |
+| ✅ Verified | 23 |
+| ⛔ Blocked | 0 |
 
 The plan expected AC-1.1/1.2/1.3, AC-3.2/3.3, AC-3.4 and AC-4.1 to be manual (E-7). **Four of those were automated or executed instead** — AC-3.1, AC-3.2, AC-3.3 by probing a live service, and AC-4.1 by starting all seven.
 
@@ -20,9 +20,9 @@ The plan expected AC-1.1/1.2/1.3, AC-3.2/3.3, AC-3.4 and AC-4.1 to be manual (E-
 
 | AC | Outcome | Evidence |
 |---|---|---|
-| AC-1.1 | ⛔ **BLOCKED** | Needs a container runtime. → F-013-T14 |
-| AC-1.2 | ⛔ **BLOCKED** | Dashboard listing needs a running AppHost. → F-013-T14. *Partial:* `AppHostWiringTest.AllNineResourcesAreRegistered` asserts all nine exist in the model. |
-| AC-1.3 | ⛔ **BLOCKED** | Needs the dashboard. → F-013-T14. *Partial:* all 7 services verified to start and serve `/health` standalone (see AC-3.2). |
+| AC-1.1 | ✅ **executed 2026-08-18** | `dotnet run --project AgendaBuddy.AppHost` in a clean shell with **no exported environment variables**: dashboard served, both containers healthy, all 7 services launched. |
+| AC-1.2 | ✅ **executed 2026-08-18** | 9 resources running: DCP lists 8 executables (dashboard + 7 services, all `Running`) plus the `mongodb` and `kafka` containers. Model side asserted by `AppHostWiringTest.AllNineResourcesAreRegistered`. |
+| AC-1.3 | ✅ **executed 2026-08-18** | `GET /health` → `200 Healthy` on all seven under the AppHost, on the dynamically assigned ports. |
 | AC-1.4 | ✅ | `AppHostWiringTest.NoServiceBindsAHardcodedHostPort`. Took **two** fixes — the launch profile *and* `Kestrel:Endpoints` in `appsettings.json` both pin `603x`. The test fails if either route reopens. |
 | AC-1.5 | ✅ | `dotnet list AgendaBuddy.AppHost reference` → the 7 services, no MobileApp. Also asserted in-test and guarded in CI. |
 
@@ -32,7 +32,7 @@ The plan expected AC-1.1/1.2/1.3, AC-3.2/3.3, AC-3.4 and AC-4.1 to be manual (E-
 |---|---|---|
 | AC-2.1 | ✅ | `git grep` for the password literal returns nothing in tracked files. **The criterion was self-defeating as written** — it embedded the password in the PRD, guaranteeing a match. The PRD and brainstorm log were redacted to a placeholder. |
 | AC-2.2 | ✅ | `git grep -nE 'mongodb(\+srv)?://[^ "/]+:[^@"]+@'` returns nothing in tracked files. 17 files cleaned, not the 14 estimated — two were `docs/pdlc/context/` files the hydrate backfill had copied the URI into. Guarded in CI. |
-| AC-2.3 | ⛔ **BLOCKED** | Depends on AC-1.1. → F-013-T14 |
+| AC-2.3 | ✅ **executed 2026-08-18** | Every service resolves its connection string under the AppHost — `/health` runs the MongoDB connectivity check, and all seven return `Healthy`. This criterion **caught a second real defect**: `WithReference(database)` injects `ConnectionStrings__agenda-buddy`, not the `ConnectionStrings:mongodb` the resolver reads, so `profession` crashed on startup (exit 134) and the other six would have failed on first request. Fixed by injecting the canonical key; guarded by `EveryServiceReceivesTheCanonicalMongoConnectionStringKey` (7 cases). |
 | AC-2.4 | ✅ | All 7 services started standalone with only `ConnectionStrings__mongodb` set, in both `Staging` and `Development`, each reaching "Now listening on". |
 | AC-2.5 | ✅ | `MongoConnectionResolverTest.Resolve_ThrowsNamingEveryKeyTried_WhenNoneResolves` and `Resolve_FailureMessageIsActionable`. Empty and whitespace values are treated as absent, which is what makes the emptied keys fall through rather than reaching `MongoClient`. |
 
@@ -45,7 +45,7 @@ The plan expected AC-1.1/1.2/1.3, AC-3.2/3.3, AC-3.4 and AC-4.1 to be manual (E-
 | AC-3.1 | ✅ | `ServiceDefaultsExtensionsTest` covers both endpoints; confirmed live against Booking — `GET /health` and `GET /alive` both respond. |
 | AC-3.2 | ✅ **executed, not inspected** | Booking started with no MongoDB reachable: `GET /health` → **HTTP 503 `Unhealthy`**. |
 | AC-3.3 | ✅ **executed** | Same instant, same process: `GET /alive` → **HTTP 200 `Healthy`**. This is risk **R-6** disproven in practice — the process is alive while its database is not, so an orchestrator will not restart it. Also covered by `MapDefaultEndpoints_AliveStaysOk_WhenAReadinessCheckFails`. |
-| AC-3.4 | ⛔ **BLOCKED** | Traces/metrics/logs in the dashboard need a running AppHost. → F-013-T14. Registration of the OTel providers is asserted by `AddServiceDefaults_RegistersOpenTelemetryTracingAndMetrics`. |
+| AC-3.4 | ✅ **executed 2026-08-18**, with one visual check outstanding | Under the AppHost all seven services export to the dashboard's OTLP endpoint with **zero exporter errors** across their stdout/stderr after live traffic (7 × `/health`, 7 × `/alive`, 3 × an email-bearing path). Provider registration asserted by `AddServiceDefaults_RegistersOpenTelemetryTracingAndMetrics`. **Not machine-checked:** that traces, metrics and structured logs render for all 7 in the dashboard UI, and threat T-004's span inspection — both need eyes on the dashboard, along with review finding A-3 (JWT masking). Redaction itself is covered by `TelemetryPiiTest`. |
 | AC-3.5 | ✅ | `builder.AddServiceDefaults();` present exactly once in all 7 `Program.cs`. |
 
 ## US-4 — The stack starts outside Development
@@ -79,4 +79,5 @@ The plan expected AC-1.1/1.2/1.3, AC-3.2/3.3, AC-3.4 and AC-4.1 to be manual (E-
 2. **`CONSTITUTION.md` §7 security scan** (dependency audit + secret scan) is still not implemented. CI gained a single-pattern credential assertion, which is not a scanner. Deferred to **F-017**.
 3. **`agenda-buddy-prr`** — `MobileApp` compile failure; also breaks the `build-mobile-tests` CI job.
 4. **`scripts/seed/seed-mongo.sh`** is stale: it hardcodes `mongo:27017` and targets `ProviderDb`/`CustomerDb`, which no service reads. Documented, not fixed (E-8).
-5. **No integration-test harness** exists (E-7). The five blocked criteria are blocked because of this plus the missing container runtime.
+5. **No integration-test harness** exists (E-7). The five criteria above were verified by hand against a live AppHost, so nothing in CI would catch a regression in orchestrated startup. `AppHostWiringTest` asserts the model, not the run.
+6. **Three visual checks in the dashboard** remain: AC-3.4's rendering of traces/metrics/logs for all 7, threat **T-004**'s span inspection (`http.route` templates rather than raw paths containing an email), and review finding **A-3** (JWT parameters masked). The stack was left running with traffic already generated, including an email-bearing path.

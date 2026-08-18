@@ -122,20 +122,39 @@ dotnet run --project AgendaBuddy.AppHost
 
 The Aspire dashboard opens with all nine resources, their health, logs, traces, and metrics. `Ctrl+C` stops everything.
 
-**On the first run** Aspire prompts for two values and stores them in [user secrets](https://learn.microsoft.com/aspnet/core/security/app-secrets), scoped to the AppHost:
+**On the first run** Aspire prompts for three values and stores them in [user secrets](https://learn.microsoft.com/aspnet/core/security/app-secrets), scoped to the AppHost:
 
 | Prompt | What to paste |
 |---|---|
 | `jwt-public-key` | RSA public key (PEM) used by every service to verify tokens |
 | `jwt-private-key` | RSA private key (PEM) used by Identity to sign them |
+| `mongodb-password` | Any password you like — it becomes the local MongoDB root password |
 
-They are asked for once per machine and never written to the repository — this replaces the undocumented gitignored `.env` file the services previously relied on. Because they are declared as secret parameters, the dashboard masks them.
+They are asked for once per machine and never written to the repository — this replaces the undocumented gitignored `.env` file the services previously relied on. Because they are declared as secret parameters, the dashboard masks them. To set them without the prompt:
+
+```bash
+dotnet user-secrets set "Parameters:mongodb-password" "<password>" --project AgendaBuddy.AppHost
+```
+
+`mongodb-password` is declared explicitly rather than generated because MongoDB runs on a persistent data volume: a generated password changes on every run, while the volume keeps the root user created by the first one, and nothing would ever authenticate again (see the troubleshooting entry below).
+
+User secrets only load in the `Development` environment, which is why `AgendaBuddy.AppHost/Properties/launchSettings.json` sets `DOTNET_ENVIRONMENT=Development`. Do not delete that file, and do not run the AppHost with `--no-launch-profile` unless you export `DOTNET_ENVIRONMENT=Development` yourself.
 
 You do **not** need to set a MongoDB connection string: the AppHost injects it.
 
 ### Troubleshooting the first run
 
 **"Docker is not running" / the resources never leave `Starting`.** The most common first-run failure by a wide margin. Start Docker Desktop (or `podman machine start`) and re-run. The AppHost cannot provision MongoDB or Kafka without it.
+
+**The containers come up but all seven services sit in `Waiting` forever, with nothing logged.** A service is only scheduled once its parameters resolve and the resources it waits for are healthy — neither of which is reported as an error, which is what makes this silent. Two causes, both diagnosable from the dashboard's parameter resources:
+
+- **A parameter shows `ValueMissing`.** Its value isn't in user secrets, or the AppHost isn't running in `Development` and so never loaded them. Check `DOTNET_ENVIRONMENT` and `dotnet user-secrets list --project AgendaBuddy.AppHost`.
+- **`mongodb` never reaches `Healthy`.** Usually the data volume was initialised with a different root password, so the health check can't authenticate. `MONGO_INITDB_ROOT_PASSWORD` is ignored on a non-empty `/data/db`, so changing the parameter is not enough — reset the volume:
+
+```bash
+docker volume ls | grep mongodb-data          # find it: agendabuddy.apphost-<hash>-mongodb-data
+docker volume rm <name>                       # destroys local dev data only
+```
 
 **A service fails immediately with `No MongoDB connection string found. Set one of: …`.** You are running that service directly (`dotnet run --project Booking`) rather than through the AppHost. Either start the AppHost instead, or export the connection string yourself:
 

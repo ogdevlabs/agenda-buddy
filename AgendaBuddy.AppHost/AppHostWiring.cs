@@ -24,8 +24,16 @@ internal static class AppHostWiring
         var jwtPublicKey = builder.AddParameter("jwt-public-key", secret: true);
         var jwtPrivateKey = builder.AddParameter("jwt-private-key", secret: true);
 
-        // Persistent volume so seeded data survives a restart.
-        var mongo = builder.AddMongoDB("mongodb")
+        // Persistent volume so seeded data survives a restart — which is exactly why the root
+        // password has to be pinned. Aspire's default generates a fresh one on every run and
+        // rewrites the user secret, while the volume keeps the root user created by the first run.
+        // From the second run on, the container's credentials no longer match the ones in the
+        // volume, the mongodb health check never reaches Healthy, and every service gated by
+        // WaitFor(mongo) sits in Waiting forever with nothing logged (ISSUE-001). A declared
+        // secret parameter is stable across runs and stays masked in the dashboard (T-003).
+        var mongoPassword = builder.AddParameter("mongodb-password", secret: true);
+
+        var mongo = builder.AddMongoDB("mongodb", password: mongoPassword)
             .WithDataVolume();
 
         // Two logical databases, matching what the services already expect: the six domain
@@ -59,8 +67,15 @@ internal static class AppHostWiring
             // launchProfileName: null keeps Aspire from adopting the launch profile's
             // applicationUrl, which pins localhost:603x — the very thing the AppHost exists to
             // get rid of (AC-1.4).
+            // WithReference alone injects ConnectionStrings__<resource name> — agenda-buddy or
+            // IdentityDb — but MongoConnectionResolver's primary key is ConnectionStrings:mongodb,
+            // which is what the services, their 28 resolution tests and the resolver's own error
+            // message all name. So the reference is kept for the dashboard relationship and the
+            // connection string is also injected under the canonical key, still pointing at the
+            // service's own database.
             var service = builder.AddProject<TProject>(name, launchProfileName: null)
                 .WithReference(database)
+                .WithEnvironment("ConnectionStrings__mongodb", database)
                 .WaitFor(mongo)
                 .WithEnvironment("JWT_PUBLIC_KEY", jwtPublicKey);
 

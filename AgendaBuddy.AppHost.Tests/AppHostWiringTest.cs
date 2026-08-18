@@ -187,6 +187,50 @@ public class AppHostWiringTest
         Assert.True(parameter.Secret, $"{parameterName} must be declared secret.");
     }
 
+    // AC-2.3 / ISSUE-001: WithReference injects ConnectionStrings__<resource name>, which is
+    // agenda-buddy or IdentityDb — not the ConnectionStrings:mongodb that MongoConnectionResolver
+    // actually reads. Profession resolves its client eagerly and crashed on startup; the other six
+    // would have failed on their first request. The canonical key must be injected explicitly.
+    [Theory]
+    [InlineData("booking")]
+    [InlineData("calendar")]
+    [InlineData("customer")]
+    [InlineData("identity")]
+    [InlineData("profession")]
+    [InlineData("provider")]
+    [InlineData("services")]
+    public async Task EveryServiceReceivesTheCanonicalMongoConnectionStringKey(string serviceName)
+    {
+        var resource = Resource(BuildModel(), serviceName);
+        var context = new EnvironmentCallbackContext(
+            new DistributedApplicationExecutionContext(DistributedApplicationOperation.Run));
+
+        foreach (var annotation in resource.Annotations.OfType<EnvironmentCallbackAnnotation>())
+        {
+            await annotation.Callback(context);
+        }
+
+        Assert.Contains("ConnectionStrings__mongodb", context.EnvironmentVariables.Keys);
+    }
+
+    // ISSUE-001: with WithDataVolume(), an auto-generated MongoDB password is regenerated on every
+    // run while the volume keeps the first one, so the health check fails from run two onward and
+    // every service hangs in Waiting. The password must be a declared secret parameter — stable
+    // across runs, and still masked in the dashboard.
+    [Fact]
+    public void MongoDbPasswordIsAStableSecretParameter()
+    {
+        var builder = BuildModel();
+
+        var parameter = Assert.IsAssignableFrom<ParameterResource>(Resource(builder, "mongodb-password"));
+
+        Assert.True(parameter.Secret, "mongodb-password must be declared secret.");
+
+        var mongo = Assert.IsAssignableFrom<MongoDBServerResource>(Resource(builder, "mongodb"));
+
+        Assert.Same(parameter, mongo.PasswordParameter);
+    }
+
     // Only Identity signs tokens; every service validates them. Handing the private key to all
     // seven would widen the blast radius for no benefit.
     [Fact]
