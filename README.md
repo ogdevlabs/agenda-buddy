@@ -216,6 +216,20 @@ The split is deliberate: point your restart probe at `/alive` and your traffic p
 
 The Aspire dashboard exposes environment variables, configuration, logs, and traces for every resource. Secret parameters are masked, but treat the dashboard as privileged: do not expose its port beyond localhost, and do not screenshot it into a public issue.
 
+### Deploying to the cloud
+
+The AppHost's resource graph is also the deployment description: `azd up` turns it into Azure Container Apps — one container app per service, plus a registry and a Log Analytics workspace. The graph is built in a different shape when publishing, because a dev container on a laptop-lifetime volume is not a production database:
+
+| | Local (`dotnet run`) | Cloud (`azd up`) |
+|---|---|---|
+| MongoDB / Kafka | containers the AppHost provisions | connection strings to managed services |
+| The 7 services | processes on dynamic ports | container apps with external HTTP ingress |
+| `WaitFor` gating | yes | no — a connection string has no lifecycle |
+
+**No deployment has been performed yet.** The capability, the `azd` project file and a manual-dispatch GitHub Actions workflow exist and are unit-tested, but the first deployment has to be run by hand, and **rotating the Atlas credential is a hard prerequisite** ([ISSUE-002](docs/issues/ISSUE-002-atlas-credential-rotation.md)).
+
+→ **[docs/deployment.md](docs/deployment.md)** for the full procedure, what is verified, and the list of gaps between this and a production posture.
+
 ### Build & test
 
 ```bash

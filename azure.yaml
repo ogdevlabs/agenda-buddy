@@ -1,0 +1,17 @@
+# Azure Developer CLI (azd) project file.
+#
+# azd reads the AppHost, not this repo's individual services: the AppHost's resource graph is the
+# single source of truth for what gets deployed, which is the whole point of orchestrating it there.
+# One container app per project resource, an Azure Container Apps environment, a container registry
+# and a Log Analytics workspace are all derived from it.
+#
+# See docs/deployment.md before running anything.
+name: agenda-buddy
+metadata:
+  template: agenda-buddy@1.0.0
+
+services:
+  app:
+    language: dotnet
+    project: ./AgendaBuddy.AppHost/AgendaBuddy.AppHost.csproj
+    host: containerapp

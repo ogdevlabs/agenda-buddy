@@ -450,3 +450,6 @@ MigrationBackup/
 
 # Beads / Dolt files (added by bd init)
 *.gate.lock*
+
+# azd creates this per-environment; it holds deployment parameter values
+.azure/

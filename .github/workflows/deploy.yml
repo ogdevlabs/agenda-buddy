@@ -1,0 +1,110 @@
+name: Deploy to Azure Container Apps
+
+# Manual only, deliberately. A push-triggered deploy on a project with one shared Atlas cluster and
+# no staging/production split is a foot-gun; wire this to `push: branches: [main]` once
+# docs/deployment.md's "Before this is production" list is actually done.
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "azd environment name (e.g. staging)"
+        required: true
+        default: staging
+      provision:
+        description: "Run azd provision (infrastructure) as well as deploy"
+        type: boolean
+        required: false
+        default: false
+
+# Federated credentials, not a stored client secret: id-token lets azd exchange a GitHub OIDC token
+# for an Azure one, so there is no long-lived credential in this repository to leak or rotate.
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: deploy-${{ inputs.environment }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+    environment: ${{ inputs.environment }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Fail fast and name every missing value. The "Assert every service starts in Development"
+      # guard in dotnet.yml silently consumed two secrets that were never created and only failed
+      # months later, on the first PR that ran it — a preflight is cheap insurance against repeating
+      # that with a half-provisioned Azure environment.
+      - name: Preflight — required configuration is present
+        env:
+          AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+          AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+          AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          AZURE_LOCATION: ${{ vars.AZURE_LOCATION }}
+          AZD_ENV_VARS: ${{ secrets.AZD_ENV_VARS }}
+        run: |
+          missing=""
+          for name in AZURE_CLIENT_ID AZURE_TENANT_ID AZURE_SUBSCRIPTION_ID AZURE_LOCATION; do
+            [ -n "${!name:-}" ] || missing="$missing $name (repository variable)"
+          done
+          [ -n "${AZD_ENV_VARS:-}" ] || missing="$missing AZD_ENV_VARS (repository secret)"
+          if [ -n "$missing" ]; then
+            echo "::error::Missing required configuration:$missing — see docs/deployment.md"
+            exit 1
+          fi
+          echo "All required configuration present."
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Install azd
+        uses: Azure/setup-azd@v2
+
+      - name: azd login (federated)
+        run: |
+          azd auth login \
+            --client-id "${{ vars.AZURE_CLIENT_ID }}" \
+            --tenant-id "${{ vars.AZURE_TENANT_ID }}" \
+            --federated-credential-provider github
+
+      # AZD_ENV_VARS is a newline-separated KEY=VALUE list holding the values the AppHost's
+      # parameters and connection strings resolve to — the Atlas connection strings, the Kafka
+      # bootstrap endpoint and the two JWT keys. It is one secret rather than five so the exact
+      # names azd derives from the resource graph can change without editing this workflow; run
+      # `azd up` once interactively to see what it asks for. Multi-line values (the PEM keys) must
+      # be base64-encoded with a `_B64` suffix, since a KEY=VALUE line cannot carry newlines.
+      - name: Configure azd environment
+        env:
+          AZD_ENV_VARS: ${{ secrets.AZD_ENV_VARS }}
+        run: |
+          set -eu
+          azd env new "${{ inputs.environment }}" \
+            --location "${{ vars.AZURE_LOCATION }}" \
+            --subscription "${{ vars.AZURE_SUBSCRIPTION_ID }}" \
+            --no-prompt || azd env select "${{ inputs.environment }}"
+
+          printf '%s\n' "$AZD_ENV_VARS" | while IFS= read -r line; do
+            [ -z "$line" ] && continue
+            key=${line%%=*}
+            value=${line#*=}
+            case "$key" in
+              *_B64) key=${key%_B64}; value=$(printf '%s' "$value" | base64 -d) ;;
+            esac
+            azd env set "$key" "$value"
+          done
+
+      - name: azd provision
+        if: ${{ inputs.provision }}
+        run: azd provision --no-prompt
+
+      - name: azd deploy
+        run: azd deploy --no-prompt
+
+      - name: Report endpoints
+        if: always()
+        run: azd show --output json | tee "$RUNNER_TEMP/azd-show.json" || true

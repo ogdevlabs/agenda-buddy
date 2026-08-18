@@ -1,5 +1,6 @@
 using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
+using Aspire.Hosting.Azure;
 using Xunit;
 
 namespace AgendaBuddy.AppHost.Tests;
@@ -13,10 +14,11 @@ public class AppHostWiringTest
     private static readonly string[] ExpectedServices =
         ["booking", "calendar", "customer", "identity", "profession", "provider", "services"];
 
-    private static IDistributedApplicationBuilder BuildModel()
+    private static IDistributedApplicationBuilder BuildModel(
+        DeploymentTarget target = DeploymentTarget.Local)
     {
         var builder = DistributedApplication.CreateBuilder([]);
-        AppHostWiring.Configure(builder);
+        AppHostWiring.Configure(builder, target);
         return builder;
     }
 
@@ -277,5 +279,113 @@ public class AppHostWiringTest
     public void KafkaConsumersWaitForKafka(string serviceName)
     {
         Assert.Contains("kafka", Waits(BuildModel(), serviceName));
+    }
+
+    // --- Cloud publish shape (docs/deployment.md) ------------------------------------------------
+
+    // A dev container on a persistent volume is not a production database. Publishing must hand the
+    // services connection strings to managed MongoDB and Kafka instead of provisioning containers.
+    [Fact]
+    public void CloudTargetProvisionsNoDataContainers()
+    {
+        var builder = BuildModel(DeploymentTarget.Cloud);
+
+        Assert.Empty(builder.Resources.OfType<MongoDBServerResource>());
+        Assert.Empty(builder.Resources.OfType<KafkaServerResource>());
+        Assert.DoesNotContain("mongodb-password", builder.Resources.Select(resource => resource.Name));
+    }
+
+    // The resource names are identical in both shapes, so a service receives the same environment
+    // variables locally and in the cloud — only what is behind them changes.
+    [Theory]
+    [InlineData("agenda-buddy")]
+    [InlineData("IdentityDb")]
+    [InlineData("kafka")]
+    public void CloudTargetSuppliesTheDataServiceAsAConnectionString(string resourceName)
+    {
+        var resource = Resource(BuildModel(DeploymentTarget.Cloud), resourceName);
+
+        Assert.IsAssignableFrom<IResourceWithConnectionString>(resource);
+    }
+
+    // Container Apps keeps ingress internal unless told otherwise, which would deploy a stack
+    // nothing can reach. The mobile app calls all seven services directly.
+    [Fact]
+    public void CloudTargetExposesEveryServiceExternally()
+    {
+        var builder = BuildModel(DeploymentTarget.Cloud);
+
+        foreach (var name in ExpectedServices)
+        {
+            var endpoints = Resource(builder, name).Annotations.OfType<EndpointAnnotation>().ToList();
+
+            Assert.NotEmpty(endpoints);
+            Assert.Contains(endpoints, endpoint => endpoint.IsExternal);
+        }
+    }
+
+    // WaitFor observes a lifecycle. A connection string to a managed service has none, so gating on
+    // it would either be ignored or hang the deployment.
+    [Fact]
+    public void CloudTargetWaitsForNothing()
+    {
+        var builder = BuildModel(DeploymentTarget.Cloud);
+
+        foreach (var name in ExpectedServices)
+        {
+            Assert.Empty(Waits(builder, name));
+        }
+    }
+
+    // AzureEnvironmentResource is annotated ASPIREAZURE001 (evaluation only). Suppressed narrowly
+    // here rather than repo-wide: if the type is renamed or removed in a later Aspire, these two
+    // tests should fail to compile and force a look at the deployment story.
+#pragma warning disable ASPIREAZURE001
+
+    // Azure Container Apps infrastructure is registered for the cloud shape. The ACA environment
+    // resource itself is only materialised during a real publish, so what is observable here is the
+    // Azure environment the publisher hangs it off — asserting more would be asserting a fiction.
+    [Fact]
+    public void CloudTargetWiresAzureInfrastructure()
+    {
+        Assert.Single(BuildModel(DeploymentTarget.Cloud).Resources.OfType<AzureEnvironmentResource>());
+    }
+
+    [Fact]
+    public void LocalTargetWiresNoAzureInfrastructure()
+    {
+        Assert.Empty(BuildModel().Resources.OfType<AzureEnvironmentResource>());
+    }
+
+#pragma warning restore ASPIREAZURE001
+
+    // AC-1.4 is not a local-only concern: a hardcoded 603x port would collide with Container Apps
+    // ingress just as surely as it collides with a second local checkout.
+    [Fact]
+    public void CloudTargetBindsNoHardcodedHostPort()
+    {
+        var builder = BuildModel(DeploymentTarget.Cloud);
+
+        foreach (var name in ExpectedServices)
+        {
+            Assert.All(Resource(builder, name).Annotations.OfType<EndpointAnnotation>(), endpoint =>
+            {
+                Assert.Null(endpoint.Port);
+                Assert.Null(endpoint.TargetPort);
+            });
+        }
+    }
+
+    // The signing keys are secret parameters in both shapes — locally they come from user secrets,
+    // on publish azd prompts and keeps them in Key Vault (threat T-003).
+    [Theory]
+    [InlineData("jwt-public-key")]
+    [InlineData("jwt-private-key")]
+    public void CloudTargetKeepsTheJwtKeysSecret(string parameterName)
+    {
+        var parameter = Assert.IsAssignableFrom<ParameterResource>(
+            Resource(BuildModel(DeploymentTarget.Cloud), parameterName));
+
+        Assert.True(parameter.Secret, $"{parameterName} must be declared secret when publishing.");
     }
 }

@@ -15,6 +15,10 @@
         <PackageReference Include="Aspire.Hosting.AppHost" Version="13.4.6" />
         <PackageReference Include="Aspire.Hosting.MongoDB" Version="13.4.6" />
         <PackageReference Include="Aspire.Hosting.Kafka" Version="13.4.6" />
+        <!-- Publish target: turns the graph into Azure Container Apps infrastructure. Used only
+             when publishing (see AppHostWiring.DeploymentTarget.Cloud); a local run never touches
+             it, so it costs nothing at development time. -->
+        <PackageReference Include="Aspire.Hosting.Azure.AppContainers" Version="13.4.6" />
     </ItemGroup>
 
     <!-- The seven API services. MobileApp is absent by construction (AC-1.5) and CI asserts it
