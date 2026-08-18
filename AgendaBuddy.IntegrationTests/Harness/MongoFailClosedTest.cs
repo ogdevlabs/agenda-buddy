@@ -72,8 +72,7 @@ public class MongoFailClosedTest(CryptoSessionFixture crypto)
         try
         {
             Environment.SetEnvironmentVariable(
-                ConnectionStringVariable,
-                "mongodb+srv://agenda_buddy:s3cret@cluster0.abcde.mongodb.net/agenda_buddy");
+                ConnectionStringVariable, HostileEndpoints.SrvWithCredentials());
 
             var fixture = new ServiceHostFixture<ProfessionAnchor>(crypto);
 
@@ -81,7 +80,8 @@ public class MongoFailClosedTest(CryptoSessionFixture crypto)
                 () => fixture.InitializeAsync());
 
             Assert.Null(fixture.ContainerConnectionString);
-            Assert.DoesNotContain("s3cret", exception.Message, StringComparison.Ordinal);
+            Assert.DoesNotContain(
+                HostileEndpoints.FakePasswordToken, exception.Message, StringComparison.Ordinal);
 
             await fixture.DisposeAsync();
         }

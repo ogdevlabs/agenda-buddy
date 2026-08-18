@@ -69,9 +69,19 @@ public class MongoEndpointGuardTest
             source: Source);
     }
 
+    /// <summary>
+    /// Supplied through <c>MemberData</c> rather than <c>InlineData</c> because these are composed at
+    /// runtime — see <see cref="HostileEndpoints"/> for why they cannot be literals.
+    /// </summary>
+    public static TheoryData<string> ConclusivelyHostileEndpoints() => new()
+    {
+        HostileEndpoints.Srv(),
+        HostileEndpoints.WithCredentials(),
+        HostileEndpoints.SrvWithCredentials(),
+    };
+
     [Theory]
-    [InlineData("mongodb+srv://cluster0.abcde.mongodb.net/agenda_buddy")]
-    [InlineData("mongodb://agenda_buddy:s3cret@cluster0.abcde.mongodb.net:27017/db")]
+    [MemberData(nameof(ConclusivelyHostileEndpoints))]
     public void T002_RejectsSrvAndCredentialBearingEndpointsOutright(string hostile)
     {
         // The cheap second layer, deliberately checkable BEFORE a container exists: no Testcontainer
@@ -87,10 +97,10 @@ public class MongoEndpointGuardTest
         // A guard that prints the string it rejected would write an Atlas password into CI logs while
         // congratulating itself on preventing a leak.
         var exception = Assert.Throws<UnsafeMongoEndpointException>(
-            () => MongoEndpointGuard.AssertNotObviouslyRemote(
-                "mongodb://agenda_buddy:s3cretp4ssw0rd@cluster0.abcde.mongodb.net:27017/db", Source));
+            () => MongoEndpointGuard.AssertNotObviouslyRemote(HostileEndpoints.WithCredentials(), Source));
 
-        Assert.DoesNotContain("s3cretp4ssw0rd", exception.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            HostileEndpoints.FakePasswordToken, exception.Message, StringComparison.Ordinal);
     }
 
     [Fact]
