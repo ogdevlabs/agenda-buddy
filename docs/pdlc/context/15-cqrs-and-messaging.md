@@ -4,7 +4,7 @@
 >
 > **Stale in one respect.** `EventStore` now takes an injected client — `public EventStore(IMongoClient client, IConfiguration configuration)` (`EventAndCommands/Persitency/EventStore.cs:19`) — instead of constructing a `MongoClient` per request scope. The rest stands: `RequestCollection` still hand-constructs handlers and calls `.Handle()` directly, MediatR still never dispatches, and there are still zero `INotificationHandler` implementations.
 >
-> `file:line` anchors below may have shifted. Authoritative sources for the change: `docs/pdlc/design/aspire-wiring/ARCHITECTURE.md`, `docs/pdlc/episodes/EPISODE_aspire-wiring_2026-08-17.md`. A full targeted rehydration is queued as the first step of F-018.
+> `file:line` anchors below may have shifted. Authoritative sources for the change: `docs/pdlc/archive/design/aspire-wiring/ARCHITECTURE.md`, `docs/pdlc/episodes/EPISODE_aspire-wiring_2026-08-17.md`. A full targeted rehydration is queued as the first step of F-018.
 
 
 **Files:** `EventAndCommands/` (commands, queries, handlers, events, `Persitency/`), the six per-service `Requests/RequestCollection.cs` + `Requests/IRequestCollection.cs`, the six `Events/Events?Helper.cs`.

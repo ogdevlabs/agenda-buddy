@@ -55,7 +55,7 @@ Seven independent ASP.NET Minimal API microservices (Booking, Calendar, Customer
 
 Locally, `AgendaBuddy.AppHost` is the composition root — it declares the infrastructure and every service, assigning ports dynamically (no hardcoded host ports). Every service calls `builder.AddServiceDefaults()` exactly once, which supplies OpenTelemetry, `/health` (readiness, including a 5-second-cached MongoDB check) and `/alive` (liveness), service discovery, and HTTP resilience. **One `IMongoClient` singleton is shared process-wide** by all services and `EventStore`.
 
-See [docs/pdlc/design/aspire-wiring/ARCHITECTURE.md](docs/pdlc/design/aspire-wiring/ARCHITECTURE.md) for the Aspire design and [docs/pdlc/context/](docs/pdlc/context/) for a `file:line`-anchored map of the codebase.
+See [docs/pdlc/archive/design/aspire-wiring/ARCHITECTURE.md](docs/pdlc/archive/design/aspire-wiring/ARCHITECTURE.md) for the Aspire design and [docs/pdlc/context/](docs/pdlc/context/) for a `file:line`-anchored map of the codebase.
 
 ## Coding Conventions
 

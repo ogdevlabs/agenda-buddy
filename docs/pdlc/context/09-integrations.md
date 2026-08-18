@@ -4,7 +4,7 @@
 >
 > **Partially stale.** `KafkaClient` no longer hardcodes the broker: `Kafka/KafkaClient.cs:38` tries `ConnectionStrings:kafka` then `Kafka:BootstrapServers`, falling back to `localhost:9092` (`:18`). Under the AppHost, Kafka and MongoDB run as **Aspire-managed containers**. The substantive finding is unchanged: Kafka still only creates topics; nothing produces or consumes.
 >
-> `file:line` anchors below may have shifted. Authoritative sources for the change: `docs/pdlc/design/aspire-wiring/ARCHITECTURE.md`, `docs/pdlc/episodes/EPISODE_aspire-wiring_2026-08-17.md`. A full targeted rehydration is queued as the first step of F-018.
+> `file:line` anchors below may have shifted. Authoritative sources for the change: `docs/pdlc/archive/design/aspire-wiring/ARCHITECTURE.md`, `docs/pdlc/episodes/EPISODE_aspire-wiring_2026-08-17.md`. A full targeted rehydration is queued as the first step of F-018.
 
 
 Four external systems are referenced. Only **one** is genuinely load-bearing.

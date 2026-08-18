@@ -5,19 +5,19 @@
      Claude reads this file at the start of every session to auto-resume from the last checkpoint.
      If this file is missing or empty, PDLC will prompt you to run /pdlc init. -->
 
-**Last updated:** 2026-08-18T12:44:29Z
+**Last updated:** 2026-08-18T13:40:00Z
 
 ---
 
 ## Current Phase
 
-Operation
+Inception
 
 ---
 
 ## Current Feature
 
-aspire-wiring
+refactor-minimal-apis
 
 ---
 
@@ -33,11 +33,13 @@ none
 
 ## Roadmap Claim
 
-- **Feature ID:** F-013
-- **Feature record:** docs/pdlc/tasks/F-013/_feature.md
+- **Feature ID:** F-018
+- **Feature record:** docs/pdlc/tasks/F-018/_feature.md
 - **Claimed by:** oscargarcia@ogdevlabs.onmicrosoft.com
-- **Claimed at:** 2026-08-15T16:45:00Z
-- **Branch:** feat/F-013-aspire-wiring
+- **Claimed at:** 2026-08-18T13:40:00Z
+- **Branch:** (will be set at build pre-flight)
+
+_F-013 `aspire-wiring` shipped as `v0.1.0` on 2026-08-18 and its claim was released._
 
 ---
 
@@ -49,13 +51,13 @@ _None active. Run `/night-shift <F-NNN>` to start an autonomous run (requires by
 
 ## Current Sub-phase
 
-Reflect
+Discover
 
 ---
 
 ## Last Checkpoint
 
-Operation / Reflect / 2026-08-18T13:20:00Z
+Inception / Discover / 2026-08-18T13:40:00Z
 
 ---
 
@@ -103,17 +105,32 @@ discovers the parameter names interactively; those names then go into the `AZD_E
 secret for the workflow. Item 1 is a hard prerequisite: deploying against an unrotated credential means
 the deployment and whoever else holds it share a database.
 
-### 3. Three dashboard visual checks for F-013 (~2 minutes, needs eyes)
+### 3. ~~Three dashboard visual checks for F-013~~ — ✅ **DONE 2026-08-18**
 
-**→ `docs/pdlc/design/aspire-wiring/verification.md`** (tracker: `agenda-buddy-e7e`)
+**→ `docs/pdlc/archive/design/aspire-wiring/verification.md`** (tracker: `agenda-buddy-e7e` — **closed**)
 
-AC-3.4's traces/metrics/logs rendering for all 7 services, threat **T-004**'s span inspection
-(`http.route` templates rather than raw paths carrying an email address), and review finding **A-3**
-(JWT parameters masked in the dashboard). Everything else in F-013 is verified and merged; these are
-recorded as unverified rather than claimed. Start the AppHost, hit any service, then look.
+Completed at the v0.1.0 Ship/Verify gate against a live AppHost. All 7 services reported
+`/health` = `Healthy` and `/alive` = 200; 21× health + 21× alive + 5 deliberately email-bearing
+requests were generated. A human confirmed all three: telemetry renders for all 7 in traces, metrics
+and structured logs; `http.route` is a template and `url.path` shows the email **redacted** (the
+literal `customer.pii@example.com` never appeared in a span despite five attempts, one of which
+returned 200); and both JWT parameters render **masked** on the `identity` resource.
+
+**Nothing in F-013 is now recorded as unverified.**
+
+### 4. Roadmap ordering note (not a blocker, but read it)
+
+**F-018 `refactor-minimal-apis` is claimed and being worked ahead of F-014–F-017** at the user's
+explicit request. That's a deliberate call — a structural refactor of every endpoint is cheaper
+before those four features add more endpoints to it — but it means three known-bad conditions stay
+open longer than the roadmap order implies: six shipped-but-unreachable capabilities (F-014), a
+mobile client that cannot reach the backend (F-015), and unauthenticated PII exposure on
+`GET /api/v1/providers` (F-016).
 
 ### Resolved, kept for context
 
+- **F-013 SHIPPED as `v0.1.0` on 2026-08-18.** Tagged at `c86bca9` and pushed — the first PDLC-tracked release in a repo that had zero tags despite 13 features marked Shipped. Episode 001 committed. **Deploy deliberately skipped**, with reasons recorded in `DEPLOYMENTS.md` rather than silently omitted. `CONSTITUTION` §7's security scan was run **by hand** at the ship gate: **0 vulnerable packages** across all 25 projects, working tree clean, and 9 commits confirmed to still carry the credential in history. That was greps, not a scanner — it does **not** discharge the gate; F-017 still owns automating it.
+- **69 whitespace findings fixed 2026-08-18.** `dotnet format` across `agenda-buddy-backend.slnf`, committed as a separate `style:` commit *after* the v0.1.0 tag. 305 tests pass before and after. **The repo still has no `.editorconfig`, so this drift will return** — adopting one is worth folding into F-018.
 - **F-013-T14 / ISSUE-001 — RESOLVED 2026-08-18, merged in PR #35.** The AppHost now starts all 7 services. Root cause was a missing `AgendaBuddy.AppHost/Properties/launchSettings.json`: without `DOTNET_ENVIRONMENT=Development` the AppHost ran as `Production`, user secrets never loaded, every secret parameter went `ValueMissing`, and all seven services parked in `Waiting` with nothing logged. Both "blockers" in the original report were misdiagnoses — `AddProject<TProject>` was never at fault. A second defect surfaced once services could start: `WithReference(database)` injects `ConnectionStrings__agenda-buddy`, not the `ConnectionStrings:mongodb` that `MongoConnectionResolver` reads, which crashed `profession` on startup.
 - **`agenda-buddy-prr` — RESOLVED 2026-08-18.** `MobileApp` did not compile under `/p:MobileWorkloads=false` (`CS0103 'Application'`), which had been failing the `build-mobile-tests` job outright — all 67 MobileApp tests had never run in CI. Guarded with the existing `MOBILE` constant.
 - **CI guard that never ran — RESOLVED 2026-08-18.** `Assert every service starts in Development` consumed `secrets.CI_JWT_*`, which were never created. It was added by F-013 and CI only triggers on push to `main` or a PR to `main`, so it first executed — and first failed — on PR #35. It now generates a throwaway keypair in-step.
@@ -124,13 +141,13 @@ recorded as unverified rather than claimed. Start the AppHost, hit any service, 
 
 ```json
 {
-  "triggered_at": "2026-08-18T00:30:00Z",
+  "triggered_at": "2026-08-18T13:40:00Z",
   "active_task": null,
-  "sub_phase": "Wrap-up",
-  "step": "f-013-merged-cloud-deploy-capability-added",
-  "skill_file": "skills/build/steps/05-wrap-up.md",
-  "work_in_progress": "F-013 merged to main (PR #35). Cloud deployment capability added on branch feat/aspire-cloud-deploy: publish/run split in AppHostWiring, azure.yaml, deploy.yml, docs/deployment.md, ISSUE-002. 305 tests passing, 0 warnings.",
-  "next_action": "Read the PENDING MARKER under Active Blockers. Item 1 (rotate the Atlas credential) is human-only and gates item 2 (first azd deployment).",
+  "sub_phase": "Discover",
+  "step": "f-013-shipped-v0.1.0-starting-f-018-inception",
+  "skill_file": "skills/brainstorm/steps/01-discover.md",
+  "work_in_progress": "F-013 shipped as v0.1.0 (tag pushed, episode 001 committed, claim released). F-018 refactor-minimal-apis claimed; Inception starting at Discover. Reference for the refactor: https://github.com/Gramli/AuthApi",
+  "next_action": "Run Discover for F-018 — restructure the Minimal API layer following the Gramli/AuthApi reference, replacing the per-service RequestCollection hand-wiring.",
   "files_open": []
 }
 ```
@@ -315,3 +332,9 @@ _Superseded handoff (F-012 mobile-app, shipped) retained for reference:_
 | 2026-08-17T22:20:00Z | review_complete | Party Review — 0 Critical, 3 Important (all fixed), Echo did not report | Review | aspire-wiring |
 | 2026-08-17T22:30:00Z | construction_paused | Build+Review done, 282 tests green; ship gated on T-014 (AppHost run unproven) | Wrap-up | aspire-wiring |
 | 2026-08-18T00:30:00Z | issue_resolved | ISSUE-001 root-caused + fixed (missing launchSettings.json → Production → user secrets never loaded); 7/7 services Healthy under the AppHost; 294 tests green | Wrap-up | aspire-wiring |
+| 2026-08-18T12:44:29Z | operation_start | Ship started. 2 guardrail warnings logged (phase-marker mismatch; §7 scan gate unimplemented). Unit gate verified: 305 passing, 0 warnings | Ship | aspire-wiring |
+| 2026-08-18T12:55:00Z | tagged | v0.1.0 tagged at c86bca9 and pushed — first tag in the repo. CHANGELOG's first PDLC entry written | Ship | aspire-wiring |
+| 2026-08-18T13:00:00Z | deploy_skipped | Deploy skipped with reasons recorded: unrotated Atlas credential gates it, no Azure subscription, first azd up must be interactive | Ship | aspire-wiring |
+| 2026-08-18T13:10:00Z | verify_complete | §7 scan run by hand (0 vulnerable packages / tree clean / 9 commits still carry the credential). 3 dashboard visual checks confirmed by human against a live AppHost; agenda-buddy-e7e closed. F-013 has nothing unverified | Verify | aspire-wiring |
+| 2026-08-18T13:30:00Z | operation_complete | Episode 001 committed and pushed. ROADMAP drift repaired (F-014–F-017 added). F-013 shipped, claim released. Artifacts archived | Reflect | aspire-wiring |
+| 2026-08-18T13:40:00Z | roadmap_claim | F-018 refactor-minimal-apis claimed, ahead of F-014–F-017 at explicit user request | Discover | refactor-minimal-apis |

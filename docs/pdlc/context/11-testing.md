@@ -4,7 +4,7 @@
 >
 > **Stale count.** **305 tests across 12 projects** now, not 256 across 11 — F-013 added ~116, including `AgendaBuddy.AppHost.Tests` (47) and `AgendaBuddy.ServiceDefaults.Tests` (13). Baseline before the feature measured 189 across 10. Note `MobileApp.Tests` (67) **has never run in CI** — `MobileApp` did not compile under the CI build flags (`agenda-buddy-prr`), which is why the test target is the `agenda-buddy-backend.slnf` filter. Still **no integration-test harness**: `AppHostWiringTest` asserts the app *model*, not a real orchestrated run.
 >
-> `file:line` anchors below may have shifted. Authoritative sources for the change: `docs/pdlc/design/aspire-wiring/ARCHITECTURE.md`, `docs/pdlc/episodes/EPISODE_aspire-wiring_2026-08-17.md`. A full targeted rehydration is queued as the first step of F-018.
+> `file:line` anchors below may have shifted. Authoritative sources for the change: `docs/pdlc/archive/design/aspire-wiring/ARCHITECTURE.md`, `docs/pdlc/episodes/EPISODE_aspire-wiring_2026-08-17.md`. A full targeted rehydration is queued as the first step of F-018.
 
 
 **Framework:** xUnit + Moq. **Coverage collector:** `coverlet.collector` 6.0.3 → `XPlat Code Coverage` (Cobertura).

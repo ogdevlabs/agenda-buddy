@@ -4,7 +4,7 @@
 >
 > **Stale.** All seven services and `EventStore` now share **one process-wide `IMongoClient` singleton**. Previously `EventStore` was Scoped and constructed a `MongoClient` — with its own connection pool and monitoring threads — **per HTTP request**, and every command and query handler writes an audit event, so this happened on every request. Connection strings resolve through `Library/MongoConnectionResolver.cs`, not a direct config-section read.
 >
-> `file:line` anchors below may have shifted. Authoritative sources for the change: `docs/pdlc/design/aspire-wiring/ARCHITECTURE.md`, `docs/pdlc/episodes/EPISODE_aspire-wiring_2026-08-17.md`. A full targeted rehydration is queued as the first step of F-018.
+> `file:line` anchors below may have shifted. Authoritative sources for the change: `docs/pdlc/archive/design/aspire-wiring/ARCHITECTURE.md`, `docs/pdlc/episodes/EPISODE_aspire-wiring_2026-08-17.md`. A full targeted rehydration is queued as the first step of F-018.
 
 
 **Files:** `Library/Repositories/IRepository.cs`, `Library/Repositories/MongoDbRepository.cs`, `Library/Tools/SupportTools.cs`, `Library/Tools/CacheAside.cs`, plus the seven per-service `MongoDbConfiguration.cs` classes.
