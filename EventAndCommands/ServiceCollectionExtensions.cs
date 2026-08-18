@@ -1,4 +1,4 @@
-using EventAndCommands.Persitency;
+using EventAndCommands.Persistence;
 
 namespace EventAndCommands;
 

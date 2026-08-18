@@ -156,5 +156,5 @@ Examples:
 
 - New packages require discussion before adding — keep the dependency footprint minimal
 - All database migrations (schema changes) must be documented in DECISIONS.md before implementation
-- The `EventAndCommands/Persitency/` typo is a known issue — do not rename until a dedicated refactor is planned (renaming breaks existing references)
+- ~~The `EventAndCommands/Persitency/` typo is a known issue — do not rename until a dedicated refactor is planned (renaming breaks existing references)~~ **RETIRED 2026-08-18 by F-016-T01.** The clause's own stated condition — *"until a dedicated refactor is planned"* — was satisfied by the approved F-016 PRD, so the prohibition expired on its own terms. Its stated *reason* also turned out to be wrong: the rename did **not** break references across all consumers. Measured before the change and confirmed after: **11 `.cs` files, one reference each, and zero references in any `.json`, `.yml`, `.csproj` or `.slnf`.** The directory and namespace are now `EventAndCommands/Persistence/`, pinned by `EventsAndCommands.Tests/Persistence/PersistenceNamespaceTest.cs` so a revert fails a test rather than passing silently.
 - Kafka `BootstrapServers` must be moved to configuration before any non-local deployment

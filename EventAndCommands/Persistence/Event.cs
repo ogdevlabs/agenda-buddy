@@ -1,4 +1,4 @@
-namespace EventAndCommands.Persitency;
+namespace EventAndCommands.Persistence;
 
 [ExcludeFromCodeCoverage]
 public class Event

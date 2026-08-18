@@ -73,7 +73,7 @@ See [docs/pdlc/archive/design/aspire-wiring/ARCHITECTURE.md](docs/pdlc/archive/d
 - `Library/Repositories/MongoDbRepository.cs` — generic MongoDB CRUD implementation
 - `Library/Tools/CacheAside.cs` — distributed cache-aside extension (use this for all cached reads)
 - `EventAndCommands/ConfigurationLoader.cs` — MongoDB config bootstrap for EventAndCommands
-- `EventAndCommands/Persitency/EventStore.cs` — audit event persistence (note: "Persitency" is a known typo). Takes an injected `IMongoClient`; it no longer builds one per request scope
+- `EventAndCommands/Persistence/EventStore.cs` — audit event persistence. Takes an injected `IMongoClient`; it no longer builds one per request scope. *(The long-standing `Persitency` misspelling was corrected in F-016; CONSTITUTION §9's prohibition against renaming it is retired.)*
 - `Booking/Program.cs` — representative Minimal API entry point showing the full wiring pattern
 - `AgendaBuddy.AppHost/Program.cs` + `AgendaBuddy.AppHost/AppHostWiring.cs` — the Aspire app model: every resource, reference, and the run/publish (`DeploymentTarget`) split
 - `AgendaBuddy.ServiceDefaults/Extensions.cs` — `AddServiceDefaults()` / `MapDefaultEndpoints()`, called by all 7 services

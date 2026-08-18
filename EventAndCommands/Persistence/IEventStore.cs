@@ -1,4 +1,4 @@
-namespace EventAndCommands.Persitency;
+namespace EventAndCommands.Persistence;
 
 public interface IEventStore
 {

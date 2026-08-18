@@ -32,4 +32,4 @@ global using Provider.Extensions;
 global using Provider.Requests;
 global using ProviderService = Library.Services.ProviderService;
 global using EventAndCommands;
-global using EventAndCommands.Persitency;
+global using EventAndCommands.Persistence;

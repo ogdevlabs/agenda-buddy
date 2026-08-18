@@ -1,6 +1,6 @@
 using Library.Configuration;
 
-namespace EventAndCommands.Persitency;
+namespace EventAndCommands.Persistence;
 
 public class EventStore : IEventStore
 {
