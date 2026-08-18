@@ -5,7 +5,7 @@
      Claude reads this file at the start of every session to auto-resume from the last checkpoint.
      If this file is missing or empty, PDLC will prompt you to run /pdlc init. -->
 
-**Last updated:** 2026-08-18T13:40:00Z
+**Last updated:** 2026-08-18T15:25:00Z
 
 ---
 
@@ -51,13 +51,13 @@ _None active. Run `/night-shift <F-NNN>` to start an autonomous run (requires by
 
 ## Current Sub-phase
 
-Discover
+Define
 
 ---
 
 ## Last Checkpoint
 
-Inception / Discover / 2026-08-18T13:40:00Z
+Inception / Define / 2026-08-18T15:25:00Z
 
 ---
 
@@ -158,31 +158,33 @@ mobile client that cannot reach the backend (F-015), and unauthenticated PII exp
 
 ```json
 {
-  "phase_completed": "Operation / Ship",
-  "next_phase": "Operation / Verify",
-  "feature": "aspire-wiring",
-  "feature_id": "F-013",
-  "version": "v0.1.0",
+  "phase_completed": "Inception / Discover",
+  "next_phase": "Inception / Define",
+  "feature": "api-refactor-foundations",
+  "feature_id": "F-018",
   "key_outputs": [
-    "docs/pdlc/memory/CHANGELOG.md",
-    "docs/pdlc/memory/DEPLOYMENTS.md",
-    "docs/pdlc/episodes/EPISODE_aspire-wiring_2026-08-17.md"
+    "docs/pdlc/brainstorm/brainstorm_refactor-minimal-apis_2026-08-18.md",
+    "docs/pdlc/mom/api-refactor-foundations_progressive-thinking_mom_2026_08_18.md"
   ],
   "decisions_made": [
-    "Tagged v0.1.0 at c86bca9 and pushed — the repo had zero tags despite 13 features marked Shipped, so Step 6's initial-tag rule applied",
-    "Did NOT run scripts/ship-merge.sh — it hardcodes 'feature/<name>' but the branch is 'feat/F-013-aspire-wiring', and there was nothing to merge (PR #35 already merged it)",
-    "Two '!' breaking commits (c6b70b6 PII span redaction, d00b87f credential removal) recorded under Breaking Changes rather than forcing v1.0.0, since this is a pre-1.0 project",
-    "Applied dotnet format across agenda-buddy-backend.slnf — 69 pre-existing WHITESPACE findings, committed as a separate 'style:' commit AFTER the v0.1.0 tag; 305 tests pass before and after",
-    "Left the v0.1.0 tag at c86bca9 rather than force-updating an already-pushed tag to include the style commit",
-    "DEPLOY SKIPPED — recorded as skipped-with-reason in DEPLOYMENTS.md, not as a deployment",
-    "Registered 'cloud' (Azure) in DEPLOYMENTS.md as a known-but-never-deployed environment so the unexercised capability is visible"
+    "Decomposed into F-018 (foundations) / F-019 (pilot Booking) / F-020 (rollout) — full Clean Architecture target preserved, staged so the harness exists before the endpoint rewrite",
+    "MediatR is the single dispatcher; SmallApiToolkit used only for DataResponse/validation-base/ExceptionMiddleware. IHttpRequestHandler explicitly rejected to avoid two dispatchers",
+    "All 5 packages adopted (FluentResults, Validot, Mapster, GuardClauses, SmallApiToolkit) — §9 amendment + ADR-015",
+    "F-018 delivers a working harness, NOT a regression net — thin endpoint coverage on a robust harness. The zero-count metrics belong to F-019/F-020",
+    "All 13 edge cases triaged IN SCOPE — grew the feature; token factory with time control, CI duration enforcement and spec-drift detection must be sized at Plan",
+    "OpenAPI spec committed now, churn accepted (Jarvis over Neo). CI must fail on spec drift",
+    "Identity gets FULL tier coverage (it has 5 write endpoints — the original matrix was built on a false fact) and Identity/Requests/AuthRequests.cs is the in-repo precedent",
+    "'Stable' for the §7 gate = 10 consecutive green CI runs. Red integration job blocks PRs from run 1",
+    "F-016 ships BEFORE F-019/F-020 — recorded as F-019 depends_on [F-018, F-016]"
   ],
-  "deploy_skipped_because": [
-    "The unrotated agenda_buddy Atlas credential is a hard prerequisite — still in git history, still valid (ISSUE-002 / agenda-buddy-41s)",
-    "No Azure subscription is wired to this machine",
-    "The first azd up must be interactive to discover parameter names before AZD_ENV_VARS can be set"
+  "next_action": "Read skills/brainstorm/steps/02-define.md and generate the PRD draft for F-018",
+  "open_risks": [
+    "Testcontainers on Rancher Desktop UNVERIFIED — everything depends on it; needs a spike first",
+    "No OpenAPI generation mechanism exists — Swashbuckle needs a running app, Swagger is Development-only",
+    "No rollback story for the 7 .csproj edits + namespace rename",
+    "Cache-aside invariant has no guard while the audit invariant has two",
+    "7 MobileApp tests are skipped and nobody knows why (372 of 379 execute)"
   ],
-  "next_action": "Verify sub-phase. There is no deployment to smoke-test; the only outstanding verification is the 3 local dashboard visual checks (agenda-buddy-e7e).",
   "pending_questions": []
 }
 ```
