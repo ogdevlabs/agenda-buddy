@@ -37,6 +37,10 @@ builder.Services.AddSingleton<IKafkaClient, KafkaClient>();
 builder.Services.AddScoped<IRequestCollection, RequestCollection>();
 
 // Enable & configure JSON Problem Details error responses
+// ADR-022 / F-016-T08: ForbiddenException -> 403 centrally, so an endpoint that omits a local
+// try/catch returns 403 rather than a bare 500. Registered unconditionally, unlike the
+// Development-only UseExceptionHandler lambda below.
+builder.Services.AddExceptionHandler<AgendaBuddyExceptionHandler>();
 builder.Services.AddProblemDetails(options =>
     options.CustomizeProblemDetails = context => CustomizeProblemDetails(context.ProblemDetails, context.HttpContext));
 
@@ -99,6 +103,13 @@ if (app.Environment.IsDevelopment())
     });
 }
 
+// MUST stay AFTER the IsDevelopment() block. Middleware registered earlier is outermost and an
+// exception propagates outward, so the INNERMOST handler sees it first. Placed here, this one takes
+// ForbiddenException and declines everything else, which then rethrows and reaches the Development
+// lambda exactly as it does today. Placed BEFORE that block, the lambda would swallow
+// ForbiddenException and the central 403 would fail in Development only. See AgendaBuddyExceptionHandler.
+app.UseExceptionHandler();
+
 app.UseAntiforgery();
 app.UseAuthentication();
 app.UseAuthorization();
@@ -150,8 +161,14 @@ customers.MapPut("/{email}",
         if (!MiniValidator.TryValidate(customerEntity, out var errors))
             return TypedResults.ValidationProblem(errors);
 
-        try { OwnershipGuard.AssertOwner(user, email); }
-        catch (ForbiddenException) { return TypedResults.Forbid(); }
+        // Deliberately NOT wrapped in try/catch — F-016 AC-13. This is the route that demonstrates the
+        // central mapping: AgendaBuddyExceptionHandler turns ForbiddenException into 403 whether or not
+        // an endpoint remembered to catch it. Before F-016 this line without a catch produced a 500 (and
+        // in Production, a bare empty-bodied one). Removing the catch here rather than shipping a
+        // test-only endpoint also demonstrates AC-14's no-double-handling in the same stroke.
+        // ForbidHttpResult stays in the union above on purpose: this route still returns 403, so removing
+        // it would drop 403 from the generated OpenAPI while the behaviour was unchanged.
+        OwnershipGuard.AssertOwner(user, email);
 
         var eventResponse =
             await EventsHelper.UpdateCustomerEvent(email, requestCollection, mediator, customerService, customerEntity);

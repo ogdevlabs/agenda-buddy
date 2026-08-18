@@ -78,7 +78,17 @@ Content-Type: application/problem+json
 
 - `requestId` comes from the existing `CustomizeProblemDetails` extension (`Activity.Current?.Id`), preserved.
 - ⚠️ **`requestId` is returned but not lookupable** — it is not exported to any sink (`10-error-handling.md:138`). Unchanged by this feature; noted so nobody treats it as a support tool yet.
-- The 8 existing local `try/catch` sites keep working and must **not** double-handle (PRD AC-14).
+- The existing local `try/catch` sites keep working and must **not** double-handle (PRD AC-14).
+- ⚠️ **Corrected during T08 — there are 7 of those sites, not 8.** `Booking:125,:149,:174`,
+  `Customer:154`, `Provider:203`, `Services:143,:167`, verified by grep across every production project.
+  T08 removes exactly one (Customer's, to satisfy AC-13), leaving **6**.
+- ⚠️ **Corrected during T08 — both 403 paths already return this same body.** The design assumed the
+  hand-written `TypedResults.Forbid()` sites returned a *bodyless* 403, so that AC-14's "no changed body"
+  meant living with two different 403 contracts. Measured: `app.UseStatusCodePages()`, already registered
+  in every domain service, converts a bodyless 403 into ProblemDetails. So the contract is **uniform**
+  across both mechanisms — better than predicted, nothing for F-015 to special-case. Verified on both
+  sides by `CentralForbiddenTest` and `LocalCatchUnaffectedTest`, which assert the identical property set
+  `{type, title, status, traceId, requestId}`.
 
 ### 3.2 Full status matrix
 

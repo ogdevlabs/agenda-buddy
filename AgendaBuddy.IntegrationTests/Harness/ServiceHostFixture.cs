@@ -1,4 +1,5 @@
 using Library.Configuration;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
 using MongoDB.Driver;
@@ -87,7 +88,14 @@ public class ServiceHostFixture<TEntryPoint>(CryptoSessionFixture crypto) : IAsy
     /// <summary>
     /// Starts the service against a fresh, uniquely named database in this class's container.
     /// </summary>
-    public ServiceHost StartService()
+    /// <param name="environment">
+    /// <c>ASPNETCORE_ENVIRONMENT</c> for this instance, or <c>null</c> for the host default. Pass
+    /// <c>"Production"</c> to exercise behaviour that differs by environment — the Development-only
+    /// <c>UseExceptionHandler</c> lambda and Swagger are both registered inside
+    /// <c>if (app.Environment.IsDevelopment())</c>, so several F-016 criteria (notably AC-23 / threat
+    /// T-004, which is about the <c>Production</c> 403 body) are only meaningful with this set.
+    /// </param>
+    public ServiceHost StartService(string? environment = null)
     {
         if (ContainerConnectionString is null)
         {
@@ -105,6 +113,11 @@ public class ServiceHostFixture<TEntryPoint>(CryptoSessionFixture crypto) : IAsy
             // searches (MongoConnectionResolver.cs:22-27), so this overrides each service's
             // LibrarySettings:MongoDB:DatabaseName without editing appsettings.
             builder.UseSetting("MongoDbSettings:DatabaseName", databaseName);
+
+            if (environment is not null)
+            {
+                builder.UseEnvironment(environment);
+            }
         });
 
         var host = new ServiceHost(

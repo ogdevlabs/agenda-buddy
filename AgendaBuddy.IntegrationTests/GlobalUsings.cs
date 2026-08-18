@@ -7,3 +7,4 @@ global using Xunit;
 // Harness/EntryPoints.cs for the full rationale. Added per service as its test classes arrive.
 global using ProfessionAnchor = Profession.Configurations.MongoDbConfiguration;
 global using CustomerAnchor = Customer.Configurations.MongoDbConfiguration;
+global using ProviderAnchor = Provider.Configurations.MongoDbConfiguration;

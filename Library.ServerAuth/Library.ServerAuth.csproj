@@ -10,4 +10,11 @@
         <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.0" />
     </ItemGroup>
 
+    <ItemGroup>
+        <!-- Needed by AgendaBuddyExceptionHandler for IExceptionHandler / IProblemDetailsService
+             (F-016-T08, ADR-022). Not a new package: the ASP.NET Core shared framework is already
+             present in all six consuming services, so this adds nothing to any deployed artifact. -->
+        <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    </ItemGroup>
+
 </Project>
