@@ -5,7 +5,7 @@
      Claude reads this file at the start of every session to auto-resume from the last checkpoint.
      If this file is missing or empty, PDLC will prompt you to run /pdlc init. -->
 
-**Last updated:** 2026-08-18T20:38:00Z
+**Last updated:** 2026-08-18T22:35:00Z
 
 ---
 
@@ -58,13 +58,16 @@ _None active. Run `/night-shift <F-NNN>` to start an autonomous run (requires by
 
 ## Current Sub-phase
 
-Build
+Review
+
+_**Build is COMPLETE — 20 of 20 tasks done.** Entered Review 2026-08-18T22:35Z. The Review, Test and
+Wrap-up sub-phases have **not** been run._
 
 ---
 
 ## Last Checkpoint
 
-Construction / Build / 2026-08-18T20:38:00Z — **waves 1–5 complete: the verification harness is done.** Next: **wave 6**, the production-behaviour wave (10 tasks; T08, T09, T18 ready now). A wave-6 standup has not been held.
+Construction / Review / 2026-08-18T22:35:00Z — **BUILD COMPLETE, 20/20 tasks.** Next: the Review sub-phase (build skill steps 12–14), then Test (15–17), then Wrap-up (18–20).
 
 ---
 
@@ -86,38 +89,45 @@ agent-teams
 
 ## Active Blockers
 
-> ### 🔖 RESUME MARKER — updated 2026-08-18T20:38Z, harness complete
+> ### 🔖 RESUME MARKER — updated 2026-08-18T22:35Z, **BUILD COMPLETE**
 >
-> **F-016 `secure-public-endpoints` is in Construction / Build, 8 of 20 tasks done, on branch
-> `feat/F-016-secure-public-endpoints` (13 commits, nothing pushed).**
+> **F-016 `secure-public-endpoints`: all 20 tasks done. Construction / Review.**
+> Branch `feat/F-016-secure-public-endpoints`, **25 commits, nothing pushed, tree clean.**
+> 157 files changed vs `main` (+9456 / −481).
 >
-> **Waves 1–5 are complete — the entire verification harness works.** T01, T02, T03, T04, T05, T06,
-> T07 and T10. The feature's central claim is now demonstrated rather than asserted: a real service is
-> hosted over HTTP against a MongoDB Testcontainer, and `AuthFailurePathTest` proves 401-on-expired and
-> **403-on-foreign-subject** against a real route.
+> **Gates, all green:** backend **358** passing / 0 failing / 0 warnings (12 projects, baseline 305) ·
+> integration **92** passing in ~1 m 13 s · mobile **74** (67 passing, 7 skipped, untouched).
+> `tasks.cjs check` reports **zero** `security-ac-untested` findings for F-016 — all **7** threat-derived
+> ACs have linked tests.
 >
-> **Next is wave 6 — the production-behaviour wave, 10 tasks across six services.** Ready now:
-> **T08** (central 403 — gates every other endpoint task), **T09** (`AssertOwner` null-claim fix —
-> must precede T11 and T13), **T18** (audit payloads + `Event.actor`). **Hold a wave-6 standup first:**
-> the plan flags internal ordering that the dependency graph only partly encodes.
+> **NEXT: the Review sub-phase has not been run** (build skill steps 12–14), nor Test (15–17) or Wrap-up
+> (18–20). `/build` resumes there. Read
+> **`docs/pdlc/design/secure-public-endpoints/verification.md`** first — it is T19's attestation of all 26
+> ACs and it names every deviation, so a reviewer can disagree with a specific line.
 >
-> Everything in `## Context Checkpoint` still applies. What the harness now gives you:
+> **Three things a reviewer should look at first:**
 >
-> - `[Collection(HarnessCollection.Name)]` on every harness test class — shares the session keypair and
->   serialises the `JWT_PUBLIC_KEY` race. Also `IClassFixture<ServiceHostFixture<XAnchor>>` for a service.
-> - `ServiceHostFixture<TEntryPoint>.StartService()` → a `ServiceHost` with `.Client` (real HTTP through
->   the full pipeline), `.Database` (this test's own DB) and `.DatabaseName`. Container per class,
->   database per test.
-> - `new TokenFactory(crypto)` → `CreateToken(subject, role)`, `CreateExpiredToken(...)`,
->   `CreateTokenWithoutSubject()` (the T-001 probe).
-> - Anchor aliases live in `GlobalUsings.cs` — `ProfessionAnchor`, `CustomerAnchor`. **Add one per
->   service as you need it**; the type is that service's public `MongoDbConfiguration`.
-> - Two traps already paid for: `MiniValidator` runs **before** `AssertOwner` on the `{email}` PUT
->   routes, so a test with an invalid body gets 400 and never reaches the guard. And **never write
->   `ConnectionStrings__mongodb`** — it poisons the next test class and defeats the fail-closed guard.
+> 1. **One AC-19 deviation.** A pre-existing test was deleted — `Profession.Tests`
+>    `AddProfessionEvent_ReturnSuccess` — because ADR-025 removed its subject. Net −1 unit test, +3
+>    integration tests. §2 of verification.md makes the argument; accepting or rejecting it is the
+>    maintainer's call.
+> 2. **Two contract deviations from approved design docs**, both corrected in `api-contracts.md`:
+>    `ProviderSummary` has **no `profession`** field and services have no `duration` (neither exists on the
+>    entities — F-015 would have bound to nothing), and `GET /api/v1/providers` returns a **homogeneous**
+>    `ProviderSummary[]` rather than a mixed array.
+> 3. **ADR-030 still stands as accepted** — SSH.NET's unpatchable HIGH advisory, reachable only via
+>    Docker-over-SSH, which a test asserts is never loaded.
 >
-> Fastest path back in: `/build`. **Filter the ready queue on `epic:secure-public-endpoints`** — it is
-> not feature-scoped and will otherwise hand you a paused F-018 task.
+> **Two human-only actions before this can ship:**
+>
+> - **`F-016-T20`'s CI job has never run.** The workflow triggers only on push/PR to `main`, so it needs a
+>   real run on a throwaway branch **pushed by a human**. And **"blocking" is a branch-protection setting** —
+>   `Integration — real services + MongoDB` must be added to `main`'s required status checks, or the job can
+>   fail and a PR still merge.
+> - **Rotate the Atlas credential (`ISSUE-002`)** — still unrotated, still recoverable from this PUBLIC
+>   repo's history. It is exactly what makes T06's fail-closed guard load-bearing.
+>
+> ⚠️ Still true: `tasks.cjs ready` is **not** feature-scoped. Filter on `epic:secure-public-endpoints`.
 
 <!-- PENDING MARKER — read this first at the start of the next session. Each item below is either
      an action only a human can take, or work that is written but not yet exercised. Nothing here is
@@ -228,26 +238,26 @@ re-planning (`/continue`).
   "triggered_at": "2026-08-18T19:55:00Z",
   "reason": "maintainer asked for a marker so context could be cleared mid-Build",
   "phase": "Construction",
-  "sub_phase": "Build",
+  "sub_phase": "Review",
   "feature": "secure-public-endpoints",
   "feature_id": "F-016",
   "active_task": null,
-  "skill_file": "skills/build/steps/02-build-loop.md",
+  "skill_file": "skills/build/steps/03-review.md",
   "resume_command": "/build",
 
   "branch": "feat/F-016-secure-public-endpoints",
   "branch_base": "main @ e35938b (freshly pulled; branched at the maintainer's request, NOT off the F-018 branch)",
-  "commits_on_branch": 13,
+  "commits_on_branch": 25,
   "pushed": false,
   "working_tree": "clean apart from PDLC docs (STATE, the wave-3 MOM, task files)",
 
-  "progress": "8 of 20 tasks done — WAVES 1-5 COMPLETE, the whole verification harness. T01 rename, T02 project + InternalsVisibleTo x7, T03 CryptoSessionFixture + AC-3 hygiene, T04 DockerPreflight, T05 TokenFactory, T06 ServiceHostFixture + fail-closed guard, T07 401/403 over real HTTP, T10 GetPagedAsync.",
-  "ready_queue_next": ["F-016-T08 central 403 (gates every endpoint task)", "F-016-T09 AssertOwner null fix (MUST precede T11 and T13)", "F-016-T18 audit metadata + Event.actor"],
-  "critical_path": "T01 -> T02 -> T03 -> T06 -> T07 -> T08 -> T12 -> T15 -> T19 -> T20 (10 deep). SIX of ten are done. Both named bottlenecks (T02, T06) are cleared. Remaining: T08 -> T12 -> T15 -> T19 -> T20.",
+  "progress": "20 of 20 tasks done — BUILD COMPLETE. Waves 1-8 all finished. Review, Test and Wrap-up sub-phases NOT yet run.",
+  "ready_queue_next": [],
+  "critical_path": "COMPLETE. T01 -> T02 -> T03 -> T06 -> T07 -> T08 -> T12 -> T15 -> T19 -> T20, all ten done.",
 
   "test_state": {
-    "backend": "322 passing / 0 failing / 0 warnings across 12 projects via `dotnet test agenda-buddy-backend.slnf`. 305 baseline -> 309 (T01) -> 313 (T03 hygiene x4) -> 322 (T10: +3 contract, +6 semantics). Waves 4-5 added nothing here; they are all integration tests.",
-    "integration": "45 passing in 18 s via `dotnet test AgendaBuddy.IntegrationTests/AgendaBuddy.IntegrationTests.csproj` — a SEPARATE command, see ADR-031. 9 (T02) + 4 (T03) + 10 (T04) + 4 (T05) + 14 (T06) + 4 (T07). The 18 s figure is a datum for T20 duration enforcement.",
+    "backend": "358 passing / 0 failing / 0 warnings across 12 projects via `dotnet test agenda-buddy-backend.slnf`. 305 baseline -> 358 (+53). Wave 6 added the AgendaBuddyExceptionHandler, OwnershipGuard T-001, QueryAudit/AuditActor and PageRequest unit tests.",
+    "integration": "92 passing in ~1 m 13 s via `dotnet test AgendaBuddy.IntegrationTests/AgendaBuddy.IntegrationTests.csproj` — a SEPARATE command, see ADR-031. Grew across all of wave 6. T20 enforces a 600 s budget in CI.",
     "mobile": "74 (67 passing, 7 skipped) via `dotnet test MobileApp.Tests/MobileApp.Tests.csproj /p:MobileWorkloads=false` — re-verified after T10 touched Library, unchanged"
   },
 
@@ -267,6 +277,17 @@ re-planning (`/continue`).
     "never_write_the_connection_string": "ServiceHostFixture treats the environment as READ-ONLY and injects the container endpoint via WebApplicationFactory UseSetting. Writing ConnectionStrings__mongodb would (a) make the guard compare its own value to itself and (b) poison the NEXT test class, which starts a different container on a different port and would read the previous class's endpoint as a conflict and abort. JWT_PUBLIC_KEY is the exception and MUST be an env var: AuthenticationExtensions.cs:16 reads it directly, not through IConfiguration, and throws at DI-registration time.",
     "validation_precedes_authorization": "On the {email} PUT routes MiniValidator.TryValidate runs BEFORE OwnershipGuard.AssertOwner (Customer/Program.cs:150 vs :153). A test with an invalid or empty body gets 400 and NEVER REACHES THE GUARD — it reads as 'the guard does not fire'. Also a mild information-disclosure smell for F-019/F-021: an unauthorized caller can probe validation rules.",
     "what_AC4_real_HTTP_means": "The HttpClient issues real HTTP through the service's whole pipeline — routing, authn, authz, model binding, exception handler — against real MongoDB. The transport underneath is TestServer's in-memory one, not TCP. That is what Microsoft.AspNetCore.Mvc.Testing provides and what T02's EntryPoints design selected. Stated because AC-4 says 'real HTTP request'."
+  },
+
+  "WAVE_6_OUTCOMES": {
+    "all_7_security_ACs_linked": "tasks.cjs check reports ZERO security-ac-untested for F-016. T-001..T-007 each have a T00N_* test linked via ac link-test, so tasks.cjs done could not have closed any of those tasks on a citation alone.",
+    "verification_doc": "docs/pdlc/design/secure-public-endpoints/verification.md — T19's attestation of all 26 ACs, naming every deviation. READ THIS BEFORE REVIEW.",
+    "counting_errors_found_in_approved_artifacts": "THREE, all verified against code: 9 query handlers not 10 (origin: 15-cqrs-and-messaging.md:161 states '10 queries, 10 handlers' above a 9-row table) with 18 audit call sites not 20; 7 hand-written ForbiddenException catch sites not 8; and no `profession` field on ProviderEntity nor `duration` on ServiceEntity despite api-contracts section 5.1 showing both.",
+    "design_docs_corrected": "api-contracts section 3.1 and 5.1, ARCHITECTURE section 5, ADR-023 annotated, ADR-027 amended. STILL TO FIX: docs/pdlc/context/15-cqrs-and-messaging.md:161's handler count, at the /ship context refresh.",
+    "middleware_order_gotcha": "app.UseExceptionHandler() MUST stay AFTER the if (IsDevelopment()) block in all six services. Registered before it, the Development lambda becomes innermost, swallows ForbiddenException, and AC-13 fails in DEVELOPMENT ONLY -- green in CI, red locally. CentralForbiddenTest asserts both environments.",
+    "calendar_guard_before_cache": "DESIGN INVARIANT. Both Calendar routes cache on {email} -- the request SUBJECT, never the CALLER -- so the ownership guard being ABOVE the cache read is the only thing preventing a cross-tenant leak. F-019/F-020 will rewrite these exact files. T006_AWarmCacheIsNotServedToADifferentPrincipal fails if it is ever reordered.",
+    "event_actor_is_central": "Stamped in EventStore.SaveAsync from IHttpContextAccessor, NOT per handler (no handler can see the caller). AddEventStore() calls AddHttpContextAccessor() itself, so no service Program.cs registers anything. Accepted cost: EventAndCommands is now ASP.NET-aware. Escape hatch if that ever needs undoing: an IAuditActorProvider seam. Maintainer-approved; ADR-027 amended.",
+    "AC19_deviation": "ONE pre-existing test deleted: Profession.Tests AddProfessionEvent_ReturnSuccess, because ADR-025 removed its subject. Net -1 unit test, +3 integration tests. The argument is in verification.md section 2 and a comment at the deletion site. NEEDS MAINTAINER ACCEPTANCE."
   },
 
   "WAVE_3_DEBT": [
@@ -547,3 +568,16 @@ _Superseded handoff (F-012 mobile-app, shipped) retained for reference:_
 | 2026-08-18T20:28:00Z | task_complete | **F-016-T05 done** — `TokenFactory`. Tokens verified against the **services' own** `TokenValidationParameters`, read back out of `AddAgendaBuddyAuthentication`, so issuer/algorithm/clock-skew cannot drift from production and resurface as a mystery 401 in T07. No `CreateForeignSubjectToken` — that token is just `CreateToken` for somebody else, pinned as a decision by a test. `CreateTokenWithoutSubject` is the T-001 probe. Integration 27 | Build | secure-public-endpoints |
 | 2026-08-18T20:34:00Z | task_complete | **F-016-T06 done — the second bottleneck is cleared, and the CRITICAL security AC is mechanically closed.** Real services now host over HTTP against a Mongo Testcontainer; `ProfessionHostTest` is the **first test in this solution to execute a route table** (`11-testing.md:148`). Fail-closed guard in two ordered layers: srv/credential rejection **before** a container starts (proven by asserting none was started), then host+port identity against the container's own endpoint — a dedicated test rejects `mongodb://127.0.0.1:27017` while the container is elsewhere, which is the case that broke the earlier pattern-check version at the threat party. The guard never echoes the rejected string, asserted. AC-20's "no database created" asserted **positively** by inspecting the container. **Verified empirically, against expectation: xUnit v2 does inject a collection fixture into a class fixture**, so session keypair + class container compose with no static workaround. Integration 41 in 16 s | Build | secure-public-endpoints |
 | 2026-08-18T20:37:00Z | task_complete | **F-016-T07 done — the harness now observes what nothing in this solution could.** AC-6 proven over real HTTP against `PUT /api/v1/customers/{email}`: anonymous 401, expired 401, **foreign subject 403**, owner neither. All four green on the first run, so this confirms existing behaviour rather than fixing it. Test-only task, so the TDD gate holds without a manufactured red. **Trap found that would have produced a wrong conclusion:** `MiniValidator` runs *before* `AssertOwner` (`:150` vs `:153`), so a test with an invalid body gets 400 and never reaches the guard — and separately, validation preceding authorization lets an unauthorized caller probe validation rules (pre-existing; flagged to F-019/F-021). Integration 45 in 18 s | Build | secure-public-endpoints |
+| 2026-08-18T20:44:00Z | wave_kickoff | Wave 6 standup (solo) — 0 resequenced, 0 edges added. **Three counting errors found in approved artifacts**, all verified against code: **9 query handlers, not 10** (the "10" originates in `15-cqrs-and-messaging.md:161`, which states *"10 queries, 10 handlers"* directly above a **9-row table**, and propagated into the PRD, ARCHITECTURE, the plan and T18's body); **7 hand-written `ForbiddenException` catch sites, not 8**; and **`Event.actor` cannot be "one assignment per handler"** because no handler can see the caller. Bolt found the ordering trap that would have made AC-13 fail *in Development only*. The actor-threading fork (~30 files vs ~8) was escalated to the maintainer, who chose to centralise in `EventStore` | Build | secure-public-endpoints |
+| 2026-08-18T21:05:00Z | task_complete | **F-016-T08 done** — central 403 via the first `IExceptionHandler` in the codebase, in six services (not Identity). `UseExceptionHandler()` placed **after** the Development block, and both environments asserted, because the reverse order fails only locally. AC-13 satisfied by removing one local catch rather than shipping a test-only route. **Two design-doc corrections:** 7 catch sites not 8, and both 403 paths **already** share one body — `UseStatusCodePages()` converts a bodyless 403 to ProblemDetails, so my first AC-14 test asserted an empty body and correctly failed | Build | secure-public-endpoints |
+| 2026-08-18T21:20:00Z | task_complete | **F-016-T09 done** — `AssertOwner`'s null-claim pass closed (T-001). `string.Equals(null, null)` is `true`, so a caller with no `sub` checked against an entity with no email was granted **ownership**. The pre-existing "no sub claim" test passed throughout because it supplied a *non-null* email — it threw for the wrong reason. Red was 3 of 5 new cases, precisely the null-null ones. AC-21's route half deliberately deferred to T11 and written into its task body | Build | secure-public-endpoints |
+| 2026-08-18T21:45:00Z | task_complete | **F-016-T18 done** — query audit payloads reduced to `{"resultCount":N}` across **18 call sites in 9 handlers** via one `QueryAudit` factory, so "no entity data" is a property of one testable method. `Event.actor` stamped centrally in `EventStore` from `IHttpContextAccessor` (maintainer-chosen; ~8 files instead of ~30, and it attributes the 11 command handlers for free). ADR-027 amended, ARCHITECTURE §5 corrected | Build | secure-public-endpoints |
+| 2026-08-18T21:55:00Z | task_complete | **F-016-T12 done** — the headline defect closed. All **five** anonymous PII GETs now 401; red phase had all five returning 200 with full records. Breaking with zero reachable consumers | Build | secure-public-endpoints |
+| 2026-08-18T22:05:00Z | task_complete | **F-016-T17 done** — `POST /api/v1/professions` **deleted**, not role-gated (ADR-025 supersedes requirement 13; there is no admin role). Verified live before removal: **both** a Provider and a Customer token got 201 and wrote to the global catalogue. ⚠️ **The one AC-19 deviation** — one pre-existing test deleted because its subject was removed | Build | secure-public-endpoints |
+| 2026-08-18T22:10:00Z | task_complete | **F-016-T16 done** — `Provider` role required to list customers (T-003). Brings `AssertRole` into use for the **first time**: per `13-security.md:137` it had never been called anywhere, so the `role` claim authorized nothing. Only the list route — a test pins that a customer can still read their own record | Build | secure-public-endpoints |
+| 2026-08-18T22:15:00Z | task_complete | **F-016-T14 done** — role **and** ownership on `POST /api/v1/providers`. Both arms tested: a role check alone still lets one Provider create a record under another's email | Build | secure-public-endpoints |
+| 2026-08-18T22:20:00Z | task_complete | **F-016-T13 done — the Calendar IDOR is closed** (T-006). Red phase: an intruder's token returned **200 with the owner's client email** on both routes. Every sibling service already guarded; Calendar was the one family that forgot, and nothing could catch it because there was no integration test. Guard sits **above** the cache read as a design invariant, pinned by a warm-cache regression test asserting "not 200-with-data" rather than "exactly 403" | Build | secure-public-endpoints |
+| 2026-08-18T22:25:00Z | task_complete | **F-016-T11 done** — `ProviderSummary` projection. **Two api-contracts corrections:** there is **no `profession` field** and no service `duration` (neither exists on the entities, so F-015 would have bound to nothing), and the list is **homogeneous** because a mixed `items` array is not deserialisable. Added `OwnershipGuard.IsOwner` so ownership can be *branched on* rather than caught, keeping the null-claim rule in one place. Closes AC-21's second half | Build | secure-public-endpoints |
+| 2026-08-18T22:30:00Z | task_complete | **F-016-T15 done** — pagination at the **database**, threaded through 12 files, because slicing in the endpoint would bound the response while leaving the extraction unbounded. Three things the ADR did not say, now recorded in it: the cache key must carry the page, `skip` arithmetic is overflow-guarded, and the envelope composes with T11's projection | Build | secure-public-endpoints |
+| 2026-08-18T22:33:00Z | task_complete | **F-016-T19 done** — `verification.md`: all 26 ACs attested with every deviation named. Also closed the last near-miss by attesting AC-24 against the exact route it names, now that T12 authenticated it | Build | secure-public-endpoints |
+| 2026-08-18T22:35:00Z | build_complete | **BUILD COMPLETE — 20/20 tasks.** F-016-T20 added a separate, duration-enforced integration CI job and fixed a silent-skip trap (the harness matched **no** path filter, so a harness-only change ran zero jobs). Backend **358** / integration **92** / mobile **74**, 0 failing, 0 warnings. All **7** threat-derived security ACs have linked tests. ⚠️ T20's job **has never run** and "blocking" needs a branch-protection change — both human-only. Review, Test and Wrap-up sub-phases **not yet run** | Review | secure-public-endpoints |
