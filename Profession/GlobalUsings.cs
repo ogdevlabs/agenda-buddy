@@ -1,3 +1,6 @@
+global using AgendaBuddy.ServiceDefaults;
+global using Library.Configuration;
+global using Library.Diagnostics;
 // Global using directives
 
 global using System.Diagnostics;

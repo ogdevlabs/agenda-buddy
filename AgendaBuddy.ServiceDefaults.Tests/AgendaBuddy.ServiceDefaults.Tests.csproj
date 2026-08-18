@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <IsPackable>false</IsPackable>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <RootNamespace>AgendaBuddy.ServiceDefaults.Tests</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <!-- TestHost rather than Mvc.Testing: MapDefaultEndpoints is exercised through a
+             WebApplication built in-process, so WebApplicationFactory's entry-point discovery
+             (and the whole MVC stack it drags in) buys nothing here. -->
+        <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="10.0.0" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
+        <PackageReference Include="OpenTelemetry.Exporter.InMemory" Version="1.17.0" />
+        <PackageReference Include="xunit" Version="2.8.1" />
+        <PackageReference Include="xunit.runner.visualstudio" Version="2.8.1">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\AgendaBuddy.ServiceDefaults\AgendaBuddy.ServiceDefaults.csproj" />
+    </ItemGroup>
+
+</Project>

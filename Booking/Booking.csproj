@@ -8,12 +8,12 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="MediatR" Version="12.3.0"/>
-        <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.0"/>
-        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.0"/>
-        <PackageReference Include="MiniValidation" Version="0.9.1"/>
-        <PackageReference Include="MongoDB.Driver" Version="2.25.0"/>
-        <PackageReference Include="Swashbuckle.AspNetCore" Version="10.2.3"/>
+        <PackageReference Include="MediatR" Version="12.3.0" />
+        <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.0" />
+        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.0" />
+        <PackageReference Include="MiniValidation" Version="0.9.1" />
+        <PackageReference Include="MongoDB.Driver" Version="2.25.0" />
+        <PackageReference Include="Swashbuckle.AspNetCore" Version="10.2.3" />
     </ItemGroup>
 
     <ItemGroup>
@@ -23,10 +23,11 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\EventAndCommands\EventAndCommands.csproj"/>
-        <ProjectReference Include="..\Kafka\Kafka.csproj"/>
-        <ProjectReference Include="..\Library\Library.csproj"/>
-        <ProjectReference Include="..\Library.ServerAuth\Library.ServerAuth.csproj"/>
+        <ProjectReference Include="..\EventAndCommands\EventAndCommands.csproj" />
+        <ProjectReference Include="..\Kafka\Kafka.csproj" />
+        <ProjectReference Include="..\Library\Library.csproj" />
+        <ProjectReference Include="..\Library.ServerAuth\Library.ServerAuth.csproj" />
+        <ProjectReference Include="..\AgendaBuddy.ServiceDefaults\AgendaBuddy.ServiceDefaults.csproj" />
     </ItemGroup>
 
 </Project>

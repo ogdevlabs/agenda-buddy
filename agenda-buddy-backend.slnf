@@ -1,0 +1,32 @@
+{
+  "solution": {
+    "path": "agenda-buddy.sln",
+    "projects": [
+      "AgendaBuddy.AppHost.Tests\\AgendaBuddy.AppHost.Tests.csproj",
+      "AgendaBuddy.AppHost\\AgendaBuddy.AppHost.csproj",
+      "AgendaBuddy.ServiceDefaults.Tests\\AgendaBuddy.ServiceDefaults.Tests.csproj",
+      "AgendaBuddy.ServiceDefaults\\AgendaBuddy.ServiceDefaults.csproj",
+      "Booking.Tests\\Booking.Tests.csproj",
+      "Booking\\Booking.csproj",
+      "Calendar.Tests\\Calendar.Tests.csproj",
+      "Calendar\\Calendar.csproj",
+      "Customer.Tests\\Customer.Tests.csproj",
+      "Customer\\Customer.csproj",
+      "EventAndCommands\\EventAndCommands.csproj",
+      "EventsAndCommands.Tests\\EventsAndCommands.Tests.csproj",
+      "Identity.Tests\\Identity.Tests.csproj",
+      "Identity\\Identity.csproj",
+      "Kafka.Tests\\Kafka.Tests.csproj",
+      "Kafka\\Kafka.csproj",
+      "Library.ServerAuth\\Library.ServerAuth.csproj",
+      "Library.Tests\\Library.Tests.csproj",
+      "Library\\Library.csproj",
+      "Profession.Tests\\Profession.Tests.csproj",
+      "Profession\\Profession.csproj",
+      "Provider.Tests\\Provider.Tests.csproj",
+      "Provider\\Provider.csproj",
+      "Services.Tests\\Services.Tests.csproj",
+      "Services\\Services.csproj"
+    ]
+  }
+}
