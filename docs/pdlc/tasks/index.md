@@ -85,7 +85,15 @@ _No tasks._
 
 _No tasks._
 
-## F-018 — refactor-minimal-apis  `planned` — claimed by oscargarcia@ogdevlabs.onmicrosoft.com
+## F-018 — api-refactor-foundations  `planned` — claimed by oscargarcia@ogdevlabs.onmicrosoft.com
+
+_No tasks._
+
+## F-019 — api-refactor-pilot-booking  `planned`
+
+_No tasks._
+
+## F-020 — api-refactor-rollout  `planned`
 
 _No tasks._
 

@@ -17,7 +17,7 @@ Inception
 
 ## Current Feature
 
-refactor-minimal-apis
+api-refactor-foundations
 
 ---
 
@@ -34,7 +34,7 @@ none
 ## Roadmap Claim
 
 - **Feature ID:** F-018
-- **Feature record:** docs/pdlc/tasks/F-018/_feature.md
+- **Feature record:** docs/pdlc/tasks/F-018/_feature.md (retitled `api-refactor-foundations` at Discover — stage 1 of 3)
 - **Claimed by:** oscargarcia@ogdevlabs.onmicrosoft.com
 - **Claimed at:** 2026-08-18T13:40:00Z
 - **Branch:** (will be set at build pre-flight)
@@ -146,8 +146,8 @@ mobile client that cannot reach the backend (F-015), and unauthenticated PII exp
   "sub_phase": "Discover",
   "step": "f-013-shipped-v0.1.0-starting-f-018-inception",
   "skill_file": "skills/brainstorm/steps/01-discover.md",
-  "work_in_progress": "F-013 shipped as v0.1.0 (tag pushed, episode 001 committed, claim released). F-018 refactor-minimal-apis claimed; Inception starting at Discover. Reference for the refactor: https://github.com/Gramli/AuthApi",
-  "next_action": "Run Discover for F-018 — restructure the Minimal API layer following the Gramli/AuthApi reference, replacing the per-service RequestCollection hand-wiring.",
+  "work_in_progress": "F-013 shipped as v0.1.0. F-018 Inception in Discover. Round 1 done: the requested scope was too large for one PRD and was decomposed into F-018 api-refactor-foundations (harness + MobileApp CI + Persitency rename + constitution amendments), F-019 api-refactor-pilot-booking (full Clean Architecture on Booking), F-020 api-refactor-rollout (remaining 6). Integration-test capability moved out of F-017 into F-018. MediatR stays the single dispatcher; SmallApiToolkit used only for DataResponse/validation-base/middleware.",
+  "next_action": "Continue F-018 Discover at Round 2 (Future State / Key Capabilities), scoped to the foundations stage only: Testcontainers harness, MobileApp into CI, Persitency rename, constitution amendments.",
   "files_open": []
 }
 ```

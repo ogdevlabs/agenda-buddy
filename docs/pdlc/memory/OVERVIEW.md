@@ -68,7 +68,7 @@ Agenda Buddy is a scheduling and appointment management platform for independent
 
 ## Known Tech Debt
 
-- [Added 2026-07-30] `EventAndCommands/Persitency/` is a typo (should be `Persistence`) — renaming deferred to avoid breaking references across all consumers
+- [Added 2026-07-30] `EventAndCommands/Persitency/` is a typo (should be `Persistence`) — renaming deferred to avoid breaking references across all consumers. **Scheduled for F-018**: CONSTITUTION §9 deferred it "until a dedicated refactor is planned", and the API refactor program is that refactor.
 - ~~[Added 2026-07-30] `KafkaClient` hardcodes `BootstrapServers = "localhost:9092"`~~ — **RESOLVED by F-013**: now configuration-driven
 - ~~[Added 2026-07-30] No authentication or authorization layer~~ — see the F-016 caveat below; auth exists but is not uniformly enforced
 - [Added 2026-07-30] `topicName` computed but never used in `Booking/Program.cs` and other services — dead code cleanup needed
@@ -80,13 +80,13 @@ Agenda Buddy is a scheduling and appointment management platform for independent
 - ⚠️ **[HIGHEST RESIDUAL RISK] The `agenda_buddy` Atlas credential is unrotated.** Removed from 17 tracked files, but **9 commits still carry it in git history and it remains valid**. The cluster holds client names, emails, phone numbers and appointment records, and **has no backups**. Human-only action: `docs/issues/ISSUE-002-atlas-credential-rotation.md` (`agenda-buddy-41s`). Hard prerequisite for any cloud deployment.
 - **CONSTITUTION §7's security-scan gate is still not automated.** Run by hand at the v0.1.0 ship (0 vulnerable packages; working tree clean) but CI has one credential grep, not a scanner, and neither `gitleaks` nor `trufflehog` is installed. Owned by **F-017**.
 - **No `.editorconfig`.** `dotnet format` found 69 whitespace findings at the ship gate; they were fixed, but nothing prevents the drift returning.
-- **No integration-test harness.** Orchestrated-startup regressions would not be caught in CI — `AppHostWiringTest` asserts the app *model*, not a real run. Owned by **F-017**.
+- **No integration-test harness.** Orchestrated-startup regressions would not be caught in CI — `AppHostWiringTest` asserts the app *model*, not a real run. **Owned by F-018** (moved from F-017 on 2026-08-18; will be Testcontainers-based).
 - **7 `MongoDbConfiguration` classes + 7 interfaces** are kept alive solely by 3 tests. Delete with the tests, or convert those tests to the new path.
 - **7 near-identical `ServiceCollectionMongoResolutionTest.cs`** (~150 lines each) — collapse to a shared theory when one next needs editing.
 - **`AppHostWiring` mutates Aspire-produced `EndpointAnnotation`s** — revisit on any Aspire major upgrade.
 - **`scripts/seed/seed-mongo.sh` is stale** — hardcodes `mongo:27017` and targets `ProviderDb`/`CustomerDb`, which no service reads.
 - **`docs/pdlc/context/` describes pre-Aspire wiring** in places — refreshed incrementally at ship.
-- **`agenda-buddy-prr`** — `MobileApp` does not compile under `/p:MobileWorkloads=false`, so its 67 tests do not run in CI and it is excluded from `agenda-buddy-backend.slnf`.
+- ~~**`agenda-buddy-prr`** — `MobileApp` does not compile under `/p:MobileWorkloads=false`~~ — **RESOLVED and verified 2026-08-18.** The bead is closed and `MobileApp.Tests` passes 67 (7 skipped) locally. CI already runs three dedicated mobile jobs (`build-android`, `build-ios` on `macos-latest`, `build-mobile-tests`). MobileApp stays out of `agenda-buddy-backend.slnf` **by design**, not because it is broken. A stale comment in `.github/workflows/dotnet.yml` still claims otherwise.
 - **Two advisory test gaps from Echo**: the guarded legacy `MongoDbConfiguration` ctor throw, and `ProfessionSeedHostedService.StartAsync` (which swallows exceptions, so a seeding bug surfaces only as an empty catalogue).
 - **Six shipped-but-unreachable capabilities** (NotificationService, MessageService, NoteService, PaymentService, ReportingService, DeactivateProviderCommand) — implemented and unit-tested but with no DI registration, collection config, or HTTP route, so F-006–F-010 read as Shipped while being unreachable. Owned by **F-014**.
 - **The mobile client cannot reach the backend** — wrong route prefixes, no gateway for 7 ports, and a seed-data fallback that masks all of it. Owned by **F-015**.

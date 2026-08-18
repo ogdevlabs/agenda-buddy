@@ -110,9 +110,13 @@ jobs:
             ${{ runner.os }}-nuget-
 
       # agenda-buddy-backend.slnf is the solution minus MobileApp and MobileApp.Tests. Those are
-      # covered by the three mobile jobs below, and MobileApp currently does not compile under
-      # /p:MobileWorkloads=false (agenda-buddy-prr) — a pre-existing defect that would otherwise
-      # fail this job for a reason unrelated to the backend.
+      # covered by the three dedicated mobile jobs below (build-android, build-ios, build-mobile-tests),
+      # which install the MAUI workloads this job does not need. Keeping mobile out of the backend job
+      # means a mobile-only break cannot fail the backend build for an unrelated reason.
+      #
+      # Updated 2026-08-18: this comment previously said MobileApp "does not compile under
+      # /p:MobileWorkloads=false (agenda-buddy-prr)". That defect is fixed and the bead is closed —
+      # MobileApp.Tests passes 67 (7 skipped). The exclusion is by design, not a workaround.
       - name: Restore dependencies
         run: dotnet restore agenda-buddy-backend.slnf /p:MobileWorkloads=false
 

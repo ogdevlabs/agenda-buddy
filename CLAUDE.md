@@ -11,7 +11,7 @@ Agenda Buddy is a scheduling and appointment management platform for independent
 - **Messaging:** Kafka (Confluent) + MediatR (CQRS)
 - **Caching:** IDistributedCache (cache-aside pattern, 5-min TTL)
 - **Observability:** OpenTelemetry traces/metrics/logs via ServiceDefaults, exported to the Aspire dashboard
-- **Testing:** xUnit — 305 tests across 12 projects
+- **Testing:** xUnit — 379 tests total: 305 across 12 backend projects + 74 in `MobileApp.Tests`
 - **Infrastructure:** Aspire AppHost (primary local) · Docker + Docker Compose (legacy fallback) · GitHub Actions CI
 
 > **Aspire caveat:** do **not** add `Aspire.MongoDB.Driver`. It requires MongoDB.Driver ≥ 3.9.0 against the pinned 2.25.0 and fails restore with `NU1605`. The project registers `AddSingleton<IMongoClient>` with a custom `MongoHealthCheck` instead (ADR-013). There is no Aspire workload to install.
@@ -25,7 +25,7 @@ Agenda Buddy is a scheduling and appointment management platform for independent
 - `EventAndCommands/` — CQRS kernel: all commands, queries, handlers, events, and EventStore persistence
 - `Kafka/` — `KafkaClient` for topic creation (Confluent.Kafka); broker address is configuration-driven
 - `Booking/`, `Calendar/`, `Customer/`, `Provider/`, `Services/`, `Profession/`, `Identity/` — seven independent ASP.NET Minimal API microservices
-- `MobileApp/` — .NET MAUI client. **Excluded from `agenda-buddy-backend.slnf`** because it does not compile under `/p:MobileWorkloads=false` (`agenda-buddy-prr`)
+- `MobileApp/` — .NET MAUI client. **Deliberately excluded from `agenda-buddy-backend.slnf`** — it is covered by three dedicated CI jobs instead (`build-android`, `build-ios` on a macOS runner, and `build-mobile-tests`). Its 74 tests (67 passing, 7 skipped) run under `/p:MobileWorkloads=false`
 - `*.Tests/` projects mirror the service they test (e.g., `Library.Tests/`, `EventsAndCommands.Tests/`)
 - `compose/` — Docker Compose data fixtures
 
@@ -35,7 +35,8 @@ Agenda Buddy is a scheduling and appointment management platform for independent
 - **Dev server (primary):** `dotnet run --project AgendaBuddy.AppHost` — starts MongoDB, Kafka, and all 7 services
 - **Dev server (legacy):** `docker compose -f docker-compose.yml -f docker-compose.override.yml up -d`
 - **Build:** `dotnet build --no-restore`
-- **Test:** `dotnet test agenda-buddy-backend.slnf --collect:"XPlat Code Coverage"` — use the solution filter; the full solution includes MobileApp, which does not build
+- **Test (backend, 305 tests):** `dotnet test agenda-buddy-backend.slnf --collect:"XPlat Code Coverage"` — use the solution filter, not the full solution
+- **Test (mobile, 74 tests):** `dotnet test MobileApp.Tests/MobileApp.Tests.csproj /p:MobileWorkloads=false`
 - **Format:** `dotnet format agenda-buddy-backend.slnf` — there is no `.editorconfig`, so this applies built-in defaults
 - **Stop:** `Ctrl-C` on the AppHost (legacy: `docker compose down`)
 
@@ -78,7 +79,7 @@ See [docs/pdlc/archive/design/aspire-wiring/ARCHITECTURE.md](docs/pdlc/archive/d
 - `AgendaBuddy.ServiceDefaults/Extensions.cs` — `AddServiceDefaults()` / `MapDefaultEndpoints()`, called by all 7 services
 - `AgendaBuddy.ServiceDefaults/PiiRedactingProcessor.cs` — strips email addresses from span attributes before export. **Do not remove:** `url.path` was leaking real customer emails (threat T-004)
 - `Library/MongoConnectionResolver.cs` — resolves the Mongo connection string (Aspire → environment → appsettings) with an actionable failure message
-- `agenda-buddy-backend.slnf` — the solution filter CI and local test runs target; excludes MobileApp
+- `agenda-buddy-backend.slnf` — the solution filter the backend CI job and local backend test runs target; excludes MobileApp by design
 - `azure.yaml` + `.github/workflows/deploy.yml` — cloud deploy path. **Written, unit-tested, never executed**
 - `docker-compose.yml` — legacy Kafka + Zookeeper + Schema Registry + service definitions
 - `.github/workflows/dotnet.yml` — CI pipeline: restore → build → test → coverage upload, plus AppHost build and startup guards
