@@ -129,12 +129,22 @@ jobs:
       - name: Assert every service starts in Development
         run: |
           set -u
+          # Throwaway keypair generated per run, deliberately not repo secrets. This check only
+          # proves the DI graph builds and the process binds a port, so the keys need to be
+          # syntactically valid PEM, nothing more. Depending on secrets.CI_JWT_* meant the step
+          # failed with "Required environment variable 'JWT_PUBLIC_KEY' is not set" the first time
+          # it ever ran, because those secrets were never created — a hermetic step cannot rot
+          # that way, and there is no signing key here worth protecting.
+          openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out "$RUNNER_TEMP/jwt.key"
+          openssl rsa -in "$RUNNER_TEMP/jwt.key" -pubout -out "$RUNNER_TEMP/jwt.pub"
+          JWT_PRIVATE_KEY=$(cat "$RUNNER_TEMP/jwt.key")
+          JWT_PUBLIC_KEY=$(cat "$RUNNER_TEMP/jwt.pub")
+          export JWT_PRIVATE_KEY JWT_PUBLIC_KEY
+
           for svc in Booking Calendar Customer Provider Services Profession Identity; do
             log=$(mktemp)
             ASPNETCORE_ENVIRONMENT=Development \
             ConnectionStrings__mongodb='mongodb://localhost:27017' \
-            JWT_PUBLIC_KEY="${{ secrets.CI_JWT_PUBLIC_KEY }}" \
-            JWT_PRIVATE_KEY="${{ secrets.CI_JWT_PRIVATE_KEY }}" \
               dotnet run --project "$svc" --no-build -c Release --no-launch-profile > "$log" 2>&1 &
             pid=$!
             for _ in $(seq 1 40); do
