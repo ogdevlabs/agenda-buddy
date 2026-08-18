@@ -47,7 +47,7 @@ Both were pre-existing on `main` and invisible to inspection:
 
 ## Outstanding — NOT closed by merging
 
-1. **⚠️ Rotate the `agenda_buddy` Atlas credential and review the cluster access log.** Removed from the working tree; still in git history and still valid. Threat T-001 / OQ-1.
+1. **⚠️ Rotate the `agenda_buddy` Atlas credential and review the cluster access log.** Removed from the working tree; still in git history and still valid. Threat T-001 / OQ-1. *(Re-graded **MEDIUM** on 2026-08-18: the maintainer confirmed the cluster holds only synthetic/development data, so this is a dev-data-integrity and Atlas-resource-abuse risk, **not** a personal-data breach — there is no GDPR clock. Rotation is still required; the credential is publicly recoverable from `origin/main` history and there are no backups.)*
 2. ~~**F-013-T14 open** — the AppHost end-to-end run is unproven. Containers and dashboard came up; the 7 services never launched. Leading hypothesis: untrusted dev certificate, needing an interactive `dotnet dev-certs https --trust`. **AC-1.1 and AC-1.3 are unproven, so ship is gated on this.**~~
    **RESOLVED 2026-08-18 (T-14 closed, ISSUE-001).** The dev-certificate hypothesis was wrong. Root cause was a missing `AgendaBuddy.AppHost/Properties/launchSettings.json`. AC-1.1, AC-1.2 and AC-1.3 are now executed and verified, and were re-confirmed live at the Ship/Verify gate: all seven services `/health` = `Healthy`, `/alive` = 200. The three remaining dashboard visual checks were also completed by human inspection at that gate — **nothing in F-013 is now recorded as unverified** (`agenda-buddy-e7e` closed).
 3. **CONSTITUTION §7 security scan** still unimplemented — CI has one credential pattern, not a scanner. Deferred to F-017.

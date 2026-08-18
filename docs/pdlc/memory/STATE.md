@@ -5,13 +5,13 @@
      Claude reads this file at the start of every session to auto-resume from the last checkpoint.
      If this file is missing or empty, PDLC will prompt you to run /pdlc init. -->
 
-**Last updated:** 2026-08-18T15:25:00Z
+**Last updated:** 2026-08-18T17:45:00Z
 
 ---
 
 ## Current Phase
 
-Inception
+Inception Complete — Ready for /build
 
 ---
 
@@ -51,13 +51,13 @@ _None active. Run `/night-shift <F-NNN>` to start an autonomous run (requires by
 
 ## Current Sub-phase
 
-Define
+none
 
 ---
 
 ## Last Checkpoint
 
-Inception / Define / 2026-08-18T15:25:00Z
+Inception / Plan / 2026-08-18T17:45:00Z
 
 ---
 
@@ -85,12 +85,21 @@ agent-teams
 
 **→ `docs/issues/ISSUE-002-atlas-credential-rotation.md`** (tracker: `agenda-buddy-41s`)
 
+> ⚠️ **CORRECTED 2026-08-18 — the PII claims in this block are WRONG.** The maintainer confirmed the
+> cluster holds **only synthetic / development data, never real people's records**. Severity re-graded
+> **CRITICAL → MEDIUM**. Rotation is still required (the credential is still valid, publicly
+> recoverable from `origin/main` history, grants write access to a live cluster, and there are no
+> backups) — but there is **no personal-data breach, no GDPR clock and no notification duty**. See the
+> correction block at the top of ISSUE-002.
+
 A connection string with **full read/write** access to the cluster was committed to 17 tracked files.
 F-013 removed it from the working tree; it **remains in git history and remains valid until the
-password is changed at Atlas**. The cluster holds client names, email addresses, phone numbers and
+password is changed at Atlas**. ~~The cluster holds client names, email addresses, phone numbers and
 appointment records — who met which therapist or coach and when. That makes an unrotated credential a
-notifiable personal-data breach with a 72-hour GDPR clock, an unlogged data-modification risk with **no
-backups to restore from**, and the first prerequisite for any cloud deployment. Documenting it again is
+notifiable personal-data breach with a 72-hour GDPR clock~~ — **struck 2026-08-18: the cluster holds only
+synthetic/development data, so there is no personal-data breach and no GDPR clock.** What remains true:
+an unlogged data-modification risk with **no backups to restore from**, Atlas resource abuse billed to
+the project owner, and the first prerequisite for any cloud deployment. Documenting it again is
 not progress; only the rotation closes it. ISSUE-002 has the exact Atlas steps, the access-log review
 window, and the command that finds the first commit containing it.
 
@@ -158,32 +167,43 @@ mobile client that cannot reach the backend (F-015), and unauthenticated PII exp
 
 ```json
 {
-  "phase_completed": "Inception / Discover",
-  "next_phase": "Inception / Define",
+  "phase_completed": "Inception / Plan",
+  "next_phase": "Construction / Build",
   "feature": "api-refactor-foundations",
   "feature_id": "F-018",
   "key_outputs": [
-    "docs/pdlc/brainstorm/brainstorm_refactor-minimal-apis_2026-08-18.md",
-    "docs/pdlc/mom/api-refactor-foundations_progressive-thinking_mom_2026_08_18.md"
+    "docs/pdlc/prds/PRD_F-018_api-refactor-foundations_2026-08-18.md",
+    "docs/pdlc/prds/plans/plan_F-018_api-refactor-foundations_2026-08-18.md",
+    "docs/pdlc/design/api-refactor-foundations/ARCHITECTURE.md",
+    "docs/pdlc/design/api-refactor-foundations/data-model.md",
+    "docs/pdlc/design/api-refactor-foundations/api-contracts.md",
+    "docs/pdlc/design/api-refactor-foundations/threat-model.md",
+    "docs/pdlc/design/api-refactor-foundations/ux-review.md",
+    "docs/pdlc/brainstorm/brainstorm_refactor-minimal-apis_2026-08-18.md"
   ],
   "decisions_made": [
-    "Decomposed into F-018 (foundations) / F-019 (pilot Booking) / F-020 (rollout) — full Clean Architecture target preserved, staged so the harness exists before the endpoint rewrite",
-    "MediatR is the single dispatcher; SmallApiToolkit used only for DataResponse/validation-base/ExceptionMiddleware. IHttpRequestHandler explicitly rejected to avoid two dispatchers",
-    "All 5 packages adopted (FluentResults, Validot, Mapster, GuardClauses, SmallApiToolkit) — §9 amendment + ADR-015",
-    "F-018 delivers a working harness, NOT a regression net — thin endpoint coverage on a robust harness. The zero-count metrics belong to F-019/F-020",
-    "All 13 edge cases triaged IN SCOPE — grew the feature; token factory with time control, CI duration enforcement and spec-drift detection must be sized at Plan",
-    "OpenAPI spec committed now, churn accepted (Jarvis over Neo). CI must fail on spec drift",
-    "Identity gets FULL tier coverage (it has 5 write endpoints — the original matrix was built on a false fact) and Identity/Requests/AuthRequests.cs is the in-repo precedent",
-    "'Stable' for the §7 gate = 10 consecutive green CI runs. Red integration job blocks PRs from run 1",
-    "F-016 ships BEFORE F-019/F-020 — recorded as F-019 depends_on [F-018, F-016]"
+    "20 tasks in 7 waves. Critical path T01->T05->T06->T08->T13->T18->T20, bottlenecks T05 and T08",
+    "T01 (Persistence rename) MUST be the first commit and MUST precede any integration test (AC-16)",
+    "T16 (OpenAPI) deliberately OFF the critical path - spike proved spec generation needs no container",
+    "Container-per-CLASS with a unique database per test, reversed from per-test on a measured 4.45s startup",
+    "31 ACs: 27 original + 3 threat-derived [security] (T-001/T-002/T-004) + AC-31 added at the Step 18 gate",
+    "Readiness Full -> Fair, 3 gaps. Adversarial pass refuted all three self-rated Strongs. AC-31 closed two of them"
   ],
-  "next_action": "Read skills/brainstorm/steps/02-define.md and generate the PRD draft for F-018",
+  "next_action": "STOPPING HERE at the user's request - no implementation. Run /build to start Construction when ready.",
+  "git_policy": "NO PUSHING. All work is local commits on feat/F-018-api-refactor-foundations. main is PR-protected; the 5 commits pushed to main earlier in this session were left in place by user decision.",
+  "read_first_at_build": [
+    "docs/pdlc/prds/plans/plan_F-018_api-refactor-foundations_2026-08-18.md - Known gaps section names 6 things that could surprise the implementer",
+    "docs/pdlc/design/api-refactor-foundations/ARCHITECTURE.md section 9 - 4 open items carried into Plan",
+    "docs/pdlc/design/api-refactor-foundations/threat-model.md - 3 mitigate-now threats are [security] ACs on T06/T08"
+  ],
   "open_risks": [
-    "Testcontainers on Rancher Desktop UNVERIFIED — everything depends on it; needs a spike first",
-    "No OpenAPI generation mechanism exists — Swashbuckle needs a running app, Swagger is Development-only",
-    "No rollback story for the 7 .csproj edits + namespace rename",
-    "Cache-aside invariant has no guard while the audit invariant has two",
-    "7 MobileApp tests are skipped and nobody knows why (372 of 379 execute)"
+    "T16: full-document OpenAPI byte-determinism NOT verified - the spike proved stable path SETS only. AC-19 gives false failures otherwise",
+    "T16: spec output location/naming still undecided",
+    "T15: container reaping unverified - must be proven by an actual mid-flight kill, not assumed from docs",
+    "T17/T18/T19 need a MAINTAINER-PUSHED throwaway branch - the dependency graph cannot express 'waits on a human' (recorded as dependency-missed)",
+    "Cache-aside invariant still has no guard while the audit invariant has two - revisit in F-019",
+    "7 MobileApp tests skipped, reason unknown (372 of 379 execute) - T19 investigates",
+    "HUMAN-ONLY, OUTSIDE F-018: rotate the Atlas credential. Re-graded MEDIUM (synthetic data, no GDPR clock) but still valid, publicly recoverable, write access to a live no-backup cluster"
   ],
   "pending_questions": []
 }
@@ -340,3 +360,8 @@ _Superseded handoff (F-012 mobile-app, shipped) retained for reference:_
 | 2026-08-18T13:10:00Z | verify_complete | §7 scan run by hand (0 vulnerable packages / tree clean / 9 commits still carry the credential). 3 dashboard visual checks confirmed by human against a live AppHost; agenda-buddy-e7e closed. F-013 has nothing unverified | Verify | aspire-wiring |
 | 2026-08-18T13:30:00Z | operation_complete | Episode 001 committed and pushed. ROADMAP drift repaired (F-014–F-017 added). F-013 shipped, claim released. Artifacts archived | Reflect | aspire-wiring |
 | 2026-08-18T13:40:00Z | roadmap_claim | F-018 refactor-minimal-apis claimed, ahead of F-014–F-017 at explicit user request | Discover | refactor-minimal-apis |
+| 2026-08-18T15:25:00Z | discover_complete | Scope decomposed into F-018/F-019/F-020. Identity's 5 write endpoints + existing DTOs found; OTLP-suppression inference withdrawn | Discover | api-refactor-foundations |
+| 2026-08-18T16:10:00Z | prd_approved | 27 reqs / 27 ACs / 9 stories, after a walkthrough that found 5 defects incl. AC-7 claiming an audit tier for a service with no audit trail | Define | api-refactor-foundations |
+| 2026-08-18T16:30:00Z | spikes_complete | Both gating risks spiked BEFORE Design, both passed. Measured 4.45s container startup reversed container-per-test to per-class; ISwaggerProvider removed the feared 6th dependency | Design | api-refactor-foundations |
+| 2026-08-18T17:05:00Z | design_approved | 5 artifacts. Threat model Full (7 threats). Repo verified PUBLIC; cluster confirmed SYNTHETIC — T-001 re-graded CRITICAL→MEDIUM and overstated PII/GDPR claims corrected across 5 documents | Design | api-refactor-foundations |
+| 2026-08-18T17:45:00Z | inception_complete | 20 tasks / 7 waves / 31 ACs. Readiness Full → Fair (3 gaps, adversarial pass refuted all 3 self-rated Strongs); AC-31 added at the gate | Plan | api-refactor-foundations |

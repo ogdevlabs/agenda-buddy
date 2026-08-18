@@ -4,6 +4,33 @@
 **Severity:** highest residual risk in the project · **Filed:** 2026-08-18
 **Origin:** F-013 threat **T-001** / PRD **OQ-1** · **Supersedes** the blocker text carried in `docs/pdlc/memory/STATE.md`
 
+> ## ⚠️ CORRECTION — 2026-08-18: the data-exposure claims below are WRONG
+>
+> **The maintainer has confirmed the `agenda_buddy` cluster contains only synthetic / development
+> data. It has never held records for real people.** Every statement in this issue about client
+> names, email addresses, phone numbers, a notifiable personal-data breach, or a 72-hour GDPR clock
+> is therefore **incorrect** and should not be relied on. Those claims originated in earlier PDLC
+> sessions that inferred the cluster's contents from the *schema* rather than verifying them.
+>
+> **Severity re-graded: CRITICAL → MEDIUM.** Not "no longer a problem" — the rest of this issue
+> stands, and rotation is still required:
+>
+> - The credential is **still valid** and grants **full read/write to a live cluster**.
+> - Verified 2026-08-18: it is recoverable from **published** history — 9 commits reachable from
+>   `origin/main`, earliest `ddb23ba`, with the literal still extractable from
+>   `Calendar/appsettings.Development.json` at that commit. The repository is **public**.
+> - **There are no backups.** Anyone with the credential can destroy the development dataset.
+> - It permits Atlas resource abuse (storage, compute, egress) billed to the project owner.
+> - It is a valid credential into a live Atlas project, so its blast radius is bounded by that
+>   project's configuration, not by this database alone.
+>
+> What changed is the *kind* of risk, not its existence: this is an operational and cost/integrity
+> risk, **not** a personal-data breach. There is no regulator clock and no notification duty.
+>
+> **Still do:** rotate the password at Atlas, and review the access log. The review window is the
+> full public lifetime of `ddb23ba`, not merely since F-013.
+
+
 ---
 
 ## What happened
@@ -45,12 +72,16 @@ This is not a theoretical hygiene item. The credential grants read/write to the 
 
 The concrete consequences, in the order they would actually hurt:
 
-1. **A personal-data breach.** Agenda Buddy's users are therapists, tutors and coaches. An
-   appointment record linking a named individual to a therapist at a specific time is **sensitive
-   personal data**, and the customer collection is a ready-made list for phishing or extortion. Under
-   GDPR this is a notifiable personal-data breach with a **72-hour** reporting clock from the moment
-   the controller becomes aware — and the clock is arguably already running, because this document is
-   awareness.
+1. ~~**A personal-data breach.**~~ **STRUCK 2026-08-18 — this was wrong.** The reasoning below was
+   inferred from the *schema* (a `customers` collection with name/email/phone fields implies real
+   people) rather than from the cluster's actual contents. The maintainer has confirmed the cluster
+   holds **only synthetic/development data**. There is **no personal-data breach, no sensitive-data
+   exposure, no notification duty and no 72-hour clock.**
+   ~~Agenda Buddy's users are therapists, tutors and coaches. An appointment record linking a named
+   individual to a therapist at a specific time is sensitive personal data, and the customer
+   collection is a ready-made list for phishing or extortion.~~
+   **Lesson worth keeping:** a schema tells you what data *could* be there, not what is. This document
+   asserted the more alarming reading for three weeks without anyone checking.
 2. **Silent data modification.** The credential is read **and write**. An attacker who deletes or
    quietly alters appointments does damage no read-only leak could, and the project has **no backups
    and no restore drill** (`docs/deployment.md`, item 5), so there is currently nothing to restore

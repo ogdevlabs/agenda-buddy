@@ -1,11 +1,11 @@
 ---
 feature: refactor-minimal-apis
 date: 2026-08-18
-status: discover-complete
-last-updated: 2026-08-18T15:25:00Z
+status: inception-complete
+last-updated: 2026-08-18T17:45:00Z
 approved-by: ogdevlabs
 approved-date: 2026-08-18T15:25:00Z
-prd:
+prd: docs/pdlc/prds/PRD_F-018_api-refactor-foundations_2026-08-18.md
 ---
 
 # Brainstorm Log: API Refactor Program (F-018 → F-019 → F-020)
@@ -365,6 +365,156 @@ That is defensible: a fragile harness with broad coverage is worse than a depend
 ## Capability Scope Check
 
 **Skipped:** no `control-manifest.toml` at the repo root, so this repo is not part of a pdlc-fy multi-repo capability and has no sibling repos to scope work against. `node scripts/capability.cjs read --json` was not run because the manifest's absence already settles it. Agenda Buddy is a standalone repo.
+
+## Pre-Design Spikes (executed 2026-08-18)
+
+Both PRD risks marked ⚠️ were spiked **before** Design, so architecture rests on measurements rather than assumptions. Both **passed**. Throwaway projects were deleted; the temporary `InternalsVisibleTo` was reverted.
+
+### Spike 1 — Testcontainers against Rancher Desktop: ✅ PASS
+
+**Question:** does Testcontainers for .NET find Rancher's Docker endpoint, given `DOCKER_HOST` is unset, `~/.testcontainers.properties` does not exist, and **`/var/run/docker.sock` is absent**?
+
+**Answer: yes, with zero configuration.** `Testcontainers.MongoDb` 4.14.0 discovers the active `rancher-desktop` docker context (`unix:///Users/<user>/.rd/docker.sock`). A real round-trip was verified through **MongoDB.Driver 2.25.0** — the version this repo pins — inserting and reading a document, not merely opening a port.
+
+**Measured warm container startup:**
+
+| Run | Startup |
+|---|---|
+| 1 | 4436 ms |
+| 2 | 4471 ms |
+| 3 | 4475 ms |
+
+~**4.45 s**, σ ≈ 20 ms — unusually stable, so the arithmetic below is reliable. (First-ever run was 34 s including the image pull.)
+
+**⚠️ This measurement changes the container-per-test picture, and it is worse than assumed.** Discover estimated 1–3 s; reality is 4.45 s.
+
+| Scale | Pure container startup | Verdict |
+|---|---|---|
+| F-018, ~20 tests | ~89 s (≈1.5 min) | **comfortable** inside the 10-minute budget |
+| F-019, 60–100 tests | **4.5–7.4 min** | before test logic, restore or build, on 2 contended CPUs — and Kafka is slower still |
+
+So container-per-test is **fine for F-018** and will **very likely blow the budget at F-019**. No decision changes now; AC-21's tripwire fires where it matters. This vindicates Echo's Round-5 objection with a number rather than an argument.
+
+**PRD Known Risk #1 — RESOLVED.**
+
+### Spike 2 — deterministic OpenAPI generation: ✅ PASS, and better than hoped
+
+Three questions, all answered by execution:
+
+| Q | Answer |
+|---|---|
+| Does `WebApplicationFactory<Program>` boot a service once `InternalsVisibleTo` exists? | **Yes** — Booking booted. **Prerequisite 1 confirmed.** |
+| Does `AddAgendaBuddyAuthentication()` really throw without `JWT_PUBLIC_KEY`? | **Yes** — `ApplicationException: Required environment variable 'JWT_PUBLIC_KEY' is not set…`. **Prerequisite 2 confirmed by execution, not by reading.** |
+| Can the OpenAPI document be produced without a Development override and without a sixth package? | **Yes.** `AddSwaggerGen()` is registered **unconditionally** (`Booking/Program.cs:48`; only `UseSwagger()` is Development-gated), so `ISwaggerProvider` is always in DI. Resolving it straight from the host yields the document — **no HTTP call, no environment override, no `Microsoft.Extensions.ApiDescription.Server`.** |
+
+**Additional findings:**
+- **Deterministic** — two consecutive generations produced identical output, which AC-19's drift check requires.
+- **Complete** — Booking yields 1 path with **3 operations**, each with an operation ID (`BookAppointment`, `UpdateAppointment`, `CancelAppointment`). The trailing-slash route variants normalise into a single path, so the earlier "1 path" reading was correct rather than lossy.
+- **Spec generation needs no containers at all.** The host booted with an unreachable MongoDB because no request was issued. **AC-17 and AC-18 are therefore decoupled from Testcontainers** — a real simplification for the plan, and they can be built in parallel with the harness rather than behind it.
+- `/health` and `/alive` are **absent** from the spec — health-check endpoints are not API-explorer visible. Expected; recorded so it is not later mistaken for missing coverage.
+- `WebApplicationFactory` defaults to **`Development`**, so DI scope validation is **on** in tests — the very check that caught F-013's captive `IRequestCollection` dependency. A useful property to keep, not suppress.
+
+**PRD Known Risk #2 — RESOLVED. The feared sixth dependency is unnecessary.**
+
+### A false alarm I raised and am retracting
+
+The spike run emitted `NU1902`/`NU1903` warnings for **SharpCompress 0.30.1** (moderate) and **Snappier 1.0.0** (high), pulled transitively. I initially read this as a new security finding introduced by Testcontainers. **It is not.** Those warnings came from the throwaway `/tmp` project, which has no `Directory.Build.props`. This repo already pins **Snappier 1.3.1** and **SharpCompress 0.50.1** solution-wide, and both CVEs arrive via `MongoDB.Driver` regardless of Testcontainers. **No new pins are required.**
+
+## Design Discovery (Bloom's Taxonomy)
+
+**Completed:** 2026-08-18T16:40:00Z · **Interaction mode:** Sketch · Lead: Neo
+
+Most Bloom's questions were **dropped as already settled** — the skill directs skipping anything clear from the PRD or prior rounds, and the two pre-Design spikes closed the big unknowns:
+
+| Dropped question | Settled by |
+|---|---|
+| How is the OpenAPI document produced? | Spike 2 — `ISwaggerProvider` from host DI; no HTTP, no Development override, no new package |
+| Must the JWT key exist before the host builds? | Spike 2 — `ApplicationException` observed |
+| Which layer owns the harness? | PRD NFR: "No production code path may change behaviour" — test-only |
+| Data model changes? | None; the harness reads existing schema |
+| New API endpoints? | None; F-018 adds no routes |
+
+Two facts established by inspection before asking:
+- **No `IAsyncLifetime`, `IClassFixture` or `CollectionDefinition` exists anywhere in the repo** — the fixture pattern is new ground with no house style to match.
+- **`IKafkaClient` is an interface** registered `AddSingleton<IKafkaClient, KafkaClient>()` (`Booking/Program.cs:29`, `Provider/Program.cs:33`), so substitution via `ConfigureTestServices` is clean.
+
+### Round 1 — Mechanics
+
+**Q1: Container-per-test forces a decision about the test host too. The Mongo connection string must exist before the host builds, so a fresh container per test implies a fresh `WebApplicationFactory` per test (~4.45 s container + host boot each). What shape?**
+
+**A: ⚠️ DECISION REVERSED — container per test *class*, not per test.**
+
+The user changed the Q6 Discover answer on the strength of the spike measurement. At Discover, container-per-test was chosen against an *assumed* 1–3 s startup; the spike measured **4.45 s**, making the real cost roughly 2–3× the estimate. This is the reversal the spike existed to enable, and it converges on what Echo argued for in Progressive Thinking Conflict A — now settled by data rather than by debate.
+
+**Consequences propagated into the design:**
+- **One container per test class**, and therefore **one `WebApplicationFactory` per test class** — the connection string is known once, so the host is built once.
+- **Isolation is preserved by using a unique database name per test** inside the shared container, rather than by a new container. Full isolation at effectively zero cost; this replaces the isolation argument that motivated container-per-test.
+- The 10-minute CI budget becomes comfortable rather than marginal, and AC-21's tripwire is far less likely to fire at F-019 — which was the point of measuring.
+- PRD Requirement 3 and ADR-017 are amended accordingly.
+
+**Q2: Real Kafka or a stub?**
+**A: Stub `IKafkaClient` — no Kafka container.** A recording fake substituted via `ConfigureTestServices`, asserting the topic-creation call was made. Justified because Kafka here **only creates topics** — nothing is produced or consumed (`docs/pdlc/context/09-integrations.md`, unchanged by F-013) — so a real broker adds the slowest container in the suite while proving very little. The wiring is still asserted.
+
+**Q3: How is the audit event read for tier 3?**
+**A: Direct `MongoDB.Driver` read of the events collection** from the container. Asserting the actual persisted document means the test survives a refactor of `IEventStore` — which matters precisely because F-019/F-020 are refactoring that layer. Reading through the abstraction could pass while the persisted data is wrong.
+
+### Round 2 — Apply
+
+**Q4: The slnf lists 12 test projects explicitly and the backend CI job runs `dotnet test agenda-buddy-backend.slnf`. If the integration project joins that filter, the unit job starts running containers. How are they kept apart?**
+**A: Keep `AgendaBuddy.IntegrationTests` OUT of `agenda-buddy-backend.slnf`.** It is invoked by path in its own CI job — exactly the precedent `MobileApp.Tests` already sets. The separation is **structural**, not dependent on remembering a `--filter` flag. Rejected alternative: in-slnf with `--filter Category!=Integration`, because forgetting the flag silently makes the unit job start containers.
+
+*(Drafted and accepted without asking — project naming `AgendaBuddy.IntegrationTests` is fixed by PRD Req 1; xUnit is the framework per CONSTITUTION §1; fixtures follow `IAsyncLifetime` + `IClassFixture` since no house precedent exists to inherit.)*
+
+### Round 3 — Trade-offs and Judgments
+
+**Q5: Isolation versus wall-clock, given the measured 4.45 s.**
+**A:** Wall-clock wins, with isolation retained by other means — shared container per class, unique database per test. The judgment is that a suite people actually run beats a marginally purer one they avoid; Echo's Round-5 warning was that container-per-test on 2 CPUs would produce timeout flakes that "train people to re-run red builds."
+
+**Q6: Fidelity versus cost on Kafka.**
+**A:** Cost wins, because fidelity here is nearly free to fake — the integration is one method that creates a topic.
+
+**Q7: Coupling versus durability on the audit assertion.**
+**A:** Durability wins — assert persisted state, not the abstraction being refactored.
+
+### Synthesis
+
+**Neo's sketch, validated by the answers above:**
+
+- **Components:** one test project, `AgendaBuddy.IntegrationTests`, outside the backend slnf. A per-session fixture owning the in-memory RSA keypair and the token factory; a per-class fixture owning one Mongo container plus one `WebApplicationFactory` per service under test; per-test unique database names for isolation.
+- **Data model:** unchanged. The harness reads the existing `agenda_buddy` and `IdentityDb` schemas.
+- **API surface:** unchanged. F-018 adds no routes; it *records* the existing surface as committed OpenAPI specs extracted via `ISwaggerProvider`.
+- **Key decisions:** container-per-class (reversed from per-test on measured evidence) · stubbed Kafka · direct-driver audit assertions · out-of-slnf structural separation · spec generation decoupled from containers entirely.
+
+## Readiness Party Triage
+
+- Task count: **20**
+- Waves: **7**
+- Domains: `backend`, `devops`, `docs`, `security`
+- Unresolved MUST requirements: no
+- **Triage tier: Full**
+
+Outcome: **Fair — 3 open gaps** (`ac-uncovered`, `task-orphan`, `dependency-missed`). All three lenses initially self-rated **Strong**; the adversarial pass refuted all three. One gap (`ac-uncovered` + `task-orphan`, one defect from both ends) was closed at the Step 18 gate by adding **AC-31**. MOM: `docs/pdlc/mom/MOM_readiness-party_api-refactor-foundations_2026-08-18.md`.
+
+## Threat Modeling Triage
+
+- Trust boundary changes: **yes** — token-issuing capability; `InternalsVisibleTo` widens 7 assemblies
+- Regulated data: **yes at triage, corrected after** — the cluster was later confirmed to hold only synthetic data
+- New attack surface: **yes** — committed OpenAPI specs on a public repo; a new CI job pulling images
+- **Triage tier: Full** (3/3)
+
+Outcome: 7 threats. 3 mitigate-now → `[security]` ACs 28–30. T-001 re-graded CRITICAL→MEDIUM and T-003/T-004 HIGH→MEDIUM once the synthetic-data fact landed. MOM: `docs/pdlc/mom/MOM_threat-model_api-refactor-foundations_2026-08-18.md`.
+
+## Standards Guidance (ideation)
+
+**Skipped — inputs unavailable. This is not an override.**
+
+The `nordstrom-standards-readiness` plugin **is installed** (verified at preflight), but its six `.nordstrom-standards/*` source repositories do **not resolve** under this machine's git/gh auth — probed directly on 2026-08-18 (`engineering`, `security`, `privacy` all unreachable), and there is no local `.nordstrom-standards/` checkout. The same condition blocked Step 12.6 during F-013.
+
+Step 6.5's enforcement tier is **`advisory`**, so this skips with notice rather than blocking. No `docs/standards-readiness/ideation-*.md` was produced.
+
+Secondary note: Agenda Buddy is a personal project under `fererelabs`, not a Nordstrom system, so the six Nordstrom standards bodies are of questionable applicability here regardless of reachability. Worth settling deliberately rather than leaving the gate to fail silently at every feature — a `/diagnose` follow-up.
+
+No `⚠ MUST` items were raised, because no analysis ran. The Plan gate (Step 18.5, `--design`) will re-attempt and is expected to skip for the same reason.
 
 ## Discovery Summary
 

@@ -218,3 +218,113 @@ So services register `AddSingleton<IMongoClient>` over `MongoConnectionResolver.
 - **The CONSTITUTION §7 security scan is still not implemented.** F-013's CI adds a single-pattern credential assertion, which is not a scanner. Deferred to F-017.
 - **No integration-test harness exists**, so AC-1.1, AC-1.2, AC-1.3, AC-3.2 and AC-4.1 are verified manually (E-7). F-013-T10 records that attestation.
 - F-014 … F-017 filed as follow-ups.
+
+---
+
+## ADR-014 — API refactor as a three-stage programme, MediatR retained as the single dispatcher (F-018) *(design decision)*
+
+**Date:** 2026-08-18 · **Status:** Accepted
+
+**Context.** The endpoint layer has ten evidenced defects (string-sniffed control flow, discarded `CancellationToken`s, persistence entities as the public API contract, MediatR registered but never dispatching, a ~40-line exception block duplicated across all seven `Program.cs` files). The maintainer asked to restructure it following [Gramli/AuthApi](https://github.com/Gramli/AuthApi): full Clean Architecture, five new packages, plus a Testcontainers harness and the `Persitency` rename. Scoped as one feature this reached ~46 projects and was too large for a single PRD.
+
+**Decision.** Deliver the **full Clean Architecture target** in three staged features rather than reducing it: **F-018** foundations (harness, rename, governance — no endpoint changes), **F-019** pilot on `Booking` only, **F-020** rollout to the remaining six. Ordering is deliberate: the integration-test harness must exist *before* the endpoint rewrite, because episode 001 established that both of F-013's real defects were invisible to review and surfaced only by running the software.
+
+**MediatR is retained as the single dispatcher.** The reference does CQRS *without* MediatR and uses `SmallApiToolkit`'s `IHttpRequestHandler` as its dispatch mechanism; adopting both would put two competing dispatchers in one codebase. Endpoints will call `mediator.Send(command)` — which finally honours CONSTITUTION §3 and removes the hand-constructed `new SomeCommandHandler(...)` calls. `IHttpRequestHandler` is explicitly **not** used.
+
+**Consequences.** CONSTITUTION §3 is preserved rather than overridden. `SmallApiToolkit` is reduced to `DataResponse<T>`, the validation base class and `ExceptionMiddleware`. F-019 additionally depends on **F-016**, so the unauthenticated full-record endpoint is closed before the rewrite restructures it.
+
+**Alternatives rejected.** One large feature (too large to plan or review). Dropping MediatR for full reference fidelity (would reverse a standing constraint for no gain, since the fix is to *start* using MediatR properly).
+
+---
+
+## ADR-015 — Adopt five packages from the reference implementation (F-018) *(design decision)*
+
+**Date:** 2026-08-18 · **Status:** Accepted · **Amends:** CONSTITUTION §9
+
+**Context.** CONSTITUTION §9 requires discussion before adding packages and asks for a minimal footprint. The reference uses `FluentResults`, `Validot`, `Mapster`, `GuardClauses` and `SmallApiToolkit`.
+
+**Decision.** All five approved. §9 is amended to record the approval. **Used in F-019/F-020, not F-018** — F-018 grants the approval and records the reasoning; no production code consumes them yet.
+
+**Recorded caveat.** `SmallApiToolkit` is the reference author's own library and its README scopes it to *"small-scale or example web APIs"*, with production-readiness applying "primarily to the core handler pattern". We take the narrow slice (`DataResponse<T>`, validation base, `ExceptionMiddleware`) and not the dispatch abstraction, which partially limits the exposure. If it proves unmaintained, the slice we use is small enough to vendor.
+
+**Consequences.** F-019 must front-load a restore check against `net10.0` + `MongoDB.Driver` 2.25.0 before building on any of them — F-013 lost a task to exactly this class of assumption (`Aspire.MongoDB.Driver` required driver ≥ 3.9.0 and failed restore with `NU1605`). Partially de-risked already: `Testcontainers.MongoDb` 4.14.0 restores and runs cleanly on that combination.
+
+---
+
+## ADR-016 — Validot replaces MiniValidator (F-018) *(design decision)*
+
+**Date:** 2026-08-18 · **Status:** Accepted · **Amends:** CONSTITUTION §4
+
+**Context.** §4 mandates *"Input validation via `MiniValidator` at every API endpoint"*. Today that is literally true and is part of the problem — `MiniValidator.TryValidate` is repeated at the top of every endpoint, one of the four blocks duplicated across all seven services.
+
+**Decision.** `Validot` replaces `MiniValidator`, with validation moved off the endpoint into a validation base class. §4 is amended.
+
+**Consequences.** §4 no longer describes the code until F-019 lands, so the amendment records both the target and the transition. The duplication disappears only when endpoints are rewritten; F-018 changes no endpoint.
+
+---
+
+## ADR-017 — Testcontainers integration harness, one container per test class (F-018) *(design decision)*
+
+**Date:** 2026-08-18 · **Status:** Accepted
+
+**Context.** No integration tests exist, and CONSTITUTION §5's "all integration tests pass" has been unsatisfiable since initialization. Nothing asserts the §3 audit invariant, so F-019/F-020 could delete the audit trail with CI staying green.
+
+**Decision.** A Testcontainers-backed harness in a single project, `AgendaBuddy.IntegrationTests`, kept **out of** `agenda-buddy-backend.slnf` so the unit job cannot accidentally start containers. Three assertion tiers: route contract, persistence round-trip, audit fired.
+
+**One container per test *class*, not per test — reversed on measurement.** Discover chose container-per-test against an *assumed* 1–3 s startup. A pre-Design spike measured **4.45 s** (4436 / 4471 / 4475 ms, σ≈20 ms) — 2–3× the estimate. At F-019's expected 60–100 tests that is 4.5–7.4 minutes of pure container startup on a 2 CPU / 4.1 GB VM. Isolation is preserved instead by a **unique database name per test** inside the shared container, which delivers the same isolation the original choice was made for, at effectively zero cost.
+
+**Also decided.** Kafka is **not** containerised — `IKafkaClient` is substituted with a recording fake, because Kafka here only creates topics and nothing is produced or consumed. Tier 3 reads the persisted document **directly with `MongoDB.Driver`**, not through `IEventStore`, so the assertion survives F-019/F-020 refactoring that abstraction.
+
+**Consequences.** The 10-minute CI budget becomes comfortable rather than marginal; AC-21 remains as a tripwire. This converges on what Echo argued in Progressive Thinking Conflict A — settled by measurement rather than debate.
+
+---
+
+## ADR-018 — Container images pinned by tag, not digest (F-018) *(accepted risk)*
+
+**Date:** 2026-08-18 · **Status:** Accepted · **Threat:** T-005 (MEDIUM, mitigate later)
+
+**Context.** The harness pins images by tag (`mongo:7.0.14`). Tags are mutable, so a repointed or compromised upstream tag would execute attacker-controlled code on developer machines and CI runners. Digest pinning (`mongo@sha256:…`) removes that.
+
+**Decision.** Pin by tag for now; defer digest pinning.
+
+**Rationale.** Digest pinning adds a real update burden — every upgrade edits a hash — and the marginal risk over a pinned *patch* tag from a first-party image is modest. Friday's dissent (that the burden outweighs the risk here) is recorded and was accepted.
+
+**Revisit when.** The harness pulls any non-first-party image, or a supply-chain incident touches a base image in use.
+
+---
+
+## ADR-019 — `InternalsVisibleTo` on seven production assemblies (F-018) *(accepted risk)*
+
+**Date:** 2026-08-18 · **Status:** Accepted · **Threat:** T-006 (MEDIUM, accept)
+
+**Context.** `WebApplicationFactory<Program>` requires the entry-point type to be visible. The services use top-level statements, so `Program` is internal. Each of the seven services therefore gains `<InternalsVisibleTo Include="AgendaBuddy.IntegrationTests" />` permanently. The assemblies are not strong-named, so the grant is to a *name*, not an identity — any assembly built with that name can reach their internals.
+
+**Decision.** Accept.
+
+**Rationale.** Exploitability is low: adding a project to the build requires repository write access, which is a larger problem than this grant. The alternatives are worse trades for a test-only need — making `Program` public widens the real API surface, and strong-naming seven assemblies is disproportionate.
+
+**Revisit when.** The repository moves to a model where untrusted contributors can add projects, or the assemblies are strong-named for another reason.
+
+---
+
+## ADR-020 — OpenAPI specs generated in CI but not committed until F-016 (F-018) *(design decision)*
+
+**Date:** 2026-08-18 · **Status:** Accepted · **Threat:** T-003 (MEDIUM, resolved at the Step 12 gate)
+
+**Context.** The maintainer chose to adopt committed OpenAPI specs as a contract baseline, over Neo's objection that F-019/F-020 will churn them — the deciding argument being that F-015's mobile/backend route mismatch survived the project's entire life because no artifact ever made the contract diffable. Threat modelling then observed that the repository is **public**, and that a committed spec documents which endpoints are anonymous — including `GET /api/v1/providers`, which F-016 exists to fix because it returns full provider records unauthenticated and unpaginated.
+
+**Decision.** Middle path: **generate and drift-check the specs in CI from day one; do not commit them** until F-016 closes that endpoint. Committing becomes an **F-016 exit criterion** so the deferral cannot be forgotten.
+
+**Consequences.** The mechanical drift protection exists through exactly the period F-019/F-020 change contracts. AC-17 is reworded from "committed" to "generated and drift-checked"; AC-19's baseline becomes the previous run's artifact (or a checked-in hash manifest) rather than the spec body. The residual severity is lower than first assessed anyway — the endpoint returns synthetic data — but it remains an unauthenticated full-record dump.
+
+**A separate, unenforced obligation (threat T-007, deferred).** The spec only delivers its stated value if diffs are *read*. CI can force regeneration; it cannot force review. Making that real — CODEOWNERS on the spec path, or a required PR label — is deferred to F-019/F-020, the features that will actually change the contract.
+
+---
+
+## ADR-021 — Threat-derived security ACs added to the F-018 PRD post-Define *(process record)*
+
+**Date:** 2026-08-18 · **Status:** Accepted
+
+Threat modelling runs at Design Step 10.5, after the Define gate closed. The three "mitigate now" threats it produced were therefore back-written into the F-018 PRD as acceptance criteria **28 (T-001)**, **29 (T-004)** and **30 (T-002)**, and materialized as structured `[security]` ACs on tasks `F-018-T08` and `F-018-T06` via `tasks.cjs ac add`.
+
+This is a logged addendum, not a Define reopen. Recording it here because adding acceptance criteria after approval is a governance act that should be auditable — and because the *reason* matters: an AC (not a task) is what the build TDD gate enumerates and what `tasks.cjs done` mechanically refuses to close without a linked test. A threat recorded only as a task-body citation is invisible to both.

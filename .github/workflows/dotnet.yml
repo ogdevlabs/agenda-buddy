@@ -21,6 +21,9 @@ jobs:
       mobile: ${{ steps.filter.outputs.mobile }}
       mobile-tests: ${{ steps.filter.outputs.mobile-tests }}
       library: ${{ steps.filter.outputs.library }}
+      # AND-ed into every build job so a markdown-only change never builds. See the long note on
+      # the filters below for why this is a separate filter rather than a `!**/*.md` negation.
+      code: ${{ steps.filter.outputs.code }}
     steps:
       - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v3
@@ -31,9 +34,60 @@ jobs:
           # the branch. That is why the lists below are deliberate about which jobs a shared change
           # is worth paying for.
           #
-          # Docs-only changes (docs/**, *.md, azure.yaml) match nothing and run no build jobs. The
-          # `summary` job still reports, so a docs PR gets a green check rather than an empty one.
+          # Docs-only changes run no build jobs. The `summary` job still reports, so a docs PR gets
+          # a green check rather than an empty one.
+          #
+          # ── Why there are no `!` negations below ──────────────────────────────────────────────
+          # dorny/paths-filter@v3 supports only predicate-quantifier 'some' (the default) and
+          # 'every'. Under 'some' every pattern is OR-ed, so a leading-`!` pattern does NOT exclude
+          # anything — it is silently a no-op. ('some-with-excludes', which would work, exists only
+          # on master; it is not in the v3 tag.) 'every' is unusable here because no single file can
+          # match all of `Library/**`, `Booking/**`, … at once.
+          #
+          # Two real bugs came from that misunderstanding, both fixed below:
+          #   1. Markdown inside a code directory built the whole backend. `Kafka/readme.md` matches
+          #      `Kafka/**`, so editing it ran the full build + test. `docs/**` and root-level `*.md`
+          #      were always fine; markdown nested under a service was not.
+          #   2. `- '!MobileApp.Tests/**'` never excluded anything. `*.Tests/**` matches
+          #      `MobileApp.Tests/**`, so a mobile-test-only change ran the backend job.
+          #
+          # Fixes, both of which work under OR semantics:
+          #   • A separate `code` filter lists code-ish file types positively. Build jobs require
+          #     BOTH their area filter AND `code`, so a markdown-only change can never build.
+          #   • `*.Tests/**` is replaced with the 12 backend test projects named explicitly, so
+          #     MobileApp.Tests is excluded by not being listed rather than by a no-op negation.
           filters: |
+            # True when at least one genuinely code-relevant file changed. AND-ed into every build
+            # job's condition. Excludes markdown by simply not listing it.
+            #
+            # ⚠ This list must stay EXHAUSTIVE. Because the build jobs now require `code == true`,
+            # an unlisted-but-code-relevant extension makes the build SILENTLY SKIP rather than
+            # run — the failure mode is fail-closed, the opposite of the old behaviour. The
+            # `summary` job prints a loud warning whenever an area filter fired while `code` did
+            # not, so this can never skip a build unnoticed. Verified against every extension
+            # actually tracked in the repo on 2026-08-18.
+            code:
+              - '**/*.cs'
+              - '**/*.csproj'
+              - '**/*.props'
+              - '**/*.targets'
+              - '**/*.json'
+              - '**/*.sln'
+              - '**/*.slnf'
+              - '**/*.xaml'
+              - '**/*.yml'
+              - '**/*.yaml'
+              - '**/Dockerfile*'
+              - '**/.dockerignore'
+              - '**/*.sh'
+              - '**/*.editorconfig'
+              # MobileApp platform + resource files: these are compiled into the Android/iOS heads,
+              # so a change to a manifest, Info.plist, privacy manifest or app icon is a real build
+              # input, not documentation.
+              - '**/*.xml'
+              - '**/*.plist'
+              - '**/*.xcprivacy'
+              - '**/*.svg'
             library:
               - 'Library/**'
               - 'Library.ServerAuth/**'
@@ -55,8 +109,20 @@ jobs:
               - 'Kafka/**'
               - 'AgendaBuddy.AppHost/**'
               - 'AgendaBuddy.ServiceDefaults/**'
-              - '*.Tests/**'
-              - '!MobileApp.Tests/**'
+              # The 12 backend test projects, named explicitly. MobileApp.Tests is absent on
+              # purpose — it is covered by the mobile-tests job and must not gate the backend.
+              - 'Booking.Tests/**'
+              - 'Calendar.Tests/**'
+              - 'Customer.Tests/**'
+              - 'Provider.Tests/**'
+              - 'Services.Tests/**'
+              - 'Profession.Tests/**'
+              - 'Identity.Tests/**'
+              - 'Library.Tests/**'
+              - 'Kafka.Tests/**'
+              - 'EventsAndCommands.Tests/**'
+              - 'AgendaBuddy.AppHost.Tests/**'
+              - 'AgendaBuddy.ServiceDefaults.Tests/**'
               - 'Directory.Build.props'
               - '*.sln'
               # Without these a change to only infrastructure ran zero jobs (R-8) — the same
@@ -69,11 +135,12 @@ jobs:
               # This workflow only, not '.github/workflows/**': deploy.yml cannot be validated by
               # these jobs, so a deployment-pipeline edit no longer rebuilds the entire backend.
               - '.github/workflows/dotnet.yml'
-            # Android and iOS each install a MAUI workload and take minutes. Reserved for changes to
-            # the app itself — a shared Library change is covered by mobile-tests below, which
-            # compiles MobileApp against it under the fallback TFM and would catch a break (that is
-            # exactly how agenda-buddy-prr's CS0103 surfaced). If a Library change ever breaks only
-            # the platform heads, add 'Library/**' back here and accept the minutes.
+            # Android and iOS each install a MAUI workload and take minutes (iOS runs on a macOS
+            # runner, billed at 10x Linux). Reserved for changes to the app itself — a shared Library
+            # change is covered by mobile-tests below, which compiles MobileApp against it under the
+            # fallback TFM and would catch a break (that is exactly how agenda-buddy-prr's CS0103
+            # surfaced). If a Library change ever breaks only the platform heads, add 'Library/**'
+            # back here and accept the minutes.
             mobile:
               - 'MobileApp/**'
               - 'Directory.Build.props'
@@ -90,7 +157,7 @@ jobs:
   # ---------------------------------------------------------------------------
   build-and-test:
     needs: changes
-    if: needs.changes.outputs.api == 'true'
+    if: needs.changes.outputs.api == 'true' && needs.changes.outputs.code == 'true'
     runs-on: ubuntu-24.04
 
     steps:
@@ -218,7 +285,7 @@ jobs:
   build-android:
     name: "Mobile — Android Build"
     needs: changes
-    if: needs.changes.outputs.mobile == 'true'
+    if: needs.changes.outputs.mobile == 'true' && needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
 
     steps:
@@ -241,7 +308,7 @@ jobs:
   build-ios:
     name: "Mobile — iOS Build"
     needs: changes
-    if: needs.changes.outputs.mobile == 'true'
+    if: needs.changes.outputs.mobile == 'true' && needs.changes.outputs.code == 'true'
     runs-on: macos-latest
 
     steps:
@@ -264,7 +331,7 @@ jobs:
   build-mobile-tests:
     name: "Mobile — Unit Tests"
     needs: changes
-    if: needs.changes.outputs.mobile-tests == 'true'
+    if: needs.changes.outputs.mobile-tests == 'true' && needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
 
     steps:
@@ -299,6 +366,7 @@ jobs:
           API: ${{ needs.changes.outputs.api }}
           MOBILE: ${{ needs.changes.outputs.mobile }}
           MOBILE_TESTS: ${{ needs.changes.outputs.mobile-tests }}
+          CODE: ${{ needs.changes.outputs.code }}
           R_BACKEND: ${{ needs.build-and-test.result }}
           R_ANDROID: ${{ needs.build-android.result }}
           R_IOS: ${{ needs.build-ios.result }}
@@ -306,6 +374,8 @@ jobs:
         run: |
           {
             echo "### CI summary"
+            echo
+            echo "Code-relevant change detected: \`$CODE\` — every build job below also requires this."
             echo
             echo "| Filter | Fired | Job | Result |"
             echo "|---|---|---|---|"
@@ -316,6 +386,24 @@ jobs:
             echo
             echo "\`skipped\` means no file in that filter's paths changed — not that anything was ignored."
           } >> "$GITHUB_STEP_SUMMARY"
+
+          # Fail-closed guard. An area filter firing while `code` did not means the change touched
+          # only non-code files under a code directory — normally documentation, which is exactly
+          # what we want skipped. But it would ALSO happen if a genuinely code-relevant extension
+          # is missing from the `code` filter, and then the build would skip silently. Make that
+          # case loud rather than invisible.
+          if [ "$CODE" != "true" ] && { [ "$API" = "true" ] || [ "$MOBILE" = "true" ] || [ "$MOBILE_TESTS" = "true" ]; }; then
+            {
+              echo
+              echo "> ⚠️ **Build jobs were skipped because no code-relevant file changed**, even though"
+              echo "> an area filter matched. This is expected for documentation inside a code directory"
+              echo "> (for example \`Kafka/readme.md\`)."
+              echo ">"
+              echo "> If this change *did* touch build-relevant files, the \`code\` filter is missing an"
+              echo "> extension — add it in the \`changes\` job and re-run."
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "::warning::Area filter fired but code == false — build skipped. Verify the 'code' filter covers this change's file types."
+          fi
 
           failed=""
           for pair in "build-and-test:$R_BACKEND" "android:$R_ANDROID" "ios:$R_IOS" "mobile-tests:$R_MOBILE_TESTS"; do

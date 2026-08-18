@@ -87,7 +87,28 @@ _No tasks._
 
 ## F-018 — api-refactor-foundations  `planned` — claimed by oscargarcia@ogdevlabs.onmicrosoft.com
 
-_No tasks._
+| ID | Title | Status | Prio | Depends on |
+|----|-------|--------|------|------------|
+| F-018-T01 | Rename EventAndCommands/Persitency to Persistence | open | — | — |
+| F-018-T02 | Amend CONSTITUTION 1/4/9, verify ADR-014..020, fix the Identity comment | open | — | — |
+| F-018-T03 | Add .editorconfig and enforce dotnet format in CI | open | — | — |
+| F-018-T04 | File the beads issue tracking the 10-green-run count for the section 7 gate | open | — | — |
+| F-018-T05 | Create AgendaBuddy.IntegrationTests and add InternalsVisibleTo to 7 services | open | — | F-018-T01 |
+| F-018-T06 | CryptoSessionFixture: session RSA keypair, in memory, never on disk | open | — | F-018-T05 |
+| F-018-T07 | DockerPreflight: actionable diagnostics for infrastructure failure | open | — | F-018-T05 |
+| F-018-T08 | ServiceHostFixture: one Mongo container per class, fail-closed endpoint guard | open | — | F-018-T05, F-018-T06, F-018-T07 |
+| F-018-T09 | TokenFactory: valid, expired and foreign-subject RS256 tokens | open | — | F-018-T06 |
+| F-018-T10 | KafkaClientFake: recording IKafkaClient substitute, no Kafka container | open | — | F-018-T05 |
+| F-018-T11 | Tier 1: route-contract tests for all 7 services | open | — | F-018-T08 |
+| F-018-T12 | Tier 2: persistence round-trip against real MongoDB, all 7 services | open | — | F-018-T08 |
+| F-018-T13 | Tier 3: audit-fired assertions (6 services) plus the permanent guard test | open | — | F-018-T08, F-018-T10 |
+| F-018-T14 | Auth failure paths: 401 on expired token, 403 on foreign subject | open | — | F-018-T08, F-018-T09 |
+| F-018-T15 | Verify container reaping after an abnormal exit | open | — | F-018-T08 |
+| F-018-T16 | OpenAPI generation via ISwaggerProvider, with byte-determinism proven | open | — | F-018-T05, F-018-T06 |
+| F-018-T17 | CI spec-drift check | open | — | F-018-T16 |
+| F-018-T18 | Integration CI job: separate, blocking from run 1, with duration enforcement | open | — | F-018-T11, F-018-T12, F-018-T13, F-018-T14 |
+| F-018-T19 | Confirm the 3 mobile CI jobs pass and report 379 as the headline count | open | — | — |
+| F-018-T20 | Final verification: 379 tests green, no test deleted, ACs attested | open | — | F-018-T18, F-018-T17, F-018-T15, F-018-T19, F-018-T02, F-018-T03, F-018-T04 |
 
 ## F-019 — api-refactor-pilot-booking  `planned`
 
