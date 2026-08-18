@@ -34,14 +34,31 @@ public static class OwnershipGuard
     /// </remarks>
     public static void AssertOwner(ClaimsPrincipal user, string? entityEmail)
     {
-        var sub = user.FindFirstValue(ClaimTypes.NameIdentifier);
-
-        if (sub is null
-            || entityEmail is null
-            || !string.Equals(sub, entityEmail, StringComparison.OrdinalIgnoreCase))
+        if (!IsOwner(user, entityEmail))
         {
             throw new ForbiddenException();
         }
+    }
+
+    /// <summary>
+    /// Whether the caller owns <paramref name="entityEmail"/> — the same rule as
+    /// <see cref="AssertOwner"/>, as a predicate.
+    /// </summary>
+    /// <remarks>
+    /// Added by F-016-T11 for the provider response projection, where "not the owner" selects a narrower
+    /// response shape rather than refusing the request. Branching on a caught
+    /// <see cref="ForbiddenException"/> would have been exception-driven control flow on a read path — and
+    /// it would have put the null-claim rule in two places, which is precisely how the T-001 asymmetry
+    /// between <see cref="AssertOwner"/> and <see cref="AssertOwnerAny"/> arose. Both now share this one
+    /// implementation.
+    /// </remarks>
+    public static bool IsOwner(ClaimsPrincipal user, string? entityEmail)
+    {
+        var sub = user.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        return sub is not null
+               && entityEmail is not null
+               && string.Equals(sub, entityEmail, StringComparison.OrdinalIgnoreCase);
     }
 
     public static void AssertOwnerAny(ClaimsPrincipal user, params string[] entityEmails)

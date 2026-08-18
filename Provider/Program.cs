@@ -1,3 +1,4 @@
+using Library.Dtos;
 ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls13;
 
 
@@ -173,7 +174,7 @@ providers.MapPost("/", async Task<Results<ValidationProblem, Created<ProviderEnt
     .RequireAuthorization();
 
 // Get provider list
-providers.MapGet("", async Task<Results<Ok<List<ProviderEntity>>, NoContent>> (IMediator mediator,
+providers.MapGet("", async Task<Results<Ok<List<ProviderSummary>>, NoContent>> (IMediator mediator,
     ProviderService providerService,
     IRequestCollection requestCollection, IDistributedCache cache) =>
 {
@@ -184,17 +185,29 @@ providers.MapGet("", async Task<Results<Ok<List<ProviderEntity>>, NoContent>> (I
         return listProviders;
     });
 
-    if (providerCollection is not null)
-        return TypedResults.Ok(providerCollection);
+    if (providerCollection is null)
+        return TypedResults.NoContent();
 
-    return TypedResults.NoContent();
+    // F-016 AC-9 / requirement 10. ProviderEntity embeds AppointmentEntities (each carrying
+    // email_customer) and SubscribedCustomerCollection, so authentication alone does not fix this: an
+    // authenticated CUSTOMER browsing for a coach would still receive every provider's appointment book
+    // and client roster.
+    //
+    // ⚠️ THE LIST IS HOMOGENEOUS -- every element is a ProviderSummary, including the caller's own record.
+    // api-contracts.md section 5.1 describes owner-gets-full for this route too, which would make `items`
+    // a MIXED array of two shapes. That is not deserialisable into a typed list, and F-015 is written
+    // against this contract. An owner loses nothing: GET /api/v1/providers/{email} returns their full
+    // record, and that route DOES apply the ownership branch. Deviation recorded in api-contracts.md.
+    return TypedResults.Ok(providerCollection.Select(ProviderSummary.From).ToList());
 })
     // F-016 AC-8 / requirement 9: PII-bearing read, so no longer anonymous. Breaking change with zero reachable consumers (01-api-surface.md:158).
     .WithName("GetAllProviders")
     .RequireAuthorization();
 
 // Get provider by Email
-providers.MapGet("/{email}", async Task<Results<Ok<ProviderEntity>, NotFound>> (IMediator mediator,
+providers.MapGet("/{email}", async Task<Results<Ok<ProviderEntity>, Ok<ProviderSummary>, NotFound>> (
+    IMediator mediator,
+    ClaimsPrincipal user,
     string email,
     ProviderService providerService,
     IRequestCollection requestCollection, IDistributedCache cache) =>
@@ -207,10 +220,22 @@ providers.MapGet("/{email}", async Task<Results<Ok<ProviderEntity>, NotFound>> (
         return provider;
     });
 
-    if (providerEntity is not null)
-        return TypedResults.Ok(providerEntity);
+    if (providerEntity is null)
+        return TypedResults.NotFound();
 
-    return TypedResults.NotFound();
+    // F-016 AC-9 / requirement 10: two shapes, selected by ownership. Deliberately NOT 403 for a provider
+    // you do not own -- reading another provider's SUMMARY is the discovery flow F-003 defines. Only the
+    // embedded data is withheld.
+    //
+    // ⚠️ This branch is exactly why F-016-T09 had to land first (threat T-001). AssertOwner's null-claim
+    // fall-through used to land on the OWNER side, so a token carrying no `sub` would have received the
+    // unprojected entity. Pinned by ProviderProjectionTest.T001_*.
+    // IsOwner rather than catching AssertOwner's ForbiddenException: "not the owner" selects a narrower
+    // shape here, it is not a failure, and exception-driven control flow on a read path is both slower and
+    // misleading. Both share one implementation, so the null-claim rule cannot drift between them.
+    return OwnershipGuard.IsOwner(user, providerEntity.Email)
+        ? TypedResults.Ok(providerEntity)
+        : TypedResults.Ok(ProviderSummary.From(providerEntity));
 })
     // F-016 AC-8 / requirement 9: PII-bearing read, so no longer anonymous. Breaking change with zero reachable consumers (01-api-surface.md:158).
     .WithName("GetProviderByEmail")

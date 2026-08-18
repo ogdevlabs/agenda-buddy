@@ -195,7 +195,21 @@ Content-Type: application/json
 
 **Absent, and this is the whole point:** `appointmentEntities`, `subscribedCustomerCollection`, `kafkaTopic`, `_id`.
 
-**Response — caller IS the owning provider:** their own full `ProviderEntity`, unchanged, including embedded appointments.
+> ⚠️ **Two corrections made during T11, both verified against the entities.**
+>
+> 1. **There is no `profession` field, and services have no `duration`.** The example above shows both.
+>    `ProviderEntity` has `Id`, `FirstName`, `LastName`, `Email`, `KafkaTopic`, `ServiceEntities`,
+>    `AppointmentEntities`, `SubscribedCustomerCollection`, `IsActive` — no profession. `ServiceEntity` has
+>    `Name`, `Description`, `Fee`, `FeeType`, `IsActive` — no duration. `ProviderSummary` is therefore
+>    `{ email, firstName, lastName, services[] }`. **This matters because F-015 is written against this
+>    document** and would have bound to fields that do not exist.
+> 2. **This list is homogeneous — every element is a `ProviderSummary`, including the caller's own record.**
+>    The line below originally said an owner receives their full entity from *this* route too, which would
+>    make `items` a mixed array of two shapes — not deserialisable into a typed list. An owner loses
+>    nothing: `GET /api/v1/providers/{email}` returns their full record and **does** apply the ownership
+>    branch (§5.2).
+
+**Response — caller IS the owning provider:** ~~their own full `ProviderEntity`~~ — **struck for this route**; see correction 2. Applies to §5.2 only.
 
 | Status | When |
 |---|---|
