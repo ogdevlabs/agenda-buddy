@@ -29,3 +29,4 @@ global using MiniValidation;
 global using MongoDB.Driver;
 global using EventAndCommands;
 global using EventAndCommands.Persistence;
+global using Library.Dtos;   // F-016-T15: PageRequest / PagedResponse<T>

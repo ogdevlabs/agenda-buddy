@@ -21,3 +21,4 @@ global using Microsoft.Extensions.DependencyInjection;
 global using MongoDB.Bson;
 global using MongoDB.Bson.Serialization.Attributes;
 global using MongoDB.Driver;
+global using Library.Dtos;   // F-016-T15: PageRequest / PagedResponse<T>

@@ -174,19 +174,32 @@ providers.MapPost("/", async Task<Results<ValidationProblem, Created<ProviderEnt
     .RequireAuthorization();
 
 // Get provider list
-providers.MapGet("", async Task<Results<Ok<List<ProviderSummary>>, NoContent>> (IMediator mediator,
+providers.MapGet("", async Task<Ok<PagedResponse<ProviderSummary>>> (IMediator mediator,
     ProviderService providerService,
-    IRequestCollection requestCollection, IDistributedCache cache) =>
+    IRequestCollection requestCollection, IDistributedCache cache,
+    int? page = null, int? pageSize = null) =>
 {
-    var key = $"providers";
+    // F-016 AC-15 / ADR-023. Clamped, never rejected: a 400 would tell an attacker the exact boundary and
+    // leave an honest client no way to discover the cap. MaxPageSize is a SECURITY control -- an uncapped
+    // page size restores the full-dataset dump this feature exists to remove.
+    var pageRequest = PageRequest.Clamp(page, pageSize);
+
+    // ⚠️ The cache key carries the page, or page 2 would serve page 1's entry. Cheap to get wrong and
+    // invisible in a single-page test.
+    var key = $"providers-p{pageRequest.Page}-s{pageRequest.PageSize}";
     var providerCollection = await cache.GetOrCreateAsync(key, async token =>
     {
-        var listProviders = await EventsHelper.GetProvidersEvent(requestCollection, mediator, providerService);
+        var listProviders =
+            await EventsHelper.GetProvidersEvent(requestCollection, mediator, providerService, pageRequest);
         return listProviders;
     });
 
     if (providerCollection is null)
-        return TypedResults.NoContent();
+    {
+        // 204 is RETIRED (ADR-023): a client always gets a parseable body. CacheAside returns default! on a
+        // 500 ms lock timeout, so this branch is a cache miss rather than an empty collection.
+        return TypedResults.Ok(PagedResponse<ProviderSummary>.From([], 0, pageRequest));
+    }
 
     // F-016 AC-9 / requirement 10. ProviderEntity embeds AppointmentEntities (each carrying
     // email_customer) and SubscribedCustomerCollection, so authentication alone does not fix this: an
@@ -198,7 +211,10 @@ providers.MapGet("", async Task<Results<Ok<List<ProviderSummary>>, NoContent>> (
     // a MIXED array of two shapes. That is not deserialisable into a typed list, and F-015 is written
     // against this contract. An owner loses nothing: GET /api/v1/providers/{email} returns their full
     // record, and that route DOES apply the ownership branch. Deviation recorded in api-contracts.md.
-    return TypedResults.Ok(providerCollection.Select(ProviderSummary.From).ToList());
+    return TypedResults.Ok(PagedResponse<ProviderSummary>.From(
+        providerCollection.Items.Select(ProviderSummary.From).ToList(),
+        providerCollection.TotalCount,
+        pageRequest));
 })
     // F-016 AC-8 / requirement 9: PII-bearing read, so no longer anonymous. Breaking change with zero reachable consumers (01-api-surface.md:158).
     .WithName("GetAllProviders")

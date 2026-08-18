@@ -7,6 +7,18 @@ public class ProviderService(IRepository<ProviderEntity> providerRepository) : I
         return await providerRepository.GetAllAsync();
     }
 
+    /// <summary>
+    /// One page of providers, plus the total number of them. F-016-T15 / ADR-023.
+    /// </summary>
+    /// <remarks>
+    /// Paged at the database, not after the fact. Reading everything and slicing in the endpoint would bound
+    /// the RESPONSE while leaving the EXTRACTION unbounded, which is the opposite of the point.
+    /// </remarks>
+    public async Task<(IEnumerable<ProviderEntity> Items, long TotalCount)> GetPagedProvidersAsync(int skip, int take)
+    {
+        return await providerRepository.GetPagedAsync(skip, take);
+    }
+
     public async Task<ProviderEntity> GetProviderByIdAsync(string id)
     {
         return await providerRepository.GetByIdAsync(id);

@@ -1,7 +1,7 @@
 namespace EventAndCommands.Queries.Provider;
 
 [ExcludeFromCodeCoverage]
-public class GetProvidersQuery : IRequest<List<ProviderEntity>>
+public class GetProvidersQuery : IRequest<PagedResponse<ProviderEntity>>
 {
     public List<ProviderEntity>? ProviderEntities { get; }
 }

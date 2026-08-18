@@ -8,7 +8,8 @@ public interface IRequestCollection
     public Task<string> UpdateCustomerRequest(string email, IMediator mediator, CustomerService customerService,
         CustomerEntity customerEntity);
 
-    public Task<List<CustomerEntity>> GetCustomersRequest(IMediator mediator, CustomerService customerService);
+    public Task<PagedResponse<CustomerEntity>> GetCustomersRequest(IMediator mediator,
+        CustomerService customerService, PageRequest page);
 
     public Task<CustomerEntity> GetCustomerByEmail(IMediator mediator, CustomerService customerService, string email);
 }

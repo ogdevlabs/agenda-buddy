@@ -33,3 +33,4 @@ global using Provider.Requests;
 global using ProviderService = Library.Services.ProviderService;
 global using EventAndCommands;
 global using EventAndCommands.Persistence;
+global using Library.Dtos;   // F-016-T15: PageRequest / PagedResponse<T>

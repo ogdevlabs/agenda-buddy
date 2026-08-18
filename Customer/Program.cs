@@ -181,9 +181,10 @@ customers.MapPut("/{email}",
     .RequireAuthorization();
 
 customers.MapGet("",
-    async Task<Results<Ok<List<CustomerEntity>>, NoContent>> (IMediator mediator,
+    async Task<Ok<PagedResponse<CustomerEntity>>> (IMediator mediator,
         ClaimsPrincipal user,
-        CustomerService customerService, IRequestCollection requestCollection, IDistributedCache cache) =>
+        CustomerService customerService, IRequestCollection requestCollection, IDistributedCache cache,
+        int? page = null, int? pageSize = null) =>
     {
         // F-016 AC-22 / threat T-003 / ADR-026: the Provider role, not merely a token. Authenticating this
         // route alone was nearly worthless -- POST /api/v1/auth/register is anonymous, unverified and
@@ -194,14 +195,20 @@ customers.MapGet("",
         // Guard runs BEFORE the cache read, so a refused caller never reaches cached data.
         OwnershipGuard.AssertRole(user, "Provider");
 
-        var key = $"customers";
+        // F-016 AC-15 / ADR-023. See Provider/Program.cs for why clamping rather than rejecting.
+        var pageRequest = PageRequest.Clamp(page, pageSize);
+
+    // ⚠️ The cache key carries the page, or page 2 would serve page 1's entry. Cheap to get wrong and
+    // invisible in a single-page test.
+        var key = $"customers-p{pageRequest.Page}-s{pageRequest.PageSize}";
         var customerCollection = await cache.GetOrCreateAsync(key,
-            async token => await EventsHelper.GetCustomersEvent(requestCollection, mediator, customerService));
+            async token => await EventsHelper.GetCustomersEvent(
+                requestCollection, mediator, customerService, pageRequest));
 
-        if (customerCollection is not null)
-            return TypedResults.Ok(customerCollection);
-
-        return TypedResults.NoContent();
+        // 204 is RETIRED (ADR-023).
+        return customerCollection is not null
+            ? TypedResults.Ok(customerCollection)
+            : TypedResults.Ok(PagedResponse<CustomerEntity>.From([], 0, pageRequest));
     })
     // F-016 AC-8 / requirement 9: PII-bearing read, so no longer anonymous. Breaking change with zero reachable consumers (01-api-surface.md:158).
     .WithName("GetAllCustomers")

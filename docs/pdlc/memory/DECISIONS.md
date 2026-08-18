@@ -351,6 +351,28 @@ This is a logged addendum, not a Define reopen. Recording it here because adding
 
 **Date:** 2026-08-18 · **Status:** Accepted · **Feature:** F-016 · **Required by:** PRD AC-16 · **Consumed by:** F-015
 
+> **Implemented and verified 2026-08-18 by F-016-T15.** AC-16 requires this ADR to exist before the endpoint
+> work closes; it did, and the contract was implemented as written. Three things the implementation
+> established that the ADR did not say:
+>
+> 1. **Paging is at the database, not after the fact.** The query handlers call
+>    `GetPagedAsync(skip, take)` (T10's primitive). Reading everything and slicing in the endpoint would
+>    bound the *response* while leaving the *extraction* unbounded — the opposite of the point. Threading a
+>    `PageRequest` down cost 12 files across two read paths: endpoint → `EventsHelper` →
+>    `IRequestCollection`/`RequestCollection` → query handler → domain service → repository.
+> 2. **The cache key must carry the page.** Both list routes cache, and the pre-existing keys were
+>    `"providers"` / `"customers"`. Without `-p{page}-s{pageSize}` appended, page 2 serves page 1's entry.
+>    Invisible in any single-page test.
+> 3. **`skip` arithmetic is overflow-guarded.** `(page - 1) * pageSize` overflows to a *negative* skip for a
+>    large page, and a negative skip is what the Mongo driver rejects — a 500 on an attacker-controlled
+>    input. `PageRequest.Clamp` bounds the page so the product cannot overflow, with a test at
+>    `int.MaxValue`.
+>
+> `PageRequest.Clamp` and `PagedResponse<T>` live in the new `Library/Dtos/` folder alongside
+> `ProviderSummary` (T11). ⚠️ **`GET /api/v1/providers` returns `PagedResponse<ProviderSummary>`** — the
+> projection and the envelope compose, and the list is homogeneous; see the `api-contracts.md` §5.1
+> correction.
+
 **Context.** `GET /api/v1/providers` and `GET /api/v1/customers` return unbounded bare JSON arrays; an uncapped list endpoint is the dump F-016 exists to remove. `IRepository<T>` (verified by reading `Library/Repositories/IRepository.cs`) exposes `GetAllAsync()` and `FindAllAsync(BsonDocument)` and **no skip, limit or count**. F-015 will write the mobile client against whatever shape is chosen, so this is a contract, not an implementation detail — AC-16 requires it recorded before the endpoint work closes.
 
 **Decision.**

@@ -37,12 +37,12 @@ public class RequestCollection(IKafkaClient kafkaClient, IEventStore eventStore)
         return result;
     }
 
-    public async Task<List<ProviderEntity>?> GetProvidersRequest(IMediator mediator,
-        ProviderService providerService)
+    public async Task<PagedResponse<ProviderEntity>> GetProvidersRequest(IMediator mediator,
+        ProviderService providerService, PageRequest page)
     {
         var result =
-            await new GetProvidersQueryHandler(mediator, providerService, eventStore).Handle(new GetProvidersQuery(),
-                new CancellationToken());
+            await new GetProvidersQueryHandler(mediator, providerService, eventStore, page).Handle(
+                new GetProvidersQuery(), new CancellationToken());
         return result;
     }
 
