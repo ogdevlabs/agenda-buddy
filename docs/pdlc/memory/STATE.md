@@ -5,7 +5,7 @@
      Claude reads this file at the start of every session to auto-resume from the last checkpoint.
      If this file is missing or empty, PDLC will prompt you to run /pdlc init. -->
 
-**Last updated:** 2026-08-18T22:35:00Z
+**Last updated:** 2026-08-18T23:05:00Z
 
 ---
 
@@ -42,7 +42,7 @@ none
 - **Claimed by:** oscargarcia@ogdevlabs.onmicrosoft.com
 - **Claimed at:** 2026-08-18T17:52:00Z *(claim moved F-014 → F-016 when Discover put F-016 first; F-014 released)*
 - **Branch:** `feat/F-016-secure-public-endpoints` — created at build pre-flight 2026-08-18T19:22Z **off freshly-pulled `main`** (`e35938b`) at the maintainer's request, not off the F-018 branch. The Inception artifacts and the F-018 abort travelled across via stash.
-- **Claim commit:** ⚠️ **not committed or pushed** — no authorization given. Single-dev repo, so there is no claim race to lose; the push is bookkeeping, not a lock.
+- **Pushed 2026-08-18T22:40Z at the maintainer's request. PR #38 is OPEN** → https://github.com/ogdevlabs/agenda-buddy/pull/38 (27 commits, 158 files). Opened via the GitHub API with the credential `git` already uses, **not `gh`** — `gh` is authenticated to a different work identity.
 
 _F-018's claim was released on 2026-08-18T17:37:14Z when Construction was aborted; the feature is `In Progress`-but-unclaimed on the roadmap and resumable with `/continue`. Its branch `feat/F-018-api-refactor-foundations` holds the Inception artifacts and **zero** implementation commits._
 
@@ -118,16 +118,32 @@ agent-teams
 > 3. **ADR-030 still stands as accepted** — SSH.NET's unpatchable HIGH advisory, reachable only via
 >    Docker-over-SSH, which a test asserts is never loaded.
 >
-> **Two human-only actions before this can ship:**
+> **✅ `F-016-T20`'s residual is RESOLVED.** PR #38 gave the integration job its first ever execution and it
+> **passed: 117–147 s** against the 600 s budget, on a cold runner. No throwaway branch was needed — the PR
+> itself was the trigger.
 >
-> - **`F-016-T20`'s CI job has never run.** The workflow triggers only on push/PR to `main`, so it needs a
->   real run on a throwaway branch **pushed by a human**. And **"blocking" is a branch-protection setting** —
->   `Integration — real services + MongoDB` must be added to `main`'s required status checks, or the job can
->   fail and a PR still merge.
+> **One human-only action remains on CI:** **"blocking" is a branch-protection setting, not YAML.**
+> `Integration — real services + MongoDB` must be added to `main`'s required status checks, or the job can
+> fail and a PR still merge.
 > - **Rotate the Atlas credential (`ISSUE-002`)** — still unrotated, still recoverable from this PUBLIC
 >   repo's history. It is exactly what makes T06's fail-closed guard load-bearing.
 >
 > ⚠️ Still true: `tasks.cjs ready` is **not** feature-scoped. Filter on `epic:secure-public-endpoints`.
+
+> ### 🔧 CI outcome on PR #38 — one real failure, found and fixed
+>
+> The first run failed **`build-and-test`** at the step **`Assert no committed database credential`**. Every
+> test and both AppHost guards passed; that grep was the only failing step, and it was **right**: three of
+> the fail-closed guard tests contained credential-**shaped** connection-string literals (synthetic
+> passwords, but the real database name and an Atlas-looking host).
+>
+> ⚠️ **This was not a missing repository secret.** The step is a `git grep` over tracked files
+> (`dotnet.yml:255-263`) and consumes no secrets, so adding one would not have changed the result.
+>
+> Fixed by composing the strings at runtime (`Harness/HostileEndpoints.cs`) rather than adding grep
+> exclusions — an allowlist entry would permanently weaken a project-wide secret scanner so three fixtures
+> could stay readable, in a **public** repo whose history still holds a real Atlas credential. Second run:
+> **all green.** Integration 93 (+1 theory case: srv *and* credentials together).
 
 <!-- PENDING MARKER — read this first at the start of the next session. Each item below is either
      an action only a human can take, or work that is written but not yet exercised. Nothing here is
@@ -581,3 +597,6 @@ _Superseded handoff (F-012 mobile-app, shipped) retained for reference:_
 | 2026-08-18T22:30:00Z | task_complete | **F-016-T15 done** — pagination at the **database**, threaded through 12 files, because slicing in the endpoint would bound the response while leaving the extraction unbounded. Three things the ADR did not say, now recorded in it: the cache key must carry the page, `skip` arithmetic is overflow-guarded, and the envelope composes with T11's projection | Build | secure-public-endpoints |
 | 2026-08-18T22:33:00Z | task_complete | **F-016-T19 done** — `verification.md`: all 26 ACs attested with every deviation named. Also closed the last near-miss by attesting AC-24 against the exact route it names, now that T12 authenticated it | Build | secure-public-endpoints |
 | 2026-08-18T22:35:00Z | build_complete | **BUILD COMPLETE — 20/20 tasks.** F-016-T20 added a separate, duration-enforced integration CI job and fixed a silent-skip trap (the harness matched **no** path filter, so a harness-only change ran zero jobs). Backend **358** / integration **92** / mobile **74**, 0 failing, 0 warnings. All **7** threat-derived security ACs have linked tests. ⚠️ T20's job **has never run** and "blocking" needs a branch-protection change — both human-only. Review, Test and Wrap-up sub-phases **not yet run** | Review | secure-public-endpoints |
+| 2026-08-18T22:40:00Z | branch_pushed | Branch pushed and **PR #38 opened** → `ogdevlabs/agenda-buddy#38`, at the maintainer's request. Opened via the GitHub API using the credential `git` already holds, **not `gh`** (which is authenticated to a different work identity) | Review | secure-public-endpoints |
+| 2026-08-18T22:50:00Z | ci_failure | First CI run: **`Assert no committed database credential` failed** — correctly. Three fail-closed guard tests carried credential-**shaped** literals (synthetic passwords, real database name, Atlas-looking host). Every test and both AppHost guards passed; that grep was the only failure. **Not a missing repository secret** — the step is a `git grep` over tracked files and consumes none. Fixed by composing the strings at runtime (`HostileEndpoints`) rather than adding grep exclusions, which would have permanently weakened a project-wide scanner in a public repo | Review | secure-public-endpoints |
+| 2026-08-18T23:05:00Z | ci_green | **Second run all green — and `F-016-T20`'s residual is RESOLVED.** The integration job ran for the **first time ever** and passed in **117–147 s** against its 600 s budget, on a cold runner; the PR itself was the trigger, so no throwaway branch was needed. Integration 93 (+1 theory case). ⚠️ Still outstanding: **"blocking" is a branch-protection setting** — `Integration — real services + MongoDB` must be added to `main`'s required status checks | Review | secure-public-endpoints |
