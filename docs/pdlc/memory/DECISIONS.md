@@ -430,6 +430,19 @@ Until F-016 these endpoints had no authenticated caller to record. **This featur
 
 **Decision.** Add a nullable `Actor` property to `Event` (`[BsonElement("actor")]`), populated from the caller's `sub` claim.
 
+**Amended 2026-08-18 during F-016-T18 — the mechanism, which Design got wrong.** `ARCHITECTURE.md` §5 costed this as *"one `[BsonElement]` and one assignment per handler."* That is not achievable: **no query handler has any access to the caller.** `ClaimsPrincipal` is dropped at the endpoint, the nine query objects carry no properties, and `RequestCollection` hand-constructs each handler from domain data. `IHttpContextAccessor` was registered nowhere in the solution.
+
+Two viable implementations were put to the maintainer, who chose the second:
+
+| | Where the actor is set | Files | Notes |
+|---|---|---|---|
+| **A** | each handler, via a new parameter | ~30 — 6 × `EventsHelper`, 6 × `IRequestCollection`, 6 × `RequestCollection`, 9 handlers, 9 query types | What §5 described. Widens six public interfaces to carry an audit field, and can be **half-done**: miss one handler and that path silently loses attribution. |
+| **C — chosen** | `EventStore.SaveAsync`, from `IHttpContextAccessor` | ~8 | Attribution is a property of *writing an audit record*, not of each handler. One seam, cannot be half-done, and it attributes the **11 command handlers** for free — same field, no extra scope. `AddEventStore()` calls `AddHttpContextAccessor()` itself, so no service `Program.cs` changes at all. |
+
+**Accepted cost of C:** `EventAndCommands` gains a `FrameworkReference` on `Microsoft.AspNetCore.App` and its kernel becomes ASP.NET-aware, which it was not before. Nothing is added to any deployed artifact (all seven consumers are ASP.NET Core apps), but it is a real coupling. **If F-019/F-020 ever needs the kernel HTTP-free, the seam is a small `IAuditActorProvider` interface owned by `EventAndCommands` and implemented in `Library.ServerAuth`** — recorded so that is a known move rather than a rediscovery. Side effect: three `Microsoft.Extensions.*` package references became redundant under the framework reference (NU1510) and were removed.
+
+The "what counts as an actor" decision is a pure function, `AuditActor.From(ClaimsPrincipal?)`, so it is testable without a request, a container or a mocking framework. Null is a correct answer in three live cases: a hosted service, an anonymous read, and a token carrying no `sub` (the threat T-001 shape).
+
 **Consequences.**
 - **`data-model.md` is no longer a no-schema-change document.** F-016's revert leaves harmless unread residue rather than no trace. This was **Friday's recorded dissent** at the threat party — a clean revert is a genuinely valuable property for a feature changing authorization across five services — and it is the cost being accepted.
 - **No backfill migration.** The field is nullable, MongoDB is schemaless, and nothing reads `actor` for control flow. A backfill is impossible anyway: the actor for a historical anonymous read is genuinely unknown, and inventing one would be worse than a null.

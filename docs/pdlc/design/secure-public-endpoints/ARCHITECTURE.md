@@ -36,7 +36,7 @@ That narrowness is not a stylistic choice; it is forced by the actual shape of t
 | `Library.ServerAuth` | ✅ | new shared `IExceptionHandler`; **and the `AssertOwner` null-claim fix — now required here, not deferred** (T-001) |
 | `Library/Repositories` | ✅ | one new paged primitive on `IRepository<T>` + `MongoDbRepository<T>` |
 | `Library/Entities` | ⚠️ additive | new response DTOs; **plus one additive field on `Event`** — `actor` (T-005) |
-| `EventAndCommands/Queries` × 10 | ✅ | audit writes reduced to metadata, `actor` populated from `sub` |
+| `EventAndCommands/Queries` × **9** | ✅ | audit writes reduced to metadata via the new `QueryAudit` factory *(18 call sites; the "× 10" was wrong — see §5)*. `actor` is **not** set here — it is stamped centrally in `EventStore` |
 | `Profession/Program.cs` + its `RequestCollection`/`EventsHelper` write path | ✅ **deletion** | `POST /api/v1/professions` removed (T-007) |
 | `EventAndCommands/Persitency` → `Persistence` | ✅ | rename only, behaviour-preserving |
 | `AgendaBuddy.IntegrationTests` | ✅ new project | the harness |
@@ -172,9 +172,11 @@ Event { Id, TimeStamp, Status, Type, Data }
 
 ### Scope finding — the PRD is narrower than the defect
 
-PRD requirement 16 names `GetProvidersQueryHandler.cs:23` as "the specific offender." But **all ten query handlers follow the identical publish → query → audit shape** (`15-cqrs-and-messaging.md:160`), and `GetCustomersQuery` serialises every customer record — an equivalent hole. AC-17 tests only the provider path.
+PRD requirement 16 names `GetProvidersQueryHandler.cs:23` as "the specific offender." But **all nine query handlers follow the identical publish → query → audit shape** (`15-cqrs-and-messaging.md:160`), and `GetCustomersQuery` serialises every customer record — an equivalent hole. AC-17 tests only the provider path.
 
-**Design decision: implement across all ten query handlers. Flagged for the Plan gate to broaden AC-17.** Recorded here rather than silently widened, because the PRD is approved and scope changes belong to the human.
+⚠️ **Corrected during T18 — there are NINE query handlers, not ten**, and **18** audit call sites, not 20. The "10" comes from `15-cqrs-and-messaging.md:161`, which states *"10 queries, 10 handlers"* directly above a table listing **9**; it propagated into the PRD, this document, the plan and T18's task body. Verified by grep. The catalog line needs correcting at the next `/ship` context refresh.
+
+**Design decision: implement across all nine query handlers. Flagged for the Plan gate to broaden AC-17.** Recorded here rather than silently widened, because the PRD is approved and scope changes belong to the human.
 
 **Command handlers are left alone.** They serialise the entity the caller just submitted — the caller already has it, so it is not an amplification vector, and it is the actual audit content for a write. Changing 11 more blocks would be scope creep with no criterion behind it.
 
@@ -182,7 +184,9 @@ PRD requirement 16 names `GetProvidersQueryHandler.cs:23` as "the specific offen
 
 `15-cqrs-and-messaging.md:215`: *"No actor, no correlation, no request id. The audit trail cannot answer 'who did this'."* Until F-016 these endpoints had no authenticated caller to record. Now they do, which makes an `actor` field newly *possible* — and it is exactly what an audit trail on a security fix should carry.
 
-**Approved 2026-08-18.** `Event` gains a nullable `actor` field populated from the `sub` claim — one `[BsonElement]` and one assignment per handler. Cost, accepted knowingly: this feature is **no longer schema-change-free**, so its revert leaves harmless residue rather than no trace (Friday's dissent, recorded). Echo's counter carried — with no log sink and `requestId` unexported, nothing outside the `events` collection is durable, so there is no fallback attribution. Detail in `data-model.md` §4a.
+**Approved 2026-08-18.** `Event` gains a nullable `actor` field populated from the `sub` claim.
+
+⚠️ **Corrected during T18 — "one `[BsonElement]` and one assignment per handler" was wrong.** No query handler can see the caller: `ClaimsPrincipal` is dropped at the endpoint, the query objects carry no properties, and `RequestCollection` hand-constructs handlers from domain data. The actor is therefore stamped **centrally in `EventStore.SaveAsync`** from `IHttpContextAccessor` — ~8 files instead of ~30, it cannot be half-done, and it attributes the 11 command handlers for free. Maintainer-approved; see the ADR-027 amendment for the alternative that was rejected and the ASP.NET coupling accepted. Cost, accepted knowingly: this feature is **no longer schema-change-free**, so its revert leaves harmless residue rather than no trace (Friday's dissent, recorded). Echo's counter carried — with no log sink and `requestId` unexported, nothing outside the `events` collection is durable, so there is no fallback attribution. Detail in `data-model.md` §4a.
 
 ---
 

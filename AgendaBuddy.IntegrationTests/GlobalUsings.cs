@@ -8,3 +8,4 @@ global using Xunit;
 global using ProfessionAnchor = Profession.Configurations.MongoDbConfiguration;
 global using CustomerAnchor = Customer.Configurations.MongoDbConfiguration;
 global using ProviderAnchor = Provider.Configurations.MongoDbConfiguration;
+global using CalendarAnchor = Calendar.Configurations.MongoDbConfiguration;

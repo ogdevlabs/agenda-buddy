@@ -10,11 +10,18 @@
 
     <ItemGroup>
         <PackageReference Include="MediatR" Version="12.3.0"/>
-        <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.0"/>
-        <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.0"/>
-        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.0"/>
+        <!-- Microsoft.Extensions.Configuration/.Json/.DependencyInjection were removed by F-016-T18:
+             the FrameworkReference below supplies them, and NuGet flags keeping both (NU1510). -->
         <PackageReference Include="MongoDB.Bson" Version="2.25.0"/>
         <PackageReference Include="MongoDB.Driver" Version="2.25.0"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <!-- IHttpContextAccessor, for the central Event.Actor stamp (F-016-T18 / ADR-027). Not a new
+             package: the ASP.NET Core shared framework is already present in all seven consuming
+             services, so this adds nothing to any deployed artifact. It does couple the CQRS kernel to
+             ASP.NET, which is the accepted trade recorded on EventStore's constructor. -->
+        <FrameworkReference Include="Microsoft.AspNetCore.App"/>
     </ItemGroup>
 
     <ItemGroup>

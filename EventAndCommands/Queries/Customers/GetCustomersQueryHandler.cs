@@ -12,27 +12,11 @@ public class GetCustomersQueryHandler(IMediator mediator, CustomerService custom
         var customerEntities = customerList.ToList();
         if (customerEntities.ToList().Count != 0)
         {
-            var successEvent = new Event
-            {
-                Id = ObjectId.GenerateNewId(),
-                TimeStamp = DateTime.UtcNow,
-                Status = "Success",
-                Type = "GetCustomersQuery",
-                Data = JsonSerializer.Serialize(customerEntities.ToList())
-            };
-            await eventStore.SaveAsync(successEvent);
+            await eventStore.SaveAsync(QueryAudit.Success("GetCustomersQuery", customerEntities.Count()));
             return customerEntities;
         }
 
-        var failEvent = new Event
-        {
-            Id = ObjectId.GenerateNewId(),
-            TimeStamp = DateTime.UtcNow,
-            Status = "Failed",
-            Type = "GetCustomersQuery",
-            Data = JsonSerializer.Serialize(customerEntities.ToList())
-        };
-        await eventStore.SaveAsync(failEvent);
+        await eventStore.SaveAsync(QueryAudit.Failure("GetCustomersQuery"));
         return customerEntities;
     }
 }

@@ -17,29 +17,15 @@ public class CheckCalendarAvailabilityQueryHandler(
         var providerEntity = await providerService.FindProvidersAsync(filterProvider);
         if (providerEntity != null)
         {
-            var successEvent = new Event
-            {
-                Id = ObjectId.GenerateNewId(),
-                TimeStamp = DateTime.UtcNow,
-                Status = "Success",
-                Type = "CheckCalendarAvailabilityQuery",
-                Data = JsonSerializer.Serialize(providerEntity)
-            };
-            await eventStore.SaveAsync(successEvent);
             var res = SupportTools<ProviderEntity>.GetThirtyDaysCalendarAvailability(providerEntity);
             res.ForEach(timeslot => Console.WriteLine(timeslot));
+
+            // Audited after the result exists, so the count reflects the slots disclosed.
+            await eventStore.SaveAsync(QueryAudit.Success("CheckCalendarAvailabilityQuery", res.Count));
             return res;
         }
 
-        var failEvent = new Event
-        {
-            Id = ObjectId.GenerateNewId(),
-            TimeStamp = DateTime.UtcNow,
-            Status = "Failed",
-            Type = "CheckCalendarAvailabilityQuery",
-            Data = JsonSerializer.Serialize(new ProviderEntity())
-        };
-        await eventStore.SaveAsync(failEvent);
+        await eventStore.SaveAsync(QueryAudit.Failure("CheckCalendarAvailabilityQuery"));
         return null!;
     }
 }

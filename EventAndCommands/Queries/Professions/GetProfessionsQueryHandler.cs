@@ -13,28 +13,12 @@ public class GetProfessionsQueryHandler(IMediator mediator, ProfessionService pr
         var professionList = await professionService.GetProfessionCollectionAsync();
         if (professionList.Count != 0)
         {
-            var successEvent = new Event
-            {
-                Id = ObjectId.GenerateNewId(),
-                TimeStamp = DateTime.UtcNow,
-                Status = "Success",
-                Type = "GetProfessionsQuery",
-                Data = JsonSerializer.Serialize(professionList)
-            };
-            await eventStore.SaveAsync(successEvent);
+            await eventStore.SaveAsync(QueryAudit.Success("GetProfessionsQuery", professionList.Count));
             return professionList;
         }
         else
         {
-            var failEvent = new Event
-            {
-                Id = ObjectId.GenerateNewId(),
-                TimeStamp = DateTime.UtcNow,
-                Status = "Failed",
-                Type = "GetProfessionsQuery",
-                Data = JsonSerializer.Serialize(professionList)
-            };
-            await eventStore.SaveAsync(failEvent);
+            await eventStore.SaveAsync(QueryAudit.Failure("GetProfessionsQuery"));
             return null!;
         }
     }
