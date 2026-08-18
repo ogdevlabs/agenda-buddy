@@ -366,6 +366,60 @@ That is defensible: a fragile harness with broad coverage is worse than a depend
 
 **Skipped:** no `control-manifest.toml` at the repo root, so this repo is not part of a pdlc-fy multi-repo capability and has no sibling repos to scope work against. `node scripts/capability.cjs read --json` was not run because the manifest's absence already settles it. Agenda Buddy is a standalone repo.
 
+## Pre-Design Spikes (executed 2026-08-18)
+
+Both PRD risks marked ⚠️ were spiked **before** Design, so architecture rests on measurements rather than assumptions. Both **passed**. Throwaway projects were deleted; the temporary `InternalsVisibleTo` was reverted.
+
+### Spike 1 — Testcontainers against Rancher Desktop: ✅ PASS
+
+**Question:** does Testcontainers for .NET find Rancher's Docker endpoint, given `DOCKER_HOST` is unset, `~/.testcontainers.properties` does not exist, and **`/var/run/docker.sock` is absent**?
+
+**Answer: yes, with zero configuration.** `Testcontainers.MongoDb` 4.14.0 discovers the active `rancher-desktop` docker context (`unix:///Users/<user>/.rd/docker.sock`). A real round-trip was verified through **MongoDB.Driver 2.25.0** — the version this repo pins — inserting and reading a document, not merely opening a port.
+
+**Measured warm container startup:**
+
+| Run | Startup |
+|---|---|
+| 1 | 4436 ms |
+| 2 | 4471 ms |
+| 3 | 4475 ms |
+
+~**4.45 s**, σ ≈ 20 ms — unusually stable, so the arithmetic below is reliable. (First-ever run was 34 s including the image pull.)
+
+**⚠️ This measurement changes the container-per-test picture, and it is worse than assumed.** Discover estimated 1–3 s; reality is 4.45 s.
+
+| Scale | Pure container startup | Verdict |
+|---|---|---|
+| F-018, ~20 tests | ~89 s (≈1.5 min) | **comfortable** inside the 10-minute budget |
+| F-019, 60–100 tests | **4.5–7.4 min** | before test logic, restore or build, on 2 contended CPUs — and Kafka is slower still |
+
+So container-per-test is **fine for F-018** and will **very likely blow the budget at F-019**. No decision changes now; AC-21's tripwire fires where it matters. This vindicates Echo's Round-5 objection with a number rather than an argument.
+
+**PRD Known Risk #1 — RESOLVED.**
+
+### Spike 2 — deterministic OpenAPI generation: ✅ PASS, and better than hoped
+
+Three questions, all answered by execution:
+
+| Q | Answer |
+|---|---|
+| Does `WebApplicationFactory<Program>` boot a service once `InternalsVisibleTo` exists? | **Yes** — Booking booted. **Prerequisite 1 confirmed.** |
+| Does `AddAgendaBuddyAuthentication()` really throw without `JWT_PUBLIC_KEY`? | **Yes** — `ApplicationException: Required environment variable 'JWT_PUBLIC_KEY' is not set…`. **Prerequisite 2 confirmed by execution, not by reading.** |
+| Can the OpenAPI document be produced without a Development override and without a sixth package? | **Yes.** `AddSwaggerGen()` is registered **unconditionally** (`Booking/Program.cs:48`; only `UseSwagger()` is Development-gated), so `ISwaggerProvider` is always in DI. Resolving it straight from the host yields the document — **no HTTP call, no environment override, no `Microsoft.Extensions.ApiDescription.Server`.** |
+
+**Additional findings:**
+- **Deterministic** — two consecutive generations produced identical output, which AC-19's drift check requires.
+- **Complete** — Booking yields 1 path with **3 operations**, each with an operation ID (`BookAppointment`, `UpdateAppointment`, `CancelAppointment`). The trailing-slash route variants normalise into a single path, so the earlier "1 path" reading was correct rather than lossy.
+- **Spec generation needs no containers at all.** The host booted with an unreachable MongoDB because no request was issued. **AC-17 and AC-18 are therefore decoupled from Testcontainers** — a real simplification for the plan, and they can be built in parallel with the harness rather than behind it.
+- `/health` and `/alive` are **absent** from the spec — health-check endpoints are not API-explorer visible. Expected; recorded so it is not later mistaken for missing coverage.
+- `WebApplicationFactory` defaults to **`Development`**, so DI scope validation is **on** in tests — the very check that caught F-013's captive `IRequestCollection` dependency. A useful property to keep, not suppress.
+
+**PRD Known Risk #2 — RESOLVED. The feared sixth dependency is unnecessary.**
+
+### A false alarm I raised and am retracting
+
+The spike run emitted `NU1902`/`NU1903` warnings for **SharpCompress 0.30.1** (moderate) and **Snappier 1.0.0** (high), pulled transitively. I initially read this as a new security finding introduced by Testcontainers. **It is not.** Those warnings came from the throwaway `/tmp` project, which has no `Directory.Build.props`. This repo already pins **Snappier 1.3.1** and **SharpCompress 0.50.1** solution-wide, and both CVEs arrive via `MongoDB.Driver` regardless of Testcontainers. **No new pins are required.**
+
 ## Standards Guidance (ideation)
 
 **Skipped — inputs unavailable. This is not an override.**
