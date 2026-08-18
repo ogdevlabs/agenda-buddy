@@ -46,8 +46,8 @@ Relative to INTENT.md's personas: no effect on the Independent Service Provider 
 
 1. The system MUST provide a Testcontainers-backed integration-test harness in a **single** project, `AgendaBuddy.IntegrationTests`. Seven per-service test projects MUST NOT be created — episode 001 already recorded the seven near-identical `ServiceCollectionMongoResolutionTest.cs` files as debt.
 2. The harness MUST support three assertion tiers: **route contract** (real HTTP through the real pipeline returns the expected status), **persistence round-trip** (a write followed by a read returns the written data against a real MongoDB), and **audit fired** (the command persisted an EventStore event).
-3. The harness MUST start a **fresh container per test**.
-4. The harness MUST start MongoDB for every test that needs persistence, and Kafka **only** for the provider-registration path — the one place a topic is created.
+3. The harness MUST start **one container per test class**, with **isolation preserved by a unique database name per test** inside that shared container. *(Amended at Design, 2026-08-18: Discover chose container-per-**test** against an assumed 1–3 s startup; the pre-Design spike measured **4.45 s** (4436/4471/4475 ms), roughly 2–3× the estimate. The decision was reversed on that measurement. One `WebApplicationFactory` per test class follows, since the connection string is then known once.)*
+4. The harness MUST start MongoDB for every test class that needs persistence. It MUST **NOT** start Kafka: `IKafkaClient` is substituted with a recording fake via `ConfigureTestServices`, asserting the topic-creation call. *(Amended at Design: Kafka here only creates topics — nothing is produced or consumed — so a real broker adds the slowest container in the suite while proving almost nothing. The wiring is still asserted.)*
 
 **The three hard prerequisites** *(nothing runs until all three work)*
 
@@ -77,7 +77,7 @@ Relative to INTENT.md's personas: no effect on the Independent Service Provider 
 
 **OpenAPI contract baseline**
 
-16. The system MUST generate and commit an OpenAPI spec per service, through a **deterministic, environment-independent** mechanism (Swagger currently runs only in `Development`, and Swashbuckle generates from a running app).
+16. The system MUST generate an OpenAPI spec per service through a **deterministic, environment-independent** mechanism. **Amended at the Step 12 gate: the specs are generated and drift-checked in CI but NOT committed** until F-016 closes the anonymous full-record `GET /api/v1/providers` endpoint — threat **T-003**. Committing them becomes an **F-016 exit criterion** so the deferral cannot be forgotten. *(Mechanism spike-proven: `ISwaggerProvider` resolved from host DI — no HTTP, no Development override, no sixth package.)*
 17. Spec generation MUST **fail loudly** if any service cannot boot, and MUST NOT write an empty or partial spec over a good one.
 18. CI MUST regenerate the spec and **fail on any diff** against the committed copy.
 
@@ -92,7 +92,7 @@ Relative to INTENT.md's personas: no effect on the Independent Service Provider 
 **Governance**
 
 24. CONSTITUTION MUST be amended: §1 (.NET 8 → `net10.0`), §4 (`MiniValidator` → `Validot`), §9 (the five packages approved; the stale `Persitency` prohibition removed).
-25. ADR-014 through ADR-017 MUST be recorded (program shape, packages, validation change, harness).
+25. ADR-014 through **ADR-020** MUST be recorded: programme shape + MediatR retention (014), the five packages (015), Validot replacing MiniValidator (016), the Testcontainers harness incl. the container-per-class reversal (017), tag-not-digest pinning (018, accepted risk), `InternalsVisibleTo` (019, accepted risk), and OpenAPI generated-not-committed (020). *(Grew from four to seven at the Step 12 gate — the threat model produced three deferral/acceptance decisions, each of which the skill requires be recorded as an ADR.)*
 26. The system SHOULD adopt an `.editorconfig` and enforce it in CI. The v0.1.0 ship fixed 69 whitespace findings with nothing preventing their return, and F-019/F-020 rewrite every endpoint file — formatting drift during a large refactor is noise that hides real changes in review. *(Promoted from MAY: a MAY with no acceptance criterion is a requirement that never happens.)*
 27. `Identity/Program.cs`'s comment claiming the process-wide Mongo client is "shared by the repositories and the EventStore" MUST be corrected — Identity registers no EventStore. Comment-only, no behaviour change; found while verifying AC-7.
 
@@ -126,16 +126,17 @@ Relative to INTENT.md's personas: no effect on the Independent Service Provider 
 11. A simulated image-pull failure is reported as an infrastructure error, distinguishable from an assertion failure. 🧪 test-first
 12. Every container image is pinned by explicit tag; no `:latest` appears in the harness. 🧪 test-first
 13. A run killed mid-flight leaves **zero** orphan containers, verified by `docker ps` after a deliberate kill. 🧪 test-first
+13b. Tests within a class are isolated from one another by a **unique database name per test**, demonstrated by two tests in the same class writing the same document id without collision. 🧪 test-first
 14. The harness warns when an Aspire AppHost is already running. 🧪 test-first
 15. A permanent guard test fails when the EventStore write is removed from the command path, and the one-time mutation red/green is recorded as evidence in the verification document. 🧪 test-first
 16. `EventAndCommands/Persistence/` exists, `git grep Persitency` returns **zero** matches in tracked source, all 379 tests pass, and the rename is an isolated commit that precedes the first integration test commit. 🧪 test-first
-17. An OpenAPI spec is committed for each of the seven services, generated by a documented command that does not require manually starting the app in `Development`. 🧪 test-first
-18. Spec generation exits non-zero and leaves the committed spec untouched when a service cannot boot. 🧪 test-first
-19. CI fails when a route is changed without regenerating the committed spec — demonstrated by deliberately changing one route and observing the failure. **Verified on a throwaway branch (see the CI-verification note below), not on `main`.** 🧪 test-first
+17. An OpenAPI spec is **generated** for each of the seven services by a documented command that does not require manually starting the app in `Development`, and is published as a **CI artifact**. It is **not** committed to the repository in F-018 (threat T-003; committing is an F-016 exit criterion). 🧪 test-first
+18. Spec generation exits non-zero and produces **no** spec artifact when a service cannot boot — it never emits an empty or partial spec. 🧪 test-first
+19. CI fails when a route changes without the spec being regenerated — demonstrated by deliberately changing one route and observing the failure. Because the spec is not committed in F-018, the drift baseline is the **previous run's artifact** (or a checked-in hash manifest rather than the spec body). **Verified on a throwaway branch (see the CI-verification note below), not on `main`.** 🧪 test-first
 20. A separate CI job runs the integration tests on every PR, and a deliberately failing integration test blocks the PR on its first run. **Verified on the same throwaway branch.** 🧪 test-first
 21. The integration job prints its wall-clock duration, and exceeding 10 minutes produces an explicit failure or warning rather than passing silently. 🧪 test-first
 22. `build-android`, `build-ios` and `build-mobile-tests` are confirmed green on a real CI run, and the headline test count is reported as 379. **Verified on the same throwaway branch.** 🧪 test-first
-23. CONSTITUTION §1, §4 and §9 are amended, and ADR-014 through ADR-017 exist in DECISIONS.md. 🧪 test-first
+23. CONSTITUTION §1, §4 and §9 are amended, and **ADR-014 through ADR-020** exist in DECISIONS.md. 🧪 test-first
 24. All 379 pre-existing tests still pass, and **no test file has been deleted**. Test files **may be modified only** by the `Persistence` namespace rename (which touches six `GlobalUsings.cs` files); no test body, assertion, or `[Fact]`/`[Theory]` is changed, removed, or skipped. 🧪 test-first
 25. `Identity/Program.cs`'s comment claiming the shared Mongo client is "shared by the repositories and the EventStore" is corrected — Identity has no EventStore. Comment-only; no behaviour change. 🧪 test-first
 26. An `.editorconfig` exists at the repo root, and `dotnet format agenda-buddy-backend.slnf --verify-no-changes` passes against it in CI. 🧪 test-first
@@ -245,12 +246,14 @@ The build loop enforces this at a mandatory **TDD gate** (build Step 9a-bis): im
 
 ## Non-Functional Requirements
 
-- The integration CI job MUST complete in **under 10 minutes**. Exceeding this is the objective trigger to move from container-per-test to per-class container reuse or Testcontainers' reuse flag — a decision made on measurement, not preference.
+- The integration CI job MUST complete in **under 10 minutes**. *(Now expected to be comfortable rather than marginal: the container-per-class reversal cuts startup cost from ~4.45 s per test to ~4.45 s per test class. The threshold stays as a tripwire — AC-21 — because F-019 adds substantially more tests.)*
 - The harness MUST NOT write private key material to disk at any point. The Atlas credential incident is still unremediated; a committed test keypair would be a second secret-shaped artifact and would trip F-017's future scanner.
-- The harness MUST run on a **2 CPU / 4.1 GB** VM that is already running a Kubernetes cluster. This is the real local constraint, not a theoretical one.
+- The harness MUST run on a **2 CPU / 4.1 GB** VM that is already running a Kubernetes cluster. This is the real local constraint, not a theoretical one, and it is what made the measured 4.45 s container startup decisive rather than academic.
+- **Tier 3 assertions MUST read the persisted document directly with `MongoDB.Driver`**, not through `IEventStore`. F-019/F-020 refactor that abstraction, so an assertion routed through it could pass while the persisted data is wrong.
+- **`AgendaBuddy.IntegrationTests` MUST NOT be added to `agenda-buddy-backend.slnf`.** It is invoked by path in its own CI job, so the unit job stays fast and container-free by structure rather than by remembering a `--filter` flag.
 - Diagnostic messages for infrastructure failure MUST name the specific remedy (start Rancher Desktop; export `PATH="$HOME/.rd/bin:$PATH"`), because a developer hitting this will otherwise read it as a broken test.
 - The rename MUST be behaviour-preserving: no collection name, configuration key, or serialized document changes.
-- Committed OpenAPI specs MUST be deterministic — regenerating without source changes MUST produce a byte-identical file, or the CI drift check (AC-19) produces false failures.
+- Generated OpenAPI specs MUST be deterministic — regenerating without source changes MUST produce a byte-identical file, or the CI drift check (AC-19) produces false failures. **The spike verified stable path *sets* only, not full-document byte stability; that still needs its own verification** and is the same "reasoned, not observed" trap that made threat T-004 wrong in F-013.
 - No production code path may change behaviour. F-018 adds `InternalsVisibleTo`, renames a namespace, and adds tests, CI and docs. Any behavioural change is out of scope and belongs to F-019.
 
 ---
@@ -296,12 +299,15 @@ The build loop enforces this at a mandatory **TDD gate** (build Step 9a-bis): im
 
 ## Design Docs
 
-- Architecture: <!-- filled after Design -->
-- Data model: <!-- filled after Design -->
-- API contracts: <!-- filled after Design -->
-- Threat model: <!-- filled after Design -->
-- UX review: <!-- expected "Skip" — F-018 has no UI surface -->
-- Additional: <!-- filled after Design -->
+- Architecture: [ARCHITECTURE.md](../design/api-refactor-foundations/ARCHITECTURE.md)
+- Data model: [data-model.md](../design/api-refactor-foundations/data-model.md) — *no schema changes; records the schema the harness depends on*
+- API contracts: [api-contracts.md](../design/api-refactor-foundations/api-contracts.md) — *no new endpoints; captures the existing surface as a committed artifact*
+- Threat model: [threat-model.md](../design/api-refactor-foundations/threat-model.md) — **triage: Full (3/3)** · 1 CRITICAL, 3 HIGH, 3 MEDIUM · **2 open questions for the human**
+- UX review: [ux-review.md](../design/api-refactor-foundations/ux-review.md) — **triage: Skip** (no user-facing surface)
+- Threat-model MOM: [MOM_threat-model_api-refactor-foundations_2026-08-18.md](../mom/MOM_threat-model_api-refactor-foundations_2026-08-18.md)
+- Progressive-thinking MOM: [api-refactor-foundations_progressive-thinking_mom_2026_08_18.md](../mom/api-refactor-foundations_progressive-thinking_mom_2026_08_18.md)
+
+> ⚠️ **The threat model materially changed the risk picture and must be read before approval.** The repository was verified **PUBLIC**, and the Atlas credential is recoverable from **published** history (9 commits from `origin/main`, earliest `ddb23ba`). That raised T-001 to CRITICAL and T-004 from MEDIUM to HIGH. Three threats are "mitigate now" and will be back-written as `[security]`-tagged acceptance criteria at Plan Step 14.5.
 
 ---
 

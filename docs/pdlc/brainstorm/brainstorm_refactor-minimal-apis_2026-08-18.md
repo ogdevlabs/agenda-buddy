@@ -1,8 +1,8 @@
 ---
 feature: refactor-minimal-apis
 date: 2026-08-18
-status: prd-approved
-last-updated: 2026-08-18T16:10:00Z
+status: design-approved
+last-updated: 2026-08-18T17:05:00Z
 approved-by: ogdevlabs
 approved-date: 2026-08-18T15:25:00Z
 prd: docs/pdlc/prds/PRD_F-018_api-refactor-foundations_2026-08-18.md
@@ -419,6 +419,71 @@ Three questions, all answered by execution:
 ### A false alarm I raised and am retracting
 
 The spike run emitted `NU1902`/`NU1903` warnings for **SharpCompress 0.30.1** (moderate) and **Snappier 1.0.0** (high), pulled transitively. I initially read this as a new security finding introduced by Testcontainers. **It is not.** Those warnings came from the throwaway `/tmp` project, which has no `Directory.Build.props`. This repo already pins **Snappier 1.3.1** and **SharpCompress 0.50.1** solution-wide, and both CVEs arrive via `MongoDB.Driver` regardless of Testcontainers. **No new pins are required.**
+
+## Design Discovery (Bloom's Taxonomy)
+
+**Completed:** 2026-08-18T16:40:00Z · **Interaction mode:** Sketch · Lead: Neo
+
+Most Bloom's questions were **dropped as already settled** — the skill directs skipping anything clear from the PRD or prior rounds, and the two pre-Design spikes closed the big unknowns:
+
+| Dropped question | Settled by |
+|---|---|
+| How is the OpenAPI document produced? | Spike 2 — `ISwaggerProvider` from host DI; no HTTP, no Development override, no new package |
+| Must the JWT key exist before the host builds? | Spike 2 — `ApplicationException` observed |
+| Which layer owns the harness? | PRD NFR: "No production code path may change behaviour" — test-only |
+| Data model changes? | None; the harness reads existing schema |
+| New API endpoints? | None; F-018 adds no routes |
+
+Two facts established by inspection before asking:
+- **No `IAsyncLifetime`, `IClassFixture` or `CollectionDefinition` exists anywhere in the repo** — the fixture pattern is new ground with no house style to match.
+- **`IKafkaClient` is an interface** registered `AddSingleton<IKafkaClient, KafkaClient>()` (`Booking/Program.cs:29`, `Provider/Program.cs:33`), so substitution via `ConfigureTestServices` is clean.
+
+### Round 1 — Mechanics
+
+**Q1: Container-per-test forces a decision about the test host too. The Mongo connection string must exist before the host builds, so a fresh container per test implies a fresh `WebApplicationFactory` per test (~4.45 s container + host boot each). What shape?**
+
+**A: ⚠️ DECISION REVERSED — container per test *class*, not per test.**
+
+The user changed the Q6 Discover answer on the strength of the spike measurement. At Discover, container-per-test was chosen against an *assumed* 1–3 s startup; the spike measured **4.45 s**, making the real cost roughly 2–3× the estimate. This is the reversal the spike existed to enable, and it converges on what Echo argued for in Progressive Thinking Conflict A — now settled by data rather than by debate.
+
+**Consequences propagated into the design:**
+- **One container per test class**, and therefore **one `WebApplicationFactory` per test class** — the connection string is known once, so the host is built once.
+- **Isolation is preserved by using a unique database name per test** inside the shared container, rather than by a new container. Full isolation at effectively zero cost; this replaces the isolation argument that motivated container-per-test.
+- The 10-minute CI budget becomes comfortable rather than marginal, and AC-21's tripwire is far less likely to fire at F-019 — which was the point of measuring.
+- PRD Requirement 3 and ADR-017 are amended accordingly.
+
+**Q2: Real Kafka or a stub?**
+**A: Stub `IKafkaClient` — no Kafka container.** A recording fake substituted via `ConfigureTestServices`, asserting the topic-creation call was made. Justified because Kafka here **only creates topics** — nothing is produced or consumed (`docs/pdlc/context/09-integrations.md`, unchanged by F-013) — so a real broker adds the slowest container in the suite while proving very little. The wiring is still asserted.
+
+**Q3: How is the audit event read for tier 3?**
+**A: Direct `MongoDB.Driver` read of the events collection** from the container. Asserting the actual persisted document means the test survives a refactor of `IEventStore` — which matters precisely because F-019/F-020 are refactoring that layer. Reading through the abstraction could pass while the persisted data is wrong.
+
+### Round 2 — Apply
+
+**Q4: The slnf lists 12 test projects explicitly and the backend CI job runs `dotnet test agenda-buddy-backend.slnf`. If the integration project joins that filter, the unit job starts running containers. How are they kept apart?**
+**A: Keep `AgendaBuddy.IntegrationTests` OUT of `agenda-buddy-backend.slnf`.** It is invoked by path in its own CI job — exactly the precedent `MobileApp.Tests` already sets. The separation is **structural**, not dependent on remembering a `--filter` flag. Rejected alternative: in-slnf with `--filter Category!=Integration`, because forgetting the flag silently makes the unit job start containers.
+
+*(Drafted and accepted without asking — project naming `AgendaBuddy.IntegrationTests` is fixed by PRD Req 1; xUnit is the framework per CONSTITUTION §1; fixtures follow `IAsyncLifetime` + `IClassFixture` since no house precedent exists to inherit.)*
+
+### Round 3 — Trade-offs and Judgments
+
+**Q5: Isolation versus wall-clock, given the measured 4.45 s.**
+**A:** Wall-clock wins, with isolation retained by other means — shared container per class, unique database per test. The judgment is that a suite people actually run beats a marginally purer one they avoid; Echo's Round-5 warning was that container-per-test on 2 CPUs would produce timeout flakes that "train people to re-run red builds."
+
+**Q6: Fidelity versus cost on Kafka.**
+**A:** Cost wins, because fidelity here is nearly free to fake — the integration is one method that creates a topic.
+
+**Q7: Coupling versus durability on the audit assertion.**
+**A:** Durability wins — assert persisted state, not the abstraction being refactored.
+
+### Synthesis
+
+**Neo's sketch, validated by the answers above:**
+
+- **Components:** one test project, `AgendaBuddy.IntegrationTests`, outside the backend slnf. A per-session fixture owning the in-memory RSA keypair and the token factory; a per-class fixture owning one Mongo container plus one `WebApplicationFactory` per service under test; per-test unique database names for isolation.
+- **Data model:** unchanged. The harness reads the existing `agenda_buddy` and `IdentityDb` schemas.
+- **API surface:** unchanged. F-018 adds no routes; it *records* the existing surface as committed OpenAPI specs extracted via `ISwaggerProvider`.
+- **Key decisions:** container-per-class (reversed from per-test on measured evidence) · stubbed Kafka · direct-driver audit assertions · out-of-slnf structural separation · spec generation decoupled from containers entirely.
 
 ## Standards Guidance (ideation)
 

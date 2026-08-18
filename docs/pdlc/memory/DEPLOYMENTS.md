@@ -97,7 +97,7 @@ Terminate the AppHost with `Ctrl-C`. Legacy Compose path: `docker compose down`.
 
 #### Blockers before first deploy
 
-1. ⚠️ **Rotate the `agenda_buddy` Atlas credential first** (`docs/issues/ISSUE-002-atlas-credential-rotation.md`, tracker `agenda-buddy-41s`). It remains in git history and remains valid. Deploying against it means the deployment and whoever else holds that credential share a database holding client names, emails, phone numbers and appointment records.
+1. ⚠️ **Rotate the `agenda_buddy` Atlas credential first** (`docs/issues/ISSUE-002-atlas-credential-rotation.md`, tracker `agenda-buddy-41s`). It remains in git history and remains valid. Deploying against it means the deployment and whoever else holds that credential share a live database. *(Corrected 2026-08-18: that database holds only synthetic/development data — no real client records — so this is re-graded MEDIUM. Still rotate before any deploy: the credential is valid, publicly recoverable, and there are no backups.)*
 2. No Azure subscription is wired to this machine.
 3. After the first interactive `azd up`, the discovered parameter names must go into the `AZD_ENV_VARS` repository secret for `.github/workflows/deploy.yml` to work.
 

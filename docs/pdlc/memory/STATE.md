@@ -5,7 +5,7 @@
      Claude reads this file at the start of every session to auto-resume from the last checkpoint.
      If this file is missing or empty, PDLC will prompt you to run /pdlc init. -->
 
-**Last updated:** 2026-08-18T16:10:00Z
+**Last updated:** 2026-08-18T17:05:00Z
 
 ---
 
@@ -51,13 +51,13 @@ _None active. Run `/night-shift <F-NNN>` to start an autonomous run (requires by
 
 ## Current Sub-phase
 
-Design
+Plan
 
 ---
 
 ## Last Checkpoint
 
-Inception / Design / 2026-08-18T16:10:00Z
+Inception / Plan / 2026-08-18T17:05:00Z
 
 ---
 
@@ -85,12 +85,21 @@ agent-teams
 
 **→ `docs/issues/ISSUE-002-atlas-credential-rotation.md`** (tracker: `agenda-buddy-41s`)
 
+> ⚠️ **CORRECTED 2026-08-18 — the PII claims in this block are WRONG.** The maintainer confirmed the
+> cluster holds **only synthetic / development data, never real people's records**. Severity re-graded
+> **CRITICAL → MEDIUM**. Rotation is still required (the credential is still valid, publicly
+> recoverable from `origin/main` history, grants write access to a live cluster, and there are no
+> backups) — but there is **no personal-data breach, no GDPR clock and no notification duty**. See the
+> correction block at the top of ISSUE-002.
+
 A connection string with **full read/write** access to the cluster was committed to 17 tracked files.
 F-013 removed it from the working tree; it **remains in git history and remains valid until the
-password is changed at Atlas**. The cluster holds client names, email addresses, phone numbers and
+password is changed at Atlas**. ~~The cluster holds client names, email addresses, phone numbers and
 appointment records — who met which therapist or coach and when. That makes an unrotated credential a
-notifiable personal-data breach with a 72-hour GDPR clock, an unlogged data-modification risk with **no
-backups to restore from**, and the first prerequisite for any cloud deployment. Documenting it again is
+notifiable personal-data breach with a 72-hour GDPR clock~~ — **struck 2026-08-18: the cluster holds only
+synthetic/development data, so there is no personal-data breach and no GDPR clock.** What remains true:
+an unlogged data-modification risk with **no backups to restore from**, Atlas resource abuse billed to
+the project owner, and the first prerequisite for any cloud deployment. Documenting it again is
 not progress; only the rotation closes it. ISSUE-002 has the exact Atlas steps, the access-log review
 window, and the command that finds the first commit containing it.
 
@@ -158,31 +167,37 @@ mobile client that cannot reach the backend (F-015), and unauthenticated PII exp
 
 ```json
 {
-  "phase_completed": "Inception / Define",
-  "next_phase": "Inception / Design",
+  "phase_completed": "Inception / Design",
+  "next_phase": "Inception / Plan",
   "feature": "api-refactor-foundations",
   "feature_id": "F-018",
   "key_outputs": [
     "docs/pdlc/prds/PRD_F-018_api-refactor-foundations_2026-08-18.md",
-    "docs/pdlc/brainstorm/brainstorm_refactor-minimal-apis_2026-08-18.md",
-    "docs/pdlc/mom/api-refactor-foundations_progressive-thinking_mom_2026_08_18.md"
+    "docs/pdlc/design/api-refactor-foundations/ARCHITECTURE.md",
+    "docs/pdlc/design/api-refactor-foundations/data-model.md",
+    "docs/pdlc/design/api-refactor-foundations/api-contracts.md",
+    "docs/pdlc/design/api-refactor-foundations/threat-model.md",
+    "docs/pdlc/design/api-refactor-foundations/ux-review.md",
+    "docs/pdlc/mom/MOM_threat-model_api-refactor-foundations_2026-08-18.md"
   ],
   "decisions_made": [
-    "PRD approved: 27 requirements, 27 acceptance criteria, 9 BDD user stories",
-    "AC-7 corrected — Identity registers AddEventStore ZERO times and uses its own IdentityDb, so the audit tier applies to six services, not seven. The first draft claimed all seven",
-    "AC-19/20/22 are verified on a short-lived throwaway branch the MAINTAINER pushes on request. Deliberately not downgraded to 'passes locally' — that is how F-013's CI credential guard sat unexecuted until PR #35",
-    "'10 consecutive green runs' now has an owner and a durable counter (beads issue, AC-27) rather than only a definition",
-    ".editorconfig promoted from MAY to SHOULD with AC-26 — a MAY with no acceptance criterion never happens",
-    "Test layers: Unit (existing) + Integration (new, becomes a §7 gate after 10 green runs) + Security scan (still F-017's, NOT discharged here)"
+    "Design approved. Threat model triage Full (3/3); UX review triage Skip (no user-facing surface)",
+    "CONTAINER-PER-CLASS, reversed from container-per-test on a measured 4.45s startup (assumed 1-3s). Isolation preserved by a unique database name per test. ADR-017",
+    "Kafka NOT containerised - IKafkaClient substituted with a recording fake. Only creates topics; nothing produced or consumed",
+    "Tier 3 reads the audit document directly with MongoDB.Driver, not through IEventStore, so it survives F-019/F-020 refactoring that abstraction",
+    "AgendaBuddy.IntegrationTests stays OUT of agenda-buddy-backend.slnf - structural separation, not a --filter flag",
+    "OpenAPI: generated + drift-checked in CI but NOT committed until F-016 closes the anonymous full-record endpoint. Committing is an F-016 exit criterion. ADR-020",
+    "T-001 RE-GRADED CRITICAL -> MEDIUM: the maintainer confirmed the Atlas cluster holds ONLY synthetic/dev data. The overstated PII/GDPR claims were corrected across ISSUE-002, STATE.md, OVERVIEW.md, DEPLOYMENTS.md and episode 001",
+    "ADR-014 through ADR-020 recorded (7, up from the 4 planned - the threat model produced 3 deferral/acceptance decisions)"
   ],
-  "next_action": "Read skills/brainstorm/steps/03-design.md and begin Bloom's Taxonomy design questioning",
-  "git_policy": "NO PUSHING. Working on feat/F-018-api-refactor-foundations with local commits only. main is PR-protected; the five commits pushed to main earlier in this session were left in place by user decision.",
+  "next_action": "Read skills/brainstorm/steps/04-plan.md and decompose into tasks. Three mitigate-now threats (T-001 fail-closed, T-002, T-004) must be back-written as [security]-tagged ACs at Step 14.5",
+  "git_policy": "NO PUSHING. Local commits only on feat/F-018-api-refactor-foundations. Stopping at the /build boundary - no implementation.",
   "open_risks": [
-    "SPIKE 1 — Testcontainers on Rancher Desktop unverified; socket is ~/.rd/docker.sock. Every AC depends on it. Must be task 1",
-    "SPIKE 2 — no OpenAPI generation mechanism identified; Swashbuckle needs a running app and Swagger is Development-only. AC-17/18/19 block on it. A build-time alternative would be a SIXTH package",
-    "Container-per-test vs the 10-minute budget: fine at F-018's ~20 tests, 2-4 min of pure container startup at F-019's 60-100",
-    "Cache-aside invariant still has no guard while the audit invariant has two — revisit in F-019",
-    "7 MobileApp tests skipped, reason unknown (372 of 379 execute)"
+    "Full-document OpenAPI byte-determinism is NOT yet verified - the spike proved stable path SETS only. AC-19 produces false failures otherwise",
+    "Container reaping (AC-13) relies on Testcontainers' reaper and is unverified - must be proven by an actual mid-flight kill",
+    "Spec output location/naming still undecided",
+    "Cache-aside invariant has no guard while the audit invariant has two - revisit in F-019",
+    "7 MobileApp tests skipped, reason still unknown"
   ],
   "pending_questions": []
 }
