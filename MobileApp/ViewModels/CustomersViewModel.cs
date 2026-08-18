@@ -122,8 +122,15 @@ public partial class CustomersViewModel : ObservableObject
             ? $"{customer.TotalSessions} services available\n\n{customer.LastSession}\n\nAvailable: {customer.Availability}"
             : $"{customer.TotalSessions} total sessions\n\nLast: {customer.LastSession}\n\nContact: {customer.Phone}";
 
+#if MOBILE
         if (Application.Current?.Windows.FirstOrDefault()?.Page is { } page)
             await page.DisplayAlertAsync(title, body, "OK");
+#else
+        // The net10.0 fallback slice (MobileWorkloads=false) builds with UseMaui=false, so there is
+        // no Application object and no page to present on. The text above is still built, keeping
+        // this the only platform-conditional part of the view model.
+        await Task.CompletedTask;
+#endif
     }
 
     private List<CustomerSummary> SeedContacts()
