@@ -192,7 +192,10 @@ customers.MapGet("",
             return TypedResults.Ok(customerCollection);
 
         return TypedResults.NoContent();
-    }).WithName("GetAllCustomers");
+    })
+    // F-016 AC-8 / requirement 9: PII-bearing read, so no longer anonymous. Breaking change with zero reachable consumers (01-api-surface.md:158).
+    .WithName("GetAllCustomers")
+    .RequireAuthorization();
 
 customers.MapGet("/{email}", async Task<Results<Ok<CustomerEntity>, NotFound>> (IMediator mediator, string email,
     CustomerService customerService, IRequestCollection requestCollection, IDistributedCache cache) =>
@@ -206,7 +209,10 @@ customers.MapGet("/{email}", async Task<Results<Ok<CustomerEntity>, NotFound>> (
         return TypedResults.Ok(customer);
 
     return TypedResults.NotFound();
-}).WithName("GetCustomerByEmail");
+})
+    // F-016 AC-8 / requirement 9: PII-bearing read, so no longer anonymous. Breaking change with zero reachable consumers (01-api-surface.md:158).
+    .WithName("GetCustomerByEmail")
+    .RequireAuthorization();
 
 app.Run();
 

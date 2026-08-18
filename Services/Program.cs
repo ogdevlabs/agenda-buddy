@@ -139,7 +139,12 @@ services.MapGet("/{email}",
             return TypedResults.Ok(serviceEntities);
 
         return TypedResults.NotFound();
-    }).WithName("GetServicesFromProvider");
+    })
+    // F-016 AC-8 / requirement 9: PII-bearing read, so no longer anonymous. This is the fifth of the
+    // five routes — it was omitted from the program Discover summary and added at Define.
+    // Breaking change with zero reachable consumers (01-api-surface.md:158).
+    .WithName("GetServicesFromProvider")
+    .RequireAuthorization();
 
 services.MapPut("/{email}",
     async Task<Results<ValidationProblem, ForbidHttpResult, NotFound, Ok<ProviderEntity>>> (IMediator mediator,

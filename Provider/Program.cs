@@ -175,7 +175,10 @@ providers.MapGet("", async Task<Results<Ok<List<ProviderEntity>>, NoContent>> (I
         return TypedResults.Ok(providerCollection);
 
     return TypedResults.NoContent();
-}).WithName("GetAllProviders");
+})
+    // F-016 AC-8 / requirement 9: PII-bearing read, so no longer anonymous. Breaking change with zero reachable consumers (01-api-surface.md:158).
+    .WithName("GetAllProviders")
+    .RequireAuthorization();
 
 // Get provider by Email
 providers.MapGet("/{email}", async Task<Results<Ok<ProviderEntity>, NotFound>> (IMediator mediator,
@@ -195,7 +198,10 @@ providers.MapGet("/{email}", async Task<Results<Ok<ProviderEntity>, NotFound>> (
         return TypedResults.Ok(providerEntity);
 
     return TypedResults.NotFound();
-}).WithName("GetProviderByEmail");
+})
+    // F-016 AC-8 / requirement 9: PII-bearing read, so no longer anonymous. Breaking change with zero reachable consumers (01-api-surface.md:158).
+    .WithName("GetProviderByEmail")
+    .RequireAuthorization();
 
 
 // Update a provider, using email for search of the record
