@@ -366,6 +366,18 @@ That is defensible: a fragile harness with broad coverage is worse than a depend
 
 **Skipped:** no `control-manifest.toml` at the repo root, so this repo is not part of a pdlc-fy multi-repo capability and has no sibling repos to scope work against. `node scripts/capability.cjs read --json` was not run because the manifest's absence already settles it. Agenda Buddy is a standalone repo.
 
+## Standards Guidance (ideation)
+
+**Skipped — inputs unavailable. This is not an override.**
+
+The `nordstrom-standards-readiness` plugin **is installed** (verified at preflight), but its six `.nordstrom-standards/*` source repositories do **not resolve** under this machine's git/gh auth — probed directly on 2026-08-18 (`engineering`, `security`, `privacy` all unreachable), and there is no local `.nordstrom-standards/` checkout. The same condition blocked Step 12.6 during F-013.
+
+Step 6.5's enforcement tier is **`advisory`**, so this skips with notice rather than blocking. No `docs/standards-readiness/ideation-*.md` was produced.
+
+Secondary note: Agenda Buddy is a personal project under `fererelabs`, not a Nordstrom system, so the six Nordstrom standards bodies are of questionable applicability here regardless of reachability. Worth settling deliberately rather than leaving the gate to fail silently at every feature — a `/diagnose` follow-up.
+
+No `⚠ MUST` items were raised, because no analysis ran. The Plan gate (Step 18.5, `--design`) will re-attempt and is expected to skip for the same reason.
+
 ## Discovery Summary
 
 **Confirmed by the user:** 2026-08-18T15:25:00Z
