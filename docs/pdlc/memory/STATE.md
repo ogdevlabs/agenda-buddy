@@ -5,7 +5,7 @@
      Claude reads this file at the start of every session to auto-resume from the last checkpoint.
      If this file is missing or empty, PDLC will prompt you to run /pdlc init. -->
 
-**Last updated:** 2026-08-18T19:52:00Z
+**Last updated:** 2026-08-18T19:55:00Z
 
 ---
 
@@ -64,7 +64,7 @@ Build
 
 ## Last Checkpoint
 
-Construction / Build / 2026-08-18T19:52:00Z
+Construction / Build / 2026-08-18T19:55:00Z (context cleared here — see Context Checkpoint)
 
 ---
 
@@ -85,6 +85,20 @@ agent-teams
 ---
 
 ## Active Blockers
+
+> ### 🔖 RESUME MARKER — context was cleared 2026-08-18T19:55Z mid-Build
+>
+> **F-016 `secure-public-endpoints` is in Construction / Build, 2 of 20 tasks done, on branch
+> `feat/F-016-secure-public-endpoints` (5 commits, nothing pushed, tree clean).**
+>
+> Read the **`## Context Checkpoint`** block below before doing anything — it is written to be read
+> cold and contains the resume command, the next three ready tasks, nine gotchas that will otherwise
+> bite, the measured container timings, and one accepted-risk decision the maintainer may want to
+> revisit (ADR-030, the SSH.NET CVE).
+>
+> Fastest path back in: `/build`. **Filter the ready queue on `epic:secure-public-endpoints`** — it is
+> not feature-scoped and will otherwise hand you a paused F-018 task.
+
 <!-- PENDING MARKER — read this first at the start of the next session. Each item below is either
      an action only a human can take, or work that is written but not yet exercised. Nothing here is
      blocked on more code being written. -->
@@ -185,15 +199,66 @@ re-planning (`/continue`).
 
 ## Context Checkpoint
 
+<!-- ⚠️ CONTEXT CLEARED HERE at the maintainer's request, 2026-08-18T19:55Z.
+     This block is written to be read COLD — a fresh session should be able to resume
+     F-016 Construction from it alone, without any of the prior conversation. -->
+
 ```json
 {
-  "triggered_at": "2026-08-18T13:40:00Z",
+  "triggered_at": "2026-08-18T19:55:00Z",
+  "reason": "maintainer asked for a marker so context could be cleared mid-Build",
+  "phase": "Construction",
+  "sub_phase": "Build",
+  "feature": "secure-public-endpoints",
+  "feature_id": "F-016",
   "active_task": null,
-  "sub_phase": "Discover",
-  "step": "f-013-shipped-v0.1.0-starting-f-018-inception",
-  "skill_file": "skills/brainstorm/steps/01-discover.md",
-  "work_in_progress": "F-013 shipped as v0.1.0. F-018 Inception in Discover. Round 1 done: the requested scope was too large for one PRD and was decomposed into F-018 api-refactor-foundations (harness + MobileApp CI + Persitency rename + constitution amendments), F-019 api-refactor-pilot-booking (full Clean Architecture on Booking), F-020 api-refactor-rollout (remaining 6). Integration-test capability moved out of F-017 into F-018. MediatR stays the single dispatcher; SmallApiToolkit used only for DataResponse/validation-base/middleware.",
-  "next_action": "Continue F-018 Discover at Round 2 (Future State / Key Capabilities), scoped to the foundations stage only: Testcontainers harness, MobileApp into CI, Persitency rename, constitution amendments.",
+  "skill_file": "skills/build/steps/02-build-loop.md",
+  "resume_command": "/build",
+
+  "branch": "feat/F-016-secure-public-endpoints",
+  "branch_base": "main @ e35938b (freshly pulled; branched at the maintainer's request, NOT off the F-018 branch)",
+  "commits_on_branch": 5,
+  "pushed": false,
+  "working_tree": "clean",
+
+  "progress": "2 of 20 tasks done — F-016-T01 (Persitency -> Persistence rename) and F-016-T02 (integration test project + InternalsVisibleTo x7).",
+  "ready_queue_next": ["F-016-T03 CryptoSessionFixture", "F-016-T04 DockerPreflight", "F-016-T10 GetPagedAsync"],
+  "critical_path": "T01 -> T02 -> T03 -> T06 -> T07 -> T08 -> T12 -> T15 -> T19 -> T20 (10 deep). T02 is done; the remaining bottleneck is T06 (ServiceHostFixture), which carries the CRITICAL security AC.",
+
+  "test_state": {
+    "backend": "309 passing / 0 failing / 0 warnings across 12 projects via `dotnet test agenda-buddy-backend.slnf`. Baseline was 305; +4 from the T01 namespace test.",
+    "integration": "9 passing via `dotnet test AgendaBuddy.IntegrationTests/AgendaBuddy.IntegrationTests.csproj` — a SEPARATE command, see ADR-031",
+    "mobile": "74 (67 passing, 7 skipped) via `dotnet test MobileApp.Tests/MobileApp.Tests.csproj /p:MobileWorkloads=false` — untouched by F-016"
+  },
+
+  "READ_FIRST_ON_RESUME": [
+    "docs/pdlc/prds/plans/plan_F-016_secure-public-endpoints_2026-08-18.md — the 10 known gaps section names everything that will surprise the implementer",
+    "docs/pdlc/design/secure-public-endpoints/threat-model.md — 7 mitigate-now threats are [security] ACs on T06/T08/T09/T13/T16/T17/T18",
+    "docs/pdlc/design/secure-public-endpoints/ARCHITECTURE.md — AD-1 (section 2) explains why requirement 14 could not be met as scoped",
+    "AgendaBuddy.IntegrationTests/Harness/EntryPoints.cs — why WebApplicationFactory<Program> cannot be used here"
+  ],
+
+  "GOTCHAS_THAT_WILL_BITE": [
+    "`tasks.cjs ready` is NOT feature-scoped. It returns paused-F-018 tasks (F-018-T02/T04/T19) alongside F-016's. ALWAYS filter on label epic:secure-public-endpoints or Build will start an F-018 task.",
+    "docker is NOT on PATH under Rancher Desktop. `export PATH=\"$HOME/.rd/bin:$PATH\"` before anything that touches containers.",
+    "Do NOT add AgendaBuddy.IntegrationTests to agenda-buddy-backend.slnf (ADR-031). That slnf is the Docker-free unit gate documented in CLAUDE.md and run by CI's api job.",
+    "WebApplicationFactory<Program> does NOT compile: 7 assemblies each emit an internal Program in the global namespace. Use Harness/EntryPoints.cs, which anchors each service to a distinct public type. Note Booking's namespace is Booking.Configuration (singular) while the other six are *.Configurations (plural).",
+    "`tasks.cjs ac list <task> --json` reports tag=None threat=None even when the tags ARE persisted. Read the raw task file (acceptance_criteria: [\"AC1|security|T-002|...\"]) or use `tasks.cjs check`. This produced a false security-ac-unmaterialized reading at the readiness party.",
+    "T09 (AssertOwner null-claim fix) MUST precede T11 (ProviderSummary projection). The projection selects owner-vs-non-owner with AssertOwner, whose null-claim pass lands on the OWNER branch and returns the unprojected entity. Building T11 first ships the bypass. The dep edge exists — do not optimise it away.",
+    "T13's cache test must assert 'NOT 200-with-data', not 'exactly 403'. CacheAside has no test and returns default! on a 500ms lock timeout, surfacing as a spurious 404.",
+    "F-016-T20 (integration CI job) CANNOT be completed without the maintainer: main is PR-protected and CI is path-filtered, so it needs a throwaway branch PUSHED BY A HUMAN. The task graph cannot express that.",
+    "Party mode is `solo` for this whole feature — the session carried a standing 'do not call the Agent tool unless requested' instruction that overrides STATE's `Party Mode: agent-teams`. Every MOM records this."
+  ],
+
+  "MEASURED_FACTS": {
+    "container_start_warm": "3 s — BETTER than the 4.45 s F-018's spike measured, so ADR-017's container-per-class decision holds with margin",
+    "container_start_cold": "62 s, dominated by the 1.13 GB mongo:7.0 pull. A CI consideration for T20 — image caching is worth ~1 min per cold runner.",
+    "rename_scope": "11 .cs files, one reference each; zero in any .json/.yml/.csproj/.slnf. Matched the F-018 Discover measurement exactly.",
+    "host": "Rancher Desktop, docker 29.5.3, 2 CPUs / 4.1 GB, k8s already running (11 containers)"
+  },
+
+  "OPEN_DECISION_THE_MAINTAINER_MAY_REVISIT": "ADR-030 — SSH.NET GHSA-q939-rpr3-3284 (HIGH) enters via Testcontainers and has NO patched version (2023.0.0 through 2025.0.0 all flagged; pinning was attempted and cannot fix it). Accepted as unreachable, and the unreachability is TESTED by Harness/ContainerRuntimeGuardTest.cs. NU1903 is suppressed in that project only; the vulnerability report still lists it, so F-017's audit gate is unaffected. This was surfaced to the maintainer for possible reversal and they moved on to clearing context, so IT STANDS AS ACCEPTED — but it was explicitly flagged as a call a different maintainer could reasonably make differently. CONSTITUTION section 7's dependency-audit gate is unimplemented, which is what makes this uncomfortable.",
+
   "files_open": []
 }
 ```
@@ -204,39 +269,58 @@ re-planning (`/continue`).
 
 ```json
 {
-  "phase_completed": "Inception / Design",
-  "next_phase": "Inception / Plan",
+  "phase_completed": "Inception (all four sub-phases) + Construction waves 1-2",
+  "next_phase": "Construction / Build — wave 3",
   "feature": "secure-public-endpoints",
   "feature_id": "F-016",
+  "branch": "feat/F-016-secure-public-endpoints",
+  "branch_pushed": false,
+  "commits": 5,
+  "tests": "backend 309 passing / 0 failing / 0 warnings (12 projects); integration 9 passing; mobile 74 untouched",
+  "task_status": "2 of 20 done — T01, T02. Next ready: T03, T04, T10.",
+
   "key_outputs": [
-    "docs/pdlc/prds/PRD_F-016_secure-public-endpoints_2026-08-18.md (Approved)",
-    "docs/pdlc/design/secure-public-endpoints/ARCHITECTURE.md",
-    "docs/pdlc/design/secure-public-endpoints/data-model.md",
-    "docs/pdlc/design/secure-public-endpoints/api-contracts.md",
-    "docs/pdlc/design/secure-public-endpoints/threat-model.md (Full, 8 threats, Approved)",
-    "docs/pdlc/design/secure-public-endpoints/ux-review.md (Skip, 0/3)",
-    "docs/pdlc/mom/MOM_threat-model_secure-public-endpoints_2026-08-18.md",
-    "docs/pdlc/brainstorm/brainstorm_platform-remediation_2026-08-18.md (design-approved)",
-    "DECISIONS.md ADR-022..ADR-028"
+    "docs/pdlc/prds/PRD_F-016_secure-public-endpoints_2026-08-18.md (Approved, 26 ACs)",
+    "docs/pdlc/design/secure-public-endpoints/ — ARCHITECTURE, data-model, api-contracts, threat-model (Full/Approved), ux-review (Skip)",
+    "docs/pdlc/prds/plans/plan_F-016_secure-public-endpoints_2026-08-18.md (20 tasks / 8 waves)",
+    "docs/pdlc/brainstorm/brainstorm_platform-remediation_2026-08-18.md (inception-complete)",
+    "docs/pdlc/mom/ — threat-model, readiness-party, and the F-018 wave-1 standup",
+    "DECISIONS.md ADR-022..ADR-031",
+    "AgendaBuddy.IntegrationTests/ — the harness project, Harness/EntryPoints.cs, ContainerRuntimeGuardTest, InternalsVisibleToTest",
+    "EventsAndCommands.Tests/Persistence/PersistenceNamespaceTest.cs"
   ],
+
   "decisions_made": [
-    "AD-1 / ADR-022: shared IExceptionHandler registered OUTSIDE the IsDevelopment() guard in 6 services - requirement 14 could NOT be met as scoped because the existing handler is Development-only",
-    "ADR-023: paginated contract - page/pageSize, MaxPageSize 100, CLAMP not reject, envelope {items,totalCount,page,pageSize}, 204 retired. F-015 consumes this",
-    "ADR-025: POST /api/v1/professions DELETED, not role-gated - there is no admin role to check for. Supersedes requirement 13",
-    "ADR-026: GET /api/v1/customers requires the Provider role - authentication alone left the whole table extractable via free self-registration. Scope addition",
-    "ADR-027: Event gains a nullable actor field - F-016 is no longer schema-change-free. Accepted over Friday's dissent",
-    "ADR-024: T-008 (no audience scoping, no revocation) deferred to F-023",
-    "Requirement 18 (AssertOwner null-claim) MOVED from F-021 into F-016 - threat T-001 makes it reachable, landing on the owner branch"
+    "F-018 Construction ABORTED before any code; claim released; paused (docs/pdlc/memory/.paused-feature.json). F-018 now ~12 tasks — F-016 absorbed EIGHT (T01,T05,T06,T07,T08,T09,T14,T18). DO NOT rebuild a harness that exists.",
+    "F-014-F-017 decomposed into SIX features. Order: F-016 -> F-021 -> F-014 -> F-015 -> F-017 -> F-018-F-020. F-022/023/024 filed.",
+    "ADR-022: shared IExceptionHandler registered OUTSIDE the IsDevelopment() guard — requirement 14 could NOT be met as scoped because the existing handler is Development-only in all 7 services.",
+    "ADR-023: paginated contract — page/pageSize, MaxPageSize 100, CLAMP not reject, envelope {items,totalCount,page,pageSize}, 204 retired. F-015 consumes this.",
+    "ADR-025: POST /api/v1/professions DELETED, not role-gated — there is no admin role. Supersedes requirement 13.",
+    "ADR-026: GET /api/v1/customers requires the Provider role. Scope addition.",
+    "ADR-027: Event gains a nullable actor field — F-016 is no longer schema-change-free.",
+    "ADR-030: SSH.NET HIGH CVE accepted as unreachable, and the unreachability is TESTED. See the Context Checkpoint's OPEN_DECISION field.",
+    "ADR-031: integration project excluded from agenda-buddy-backend.slnf, per the MobileApp precedent, so the unit gate stays Docker-free."
   ],
-  "next_action": "Read skills/brainstorm/steps/04-plan.md and decompose into tasks. MUST back-write the 7 mitigate-now threats as [security]-tagged ACs (PRD addendum + tasks.cjs ac add --tag security --threat T-NNN).",
-  "carry_into_plan": [
-    "Broaden PRD AC-17 from GetProvidersQueryHandler alone to ALL TEN query handlers - the design covers all ten, the AC tests one",
-    "DockerPreflight (F-018 T07) is a SIXTH absorbed F-018 task, not one of the five the Discover summary listed",
-    "CI-dependent criteria cannot be verified locally: main is PR-protected and CI is path-filtered. The task graph cannot express 'waits on a human'",
-    "F-021's rate limiter must ship with a test-environment escape or it breaks this feature's harness",
-    "Harness must follow Identity.Tests' TestCollectionDefinition pattern - AuthenticationExtensions reads JWT_PUBLIC_KEY from the environment at startup and parallel classes would race",
-    "T-006's test must assert 'not 200 with data' rather than 'exactly 403' - CacheAside returns default! on a 500ms lock timeout, surfacing as a spurious 404"
+
+  "next_action": "Run /build. It will resume at Build Step 4. Filter the ready queue on label epic:secure-public-endpoints (see the Context Checkpoint gotcha). Wave 3 is T03 CryptoSessionFixture, T04 DockerPreflight, T10 GetPagedAsync.",
+
+  "do_not_redo": [
+    "Do not re-run the Testcontainers feasibility spike: proven on this machine 2026-08-18. 3 s warm, 62 s cold.",
+    "Do not try WebApplicationFactory<Program>: ambiguous across 7 assemblies. Use Harness/EntryPoints.cs.",
+    "Do not try to pin SSH.NET to a safe version: every published version through 2025.0.0 is flagged. Attempted and measured.",
+    "Do not add the integration project to agenda-buddy-backend.slnf (ADR-031).",
+    "Do not run the Nordstrom standards gate: the plugin is installed but its six source repos do not resolve. Skipped with notice at both Define and Plan; same as F-013 and F-018.",
+    "Do not check CONSTITUTION section 7's Integration box: gated on 10 consecutive green runs, tracked separately (F-018 T04, NOT absorbed)."
   ],
+
+  "outstanding_not_closed_by_this_feature": [
+    "ROTATE the Atlas credential (ISSUE-002) — human-only, still valid, still recoverable from this PUBLIC repo's history. It is what makes T06's fail-closed guard load-bearing.",
+    "F-016-T20 needs a maintainer-pushed throwaway branch to verify.",
+    "CONSTITUTION section 7's dependency-audit + secret-scan gate remains unimplemented (F-017). ADR-030 will be its first finding, with expected disposition 'accepted'.",
+    "Deferred from ADR-026: owner-scoping GET /api/v1/customers to the caller's own SubscribedCustomerCollection is the stronger fix.",
+    "Deferred from ADR-022: nine other exception-to-status mappings. FormatException -> 400 is the best next candidate (most likely live 500)."
+  ],
+
   "pending_questions": []
 }
 ```
