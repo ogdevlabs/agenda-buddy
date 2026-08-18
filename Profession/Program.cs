@@ -121,35 +121,17 @@ var professions = app.MapGroup("api/v1/professions")
     .WithOpenApi()
     .AddEndpointFilter<ProblemDetailsServiceEndpointFilter>();
 
-professions.MapPost("/",
-    async Task<Results<ValidationProblem, Created<ProfessionEntity>>> (IMediator mediator,
-        ProfessionService professionService, ProfessionEntity professionEntity,
-        IRequestCollection requestCollection) =>
-    {
-        if (!MiniValidator.TryValidate(professionEntity, out var errors))
-            return TypedResults.ValidationProblem(errors);
-        var profession = await professionService.GetProfessionAsync(professionEntity.Name);
-        if (profession != null)
-        {
-            return TypedResults.ValidationProblem(GenerateErrorMessage(
-                "Existing record found", new[]
-                {
-                    $"Name:{professionEntity.Name}"
-                }));
-        }
-
-        var eventResponse =
-            await EventsHelper.AddProfessionEvent(requestCollection, mediator, professionService, professionEntity);
-
-        if (eventResponse != null)
-            return TypedResults.Created($"api/v1/professions/{professionEntity.Id}", professionEntity);
-
-        return TypedResults.ValidationProblem(GenerateErrorMessage(
-            "Error", ["Error adding profession:", $"{professionEntity.Name}"])
-        );
-    })
-    .WithName("CreateProfession")
-    .RequireAuthorization();
+// F-016-T17 / ADR-025 / threat T-007: POST /api/v1/professions was DELETED, not role-gated.
+// PRD requirement 13 asked for a role check; there is no role to check for. Identity's allow-list is
+// exactly {Provider, Customer} (Identity/Program.cs:121) with no administrative tier, so the only
+// implementable check would still let any self-registered provider write global reference data read by
+// every user. Professions are SEEDED from Library/Data/ProfessionSeedData.cs and no shipped flow creates
+// one, so nothing is lost. Verified live before removal: both a Provider AND a Customer token received
+// 201 and wrote to the catalogue.
+// AddProfessionCommand/AddProfessionCommandHandler are deliberately LEFT IN PLACE -- the refactor program
+// audits dead handlers systematically. If professions ever need to be user-creatable, that is a feature
+// with a real authorization model, not a route quietly restored. Pinned by
+// ProfessionWriteRouteRemovedTest.
 
 professions.MapGet("",
     async Task<Results<Ok<List<ProfessionEntity>>, NoContent>> (IRequestCollection requestCollection,
@@ -188,10 +170,4 @@ app.Run();
 void CustomizeProblemDetails(ProblemDetails problemDetails, HttpContext httpContext)
 {
     problemDetails.Extensions["requestId"] = Activity.Current?.Id ?? httpContext.TraceIdentifier;
-}
-
-Dictionary<string, string[]> GenerateErrorMessage(string key, string[] values)
-{
-    var dictionary = new Dictionary<string, string[]> { { key, values } };
-    return dictionary;
 }
