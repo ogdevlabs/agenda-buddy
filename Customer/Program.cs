@@ -182,8 +182,18 @@ customers.MapPut("/{email}",
 
 customers.MapGet("",
     async Task<Results<Ok<List<CustomerEntity>>, NoContent>> (IMediator mediator,
+        ClaimsPrincipal user,
         CustomerService customerService, IRequestCollection requestCollection, IDistributedCache cache) =>
     {
+        // F-016 AC-22 / threat T-003 / ADR-026: the Provider role, not merely a token. Authenticating this
+        // route alone was nearly worthless -- POST /api/v1/auth/register is anonymous, unverified and
+        // unrate-limited, so an attacker self-registers as a Customer and pages the whole customer table
+        // exactly as before. Pagination bounds the response, not the extraction.
+        //
+        // No local try/catch: T08's AgendaBuddyExceptionHandler maps ForbiddenException to 403 centrally.
+        // Guard runs BEFORE the cache read, so a refused caller never reaches cached data.
+        OwnershipGuard.AssertRole(user, "Provider");
+
         var key = $"customers";
         var customerCollection = await cache.GetOrCreateAsync(key,
             async token => await EventsHelper.GetCustomersEvent(requestCollection, mediator, customerService));
