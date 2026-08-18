@@ -5,13 +5,13 @@
      Claude reads this file at the start of every session to auto-resume from the last checkpoint.
      If this file is missing or empty, PDLC will prompt you to run /pdlc init. -->
 
-**Last updated:** 2026-08-18T17:05:00Z
+**Last updated:** 2026-08-18T17:45:00Z
 
 ---
 
 ## Current Phase
 
-Inception
+Inception Complete — Ready for /build
 
 ---
 
@@ -51,13 +51,13 @@ _None active. Run `/night-shift <F-NNN>` to start an autonomous run (requires by
 
 ## Current Sub-phase
 
-Plan
+none
 
 ---
 
 ## Last Checkpoint
 
-Inception / Plan / 2026-08-18T17:05:00Z
+Inception / Plan / 2026-08-18T17:45:00Z
 
 ---
 
@@ -167,37 +167,43 @@ mobile client that cannot reach the backend (F-015), and unauthenticated PII exp
 
 ```json
 {
-  "phase_completed": "Inception / Design",
-  "next_phase": "Inception / Plan",
+  "phase_completed": "Inception / Plan",
+  "next_phase": "Construction / Build",
   "feature": "api-refactor-foundations",
   "feature_id": "F-018",
   "key_outputs": [
     "docs/pdlc/prds/PRD_F-018_api-refactor-foundations_2026-08-18.md",
+    "docs/pdlc/prds/plans/plan_F-018_api-refactor-foundations_2026-08-18.md",
     "docs/pdlc/design/api-refactor-foundations/ARCHITECTURE.md",
     "docs/pdlc/design/api-refactor-foundations/data-model.md",
     "docs/pdlc/design/api-refactor-foundations/api-contracts.md",
     "docs/pdlc/design/api-refactor-foundations/threat-model.md",
     "docs/pdlc/design/api-refactor-foundations/ux-review.md",
-    "docs/pdlc/mom/MOM_threat-model_api-refactor-foundations_2026-08-18.md"
+    "docs/pdlc/brainstorm/brainstorm_refactor-minimal-apis_2026-08-18.md"
   ],
   "decisions_made": [
-    "Design approved. Threat model triage Full (3/3); UX review triage Skip (no user-facing surface)",
-    "CONTAINER-PER-CLASS, reversed from container-per-test on a measured 4.45s startup (assumed 1-3s). Isolation preserved by a unique database name per test. ADR-017",
-    "Kafka NOT containerised - IKafkaClient substituted with a recording fake. Only creates topics; nothing produced or consumed",
-    "Tier 3 reads the audit document directly with MongoDB.Driver, not through IEventStore, so it survives F-019/F-020 refactoring that abstraction",
-    "AgendaBuddy.IntegrationTests stays OUT of agenda-buddy-backend.slnf - structural separation, not a --filter flag",
-    "OpenAPI: generated + drift-checked in CI but NOT committed until F-016 closes the anonymous full-record endpoint. Committing is an F-016 exit criterion. ADR-020",
-    "T-001 RE-GRADED CRITICAL -> MEDIUM: the maintainer confirmed the Atlas cluster holds ONLY synthetic/dev data. The overstated PII/GDPR claims were corrected across ISSUE-002, STATE.md, OVERVIEW.md, DEPLOYMENTS.md and episode 001",
-    "ADR-014 through ADR-020 recorded (7, up from the 4 planned - the threat model produced 3 deferral/acceptance decisions)"
+    "20 tasks in 7 waves. Critical path T01->T05->T06->T08->T13->T18->T20, bottlenecks T05 and T08",
+    "T01 (Persistence rename) MUST be the first commit and MUST precede any integration test (AC-16)",
+    "T16 (OpenAPI) deliberately OFF the critical path - spike proved spec generation needs no container",
+    "Container-per-CLASS with a unique database per test, reversed from per-test on a measured 4.45s startup",
+    "31 ACs: 27 original + 3 threat-derived [security] (T-001/T-002/T-004) + AC-31 added at the Step 18 gate",
+    "Readiness Full -> Fair, 3 gaps. Adversarial pass refuted all three self-rated Strongs. AC-31 closed two of them"
   ],
-  "next_action": "Read skills/brainstorm/steps/04-plan.md and decompose into tasks. Three mitigate-now threats (T-001 fail-closed, T-002, T-004) must be back-written as [security]-tagged ACs at Step 14.5",
-  "git_policy": "NO PUSHING. Local commits only on feat/F-018-api-refactor-foundations. Stopping at the /build boundary - no implementation.",
+  "next_action": "STOPPING HERE at the user's request - no implementation. Run /build to start Construction when ready.",
+  "git_policy": "NO PUSHING. All work is local commits on feat/F-018-api-refactor-foundations. main is PR-protected; the 5 commits pushed to main earlier in this session were left in place by user decision.",
+  "read_first_at_build": [
+    "docs/pdlc/prds/plans/plan_F-018_api-refactor-foundations_2026-08-18.md - Known gaps section names 6 things that could surprise the implementer",
+    "docs/pdlc/design/api-refactor-foundations/ARCHITECTURE.md section 9 - 4 open items carried into Plan",
+    "docs/pdlc/design/api-refactor-foundations/threat-model.md - 3 mitigate-now threats are [security] ACs on T06/T08"
+  ],
   "open_risks": [
-    "Full-document OpenAPI byte-determinism is NOT yet verified - the spike proved stable path SETS only. AC-19 produces false failures otherwise",
-    "Container reaping (AC-13) relies on Testcontainers' reaper and is unverified - must be proven by an actual mid-flight kill",
-    "Spec output location/naming still undecided",
-    "Cache-aside invariant has no guard while the audit invariant has two - revisit in F-019",
-    "7 MobileApp tests skipped, reason still unknown"
+    "T16: full-document OpenAPI byte-determinism NOT verified - the spike proved stable path SETS only. AC-19 gives false failures otherwise",
+    "T16: spec output location/naming still undecided",
+    "T15: container reaping unverified - must be proven by an actual mid-flight kill, not assumed from docs",
+    "T17/T18/T19 need a MAINTAINER-PUSHED throwaway branch - the dependency graph cannot express 'waits on a human' (recorded as dependency-missed)",
+    "Cache-aside invariant still has no guard while the audit invariant has two - revisit in F-019",
+    "7 MobileApp tests skipped, reason unknown (372 of 379 execute) - T19 investigates",
+    "HUMAN-ONLY, OUTSIDE F-018: rotate the Atlas credential. Re-graded MEDIUM (synthetic data, no GDPR clock) but still valid, publicly recoverable, write access to a live no-backup cluster"
   ],
   "pending_questions": []
 }
@@ -354,3 +360,8 @@ _Superseded handoff (F-012 mobile-app, shipped) retained for reference:_
 | 2026-08-18T13:10:00Z | verify_complete | §7 scan run by hand (0 vulnerable packages / tree clean / 9 commits still carry the credential). 3 dashboard visual checks confirmed by human against a live AppHost; agenda-buddy-e7e closed. F-013 has nothing unverified | Verify | aspire-wiring |
 | 2026-08-18T13:30:00Z | operation_complete | Episode 001 committed and pushed. ROADMAP drift repaired (F-014–F-017 added). F-013 shipped, claim released. Artifacts archived | Reflect | aspire-wiring |
 | 2026-08-18T13:40:00Z | roadmap_claim | F-018 refactor-minimal-apis claimed, ahead of F-014–F-017 at explicit user request | Discover | refactor-minimal-apis |
+| 2026-08-18T15:25:00Z | discover_complete | Scope decomposed into F-018/F-019/F-020. Identity's 5 write endpoints + existing DTOs found; OTLP-suppression inference withdrawn | Discover | api-refactor-foundations |
+| 2026-08-18T16:10:00Z | prd_approved | 27 reqs / 27 ACs / 9 stories, after a walkthrough that found 5 defects incl. AC-7 claiming an audit tier for a service with no audit trail | Define | api-refactor-foundations |
+| 2026-08-18T16:30:00Z | spikes_complete | Both gating risks spiked BEFORE Design, both passed. Measured 4.45s container startup reversed container-per-test to per-class; ISwaggerProvider removed the feared 6th dependency | Design | api-refactor-foundations |
+| 2026-08-18T17:05:00Z | design_approved | 5 artifacts. Threat model Full (7 threats). Repo verified PUBLIC; cluster confirmed SYNTHETIC — T-001 re-graded CRITICAL→MEDIUM and overstated PII/GDPR claims corrected across 5 documents | Design | api-refactor-foundations |
+| 2026-08-18T17:45:00Z | inception_complete | 20 tasks / 7 waves / 31 ACs. Readiness Full → Fair (3 gaps, adversarial pass refuted all 3 self-rated Strongs); AC-31 added at the gate | Plan | api-refactor-foundations |

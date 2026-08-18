@@ -318,3 +318,13 @@ So services register `AddSingleton<IMongoClient>` over `MongoConnectionResolver.
 **Consequences.** The mechanical drift protection exists through exactly the period F-019/F-020 change contracts. AC-17 is reworded from "committed" to "generated and drift-checked"; AC-19's baseline becomes the previous run's artifact (or a checked-in hash manifest) rather than the spec body. The residual severity is lower than first assessed anyway — the endpoint returns synthetic data — but it remains an unauthenticated full-record dump.
 
 **A separate, unenforced obligation (threat T-007, deferred).** The spec only delivers its stated value if diffs are *read*. CI can force regeneration; it cannot force review. Making that real — CODEOWNERS on the spec path, or a required PR label — is deferred to F-019/F-020, the features that will actually change the contract.
+
+---
+
+## ADR-021 — Threat-derived security ACs added to the F-018 PRD post-Define *(process record)*
+
+**Date:** 2026-08-18 · **Status:** Accepted
+
+Threat modelling runs at Design Step 10.5, after the Define gate closed. The three "mitigate now" threats it produced were therefore back-written into the F-018 PRD as acceptance criteria **28 (T-001)**, **29 (T-004)** and **30 (T-002)**, and materialized as structured `[security]` ACs on tasks `F-018-T08` and `F-018-T06` via `tasks.cjs ac add`.
+
+This is a logged addendum, not a Define reopen. Recording it here because adding acceptance criteria after approval is a governance act that should be auditable — and because the *reason* matters: an AC (not a task) is what the build TDD gate enumerates and what `tasks.cjs done` mechanically refuses to close without a linked test. A threat recorded only as a task-body citation is invisible to both.

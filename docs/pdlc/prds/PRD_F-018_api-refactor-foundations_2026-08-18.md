@@ -148,6 +148,21 @@ Relative to INTENT.md's personas: no effect on the Independent Service Provider 
 >
 > This is deliberately *not* downgraded to "the commands pass locally" — running the command locally proves the command works, not that CI is wired to run it. That distinction is precisely what let F-013's CI credential guard sit unexecuted until it first failed on PR #35.
 
+28. **[security] (T-001)** Given any resolved MongoDB connection string that does not target a Testcontainer-managed endpoint, the harness refuses to run and fails with a message naming the offending host. 🧪 test-first
+29. **[security] (T-004)** With `ConnectionStrings__mongodb` exported to a non-container value, the harness aborts before executing any test and names the rejected host. 🧪 test-first
+30. **[security] (T-002)** No PEM or private-key material appears in any tracked file, and no production `.csproj` references `AgendaBuddy.IntegrationTests` — both asserted in CI. 🧪 test-first
+
+> ### Addendum — threat-derived security ACs (added post-Define, 2026-08-18)
+>
+> ACs 28–30 were **added after the Define gate**, which is expected and auditable: threat modelling runs at Design, so security criteria it produces are a logged addition rather than a Define reopen. Each corresponds to a "mitigate now" threat from `threat-model.md` and is materialized as a structured AC on its task (`F-018-T08` for T-001/T-004, `F-018-T06` for T-002).
+>
+31. `KafkaClientFake` **records** the topic-creation call, asserted on the provider-registration path — so the per-provider-topic convention (CONSTITUTION §3) stays guarded even though no broker runs. 🧪 test-first
+
+> **Added at the Step 18 gate (2026-08-18) on the readiness party's recommendation.** Requirement 4 had no acceptance criterion, and `F-018-T10` mapped to none — one defect seen from both ends (`ac-uncovered` + `task-orphan`). ADR-017 asserts *"the fake records calls so the topic-creation wiring is still asserted — the convention stays guarded, only the broker is faked"*; without this AC nothing verified that, so a fake that silently swallowed the call would have passed every test. Phantom noted it is structurally identical to F-013's threat T-004 failure: an ADR sentence standing in for a test.
+
+> This makes the chain mechanical rather than advisory: the build TDD gate enumerates `[security]` ACs and demands a failing-first test named after the threat id, and `node scripts/tasks.cjs done` **refuses** to close the task until a test is linked. `tasks.cjs check` currently reports 3 `security-ac-untested` findings — expected until Build links the tests. A threat mitigation can no longer be closed on a task-body citation alone.
+
+
 ---
 
 ## User Stories
@@ -293,7 +308,36 @@ The build loop enforces this at a mandatory **TDD gate** (build Step 9a-bis): im
 
 **Bodies assessed:** none.
 
+**Design gate (Step 17.5, `--design`, enforcing) — also skipped with notice, 2026-08-18.** Re-probed at Plan: still no local `.nordstrom-standards/` checkout and `Nordstrom/.nordstrom-standards-engineering` remains unreachable. Because the *skill's inputs* are unavailable rather than the user bypassing it, this is the skill's documented degradation path (skip-with-notice), **not an `/override`** — so no override ADR is required and no MUST-level finding blocks Plan approval. No `docs/standards-readiness/design-review-*.md` was produced.
+
 > Separately worth settling: Agenda Buddy is a personal project under `fererelabs`, not a Nordstrom system, so these six standards bodies may not apply at all. Deciding that deliberately would be better than letting the gate fail silently on every feature. Tracked as a `/diagnose` follow-up.
+
+---
+
+## Readiness Assessment
+
+**Triage:** Full · **Date:** 2026-08-18 · **Overall: Fair — 3 open gaps**
+
+Triage inputs: **20 tasks**, **7 waves**, **4 domains** (`backend`, `devops`, `docs`, `security`), no unresolved MUST requirement → Full.
+
+| Dimension | Rating | Evidence / gaps |
+|---|---|---|
+| **Completeness** | **Fair** | *Strong evidence:* all 27 requirements present and grouped; scope exclusions explicit (§Out of Scope, 7 items each with a reason); NFRs specified (§Non-Functional Requirements, 7 items incl. the measured 4.45 s constraint); 8 known risks each with deferral reasoning; 31 ACs all phrased as binary and all tagged `🧪 test-first`. *Gap:* **Requirement 4** (Kafka not containerised; `IKafkaClient` substituted with a recording fake) **has no acceptance criterion** — `ac-uncovered`. ADR-017 asserts "the convention stays guarded, only the broker is faked", but nothing verifies the topic-creation call is actually recorded. |
+| **Traceability** *(core)* | **Fair** | *Strong evidence:* every one of the 31 ACs maps to at least one task (AC-1→T05 … AC-30→T06); all three "mitigate now" threats are materialized as `[security]`-tagged ACs on tasks, confirmed by `tasks.cjs ac list` — **no `security-ac-unmaterialized`**. *Gap:* **F-018-T10** (`KafkaClientFake`) traces to no AC — `task-orphan`. Same root cause as the Completeness gap. |
+| **Durability** | **Fair** | *Strong evidence:* dependency graph is acyclic (34 nodes/edges rendered, 0 cycles); 7 waves sensibly ordered with the two bottlenecks (`T05`, `T08`) identified; critical path stated (7 deep); `T16` correctly decoupled from containers on spike evidence; tasks right-sized (no "build the whole thing", no single-variable tasks). *Gap:* **`T19 → T20` crosses a human gate invisible to the graph** — `dependency-missed`. `T19`, `T17` and `T18` all require a **maintainer-pushed throwaway branch** to verify, so the critical path contains a human action the dependency model cannot express or schedule. |
+
+**Open gaps at the time of the party (3):** `ac-uncovered` (Requirement 4 — Kafka fake assertion) · `task-orphan` (F-018-T10) · `dependency-missed` (T19→T20 human gate).
+
+**Resolved at the Step 18 gate:** the human accepted the recommendation, and **AC-31** was added — closing both `ac-uncovered` and `task-orphan` with one criterion. **1 gap remains open** (`dependency-missed`), disclosed rather than fixed because the no-push constraint is deliberate. The Readiness Trend row in `METRICS.md` records the planning-time state (3 gaps) so Ship Reflect can reconcile honestly against what actually surfaces — it is not rewritten to look better after the fact.
+
+**Adversarial pass: ran.** All three dimensions were initially rated **Strong** by their owning lens; each was challenged and **each dropped to Fair**:
+- *Completeness* Strong → Fair: the skeptic asked which AC verifies Requirement 4. There isn't one.
+- *Traceability* Strong → Fair: "every AC has a task" is true, but the matrix must close *both* ways — `T10` has no AC.
+- *Durability* Strong → Fair: the graph is sound *as a graph*, but three tasks are gated on a human push that no edge represents.
+
+Recording this because a self-certified Strong would have been wrong on all three counts.
+
+**Recommendation (advisory — the human decides at Step 18):** the first two gaps share one cheap fix — add an AC asserting the `KafkaClientFake` records the topic-creation call, which simultaneously covers Requirement 4 and gives `T10` a home. The third is inherent to the no-push constraint and is already documented in the plan's *Known gaps*; it needs acknowledgement, not a fix.
 
 ---
 

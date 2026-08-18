@@ -75,6 +75,7 @@ When this log accumulates **3 fires**, Jarvis flags it at the next Reflect with 
 | Feature | Name | Triage | Readiness (overall + per-dim) | Gaps@plan (by category) | Gaps@surfaced-later (by category) | Planning-accuracy delta | Taxonomy ver | Date |
 |---------|------|--------|-------------------------------|-------------------------|-----------------------------------|-------------------------|--------------|------|
 | F-013 | aspire-wiring | Skip | n/a | — | security-ac-unmaterialized:1, ac-uncovered:1, nfr-underspecified:2, dependency-missed:2, estimate-mis-scoped:1 | no-baseline (no Readiness Party row at plan) | v2 | 2026-08-18 |
+| F-018 | api-refactor-foundations | Full | Fair (C:Fair T:Fair D:Fair) | ac-uncovered:1, task-orphan:1, dependency-missed:1 | *(pending Ship Reflect 16g)* | *(pending)* | v2 | 2026-08-18 |
 
 **Attribution for F-013's surfaced-later gaps** — recorded so a later reader can judge the classification rather than trust it:
 

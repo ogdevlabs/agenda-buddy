@@ -1,8 +1,8 @@
 ---
 feature: refactor-minimal-apis
 date: 2026-08-18
-status: design-approved
-last-updated: 2026-08-18T17:05:00Z
+status: inception-complete
+last-updated: 2026-08-18T17:45:00Z
 approved-by: ogdevlabs
 approved-date: 2026-08-18T15:25:00Z
 prd: docs/pdlc/prds/PRD_F-018_api-refactor-foundations_2026-08-18.md
@@ -484,6 +484,25 @@ The user changed the Q6 Discover answer on the strength of the spike measurement
 - **Data model:** unchanged. The harness reads the existing `agenda_buddy` and `IdentityDb` schemas.
 - **API surface:** unchanged. F-018 adds no routes; it *records* the existing surface as committed OpenAPI specs extracted via `ISwaggerProvider`.
 - **Key decisions:** container-per-class (reversed from per-test on measured evidence) · stubbed Kafka · direct-driver audit assertions · out-of-slnf structural separation · spec generation decoupled from containers entirely.
+
+## Readiness Party Triage
+
+- Task count: **20**
+- Waves: **7**
+- Domains: `backend`, `devops`, `docs`, `security`
+- Unresolved MUST requirements: no
+- **Triage tier: Full**
+
+Outcome: **Fair — 3 open gaps** (`ac-uncovered`, `task-orphan`, `dependency-missed`). All three lenses initially self-rated **Strong**; the adversarial pass refuted all three. One gap (`ac-uncovered` + `task-orphan`, one defect from both ends) was closed at the Step 18 gate by adding **AC-31**. MOM: `docs/pdlc/mom/MOM_readiness-party_api-refactor-foundations_2026-08-18.md`.
+
+## Threat Modeling Triage
+
+- Trust boundary changes: **yes** — token-issuing capability; `InternalsVisibleTo` widens 7 assemblies
+- Regulated data: **yes at triage, corrected after** — the cluster was later confirmed to hold only synthetic data
+- New attack surface: **yes** — committed OpenAPI specs on a public repo; a new CI job pulling images
+- **Triage tier: Full** (3/3)
+
+Outcome: 7 threats. 3 mitigate-now → `[security]` ACs 28–30. T-001 re-graded CRITICAL→MEDIUM and T-003/T-004 HIGH→MEDIUM once the synthetic-data fact landed. MOM: `docs/pdlc/mom/MOM_threat-model_api-refactor-foundations_2026-08-18.md`.
 
 ## Standards Guidance (ideation)
 
