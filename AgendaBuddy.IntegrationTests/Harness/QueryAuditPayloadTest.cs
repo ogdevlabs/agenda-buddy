@@ -23,8 +23,11 @@ namespace AgendaBuddy.IntegrationTests.Harness;
 /// be wrong about.
 /// </para>
 /// <para>
-/// The literal <c>GET /api/v1/providers</c> wording is re-checked at F-016-T12, when that route becomes
-/// authenticated, and F-016-T19 attests it.
+/// ✅ <b>The literal wording is now covered too.</b> F-016-T12 authenticated
+/// <c>GET /api/v1/providers</c>, so F-016-T19 added
+/// <see cref="T005_TheLiteralCriterion_AnAuthenticatedGetProvidersIsAttributedAndCarriesNoPii"/> against
+/// the exact route AC-24 names. The Calendar case is kept: it exercises a different one of the nine
+/// handlers.
 /// </para>
 /// <para>
 /// The assertion searches the raw <c>data</c> string for values that were actually seeded, rather than
@@ -33,18 +36,25 @@ namespace AgendaBuddy.IntegrationTests.Harness;
 /// </para>
 /// </remarks>
 [Collection(HarnessCollection.Name)]
-public class QueryAuditPayloadTest : IClassFixture<ServiceHostFixture<CalendarAnchor>>
+public class QueryAuditPayloadTest :
+    IClassFixture<ServiceHostFixture<CalendarAnchor>>,
+    IClassFixture<ServiceHostFixture<ProviderAnchor>>
 {
     private const string ProviderEmail = "audited-provider@example.com";
     private const string CustomerEmail = "audited-customer@example.com";
     private const string AppointmentDescription = "a-uniquely-identifiable-appointment-note";
 
     private readonly ServiceHostFixture<CalendarAnchor> _host;
+    private readonly ServiceHostFixture<ProviderAnchor> _providerHost;
     private readonly TokenFactory _tokens;
 
-    public QueryAuditPayloadTest(ServiceHostFixture<CalendarAnchor> host, CryptoSessionFixture crypto)
+    public QueryAuditPayloadTest(
+        ServiceHostFixture<CalendarAnchor> host,
+        ServiceHostFixture<ProviderAnchor> providerHost,
+        CryptoSessionFixture crypto)
     {
         _host = host;
+        _providerHost = providerHost;
         _tokens = new TokenFactory(crypto);
     }
 
@@ -135,5 +145,42 @@ public class QueryAuditPayloadTest : IClassFixture<ServiceHostFixture<CalendarAn
             .FirstOrDefaultAsync();
 
         Assert.Null(audit);
+    }
+
+    [Fact]
+    public async Task T005_TheLiteralCriterion_AnAuthenticatedGetProvidersIsAttributedAndCarriesNoPii()
+    {
+        // AC-24 is worded against GET /api/v1/providers. When this test's sibling above was written (T18)
+        // that route was still anonymous, so an AUTHENTICATED read of it was impossible and only the actor
+        // half could be shown on the Calendar route. F-016-T12 authenticated it, so the criterion can now be
+        // attested against the exact route it names. Added at T19 rather than left as a near-miss.
+        using var service = _providerHost.StartService("Production");
+
+        await service.Database
+            .GetCollection<ProviderEntity>("providers")
+            .InsertOneAsync(SeededProvider());
+
+        var request = new HttpRequestMessage(HttpMethod.Get, "api/v1/providers");
+        request.Headers.Authorization = new AuthenticationHeaderValue(
+            "Bearer", _tokens.CreateToken(ProviderEmail, TokenFactory.ProviderRole));
+
+        var response = await service.Client.SendAsync(request);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var audit = await service.Database
+            .GetCollection<Event>("events")
+            .Find(Builders<Event>.Filter.Eq(e => e.Type, "GetProvidersQuery"))
+            .FirstOrDefaultAsync();
+
+        Assert.NotNull(audit);
+        Assert.Equal(ProviderEmail, audit!.Actor);
+        Assert.Equal("""{"resultCount":1}""", audit.Data);
+
+        // GetProvidersQueryHandler.cs:23 used to serialise every provider, every embedded appointment and
+        // every customer email into this document on every call.
+        var record = audit.ToJson();
+        Assert.DoesNotContain(CustomerEmail, record, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain(AppointmentDescription, record, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain(ProviderEmail, audit.Data!, StringComparison.OrdinalIgnoreCase);
     }
 }
