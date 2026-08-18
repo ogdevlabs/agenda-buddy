@@ -32,6 +32,11 @@ public class ContainerRuntimeGuardTest
     [Fact]
     public async Task MongoContainer_StartsAgainstLocalDocker_WithoutLoadingSshNet()
     {
+        // F-016-T04 / AC-7. Without this line, a stopped container runtime makes THIS test the
+        // unexplained stall the preflight exists to prevent — it was the first container start in the
+        // harness and had no guard in front of it.
+        DockerPreflight.EnsureAvailable();
+
         var container = new MongoDbBuilder().WithImage("mongo:7.0").Build();
 
         await container.StartAsync();
