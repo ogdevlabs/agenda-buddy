@@ -46,11 +46,11 @@ public class EventsHelperTest
         // Act
         var result = await EventsHelper.AddProfessionEvent(_mockRequestCollection.Object, _mockMediator.Object,
             _mockProfessionService.Object, _professionEntity);
-        
+
         // Assert
         Assert.Equal(expectedResponse, result);
     }
-    
+
     [Fact]
     public async Task GetProfessionByNameEvent_ReturnSuccess()
     {
@@ -67,11 +67,11 @@ public class EventsHelperTest
         // Act
         var result = await EventsHelper.GetProfessionByNameEvent(_mockRequestCollection.Object, _mockMediator.Object,
             _mockProfessionService.Object, "AnyName");
-        
+
         // Assert
         Assert.Equal(expectedResponse, result);
     }
-    
+
     [Fact]
     public async Task GetProfessionsEvent_ReturnSuccess()
     {
@@ -90,7 +90,7 @@ public class EventsHelperTest
         // Act
         var result = await EventsHelper.GetAllProfessionsEvent(_mockRequestCollection.Object, _mockMediator.Object,
             _mockProfessionService.Object);
-        
+
         // Assert
         Assert.Equal(expectedResponse, result);
     }

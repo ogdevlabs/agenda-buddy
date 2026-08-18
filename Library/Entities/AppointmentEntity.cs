@@ -4,7 +4,7 @@ namespace Library.Entities;
 public class AppointmentEntity
 {
     public AppointmentEntity()
-        
+
     {
     }
 

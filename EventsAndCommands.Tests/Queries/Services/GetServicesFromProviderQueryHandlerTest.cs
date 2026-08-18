@@ -9,6 +9,6 @@ public class GetServicesFromProviderQueryHandlerTest
     [Fact]
     public void METHOD()
     {
-        
+
     }
 }

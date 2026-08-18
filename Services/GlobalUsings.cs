@@ -23,5 +23,6 @@ global using Microsoft.AspNetCore.WebUtilities;
 global using Microsoft.Net.Http.Headers;
 global using MiniValidation;
 global using Services.Events;
-global using Services.Requests;global using EventAndCommands;
+global using Services.Requests;
+global using EventAndCommands;
 global using EventAndCommands.Persitency;

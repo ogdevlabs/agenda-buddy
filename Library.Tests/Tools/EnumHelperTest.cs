@@ -9,6 +9,6 @@ public class EnumHelperTest
     [Fact]
     public void METHOD()
     {
-        
+
     }
 }

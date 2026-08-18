@@ -18,7 +18,7 @@ public class UpdateCustomerCommandHandler(
             customerEntity.KafkaTopic = customer.KafkaTopic;
             customerEntity.SubscribedProviderCollection = customer.SubscribedProviderCollection;
             customerEntity.AppointmentCollection = customer.AppointmentCollection;
-            
+
             var updateResult = await customerService.UpdateCustomerAsync(customer.Id.ToString(), customerEntity);
             if (updateResult)
             {

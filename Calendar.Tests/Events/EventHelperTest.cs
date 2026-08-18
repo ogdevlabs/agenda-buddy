@@ -11,6 +11,6 @@ public class EventHelperTest
     [Fact]
     public void METHOD()
     {
-        
+
     }
 }

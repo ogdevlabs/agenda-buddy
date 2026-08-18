@@ -7,6 +7,6 @@ public class MongoDbConfigurationTest
     [Fact]
     public void METHOD()
     {
-        
+
     }
 }

@@ -69,7 +69,7 @@ if (app.Environment.IsDevelopment())
 
             if (exceptionContext.Request.AcceptsJson()
                 && exceptionContext.RequestServices.GetRequiredService<IProblemDetailsService>() is
-                    { } problemDetailsService)
+                { } problemDetailsService)
             {
                 await problemDetailsService.WriteAsync(new ProblemDetailsContext
                 {

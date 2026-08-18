@@ -20,8 +20,8 @@ public class CustomerEntity
     }
 
     [BsonElement("_id")] public ObjectId Id { get; set; }
-    [Required] [BsonElement("first_name")] public string? FirstName { get; set; }
-    [Required] [BsonElement("last_name")] public string? LastName { get; set; }
+    [Required][BsonElement("first_name")] public string? FirstName { get; set; }
+    [Required][BsonElement("last_name")] public string? LastName { get; set; }
 
     [BsonElement("email")]
     [EmailAddress]

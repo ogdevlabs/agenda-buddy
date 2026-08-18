@@ -11,6 +11,6 @@ public class BookingServiceTest
     [Fact]
     public void METHOD()
     {
-        
+
     }
 }

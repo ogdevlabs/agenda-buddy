@@ -91,11 +91,11 @@ public class EventsHelperTest
         _mockRequestCollection
             .Setup(rc => rc.GetCustomerByEmail(It.IsAny<IMediator>(), It.IsAny<CustomerService>(), It.IsAny<string>()))
             .ReturnsAsync(expectedResponse);
-        
+
         // Act
         var result = await EventsHelper.GetCustomerByEmailEvent(_mockRequestCollection.Object, _mockMediator.Object,
             _mockCustomerService.Object, "Any@email.com");
-        
+
         // Assert
         Assert.Equal(expectedResponse, result);
     }

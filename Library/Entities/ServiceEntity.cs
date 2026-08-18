@@ -16,7 +16,7 @@ public class ServiceEntity
 
     [BsonElement("_id")] public ObjectId Id { get; set; }
 
-    [Required] [BsonElement("name")] public string Name { get; set; } = null!;
+    [Required][BsonElement("name")] public string Name { get; set; } = null!;
 
     [Required]
     [BsonElement("description")]

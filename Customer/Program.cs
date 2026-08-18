@@ -73,7 +73,7 @@ if (app.Environment.IsDevelopment())
 
             if (exceptionContext.Request.AcceptsJson()
                 && exceptionContext.RequestServices.GetRequiredService<IProblemDetailsService>() is
-                    { } problemDetailsService)
+                { } problemDetailsService)
             {
                 // Write as JSON problem details
                 await problemDetailsService.WriteAsync(new ProblemDetailsContext
@@ -184,10 +184,10 @@ customers.MapGet("/{email}", async Task<Results<Ok<CustomerEntity>, NotFound>> (
 
     var customer = await cache.GetOrCreateAsync(key,
         async token => await EventsHelper.GetCustomerByEmailEvent(requestCollection, mediator, customerService, email));
-    
+
     if (customer is not null)
         return TypedResults.Ok(customer);
-    
+
     return TypedResults.NotFound();
 }).WithName("GetCustomerByEmail");
 

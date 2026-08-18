@@ -9,6 +9,6 @@ public class CheckCalendarAvailabilityQueryHandlerTest
     [Fact]
     public void METHOD()
     {
-        
+
     }
 }

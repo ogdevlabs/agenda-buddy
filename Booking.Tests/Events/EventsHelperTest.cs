@@ -22,7 +22,7 @@ public class EventsHelperTests
             EmailProvider = "Provider@email.com",
             EmailCustomer = "Customer@email.com"
         };
-        
+
     }
 
     [Fact]

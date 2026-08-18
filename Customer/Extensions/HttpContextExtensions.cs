@@ -1,4 +1,5 @@
 namespace Customer.Extensions;
+
 [ExcludeFromCodeCoverage]
 public static class HttpContextExtensions
 {

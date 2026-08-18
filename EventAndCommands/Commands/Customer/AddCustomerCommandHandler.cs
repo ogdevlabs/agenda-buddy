@@ -46,7 +46,7 @@ public class AddCustomerCommandHandler(
 
     private async Task<string> CreateTopic(string email)
     {
-        TopicName= KafkaHelper.CreateCustomerTopicName(email);
+        TopicName = KafkaHelper.CreateCustomerTopicName(email);
         return await kafkaClient.CreateTopicIfNotExist(TopicName);
     }
 }

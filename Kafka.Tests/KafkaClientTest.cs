@@ -7,6 +7,6 @@ public class KafkaClientTest
     [Fact]
     public void METHOD()
     {
-        
+
     }
 }

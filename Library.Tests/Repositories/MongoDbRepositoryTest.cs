@@ -8,6 +8,6 @@ public class MongoDbRepositoryTest
     [Fact]
     public void METHOD()
     {
-        
+
     }
 }

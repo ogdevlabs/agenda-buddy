@@ -1,4 +1,5 @@
 namespace Profession.Extensions;
+
 [ExcludeFromCodeCoverage]
 public static class HttpContextExtensions
 {

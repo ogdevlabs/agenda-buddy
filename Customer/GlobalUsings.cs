@@ -26,5 +26,6 @@ global using Microsoft.AspNetCore.Mvc;
 global using Microsoft.AspNetCore.WebUtilities;
 global using Microsoft.Net.Http.Headers;
 global using MiniValidation;
-global using MongoDB.Driver;global using EventAndCommands;
+global using MongoDB.Driver;
+global using EventAndCommands;
 global using EventAndCommands.Persitency;

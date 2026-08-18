@@ -9,6 +9,6 @@ public class GetProviderByEmailQueryHandlerTest
     [Fact]
     public void METHOD()
     {
-        
+
     }
 }

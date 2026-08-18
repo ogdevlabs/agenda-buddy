@@ -77,7 +77,7 @@ if (app.Environment.IsDevelopment())
 
             if (exceptionContext.Request.AcceptsJson()
                 && exceptionContext.RequestServices.GetRequiredService<IProblemDetailsService>() is
-                    { } problemDetailsService)
+                { } problemDetailsService)
             {
                 // Write as JSON problem details
                 await problemDetailsService.WriteAsync(new ProblemDetailsContext

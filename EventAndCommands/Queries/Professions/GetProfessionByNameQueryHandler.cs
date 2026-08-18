@@ -8,7 +8,7 @@ public class GetProfessionByNameQueryHandler(IMediator mediator, ProfessionServi
 
     public async Task<ProfessionEntity> Handle(GetProfessionByNameQuery request, CancellationToken cancellationToken)
     {
-        await mediator.Publish(new GetProfessionByNameEvent{ Name = name }, cancellationToken);
+        await mediator.Publish(new GetProfessionByNameEvent { Name = name }, cancellationToken);
         var profession = await professionService.GetProfessionAsync(name);
         if (profession != null)
         {
