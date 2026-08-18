@@ -5,7 +5,7 @@
      Claude reads this file at the start of every session to auto-resume from the last checkpoint.
      If this file is missing or empty, PDLC will prompt you to run /pdlc init. -->
 
-**Last updated:** 2026-08-18T19:55:00Z
+**Last updated:** 2026-08-18T20:18:00Z
 
 ---
 
@@ -64,7 +64,7 @@ Build
 
 ## Last Checkpoint
 
-Construction / Build / 2026-08-18T19:55:00Z (context cleared here — see Context Checkpoint)
+Construction / Build / 2026-08-18T20:18:00Z — **wave 3 complete** (T03, T04, T10). Next: wave 4 (T05, T06).
 
 ---
 
@@ -86,15 +86,23 @@ agent-teams
 
 ## Active Blockers
 
-> ### 🔖 RESUME MARKER — context was cleared 2026-08-18T19:55Z mid-Build
+> ### 🔖 RESUME MARKER — updated 2026-08-18T20:18Z, wave 3 complete
 >
-> **F-016 `secure-public-endpoints` is in Construction / Build, 2 of 20 tasks done, on branch
-> `feat/F-016-secure-public-endpoints` (5 commits, nothing pushed, tree clean).**
+> **F-016 `secure-public-endpoints` is in Construction / Build, 5 of 20 tasks done, on branch
+> `feat/F-016-secure-public-endpoints` (8 commits, nothing pushed, tree clean apart from PDLC docs).**
+>
+> Waves 1–3 are done: T01, T02, T03, T04, T10. **Next is wave 4 — T05 (`TokenFactory`) and T06
+> (`ServiceHostFixture`, the second bottleneck, carrying the CRITICAL security AC-20 / T-002).**
+> A wave-4 standup has not been held yet.
 >
 > Read the **`## Context Checkpoint`** block below before doing anything — it is written to be read
-> cold and contains the resume command, the next three ready tasks, nine gotchas that will otherwise
-> bite, the measured container timings, and one accepted-risk decision the maintainer may want to
-> revisit (ADR-030, the SSH.NET CVE).
+> cold. Note the gotcha list still applies in full, plus three things wave 3 established:
+>
+> - `HarnessCollection` (in `Harness/CryptoSessionFixture.cs`) is the collection every harness class
+>   must join — it disables parallelization for the `JWT_PUBLIC_KEY` race and shares the one keypair.
+> - `DockerPreflight.EnsureAvailable()` must be called before **any** container start.
+> - `CryptoSessionFixture` exposes `PublicKeyPem` and a live `SigningKey` (RSA) — deliberately **no**
+>   private-key PEM string. T05 signs with `SigningKey`; T06 exports `PublicKeyPem` as `JWT_PUBLIC_KEY`.
 >
 > Fastest path back in: `/build`. **Filter the ready queue on `epic:secure-public-endpoints`** — it is
 > not feature-scoped and will otherwise hand you a paused F-018 task.
@@ -217,19 +225,33 @@ re-planning (`/continue`).
 
   "branch": "feat/F-016-secure-public-endpoints",
   "branch_base": "main @ e35938b (freshly pulled; branched at the maintainer's request, NOT off the F-018 branch)",
-  "commits_on_branch": 5,
+  "commits_on_branch": 8,
   "pushed": false,
-  "working_tree": "clean",
+  "working_tree": "clean apart from PDLC docs (STATE, the wave-3 MOM, task files)",
 
-  "progress": "2 of 20 tasks done — F-016-T01 (Persitency -> Persistence rename) and F-016-T02 (integration test project + InternalsVisibleTo x7).",
-  "ready_queue_next": ["F-016-T03 CryptoSessionFixture", "F-016-T04 DockerPreflight", "F-016-T10 GetPagedAsync"],
-  "critical_path": "T01 -> T02 -> T03 -> T06 -> T07 -> T08 -> T12 -> T15 -> T19 -> T20 (10 deep). T02 is done; the remaining bottleneck is T06 (ServiceHostFixture), which carries the CRITICAL security AC.",
+  "progress": "5 of 20 tasks done — T01 (Persitency -> Persistence rename), T02 (integration project + InternalsVisibleTo x7), T03 (CryptoSessionFixture + AC-3 hygiene tests), T04 (DockerPreflight), T10 (GetPagedAsync).",
+  "ready_queue_next": ["F-016-T05 TokenFactory", "F-016-T06 ServiceHostFixture"],
+  "critical_path": "T01 -> T02 -> T03 -> T06 -> T07 -> T08 -> T12 -> T15 -> T19 -> T20 (10 deep). T01/T02/T03 are done; the remaining bottleneck is T06 (ServiceHostFixture), which carries the CRITICAL security AC-20 / T-002.",
 
   "test_state": {
-    "backend": "309 passing / 0 failing / 0 warnings across 12 projects via `dotnet test agenda-buddy-backend.slnf`. Baseline was 305; +4 from the T01 namespace test.",
-    "integration": "9 passing via `dotnet test AgendaBuddy.IntegrationTests/AgendaBuddy.IntegrationTests.csproj` — a SEPARATE command, see ADR-031",
-    "mobile": "74 (67 passing, 7 skipped) via `dotnet test MobileApp.Tests/MobileApp.Tests.csproj /p:MobileWorkloads=false` — untouched by F-016"
+    "backend": "322 passing / 0 failing / 0 warnings across 12 projects via `dotnet test agenda-buddy-backend.slnf`. 305 baseline -> 309 (T01) -> 313 (T03 hygiene x4) -> 322 (T10: +3 contract, +6 semantics).",
+    "integration": "23 passing via `dotnet test AgendaBuddy.IntegrationTests/AgendaBuddy.IntegrationTests.csproj` — a SEPARATE command, see ADR-031. 9 (T02) + 4 (T03) + 10 (T04).",
+    "mobile": "74 (67 passing, 7 skipped) via `dotnet test MobileApp.Tests/MobileApp.Tests.csproj /p:MobileWorkloads=false` — re-verified after T10 touched Library, unchanged"
   },
+
+  "WAVE_3_ESTABLISHED": {
+    "HarnessCollection": "Harness/CryptoSessionFixture.cs. Every harness test class must join it: [Collection(HarnessCollection.Name)]. DisableParallelization = true for the JWT_PUBLIC_KEY startup race, and it shares the one CryptoSessionFixture. NOTE: Identity.Tests/Auth/TestCollectionDefinition.cs could NOT be reused — xUnit collection definitions are per-assembly. The pattern transfers, the type does not.",
+    "DockerPreflight": "Harness/DockerPreflight.cs. Call EnsureAvailable() before ANY container start; ContainerRuntimeGuardTest already does. Resolution order matches Testcontainers: DOCKER_HOST -> docker.host in ~/.testcontainers.properties -> current docker context -> default socket. It NEVER blocks on uncertainty (tcp:// reports available) because a false positive would stop a working suite.",
+    "CryptoSessionFixture": "Exposes PublicKeyPem and a live RSA SigningKey. Deliberately NO private-key PEM string — a string is what gets logged or pasted into a fixture. T05 signs with SigningKey; T06 exports PublicKeyPem as JWT_PUBLIC_KEY.",
+    "GetPagedAsync": "Task<(IEnumerable<TEntity> Items, long TotalCount)> GetPagedAsync(int skip, int take) on IRepository<T>. Negatives normalised to 0 in BOTH implementers, because Skip(-1) throws on the driver but is a no-op in LINQ. Clamping the caller's pageSize is T15's job, not the repository's (ADR-023).",
+    "measured_docker_facts": "No /var/run/docker.sock on this machine. ~/.docker/config.json currentContext = rancher-desktop -> unix:///Users/<user>/.rd/docker.sock. Testcontainers.NET does NOT shell out to the docker CLI; it uses the engine API over that socket. Both halves of T04's stated premise were wrong and are corrected in DockerPreflight's remarks."
+  },
+
+  "WAVE_3_DEBT": [
+    "MongoDbRepository<T>.GetPagedAsync has NO test of its Mongo semantics — not unit-testable (live DB + the driver's fluent chain ends in an extension method Moq cannot intercept). First real exercise is T15's paginated endpoint tests. T19's attestation must not claim otherwise. Standup finding E-1.",
+    "AC-3's tree-hygiene tests live in Library.Tests, NOT the harness, so the existing api CI job runs them on every PR — the harness is out of the slnf (ADR-031) and its CI job does not exist until T20. Consider moving them once T20 is green.",
+    "DockerPreflight residual: if the socket exists and something is listening but the daemon is wedged, the preflight passes and Testcontainers' own error surfaces. Detecting that needs a real API call with its own timeout budget."
+  ],
 
   "READ_FIRST_ON_RESUME": [
     "docs/pdlc/prds/plans/plan_F-016_secure-public-endpoints_2026-08-18.md — the 10 known gaps section names everything that will surprise the implementer",
@@ -494,3 +516,7 @@ _Superseded handoff (F-012 mobile-app, shipped) retained for reference:_
 | 2026-08-18T19:22:00Z | construction_start | Build started on `feat/F-016-secure-public-endpoints`, branched off freshly-pulled `main` at the maintainer's request. Wave 1 is a single task (T01) so no standup | Build | secure-public-endpoints |
 | 2026-08-18T19:35:00Z | task_complete | **F-016-T01 done** — `Persitency` → `Persistence`. 11 files, one reference each, exactly as measured. **309 passing / 0 failing / 0 warnings** across 12 projects (305 baseline + 4 new). CONSTITUTION §9's prohibition retired *and its stated reason recorded as wrong* — the rename broke nothing. Red phase was 4 failing assertions, not a build break, because the test resolves the namespace via `Assembly.GetType` | Build | secure-public-endpoints |
 | 2026-08-18T19:52:00Z | task_complete | **F-016-T02 done** — integration project + `InternalsVisibleTo` × 7. Three unanticipated findings: `WebApplicationFactory<Program>` is **ambiguous across 7 assemblies** (top-level statements → internal `Program` in the global namespace) — resolved via a public per-service anchor type, which also means `InternalsVisibleTo` is **not** what enables hosting, contrary to AC-2's rationale; **SSH.NET GHSA-q939-rpr3-3284 (HIGH) has no patched version** — accepted as unreachable and *tested* (ADR-030); excluded from the slnf per the MobileApp precedent so the unit gate stays Docker-free (ADR-031). Measured: container **3 s warm / 62 s cold**, beating the spike's 4.45 s. Backend 309 green, integration 9 green | Build | secure-public-endpoints |
+| 2026-08-18T19:56:00Z | wave_kickoff | Wave 3 standup (solo) — **3 tasks confirmed parallel, 0 resequenced**; the plan's parallelism claim held, unlike F-018's wave 1. Five findings carried into the tasks: xUnit collection definitions are per-assembly so `Identity.Tests`' cannot be reused (B-1); `ContainerRuntimeGuardTest` starts a container unguarded (P-1); T04's probe/diagnose split is the substance of AC-7 (P-2); `MongoDbRepository<T>` is untestable without Mongo so its paging semantics land on T15 (E-1); keep the empty `METHOD()` stub per AC-19 (E-2) | Build | secure-public-endpoints |
+| 2026-08-18T20:02:00Z | task_complete | **F-016-T03 done** — `CryptoSessionFixture` + `HarnessCollection` + AC-3's two tree-level assertions. Diverges from the `RsaKeyHelper` precedent by producing **no private-key PEM string at all**. Two corrections to how AC-3 had to be tested: the csproj half must match `ProjectReference`, not the project name, because seven production csprojs legitimately name the harness in `InternalsVisibleTo` (AC-2) and a string match would be red forever; and a **dead hardcoded public-key PEM constant** in `AuthenticationExtensionsTest` was the only committed PEM payload in the tree — removed, which is what makes AC-3 enforceable literally instead of with a carve-out. Hygiene tests placed in `Library.Tests` so the existing `api` CI job runs them. Backend 313 / integration 13 | Build | secure-public-endpoints |
+| 2026-08-18T20:10:00Z | task_complete | **F-016-T04 done** — `DockerPreflight`. AC-7 **verified empirically end to end**: a bogus `DOCKER_HOST` now fails immediately with the endpoint, its source, the problem and four remedies instead of stalling. Probe split from diagnose so the message is testable without uninstalling Docker. **Both halves of the task's stated premise were wrong** and are corrected in code: Testcontainers.NET does not shell out to the docker CLI, and `/var/run/docker.sock` does not exist on this machine — the endpoint arrives via the `rancher-desktop` docker context, so a preflight hardcoded to the default socket would have reported a false failure. Never blocks on uncertainty, with its own test. Backend 313 / integration 23 | Build | secure-public-endpoints |
+| 2026-08-18T20:17:00Z | task_complete | **F-016-T10 done** — `GetPagedAsync` on `IRepository<T>` and both implementers (exactly two, confirmed by grep). Negatives normalised to 0 in both, because `Skip(-1)` throws on the driver but is a silent no-op in LINQ — one interface would otherwise have two behaviours. Coverage split recorded rather than papered over: contract by reflection in `Library.Tests`, semantics against the in-memory implementer in `Identity.Tests`, **Mongo's own paging behaviour not covered until T15**. Backend 322 / integration 23 / mobile 74 unchanged | Build | secure-public-endpoints |
