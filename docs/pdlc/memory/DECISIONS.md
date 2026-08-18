@@ -468,3 +468,55 @@ A logged addendum, not a Define reopen — same pattern as ADR-021 for F-018. Re
 `tasks.cjs check` now reports **7 `security-ac-untested` findings for F-016** (plus 3 pre-existing for the paused F-018). Expected and correct until Build links the tests.
 
 **Notable relative to F-018:** F-018's threat model produced three mitigate-now threats; F-016's produced seven, and **five of its eight threats were introduced or made newly reachable by the feature itself** rather than inherited. That is the signature of threat-modelling a security fix rather than a greenfield capability, and it is why the party was worth convening at Full depth.
+
+---
+
+## ADR-030 — Accepted risk: `SSH.NET` GHSA-q939-rpr3-3284 (HIGH) enters the graph via Testcontainers, unreachable and untreatable by pinning
+
+**Date:** 2026-08-18 · **Status:** Accepted · **Feature:** F-016 (T02) · **Severity:** HIGH · **Reachability:** none, and *tested*
+
+**Context.** Adding `Testcontainers.MongoDb` — approved in ADR-015's five-package set and validated by F-018's spike — pulls `SSH.NET` transitively, which carries advisory **GHSA-q939-rpr3-3284 (HIGH)**.
+
+**Pinning cannot fix it.** Attempted and measured, not assumed:
+
+| Attempt | Result |
+|---|---|
+| `Testcontainers.MongoDb` 4.0.0 | SSH.NET 2023.0.0 — flagged |
+| 4.1.0 | SSH.NET 2024.1.0 — flagged |
+| 4.3.0 / 4.6.0 | SSH.NET 2024.2.0 — flagged |
+| explicit pin 2024.2.1 | flagged |
+| explicit pin 2025.0.0 (latest) | **flagged** |
+
+Every published version is covered by the advisory. There is no safe version to pin to, so the repo's existing `Directory.Build.props` transitive-pin mechanism — which fixed Snappier, SharpCompress, Newtonsoft.Json and Microsoft.OpenApi — does not apply here.
+
+**Decision.** Accept, on the basis that the vulnerable code is **unreachable in this solution**, and make that basis a *test* rather than a claim.
+
+`SSH.NET` is in the graph only to support Docker-over-SSH. This project talks to a local socket (Rancher Desktop). `AgendaBuddy.IntegrationTests/Harness/ContainerRuntimeGuardTest.cs` starts a real MongoDB container and asserts that **no SSH.NET assembly is loaded** while doing so. Verified passing 2026-08-18.
+
+**Why a test and not a comment.** A comment saying "we don't use SSH" decays the moment someone sets `DOCKER_HOST=ssh://…` to use a remote builder. The test fails at that point, which converts a silent risk change into a build failure. This is the same reasoning that turned threat T-006's cache-ordering invariant from prose into a test.
+
+**Consequences.**
+- `NU1903` is suppressed **in `AgendaBuddy.IntegrationTests` only**, never solution-wide, with the full rationale inline in the csproj.
+- **The suppression does not hide it from an audit.** Verified: `dotnet list package` with the vulnerability report still lists SSH.NET as High after the `NoWarn`. So **F-017's dependency-audit gate is unaffected** — it will report this, and it should.
+- **This will be the first finding F-017's scanner reports**, and the expected disposition is "accepted, see ADR-030" rather than "fix". Recorded here so F-017 does not treat it as new.
+- **Re-evaluation triggers:** a patched SSH.NET is published (drop the pin and the NoWarn); or anyone configures a remote Docker host over SSH (the guard test fails first); or Testcontainers drops the dependency.
+
+**Honest note on posture.** CONSTITUTION §7 marks a dependency audit "always required, cannot be unchecked", and it remains unimplemented (F-017 owns it). Introducing a HIGH-severity advisory while that gate is down is exactly the situation the gate exists to prevent. It is accepted here because the alternative is abandoning the harness — which contradicts ADR-015, ADR-017, F-018's passed spike, and the entire verification premise of F-016 — and because unreachability is demonstrated rather than argued. **A different maintainer could reasonably decide otherwise, and would be entitled to.**
+
+---
+
+## ADR-031 — `AgendaBuddy.IntegrationTests` is excluded from `agenda-buddy-backend.slnf`
+
+**Date:** 2026-08-18 · **Status:** Accepted · **Feature:** F-016 (T02)
+
+**Context.** `agenda-buddy-backend.slnf` is what CI's `api` job and the documented local command (`dotnet test agenda-buddy-backend.slnf`) target. The new integration project requires a running container runtime.
+
+**Decision.** Add the project to `agenda-buddy.sln` (so the solution is complete for IDE and tooling) but **not** to `agenda-buddy-backend.slnf`. The integration suite is invoked by targeting its `.csproj` directly, and F-016-T20 gives it a dedicated CI job.
+
+**Rationale — this follows an established precedent in this repo, it is not a new pattern.** `MobileApp` and `MobileApp.Tests` are excluded from the slnf by design and covered by three dedicated CI jobs (`build-android`, `build-ios`, `build-mobile-tests`) that target their csproj. The integration project has the same shape: a real external prerequisite the unit gate should not inherit.
+
+**Consequences.**
+- **The unit gate stays Docker-free.** Folding container tests into the slnf would make `dotnet test agenda-buddy-backend.slnf` — documented in `CLAUDE.md` and run by CI's `api` job — fail on any machine without a container runtime. That is a significant regression in the fast feedback loop for no benefit.
+- **The 305/309 headline count stays meaningful.** AC-19 counts the backend slnf; mixing in container tests would make the number depend on whether Docker was running.
+- **Duration stays honest.** Measured on the maintainer's machine: **3 s warm, 62 s cold** per container (the cold figure is the 1.13 GB `mongo:7.0` pull). T20 must enforce a duration budget, which is far easier for a job that contains only integration tests.
+- **Cost:** two commands instead of one, and a project that a naive `dotnet test agenda-buddy-backend.slnf` will not run. Mitigated by T20's blocking CI job — without it this would be the wrong trade, which is precisely why T20 was absorbed at the Plan gate.

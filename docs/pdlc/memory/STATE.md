@@ -5,7 +5,7 @@
      Claude reads this file at the start of every session to auto-resume from the last checkpoint.
      If this file is missing or empty, PDLC will prompt you to run /pdlc init. -->
 
-**Last updated:** 2026-08-18T19:22:00Z
+**Last updated:** 2026-08-18T19:35:00Z
 
 ---
 
@@ -64,7 +64,7 @@ Build
 
 ## Last Checkpoint
 
-Construction / Build / 2026-08-18T19:22:00Z
+Construction / Build / 2026-08-18T19:35:00Z
 
 ---
 
@@ -408,3 +408,4 @@ _Superseded handoff (F-012 mobile-app, shipped) retained for reference:_
 | 2026-08-18T19:05:00Z | design_approved | 5 artifacts approved. All 7 mitigate-now threats confirmed; 3 open questions resolved in favour of the stronger option each time — T-003 → `Provider` role, T-007 → **delete the route**, T-005 → **add `Event.actor`**. ADR-022…028 written | Design | secure-public-endpoints |
 | 2026-08-18T19:20:00Z | inception_complete | **20 tasks / 8 waves / 26 ACs** (19 + 7 threat-derived `[security]`). Readiness party **Full → Fair**, 4 gaps: **AC-12 contradicted ADR-025** (required a 403 on a route the ADR deletes — struck in-party, replaced by AC-26) and the **integration suite had no CI enforcement** (resolved at the gate by absorbing F-018's T18 as T20 — eight F-018 tasks now absorbed, not six). Standards gate skip-with-notice: plugin installed, sources unreachable | Plan | secure-public-endpoints |
 | 2026-08-18T19:22:00Z | construction_start | Build started on `feat/F-016-secure-public-endpoints`, branched off freshly-pulled `main` at the maintainer's request. Wave 1 is a single task (T01) so no standup | Build | secure-public-endpoints |
+| 2026-08-18T19:35:00Z | task_complete | **F-016-T01 done** — `Persitency` → `Persistence`. 11 files, one reference each, exactly as measured. **309 passing / 0 failing / 0 warnings** across 12 projects (305 baseline + 4 new). CONSTITUTION §9's prohibition retired *and its stated reason recorded as wrong* — the rename broke nothing. Red phase was 4 failing assertions, not a build break, because the test resolves the namespace via `Assembly.GetType` | Build | secure-public-endpoints |
