@@ -5,7 +5,7 @@
      Claude reads this file at the start of every session to auto-resume from the last checkpoint.
      If this file is missing or empty, PDLC will prompt you to run /pdlc init. -->
 
-**Last updated:** 2026-08-18T00:30:00Z
+**Last updated:** 2026-08-18T03:00:00Z
 
 ---
 
@@ -55,7 +55,7 @@ Wrap-up
 
 ## Last Checkpoint
 
-Construction / Wrap-up / 2026-08-18T00:30:00Z
+Construction / Wrap-up / 2026-08-18T03:00:00Z
 
 ---
 
@@ -66,10 +66,48 @@ agent-teams
 ---
 
 ## Active Blockers
+<!-- PENDING MARKER — read this first at the start of the next session. Each item below is either
+     an action only a human can take, or work that is written but not yet exercised. Nothing here is
+     blocked on more code being written. -->
 
-- **⚠️ OPERATIONAL, HIGHEST RESIDUAL SEVERITY — rotate the `agenda_buddy` Atlas credential and review the cluster access log.** F-013 removed the credential from all tracked files, which does **not** remediate the disclosure: it remains in git history and stays valid until rotated at Atlas. Threat T-001 / PRD OQ-1. Merging F-013 does not close this. *(Raised by Phantom at Party Review — it was documented in four places but absent from the one list a handoff reader scans first.)*
-- **F-013-T14 / ISSUE-001 — RESOLVED 2026-08-18.** The AppHost now starts all 7 services; AC-1.1, AC-1.2, AC-1.3, AC-2.3 and AC-3.4 are verified in `docs/pdlc/design/aspire-wiring/verification.md`. Root cause was a missing `AgendaBuddy.AppHost/Properties/launchSettings.json`: without `DOTNET_ENVIRONMENT=Development` the AppHost ran as `Production`, user secrets never loaded, every secret parameter went `ValueMissing`, and all seven services parked in `Waiting` with nothing logged. Both "blockers" in the original report were misdiagnoses — `AddProject<TProject>` was never at fault. A second defect surfaced once services could start: `WithReference(database)` injects `ConnectionStrings__agenda-buddy`, not the `ConnectionStrings:mongodb` that `MongoConnectionResolver` reads, which crashed `profession` on startup. Both fixed, +8 regression tests, 294 passing.
-- **Three visual checks remain before /ship is fully attested** (a human at the dashboard, ~2 minutes): AC-3.4's traces/metrics/logs rendering for all 7, threat **T-004**'s span inspection (`http.route` templates, not raw paths carrying an email), and review finding **A-3** (JWT parameters masked). Traffic including an email-bearing path has already been generated.
+### 1. ⚠️ Rotate the `agenda_buddy` Atlas credential — highest residual risk, human-only
+
+**→ `docs/issues/ISSUE-002-atlas-credential-rotation.md`** (tracker: `agenda-buddy-41s`)
+
+A connection string with **full read/write** access to the cluster was committed to 17 tracked files.
+F-013 removed it from the working tree; it **remains in git history and remains valid until the
+password is changed at Atlas**. The cluster holds client names, email addresses, phone numbers and
+appointment records — who met which therapist or coach and when. That makes an unrotated credential a
+notifiable personal-data breach with a 72-hour GDPR clock, an unlogged data-modification risk with **no
+backups to restore from**, and the first prerequisite for any cloud deployment. Documenting it again is
+not progress; only the rotation closes it. ISSUE-002 has the exact Atlas steps, the access-log review
+window, and the command that finds the first commit containing it.
+
+### 2. Cloud deployment capability is written but never run
+
+**→ `docs/deployment.md`** (tracker: `agenda-buddy-dwe`, blocked by `agenda-buddy-41s`)
+
+`azure.yaml`, `.github/workflows/deploy.yml` and the `DeploymentTarget.Cloud` shape of the AppHost all
+exist and are covered by 47 AppHost tests, but **no deployment has been performed** — there is no Azure
+subscription wired to this machine. The first deployment must be run by hand (`azd up`) because azd
+discovers the parameter names interactively; those names then go into the `AZD_ENV_VARS` repository
+secret for the workflow. Item 1 is a hard prerequisite: deploying against an unrotated credential means
+the deployment and whoever else holds it share a database.
+
+### 3. Three dashboard visual checks for F-013 (~2 minutes, needs eyes)
+
+**→ `docs/pdlc/design/aspire-wiring/verification.md`** (tracker: `agenda-buddy-e7e`)
+
+AC-3.4's traces/metrics/logs rendering for all 7 services, threat **T-004**'s span inspection
+(`http.route` templates rather than raw paths carrying an email address), and review finding **A-3**
+(JWT parameters masked in the dashboard). Everything else in F-013 is verified and merged; these are
+recorded as unverified rather than claimed. Start the AppHost, hit any service, then look.
+
+### Resolved, kept for context
+
+- **F-013-T14 / ISSUE-001 — RESOLVED 2026-08-18, merged in PR #35.** The AppHost now starts all 7 services. Root cause was a missing `AgendaBuddy.AppHost/Properties/launchSettings.json`: without `DOTNET_ENVIRONMENT=Development` the AppHost ran as `Production`, user secrets never loaded, every secret parameter went `ValueMissing`, and all seven services parked in `Waiting` with nothing logged. Both "blockers" in the original report were misdiagnoses — `AddProject<TProject>` was never at fault. A second defect surfaced once services could start: `WithReference(database)` injects `ConnectionStrings__agenda-buddy`, not the `ConnectionStrings:mongodb` that `MongoConnectionResolver` reads, which crashed `profession` on startup.
+- **`agenda-buddy-prr` — RESOLVED 2026-08-18.** `MobileApp` did not compile under `/p:MobileWorkloads=false` (`CS0103 'Application'`), which had been failing the `build-mobile-tests` job outright — all 67 MobileApp tests had never run in CI. Guarded with the existing `MOBILE` constant.
+- **CI guard that never ran — RESOLVED 2026-08-18.** `Assert every service starts in Development` consumed `secrets.CI_JWT_*`, which were never created. It was added by F-013 and CI only triggers on push to `main` or a PR to `main`, so it first executed — and first failed — on PR #35. It now generates a throwaway keypair in-step.
 
 ---
 
@@ -80,10 +118,10 @@ agent-teams
   "triggered_at": "2026-08-18T00:30:00Z",
   "active_task": null,
   "sub_phase": "Wrap-up",
-  "step": "issue-001-fixed-ready-to-ship",
+  "step": "f-013-merged-cloud-deploy-capability-added",
   "skill_file": "skills/build/steps/05-wrap-up.md",
-  "work_in_progress": "F-013 aspire-wiring — ISSUE-001 fixed and verified end-to-end. 294 tests passing, 0 warnings. The fix is UNCOMMITTED in the working tree.",
-  "next_action": "Review and commit the ISSUE-001 fix (launchSettings.json, AppHostWiring.cs, AppHostWiringTest.cs, README, docs), do the 3 dashboard visual checks, then run /ship.",
+  "work_in_progress": "F-013 merged to main (PR #35). Cloud deployment capability added on branch feat/aspire-cloud-deploy: publish/run split in AppHostWiring, azure.yaml, deploy.yml, docs/deployment.md, ISSUE-002. 305 tests passing, 0 warnings.",
+  "next_action": "Read the PENDING MARKER under Active Blockers. Item 1 (rotate the Atlas credential) is human-only and gates item 2 (first azd deployment).",
   "files_open": []
 }
 ```

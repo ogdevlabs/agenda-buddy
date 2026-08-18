@@ -122,23 +122,42 @@ dotnet run --project AgendaBuddy.AppHost
 
 The Aspire dashboard opens with all nine resources, their health, logs, traces, and metrics. `Ctrl+C` stops everything.
 
-**On the first run** Aspire prompts for three values and stores them in [user secrets](https://learn.microsoft.com/aspnet/core/security/app-secrets), scoped to the AppHost:
+### First run on a new machine — three secrets
 
-| Prompt | What to paste |
+The AppHost needs three values, held in [user secrets](https://learn.microsoft.com/aspnet/core/security/app-secrets) scoped to `AgendaBuddy.AppHost`:
+
+| Parameter | What it is |
 |---|---|
-| `jwt-public-key` | RSA public key (PEM) used by every service to verify tokens |
-| `jwt-private-key` | RSA private key (PEM) used by Identity to sign them |
-| `mongodb-password` | Any password you like — it becomes the local MongoDB root password |
+| `jwt-public-key` | RSA public key (PEM) every service uses to verify tokens |
+| `jwt-private-key` | RSA private key (PEM) Identity uses to sign them |
+| `mongodb-password` | Root password for the local MongoDB container |
 
-They are asked for once per machine and never written to the repository — this replaces the undocumented gitignored `.env` file the services previously relied on. Because they are declared as secret parameters, the dashboard masks them. To set them without the prompt:
+User secrets are **per machine and per user**, so every new host — and every fresh OS account — starts with none of them. Until they are set, the dashboard shows those parameters as `ValueMissing` and **all seven services sit in `Waiting`** (see troubleshooting below). Set all three in one go:
 
 ```bash
-dotnet user-secrets set "Parameters:mongodb-password" "<password>" --project AgendaBuddy.AppHost
+# Matched RSA pair — Identity signs with the private key, all seven verify with the public one
+openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out /tmp/jwt.key
+openssl rsa -in /tmp/jwt.key -pubout -out /tmp/jwt.pub
+
+dotnet user-secrets set "Parameters:jwt-private-key"  "$(cat /tmp/jwt.key)" --project AgendaBuddy.AppHost
+dotnet user-secrets set "Parameters:jwt-public-key"   "$(cat /tmp/jwt.pub)" --project AgendaBuddy.AppHost
+dotnet user-secrets set "Parameters:mongodb-password" "$(openssl rand -hex 16)" --project AgendaBuddy.AppHost
+
+rm -f /tmp/jwt.key /tmp/jwt.pub
+dotnet user-secrets list --project AgendaBuddy.AppHost   # expect the three Parameters:* keys
 ```
 
-`mongodb-password` is declared explicitly rather than generated because MongoDB runs on a persistent data volume: a generated password changes on every run, while the volume keeps the root user created by the first one, and nothing would ever authenticate again (see the troubleshooting entry below).
+Three things to get right:
 
-User secrets only load in the `Development` environment, which is why `AgendaBuddy.AppHost/Properties/launchSettings.json` sets `DOTNET_ENVIRONMENT=Development`. Do not delete that file, and do not run the AppHost with `--no-launch-profile` unless you export `DOTNET_ENVIRONMENT=Development` yourself.
+- **The JWT keys must be a matched pair.** Generating them independently leaves every request returning `401` with nothing else obviously wrong. The commands above derive the public key from the private one, so they always match.
+- **Each host can have its own pair.** Nothing shares tokens across machines, so there is no need to copy secrets between them. If you *do* want identical tokens on two machines, copy both key values verbatim.
+- **`mongodb-password` only takes effect on a first-ever run.** MongoDB ignores `MONGO_INITDB_ROOT_PASSWORD` when `/data/db` is non-empty, so if that host already has an `agendabuddy.apphost-*-mongodb-data` volume from an earlier attempt, remove it first — otherwise authentication fails permanently.
+
+Nothing here is ever written to the repository; this replaces the undocumented gitignored `.env` file the services previously relied on. Because all three are declared as secret parameters, the dashboard masks them.
+
+`mongodb-password` is declared explicitly rather than generated because MongoDB runs on a persistent data volume: a generated password changes on every run while the volume keeps the root user created by the first one, so nothing would ever authenticate again.
+
+**User secrets only load in the `Development` environment**, which is why `AgendaBuddy.AppHost/Properties/launchSettings.json` sets `DOTNET_ENVIRONMENT=Development`. Do not delete that file, and do not run the AppHost with `--no-launch-profile` unless you export `DOTNET_ENVIRONMENT=Development` yourself — either mistake reproduces ISSUE-001, where the whole graph hangs silently.
 
 You do **not** need to set a MongoDB connection string: the AppHost injects it.
 
@@ -196,6 +215,20 @@ The split is deliberate: point your restart probe at `/alive` and your traffic p
 ### ⚠️ The dashboard is a sensitive surface
 
 The Aspire dashboard exposes environment variables, configuration, logs, and traces for every resource. Secret parameters are masked, but treat the dashboard as privileged: do not expose its port beyond localhost, and do not screenshot it into a public issue.
+
+### Deploying to the cloud
+
+The AppHost's resource graph is also the deployment description: `azd up` turns it into Azure Container Apps — one container app per service, plus a registry and a Log Analytics workspace. The graph is built in a different shape when publishing, because a dev container on a laptop-lifetime volume is not a production database:
+
+| | Local (`dotnet run`) | Cloud (`azd up`) |
+|---|---|---|
+| MongoDB / Kafka | containers the AppHost provisions | connection strings to managed services |
+| The 7 services | processes on dynamic ports | container apps with external HTTP ingress |
+| `WaitFor` gating | yes | no — a connection string has no lifecycle |
+
+**No deployment has been performed yet.** The capability, the `azd` project file and a manual-dispatch GitHub Actions workflow exist and are unit-tested, but the first deployment has to be run by hand, and **rotating the Atlas credential is a hard prerequisite** ([ISSUE-002](docs/issues/ISSUE-002-atlas-credential-rotation.md)).
+
+→ **[docs/deployment.md](docs/deployment.md)** for the full procedure, what is verified, and the list of gaps between this and a production posture.
 
 ### Build & test
 

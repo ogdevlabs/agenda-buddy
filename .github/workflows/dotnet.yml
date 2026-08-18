@@ -26,13 +26,24 @@ jobs:
       - uses: dorny/paths-filter@v3
         id: filter
         with:
+          # On a pull_request these are evaluated against the whole base...HEAD diff, not the last
+          # commit — so one file in Library/** fires every filter that mentions it for the life of
+          # the branch. That is why the lists below are deliberate about which jobs a shared change
+          # is worth paying for.
+          #
+          # Docs-only changes (docs/**, *.md, azure.yaml) match nothing and run no build jobs. The
+          # `summary` job still reports, so a docs PR gets a green check rather than an empty one.
           filters: |
             library:
               - 'Library/**'
+              - 'Library.ServerAuth/**'
               - 'EventAndCommands/**'
               - 'Directory.Build.props'
             api:
               - 'Library/**'
+              # Library.ServerAuth was absent from every filter, so a change to JWT validation —
+              # the code that decides whether a request is authenticated — ran zero jobs.
+              - 'Library.ServerAuth/**'
               - 'EventAndCommands/**'
               - 'Booking/**'
               - 'Calendar/**'
@@ -55,16 +66,24 @@ jobs:
               - 'Dockerfile*'
               - '*/Dockerfile'
               - 'docker-compose*.yml'
-              - '.github/workflows/**'
+              # This workflow only, not '.github/workflows/**': deploy.yml cannot be validated by
+              # these jobs, so a deployment-pipeline edit no longer rebuilds the entire backend.
+              - '.github/workflows/dotnet.yml'
+            # Android and iOS each install a MAUI workload and take minutes. Reserved for changes to
+            # the app itself — a shared Library change is covered by mobile-tests below, which
+            # compiles MobileApp against it under the fallback TFM and would catch a break (that is
+            # exactly how agenda-buddy-prr's CS0103 surfaced). If a Library change ever breaks only
+            # the platform heads, add 'Library/**' back here and accept the minutes.
             mobile:
               - 'MobileApp/**'
-              - 'Library/**'
               - 'Directory.Build.props'
+              - '.github/workflows/dotnet.yml'
             mobile-tests:
               - 'MobileApp/**'
               - 'MobileApp.Tests/**'
               - 'Library/**'
               - 'Directory.Build.props'
+              - '.github/workflows/dotnet.yml'
 
   # ---------------------------------------------------------------------------
   # API services — build + test (runs when backend or shared library changes)
@@ -258,3 +277,51 @@ jobs:
           /p:MobileWorkloads=false
           --filter "Category!=Acceptance"
           --collect:"XPlat Code Coverage"
+
+  # ---------------------------------------------------------------------------
+  # One check that always reports, whatever the filters decided
+  # ---------------------------------------------------------------------------
+  # Path filtering means the set of jobs differs per PR, which makes "is CI green?" hard to answer
+  # and makes a required-status-check rule impossible to pin to a job that might not run. This job
+  # always runs, prints which filters fired, and fails if any job that *did* run failed. Point
+  # branch protection at this one.
+  summary:
+    needs: [changes, build-and-test, build-android, build-ios, build-mobile-tests]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Report what ran and why
+        env:
+          API: ${{ needs.changes.outputs.api }}
+          MOBILE: ${{ needs.changes.outputs.mobile }}
+          MOBILE_TESTS: ${{ needs.changes.outputs.mobile-tests }}
+          R_BACKEND: ${{ needs.build-and-test.result }}
+          R_ANDROID: ${{ needs.build-android.result }}
+          R_IOS: ${{ needs.build-ios.result }}
+          R_MOBILE_TESTS: ${{ needs.build-mobile-tests.result }}
+        run: |
+          {
+            echo "### CI summary"
+            echo
+            echo "| Filter | Fired | Job | Result |"
+            echo "|---|---|---|---|"
+            echo "| api | \`$API\` | build-and-test | \`$R_BACKEND\` |"
+            echo "| mobile | \`$MOBILE\` | Android build | \`$R_ANDROID\` |"
+            echo "| mobile | \`$MOBILE\` | iOS build | \`$R_IOS\` |"
+            echo "| mobile-tests | \`$MOBILE_TESTS\` | Mobile unit tests | \`$R_MOBILE_TESTS\` |"
+            echo
+            echo "\`skipped\` means no file in that filter's paths changed — not that anything was ignored."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          failed=""
+          for pair in "build-and-test:$R_BACKEND" "android:$R_ANDROID" "ios:$R_IOS" "mobile-tests:$R_MOBILE_TESTS"; do
+            name=${pair%%:*}; result=${pair#*:}
+            case "$result" in
+              failure|cancelled) failed="$failed $name($result)" ;;
+            esac
+          done
+          if [ -n "$failed" ]; then
+            echo "::error::Failed jobs:$failed"
+            exit 1
+          fi
+          echo "No job failed. Filters — api=$API mobile=$MOBILE mobile-tests=$MOBILE_TESTS"
