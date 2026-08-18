@@ -130,12 +130,25 @@ var providers = app.MapGroup("/api/v1/providers")
 // create a Topic for the provider
 providers.MapPost("/", async Task<Results<ValidationProblem, Created<ProviderEntity>>> (
         IMediator mediator,
+        ClaimsPrincipal user,
         ProviderService providerService,
         ProviderEntity providerEntity,
         IRequestCollection requestCollection) =>
     {
         if (!MiniValidator.TryValidate(providerEntity, out var errors))
             return TypedResults.ValidationProblem(errors);
+
+        // F-016 AC-11 -- BOTH arms are required. A role check alone still lets one Provider create a
+        // record under another provider's email, which is account takeover by registration. An ownership
+        // check alone would let a Customer create provider records for themselves.
+        //
+        // This is one of only two AssertRole call sites in the solution after F-016. Per
+        // 13-security.md:137 AssertRole had never been called anywhere, so the `role` claim authorized
+        // nothing at all before this feature.
+        //
+        // No local try/catch: T08's AgendaBuddyExceptionHandler maps ForbiddenException to 403 centrally.
+        OwnershipGuard.AssertRole(user, "Provider");
+        OwnershipGuard.AssertOwner(user, providerEntity.Email);
         var filter =
             SupportTools<ProviderEntity>.FilterByNameAndLastName(providerEntity.FirstName, providerEntity.LastName);
         var existingProvider = await providerService.FindProvidersAsync(filter);
