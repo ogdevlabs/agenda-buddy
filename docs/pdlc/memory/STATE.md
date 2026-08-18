@@ -5,7 +5,7 @@
      Claude reads this file at the start of every session to auto-resume from the last checkpoint.
      If this file is missing or empty, PDLC will prompt you to run /pdlc init. -->
 
-**Last updated:** 2026-08-18T20:18:00Z
+**Last updated:** 2026-08-18T20:38:00Z
 
 ---
 
@@ -64,7 +64,7 @@ Build
 
 ## Last Checkpoint
 
-Construction / Build / 2026-08-18T20:18:00Z — **wave 3 complete** (T03, T04, T10). Next: wave 4 (T05, T06).
+Construction / Build / 2026-08-18T20:38:00Z — **waves 1–5 complete: the verification harness is done.** Next: **wave 6**, the production-behaviour wave (10 tasks; T08, T09, T18 ready now). A wave-6 standup has not been held.
 
 ---
 
@@ -86,23 +86,35 @@ agent-teams
 
 ## Active Blockers
 
-> ### 🔖 RESUME MARKER — updated 2026-08-18T20:18Z, wave 3 complete
+> ### 🔖 RESUME MARKER — updated 2026-08-18T20:38Z, harness complete
 >
-> **F-016 `secure-public-endpoints` is in Construction / Build, 5 of 20 tasks done, on branch
-> `feat/F-016-secure-public-endpoints` (8 commits, nothing pushed, tree clean apart from PDLC docs).**
+> **F-016 `secure-public-endpoints` is in Construction / Build, 8 of 20 tasks done, on branch
+> `feat/F-016-secure-public-endpoints` (13 commits, nothing pushed).**
 >
-> Waves 1–3 are done: T01, T02, T03, T04, T10. **Next is wave 4 — T05 (`TokenFactory`) and T06
-> (`ServiceHostFixture`, the second bottleneck, carrying the CRITICAL security AC-20 / T-002).**
-> A wave-4 standup has not been held yet.
+> **Waves 1–5 are complete — the entire verification harness works.** T01, T02, T03, T04, T05, T06,
+> T07 and T10. The feature's central claim is now demonstrated rather than asserted: a real service is
+> hosted over HTTP against a MongoDB Testcontainer, and `AuthFailurePathTest` proves 401-on-expired and
+> **403-on-foreign-subject** against a real route.
 >
-> Read the **`## Context Checkpoint`** block below before doing anything — it is written to be read
-> cold. Note the gotcha list still applies in full, plus three things wave 3 established:
+> **Next is wave 6 — the production-behaviour wave, 10 tasks across six services.** Ready now:
+> **T08** (central 403 — gates every other endpoint task), **T09** (`AssertOwner` null-claim fix —
+> must precede T11 and T13), **T18** (audit payloads + `Event.actor`). **Hold a wave-6 standup first:**
+> the plan flags internal ordering that the dependency graph only partly encodes.
 >
-> - `HarnessCollection` (in `Harness/CryptoSessionFixture.cs`) is the collection every harness class
->   must join — it disables parallelization for the `JWT_PUBLIC_KEY` race and shares the one keypair.
-> - `DockerPreflight.EnsureAvailable()` must be called before **any** container start.
-> - `CryptoSessionFixture` exposes `PublicKeyPem` and a live `SigningKey` (RSA) — deliberately **no**
->   private-key PEM string. T05 signs with `SigningKey`; T06 exports `PublicKeyPem` as `JWT_PUBLIC_KEY`.
+> Everything in `## Context Checkpoint` still applies. What the harness now gives you:
+>
+> - `[Collection(HarnessCollection.Name)]` on every harness test class — shares the session keypair and
+>   serialises the `JWT_PUBLIC_KEY` race. Also `IClassFixture<ServiceHostFixture<XAnchor>>` for a service.
+> - `ServiceHostFixture<TEntryPoint>.StartService()` → a `ServiceHost` with `.Client` (real HTTP through
+>   the full pipeline), `.Database` (this test's own DB) and `.DatabaseName`. Container per class,
+>   database per test.
+> - `new TokenFactory(crypto)` → `CreateToken(subject, role)`, `CreateExpiredToken(...)`,
+>   `CreateTokenWithoutSubject()` (the T-001 probe).
+> - Anchor aliases live in `GlobalUsings.cs` — `ProfessionAnchor`, `CustomerAnchor`. **Add one per
+>   service as you need it**; the type is that service's public `MongoDbConfiguration`.
+> - Two traps already paid for: `MiniValidator` runs **before** `AssertOwner` on the `{email}` PUT
+>   routes, so a test with an invalid body gets 400 and never reaches the guard. And **never write
+>   `ConnectionStrings__mongodb`** — it poisons the next test class and defeats the fail-closed guard.
 >
 > Fastest path back in: `/build`. **Filter the ready queue on `epic:secure-public-endpoints`** — it is
 > not feature-scoped and will otherwise hand you a paused F-018 task.
@@ -225,17 +237,17 @@ re-planning (`/continue`).
 
   "branch": "feat/F-016-secure-public-endpoints",
   "branch_base": "main @ e35938b (freshly pulled; branched at the maintainer's request, NOT off the F-018 branch)",
-  "commits_on_branch": 8,
+  "commits_on_branch": 13,
   "pushed": false,
   "working_tree": "clean apart from PDLC docs (STATE, the wave-3 MOM, task files)",
 
-  "progress": "5 of 20 tasks done — T01 (Persitency -> Persistence rename), T02 (integration project + InternalsVisibleTo x7), T03 (CryptoSessionFixture + AC-3 hygiene tests), T04 (DockerPreflight), T10 (GetPagedAsync).",
-  "ready_queue_next": ["F-016-T05 TokenFactory", "F-016-T06 ServiceHostFixture"],
-  "critical_path": "T01 -> T02 -> T03 -> T06 -> T07 -> T08 -> T12 -> T15 -> T19 -> T20 (10 deep). T01/T02/T03 are done; the remaining bottleneck is T06 (ServiceHostFixture), which carries the CRITICAL security AC-20 / T-002.",
+  "progress": "8 of 20 tasks done — WAVES 1-5 COMPLETE, the whole verification harness. T01 rename, T02 project + InternalsVisibleTo x7, T03 CryptoSessionFixture + AC-3 hygiene, T04 DockerPreflight, T05 TokenFactory, T06 ServiceHostFixture + fail-closed guard, T07 401/403 over real HTTP, T10 GetPagedAsync.",
+  "ready_queue_next": ["F-016-T08 central 403 (gates every endpoint task)", "F-016-T09 AssertOwner null fix (MUST precede T11 and T13)", "F-016-T18 audit metadata + Event.actor"],
+  "critical_path": "T01 -> T02 -> T03 -> T06 -> T07 -> T08 -> T12 -> T15 -> T19 -> T20 (10 deep). SIX of ten are done. Both named bottlenecks (T02, T06) are cleared. Remaining: T08 -> T12 -> T15 -> T19 -> T20.",
 
   "test_state": {
-    "backend": "322 passing / 0 failing / 0 warnings across 12 projects via `dotnet test agenda-buddy-backend.slnf`. 305 baseline -> 309 (T01) -> 313 (T03 hygiene x4) -> 322 (T10: +3 contract, +6 semantics).",
-    "integration": "23 passing via `dotnet test AgendaBuddy.IntegrationTests/AgendaBuddy.IntegrationTests.csproj` — a SEPARATE command, see ADR-031. 9 (T02) + 4 (T03) + 10 (T04).",
+    "backend": "322 passing / 0 failing / 0 warnings across 12 projects via `dotnet test agenda-buddy-backend.slnf`. 305 baseline -> 309 (T01) -> 313 (T03 hygiene x4) -> 322 (T10: +3 contract, +6 semantics). Waves 4-5 added nothing here; they are all integration tests.",
+    "integration": "45 passing in 18 s via `dotnet test AgendaBuddy.IntegrationTests/AgendaBuddy.IntegrationTests.csproj` — a SEPARATE command, see ADR-031. 9 (T02) + 4 (T03) + 10 (T04) + 4 (T05) + 14 (T06) + 4 (T07). The 18 s figure is a datum for T20 duration enforcement.",
     "mobile": "74 (67 passing, 7 skipped) via `dotnet test MobileApp.Tests/MobileApp.Tests.csproj /p:MobileWorkloads=false` — re-verified after T10 touched Library, unchanged"
   },
 
@@ -245,6 +257,16 @@ re-planning (`/continue`).
     "CryptoSessionFixture": "Exposes PublicKeyPem and a live RSA SigningKey. Deliberately NO private-key PEM string — a string is what gets logged or pasted into a fixture. T05 signs with SigningKey; T06 exports PublicKeyPem as JWT_PUBLIC_KEY.",
     "GetPagedAsync": "Task<(IEnumerable<TEntity> Items, long TotalCount)> GetPagedAsync(int skip, int take) on IRepository<T>. Negatives normalised to 0 in BOTH implementers, because Skip(-1) throws on the driver but is a no-op in LINQ. Clamping the caller's pageSize is T15's job, not the repository's (ADR-023).",
     "measured_docker_facts": "No /var/run/docker.sock on this machine. ~/.docker/config.json currentContext = rancher-desktop -> unix:///Users/<user>/.rd/docker.sock. Testcontainers.NET does NOT shell out to the docker CLI; it uses the engine API over that socket. Both halves of T04's stated premise were wrong and are corrected in DockerPreflight's remarks."
+  },
+
+  "WAVE_4_5_ESTABLISHED": {
+    "how_to_write_an_endpoint_test": "[Collection(HarnessCollection.Name)] on the class, plus IClassFixture<ServiceHostFixture<XAnchor>>. Constructor takes (ServiceHostFixture<XAnchor> host, CryptoSessionFixture crypto). Then: using var service = host.StartService(); service.Client for real HTTP, service.Database for this test's own DB. new TokenFactory(crypto) for tokens. See AuthFailurePathTest for the full pattern.",
+    "anchors": "GlobalUsings.cs holds the per-service aliases (ProfessionAnchor, CustomerAnchor). ADD ONE PER SERVICE as needed: the type is that service's public MongoDbConfiguration. Booking's namespace is Booking.Configuration (SINGULAR); the other six are *.Configurations (plural).",
+    "xunit_mechanics_VERIFIED": "xUnit v2 DOES inject a collection fixture into a class fixture's constructor — verified empirically with a throwaway probe, contrary to expectation. That is what lets the session-scoped keypair and the class-scoped container compose with no process-static workaround. The class fixture type must be PUBLIC (CS0051).",
+    "fail_closed_guard": "MongoEndpointGuard, two layers. AssertNotObviouslyRemote (srv:// or credentials) runs BEFORE the container starts, so an Atlas string aborts without pulling a 1.13 GB image. AssertTargetsContainer compares HOST AND PORT against the container's own reported endpoint — NOT a localhost pattern, which was broken at the threat party. It never echoes the rejected string, so a credential cannot reach CI logs.",
+    "never_write_the_connection_string": "ServiceHostFixture treats the environment as READ-ONLY and injects the container endpoint via WebApplicationFactory UseSetting. Writing ConnectionStrings__mongodb would (a) make the guard compare its own value to itself and (b) poison the NEXT test class, which starts a different container on a different port and would read the previous class's endpoint as a conflict and abort. JWT_PUBLIC_KEY is the exception and MUST be an env var: AuthenticationExtensions.cs:16 reads it directly, not through IConfiguration, and throws at DI-registration time.",
+    "validation_precedes_authorization": "On the {email} PUT routes MiniValidator.TryValidate runs BEFORE OwnershipGuard.AssertOwner (Customer/Program.cs:150 vs :153). A test with an invalid or empty body gets 400 and NEVER REACHES THE GUARD — it reads as 'the guard does not fire'. Also a mild information-disclosure smell for F-019/F-021: an unauthorized caller can probe validation rules.",
+    "what_AC4_real_HTTP_means": "The HttpClient issues real HTTP through the service's whole pipeline — routing, authn, authz, model binding, exception handler — against real MongoDB. The transport underneath is TestServer's in-memory one, not TCP. That is what Microsoft.AspNetCore.Mvc.Testing provides and what T02's EntryPoints design selected. Stated because AC-4 says 'real HTTP request'."
   },
 
   "WAVE_3_DEBT": [
@@ -331,6 +353,7 @@ re-planning (`/continue`).
     "Do not try WebApplicationFactory<Program>: ambiguous across 7 assemblies. Use Harness/EntryPoints.cs.",
     "Do not try to pin SSH.NET to a safe version: every published version through 2025.0.0 is flagged. Attempted and measured.",
     "Do not add the integration project to agenda-buddy-backend.slnf (ADR-031).",
+    "Do not rebuild the harness or re-derive its patterns: waves 1-5 are DONE and 45 integration tests pass. Do not try WebApplicationFactory<Program>. Do not assume xUnit v2 cannot inject a collection fixture into a class fixture — it can, verified.",
     "Do not run the Nordstrom standards gate: the plugin is installed but its six source repos do not resolve. Skipped with notice at both Define and Plan; same as F-013 and F-018.",
     "Do not check CONSTITUTION section 7's Integration box: gated on 10 consecutive green runs, tracked separately (F-018 T04, NOT absorbed)."
   ],
@@ -520,3 +543,7 @@ _Superseded handoff (F-012 mobile-app, shipped) retained for reference:_
 | 2026-08-18T20:02:00Z | task_complete | **F-016-T03 done** — `CryptoSessionFixture` + `HarnessCollection` + AC-3's two tree-level assertions. Diverges from the `RsaKeyHelper` precedent by producing **no private-key PEM string at all**. Two corrections to how AC-3 had to be tested: the csproj half must match `ProjectReference`, not the project name, because seven production csprojs legitimately name the harness in `InternalsVisibleTo` (AC-2) and a string match would be red forever; and a **dead hardcoded public-key PEM constant** in `AuthenticationExtensionsTest` was the only committed PEM payload in the tree — removed, which is what makes AC-3 enforceable literally instead of with a carve-out. Hygiene tests placed in `Library.Tests` so the existing `api` CI job runs them. Backend 313 / integration 13 | Build | secure-public-endpoints |
 | 2026-08-18T20:10:00Z | task_complete | **F-016-T04 done** — `DockerPreflight`. AC-7 **verified empirically end to end**: a bogus `DOCKER_HOST` now fails immediately with the endpoint, its source, the problem and four remedies instead of stalling. Probe split from diagnose so the message is testable without uninstalling Docker. **Both halves of the task's stated premise were wrong** and are corrected in code: Testcontainers.NET does not shell out to the docker CLI, and `/var/run/docker.sock` does not exist on this machine — the endpoint arrives via the `rancher-desktop` docker context, so a preflight hardcoded to the default socket would have reported a false failure. Never blocks on uncertainty, with its own test. Backend 313 / integration 23 | Build | secure-public-endpoints |
 | 2026-08-18T20:17:00Z | task_complete | **F-016-T10 done** — `GetPagedAsync` on `IRepository<T>` and both implementers (exactly two, confirmed by grep). Negatives normalised to 0 in both, because `Skip(-1)` throws on the driver but is a silent no-op in LINQ — one interface would otherwise have two behaviours. Coverage split recorded rather than papered over: contract by reflection in `Library.Tests`, semantics against the in-memory implementer in `Identity.Tests`, **Mongo's own paging behaviour not covered until T15**. Backend 322 / integration 23 / mobile 74 unchanged | Build | secure-public-endpoints |
+| 2026-08-18T20:22:00Z | wave_kickoff | Wave 4 standup (solo) — 2 tasks confirmed parallel, 0 resequenced. T06 kept independent of T05 by satisfying AC-4 against the **anonymous** `GET /api/v1/professions` route (B-1). Three findings pinned the fail-closed guard before it could be built wrong: never blindly overwrite the connection string or the guard compares its own value to itself (E-1); assert container **identity** via `GetConnectionString()`, never a `localhost` pattern (E-2); prove "no database created" by inspecting the container's database list, since a negative asserted by absence is unfalsifiable (E-3). Newly measured: all four appsettings resolution paths are empty strings, so the one live leak path is an env var | Build | secure-public-endpoints |
+| 2026-08-18T20:28:00Z | task_complete | **F-016-T05 done** — `TokenFactory`. Tokens verified against the **services' own** `TokenValidationParameters`, read back out of `AddAgendaBuddyAuthentication`, so issuer/algorithm/clock-skew cannot drift from production and resurface as a mystery 401 in T07. No `CreateForeignSubjectToken` — that token is just `CreateToken` for somebody else, pinned as a decision by a test. `CreateTokenWithoutSubject` is the T-001 probe. Integration 27 | Build | secure-public-endpoints |
+| 2026-08-18T20:34:00Z | task_complete | **F-016-T06 done — the second bottleneck is cleared, and the CRITICAL security AC is mechanically closed.** Real services now host over HTTP against a Mongo Testcontainer; `ProfessionHostTest` is the **first test in this solution to execute a route table** (`11-testing.md:148`). Fail-closed guard in two ordered layers: srv/credential rejection **before** a container starts (proven by asserting none was started), then host+port identity against the container's own endpoint — a dedicated test rejects `mongodb://127.0.0.1:27017` while the container is elsewhere, which is the case that broke the earlier pattern-check version at the threat party. The guard never echoes the rejected string, asserted. AC-20's "no database created" asserted **positively** by inspecting the container. **Verified empirically, against expectation: xUnit v2 does inject a collection fixture into a class fixture**, so session keypair + class container compose with no static workaround. Integration 41 in 16 s | Build | secure-public-endpoints |
+| 2026-08-18T20:37:00Z | task_complete | **F-016-T07 done — the harness now observes what nothing in this solution could.** AC-6 proven over real HTTP against `PUT /api/v1/customers/{email}`: anonymous 401, expired 401, **foreign subject 403**, owner neither. All four green on the first run, so this confirms existing behaviour rather than fixing it. Test-only task, so the TDD gate holds without a manufactured red. **Trap found that would have produced a wrong conclusion:** `MiniValidator` runs *before* `AssertOwner` (`:150` vs `:153`), so a test with an invalid body gets 400 and never reaches the guard — and separately, validation preceding authorization lets an unauthorized caller probe validation rules (pre-existing; flagged to F-019/F-021). Integration 45 in 18 s | Build | secure-public-endpoints |
