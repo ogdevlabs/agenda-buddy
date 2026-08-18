@@ -93,6 +93,67 @@ public class OwnershipGuardTest
             OwnershipGuard.AssertRole(principal, "Provider"));
     }
 
+    // ── F-016-T09 · threat T-001 (HIGH) · PRD AC-21 ──────────────────────────────────────────────
+    //
+    // AssertOwner compared with string.Equals(sub, entityEmail, OrdinalIgnoreCase) and guarded NEITHER
+    // side against null. string.Equals(null, null) is TRUE, so a caller with no `sub` claim, checked
+    // against an entity with no email, was granted OWNERSHIP.
+    //
+    // AssertOwnerAny had the guard all along (OwnershipGuard.cs:17 checks `sub is null` first).
+    // AssertOwner did not. That asymmetry is the whole defect, and it is documented in this repo's own
+    // public context catalog.
+    //
+    // Note what the pre-existing AssertOwner_WhenPrincipalHasNoSubClaim_ThrowsForbiddenException test
+    // above does NOT cover: it passes a non-null "victim@example.com", so string.Equals(null, "victim")
+    // is false and it throws for the wrong reason. It would have kept passing throughout.
+    //
+    // Why this had to be fixed in F-016 rather than deferred to F-021 (ADR-028): T11's response
+    // projection selects owner-vs-non-owner with this exact primitive, and the null fall-through lands
+    // on the OWNER branch -- returning the unprojected ProviderEntity with its full appointment book and
+    // subscribed-customer list. Building T11 first would have shipped the bypass.
+
+    [Fact]
+    public void T001_AssertOwner_WhenNeitherSubNorEntityEmailIsKnown_Throws()
+    {
+        // The hole itself. Both sides null, string.Equals says "equal", and the guard used to pass.
+        var principal = MakePrincipal(null);
+
+        Assert.Throws<ForbiddenException>(() => OwnershipGuard.AssertOwner(principal, null));
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("victim@example.com")]
+    public void T001_AssertOwner_WithNoSubClaim_ThrowsWhateverTheEntityEmailIs(string? entityEmail)
+    {
+        var principal = MakePrincipal(null);
+
+        Assert.Throws<ForbiddenException>(() => OwnershipGuard.AssertOwner(principal, entityEmail));
+    }
+
+    [Fact]
+    public void T001_AssertOwner_WhenTheEntityHasNoEmail_ThrowsEvenForAValidCaller()
+    {
+        // The other direction, and it matters for T11: an entity with no email has no owner, so nobody
+        // may be treated as its owner -- not even a perfectly authenticated caller.
+        var principal = MakePrincipal("provider@example.com");
+
+        Assert.Throws<ForbiddenException>(() => OwnershipGuard.AssertOwner(principal, null));
+    }
+
+    [Fact]
+    public void T001_AssertOwnerAndAssertOwnerAny_NowAgreeOnAMissingSubClaim()
+    {
+        // Pins the asymmetry closed. AssertOwnerAny always rejected a null sub; AssertOwner now does too.
+        // If they ever diverge again, this fails rather than the divergence hiding until a projection
+        // branches on it.
+        var principal = MakePrincipal(null);
+
+        Assert.Throws<ForbiddenException>(() => OwnershipGuard.AssertOwner(principal, null));
+        Assert.Throws<ForbiddenException>(() => OwnershipGuard.AssertOwnerAny(principal));
+    }
+
     [Fact]
     public void ForbiddenException_HasCorrect403StatusCode()
     {
