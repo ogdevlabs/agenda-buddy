@@ -19,6 +19,79 @@
 
 ---
 
+## v0.2.0 — 2026-08-18
+
+Closes unauthenticated PII exposure across the six domain services, and adds the integration harness that
+makes endpoint authorization verifiable at all (F-016).
+
+Every defect below was reproduced as a failing test before being fixed. Before this release no route table in
+the solution was executed by any test — which is why the Calendar IDOR could exist unnoticed.
+
+### Breaking Changes
+- `GET /api/v1/providers`, `/providers/{email}`, `/customers`, `/customers/{email}` and `/services/{email}`
+  now require authentication. They previously returned full records to anonymous callers, including embedded
+  appointments carrying customer email addresses and each provider's subscribed-customer list.
+- `POST /api/v1/professions` is **removed**. Professions are seeded reference data, no shipped flow creates
+  one, and Identity's role allow-list is exactly `{Provider, Customer}` — there is no administrative role to
+  gate the route on (ADR-025).
+- `GET /api/v1/providers` and `/customers` return `{items, totalCount, page, pageSize}` instead of a bare
+  JSON array, and return `200` with `items: []` where they previously returned `204` (ADR-023).
+- `GET /api/v1/providers` and `/providers/{email}` return `ProviderSummary` to any caller who is not the
+  owning provider: no appointments, no subscribed customers, no Kafka topic.
+- Nothing could reach these routes before this release, which is why the contracts changed now — the mobile
+  client's paths and base URL are both wrong (F-015 fixes that against the new shapes).
+
+### Fixed
+- `GET /api/v1/calendar/availability/{email}` and `/calendar/appointments/{email}` now enforce ownership. Any
+  authenticated user could previously read any provider's full appointment list, including every customer
+  email in it. Every sibling service already guarded; Calendar was the one that did not.
+- `OwnershipGuard.AssertOwner` no longer treats a missing `sub` claim as ownership. `string.Equals(null,
+  null)` is `true`, so a token carrying no subject, checked against an entity with no email, passed the guard.
+- `ForbiddenException` maps to **403 in every environment**. It previously reached the client as 403 only
+  where an endpoint hand-wrote a `try/catch`; elsewhere it was a 500, and in `Production` a bare
+  empty-bodied one (ADR-022).
+- Query handlers no longer serialise their full result payload into the `events` collection. A single
+  anonymous list call previously wrote every provider — with embedded appointments and customer emails —
+  into a collection that is unbounded, unindexed and never pruned. The payload is now the result *size*.
+- `AgendaBuddy.IntegrationTests` matched no CI path filter, so a change to the harness alone ran zero jobs.
+
+### Added
+- `GET /api/v1/customers` requires the `Provider` role, not merely a token. Registration is anonymous and
+  unrate-limited, so authentication alone left the whole customer table pageable — pagination bounds the
+  response, not the extraction (ADR-026).
+- `POST /api/v1/providers` requires the `Provider` role **and** that the record is the caller's own. A role
+  check alone still allows one provider to register a record under another provider's email. This is also the
+  first time `OwnershipGuard.AssertRole` is called anywhere in the solution.
+- Pagination on both list endpoints: `?page=&pageSize=`, capped at 100 and **clamped rather than rejected**,
+  with the response echoing the size actually applied. Paged at the database, so the bound applies to the
+  extraction and not just the response.
+- `Event.actor` — audit records attribute reads to the calling `sub` claim. Nullable and additive, so no
+  backfill; the actor of a historical anonymous read is genuinely unknown (ADR-027).
+- `AgendaBuddy.IntegrationTests` — the first integration suite in the solution. Real services over HTTP
+  against a MongoDB Testcontainer, one container per test class and a database per test, with a
+  **fail-closed guard** that refuses to run unless the resolved endpoint is this session's own container.
+  Identity is compared by host and port, not by hostname shape, because a tunnel to a remote cluster also
+  presents as `127.0.0.1`. 99 tests.
+- A separate, duration-enforced integration CI job, with the budget asserted in the step so growth has to be
+  argued for in a reviewed change.
+
+### Changed
+- `EventAndCommands/Persitency` renamed to `Persistence`, pinned by a test so a revert fails rather than
+  passing silently.
+- Test suites: **531** tests across three separate commands — 358 backend, 99 integration, 74 mobile. The
+  integration suite is deliberately outside `agenda-buddy-backend.slnf` so the unit gate stays Docker-free
+  (ADR-031), which means the backend command does not run it.
+
+### Known limitations
+- `GET /api/v1/customers` still returns full customer records to any `Provider`-role caller, including the
+  customer-to-provider relationship graph. Owner-scoping is the stronger fix and was deferred (ADR-026).
+- Authorization failures are not logged anywhere — there is no log sink — so repeated probing leaves no trace.
+- `SSH.NET` carries a HIGH advisory with no patched version. It reaches the build only through Testcontainers
+  and only supports Docker-over-SSH, which this project does not use; a test asserts it is never loaded
+  (ADR-030).
+
+---
+
 ## v0.1.0 — 2026-08-18
 
 First PDLC-tracked release. Wires the solution as a .NET Aspire application (F-013).
