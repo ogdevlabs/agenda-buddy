@@ -7,6 +7,15 @@ public class CustomerService(IRepository<CustomerEntity> customerRepository) : I
         return await customerRepository.GetAllAsync();
     }
 
+    /// <summary>
+    /// One page of customers, plus the total number of them. F-016-T15 / ADR-023.
+    /// </summary>
+    /// <remarks>See <c>ProviderService.GetPagedProvidersAsync</c> for why this is paged at the database.</remarks>
+    public async Task<(IEnumerable<CustomerEntity> Items, long TotalCount)> GetPagedCustomersAsync(int skip, int take)
+    {
+        return await customerRepository.GetPagedAsync(skip, take);
+    }
+
     public async Task AddCustomerAsync(CustomerEntity customerEntity)
     {
         await customerRepository.InsertAsync(customerEntity);

@@ -2,8 +2,8 @@
 id: F-019
 title: api-refactor-pilot-booking
 status: planned
-priority: 19
-labels: [roadmap, "priority:19"]
+priority: 20
+labels: [roadmap, "priority:20"]
 depends_on: [F-018, F-016]
 claimed_by: null
 created: 2026-08-18

@@ -17,27 +17,13 @@ public class GetServicesFromProviderQueryHandler(
         var providerEntity = await providerService.FindProvidersAsync(filter);
         if (providerEntity != null)
         {
-            var successEvent = new Event
-            {
-                Id = ObjectId.GenerateNewId(),
-                TimeStamp = DateTime.UtcNow,
-                Status = "Success",
-                Type = "GetServicesFromProviderQuery",
-                Data = JsonSerializer.Serialize(providerEntity)
-            };
-            await eventStore.SaveAsync(successEvent);
+            // Counts the services disclosed, not the single provider they were read from.
+            await eventStore.SaveAsync(QueryAudit.Success(
+                "GetServicesFromProviderQuery", providerEntity.ServiceEntities.Count));
             return providerEntity.ServiceEntities;
         }
 
-        var failEvent = new Event
-        {
-            Id = ObjectId.GenerateNewId(),
-            TimeStamp = DateTime.UtcNow,
-            Status = "Failed",
-            Type = "GetServicesFromProviderQuery",
-            Data = JsonSerializer.Serialize(new ProviderEntity())
-        };
-        await eventStore.SaveAsync(failEvent);
+        await eventStore.SaveAsync(QueryAudit.Failure("GetServicesFromProviderQuery"));
         return new List<ServiceEntity>();
     }
 }

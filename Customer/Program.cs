@@ -37,6 +37,10 @@ builder.Services.AddSingleton<IKafkaClient, KafkaClient>();
 builder.Services.AddScoped<IRequestCollection, RequestCollection>();
 
 // Enable & configure JSON Problem Details error responses
+// ADR-022 / F-016-T08: ForbiddenException -> 403 centrally, so an endpoint that omits a local
+// try/catch returns 403 rather than a bare 500. Registered unconditionally, unlike the
+// Development-only UseExceptionHandler lambda below.
+builder.Services.AddExceptionHandler<AgendaBuddyExceptionHandler>();
 builder.Services.AddProblemDetails(options =>
     options.CustomizeProblemDetails = context => CustomizeProblemDetails(context.ProblemDetails, context.HttpContext));
 
@@ -99,6 +103,13 @@ if (app.Environment.IsDevelopment())
     });
 }
 
+// MUST stay AFTER the IsDevelopment() block. Middleware registered earlier is outermost and an
+// exception propagates outward, so the INNERMOST handler sees it first. Placed here, this one takes
+// ForbiddenException and declines everything else, which then rethrows and reaches the Development
+// lambda exactly as it does today. Placed BEFORE that block, the lambda would swallow
+// ForbiddenException and the central 403 would fail in Development only. See AgendaBuddyExceptionHandler.
+app.UseExceptionHandler();
+
 app.UseAntiforgery();
 app.UseAuthentication();
 app.UseAuthorization();
@@ -150,8 +161,14 @@ customers.MapPut("/{email}",
         if (!MiniValidator.TryValidate(customerEntity, out var errors))
             return TypedResults.ValidationProblem(errors);
 
-        try { OwnershipGuard.AssertOwner(user, email); }
-        catch (ForbiddenException) { return TypedResults.Forbid(); }
+        // Deliberately NOT wrapped in try/catch — F-016 AC-13. This is the route that demonstrates the
+        // central mapping: AgendaBuddyExceptionHandler turns ForbiddenException into 403 whether or not
+        // an endpoint remembered to catch it. Before F-016 this line without a catch produced a 500 (and
+        // in Production, a bare empty-bodied one). Removing the catch here rather than shipping a
+        // test-only endpoint also demonstrates AC-14's no-double-handling in the same stroke.
+        // ForbidHttpResult stays in the union above on purpose: this route still returns 403, so removing
+        // it would drop 403 from the generated OpenAPI while the behaviour was unchanged.
+        OwnershipGuard.AssertOwner(user, email);
 
         var eventResponse =
             await EventsHelper.UpdateCustomerEvent(email, requestCollection, mediator, customerService, customerEntity);
@@ -164,18 +181,38 @@ customers.MapPut("/{email}",
     .RequireAuthorization();
 
 customers.MapGet("",
-    async Task<Results<Ok<List<CustomerEntity>>, NoContent>> (IMediator mediator,
-        CustomerService customerService, IRequestCollection requestCollection, IDistributedCache cache) =>
+    async Task<Ok<PagedResponse<CustomerEntity>>> (IMediator mediator,
+        ClaimsPrincipal user,
+        CustomerService customerService, IRequestCollection requestCollection, IDistributedCache cache,
+        int? page = null, int? pageSize = null) =>
     {
-        var key = $"customers";
+        // F-016 AC-22 / threat T-003 / ADR-026: the Provider role, not merely a token. Authenticating this
+        // route alone was nearly worthless -- POST /api/v1/auth/register is anonymous, unverified and
+        // unrate-limited, so an attacker self-registers as a Customer and pages the whole customer table
+        // exactly as before. Pagination bounds the response, not the extraction.
+        //
+        // No local try/catch: T08's AgendaBuddyExceptionHandler maps ForbiddenException to 403 centrally.
+        // Guard runs BEFORE the cache read, so a refused caller never reaches cached data.
+        OwnershipGuard.AssertRole(user, "Provider");
+
+        // F-016 AC-15 / ADR-023. See Provider/Program.cs for why clamping rather than rejecting.
+        var pageRequest = PageRequest.Clamp(page, pageSize);
+
+        // ⚠️ The cache key carries the page, or page 2 would serve page 1's entry. Cheap to get wrong and
+        // invisible in a single-page test.
+        var key = $"customers-p{pageRequest.Page}-s{pageRequest.PageSize}";
         var customerCollection = await cache.GetOrCreateAsync(key,
-            async token => await EventsHelper.GetCustomersEvent(requestCollection, mediator, customerService));
+            async token => await EventsHelper.GetCustomersEvent(
+                requestCollection, mediator, customerService, pageRequest));
 
-        if (customerCollection is not null)
-            return TypedResults.Ok(customerCollection);
-
-        return TypedResults.NoContent();
-    }).WithName("GetAllCustomers");
+        // 204 is RETIRED (ADR-023).
+        return customerCollection is not null
+            ? TypedResults.Ok(customerCollection)
+            : TypedResults.Ok(PagedResponse<CustomerEntity>.From([], 0, pageRequest));
+    })
+    // F-016 AC-8 / requirement 9: PII-bearing read, so no longer anonymous. Breaking change with zero reachable consumers (01-api-surface.md:158).
+    .WithName("GetAllCustomers")
+    .RequireAuthorization();
 
 customers.MapGet("/{email}", async Task<Results<Ok<CustomerEntity>, NotFound>> (IMediator mediator, string email,
     CustomerService customerService, IRequestCollection requestCollection, IDistributedCache cache) =>
@@ -189,7 +226,10 @@ customers.MapGet("/{email}", async Task<Results<Ok<CustomerEntity>, NotFound>> (
         return TypedResults.Ok(customer);
 
     return TypedResults.NotFound();
-}).WithName("GetCustomerByEmail");
+})
+    // F-016 AC-8 / requirement 9: PII-bearing read, so no longer anonymous. Breaking change with zero reachable consumers (01-api-surface.md:158).
+    .WithName("GetCustomerByEmail")
+    .RequireAuthorization();
 
 app.Run();
 

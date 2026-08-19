@@ -12,27 +12,11 @@ public class GetProviderByEmailQueryHandler(IMediator mediator, ProviderService 
         var providerEntity = await providerService.FindProvidersAsync(filter);
         if (providerEntity != null)
         {
-            var successEvent = new Event
-            {
-                Id = ObjectId.GenerateNewId(),
-                TimeStamp = DateTime.UtcNow,
-                Status = "Success",
-                Type = "GetProviderByEmailQuery",
-                Data = JsonSerializer.Serialize(providerEntity)
-            };
-            await eventStore.SaveAsync(successEvent);
+            await eventStore.SaveAsync(QueryAudit.Success("GetProviderByEmailQuery", 1));
             return providerEntity;
         }
 
-        var failEvent = new Event
-        {
-            Id = ObjectId.GenerateNewId(),
-            TimeStamp = DateTime.UtcNow,
-            Status = "Failed",
-            Type = "GetProviderByEmailQuery",
-            Data = JsonSerializer.Serialize(new ProviderEntity())
-        };
-        await eventStore.SaveAsync(failEvent);
+        await eventStore.SaveAsync(QueryAudit.Failure("GetProviderByEmailQuery"));
         return null!;
     }
 }

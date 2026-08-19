@@ -85,4 +85,21 @@ public class MongoDbRepository<TEntity> : IRepository<TEntity> where TEntity : c
     {
         return await _collection.Find(filter).ToListAsync();
     }
+
+    public async Task<(IEnumerable<TEntity> Items, long TotalCount)> GetPagedAsync(int skip, int take)
+    {
+        // Normalised because Skip(-1) throws on the driver but is a silent no-op in LINQ, and
+        // InMemoryCredentialRepository implements the same interface. Divergent behaviour between two
+        // implementers of one contract is the kind of defect that only ever appears in production.
+        var filter = new BsonDocument();
+
+        var totalCount = await _collection.CountDocumentsAsync(filter);
+        var items = await _collection
+            .Find(filter)
+            .Skip(Math.Max(0, skip))
+            .Limit(Math.Max(0, take))
+            .ToListAsync();
+
+        return (items, totalCount);
+    }
 }

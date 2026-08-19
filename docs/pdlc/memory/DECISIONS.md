@@ -328,3 +328,230 @@ So services register `AddSingleton<IMongoClient>` over `MongoConnectionResolver.
 Threat modelling runs at Design Step 10.5, after the Define gate closed. The three "mitigate now" threats it produced were therefore back-written into the F-018 PRD as acceptance criteria **28 (T-001)**, **29 (T-004)** and **30 (T-002)**, and materialized as structured `[security]` ACs on tasks `F-018-T08` and `F-018-T06` via `tasks.cjs ac add`.
 
 This is a logged addendum, not a Define reopen. Recording it here because adding acceptance criteria after approval is a governance act that should be auditable — and because the *reason* matters: an AC (not a task) is what the build TDD gate enumerates and what `tasks.cjs done` mechanically refuses to close without a linked test. A threat recorded only as a task-body citation is invisible to both.
+
+---
+
+## ADR-022 — `UseExceptionHandler` moves outside the `IsDevelopment()` guard in the six domain services
+
+**Date:** 2026-08-18 · **Status:** Accepted · **Feature:** F-016 · **Design ref:** `ARCHITECTURE.md` AD-1
+
+**Context.** F-016 requirement 14 asks for `ForbiddenException` to map to 403 centrally, so that an endpoint which forgets the local `try/catch` cannot silently return 500 instead of 403. Design discovered this **cannot be satisfied as scoped**: in all seven services `UseExceptionHandler` is registered *inside* `if (app.Environment.IsDevelopment())`, alongside Swagger (`docs/pdlc/context/10-error-handling.md:9-34`). A mapping added to that lambda would yield 403 in Development and a **bare, empty-bodied 500 in Production** — preserving the exact failure the requirement exists to remove, in the only environment that matters.
+
+**Decision.** Implement `AgendaBuddyExceptionHandler : IExceptionHandler` in `Library.ServerAuth`, register it with `AddExceptionHandler<T>()`, and call `app.UseExceptionHandler()` **unconditionally** in the six domain services. It maps `ForbiddenException` → 403 with ProblemDetails and returns `false` for everything else, so the existing Development-only lambda continues to handle what it handles today. The two coexist.
+
+**Consequences.**
+- **Production error behaviour changes for six services** — this is the reason an ADR exists rather than absorbing the change. Today Production emits an empty 500 for any unhandled exception; afterwards `ForbiddenException` emits a well-formed 403 and everything else still emits 500. A strict improvement, and a behavioural change beyond the feature's literal scope.
+- `IExceptionHandler` is the .NET 8+ idiomatic form and is used **nowhere else in this codebase** — F-016 introduces the pattern. F-019/F-020 should generalise it, not reinvent it.
+- **Deliberately not done:** the nine other exception types that incorrectly surface as 500 (`ArgumentException`→404, `KeyNotFoundException`→404, `UnauthorizedAccessException`→403, `InvalidOperationException`→409, `FormatException`→400, `MongoException`→503). Each changes the contract of an endpoint F-016 does not otherwise touch, with no acceptance criterion behind it. The handler is structured so each is a one-line addition later. `FormatException` from `new ObjectId(badId)` is the most likely live 500 and the best candidate to take next.
+- **Identity is excluded.** It uses an incompatible ad-hoc `{ error, message }` envelope and is the only service without `ProblemDetailsServiceEndpointFilter`. Registering the handler there would put two error schemes in one service. F-021 touches Identity next; unification belongs with it.
+
+---
+
+## ADR-023 — Paginated list response contract
+
+**Date:** 2026-08-18 · **Status:** Accepted · **Feature:** F-016 · **Required by:** PRD AC-16 · **Consumed by:** F-015
+
+> **Implemented and verified 2026-08-18 by F-016-T15.** AC-16 requires this ADR to exist before the endpoint
+> work closes; it did, and the contract was implemented as written. Three things the implementation
+> established that the ADR did not say:
+>
+> 1. **Paging is at the database, not after the fact.** The query handlers call
+>    `GetPagedAsync(skip, take)` (T10's primitive). Reading everything and slicing in the endpoint would
+>    bound the *response* while leaving the *extraction* unbounded — the opposite of the point. Threading a
+>    `PageRequest` down cost 12 files across two read paths: endpoint → `EventsHelper` →
+>    `IRequestCollection`/`RequestCollection` → query handler → domain service → repository.
+> 2. **The cache key must carry the page.** Both list routes cache, and the pre-existing keys were
+>    `"providers"` / `"customers"`. Without `-p{page}-s{pageSize}` appended, page 2 serves page 1's entry.
+>    Invisible in any single-page test.
+> 3. **`skip` arithmetic is overflow-guarded.** `(page - 1) * pageSize` overflows to a *negative* skip for a
+>    large page, and a negative skip is what the Mongo driver rejects — a 500 on an attacker-controlled
+>    input. `PageRequest.Clamp` bounds the page so the product cannot overflow, with a test at
+>    `int.MaxValue`.
+>
+> `PageRequest.Clamp` and `PagedResponse<T>` live in the new `Library/Dtos/` folder alongside
+> `ProviderSummary` (T11). ⚠️ **`GET /api/v1/providers` returns `PagedResponse<ProviderSummary>`** — the
+> projection and the envelope compose, and the list is homogeneous; see the `api-contracts.md` §5.1
+> correction.
+
+**Context.** `GET /api/v1/providers` and `GET /api/v1/customers` return unbounded bare JSON arrays; an uncapped list endpoint is the dump F-016 exists to remove. `IRepository<T>` (verified by reading `Library/Repositories/IRepository.cs`) exposes `GetAllAsync()` and `FindAllAsync(BsonDocument)` and **no skip, limit or count**. F-015 will write the mobile client against whatever shape is chosen, so this is a contract, not an implementation detail — AC-16 requires it recorded before the endpoint work closes.
+
+**Decision.**
+
+Request: `?page=<int, 1-based, default 1>&pageSize=<int, default 25>`.
+Response envelope: `{ items: T[], totalCount: long, page: int, pageSize: int }`.
+**`MaxPageSize` = 100.** Out-of-range values are **clamped server-side, never rejected**; the response echoes the **effective** `page`/`pageSize` after clamping.
+One new repository primitive: `Task<(IEnumerable<TEntity> Items, long TotalCount)> GetPagedAsync(int skip, int take)`.
+
+**Rationale for clamping over rejecting.** A 400 would tell an attacker the exact boundary and leave an honest client no way to discover the cap. Clamping plus echoing the effective value lets a correct client paginate and lets nobody probe. The cap is a **security control**, not ergonomics.
+
+**Consequences.**
+- **Breaking change**, taken deliberately now because these routes have **zero reachable consumers** — the mobile client's paths and base URL are both wrong (`01-api-surface.md:158`). Doing it after F-015 would mean writing the client twice.
+- `204 No Content` for an empty collection is **retired**; empty pages return `200` with `items: []` and `totalCount: 0`, so a client always gets a parseable body.
+- `IRepository<T>` gains a method, so **every implementer changes** — `MongoDbRepository<T>` and `Identity.Tests/Helpers/InMemoryRepository.cs`. The latter is a test helper and cheap, but if missed, `Identity.Tests` stops compiling.
+- **Accepted debt with a named trigger:** `skip`/`limit` degrades linearly with offset. Immaterial on synthetic data; the fix at scale is keyset pagination, which **would change this contract**. Revisit *before* real user data lands, not after — by then F-015 depends on this shape.
+
+---
+
+## ADR-024 — Accepted risk: no audience scoping and no token revocation (threat T-008 deferred to F-023)
+
+**Date:** 2026-08-18 · **Status:** Accepted (deferral) · **Feature:** F-016 · **Threat:** T-008 (MEDIUM) · **Owner:** F-023
+
+**Context.** F-016 adds the solution's first authorization checks that read `sub` and `role` from the bearer token. Behind them there is no audience scoping: `ValidateAudience = false` and no `aud` claim is issued, so **all seven services accept any token this issuer minted** (`13-security.md:71`). And there is no revocation: `jti` is minted and never recorded, so an access token stays valid up to 60 minutes after logout (`:77`).
+
+**Decision.** Accept for F-016; defer to **F-023 `token-revocation`**.
+
+**Rationale.** Introducing `aud` and enabling `ValidateAudience` is a token-format change requiring coordinated updates to Identity's minting and all seven validators — inside a feature that deliberately excludes Identity (ADR-022's last bullet). Revocation needs a denylist store, and the current `AddDistributedMemoryCache()` is per-process and **cannot back a cross-service denylist** (`00-overview.md` finding 7). Neither is a one-task fix.
+
+**Residual risk.** A token obtained through any flow is a universal key across all seven services for up to 60 minutes, including after logout. Partially offset by strict validation that F-016 does not weaken: RS256 with `ValidAlgorithms = ["RS256"]` blocks algorithm confusion, `ClockSkew = Zero` removes the grace window, and asymmetric signing means only Identity can mint. **The validation is strict; the scoping is absent.**
+
+**Re-evaluation trigger.** Before F-016 or F-021 ships to any environment holding real user data.
+
+---
+
+## ADR-025 — `POST /api/v1/professions` is deleted rather than role-gated (threat T-007)
+
+**Date:** 2026-08-18 · **Status:** Accepted · **Feature:** F-016 · **Threat:** T-007 (MEDIUM) · **Supersedes:** F-016 PRD requirement 13
+
+**Context.** PRD requirement 13 asked for `AssertRole` on `POST /api/v1/professions` so an arbitrary authenticated Customer could not write to the global reference catalogue. **Bolt found there was no role to check for**: Identity's allow-list is exactly `{Provider, Customer}` (`Identity/Program.cs:100-106`) — there is no administrative tier. The only implementable check, `AssertRole(user, "Provider")`, would still let any self-registered provider write shared reference data read by every user. With open, unverified, unthrottled registration, that raises the bar from "any account" to "any account that picked `Provider` at signup."
+
+**Decision.** **Delete the route**, together with its handler wiring and its `RequestCollection` / `EventsHelper` write path. The two profession **read** routes stay anonymous and unchanged.
+
+**Rationale.** Professions are seeded from `Library/Data/ProfessionSeedData.cs` and no shipped flow creates one. Removing surface is strictly stronger than guarding it, needs less code, and avoids inventing an `Admin` role inside a feature that excludes Identity.
+
+**Rejected alternatives.** *Introduce an `Admin` role* — architecturally correct, but touches Identity's allow-list, token minting and seeding; real scope creep. *Accept `Provider`-only with an ADR* (Atlas's preference) — defensible pre-launch, but carries risk in writing for no benefit once deletion is available.
+
+**Consequences.** Requirement 13 is **superseded, not dropped** — its intent (a Customer must not write the global catalogue) is fully satisfied by removal. `AddProfessionCommand` and `AddProfessionCommandHandler` become unreachable; they are left in place rather than deleted, since the refactor program (F-019/F-020) will audit dead handlers systematically. **If professions ever need to be user-creatable, that is a feature with a real authorization model — not a route quietly restored.**
+
+---
+
+## ADR-026 — `GET /api/v1/customers` requires the `Provider` role, not merely authentication (threat T-003)
+
+**Date:** 2026-08-18 · **Status:** Accepted · **Feature:** F-016 · **Threat:** T-003 (HIGH) · **Scope:** addition beyond the approved PRD
+
+**Context.** PRD requirement 9 makes `GET /api/v1/customers` authenticated. Threat modelling established that **authentication alone is nearly worthless there**: `POST /api/v1/auth/register` is anonymous, unverified and unrate-limited, so an attacker self-registers as a `Customer`, obtains a valid token, and pages through the entire customer table exactly as before — and `totalCount` tells them how many pages to fetch. **Pagination bounds each response; it does not bound extraction.**
+
+Atlas reframed it as a product question rather than a control question: *who is this endpoint for?* `ROADMAP.md` F-003 `customer-onboarding-flow` (Shipped) defines discovery as customers finding **providers**, not each other. No flow lists every customer. The only defensible caller is a provider.
+
+**Decision.** Require the `Provider` role on the **list** route. The maintainer approved this as an explicit scope addition at the Step 12 gate.
+
+**Consequences.**
+- Cost is one line — the same primitive as the `POST /api/v1/providers` role check — so the marginal cost over approved scope is near zero. No UX cost: no shipped screen consumes the route.
+- **Only the list is gated.** `GET /api/v1/customers/{email}` stays authenticated-but-not-role-gated, because a customer legitimately reads their own record through it.
+- **Deferred, not rejected:** scoping results to the calling provider's own `SubscribedCustomerCollection` is the stronger fix and was weighed at the gate. It is a genuine behaviour change and more work; the role check blocks the actual attack path now. Recorded so the stronger option remains a known follow-up rather than a forgotten one.
+- The 200-vs-404 enumeration oracle on the single-record route is **narrowed, not closed** — any authenticated caller can still probe which emails are registered. Deliberate: 404 is kept for consistency with the eight existing call sites.
+
+---
+
+## ADR-027 — `Event` gains an `actor` field; F-016 stops being schema-change-free (threat T-005)
+
+**Date:** 2026-08-18 · **Status:** Accepted · **Feature:** F-016 · **Threat:** T-005 (MEDIUM)
+
+**Context.** F-016 requirement 16 reduces query-handler audit writes from full result payloads to metadata, closing a PII-amplification path where `GetProvidersQueryHandler.cs:23` serialised the entire provider list into the `events` collection on every call. But `Event` has **no actor field** (`15-cqrs-and-messaging.md:215`), so the reduced record reads *"a `GetProvidersQuery` succeeded at 14:03"* — with no indication of who. The change is a net gain in confidentiality and a net **regression in accountability**: the PII dump at least revealed *what* was accessed.
+
+Until F-016 these endpoints had no authenticated caller to record. **This feature is the first point at which an actor exists.**
+
+**Decision.** Add a nullable `Actor` property to `Event` (`[BsonElement("actor")]`), populated from the caller's `sub` claim.
+
+**Amended 2026-08-18 during F-016-T18 — the mechanism, which Design got wrong.** `ARCHITECTURE.md` §5 costed this as *"one `[BsonElement]` and one assignment per handler."* That is not achievable: **no query handler has any access to the caller.** `ClaimsPrincipal` is dropped at the endpoint, the nine query objects carry no properties, and `RequestCollection` hand-constructs each handler from domain data. `IHttpContextAccessor` was registered nowhere in the solution.
+
+Two viable implementations were put to the maintainer, who chose the second:
+
+| | Where the actor is set | Files | Notes |
+|---|---|---|---|
+| **A** | each handler, via a new parameter | ~30 — 6 × `EventsHelper`, 6 × `IRequestCollection`, 6 × `RequestCollection`, 9 handlers, 9 query types | What §5 described. Widens six public interfaces to carry an audit field, and can be **half-done**: miss one handler and that path silently loses attribution. |
+| **C — chosen** | `EventStore.SaveAsync`, from `IHttpContextAccessor` | ~8 | Attribution is a property of *writing an audit record*, not of each handler. One seam, cannot be half-done, and it attributes the **11 command handlers** for free — same field, no extra scope. `AddEventStore()` calls `AddHttpContextAccessor()` itself, so no service `Program.cs` changes at all. |
+
+**Accepted cost of C:** `EventAndCommands` gains a `FrameworkReference` on `Microsoft.AspNetCore.App` and its kernel becomes ASP.NET-aware, which it was not before. Nothing is added to any deployed artifact (all seven consumers are ASP.NET Core apps), but it is a real coupling. **If F-019/F-020 ever needs the kernel HTTP-free, the seam is a small `IAuditActorProvider` interface owned by `EventAndCommands` and implemented in `Library.ServerAuth`** — recorded so that is a known move rather than a rediscovery. Side effect: three `Microsoft.Extensions.*` package references became redundant under the framework reference (NU1510) and were removed.
+
+The "what counts as an actor" decision is a pure function, `AuditActor.From(ClaimsPrincipal?)`, so it is testable without a request, a container or a mocking framework. Null is a correct answer in three live cases: a hosted service, an anonymous read, and a token carrying no `sub` (the threat T-001 shape).
+
+**Consequences.**
+- **`data-model.md` is no longer a no-schema-change document.** F-016's revert leaves harmless unread residue rather than no trace. This was **Friday's recorded dissent** at the threat party — a clean revert is a genuinely valuable property for a feature changing authorization across five services — and it is the cost being accepted.
+- **No backfill migration.** The field is nullable, MongoDB is schemaless, and nothing reads `actor` for control flow. A backfill is impossible anyway: the actor for a historical anonymous read is genuinely unknown, and inventing one would be worse than a null.
+- Echo's counter-argument carried against accepting the regression: there is **no log sink** and `requestId` is not exported anywhere (`10-error-handling.md:138`), so nothing outside the `events` collection is durable. There was no fallback attribution to rely on.
+- **What `actor` is not:** it records the `sub` claim from a validated token. It is not tamper-evident, not signed, and not joined to `jti` (minted, never recorded). It answers "which account did this" for incident response; it is **not a non-repudiation control.**
+
+---
+
+## ADR-028 — F-016 scope amendments discovered at Design *(process record)*
+
+**Date:** 2026-08-18 · **Status:** Accepted · **Feature:** F-016
+
+Design and threat modelling changed the approved F-016 PRD in four ways. Recorded together because amending an approved PRD is a governance act that should be auditable, and because three of the four came from **threat modelling finding things document review did not**.
+
+| # | Amendment | Origin |
+|---|---|---|
+| 1 | **Requirement 18 reassigned from F-021 into F-016.** The response-shape projection reuses `OwnershipGuard.AssertOwner`, whose null-claim pass (`string.Equals(null, null)` is `true`) then lands on the **owner** branch and returns the unprojected entity. The hole exists today but is *unreachable* at these routes — F-016 is what makes it reachable, so F-016 must fix it. | Threat T-001, found by Neo→Phantom cross-talk |
+| 2 | **Requirement 14's approach replaced** — see ADR-022. | Design, `10-error-handling.md` |
+| 3 | **Requirement 13 superseded** by route deletion — see ADR-025. | Threat T-007, found by Bolt attempting the implementation |
+| 4 | **Scope addition: `GET /api/v1/customers` role-gated** — see ADR-026. | Threat T-003, reframed by Atlas as a product question |
+
+**Also broadened at Design, without an ADR because it is a straightforward scope correction:** PRD requirement 16 named `GetProvidersQueryHandler.cs:23` as "the specific offender", but **all ten query handlers** follow the identical publish→query→audit shape and `GetCustomersQuery` serialises every customer record. The design covers all ten; PRD AC-17 tests only the provider path and is flagged at the Plan gate to be broadened.
+
+**Process observation worth keeping.** Amendment 3 was produced by *trying to implement* the requirement — Bolt went to write the role check and found the role did not exist. That is a class of finding no amount of document review produces, and it argues for keeping an implementation-feasibility lens in the threat party rather than treating it as purely analytical.
+
+---
+
+## ADR-029 — Threat-derived security ACs added to the F-016 PRD post-Define *(process record)*
+
+**Date:** 2026-08-18 · **Status:** Accepted · **Feature:** F-016
+
+Threat modelling runs at Design Step 10.5, after the Define gate closed. The **seven** "mitigate now" threats it produced were back-written into the F-016 PRD as acceptance criteria **20 (T-002)**, **21 (T-001)**, **22 (T-003)**, **23 (T-004)**, **24 (T-005)**, **25 (T-006)** and **26 (T-007)**, and materialized as structured `[security]` ACs on tasks `F-016-T06`, `T09`, `T16`, `T08`, `T18`, `T13` and `T17` via `tasks.cjs ac add`.
+
+A logged addendum, not a Define reopen — same pattern as ADR-021 for F-018. Recorded because adding acceptance criteria after approval is a governance act that should be auditable, and because the *reason* matters: an AC (not a task) is what the build TDD gate enumerates and what `tasks.cjs done` mechanically refuses to close without a linked test. A threat recorded only as a task-body citation is invisible to both.
+
+`tasks.cjs check` now reports **7 `security-ac-untested` findings for F-016** (plus 3 pre-existing for the paused F-018). Expected and correct until Build links the tests.
+
+**Notable relative to F-018:** F-018's threat model produced three mitigate-now threats; F-016's produced seven, and **five of its eight threats were introduced or made newly reachable by the feature itself** rather than inherited. That is the signature of threat-modelling a security fix rather than a greenfield capability, and it is why the party was worth convening at Full depth.
+
+---
+
+## ADR-030 — Accepted risk: `SSH.NET` GHSA-q939-rpr3-3284 (HIGH) enters the graph via Testcontainers, unreachable and untreatable by pinning
+
+**Date:** 2026-08-18 · **Status:** Accepted · **Feature:** F-016 (T02) · **Severity:** HIGH · **Reachability:** none, and *tested*
+
+**Context.** Adding `Testcontainers.MongoDb` — approved in ADR-015's five-package set and validated by F-018's spike — pulls `SSH.NET` transitively, which carries advisory **GHSA-q939-rpr3-3284 (HIGH)**.
+
+**Pinning cannot fix it.** Attempted and measured, not assumed:
+
+| Attempt | Result |
+|---|---|
+| `Testcontainers.MongoDb` 4.0.0 | SSH.NET 2023.0.0 — flagged |
+| 4.1.0 | SSH.NET 2024.1.0 — flagged |
+| 4.3.0 / 4.6.0 | SSH.NET 2024.2.0 — flagged |
+| explicit pin 2024.2.1 | flagged |
+| explicit pin 2025.0.0 (latest) | **flagged** |
+
+Every published version is covered by the advisory. There is no safe version to pin to, so the repo's existing `Directory.Build.props` transitive-pin mechanism — which fixed Snappier, SharpCompress, Newtonsoft.Json and Microsoft.OpenApi — does not apply here.
+
+**Decision.** Accept, on the basis that the vulnerable code is **unreachable in this solution**, and make that basis a *test* rather than a claim.
+
+`SSH.NET` is in the graph only to support Docker-over-SSH. This project talks to a local socket (Rancher Desktop). `AgendaBuddy.IntegrationTests/Harness/ContainerRuntimeGuardTest.cs` starts a real MongoDB container and asserts that **no SSH.NET assembly is loaded** while doing so. Verified passing 2026-08-18.
+
+**Why a test and not a comment.** A comment saying "we don't use SSH" decays the moment someone sets `DOCKER_HOST=ssh://…` to use a remote builder. The test fails at that point, which converts a silent risk change into a build failure. This is the same reasoning that turned threat T-006's cache-ordering invariant from prose into a test.
+
+**Consequences.**
+- `NU1903` is suppressed **in `AgendaBuddy.IntegrationTests` only**, never solution-wide, with the full rationale inline in the csproj.
+- **The suppression does not hide it from an audit.** Verified: `dotnet list package` with the vulnerability report still lists SSH.NET as High after the `NoWarn`. So **F-017's dependency-audit gate is unaffected** — it will report this, and it should.
+- **This will be the first finding F-017's scanner reports**, and the expected disposition is "accepted, see ADR-030" rather than "fix". Recorded here so F-017 does not treat it as new.
+- **Re-evaluation triggers:** a patched SSH.NET is published (drop the pin and the NoWarn); or anyone configures a remote Docker host over SSH (the guard test fails first); or Testcontainers drops the dependency.
+
+**Honest note on posture.** CONSTITUTION §7 marks a dependency audit "always required, cannot be unchecked", and it remains unimplemented (F-017 owns it). Introducing a HIGH-severity advisory while that gate is down is exactly the situation the gate exists to prevent. It is accepted here because the alternative is abandoning the harness — which contradicts ADR-015, ADR-017, F-018's passed spike, and the entire verification premise of F-016 — and because unreachability is demonstrated rather than argued. **A different maintainer could reasonably decide otherwise, and would be entitled to.**
+
+---
+
+## ADR-031 — `AgendaBuddy.IntegrationTests` is excluded from `agenda-buddy-backend.slnf`
+
+**Date:** 2026-08-18 · **Status:** Accepted · **Feature:** F-016 (T02)
+
+**Context.** `agenda-buddy-backend.slnf` is what CI's `api` job and the documented local command (`dotnet test agenda-buddy-backend.slnf`) target. The new integration project requires a running container runtime.
+
+**Decision.** Add the project to `agenda-buddy.sln` (so the solution is complete for IDE and tooling) but **not** to `agenda-buddy-backend.slnf`. The integration suite is invoked by targeting its `.csproj` directly, and F-016-T20 gives it a dedicated CI job.
+
+**Rationale — this follows an established precedent in this repo, it is not a new pattern.** `MobileApp` and `MobileApp.Tests` are excluded from the slnf by design and covered by three dedicated CI jobs (`build-android`, `build-ios`, `build-mobile-tests`) that target their csproj. The integration project has the same shape: a real external prerequisite the unit gate should not inherit.
+
+**Consequences.**
+- **The unit gate stays Docker-free.** Folding container tests into the slnf would make `dotnet test agenda-buddy-backend.slnf` — documented in `CLAUDE.md` and run by CI's `api` job — fail on any machine without a container runtime. That is a significant regression in the fast feedback loop for no benefit.
+- **The 305/309 headline count stays meaningful.** AC-19 counts the backend slnf; mixing in container tests would make the number depend on whether Docker was running.
+- **Duration stays honest.** Measured on the maintainer's machine: **3 s warm, 62 s cold** per container (the cold figure is the 1.13 GB `mongo:7.0` pull). T20 must enforce a duration budget, which is far easier for a job that contains only integration tests.
+- **Cost:** two commands instead of one, and a project that a naive `dotnet test agenda-buddy-backend.slnf` will not run. Mitigated by T20's blocking CI job — without it this would be the wrong trade, which is precisely why T20 was absorbed at the Plan gate.

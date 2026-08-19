@@ -35,6 +35,10 @@ builder.Services.AddMvcCore();
 builder.Services.AddScoped<IRequestCollection, RequestCollection>();
 
 // Enable & configure JSON Problem Details error responses
+// ADR-022 / F-016-T08: ForbiddenException -> 403 centrally, so an endpoint that omits a local
+// try/catch returns 403 rather than a bare 500. Registered unconditionally, unlike the
+// Development-only UseExceptionHandler lambda below.
+builder.Services.AddExceptionHandler<AgendaBuddyExceptionHandler>();
 builder.Services.AddProblemDetails(options =>
     options.CustomizeProblemDetails =
         context => CustomizeProblemDetails(context.ProblemDetails, context.HttpContext));
@@ -100,6 +104,13 @@ if (app.Environment.IsDevelopment())
     });
 }
 
+// MUST stay AFTER the IsDevelopment() block. Middleware registered earlier is outermost and an
+// exception propagates outward, so the INNERMOST handler sees it first. Placed here, this one takes
+// ForbiddenException and declines everything else, which then rethrows and reaches the Development
+// lambda exactly as it does today. Placed BEFORE that block, the lambda would swallow
+// ForbiddenException and the central 403 would fail in Development only. See AgendaBuddyExceptionHandler.
+app.UseExceptionHandler();
+
 app.UseAntiforgery();
 app.UseAuthentication();
 app.UseAuthorization();
@@ -128,7 +139,12 @@ services.MapGet("/{email}",
             return TypedResults.Ok(serviceEntities);
 
         return TypedResults.NotFound();
-    }).WithName("GetServicesFromProvider");
+    })
+    // F-016 AC-8 / requirement 9: PII-bearing read, so no longer anonymous. This is the fifth of the
+    // five routes — it was omitted from the program Discover summary and added at Define.
+    // Breaking change with zero reachable consumers (01-api-surface.md:158).
+    .WithName("GetServicesFromProvider")
+    .RequireAuthorization();
 
 services.MapPut("/{email}",
     async Task<Results<ValidationProblem, ForbidHttpResult, NotFound, Ok<ProviderEntity>>> (IMediator mediator,

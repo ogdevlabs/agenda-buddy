@@ -123,6 +123,13 @@ jobs:
               - 'EventsAndCommands.Tests/**'
               - 'AgendaBuddy.AppHost.Tests/**'
               - 'AgendaBuddy.ServiceDefaults.Tests/**'
+              # AgendaBuddy.IntegrationTests is the 13th test project and is deliberately OUTSIDE
+              # agenda-buddy-backend.slnf (ADR-031), so build-and-test never touches it — the
+              # `integration` job below does. Listed here because without it a change to the harness
+              # alone matched no filter and ran ZERO jobs: the same silent-skip that let F-013's
+              # "assert every service starts" guard sit unexecuted until it first ran, and first
+              # failed, on PR #35.
+              - 'AgendaBuddy.IntegrationTests/**'
               - 'Directory.Build.props'
               - '*.sln'
               # Without these a change to only infrastructure ran zero jobs (R-8) — the same
@@ -280,6 +287,123 @@ jobs:
           if-no-files-found: warn
 
   # ---------------------------------------------------------------------------
+  # Integration — real services over HTTP against a MongoDB Testcontainer
+  #
+  # F-016-T20. SEPARATE from build-and-test on purpose, three reasons:
+  #   1. AgendaBuddy.IntegrationTests is excluded from agenda-buddy-backend.slnf (ADR-031) so the
+  #      unit gate stays Docker-free and fast. Running it here keeps that true.
+  #   2. A container-runtime problem should read as "integration failed", not as "the backend build
+  #      broke".
+  #   3. It is the slowest gate, so it must be separately visible when it starts costing minutes.
+  #
+  # ⚠️ BLOCKING is a BRANCH-PROTECTION setting, not something this file can assert. Add
+  #    "Integration — real services + MongoDB" to the required status checks for `main`, or this job
+  #    can fail and a PR can still merge. Until that is done, the feature's central claim —
+  #    authorization you can demonstrate — is enforced by nothing but habit.
+  #
+  # ⚠️ THIS JOB HAS NEVER RUN. The workflow triggers only on push to `main` or PR to `main`, so it
+  #    cannot execute on an ordinary branch. Verifying it needs a real CI run on a short-lived
+  #    throwaway branch pushed by the maintainer. That is F-016-T20's residual, recorded in the
+  #    plan's known gaps and in verification.md — not an oversight.
+  #
+  # Needs no secrets: the harness generates its own RSA keypair per session in memory
+  # (CryptoSessionFixture) and starts its own MongoDB container. Deliberate — F-013's CI guard
+  # consumed secrets.CI_JWT_* that were never created, and failed the first time it ran.
+  # ---------------------------------------------------------------------------
+  integration:
+    name: "Integration — real services + MongoDB"
+    needs: changes
+    if: needs.changes.outputs.api == 'true' && needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-24.04
+
+    # Hard ceiling. The suite measured 1 m 13 s locally with a warm image; a cold runner adds ~1 min
+    # for the 1.13 GB mongo:7.0 pull. 20 minutes is generous on purpose — it exists to stop a hung
+    # container burning a runner for six hours, not to police duration. That is the soft budget below.
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      # Pulled explicitly, before the timed step, so the image download is not counted against the
+      # suite's duration budget. Measured cold: ~60 s for 1.13 GB.
+      - name: Pre-pull the MongoDB image
+        run: docker pull mongo:7.0
+
+      - name: Restore dependencies
+        run: dotnet restore AgendaBuddy.IntegrationTests/AgendaBuddy.IntegrationTests.csproj
+
+      - name: Build
+        run: >
+          dotnet build AgendaBuddy.IntegrationTests/AgendaBuddy.IntegrationTests.csproj
+          --no-restore --configuration Release
+
+      # DURATION ENFORCEMENT. A slow integration suite is a suite people stop running, and then
+      # delete. The budget is asserted rather than merely reported, so growth has to be argued for by
+      # raising this number in a reviewed diff.
+      - name: Test (duration-enforced)
+        env:
+          DURATION_BUDGET_SECONDS: "600"
+        run: |
+          set -o pipefail
+          started=$(date +%s)
+          status=0
+
+          # `|| status=$?` rather than a bare invocation: Actions runs this with `bash -e`, so a bare
+          # failing command would abort the step here and the duration summary below would never be
+          # written -- and `status=$?` would be dead code. Handling the failure explicitly keeps the
+          # timing report available on red runs, which is when it is most useful.
+          dotnet test AgendaBuddy.IntegrationTests/AgendaBuddy.IntegrationTests.csproj \
+            --no-build \
+            --configuration Release \
+            --logger "trx;LogFileName=integration-results.trx" || status=$?
+
+          elapsed=$(( $(date +%s) - started ))
+          echo "Integration suite took ${elapsed}s (budget ${DURATION_BUDGET_SECONDS}s)."
+          {
+            echo "### Integration suite"
+            echo
+            echo "Duration: **${elapsed}s** (budget ${DURATION_BUDGET_SECONDS}s)"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [ "$status" -ne 0 ]; then
+            exit "$status"
+          fi
+
+          if [ "$elapsed" -gt "$DURATION_BUDGET_SECONDS" ]; then
+            echo "::error::Integration suite took ${elapsed}s, over the ${DURATION_BUDGET_SECONDS}s budget."
+            echo "::error::Either make it faster or raise DURATION_BUDGET_SECONDS deliberately, in a reviewed change."
+            exit 1
+          fi
+
+      # Container-per-class means a leaked container is possible if a fixture throws mid-startup.
+      # Reported rather than cleaned up: the runner is ephemeral, so this is a diagnostic, and a
+      # non-empty list here means a fixture has a disposal bug worth knowing about.
+      - name: Report any surviving containers
+        if: always()
+        run: docker ps -a --filter "ancestor=mongo:7.0" --format '{{.ID}} {{.Status}}' || true
+
+      - name: Publish integration test results
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: Integration Tests
+          path: "**/TestResults/integration-results.trx"
+          reporter: dotnet-trx
+
+  # ---------------------------------------------------------------------------
   # Mobile — Android build (runs when MobileApp or shared library changes)
   # ---------------------------------------------------------------------------
   build-android:
@@ -357,7 +481,7 @@ jobs:
   # always runs, prints which filters fired, and fails if any job that *did* run failed. Point
   # branch protection at this one.
   summary:
-    needs: [changes, build-and-test, build-android, build-ios, build-mobile-tests]
+    needs: [changes, build-and-test, integration, build-android, build-ios, build-mobile-tests]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -368,6 +492,7 @@ jobs:
           MOBILE_TESTS: ${{ needs.changes.outputs.mobile-tests }}
           CODE: ${{ needs.changes.outputs.code }}
           R_BACKEND: ${{ needs.build-and-test.result }}
+          R_INTEGRATION: ${{ needs.integration.result }}
           R_ANDROID: ${{ needs.build-android.result }}
           R_IOS: ${{ needs.build-ios.result }}
           R_MOBILE_TESTS: ${{ needs.build-mobile-tests.result }}
@@ -380,6 +505,7 @@ jobs:
             echo "| Filter | Fired | Job | Result |"
             echo "|---|---|---|---|"
             echo "| api | \`$API\` | build-and-test | \`$R_BACKEND\` |"
+            echo "| api | \`$API\` | Integration (containers) | \`$R_INTEGRATION\` |"
             echo "| mobile | \`$MOBILE\` | Android build | \`$R_ANDROID\` |"
             echo "| mobile | \`$MOBILE\` | iOS build | \`$R_IOS\` |"
             echo "| mobile-tests | \`$MOBILE_TESTS\` | Mobile unit tests | \`$R_MOBILE_TESTS\` |"

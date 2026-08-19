@@ -31,4 +31,4 @@ global using Profession.Events;
 global using Profession.Extensions;
 global using Profession.Requests;
 global using EventAndCommands;
-global using EventAndCommands.Persitency;
+global using EventAndCommands.Persistence;

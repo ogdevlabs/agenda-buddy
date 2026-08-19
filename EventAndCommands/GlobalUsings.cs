@@ -9,7 +9,7 @@ global using EventAndCommands.Events.Calendar;
 global using EventAndCommands.Events.Customer;
 global using EventAndCommands.Events.Provider;
 global using EventAndCommands.Events.Services;
-global using EventAndCommands.Persitency;
+global using EventAndCommands.Persistence;
 global using Kafka;
 global using Kafka.Support;
 global using Library.Entities;
@@ -21,3 +21,4 @@ global using Microsoft.Extensions.DependencyInjection;
 global using MongoDB.Bson;
 global using MongoDB.Bson.Serialization.Attributes;
 global using MongoDB.Driver;
+global using Library.Dtos;   // F-016-T15: PageRequest / PagedResponse<T>

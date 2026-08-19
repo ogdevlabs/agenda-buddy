@@ -3,19 +3,6 @@ namespace Profession.Requests;
 [ExcludeFromCodeCoverage]
 public class RequestCollection(IEventStore eventStore) : IRequestCollection
 {
-    public async Task<ProfessionEntity> AddProfessionRequest(IMediator mediator, ProfessionService professionService,
-        ProfessionEntity professionEntity)
-    {
-        var result = await new AddProfessionCommandHandler(
-                mediator,
-                professionService,
-                professionEntity,
-                eventStore)
-            .Handle(
-                new AddProfessionCommand() { ProfessionEntity = professionEntity }, new CancellationToken());
-        return result;
-    }
-
     public async Task<List<ProfessionEntity>> GetProfessionsRequest(IMediator mediator,
         ProfessionService professionService)
     {

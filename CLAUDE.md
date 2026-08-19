@@ -11,7 +11,7 @@ Agenda Buddy is a scheduling and appointment management platform for independent
 - **Messaging:** Kafka (Confluent) + MediatR (CQRS)
 - **Caching:** IDistributedCache (cache-aside pattern, 5-min TTL)
 - **Observability:** OpenTelemetry traces/metrics/logs via ServiceDefaults, exported to the Aspire dashboard
-- **Testing:** xUnit — 379 tests total: 305 across 12 backend projects + 74 in `MobileApp.Tests`
+- **Testing:** xUnit — **531 tests total**, in **three separate suites** that no single command runs: **358** across 12 backend projects (`agenda-buddy-backend.slnf`), **99** in `AgendaBuddy.IntegrationTests` (real services over HTTP against a MongoDB Testcontainer — needs a container runtime), and **74** in `MobileApp.Tests` (67 passing, 7 skipped)
 - **Infrastructure:** Aspire AppHost (primary local) · Docker + Docker Compose (legacy fallback) · GitHub Actions CI
 
 > **Aspire caveat:** do **not** add `Aspire.MongoDB.Driver`. It requires MongoDB.Driver ≥ 3.9.0 against the pinned 2.25.0 and fails restore with `NU1605`. The project registers `AddSingleton<IMongoClient>` with a custom `MongoHealthCheck` instead (ADR-013). There is no Aspire workload to install.
@@ -35,7 +35,8 @@ Agenda Buddy is a scheduling and appointment management platform for independent
 - **Dev server (primary):** `dotnet run --project AgendaBuddy.AppHost` — starts MongoDB, Kafka, and all 7 services
 - **Dev server (legacy):** `docker compose -f docker-compose.yml -f docker-compose.override.yml up -d`
 - **Build:** `dotnet build --no-restore`
-- **Test (backend, 305 tests):** `dotnet test agenda-buddy-backend.slnf --collect:"XPlat Code Coverage"` — use the solution filter, not the full solution
+- **Test (backend, 358 tests):** `dotnet test agenda-buddy-backend.slnf --collect:"XPlat Code Coverage"` — use the solution filter, not the full solution
+- **Test (integration, 99 tests):** `dotnet test AgendaBuddy.IntegrationTests/AgendaBuddy.IntegrationTests.csproj` — ⚠️ a **separate command**. `AgendaBuddy.IntegrationTests` is deliberately excluded from the slnf (ADR-031) so the unit gate stays Docker-free, which means the backend command above **does not run it**. Needs a container runtime; `export PATH="$HOME/.rd/bin:$PATH"` first under Rancher Desktop
 - **Test (mobile, 74 tests):** `dotnet test MobileApp.Tests/MobileApp.Tests.csproj /p:MobileWorkloads=false`
 - **Format:** `dotnet format agenda-buddy-backend.slnf` — there is no `.editorconfig`, so this applies built-in defaults
 - **Stop:** `Ctrl-C` on the AppHost (legacy: `docker compose down`)
@@ -73,13 +74,14 @@ See [docs/pdlc/archive/design/aspire-wiring/ARCHITECTURE.md](docs/pdlc/archive/d
 - `Library/Repositories/MongoDbRepository.cs` — generic MongoDB CRUD implementation
 - `Library/Tools/CacheAside.cs` — distributed cache-aside extension (use this for all cached reads)
 - `EventAndCommands/ConfigurationLoader.cs` — MongoDB config bootstrap for EventAndCommands
-- `EventAndCommands/Persitency/EventStore.cs` — audit event persistence (note: "Persitency" is a known typo). Takes an injected `IMongoClient`; it no longer builds one per request scope
+- `EventAndCommands/Persistence/EventStore.cs` — audit event persistence. Takes an injected `IMongoClient`; it no longer builds one per request scope. *(The long-standing `Persitency` misspelling was corrected in F-016; CONSTITUTION §9's prohibition against renaming it is retired.)*
 - `Booking/Program.cs` — representative Minimal API entry point showing the full wiring pattern
 - `AgendaBuddy.AppHost/Program.cs` + `AgendaBuddy.AppHost/AppHostWiring.cs` — the Aspire app model: every resource, reference, and the run/publish (`DeploymentTarget`) split
 - `AgendaBuddy.ServiceDefaults/Extensions.cs` — `AddServiceDefaults()` / `MapDefaultEndpoints()`, called by all 7 services
 - `AgendaBuddy.ServiceDefaults/PiiRedactingProcessor.cs` — strips email addresses from span attributes before export. **Do not remove:** `url.path` was leaking real customer emails (threat T-004)
 - `Library/MongoConnectionResolver.cs` — resolves the Mongo connection string (Aspire → environment → appsettings) with an actionable failure message
-- `agenda-buddy-backend.slnf` — the solution filter the backend CI job and local backend test runs target; excludes MobileApp by design
+- `AgendaBuddy.IntegrationTests/` — the only integration suite. `Harness/ServiceHostFixture.cs` hosts a real service over HTTP against a MongoDB Testcontainer (container per test class, database per test); `Harness/MongoEndpointGuard.cs` **fails the suite closed** if the resolved endpoint is not this session's own container. Add a per-service anchor alias to `GlobalUsings.cs` to host a new service — never `WebApplicationFactory<Program>`, which is ambiguous across all seven assemblies (see `Harness/EntryPoints.cs`)
+- `agenda-buddy-backend.slnf` — the solution filter the backend CI job and local backend test runs target; excludes MobileApp **and `AgendaBuddy.IntegrationTests`** by design (ADR-031)
 - `azure.yaml` + `.github/workflows/deploy.yml` — cloud deploy path. **Written, unit-tested, never executed**
 - `docker-compose.yml` — legacy Kafka + Zookeeper + Schema Registry + service definitions
 - `.github/workflows/dotnet.yml` — CI pipeline: restore → build → test → coverage upload, plus AppHost build and startup guards

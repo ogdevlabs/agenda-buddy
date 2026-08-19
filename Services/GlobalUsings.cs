@@ -25,4 +25,4 @@ global using MiniValidation;
 global using Services.Events;
 global using Services.Requests;
 global using EventAndCommands;
-global using EventAndCommands.Persitency;
+global using EventAndCommands.Persistence;

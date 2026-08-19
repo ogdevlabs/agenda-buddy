@@ -1,3 +1,4 @@
+using Library.Dtos;
 ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls13;
 
 
@@ -38,6 +39,10 @@ builder.Services.AddSingleton<IKafkaClient, KafkaClient>();
 builder.Services.AddScoped<IRequestCollection, RequestCollection>();
 
 // Enable & configure JSON Problem Details error responses
+// ADR-022 / F-016-T08: ForbiddenException -> 403 centrally, so an endpoint that omits a local
+// try/catch returns 403 rather than a bare 500. Registered unconditionally, unlike the
+// Development-only UseExceptionHandler lambda below.
+builder.Services.AddExceptionHandler<AgendaBuddyExceptionHandler>();
 builder.Services.AddProblemDetails(options =>
     options.CustomizeProblemDetails = context => CustomizeProblemDetails(context.ProblemDetails, context.HttpContext));
 
@@ -103,6 +108,13 @@ if (app.Environment.IsDevelopment())
     });
 }
 
+// MUST stay AFTER the IsDevelopment() block. Middleware registered earlier is outermost and an
+// exception propagates outward, so the INNERMOST handler sees it first. Placed here, this one takes
+// ForbiddenException and declines everything else, which then rethrows and reaches the Development
+// lambda exactly as it does today. Placed BEFORE that block, the lambda would swallow
+// ForbiddenException and the central 403 would fail in Development only. See AgendaBuddyExceptionHandler.
+app.UseExceptionHandler();
+
 app.UseAntiforgery();
 app.UseAuthentication();
 app.UseAuthorization();
@@ -119,12 +131,25 @@ var providers = app.MapGroup("/api/v1/providers")
 // create a Topic for the provider
 providers.MapPost("/", async Task<Results<ValidationProblem, Created<ProviderEntity>>> (
         IMediator mediator,
+        ClaimsPrincipal user,
         ProviderService providerService,
         ProviderEntity providerEntity,
         IRequestCollection requestCollection) =>
     {
         if (!MiniValidator.TryValidate(providerEntity, out var errors))
             return TypedResults.ValidationProblem(errors);
+
+        // F-016 AC-11 -- BOTH arms are required. A role check alone still lets one Provider create a
+        // record under another provider's email, which is account takeover by registration. An ownership
+        // check alone would let a Customer create provider records for themselves.
+        //
+        // This is one of only two AssertRole call sites in the solution after F-016. Per
+        // 13-security.md:137 AssertRole had never been called anywhere, so the `role` claim authorized
+        // nothing at all before this feature.
+        //
+        // No local try/catch: T08's AgendaBuddyExceptionHandler maps ForbiddenException to 403 centrally.
+        OwnershipGuard.AssertRole(user, "Provider");
+        OwnershipGuard.AssertOwner(user, providerEntity.Email);
         var filter =
             SupportTools<ProviderEntity>.FilterByNameAndLastName(providerEntity.FirstName, providerEntity.LastName);
         var existingProvider = await providerService.FindProvidersAsync(filter);
@@ -149,25 +174,56 @@ providers.MapPost("/", async Task<Results<ValidationProblem, Created<ProviderEnt
     .RequireAuthorization();
 
 // Get provider list
-providers.MapGet("", async Task<Results<Ok<List<ProviderEntity>>, NoContent>> (IMediator mediator,
+providers.MapGet("", async Task<Ok<PagedResponse<ProviderSummary>>> (IMediator mediator,
     ProviderService providerService,
-    IRequestCollection requestCollection, IDistributedCache cache) =>
+    IRequestCollection requestCollection, IDistributedCache cache,
+    int? page = null, int? pageSize = null) =>
 {
-    var key = $"providers";
+    // F-016 AC-15 / ADR-023. Clamped, never rejected: a 400 would tell an attacker the exact boundary and
+    // leave an honest client no way to discover the cap. MaxPageSize is a SECURITY control -- an uncapped
+    // page size restores the full-dataset dump this feature exists to remove.
+    var pageRequest = PageRequest.Clamp(page, pageSize);
+
+    // ⚠️ The cache key carries the page, or page 2 would serve page 1's entry. Cheap to get wrong and
+    // invisible in a single-page test.
+    var key = $"providers-p{pageRequest.Page}-s{pageRequest.PageSize}";
     var providerCollection = await cache.GetOrCreateAsync(key, async token =>
     {
-        var listProviders = await EventsHelper.GetProvidersEvent(requestCollection, mediator, providerService);
+        var listProviders =
+            await EventsHelper.GetProvidersEvent(requestCollection, mediator, providerService, pageRequest);
         return listProviders;
     });
 
-    if (providerCollection is not null)
-        return TypedResults.Ok(providerCollection);
+    if (providerCollection is null)
+    {
+        // 204 is RETIRED (ADR-023): a client always gets a parseable body. CacheAside returns default! on a
+        // 500 ms lock timeout, so this branch is a cache miss rather than an empty collection.
+        return TypedResults.Ok(PagedResponse<ProviderSummary>.From([], 0, pageRequest));
+    }
 
-    return TypedResults.NoContent();
-}).WithName("GetAllProviders");
+    // F-016 AC-9 / requirement 10. ProviderEntity embeds AppointmentEntities (each carrying
+    // email_customer) and SubscribedCustomerCollection, so authentication alone does not fix this: an
+    // authenticated CUSTOMER browsing for a coach would still receive every provider's appointment book
+    // and client roster.
+    //
+    // ⚠️ THE LIST IS HOMOGENEOUS -- every element is a ProviderSummary, including the caller's own record.
+    // api-contracts.md section 5.1 describes owner-gets-full for this route too, which would make `items`
+    // a MIXED array of two shapes. That is not deserialisable into a typed list, and F-015 is written
+    // against this contract. An owner loses nothing: GET /api/v1/providers/{email} returns their full
+    // record, and that route DOES apply the ownership branch. Deviation recorded in api-contracts.md.
+    return TypedResults.Ok(PagedResponse<ProviderSummary>.From(
+        providerCollection.Items.Select(ProviderSummary.From).ToList(),
+        providerCollection.TotalCount,
+        pageRequest));
+})
+    // F-016 AC-8 / requirement 9: PII-bearing read, so no longer anonymous. Breaking change with zero reachable consumers (01-api-surface.md:158).
+    .WithName("GetAllProviders")
+    .RequireAuthorization();
 
 // Get provider by Email
-providers.MapGet("/{email}", async Task<Results<Ok<ProviderEntity>, NotFound>> (IMediator mediator,
+providers.MapGet("/{email}", async Task<Results<Ok<ProviderEntity>, Ok<ProviderSummary>, NotFound>> (
+    IMediator mediator,
+    ClaimsPrincipal user,
     string email,
     ProviderService providerService,
     IRequestCollection requestCollection, IDistributedCache cache) =>
@@ -180,11 +236,26 @@ providers.MapGet("/{email}", async Task<Results<Ok<ProviderEntity>, NotFound>> (
         return provider;
     });
 
-    if (providerEntity is not null)
-        return TypedResults.Ok(providerEntity);
+    if (providerEntity is null)
+        return TypedResults.NotFound();
 
-    return TypedResults.NotFound();
-}).WithName("GetProviderByEmail");
+    // F-016 AC-9 / requirement 10: two shapes, selected by ownership. Deliberately NOT 403 for a provider
+    // you do not own -- reading another provider's SUMMARY is the discovery flow F-003 defines. Only the
+    // embedded data is withheld.
+    //
+    // ⚠️ This branch is exactly why F-016-T09 had to land first (threat T-001). AssertOwner's null-claim
+    // fall-through used to land on the OWNER side, so a token carrying no `sub` would have received the
+    // unprojected entity. Pinned by ProviderProjectionTest.T001_*.
+    // IsOwner rather than catching AssertOwner's ForbiddenException: "not the owner" selects a narrower
+    // shape here, it is not a failure, and exception-driven control flow on a read path is both slower and
+    // misleading. Both share one implementation, so the null-claim rule cannot drift between them.
+    return OwnershipGuard.IsOwner(user, providerEntity.Email)
+        ? TypedResults.Ok(providerEntity)
+        : TypedResults.Ok(ProviderSummary.From(providerEntity));
+})
+    // F-016 AC-8 / requirement 9: PII-bearing read, so no longer anonymous. Breaking change with zero reachable consumers (01-api-surface.md:158).
+    .WithName("GetProviderByEmail")
+    .RequireAuthorization();
 
 
 // Update a provider, using email for search of the record

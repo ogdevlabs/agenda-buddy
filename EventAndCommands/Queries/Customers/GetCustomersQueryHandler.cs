@@ -1,38 +1,25 @@
 namespace EventAndCommands.Queries.Customers;
 
-public class GetCustomersQueryHandler(IMediator mediator, CustomerService customerService, IEventStore eventStore)
-    : IRequestHandler<GetCustomersQuery, List<CustomerEntity>>
+public class GetCustomersQueryHandler(
+    IMediator mediator,
+    CustomerService customerService,
+    IEventStore eventStore,
+    PageRequest page)
+    : IRequestHandler<GetCustomersQuery, PagedResponse<CustomerEntity>>
 {
-
-    public async Task<List<CustomerEntity>> Handle(GetCustomersQuery request,
+    /// <remarks>See <c>GetProvidersQueryHandler</c>. F-016-T15.</remarks>
+    public async Task<PagedResponse<CustomerEntity>> Handle(GetCustomersQuery request,
         CancellationToken cancellationToken)
     {
         await mediator.Publish(new GetAllCustomersEvent(), cancellationToken);
-        var customerList = await customerService.GetAllCustomersAsync();
-        var customerEntities = customerList.ToList();
-        if (customerEntities.ToList().Count != 0)
-        {
-            var successEvent = new Event
-            {
-                Id = ObjectId.GenerateNewId(),
-                TimeStamp = DateTime.UtcNow,
-                Status = "Success",
-                Type = "GetCustomersQuery",
-                Data = JsonSerializer.Serialize(customerEntities.ToList())
-            };
-            await eventStore.SaveAsync(successEvent);
-            return customerEntities;
-        }
 
-        var failEvent = new Event
-        {
-            Id = ObjectId.GenerateNewId(),
-            TimeStamp = DateTime.UtcNow,
-            Status = "Failed",
-            Type = "GetCustomersQuery",
-            Data = JsonSerializer.Serialize(customerEntities.ToList())
-        };
-        await eventStore.SaveAsync(failEvent);
-        return customerEntities;
+        var (items, totalCount) = await customerService.GetPagedCustomersAsync(page.Skip, page.PageSize);
+        var customerEntities = items.ToList();
+
+        await eventStore.SaveAsync(customerEntities.Count != 0
+            ? QueryAudit.Success("GetCustomersQuery", customerEntities.Count)
+            : QueryAudit.Failure("GetCustomersQuery"));
+
+        return PagedResponse<CustomerEntity>.From(customerEntities, totalCount, page);
     }
 }

@@ -21,4 +21,4 @@ global using Microsoft.AspNetCore.WebUtilities;
 global using Microsoft.Net.Http.Headers;
 global using MongoDB.Driver;
 global using EventAndCommands;
-global using EventAndCommands.Persitency;
+global using EventAndCommands.Persistence;

@@ -63,6 +63,13 @@ public class InMemoryCredentialRepository : IRepository<CredentialEntity>
         Task.FromResult<IEnumerable<CredentialEntity>>(_store.Where(e =>
             MatchesFilter(e, filter)).ToList());
 
+    // ADR-023's repository half (F-016-T10). Negatives are normalised to zero to match
+    // MongoDbRepository, where Skip(-1) throws rather than being the no-op LINQ makes it.
+    public Task<(IEnumerable<CredentialEntity> Items, long TotalCount)> GetPagedAsync(int skip, int take) =>
+        Task.FromResult<(IEnumerable<CredentialEntity>, long)>((
+            _store.Skip(Math.Max(0, skip)).Take(Math.Max(0, take)).ToList(),
+            _store.Count));
+
     // Simple filter evaluation for test purposes
     private CredentialEntity? FindByFilter(BsonDocument filter)
     {

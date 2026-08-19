@@ -5,19 +5,23 @@
      Claude reads this file at the start of every session to auto-resume from the last checkpoint.
      If this file is missing or empty, PDLC will prompt you to run /pdlc init. -->
 
-**Last updated:** 2026-08-18T17:45:00Z
+**Last updated:** 2026-08-18T23:55:00Z
 
 ---
 
 ## Current Phase
 
-Inception Complete — Ready for /build
+Construction Complete — Ready for /ship
 
 ---
 
 ## Current Feature
 
-api-refactor-foundations
+secure-public-endpoints
+
+_In **Construction / Build**. Inception complete 2026-08-18 — PRD, design and plan all approved. Came from the approved **Platform Remediation** program Discover, which re-scoped and re-sequenced F-014–F-017 into six features. Program log: `docs/pdlc/brainstorm/brainstorm_platform-remediation_2026-08-18.md` (`status: prd-approved`). New sequence: **F-016 → F-021 → F-014 → F-015 → F-017 → F-018–F-020**, with F-022–F-024 filed._
+
+_`api-refactor-foundations` (F-018) is **paused** — see `docs/pdlc/memory/.paused-feature.json`. Inception is complete and merged; Construction was aborted at the wave-1 standup before any code._
 
 ---
 
@@ -33,11 +37,14 @@ none
 
 ## Roadmap Claim
 
-- **Feature ID:** F-018
-- **Feature record:** docs/pdlc/tasks/F-018/_feature.md (retitled `api-refactor-foundations` at Discover — stage 1 of 3)
+- **Feature ID:** F-016
+- **Feature record:** docs/pdlc/tasks/F-016/_feature.md
 - **Claimed by:** oscargarcia@ogdevlabs.onmicrosoft.com
-- **Claimed at:** 2026-08-18T13:40:00Z
-- **Branch:** (will be set at build pre-flight)
+- **Claimed at:** 2026-08-18T17:52:00Z *(claim moved F-014 → F-016 when Discover put F-016 first; F-014 released)*
+- **Branch:** `feat/F-016-secure-public-endpoints` — created at build pre-flight 2026-08-18T19:22Z **off freshly-pulled `main`** (`e35938b`) at the maintainer's request, not off the F-018 branch. The Inception artifacts and the F-018 abort travelled across via stash.
+- **Pushed 2026-08-18T22:40Z at the maintainer's request. PR #38 is OPEN** → https://github.com/ogdevlabs/agenda-buddy/pull/38 (27 commits, 158 files). Opened via the GitHub API with the credential `git` already uses, **not `gh`** — `gh` is authenticated to a different work identity.
+
+_F-018's claim was released on 2026-08-18T17:37:14Z when Construction was aborted; the feature is `In Progress`-but-unclaimed on the roadmap and resumable with `/continue`. Its branch `feat/F-018-api-refactor-foundations` holds the Inception artifacts and **zero** implementation commits._
 
 _F-013 `aspire-wiring` shipped as `v0.1.0` on 2026-08-18 and its claim was released._
 
@@ -53,11 +60,14 @@ _None active. Run `/night-shift <F-NNN>` to start an autonomous run (requires by
 
 none
 
+_**Construction is COMPLETE** — Build (20/20 tasks), Review (approved, fix cycle 1), Test (all layers
+resolved) and Wrap-up (episode 002 drafted) are all done. Next: `/ship`._
+
 ---
 
 ## Last Checkpoint
 
-Inception / Plan / 2026-08-18T17:45:00Z
+Construction / Complete / 2026-08-18T23:55:00Z — **Construction Complete, ready for `/ship`.** PR #38 open and green.
 
 ---
 
@@ -73,10 +83,47 @@ agent-teams
 |-----------|-----------|--------|
 | 2026-08-18T12:44:29Z | ship_phase_mismatch | `/ship` started with Current Phase `Construction` (sub-phase Wrap-up), not `Construction Complete`. User confirmed: F-013's branch is merged to main and 14/14 tasks are done; the phase marker was never advanced after the ISSUE-001 fix. Bookkeeping gap, not unfinished work. |
 | 2026-08-18T12:44:29Z | required_gate_unmet | CONSTITUTION §7 `Security scan (dependency audit + secret scan)` is marked always-required and un-uncheckable but is not implemented — CI has a single credential grep, not a scanner. Pre-existing project-wide gap, not introduced by F-013; owned by F-017. User authorized shipping with the gate unmet. Unit-test gate verified empirically: 305 passing / 0 failing / 0 warnings across 12 projects. |
+| 2026-08-18T17:55:00Z | standards_gate_skipped | Define Step 6.5 (`--ideate`, advisory tier) skipped for F-016. The `nordstrom-standards-readiness` plugin **is installed**, but its six source standards repos do not resolve under this `gh` auth (needs SSO or VPN) and no local `.nordstrom-standards/` exists. Light skip per the advisory tier — the Plan-gate `--design` check will re-attempt. Same condition recorded at F-013 and F-018. |
+| 2026-08-18T23:20:00Z | standards_gate_skipped | Review Step 12.6 (`enforcing` tier, full codebase assessment) **could not run**. The `nordstrom-standards-readiness` plugin is installed, but probing its sources confirms they still do not resolve under this `gh` auth (`nordstrom-engineering-standards`, `nordstrom-security-standards`: no response), there is no local `.nordstrom-standards/` cache, and no prior `docs/standards-readiness/` report to `--delta` against. Treated as **skip-with-notice (plugin unavailable)**, not as a user `/override`, so no ADR is minted. ⚠️ **This is the fourth consecutive gate this has blocked** — F-013 ship, F-018 Define, F-016 Define, F-016 Plan, and now F-016 Review. A gate marked `enforcing` that has never once executed is governance theatre; it needs either a reachable source (SSO/VPN, or a vendored `.nordstrom-standards/`) or an explicit decision to retire it. Recommend folding into F-017, which already owns CONSTITUTION §7's unimplemented scan gate. |
+| 2026-08-18T23:35:00Z | review_warnings_accepted | Review approval gate (fix cycle 1 of 3): **0 Critical**. Maintainer chose **fix I-3 + I-4, accept the rest**. FIXED: **I-3** — AC-14 was verified on only 1 of the 6 remaining `ForbiddenException` catch sites; `RemainingLocalCatchSitesTest` now covers Booking `:125`/`:149`/`:174` and Services `:153`/`:177` in Production (integration 93 → 99). **I-4** — `CLAUDE.md` claimed "379 tests total: 305 backend" and omitted the integration command entirely; corrected to 531 (358+99+74) with the ADR-031 warning and a Key Files entry. ACCEPTED as logged warnings: **I-1** the providers-list cache holds *unprojected* entities and the projection is applied after the cache read — correct today, a trap for F-019/F-020 which rewrite that file; **I-2** `GET /api/v1/customers` returns full `CustomerEntity` (incl. `SubscribedProviderCollection`, `AppointmentCollection`, `KafkaTopic`) to any Provider-role caller — consistent with ADR-026's deferral of owner-scoping, now quantified against the real payload; **I-5** the catalog's 10-vs-9 handler line, due at the Ship refresh; and **A-1…A-7** advisories, notably that authorization failures are entirely unlogged (no log sink at all) so IDOR probing leaves no trace (F-021/F-024). |
+| 2026-08-18T23:45:00Z | test_layers_skipped | Test Step 15: **layers 3–6 have no command in this project** and are **not required** gates in CONSTITUTION §7 — E2E (real Chromium), performance/load, accessibility, visual regression. Each discovered by searching every `.csproj`/`.json`/`.yml`/`.sh` for the usual runners (playwright/cypress, k6/NBomber/BenchmarkDotNet, axe/pa11y, percy/chromatic): no candidate found. Skipped with this warning rather than silently. Layer 7c (OWASP `dependency-check` CLI) is not installed → INFO. |
+| 2026-08-18T23:45:00Z | required_gate_flagged_accepted | Test Step 15 **Layer 7 (security scan — always required, un-uncheckable)** RAN. **7a dependency audit:** `dotnet list package --vulnerable --include-transitive` reports exactly **one** vulnerable package across the whole solution — `SSH.NET 2024.2.0`, **HIGH**, `GHSA-q939-rpr3-3284` — in exactly **one** project, `AgendaBuddy.IntegrationTests`. All 25 pre-existing projects clean. This is **new on this branch** (the project did not exist on `main`, whose baseline was 0 vulnerable at the F-013 ship gate). Per Step 15 a new HIGH is a flagged required gate — **disposition already recorded in ADR-030** (maintainer-approved at T02: unreachable because Testcontainers only loads SSH.NET for Docker-over-SSH, which this project does not use, and the unreachability is *tested* by `ContainerRuntimeGuardTest`). **Not re-asked**, because re-deciding an ADR the maintainer already approved would be re-litigation. Confirms ADR-030's promise that the project-scoped `NU1903` suppression does not hide it from the audit report — it is listed. **7b secret scan on the 161 changed files:** clean on all six patterns (mongodb credential, AWS key, GitHub token, Stripe live key, PEM payload, assigned-secret literal); no `.env` files; every `appsettings` connection string still blank. ⚠️ Gate satisfied **by hand**, as at F-013 — CI still has only a credential grep, not a scanner. **F-017 still owns automating it.** |
 
 ---
 
 ## Active Blockers
+
+> ### 🔖 RESUME MARKER — updated 2026-08-18T23:55Z, **CONSTRUCTION COMPLETE**
+>
+> **F-016 `secure-public-endpoints` is Construction Complete and ready for `/ship`.**
+> Branch `feat/F-016-secure-public-endpoints`, **pushed**, **[PR #38](https://github.com/ogdevlabs/agenda-buddy/pull/38) open, mergeable, CI green.**
+>
+> All four sub-phases done: **Build** 20/20 tasks · **Review** approved (0 Critical; fix cycle 1 closed I-3 and
+> I-4) · **Test** all layers resolved · **Wrap-up** episode 002 drafted.
+>
+> **Gates:** backend **358** / integration **99** / mobile **74** = **531**, 0 failing, 0 warnings.
+> All **7** threat-derived security ACs have linked tests; `tasks.cjs check` → 0 `security-ac-untested`.
+>
+> **Read before shipping:**
+> - `docs/pdlc/design/secure-public-endpoints/verification.md` — the 26-AC attestation, every deviation named
+> - `docs/pdlc/reviews/REVIEW_secure-public-endpoints_2026-08-18.md` — 0 Critical, 5 Important (2 fixed, 3
+>   accepted), 7 Advisory, and the approval-outcome table
+> - `docs/pdlc/episodes/EPISODE_secure-public-endpoints_2026-08-18.md` — **Status: Draft**, needs human sign-off
+>
+> **Three things `/ship` must not skip:**
+>
+> 1. **Add `Integration — real services + MongoDB` to `main`'s required status checks.** "Blocking" is a
+>    branch-protection setting, not YAML. Until then the job can fail and a PR still merge — which would leave
+>    this feature's central claim enforced by habit.
+> 2. **The context refresh (Reflect 16c-bis) must fix `docs/pdlc/context/15-cqrs-and-messaging.md:161`** —
+>    "10 queries, 10 handlers" above a 9-row table. That line is the origin of an error that reached four
+>    approved artifacts. Review finding I-5.
+> 3. **§7's Integration checkbox stays unchecked** (gated on 10 consecutive green runs, tracked separately),
+>    and §7's security-scan gate was satisfied **by hand** again — F-017 still owns automating it.
+>
+> ⚠️ **Still unrotated: the Atlas credential (`ISSUE-002`).** Human-only, and it is what makes the harness's
+> fail-closed guard load-bearing.
+
 <!-- PENDING MARKER — read this first at the start of the next session. Each item below is either
      an action only a human can take, or work that is written but not yet exercised. Nothing here is
      blocked on more code being written. -->
@@ -127,14 +174,43 @@ returned 200); and both JWT parameters render **masked** on the `identity` resou
 
 **Nothing in F-013 is now recorded as unverified.**
 
-### 4. Roadmap ordering note (not a blocker, but read it)
+### 4. Roadmap ordering — **REVERSED, then decomposed 2026-08-18. New order: F-016 → F-021 → F-014 → F-015 → F-017**
 
-**F-018 `refactor-minimal-apis` is claimed and being worked ahead of F-014–F-017** at the user's
-explicit request. That's a deliberate call — a structural refactor of every endpoint is cheaper
-before those four features add more endpoints to it — but it means three known-bad conditions stay
-open longer than the roadmap order implies: six shipped-but-unreachable capabilities (F-014), a
-mobile client that cannot reach the backend (F-015), and unauthenticated PII exposure on
-`GET /api/v1/providers` (F-016).
+F-018 was being worked ahead of F-014–F-017 at the user's request. That is **no longer the case**:
+F-018 finished Inception (PR #37 merged) and then had Construction **aborted at the wave-1 standup,
+before a single line of code**. A **program-level Discover** then ran across all four
+(`docs/pdlc/brainstorm/brainstorm_platform-remediation_2026-08-18.md`, approved) and decomposed them
+**4 → 6**:
+
+- **F-016 goes first, and carries the verification harness.** `docs/pdlc/context/11-testing.md:148`
+  establishes that `Program.cs` is not coverable and **there is no integration test in the solution**,
+  so endpoint authz — precisely what F-016 changes — is the one thing nothing here can verify. The
+  Calendar IDOR exists *because* of that gap. F-016 therefore absorbs **six tasks from F-018's
+  already-approved, already-spiked plan** (T01, T05, T06, T08, T09, T14) as its wave 1.
+- **F-021 `identity-hardening` is new** — split out of F-016 because it grew past one PRD. It carries
+  the account-destroying `RefreshAsync`, the HTTPS-before-auth ordering, rate limiting, and the
+  `AssertOwner` null-claim hole.
+- **F-022–F-024 filed:** password reset (downstream of F-014 — needs `NotificationService`), token
+  revocation, data-subject rights.
+- ⚠️ **F-018 is now ~14 tasks, and its paused plan is stale.** Recorded in `.paused-feature.json`.
+
+The known-bad conditions this order addresses, in the order they now get addressed:
+
+- **F-014** — six shipped-but-unreachable capabilities (`NotificationService`, `MessageService`,
+  `NoteService`, `PaymentService`, `ReportingService`, `DeactivateProviderCommand`): domain code and
+  unit tests exist, but no DI registration, no configured collection, no HTTP route. F-006–F-010 are
+  marked Shipped on code nothing can call.
+- **F-015** — the mobile client cannot reach the backend: missing `api/v1/` prefixes, three wrong base
+  URLs, no gateway, refresh-token flow wired but unused, `LogoutAsync` never calls the server.
+- **F-016** — **unauthenticated PII exposure.** `GET /api/v1/providers` returns every provider's full
+  record including customer emails, anonymous and unpaginated. Both Calendar routes are IDOR-able and
+  `OwnershipGuard.AssertRole` is never actually called. **This is the highest-severity item in the
+  four and is worth considering ahead of F-014.**
+- **F-017** — three Dockerfiles publish `net10.0` onto a `dotnet/runtime:8.0` base and cannot run;
+  CONSTITUTION §7's dependency-audit + secret-scan gate is still mandated-but-unimplemented.
+
+F-018's Inception artifacts stay valid and its 20 tasks stay in the store — resuming it costs no
+re-planning (`/continue`).
 
 ### Resolved, kept for context
 
@@ -148,15 +224,101 @@ mobile client that cannot reach the backend (F-015), and unauthenticated PII exp
 
 ## Context Checkpoint
 
+<!-- ⚠️ CONTEXT CLEARED HERE at the maintainer's request, 2026-08-18T19:55Z.
+     This block is written to be read COLD — a fresh session should be able to resume
+     F-016 Construction from it alone, without any of the prior conversation. -->
+
 ```json
 {
-  "triggered_at": "2026-08-18T13:40:00Z",
+  "triggered_at": "2026-08-18T19:55:00Z",
+  "reason": "maintainer asked for a marker so context could be cleared mid-Build",
+  "phase": "Construction",
+  "sub_phase": "Review",
+  "feature": "secure-public-endpoints",
+  "feature_id": "F-016",
   "active_task": null,
-  "sub_phase": "Discover",
-  "step": "f-013-shipped-v0.1.0-starting-f-018-inception",
-  "skill_file": "skills/brainstorm/steps/01-discover.md",
-  "work_in_progress": "F-013 shipped as v0.1.0. F-018 Inception in Discover. Round 1 done: the requested scope was too large for one PRD and was decomposed into F-018 api-refactor-foundations (harness + MobileApp CI + Persitency rename + constitution amendments), F-019 api-refactor-pilot-booking (full Clean Architecture on Booking), F-020 api-refactor-rollout (remaining 6). Integration-test capability moved out of F-017 into F-018. MediatR stays the single dispatcher; SmallApiToolkit used only for DataResponse/validation-base/middleware.",
-  "next_action": "Continue F-018 Discover at Round 2 (Future State / Key Capabilities), scoped to the foundations stage only: Testcontainers harness, MobileApp into CI, Persitency rename, constitution amendments.",
+  "skill_file": "skills/build/steps/03-review.md",
+  "resume_command": "/build",
+
+  "branch": "feat/F-016-secure-public-endpoints",
+  "branch_base": "main @ e35938b (freshly pulled; branched at the maintainer's request, NOT off the F-018 branch)",
+  "commits_on_branch": 25,
+  "pushed": false,
+  "working_tree": "clean apart from PDLC docs (STATE, the wave-3 MOM, task files)",
+
+  "progress": "20 of 20 tasks done — BUILD COMPLETE. Waves 1-8 all finished. Review, Test and Wrap-up sub-phases NOT yet run.",
+  "ready_queue_next": [],
+  "critical_path": "COMPLETE. T01 -> T02 -> T03 -> T06 -> T07 -> T08 -> T12 -> T15 -> T19 -> T20, all ten done.",
+
+  "test_state": {
+    "backend": "358 passing / 0 failing / 0 warnings across 12 projects via `dotnet test agenda-buddy-backend.slnf`. 305 baseline -> 358 (+53). Wave 6 added the AgendaBuddyExceptionHandler, OwnershipGuard T-001, QueryAudit/AuditActor and PageRequest unit tests.",
+    "integration": "92 passing in ~1 m 13 s via `dotnet test AgendaBuddy.IntegrationTests/AgendaBuddy.IntegrationTests.csproj` — a SEPARATE command, see ADR-031. Grew across all of wave 6. T20 enforces a 600 s budget in CI.",
+    "mobile": "74 (67 passing, 7 skipped) via `dotnet test MobileApp.Tests/MobileApp.Tests.csproj /p:MobileWorkloads=false` — re-verified after T10 touched Library, unchanged"
+  },
+
+  "WAVE_3_ESTABLISHED": {
+    "HarnessCollection": "Harness/CryptoSessionFixture.cs. Every harness test class must join it: [Collection(HarnessCollection.Name)]. DisableParallelization = true for the JWT_PUBLIC_KEY startup race, and it shares the one CryptoSessionFixture. NOTE: Identity.Tests/Auth/TestCollectionDefinition.cs could NOT be reused — xUnit collection definitions are per-assembly. The pattern transfers, the type does not.",
+    "DockerPreflight": "Harness/DockerPreflight.cs. Call EnsureAvailable() before ANY container start; ContainerRuntimeGuardTest already does. Resolution order matches Testcontainers: DOCKER_HOST -> docker.host in ~/.testcontainers.properties -> current docker context -> default socket. It NEVER blocks on uncertainty (tcp:// reports available) because a false positive would stop a working suite.",
+    "CryptoSessionFixture": "Exposes PublicKeyPem and a live RSA SigningKey. Deliberately NO private-key PEM string — a string is what gets logged or pasted into a fixture. T05 signs with SigningKey; T06 exports PublicKeyPem as JWT_PUBLIC_KEY.",
+    "GetPagedAsync": "Task<(IEnumerable<TEntity> Items, long TotalCount)> GetPagedAsync(int skip, int take) on IRepository<T>. Negatives normalised to 0 in BOTH implementers, because Skip(-1) throws on the driver but is a no-op in LINQ. Clamping the caller's pageSize is T15's job, not the repository's (ADR-023).",
+    "measured_docker_facts": "No /var/run/docker.sock on this machine. ~/.docker/config.json currentContext = rancher-desktop -> unix:///Users/<user>/.rd/docker.sock. Testcontainers.NET does NOT shell out to the docker CLI; it uses the engine API over that socket. Both halves of T04's stated premise were wrong and are corrected in DockerPreflight's remarks."
+  },
+
+  "WAVE_4_5_ESTABLISHED": {
+    "how_to_write_an_endpoint_test": "[Collection(HarnessCollection.Name)] on the class, plus IClassFixture<ServiceHostFixture<XAnchor>>. Constructor takes (ServiceHostFixture<XAnchor> host, CryptoSessionFixture crypto). Then: using var service = host.StartService(); service.Client for real HTTP, service.Database for this test's own DB. new TokenFactory(crypto) for tokens. See AuthFailurePathTest for the full pattern.",
+    "anchors": "GlobalUsings.cs holds the per-service aliases (ProfessionAnchor, CustomerAnchor). ADD ONE PER SERVICE as needed: the type is that service's public MongoDbConfiguration. Booking's namespace is Booking.Configuration (SINGULAR); the other six are *.Configurations (plural).",
+    "xunit_mechanics_VERIFIED": "xUnit v2 DOES inject a collection fixture into a class fixture's constructor — verified empirically with a throwaway probe, contrary to expectation. That is what lets the session-scoped keypair and the class-scoped container compose with no process-static workaround. The class fixture type must be PUBLIC (CS0051).",
+    "fail_closed_guard": "MongoEndpointGuard, two layers. AssertNotObviouslyRemote (srv:// or credentials) runs BEFORE the container starts, so an Atlas string aborts without pulling a 1.13 GB image. AssertTargetsContainer compares HOST AND PORT against the container's own reported endpoint — NOT a localhost pattern, which was broken at the threat party. It never echoes the rejected string, so a credential cannot reach CI logs.",
+    "never_write_the_connection_string": "ServiceHostFixture treats the environment as READ-ONLY and injects the container endpoint via WebApplicationFactory UseSetting. Writing ConnectionStrings__mongodb would (a) make the guard compare its own value to itself and (b) poison the NEXT test class, which starts a different container on a different port and would read the previous class's endpoint as a conflict and abort. JWT_PUBLIC_KEY is the exception and MUST be an env var: AuthenticationExtensions.cs:16 reads it directly, not through IConfiguration, and throws at DI-registration time.",
+    "validation_precedes_authorization": "On the {email} PUT routes MiniValidator.TryValidate runs BEFORE OwnershipGuard.AssertOwner (Customer/Program.cs:150 vs :153). A test with an invalid or empty body gets 400 and NEVER REACHES THE GUARD — it reads as 'the guard does not fire'. Also a mild information-disclosure smell for F-019/F-021: an unauthorized caller can probe validation rules.",
+    "what_AC4_real_HTTP_means": "The HttpClient issues real HTTP through the service's whole pipeline — routing, authn, authz, model binding, exception handler — against real MongoDB. The transport underneath is TestServer's in-memory one, not TCP. That is what Microsoft.AspNetCore.Mvc.Testing provides and what T02's EntryPoints design selected. Stated because AC-4 says 'real HTTP request'."
+  },
+
+  "WAVE_6_OUTCOMES": {
+    "all_7_security_ACs_linked": "tasks.cjs check reports ZERO security-ac-untested for F-016. T-001..T-007 each have a T00N_* test linked via ac link-test, so tasks.cjs done could not have closed any of those tasks on a citation alone.",
+    "verification_doc": "docs/pdlc/design/secure-public-endpoints/verification.md — T19's attestation of all 26 ACs, naming every deviation. READ THIS BEFORE REVIEW.",
+    "counting_errors_found_in_approved_artifacts": "THREE, all verified against code: 9 query handlers not 10 (origin: 15-cqrs-and-messaging.md:161 states '10 queries, 10 handlers' above a 9-row table) with 18 audit call sites not 20; 7 hand-written ForbiddenException catch sites not 8; and no `profession` field on ProviderEntity nor `duration` on ServiceEntity despite api-contracts section 5.1 showing both.",
+    "design_docs_corrected": "api-contracts section 3.1 and 5.1, ARCHITECTURE section 5, ADR-023 annotated, ADR-027 amended. STILL TO FIX: docs/pdlc/context/15-cqrs-and-messaging.md:161's handler count, at the /ship context refresh.",
+    "middleware_order_gotcha": "app.UseExceptionHandler() MUST stay AFTER the if (IsDevelopment()) block in all six services. Registered before it, the Development lambda becomes innermost, swallows ForbiddenException, and AC-13 fails in DEVELOPMENT ONLY -- green in CI, red locally. CentralForbiddenTest asserts both environments.",
+    "calendar_guard_before_cache": "DESIGN INVARIANT. Both Calendar routes cache on {email} -- the request SUBJECT, never the CALLER -- so the ownership guard being ABOVE the cache read is the only thing preventing a cross-tenant leak. F-019/F-020 will rewrite these exact files. T006_AWarmCacheIsNotServedToADifferentPrincipal fails if it is ever reordered.",
+    "event_actor_is_central": "Stamped in EventStore.SaveAsync from IHttpContextAccessor, NOT per handler (no handler can see the caller). AddEventStore() calls AddHttpContextAccessor() itself, so no service Program.cs registers anything. Accepted cost: EventAndCommands is now ASP.NET-aware. Escape hatch if that ever needs undoing: an IAuditActorProvider seam. Maintainer-approved; ADR-027 amended.",
+    "AC19_deviation": "ONE pre-existing test deleted: Profession.Tests AddProfessionEvent_ReturnSuccess, because ADR-025 removed its subject. Net -1 unit test, +3 integration tests. The argument is in verification.md section 2 and a comment at the deletion site. NEEDS MAINTAINER ACCEPTANCE."
+  },
+
+  "WAVE_3_DEBT": [
+    "MongoDbRepository<T>.GetPagedAsync has NO test of its Mongo semantics — not unit-testable (live DB + the driver's fluent chain ends in an extension method Moq cannot intercept). First real exercise is T15's paginated endpoint tests. T19's attestation must not claim otherwise. Standup finding E-1.",
+    "AC-3's tree-hygiene tests live in Library.Tests, NOT the harness, so the existing api CI job runs them on every PR — the harness is out of the slnf (ADR-031) and its CI job does not exist until T20. Consider moving them once T20 is green.",
+    "DockerPreflight residual: if the socket exists and something is listening but the daemon is wedged, the preflight passes and Testcontainers' own error surfaces. Detecting that needs a real API call with its own timeout budget."
+  ],
+
+  "READ_FIRST_ON_RESUME": [
+    "docs/pdlc/prds/plans/plan_F-016_secure-public-endpoints_2026-08-18.md — the 10 known gaps section names everything that will surprise the implementer",
+    "docs/pdlc/design/secure-public-endpoints/threat-model.md — 7 mitigate-now threats are [security] ACs on T06/T08/T09/T13/T16/T17/T18",
+    "docs/pdlc/design/secure-public-endpoints/ARCHITECTURE.md — AD-1 (section 2) explains why requirement 14 could not be met as scoped",
+    "AgendaBuddy.IntegrationTests/Harness/EntryPoints.cs — why WebApplicationFactory<Program> cannot be used here"
+  ],
+
+  "GOTCHAS_THAT_WILL_BITE": [
+    "`tasks.cjs ready` is NOT feature-scoped. It returns paused-F-018 tasks (F-018-T02/T04/T19) alongside F-016's. ALWAYS filter on label epic:secure-public-endpoints or Build will start an F-018 task.",
+    "docker is NOT on PATH under Rancher Desktop. `export PATH=\"$HOME/.rd/bin:$PATH\"` before anything that touches containers.",
+    "Do NOT add AgendaBuddy.IntegrationTests to agenda-buddy-backend.slnf (ADR-031). That slnf is the Docker-free unit gate documented in CLAUDE.md and run by CI's api job.",
+    "WebApplicationFactory<Program> does NOT compile: 7 assemblies each emit an internal Program in the global namespace. Use Harness/EntryPoints.cs, which anchors each service to a distinct public type. Note Booking's namespace is Booking.Configuration (singular) while the other six are *.Configurations (plural).",
+    "`tasks.cjs ac list <task> --json` reports tag=None threat=None even when the tags ARE persisted. Read the raw task file (acceptance_criteria: [\"AC1|security|T-002|...\"]) or use `tasks.cjs check`. This produced a false security-ac-unmaterialized reading at the readiness party.",
+    "T09 (AssertOwner null-claim fix) MUST precede T11 (ProviderSummary projection). The projection selects owner-vs-non-owner with AssertOwner, whose null-claim pass lands on the OWNER branch and returns the unprojected entity. Building T11 first ships the bypass. The dep edge exists — do not optimise it away.",
+    "T13's cache test must assert 'NOT 200-with-data', not 'exactly 403'. CacheAside has no test and returns default! on a 500ms lock timeout, surfacing as a spurious 404.",
+    "F-016-T20 (integration CI job) CANNOT be completed without the maintainer: main is PR-protected and CI is path-filtered, so it needs a throwaway branch PUSHED BY A HUMAN. The task graph cannot express that.",
+    "Party mode is `solo` for this whole feature — the session carried a standing 'do not call the Agent tool unless requested' instruction that overrides STATE's `Party Mode: agent-teams`. Every MOM records this."
+  ],
+
+  "MEASURED_FACTS": {
+    "container_start_warm": "3 s — BETTER than the 4.45 s F-018's spike measured, so ADR-017's container-per-class decision holds with margin",
+    "container_start_cold": "62 s, dominated by the 1.13 GB mongo:7.0 pull. A CI consideration for T20 — image caching is worth ~1 min per cold runner.",
+    "rename_scope": "11 .cs files, one reference each; zero in any .json/.yml/.csproj/.slnf. Matched the F-018 Discover measurement exactly.",
+    "host": "Rancher Desktop, docker 29.5.3, 2 CPUs / 4.1 GB, k8s already running (11 containers)"
+  },
+
+  "OPEN_DECISION_THE_MAINTAINER_MAY_REVISIT": "ADR-030 — SSH.NET GHSA-q939-rpr3-3284 (HIGH) enters via Testcontainers and has NO patched version (2023.0.0 through 2025.0.0 all flagged; pinning was attempted and cannot fix it). Accepted as unreachable, and the unreachability is TESTED by Harness/ContainerRuntimeGuardTest.cs. NU1903 is suppressed in that project only; the vulnerability report still lists it, so F-017's audit gate is unaffected. This was surfaced to the maintainer for possible reversal and they moved on to clearing context, so IT STANDS AS ACCEPTED — but it was explicitly flagged as a call a different maintainer could reasonably make differently. CONSTITUTION section 7's dependency-audit gate is unimplemented, which is what makes this uncomfortable.",
+
   "files_open": []
 }
 ```
@@ -167,44 +329,40 @@ mobile client that cannot reach the backend (F-015), and unauthenticated PII exp
 
 ```json
 {
-  "phase_completed": "Inception / Plan",
-  "next_phase": "Construction / Build",
-  "feature": "api-refactor-foundations",
-  "feature_id": "F-018",
+  "phase_completed": "Construction (Build + Review + Test + Wrap-up)",
+  "next_phase": "Operation (/ship)",
+  "feature": "secure-public-endpoints",
+  "feature_id": "F-016",
+  "branch": "feat/F-016-secure-public-endpoints",
+  "branch_pushed": true,
+  "pr": "https://github.com/ogdevlabs/agenda-buddy/pull/38 \u2014 open, mergeable, CI green",
+  "tests": "531 total: backend 358 / integration 99 / mobile 74 (67 pass, 7 skip). 0 failing, 0 warnings.",
+  "task_status": "20 of 20 done",
+  "review": "0 Critical / 5 Important / 7 Advisory. Approved with fix cycle 1: I-3 and I-4 FIXED; I-1, I-2, I-5 accepted as logged warnings.",
   "key_outputs": [
-    "docs/pdlc/prds/PRD_F-018_api-refactor-foundations_2026-08-18.md",
-    "docs/pdlc/prds/plans/plan_F-018_api-refactor-foundations_2026-08-18.md",
-    "docs/pdlc/design/api-refactor-foundations/ARCHITECTURE.md",
-    "docs/pdlc/design/api-refactor-foundations/data-model.md",
-    "docs/pdlc/design/api-refactor-foundations/api-contracts.md",
-    "docs/pdlc/design/api-refactor-foundations/threat-model.md",
-    "docs/pdlc/design/api-refactor-foundations/ux-review.md",
-    "docs/pdlc/brainstorm/brainstorm_refactor-minimal-apis_2026-08-18.md"
+    "docs/pdlc/reviews/REVIEW_secure-public-endpoints_2026-08-18.md",
+    "docs/pdlc/reviews/BLAST-RADIUS_secure-public-endpoints_2026-08-18.md",
+    "docs/pdlc/design/secure-public-endpoints/verification.md \u2014 26-AC attestation",
+    "docs/pdlc/episodes/EPISODE_secure-public-endpoints_2026-08-18.md \u2014 Status: Draft, needs human sign-off",
+    "docs/pdlc/mom/party-review_F-016_2026-08-18.md",
+    "AgendaBuddy.IntegrationTests/ \u2014 99 tests, the first integration suite in the solution",
+    "DECISIONS.md ADR-022..ADR-031 (ADR-023 and ADR-027 amended during Build)"
   ],
   "decisions_made": [
-    "20 tasks in 7 waves. Critical path T01->T05->T06->T08->T13->T18->T20, bottlenecks T05 and T08",
-    "T01 (Persistence rename) MUST be the first commit and MUST precede any integration test (AC-16)",
-    "T16 (OpenAPI) deliberately OFF the critical path - spike proved spec generation needs no container",
-    "Container-per-CLASS with a unique database per test, reversed from per-test on a measured 4.45s startup",
-    "31 ACs: 27 original + 3 threat-derived [security] (T-001/T-002/T-004) + AC-31 added at the Step 18 gate",
-    "Readiness Full -> Fair, 3 gaps. Adversarial pass refuted all three self-rated Strongs. AC-31 closed two of them"
+    "Review approved with fix cycle 1 of 3. I-3: AC-14 now verified on all 6 remaining ForbiddenException catch sites, not 1. I-4: CLAUDE.md corrected to 531 tests and the missing integration command added.",
+    "I-1 (providers-list cache holds unprojected entities), I-2 (GET /customers returns full CustomerEntity to Provider-role callers, per ADR-026's deferral) and I-5 (catalog handler count) ACCEPTED as logged warnings with named owners.",
+    "AC-19 deviation accepted: one pre-existing test deleted because ADR-025 removed its subject. Net -1 unit test, +3 integration tests.",
+    "Layer 7 security scan run BY HAND again. One HIGH (SSH.NET) \u2014 new on this branch, disposition already in ADR-030, not re-asked.",
+    "Nordstrom standards gate could not run for the FIFTH time; recommended folding into F-017 or retiring it."
   ],
-  "next_action": "STOPPING HERE at the user's request - no implementation. Run /build to start Construction when ready.",
-  "git_policy": "NO PUSHING. All work is local commits on feat/F-018-api-refactor-foundations. main is PR-protected; the 5 commits pushed to main earlier in this session were left in place by user decision.",
-  "read_first_at_build": [
-    "docs/pdlc/prds/plans/plan_F-018_api-refactor-foundations_2026-08-18.md - Known gaps section names 6 things that could surprise the implementer",
-    "docs/pdlc/design/api-refactor-foundations/ARCHITECTURE.md section 9 - 4 open items carried into Plan",
-    "docs/pdlc/design/api-refactor-foundations/threat-model.md - 3 mitigate-now threats are [security] ACs on T06/T08"
+  "ship_must_not_skip": [
+    "Add 'Integration \u2014 real services + MongoDB' to main's REQUIRED STATUS CHECKS. Blocking is a branch-protection setting, not YAML \u2014 until then the job can fail and a PR still merge.",
+    "Reflect 16c-bis context refresh MUST fix docs/pdlc/context/15-cqrs-and-messaging.md:161 ('10 queries, 10 handlers' above a 9-row table) \u2014 the origin of an error that reached four approved artifacts. Review finding I-5.",
+    "Do NOT tick CONSTITUTION section 7's Integration checkbox \u2014 gated on 10 consecutive green runs, tracked separately (F-018 T04, not absorbed).",
+    "Episode 002 is Status: Draft and needs human sign-off before commit.",
+    "ROTATE the Atlas credential (ISSUE-002) \u2014 still unrotated, still recoverable from this PUBLIC repo's history."
   ],
-  "open_risks": [
-    "T16: full-document OpenAPI byte-determinism NOT verified - the spike proved stable path SETS only. AC-19 gives false failures otherwise",
-    "T16: spec output location/naming still undecided",
-    "T15: container reaping unverified - must be proven by an actual mid-flight kill, not assumed from docs",
-    "T17/T18/T19 need a MAINTAINER-PUSHED throwaway branch - the dependency graph cannot express 'waits on a human' (recorded as dependency-missed)",
-    "Cache-aside invariant still has no guard while the audit invariant has two - revisit in F-019",
-    "7 MobileApp tests skipped, reason unknown (372 of 379 execute) - T19 investigates",
-    "HUMAN-ONLY, OUTSIDE F-018: rotate the Atlas credential. Re-graded MEDIUM (synthetic data, no GDPR clock) but still valid, publicly recoverable, write access to a live no-backup cluster"
-  ],
+  "next_action": "Run /ship. Merge PR #38, tag, update CHANGELOG (at docs/pdlc/memory/CHANGELOG.md, NOT the repo root), refresh the context catalog, fill the episode's Reflect Notes.",
   "pending_questions": []
 }
 ```
@@ -365,3 +523,44 @@ _Superseded handoff (F-012 mobile-app, shipped) retained for reference:_
 | 2026-08-18T16:30:00Z | spikes_complete | Both gating risks spiked BEFORE Design, both passed. Measured 4.45s container startup reversed container-per-test to per-class; ISwaggerProvider removed the feared 6th dependency | Design | api-refactor-foundations |
 | 2026-08-18T17:05:00Z | design_approved | 5 artifacts. Threat model Full (7 threats). Repo verified PUBLIC; cluster confirmed SYNTHETIC — T-001 re-graded CRITICAL→MEDIUM and overstated PII/GDPR claims corrected across 5 documents | Design | api-refactor-foundations |
 | 2026-08-18T17:45:00Z | inception_complete | 20 tasks / 7 waves / 31 ACs. Readiness Full → Fair (3 gaps, adversarial pass refuted all 3 self-rated Strongs); AC-31 added at the gate | Plan | api-refactor-foundations |
+| 2026-08-18T17:33:01Z | construction_start | Construction started, tasks to run **sequentially** at user request. Pre-flight clean: channel in-sync; PR #37 (Inception artifacts) merged to main, branch rebased; `tasks.cjs check` clean apart from the 3 expected `security-ac-untested` warnings | Build | api-refactor-foundations |
+| 2026-08-18T17:35:00Z | wave_kickoff | Wave 1 standup — the plan's "fully parallel" claim was **wrong**; 3 ordering edges found and applied (T02→T01 because CONSTITUTION §9 still forbids the rename; T01→T03 because T03's repo-wide `dotnet format` would absorb the rename diff AC-16 protects; T02→T03 because both write CONSTITUTION.md). Order set to T02→T01→T03→T04→T19 | Build | api-refactor-foundations |
+| 2026-08-18T17:37:14Z | construction_aborted | Build aborted **before any code was written** at the user's explicit request, to deliver F-014–F-017 first. Claim released, feature paused, roadmap order restored. Inception artifacts remain valid — resume needs no re-planning | Build | api-refactor-foundations |
+| 2026-08-18T17:37:14Z | feature_paused | Inception Complete — Ready for /build | Plan | api-refactor-foundations |
+| 2026-08-18T17:46:32Z | roadmap_claim | F-014 claimed as anchor for a **program-level Discover** across F-014–F-017, chosen over starting Inception on one feature | Discover | platform-remediation |
+| 2026-08-18T17:52:00Z | discover_complete | **Program decomposed 4 → 6.** All four premises verified against code and held; two were under-scoped; 10 catalogued defects belonged to no feature. F-016 split (→ F-021 identity-hardening), harness absorbed from F-018 (6 tasks) because `11-testing.md:148` proves endpoint authz is unverifiable today, F-022–F-024 filed. New order F-016 → F-021 → F-014 → F-015 → F-017. Claim moved to F-016 | Discover | platform-remediation |
+| 2026-08-18T18:50:52Z | prd_approved | F-016 `secure-public-endpoints`: 20 requirements / 19 ACs / 9 stories. The flagged product call (authenticating provider discovery) was confirmed with evidence — F-003's shipped definition makes discovery post-signup. Anonymous PII GET count corrected 4 → 5 (`services/{email}` had been omitted) | Define | secure-public-endpoints |
+| 2026-08-18T18:58:00Z | design_complete_pending_approval | 5 artifacts. Threat model **Full** (3/3): 8 threats, 1 CRITICAL / 2 HIGH / 5 MEDIUM — **5 of 8 created by this feature**. UX review **Skip** (0/3, no UI). Design **changed the PRD twice**: req 18 reassigned from F-021 into F-016 (T-001 makes the `AssertOwner` null-claim hole reachable, landing on the owner branch), and req 14's approach replaced by AD-1 because the existing exception handler is Development-only. 3 scope additions escalated to the human | Design | secure-public-endpoints |
+| 2026-08-18T19:05:00Z | design_approved | 5 artifacts approved. All 7 mitigate-now threats confirmed; 3 open questions resolved in favour of the stronger option each time — T-003 → `Provider` role, T-007 → **delete the route**, T-005 → **add `Event.actor`**. ADR-022…028 written | Design | secure-public-endpoints |
+| 2026-08-18T19:20:00Z | inception_complete | **20 tasks / 8 waves / 26 ACs** (19 + 7 threat-derived `[security]`). Readiness party **Full → Fair**, 4 gaps: **AC-12 contradicted ADR-025** (required a 403 on a route the ADR deletes — struck in-party, replaced by AC-26) and the **integration suite had no CI enforcement** (resolved at the gate by absorbing F-018's T18 as T20 — eight F-018 tasks now absorbed, not six). Standards gate skip-with-notice: plugin installed, sources unreachable | Plan | secure-public-endpoints |
+| 2026-08-18T19:22:00Z | construction_start | Build started on `feat/F-016-secure-public-endpoints`, branched off freshly-pulled `main` at the maintainer's request. Wave 1 is a single task (T01) so no standup | Build | secure-public-endpoints |
+| 2026-08-18T19:35:00Z | task_complete | **F-016-T01 done** — `Persitency` → `Persistence`. 11 files, one reference each, exactly as measured. **309 passing / 0 failing / 0 warnings** across 12 projects (305 baseline + 4 new). CONSTITUTION §9's prohibition retired *and its stated reason recorded as wrong* — the rename broke nothing. Red phase was 4 failing assertions, not a build break, because the test resolves the namespace via `Assembly.GetType` | Build | secure-public-endpoints |
+| 2026-08-18T19:52:00Z | task_complete | **F-016-T02 done** — integration project + `InternalsVisibleTo` × 7. Three unanticipated findings: `WebApplicationFactory<Program>` is **ambiguous across 7 assemblies** (top-level statements → internal `Program` in the global namespace) — resolved via a public per-service anchor type, which also means `InternalsVisibleTo` is **not** what enables hosting, contrary to AC-2's rationale; **SSH.NET GHSA-q939-rpr3-3284 (HIGH) has no patched version** — accepted as unreachable and *tested* (ADR-030); excluded from the slnf per the MobileApp precedent so the unit gate stays Docker-free (ADR-031). Measured: container **3 s warm / 62 s cold**, beating the spike's 4.45 s. Backend 309 green, integration 9 green | Build | secure-public-endpoints |
+| 2026-08-18T19:56:00Z | wave_kickoff | Wave 3 standup (solo) — **3 tasks confirmed parallel, 0 resequenced**; the plan's parallelism claim held, unlike F-018's wave 1. Five findings carried into the tasks: xUnit collection definitions are per-assembly so `Identity.Tests`' cannot be reused (B-1); `ContainerRuntimeGuardTest` starts a container unguarded (P-1); T04's probe/diagnose split is the substance of AC-7 (P-2); `MongoDbRepository<T>` is untestable without Mongo so its paging semantics land on T15 (E-1); keep the empty `METHOD()` stub per AC-19 (E-2) | Build | secure-public-endpoints |
+| 2026-08-18T20:02:00Z | task_complete | **F-016-T03 done** — `CryptoSessionFixture` + `HarnessCollection` + AC-3's two tree-level assertions. Diverges from the `RsaKeyHelper` precedent by producing **no private-key PEM string at all**. Two corrections to how AC-3 had to be tested: the csproj half must match `ProjectReference`, not the project name, because seven production csprojs legitimately name the harness in `InternalsVisibleTo` (AC-2) and a string match would be red forever; and a **dead hardcoded public-key PEM constant** in `AuthenticationExtensionsTest` was the only committed PEM payload in the tree — removed, which is what makes AC-3 enforceable literally instead of with a carve-out. Hygiene tests placed in `Library.Tests` so the existing `api` CI job runs them. Backend 313 / integration 13 | Build | secure-public-endpoints |
+| 2026-08-18T20:10:00Z | task_complete | **F-016-T04 done** — `DockerPreflight`. AC-7 **verified empirically end to end**: a bogus `DOCKER_HOST` now fails immediately with the endpoint, its source, the problem and four remedies instead of stalling. Probe split from diagnose so the message is testable without uninstalling Docker. **Both halves of the task's stated premise were wrong** and are corrected in code: Testcontainers.NET does not shell out to the docker CLI, and `/var/run/docker.sock` does not exist on this machine — the endpoint arrives via the `rancher-desktop` docker context, so a preflight hardcoded to the default socket would have reported a false failure. Never blocks on uncertainty, with its own test. Backend 313 / integration 23 | Build | secure-public-endpoints |
+| 2026-08-18T20:17:00Z | task_complete | **F-016-T10 done** — `GetPagedAsync` on `IRepository<T>` and both implementers (exactly two, confirmed by grep). Negatives normalised to 0 in both, because `Skip(-1)` throws on the driver but is a silent no-op in LINQ — one interface would otherwise have two behaviours. Coverage split recorded rather than papered over: contract by reflection in `Library.Tests`, semantics against the in-memory implementer in `Identity.Tests`, **Mongo's own paging behaviour not covered until T15**. Backend 322 / integration 23 / mobile 74 unchanged | Build | secure-public-endpoints |
+| 2026-08-18T20:22:00Z | wave_kickoff | Wave 4 standup (solo) — 2 tasks confirmed parallel, 0 resequenced. T06 kept independent of T05 by satisfying AC-4 against the **anonymous** `GET /api/v1/professions` route (B-1). Three findings pinned the fail-closed guard before it could be built wrong: never blindly overwrite the connection string or the guard compares its own value to itself (E-1); assert container **identity** via `GetConnectionString()`, never a `localhost` pattern (E-2); prove "no database created" by inspecting the container's database list, since a negative asserted by absence is unfalsifiable (E-3). Newly measured: all four appsettings resolution paths are empty strings, so the one live leak path is an env var | Build | secure-public-endpoints |
+| 2026-08-18T20:28:00Z | task_complete | **F-016-T05 done** — `TokenFactory`. Tokens verified against the **services' own** `TokenValidationParameters`, read back out of `AddAgendaBuddyAuthentication`, so issuer/algorithm/clock-skew cannot drift from production and resurface as a mystery 401 in T07. No `CreateForeignSubjectToken` — that token is just `CreateToken` for somebody else, pinned as a decision by a test. `CreateTokenWithoutSubject` is the T-001 probe. Integration 27 | Build | secure-public-endpoints |
+| 2026-08-18T20:34:00Z | task_complete | **F-016-T06 done — the second bottleneck is cleared, and the CRITICAL security AC is mechanically closed.** Real services now host over HTTP against a Mongo Testcontainer; `ProfessionHostTest` is the **first test in this solution to execute a route table** (`11-testing.md:148`). Fail-closed guard in two ordered layers: srv/credential rejection **before** a container starts (proven by asserting none was started), then host+port identity against the container's own endpoint — a dedicated test rejects `mongodb://127.0.0.1:27017` while the container is elsewhere, which is the case that broke the earlier pattern-check version at the threat party. The guard never echoes the rejected string, asserted. AC-20's "no database created" asserted **positively** by inspecting the container. **Verified empirically, against expectation: xUnit v2 does inject a collection fixture into a class fixture**, so session keypair + class container compose with no static workaround. Integration 41 in 16 s | Build | secure-public-endpoints |
+| 2026-08-18T20:37:00Z | task_complete | **F-016-T07 done — the harness now observes what nothing in this solution could.** AC-6 proven over real HTTP against `PUT /api/v1/customers/{email}`: anonymous 401, expired 401, **foreign subject 403**, owner neither. All four green on the first run, so this confirms existing behaviour rather than fixing it. Test-only task, so the TDD gate holds without a manufactured red. **Trap found that would have produced a wrong conclusion:** `MiniValidator` runs *before* `AssertOwner` (`:150` vs `:153`), so a test with an invalid body gets 400 and never reaches the guard — and separately, validation preceding authorization lets an unauthorized caller probe validation rules (pre-existing; flagged to F-019/F-021). Integration 45 in 18 s | Build | secure-public-endpoints |
+| 2026-08-18T20:44:00Z | wave_kickoff | Wave 6 standup (solo) — 0 resequenced, 0 edges added. **Three counting errors found in approved artifacts**, all verified against code: **9 query handlers, not 10** (the "10" originates in `15-cqrs-and-messaging.md:161`, which states *"10 queries, 10 handlers"* directly above a **9-row table**, and propagated into the PRD, ARCHITECTURE, the plan and T18's body); **7 hand-written `ForbiddenException` catch sites, not 8**; and **`Event.actor` cannot be "one assignment per handler"** because no handler can see the caller. Bolt found the ordering trap that would have made AC-13 fail *in Development only*. The actor-threading fork (~30 files vs ~8) was escalated to the maintainer, who chose to centralise in `EventStore` | Build | secure-public-endpoints |
+| 2026-08-18T21:05:00Z | task_complete | **F-016-T08 done** — central 403 via the first `IExceptionHandler` in the codebase, in six services (not Identity). `UseExceptionHandler()` placed **after** the Development block, and both environments asserted, because the reverse order fails only locally. AC-13 satisfied by removing one local catch rather than shipping a test-only route. **Two design-doc corrections:** 7 catch sites not 8, and both 403 paths **already** share one body — `UseStatusCodePages()` converts a bodyless 403 to ProblemDetails, so my first AC-14 test asserted an empty body and correctly failed | Build | secure-public-endpoints |
+| 2026-08-18T21:20:00Z | task_complete | **F-016-T09 done** — `AssertOwner`'s null-claim pass closed (T-001). `string.Equals(null, null)` is `true`, so a caller with no `sub` checked against an entity with no email was granted **ownership**. The pre-existing "no sub claim" test passed throughout because it supplied a *non-null* email — it threw for the wrong reason. Red was 3 of 5 new cases, precisely the null-null ones. AC-21's route half deliberately deferred to T11 and written into its task body | Build | secure-public-endpoints |
+| 2026-08-18T21:45:00Z | task_complete | **F-016-T18 done** — query audit payloads reduced to `{"resultCount":N}` across **18 call sites in 9 handlers** via one `QueryAudit` factory, so "no entity data" is a property of one testable method. `Event.actor` stamped centrally in `EventStore` from `IHttpContextAccessor` (maintainer-chosen; ~8 files instead of ~30, and it attributes the 11 command handlers for free). ADR-027 amended, ARCHITECTURE §5 corrected | Build | secure-public-endpoints |
+| 2026-08-18T21:55:00Z | task_complete | **F-016-T12 done** — the headline defect closed. All **five** anonymous PII GETs now 401; red phase had all five returning 200 with full records. Breaking with zero reachable consumers | Build | secure-public-endpoints |
+| 2026-08-18T22:05:00Z | task_complete | **F-016-T17 done** — `POST /api/v1/professions` **deleted**, not role-gated (ADR-025 supersedes requirement 13; there is no admin role). Verified live before removal: **both** a Provider and a Customer token got 201 and wrote to the global catalogue. ⚠️ **The one AC-19 deviation** — one pre-existing test deleted because its subject was removed | Build | secure-public-endpoints |
+| 2026-08-18T22:10:00Z | task_complete | **F-016-T16 done** — `Provider` role required to list customers (T-003). Brings `AssertRole` into use for the **first time**: per `13-security.md:137` it had never been called anywhere, so the `role` claim authorized nothing. Only the list route — a test pins that a customer can still read their own record | Build | secure-public-endpoints |
+| 2026-08-18T22:15:00Z | task_complete | **F-016-T14 done** — role **and** ownership on `POST /api/v1/providers`. Both arms tested: a role check alone still lets one Provider create a record under another's email | Build | secure-public-endpoints |
+| 2026-08-18T22:20:00Z | task_complete | **F-016-T13 done — the Calendar IDOR is closed** (T-006). Red phase: an intruder's token returned **200 with the owner's client email** on both routes. Every sibling service already guarded; Calendar was the one family that forgot, and nothing could catch it because there was no integration test. Guard sits **above** the cache read as a design invariant, pinned by a warm-cache regression test asserting "not 200-with-data" rather than "exactly 403" | Build | secure-public-endpoints |
+| 2026-08-18T22:25:00Z | task_complete | **F-016-T11 done** — `ProviderSummary` projection. **Two api-contracts corrections:** there is **no `profession` field** and no service `duration` (neither exists on the entities, so F-015 would have bound to nothing), and the list is **homogeneous** because a mixed `items` array is not deserialisable. Added `OwnershipGuard.IsOwner` so ownership can be *branched on* rather than caught, keeping the null-claim rule in one place. Closes AC-21's second half | Build | secure-public-endpoints |
+| 2026-08-18T22:30:00Z | task_complete | **F-016-T15 done** — pagination at the **database**, threaded through 12 files, because slicing in the endpoint would bound the response while leaving the extraction unbounded. Three things the ADR did not say, now recorded in it: the cache key must carry the page, `skip` arithmetic is overflow-guarded, and the envelope composes with T11's projection | Build | secure-public-endpoints |
+| 2026-08-18T22:33:00Z | task_complete | **F-016-T19 done** — `verification.md`: all 26 ACs attested with every deviation named. Also closed the last near-miss by attesting AC-24 against the exact route it names, now that T12 authenticated it | Build | secure-public-endpoints |
+| 2026-08-18T22:35:00Z | build_complete | **BUILD COMPLETE — 20/20 tasks.** F-016-T20 added a separate, duration-enforced integration CI job and fixed a silent-skip trap (the harness matched **no** path filter, so a harness-only change ran zero jobs). Backend **358** / integration **92** / mobile **74**, 0 failing, 0 warnings. All **7** threat-derived security ACs have linked tests. ⚠️ T20's job **has never run** and "blocking" needs a branch-protection change — both human-only. Review, Test and Wrap-up sub-phases **not yet run** | Review | secure-public-endpoints |
+| 2026-08-18T22:40:00Z | branch_pushed | Branch pushed and **PR #38 opened** → `ogdevlabs/agenda-buddy#38`, at the maintainer's request. Opened via the GitHub API using the credential `git` already holds, **not `gh`** (which is authenticated to a different work identity) | Review | secure-public-endpoints |
+| 2026-08-18T22:50:00Z | ci_failure | First CI run: **`Assert no committed database credential` failed** — correctly. Three fail-closed guard tests carried credential-**shaped** literals (synthetic passwords, real database name, Atlas-looking host). Every test and both AppHost guards passed; that grep was the only failure. **Not a missing repository secret** — the step is a `git grep` over tracked files and consumes none. Fixed by composing the strings at runtime (`HostileEndpoints`) rather than adding grep exclusions, which would have permanently weakened a project-wide scanner in a public repo | Review | secure-public-endpoints |
+| 2026-08-18T23:05:00Z | ci_green | **Second run all green — and `F-016-T20`'s residual is RESOLVED.** The integration job ran for the **first time ever** and passed in **117–147 s** against its 600 s budget, on a cold runner; the PR itself was the trigger, so no throwaway branch was needed. Integration 93 (+1 theory case). ⚠️ Still outstanding: **"blocking" is a branch-protection setting** — `Integration — real services + MongoDB` must be added to `main`'s required status checks | Review | secure-public-endpoints |
+| 2026-08-18T23:40:00Z | review_complete | **Party Review (solo)** — 0 Critical / 5 Important / 7 Advisory. Blast radius: **0 at-risk callers** across 19 public/signature-changed symbols, and the route sweep independently confirmed the PRD's "zero reachable consumers" premise *by a wider margin than claimed* (MobileApp calls `customer` singular, `booking/{id}`, `calendar?from=` and has **no provider service at all**). Phantom verified **7/7** threat mitigations with code *and* linked tests. Muse skipped (triage 0/3); Step 12.5 skipped for the same reason; Step 12.6 could not run. Approved with **fix cycle 1**: I-3 (AC-14 verified on 1 of 6 catch sites) and I-4 (`CLAUDE.md` stale, integration command missing) **fixed**; I-1/I-2/I-5 accepted as logged warnings | Review | secure-public-endpoints |
+| 2026-08-18T23:50:00Z | test_complete | **Test complete.** Layer 1 unit **358** / 0 failing / 0 warnings (required gate ✅). Layer 2 integration **99** (not required; run anyway). Layers 3–6 have no command in this project and are not required — logged skips. **Layer 7 security scan (always required) RAN by hand:** 7a found exactly one vulnerable package solution-wide (`SSH.NET` HIGH, ADR-030-accepted, and confirming the `NU1903` suppression does not hide it from the report); 7b clean on six patterns across 161 changed files. Mobile 74 untouched. **531 tests total** | Test | secure-public-endpoints |
+| 2026-08-18T23:55:00Z | construction_complete | **Construction Complete** — episode **002** drafted (`docs/pdlc/episodes/EPISODE_secure-public-endpoints_2026-08-18.md`, Status: Draft). PR #38 open, mergeable, CI green. Ready for `/ship` | — | secure-public-endpoints |
+

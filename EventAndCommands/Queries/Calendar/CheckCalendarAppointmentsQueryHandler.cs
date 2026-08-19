@@ -17,27 +17,15 @@ public class
         if (providerEntity != null)
         {
             var providerAppointmentCollection = providerEntity.AppointmentEntities;
-            var successEvent = new Event
-            {
-                Id = ObjectId.GenerateNewId(),
-                TimeStamp = DateTime.UtcNow,
-                Status = "Success",
-                Type = "CheckCalendarAppointmentsQuery",
-                Data = JsonSerializer.Serialize(providerEntity)
-            };
-            await eventStore.SaveAsync(successEvent);
+
+            // Counts the appointments actually disclosed, not "one provider matched" — the count is
+            // there to answer "how much was read".
+            await eventStore.SaveAsync(QueryAudit.Success(
+                "CheckCalendarAppointmentsQuery", providerAppointmentCollection.Count));
             return providerAppointmentCollection;
         }
 
-        var failEvent = new Event
-        {
-            Id = ObjectId.GenerateNewId(),
-            TimeStamp = DateTime.UtcNow,
-            Status = "Failed",
-            Type = "CheckCalendarAppointmentsQuery",
-            Data = JsonSerializer.Serialize(new List<AppointmentEntity>())
-        };
-        await eventStore.SaveAsync(failEvent);
+        await eventStore.SaveAsync(QueryAudit.Failure("CheckCalendarAppointmentsQuery"));
         return null!;
     }
 }

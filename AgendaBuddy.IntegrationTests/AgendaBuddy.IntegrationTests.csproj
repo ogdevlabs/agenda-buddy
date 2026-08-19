@@ -1,0 +1,50 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- F-016 AC-3 / threat T-002: this project must never be referenced by production code.
+         Nothing enforces that mechanically, so it is asserted by a test instead. -->
+    <RootNamespace>AgendaBuddy.IntegrationTests</RootNamespace>
+    <!--
+      NU1903: Testcontainers depends on SSH.NET, which carries GHSA-q939-rpr3-3284 (HIGH) with
+      NO PATCHED VERSION PUBLISHED. Versions 2023.0.0 through 2025.0.0 are all flagged, so the
+      advisory cannot be resolved by pinning (verified by attempting 2024.2.1 and 2025.0.0).
+      SSH.NET is in the graph only to support Docker over SSH. This project talks to a local
+      socket, and Harness/ContainerRuntimeGuardTest.cs ASSERTS that SSH.NET is never loaded while
+      starting a container, so the advisory describes code this solution cannot reach. That claim
+      is tested, not merely asserted: if anyone configures a remote Docker host over SSH, the test
+      fails and the risk stops being theoretical.
+      Suppressed HERE ONLY, never solution wide. The `dotnet list package` vulnerability report
+      still lists it, so F-017's future dependency audit gate is unaffected by this NoWarn.
+      See ADR-030.
+    -->
+    <NoWarn>$(NoWarn);NU1903</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
+    <PackageReference Include="Testcontainers.MongoDb" Version="4.6.0" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.1">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- All seven services. The harness resolves each service's entry-point assembly through a
+         distinct PUBLIC type rather than `Program` — see EntryPoints.cs for why. -->
+    <ProjectReference Include="..\Booking\Booking.csproj" />
+    <ProjectReference Include="..\Calendar\Calendar.csproj" />
+    <ProjectReference Include="..\Customer\Customer.csproj" />
+    <ProjectReference Include="..\Provider\Provider.csproj" />
+    <ProjectReference Include="..\Services\Services.csproj" />
+    <ProjectReference Include="..\Profession\Profession.csproj" />
+    <ProjectReference Include="..\Identity\Identity.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -11,26 +11,10 @@ public class GetCustomerByEmailQueryHandler(IMediator mediator, CustomerService 
         var matchedCustomer = await customerService.FindCustomerAsync(filterByEmail);
         if (matchedCustomer != null)
         {
-            var successEvent = new Event
-            {
-                Id = ObjectId.GenerateNewId(),
-                TimeStamp = DateTime.UtcNow,
-                Status = "Success",
-                Type = "GetCustomerByEmailQuery",
-                Data = JsonSerializer.Serialize(matchedCustomer)
-            };
-            await eventStore.SaveAsync(successEvent);
+            await eventStore.SaveAsync(QueryAudit.Success("GetCustomerByEmailQuery", 1));
             return matchedCustomer;
         }
-        var failedEvent = new Event
-        {
-            Id = ObjectId.GenerateNewId(),
-            TimeStamp = DateTime.UtcNow,
-            Status = "Failed",
-            Type = "GetCustomerByEmailQuery",
-            Data = JsonSerializer.Serialize(new CustomerEntity())
-        };
-        await eventStore.SaveAsync(failedEvent);
+        await eventStore.SaveAsync(QueryAudit.Failure("GetCustomerByEmailQuery"));
         return null!;
     }
 }

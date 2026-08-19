@@ -28,12 +28,12 @@ public class RequestCollection(IKafkaClient kafkaClient, IEventStore eventStore)
         return result;
     }
 
-    public async Task<List<CustomerEntity>> GetCustomersRequest(IMediator mediator,
-        CustomerService customerService)
+    public async Task<PagedResponse<CustomerEntity>> GetCustomersRequest(IMediator mediator,
+        CustomerService customerService, PageRequest page)
     {
         var result =
-            await new GetCustomersQueryHandler(mediator, customerService, eventStore).Handle(new GetCustomersQuery(),
-                new CancellationToken());
+            await new GetCustomersQueryHandler(mediator, customerService, eventStore, page).Handle(
+                new GetCustomersQuery(), new CancellationToken());
         return result;
     }
 
