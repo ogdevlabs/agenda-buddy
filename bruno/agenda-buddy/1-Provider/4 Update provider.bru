@@ -1,0 +1,17 @@
+meta { name: 4 Update provider, type: http, seq: 5 }
+put { url: {{providerUrl}}/api/v1/providers/{{providerEmail}} , body: json }
+body:json {
+  {
+    "firstName": "Grace",
+    "lastName": "Hopper-Updated",
+    "email": "{{providerEmail}}"
+  }
+}
+docs {
+  Ownership-guarded, and one of the six routes that still catches `ForbiddenException` locally. Its `403`
+  body is identical to the central handler's — `app.UseStatusCodePages()` normalises both to
+  ProblemDetails `{type, title, status, traceId, requestId}`.
+
+  ⚠️ Validation runs **before** the ownership check, so an invalid body gives `400` and never reaches the
+  guard. If you are testing authorization, send a valid body.
+}

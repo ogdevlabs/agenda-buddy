@@ -1,0 +1,11 @@
+meta { name: 4 Logout, type: http, seq: 4 }
+post { url: {{identityUrl}}/api/v1/auth/logout, body: json, auth: none }
+body:json {
+  {
+    "refreshToken": "{{refreshToken}}"
+  }
+}
+docs {
+  Revokes the refresh token server-side. The **access token stays valid until it expires** — there is no
+  revocation list yet (F-023 owns token revocation).
+}

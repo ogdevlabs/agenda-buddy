@@ -1,0 +1,13 @@
+meta { name: 3 Update provider services, type: http, seq: 3 }
+patch { url: {{servicesUrl}}/api/v1/services/{{providerEmail}} , body: json }
+body:json {
+  [
+    {
+      "name": "60-minute session",
+      "description": "One hour, one-to-one (updated)",
+      "fee": 75.00,
+      "isActive": true
+    }
+  ]
+}
+docs { `PATCH`, not `PUT` — `PUT` is "add" (request 2) and `PATCH` is "update". Both ownership-guarded. }

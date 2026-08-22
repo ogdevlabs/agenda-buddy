@@ -1,0 +1,30 @@
+meta { name: 2 Login, type: http, seq: 2 }
+post { url: {{identityUrl}}/api/v1/auth/login, body: json, auth: none }
+body:json {
+  {
+    "email": "{{providerEmail}}",
+    "password": "{{password}}"
+  }
+}
+script:post-response {
+  // Every other request in this collection depends on this. The collection-level auth block sends
+  // Authorization: Bearer {{accessToken}}.
+  if (res.getStatus() === 200) {
+    bru.setEnvVar("accessToken", res.getBody().accessToken);
+    bru.setEnvVar("refreshToken", res.getBody().refreshToken);
+  }
+}
+tests {
+  test("200", function () { expect(res.getStatus()).to.equal(200); });
+  test("captured an access token", function () {
+    expect(bru.getEnvVar("accessToken")).to.be.a("string").and.not.empty;
+  });
+}
+docs {
+  **Run this first.** Sets `accessToken` and `refreshToken` in the active environment.
+
+  Tokens are RS256, issuer `agenda-buddy-identity`, 60-minute lifetime, and **`ClockSkew` is zero** —
+  an expired token is rejected the instant it expires, with no grace window.
+
+  `401` here means wrong credentials. `503` means Identity could not reach MongoDB.
+}

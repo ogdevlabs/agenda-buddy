@@ -1,0 +1,17 @@
+meta { name: 3 Refresh, type: http, seq: 3 }
+post { url: {{identityUrl}}/api/v1/auth/refresh, body: json, auth: none }
+body:json {
+  {
+    "refreshToken": "{{refreshToken}}"
+  }
+}
+script:post-response {
+  if (res.getStatus() === 200) {
+    bru.setEnvVar("accessToken", res.getBody().accessToken);
+    bru.setEnvVar("refreshToken", res.getBody().refreshToken);
+  }
+}
+docs {
+  ⚠️ **F-021 owns a known defect in this endpoint** — see the roadmap before relying on it. Exercise it
+  deliberately, not as a matter of routine.
+}

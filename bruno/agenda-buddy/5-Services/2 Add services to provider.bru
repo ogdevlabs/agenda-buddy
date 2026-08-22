@@ -1,0 +1,13 @@
+meta { name: 2 Add services to provider, type: http, seq: 2 }
+put { url: {{servicesUrl}}/api/v1/services/{{providerEmail}} , body: json }
+body:json {
+  [
+    {
+      "name": "60-minute session",
+      "description": "One hour, one-to-one",
+      "fee": 65.00,
+      "isActive": true
+    }
+  ]
+}
+docs { Ownership-guarded. Body is a **JSON array** of services, not a single object. }

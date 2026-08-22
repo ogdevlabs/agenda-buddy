@@ -1,0 +1,12 @@
+meta { name: 5 Register device token, type: http, seq: 5 }
+post { url: {{identityUrl}}/device-token, body: json }
+body:json {
+  {
+    "token": "fake-device-token-for-local-testing",
+    "platform": "Android"
+  }
+}
+docs {
+  ⚠️ Note the path: **`/device-token` at the root**, not under `/api/v1/auth/`. It is mapped on `app`
+  directly rather than on the `api/v1/auth` group. Requires a JWT.
+}

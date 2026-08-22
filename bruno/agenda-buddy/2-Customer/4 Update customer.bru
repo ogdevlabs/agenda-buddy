@@ -1,0 +1,19 @@
+meta { name: 4 Update customer, type: http, seq: 4 }
+put { url: {{customerUrl}}/api/v1/customers/{{customerEmail}} , body: json }
+body:json {
+  {
+    "firstName": "Ada",
+    "lastName": "Lovelace-Updated",
+    "email": "{{customerEmail}}"
+  }
+}
+docs {
+  **This is the route that proves the central 403 works.** F-016 deliberately **removed** its local
+  `try/catch (ForbiddenException)` so nothing but `AgendaBuddyExceptionHandler` turns the guard's
+  exception into a `403`. Before F-016 this line without a catch produced a `500` — and in `Production`,
+  a bare empty-bodied one.
+
+  Log in as one user and change `{{customerEmail}}` to another to see it: `403` with
+  `{type, title, status, traceId, requestId}` and **no exception type, message or stack frame** in any
+  environment (threat T-004).
+}

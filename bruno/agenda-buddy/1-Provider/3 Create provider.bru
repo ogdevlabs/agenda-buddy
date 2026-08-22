@@ -1,0 +1,21 @@
+meta { name: 3 Create provider, type: http, seq: 4 }
+post { url: {{providerUrl}}/api/v1/providers, body: json }
+body:json {
+  {
+    "firstName": "Grace",
+    "lastName": "Hopper",
+    "email": "{{providerEmail}}",
+    "services": [],
+    "appointments": [],
+    "subscribed_customer_collection": []
+  }
+}
+docs {
+  Requires the **`Provider` role AND** that `email` is your own `sub`. Both are enforced: a role check
+  alone would let one provider create a record under another provider's email.
+
+  Try it with a `Customer`-role token, or with someone else's email — both give `403`.
+
+  ⚠️ A `400` with a Kafka error means no Kafka broker is running: this handler creates a per-provider
+  Kafka topic. Start the AppHost, or expect the 400.
+}

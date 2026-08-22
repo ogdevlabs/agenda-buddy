@@ -1,0 +1,14 @@
+meta { name: 1 List professions (anonymous), type: http, seq: 1 }
+get { url: {{professionUrl}}/api/v1/professions, auth: none }
+tests {
+  test("200 WITHOUT a token — this must stay anonymous", function () {
+    expect(res.getStatus()).to.equal(200);
+  });
+}
+docs {
+  **Deliberately still anonymous** (AC-18). Reference data seeded from `ProfessionSeedData.cs`, no PII —
+  so F-016 left it open on purpose. A blanket "authenticate all the GETs" change is the obvious way to
+  break this, which is why there is a test asserting it.
+
+  `auth: none` here overrides the collection bearer token, proving it works unauthenticated.
+}

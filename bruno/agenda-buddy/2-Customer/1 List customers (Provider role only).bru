@@ -1,0 +1,24 @@
+meta { name: 1 List customers (Provider role only), type: http, seq: 1 }
+get { url: {{customerUrl}}/api/v1/customers?page=1&pageSize=25 }
+params:query {
+  page: 1
+  pageSize: 25
+}
+tests {
+  test("200 for a Provider token; 403 for a Customer token", function () {
+    expect([200, 403]).to.include(res.getStatus());
+  });
+}
+docs {
+  **Requires the `Provider` role, not merely a token** (ADR-026, threat T-003). A `Customer`-role token
+  gets `403` here by design — log in as a Provider.
+
+  Why role-gated when the others are only authenticated: registration is anonymous and unrate-limited, so
+  authentication alone would let anyone self-register as a Provider and page the entire customer table.
+  **Pagination bounds the response, not the extraction.**
+
+  ⚠️ **Known limitation, accepted:** this still returns *full* `CustomerEntity` records — including
+  `subscribedProviderCollection` and `appointmentCollection`, i.e. the customer↔provider relationship
+  graph. Owner-scoping to your own subscribed customers is the stronger fix and is deferred to F-021/F-024.
+  This is the one exposure class F-016 closed for providers but not for customers.
+}

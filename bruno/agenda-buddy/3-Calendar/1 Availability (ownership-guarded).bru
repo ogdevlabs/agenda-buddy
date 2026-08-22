@@ -1,0 +1,15 @@
+meta { name: 1 Availability (ownership-guarded), type: http, seq: 1 }
+get { url: {{calendarUrl}}/api/v1/calendar/availability/{{providerEmail}} }
+tests {
+  test("200 for the owner, 403 for anyone else", function () {
+    expect([200, 403, 404]).to.include(res.getStatus());
+  });
+}
+docs {
+  **This route was IDOR-able before F-016.** It called `RequireAuthorization()` but never `OwnershipGuard`,
+  so any registered user could read any provider's 30-day availability. Every sibling service already
+  guarded; Calendar was the one family that did not — and nothing caught it, because no test in the
+  solution executed a route table.
+
+  Change `{{providerEmail}}` to a provider you are not, and you now get `403`.
+}

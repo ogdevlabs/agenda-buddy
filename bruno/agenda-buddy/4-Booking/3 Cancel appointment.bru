@@ -1,0 +1,13 @@
+meta { name: 3 Cancel appointment, type: http, seq: 3 }
+delete { url: {{bookingUrl}}/api/v1/booking/appointments/, body: json }
+body:json {
+  {
+    "emailProvider": "{{providerEmail}}",
+    "emailCustomer": "{{customerEmail}}",
+    "start": "2026-09-01T10:00:00Z",
+    "end": "2026-09-01T11:00:00Z"
+  }
+}
+docs {
+  A `DELETE` **with a request body** — unusual, but that is how the route is defined. Trailing slash again.
+}

@@ -1,0 +1,25 @@
+meta { name: 3 Create profession — MUST be 404 or 405, seq: 3, type: http }
+post { url: {{professionUrl}}/api/v1/professions, body: json }
+body:json {
+  {
+    "name": "Smuggled Profession"
+  }
+}
+tests {
+  test("route is GONE — 404 or 405, never 201", function () {
+    expect([404, 405]).to.include(res.getStatus());
+  });
+}
+docs {
+  **This route was deleted, not role-gated** (ADR-025, threat T-007). It is kept in the collection as a
+  negative check: a `201` here is a regression.
+
+  Why deleted: Identity's role allow-list is exactly `{Provider, Customer}` — there is **no admin role** to
+  gate on. The only implementable check would still have let any self-registered provider write global
+  reference data read by every user. Professions are seeded and no shipped flow creates one, so nothing was
+  lost.
+
+  Before removal, both a Provider **and** a Customer token got `201` and wrote to the global catalogue.
+
+  You should get **405** (the path still serves `GET`, so `POST` is method-not-allowed).
+}

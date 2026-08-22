@@ -1,0 +1,17 @@
+meta { name: 1 Book appointment, type: http, seq: 1 }
+post { url: {{bookingUrl}}/api/v1/booking/appointments, body: json }
+body:json {
+  {
+    "emailProvider": "{{providerEmail}}",
+    "emailCustomer": "{{customerEmail}}",
+    "start": "2026-09-01T10:00:00Z",
+    "end": "2026-09-01T11:00:00Z",
+    "appointmentDescription": "Local test appointment"
+  }
+}
+docs {
+  Guarded with `AssertOwnerAny(emailProvider, emailCustomer)` — **either** party may act on the
+  appointment, so you can run this logged in as the provider or the customer. A third party gets `403`.
+
+  ⚠️ Validation runs before the guard, so an invalid body returns `400` and never reaches it.
+}

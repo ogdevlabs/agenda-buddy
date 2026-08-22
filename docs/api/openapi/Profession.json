@@ -1,0 +1,122 @@
+{
+    "openapi": "3.0.4",
+    "info": {
+        "title": "Profession",
+        "version": "1.0"
+    },
+    "paths": {
+        "/api/v1/professions": {
+            "get": {
+                "tags": [
+                    "ProfessionAPI"
+                ],
+                "operationId": "GetProfessionList",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/ProfessionEntity"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            }
+        },
+        "/api/v1/professions/{name}": {
+            "get": {
+                "tags": [
+                    "ProfessionAPI"
+                ],
+                "operationId": "GetProfessionByName",
+                "parameters": [
+                    {
+                        "name": "name",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProfessionEntity"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "ObjectId": {
+                "type": "object",
+                "properties": {
+                    "timestamp": {
+                        "type": "integer",
+                        "format": "int32",
+                        "readOnly": true
+                    },
+                    "machine": {
+                        "type": "integer",
+                        "format": "int32",
+                        "readOnly": true,
+                        "deprecated": true
+                    },
+                    "pid": {
+                        "type": "integer",
+                        "format": "int32",
+                        "readOnly": true,
+                        "deprecated": true
+                    },
+                    "increment": {
+                        "type": "integer",
+                        "format": "int32",
+                        "readOnly": true,
+                        "deprecated": true
+                    },
+                    "creationTime": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    }
+                },
+                "additionalProperties": false
+            },
+            "ProfessionEntity": {
+                "required": [
+                    "name"
+                ],
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "$ref": "#/components/schemas/ObjectId"
+                    },
+                    "name": {
+                        "type": "string",
+                        "nullable": true
+                    }
+                },
+                "additionalProperties": false
+            }
+        }
+    }
+}

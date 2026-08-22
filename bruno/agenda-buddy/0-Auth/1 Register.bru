@@ -1,0 +1,31 @@
+meta { name: 1 Register, type: http, seq: 1 }
+post { url: {{identityUrl}}/api/v1/auth/register, body: json, auth: none }
+body:json {
+  {
+    "email": "{{providerEmail}}",
+    "password": "{{password}}",
+    "role": "{{role}}"
+  }
+}
+script:post-response {
+  // Register returns a token pair too, so you can go straight from here to any service.
+  if (res.getStatus() === 201) {
+    bru.setEnvVar("accessToken", res.getBody().accessToken);
+    bru.setEnvVar("refreshToken", res.getBody().refreshToken);
+  }
+}
+tests {
+  test("201, or 400 if this email already exists", function () {
+    expect([201, 400]).to.include(res.getStatus());
+  });
+}
+docs {
+  Registration is **anonymous, unverified and unrate-limited** — which is exactly why F-016 role-gated
+  `GET /api/v1/customers` (ADR-026): authenticating it alone would have let anyone self-register as a
+  Provider and page the whole customer table. F-021 adds the rate limiter.
+
+  `role` must be `Provider` or `Customer` — there is no admin role, which is why
+  `POST /api/v1/professions` was **deleted** rather than role-gated (ADR-025).
+
+  Password must be at least 8 characters.
+}

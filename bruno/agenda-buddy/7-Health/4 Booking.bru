@@ -1,0 +1,16 @@
+meta { name: 4 Booking, type: http, seq: 4 }
+get { url: {{bookingUrl}}/health, auth: none }
+tests {
+  test("200 and Healthy", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody()).to.match(/Healthy/i);
+  });
+}
+docs {
+  `/health` is **readiness** — it runs every check, including a MongoDB check whose result is cached for
+  5 seconds. `/alive` is **liveness** and runs only the live-tagged checks, so a service still waiting on
+  MongoDB reports alive-but-not-ready rather than being restarted.
+
+  Both are unauthenticated by design, and both are supplied by `AddServiceDefaults()` — not by this
+  service's own route table.
+}

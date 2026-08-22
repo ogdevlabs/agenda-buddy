@@ -1,0 +1,12 @@
+meta { name: 2 Update appointment, type: http, seq: 2 }
+put { url: {{bookingUrl}}/api/v1/booking/appointments/, body: json }
+body:json {
+  {
+    "emailProvider": "{{providerEmail}}",
+    "emailCustomer": "{{customerEmail}}",
+    "start": "2026-09-01T14:00:00Z",
+    "end": "2026-09-01T15:00:00Z",
+    "appointmentStatus": "Confirmed"
+  }
+}
+docs { ⚠️ Note the **trailing slash** — the route is mapped as `/appointments/`, not `/appointments`. }

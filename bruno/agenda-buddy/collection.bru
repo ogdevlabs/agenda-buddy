@@ -1,0 +1,46 @@
+auth {
+  mode: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+docs {
+  # Agenda Buddy — local API collection
+
+  Seven independent microservices, so **one base URL per service**, not one for the whole API.
+  There is no gateway (F-015 is the feature that adds one).
+
+  ## Read this first: run `0-Auth/2 Login` before anything else
+
+  As of **F-016 (v0.2.0)** nearly every route requires a JWT. Without a token you will get `401` on
+  everything except the two `Profession` reads. `0-Auth/1 Register` and `0-Auth/2 Login` both capture
+  `accessToken` and `refreshToken` into the active environment automatically, and this collection sends
+  `Authorization: Bearer {{accessToken}}` on every request.
+
+  Register a **Provider** first: `2-Customer/List customers` and `1-Provider/Create provider` both
+  require the `Provider` role, and a `Customer`-role token gets `403` on them by design.
+
+  ## Which environment to pick
+
+  - **Local (standalone)** — fixed ports from each service's `appsettings.json`. Start only what you
+    need: `dotnet run --project Provider --no-launch-profile`. Ports are stable, so this is the one to
+    use day to day.
+  - **Local (Aspire AppHost)** — `dotnet run --project AgendaBuddy.AppHost` starts everything, but
+    **Aspire assigns ports dynamically**, so you must fill the port variables in yourself each run
+    (the dashboard lists them). Also note: Aspire does **not** run the services as `Development`, so
+    Swagger UI is unavailable there.
+
+  ## Regenerating the OpenAPI specs
+
+      ./scripts/generate-openapi.sh              # all seven
+      ./scripts/generate-openapi.sh Provider     # just one
+
+  Writes `docs/api/openapi/<Service>.json` plus a browsable `index.md`. Safe to run any time — it uses
+  a throwaway keypair and a disposable Mongo container, and touches no real data.
+}

@@ -1,0 +1,17 @@
+meta { name: 1a List providers — clamp probe, type: http, seq: 2 }
+get { url: {{providerUrl}}/api/v1/providers?page=1&pageSize=100000 }
+params:query {
+  page: 1
+  pageSize: 100000
+}
+tests {
+  test("clamped to 100 and echoed, NOT a 400", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().pageSize).to.equal(100);
+  });
+}
+docs {
+  Deliberate probe of the security control. Rejecting with `400` would tell an attacker the exact
+  boundary and leave an honest client no way to discover the cap; clamping and echoing the effective
+  value lets a well-behaved client detect it and paginate correctly.
+}
