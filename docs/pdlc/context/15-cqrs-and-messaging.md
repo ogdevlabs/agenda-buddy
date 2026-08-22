@@ -157,7 +157,14 @@ public static async Task<string> BookAppointmentEvent(IRequestCollection request
 
 ## Query inventory
 
-10 queries, 10 handlers, in `EventAndCommands/Queries/`. Read in full: `GetProvidersQueryHandler`. **Inference:** the other nine follow the same publish → query → audit shape.
+9 queries, 9 handlers, in `EventAndCommands/Queries/`. Read in full: `GetProvidersQueryHandler`. **Inference:** the other eight follow the same publish → query → audit shape.
+
+<!-- Corrected 2026-08-22 at F-016's Ship context refresh (review finding I-5). This line read
+     "10 queries, 10 handlers" above a 9-row table; the table was right. The phantom tenth handler
+     propagated into F-016's PRD, ARCHITECTURE.md §5, the plan's threat table and T18's task body
+     before a grep caught it at the wave-6 standup. Verified again here: 9 files under
+     EventAndCommands/Queries/ contain an IRequestHandler implementation. -->
+
 
 | Query | Returns | Reachable from |
 |---|---|---|

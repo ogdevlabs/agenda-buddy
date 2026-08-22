@@ -39,6 +39,8 @@ Agenda Buddy is a scheduling and appointment management platform for independent
 - **Test (integration, 99 tests):** `dotnet test AgendaBuddy.IntegrationTests/AgendaBuddy.IntegrationTests.csproj` — ⚠️ a **separate command**. `AgendaBuddy.IntegrationTests` is deliberately excluded from the slnf (ADR-031) so the unit gate stays Docker-free, which means the backend command above **does not run it**. Needs a container runtime; `export PATH="$HOME/.rd/bin:$PATH"` first under Rancher Desktop
 - **Test (mobile, 74 tests):** `dotnet test MobileApp.Tests/MobileApp.Tests.csproj /p:MobileWorkloads=false`
 - **Format:** `dotnet format agenda-buddy-backend.slnf` — there is no `.editorconfig`, so this applies built-in defaults
+- **Regenerate the OpenAPI specs:** `./scripts/generate-openapi.sh [Service…]` → `docs/api/openapi/`. Runs each service **standalone as Development** against a throwaway Mongo container, because Swashbuckle is registered only in Development and the AppHost's services do not run as Development
+- **Run the app + iOS simulator:** `./scripts/run-ios.sh` — starts the AppHost, discovers the dynamic ports, boots a simulator, launches `MobileApp`. ⚠️ The app shows **seed data**: it has no reachable backend until F-015 (see `bruno/agenda-buddy/` for a collection that does hit the real services)
 - **Stop:** `Ctrl-C` on the AppHost (legacy: `docker compose down`)
 
 ### Local-run gotchas
@@ -82,6 +84,9 @@ See [docs/pdlc/archive/design/aspire-wiring/ARCHITECTURE.md](docs/pdlc/archive/d
 - `Library/MongoConnectionResolver.cs` — resolves the Mongo connection string (Aspire → environment → appsettings) with an actionable failure message
 - `AgendaBuddy.IntegrationTests/` — the only integration suite. `Harness/ServiceHostFixture.cs` hosts a real service over HTTP against a MongoDB Testcontainer (container per test class, database per test); `Harness/MongoEndpointGuard.cs` **fails the suite closed** if the resolved endpoint is not this session's own container. Add a per-service anchor alias to `GlobalUsings.cs` to host a new service — never `WebApplicationFactory<Program>`, which is ambiguous across all seven assemblies (see `Harness/EntryPoints.cs`)
 - `agenda-buddy-backend.slnf` — the solution filter the backend CI job and local backend test runs target; excludes MobileApp **and `AgendaBuddy.IntegrationTests`** by design (ADR-031)
+- `docs/api/openapi/` + `scripts/generate-openapi.sh` — generated OpenAPI specs for all 7 services, plus a route index. A **build artifact**, regenerable on demand; do not hand-edit
+- `bruno/agenda-buddy/` — Bruno collection covering all 7 services, with the F-016 authorization expectations encoded in the request names (e.g. *"Create profession — MUST be 404 or 405"*). Two environments: `Local (Aspire AppHost)` and `Local (standalone)`
+- `scripts/run-ios.sh` — one-command local run: AppHost + port discovery + iOS simulator + `MobileApp`
 - `azure.yaml` + `.github/workflows/deploy.yml` — cloud deploy path. **Written, unit-tested, never executed**
 - `docker-compose.yml` — legacy Kafka + Zookeeper + Schema Registry + service definitions
 - `.github/workflows/dotnet.yml` — CI pipeline: restore → build → test → coverage upload, plus AppHost build and startup guards

@@ -77,21 +77,42 @@ _No tasks._
 
 _No tasks._
 
-## F-016 — secure-public-endpoints  `planned`
+## F-016 — secure-public-endpoints  `shipped`
 
-_No tasks._
+| ID | Title | Status | Prio | Depends on |
+|----|-------|--------|------|------------|
+| F-016-T01 | Rename EventAndCommands/Persitency to Persistence | done | — | — |
+| F-016-T02 | Create AgendaBuddy.IntegrationTests and add InternalsVisibleTo to 7 services | done | — | F-016-T01 |
+| F-016-T03 | CryptoSessionFixture: session RSA keypair, in memory, never on disk | done | — | F-016-T02 |
+| F-016-T04 | DockerPreflight: actionable diagnostics when the container runtime is unavailable | done | — | F-016-T02 |
+| F-016-T05 | TokenFactory: valid, expired and foreign-subject RS256 tokens | done | — | F-016-T03 |
+| F-016-T06 | ServiceHostFixture: real service over HTTP, Mongo Testcontainer, fail-closed guard | done | — | F-016-T03, F-016-T04 |
+| F-016-T07 | Auth failure paths: 401 on expired, 403 on foreign subject, against real routes | done | — | F-016-T05, F-016-T06 |
+| F-016-T08 | AgendaBuddyExceptionHandler: central ForbiddenException to 403, registered unconditionally | done | — | F-016-T07 |
+| F-016-T09 | Fix AssertOwner: reject a null sub claim before comparing | done | — | F-016-T07 |
+| F-016-T10 | Add GetPagedAsync to IRepository and MongoDbRepository | done | — | F-016-T01 |
+| F-016-T11 | Project provider reads to ProviderSummary for non-owners | done | — | F-016-T07, F-016-T09 |
+| F-016-T12 | Authenticate the five anonymous PII GET routes | done | — | F-016-T07, F-016-T08 |
+| F-016-T13 | OwnershipGuard on both Calendar routes, with a guard-before-cache regression test | done | — | F-016-T08, F-016-T09 |
+| F-016-T14 | Role plus ownership on POST /api/v1/providers | done | — | F-016-T08 |
+| F-016-T15 | Paginate both list endpoints with a capped, clamped envelope | done | — | F-016-T10, F-016-T12 |
+| F-016-T16 | Require the Provider role on GET /api/v1/customers | done | — | F-016-T08, F-016-T12 |
+| F-016-T17 | Delete POST /api/v1/professions | done | — | F-016-T08 |
+| F-016-T18 | Reduce query audit payloads to metadata and add Event.actor | done | — | F-016-T07 |
+| F-016-T19 | Final verification: full suite green, no test deleted, every AC attested | done | — | F-016-T08, F-016-T09, F-016-T10, F-016-T11, F-016-T12, F-016-T13, F-016-T14, F-016-T15, F-016-T16, F-016-T17, F-016-T18 |
+| F-016-T20 | Integration CI job: separate, blocking, duration-enforced | done | — | F-016-T19 |
 
 ## F-017 — container-and-cd-hardening  `planned`
 
 _No tasks._
 
-## F-018 — api-refactor-foundations  `planned` — claimed by oscargarcia@ogdevlabs.onmicrosoft.com
+## F-018 — api-refactor-foundations  `planned`
 
 | ID | Title | Status | Prio | Depends on |
 |----|-------|--------|------|------------|
-| F-018-T01 | Rename EventAndCommands/Persitency to Persistence | open | — | — |
+| F-018-T01 | Rename EventAndCommands/Persitency to Persistence | open | — | F-018-T02 |
 | F-018-T02 | Amend CONSTITUTION 1/4/9, verify ADR-014..020, fix the Identity comment | open | — | — |
-| F-018-T03 | Add .editorconfig and enforce dotnet format in CI | open | — | — |
+| F-018-T03 | Add .editorconfig and enforce dotnet format in CI | open | — | F-018-T01, F-018-T02 |
 | F-018-T04 | File the beads issue tracking the 10-green-run count for the section 7 gate | open | — | — |
 | F-018-T05 | Create AgendaBuddy.IntegrationTests and add InternalsVisibleTo to 7 services | open | — | F-018-T01 |
 | F-018-T06 | CryptoSessionFixture: session RSA keypair, in memory, never on disk | open | — | F-018-T05 |
@@ -115,6 +136,22 @@ _No tasks._
 _No tasks._
 
 ## F-020 — api-refactor-rollout  `planned`
+
+_No tasks._
+
+## F-021 — identity-hardening  `planned`
+
+_No tasks._
+
+## F-022 — password-reset-flow  `planned`
+
+_No tasks._
+
+## F-023 — token-revocation  `planned`
+
+_No tasks._
+
+## F-024 — data-subject-rights  `planned`
 
 _No tasks._
 

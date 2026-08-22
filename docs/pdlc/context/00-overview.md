@@ -1,6 +1,6 @@
 # Codebase Context — Agenda Buddy
 
-**Generated:** 2026-08-15 · **Partially refreshed:** 2026-08-18 (targeted, after F-013 `v0.1.0`)
+**Generated:** 2026-08-15 · **Partially refreshed:** 2026-08-22 (targeted, after F-016 `v0.2.0`; previously 2026-08-18 after F-013 `v0.1.0`)
 **Scope:** Every relevant committed source file, configuration, and CI/CD asset in this repository was read in full to produce these notes. Coverage gaps are stated explicitly at the bottom of this file.
 
 > ### ⚠️ Refresh status after F-013 (`v0.1.0`, 2026-08-18)
@@ -22,6 +22,25 @@
 > | `03`, `05`, `10`, `11`, `14`, `16` | Substantially unaffected by F-013 (`11-testing.md`'s count is now 305, not 256) |
 >
 > **A full targeted rehydration is queued as the first step of F-018** (the Minimal API refactor), which will rewrite the endpoint layer and invalidate `01`/`02` again anyway. Doing it once, after that refactor, is cheaper than twice.
+
+> ### ⚠️ Refresh status after F-016 (`v0.2.0`, shipped 2026-08-18, catalog refreshed 2026-08-22)
+>
+> F-016 changed the **authorization posture of seven routes** and added the project's first integration
+> suite, so the files below were re-read against the merged code and now carry accurate `F-016 delta`
+> banners. Anything not listed here still dates from the F-013 pass or the original 2026-08-15 scan.
+>
+> | Concern file | Status after F-016 |
+> |---|---|
+> | `01-api-surface.md` | **Refreshed** — authz column, response shapes and anchors are current for the 7 changed routes; `204` retired; pagination envelope documented; generated spec at `docs/api/openapi/` noted |
+> | `11-testing.md` | **Refreshed** — the "no integration test in the solution" claim is **retired**; counts corrected to **531** (358 + 99 + 74) |
+> | `13-security.md` | **Refreshed** — the anonymous-PII and Calendar-IDOR findings are **closed**; what remains open is enumerated, including all of F-021 |
+> | `15-cqrs-and-messaging.md` | **Corrected** — "10 queries, 10 handlers" → **9 and 9** (review finding I-5, the origin of an error that reached four approved artifacts) |
+> | `00-overview.md` | **This file** — findings 3 and 10 updated; Repo Snapshot corrected |
+> | `02`, `10` | ⚠️ **Still stale on this feature** — every touched `Program.cs` gained authz calls, a central `ForbiddenException` → 403 mapping, and pagination clamping. Anchors have shifted. Not re-read
+> | `03`–`09`, `12`, `14`, `16` | Substantially unaffected by F-016
+>
+> **The F-018 full rehydration is still queued** and still the right call: F-019/F-020 rewrite the endpoint
+> layer and will invalidate `01`/`02` again.
 
 This folder is an **agent-readable mechanical map** of the codebase: what exists, where, with which inputs/outputs and side effects. It is intentionally low-level — for the high-level product/state view see `docs/pdlc/memory/OVERVIEW.md`.
 
@@ -55,13 +74,13 @@ This folder is an **agent-readable mechanical map** of the codebase: what exists
 | Language / runtime | C# on **.NET 10** — `global.json:3` pins SDK `10.0.0`, `rollForward: latestMajor`, `allowPrerelease: true`. Every production `csproj` targets `net10.0` |
 | Framework | ASP.NET Core 10 Minimal APIs (7 services) + .NET MAUI (1 mobile client) |
 | Build | `dotnet` MSBuild; solution-wide `Directory.Build.props` for transitive CVE pins |
-| API style | REST, route groups under `api/v1/<domain>`; Swashbuckle 10.2.3 Swagger UI in Development only. **No committed OpenAPI spec file** |
+| API style | REST, route groups under `api/v1/<domain>`; Swashbuckle 10.2.3 Swagger UI in Development only — so **absent under the AppHost**, whose services do not run as `Development`. A **generated** spec is now committed at `docs/api/openapi/<Service>.json` (`scripts/generate-openapi.sh`); treat it as a build artifact *(2026-08-22)*. List routes are paginated and PII reads require auth *(F-016)* |
 | Orchestration | **.NET Aspire 13.4.6, hosting-only** *(F-013)* — `AgendaBuddy.AppHost` declares MongoDB + Kafka containers and all 7 service projects; `AgendaBuddy.ServiceDefaults` is referenced by every service. The Aspire MongoDB *client* integration is deliberately **not** used (`Aspire.MongoDB.Driver` needs driver ≥ 3.9.0 vs the pinned 2.25.0 → `NU1605`). ADR-013 |
 | Persistence | MongoDB via `MongoDB.Driver` 2.25.0. Database `agenda_buddy` (6 domain services) + `IdentityDb` (Identity). **One `IMongoClient` singleton shared process-wide** by all services and `EventStore` *(F-013)*; connection string resolved by `Library/MongoConnectionResolver.cs` (Aspire → environment → appsettings) |
 | Messaging | Confluent Kafka — **topic creation only**; no producers or consumers. Broker address is configuration-driven *(F-013)*: `ConnectionStrings:kafka` → `Kafka:BootstrapServers` → `localhost:9092` fallback (`Kafka/KafkaClient.cs:18,38`) |
 | Observability | OpenTelemetry traces/metrics/logs + `/health` and `/alive` on all 7 services, via `AgendaBuddy.ServiceDefaults/Extensions.cs` *(F-013)*. Spans are PII-redacted by `PiiRedactingProcessor.cs` |
-| Source files | 243 production `.cs` + 84 test `.cs`, 11 `.xaml`, **25** `.csproj` (was 23 — AppHost + ServiceDefaults added) |
-| Solution filter | `agenda-buddy-backend.slnf` — what CI and local test runs target. **Excludes `MobileApp`**, which does not compile under `/p:MobileWorkloads=false` (`agenda-buddy-prr`) |
+| Source files | **28** `.csproj` and **264** production / **133** test `.cs`, verified 2026-08-22 by `find`. F-016 added `AgendaBuddy.IntegrationTests`; the previously recorded 25 projects / 243+84 files undercounted |
+| Solution filter | `agenda-buddy-backend.slnf` — what CI and local backend test runs target. Excludes **`MobileApp`** (covered by three dedicated CI jobs; the `agenda-buddy-prr` compile failure is fixed) **and `AgendaBuddy.IntegrationTests`**, deliberately, so the unit gate needs no container runtime (ADR-031). Neither exclusion means "broken" |
 | Default branch | `main` (PR-protected per `docs/pdlc/memory/CONSTITUTION.md` §6) |
 
 ## Architecture in one paragraph
@@ -76,7 +95,7 @@ These are elaborated with `file:line` anchors in the concern files. Listed most 
 
 1. ⚠️ **A live MongoDB Atlas credential is in the repository's git history and is still valid.** *(Updated 2026-08-18.)* F-013 removed it from **17** tracked files (not the 14 first counted — two were `docs/pdlc/context/` files this catalog's own backfill had copied it into). **Removal is not rotation:** 9 commits still contain it, and it remains usable until the password is changed at Atlas. The cluster holds client names, emails, phone numbers and appointment records, and has **no backups**. Highest residual risk in the project and the hard prerequisite for any cloud deployment. Human-only: `docs/issues/ISSUE-002-atlas-credential-rotation.md`. See `13-security.md`, `06-configuration.md`.
 2. ✅ **RESOLVED by F-013 — the backend now starts outside `Development`.** Previously every service's `AddMongoDbRepository` read the **root-level** `MongoDB` config section, which existed only in `appsettings.Development.json`, so the connection string resolved to `null` anywhere else. Now `Library/MongoConnectionResolver.cs` resolves it from Aspire, environment, then appsettings, and throws an actionable message naming every key tried rather than returning null. Verified by starting all seven in `Staging` with only `ConnectionStrings__mongodb` set. **A second defect surfaced here:** Aspire's `WithReference(database)` injects `ConnectionStrings__agenda-buddy`, not the `ConnectionStrings:mongodb` the resolver reads — this crashed `profession` on startup and is now guarded by a 7-case test.
-3. ⚠️ **The mobile client cannot reach the backend.** `MobileApp` uses a single `ApiBaseUrl` while the backend binds seven different ports (6030–6036) with no gateway; and every mobile route omits the `api/v1/` prefix and targets verbs the backend does not expose (`GET booking?date=…` — Booking has no GET at all). The ViewModels consequently fall back to `MobileApp/Services/SeedDataProvider.cs`. See `01-api-surface.md`, `16-mobile-client.md`.
+3. ⚠️ **The mobile client cannot reach the backend.** *(Sharpened 2026-08-22.)* `MobileApp` uses a single `ApiBaseUrl` for seven services with no gateway; every mobile route omits the `api/v1/` prefix and targets verbs the backend does not expose (`GET booking?date=…` — Booking has no GET at all). Worse than previously recorded: **nothing ever loads `MobileApp/appsettings.json`** (no `AddJsonFile`/`AddJsonStream`, not an embedded resource), so `ApiBaseUrl` is always null and both clients always use the hardcoded `http://localhost:6036/` — a port that addresses nothing now that F-013 made the AppHost assign ports dynamically. The ViewModels fall back to `MobileApp/Services/SeedDataProvider.cs`, so the app runs on canned data. Owned by **F-015**. See `01-api-surface.md`, `16-mobile-client.md`.
 4. ⚠️ **`Library`, `Kafka`, and `EventAndCommands` Dockerfiles publish `net10.0` output onto a `dotnet/runtime:8.0` base image** (`Library/Dockerfile:13`, `Kafka/Dockerfile:13`, `EventAndCommands/Dockerfile:12`) — a leftover the F-011 .NET 10 upgrade missed. Those images cannot run. See `08-cicd-deploy.md`.
 5. ⚠️ **MediatR is registered but never used to dispatch.** There is no `mediator.Send(...)` anywhere; `RequestCollection` news up handlers by hand. And there are **zero `INotificationHandler` implementations**, so every `mediator.Publish(...)` call is a no-op. See `15-cqrs-and-messaging.md`.
 6. ⚠️ **Kafka is still decorative, but no longer hardcoded.** *(Updated 2026-08-18.)* F-013 made the broker address configuration-driven — `Kafka/KafkaClient.cs:38` tries `ConnectionStrings:kafka` then `Kafka:BootstrapServers`, falling back to `localhost:9092` (`:18`). **The larger finding stands:** the only operation is still `CreateTopicIfNotExist`, and no message is ever produced or consumed. See `09-integrations.md`.
@@ -85,7 +104,7 @@ These are elaborated with `file:line` anchors in the concern files. Listed most 
 
    **One thing this surfaced is worth carrying forward:** enabling telemetry exposed that `url.path` was exporting real customer email addresses (this system puts emails in route paths, e.g. `GET /api/v1/providers/{email}`). `PiiRedactingProcessor.cs` now redacts email patterns from `url.path`, `url.query`, `url.full`, `http.url`, `http.target` and the span display name before any exporter sees them. **Do not remove it.** The readiness/liveness split is also deliberate: `/alive` stays 200 when MongoDB is down so an orchestrator does not restart a healthy process over an unreachable database.
 9. ⚠️ **The seed script writes to databases the APIs never read.** `scripts/seed/seed-mongo.sh:14,22` imports into `ProviderDb` and `CustomerDb`, while every service reads `agenda_buddy`. See `05-data-model.md`.
-10. ⚠️ **Read queries write to the audit EventStore.** `EventAndCommands/Queries/Provider/GetProvidersQueryHandler.cs:25` serializes the entire provider list (PII included) into a Mongo document on every GET. See `15-cqrs-and-messaging.md`.
+10. ✅ **RESOLVED by F-016 — read queries no longer serialise PII into the audit EventStore.** `GetProvidersQueryHandler` previously wrote the entire provider list, PII included, into a Mongo document on every GET. Reads still record an audit event; they no longer carry the payload. See `15-cqrs-and-messaging.md`.
 
 ## Drift against the memory bank
 
@@ -104,7 +123,7 @@ These are elaborated with `file:line` anchors in the concern files. Listed most 
 **Read in full:** all 7 `Program.cs`; all 12 production `.csproj`; all 17 `appsettings*.json`; `docker-compose.yml`, `docker-compose.override.yml`, `Directory.Build.props`, `global.json`, `.github/workflows/dotnet.yml`; all 5 read Dockerfiles (`Booking`, `Identity`, `Library`, `Kafka`, `EventAndCommands`); all 13 `Library/Entities`; all 13 `Library/Services` implementations; `Library/Tools/*` (5); `Library/Repositories/*` (2); `Library/Data/*` (2); `Library/Tools/Migrations/*` (2); `EventAndCommands` kernel (`ConfigurationLoader`, `LibrarySettings`, `ServiceCollectionExtensions`, `Persitency/*`); all 11 commands + 11 command handlers; `Kafka/*` (3); `Library.ServerAuth/*` (2); all of `Identity/` (4); `MobileApp` bootstrap + auth + push + 3 API services; all 7 per-service `MongoDbConfiguration` + `ServiceCollectionExtension`; `Booking`/`Provider` `RequestCollection` + `EventsHelper`; `scripts/seed/seed-mongo.sh`.
 
 **Sampled (pattern confirmed uniform, not every file read line-by-line):**
-- `EventAndCommands/Queries/**` — 1 of 10 handlers read (`GetProvidersQueryHandler`); the remaining 9 follow an identical publish→query→audit shape.
+- `EventAndCommands/Queries/**` — 1 of **9** handlers read (`GetProvidersQueryHandler`); the remaining 8 follow an identical publish→query→audit shape. *(Corrected 2026-08-22: read "1 of 10 … remaining 9", carrying the same phantom tenth handler as `15-cqrs-and-messaging.md`.)*
 - `EventAndCommands/Events/**` — 1 of 19 read (`BookAppointmentEvent`); all are property-only `INotification` DTOs.
 - Per-service `Requests/RequestCollection.cs` + `Events/EventsHelper.cs` — read for Booking and Provider; Calendar, Customer, Services, Profession follow the same hand-construction pattern.
 - `MobileApp/ViewModels/**` (9 files) and `MobileApp/Views/**` (11 `.xaml` + code-behind) — **not read**. Their behaviour is inferred from `MobileApp.Tests/ViewModels/*` and the git log. `16-mobile-client.md` marks these gaps.

@@ -5,23 +5,32 @@
      Claude reads this file at the start of every session to auto-resume from the last checkpoint.
      If this file is missing or empty, PDLC will prompt you to run /pdlc init. -->
 
-**Last updated:** 2026-08-18T23:55:00Z
+**Last updated:** 2026-08-22T15:25:00Z
 
 ---
 
 ## Current Phase
 
-Construction Complete — Ready for /ship
+Idle — Ready for next /brainstorm
 
 ---
 
 ## Current Feature
 
-secure-public-endpoints
+none
 
-_In **Construction / Build**. Inception complete 2026-08-18 — PRD, design and plan all approved. Came from the approved **Platform Remediation** program Discover, which re-scoped and re-sequenced F-014–F-017 into six features. Program log: `docs/pdlc/brainstorm/brainstorm_platform-remediation_2026-08-18.md` (`status: prd-approved`). New sequence: **F-016 → F-021 → F-014 → F-015 → F-017 → F-018–F-020**, with F-022–F-024 filed._
+_**F-016 `secure-public-endpoints` SHIPPED** as `v0.2.0` — merged `2134b8d`, PR #38, episode 002 (Final).
+Operation closed 2026-08-22: smoke-tested against a live AppHost (all five formerly-anonymous PII GETs 401,
+both Calendar routes 401/403, non-owners get `ProviderSummary` only, professions still 200, deleted POST 405),
+backend re-verified 358/358 green on `main`, context catalog refreshed, review finding I-5 fixed. Cloud deploy
+skipped for the second consecutive release — three unchanged blockers in `DEPLOYMENTS.md`._
 
-_`api-refactor-foundations` (F-018) is **paused** — see `docs/pdlc/memory/.paused-feature.json`. Inception is complete and merged; Construction was aborted at the wave-1 standup before any code._
+_`api-refactor-foundations` (F-018) is **paused** — see `docs/pdlc/memory/.paused-feature.json`. Inception is
+complete and merged; Construction was aborted at the wave-1 standup before any code. ⚠️ **Its plan is now
+stale in a second way:** F-016 delivered the harness *and* the `Persistence` rename, so what remains is
+OpenAPI/spec drift (partly done — `docs/api/openapi/` and `scripts/generate-openapi.sh` now exist),
+`.editorconfig`, constitution amendments, the 10-green-run counter, mobile CI, the Tier 1–3 sweep, the Kafka
+fake and final verification._
 
 ---
 
@@ -37,16 +46,10 @@ none
 
 ## Roadmap Claim
 
-- **Feature ID:** F-016
-- **Feature record:** docs/pdlc/tasks/F-016/_feature.md
-- **Claimed by:** oscargarcia@ogdevlabs.onmicrosoft.com
-- **Claimed at:** 2026-08-18T17:52:00Z *(claim moved F-014 → F-016 when Discover put F-016 first; F-014 released)*
-- **Branch:** `feat/F-016-secure-public-endpoints` — created at build pre-flight 2026-08-18T19:22Z **off freshly-pulled `main`** (`e35938b`) at the maintainer's request, not off the F-018 branch. The Inception artifacts and the F-018 abort travelled across via stash.
-- **Pushed 2026-08-18T22:40Z at the maintainer's request. PR #38 is OPEN** → https://github.com/ogdevlabs/agenda-buddy/pull/38 (27 commits, 158 files). Opened via the GitHub API with the credential `git` already uses, **not `gh`** — `gh` is authenticated to a different work identity.
+_None held. Run `/brainstorm` to claim the next priority feature._
 
-_F-018's claim was released on 2026-08-18T17:37:14Z when Construction was aborted; the feature is `In Progress`-but-unclaimed on the roadmap and resumable with `/continue`. Its branch `feat/F-018-api-refactor-foundations` holds the Inception artifacts and **zero** implementation commits._
-
-_F-013 `aspire-wiring` shipped as `v0.1.0` on 2026-08-18 and its claim was released._
+_Next by priority: **F-021 `identity-hardening`** (priority 15, Planned) — the auth system's own defects.
+F-016's claim was released on its feature record at ship (`status: shipped`, `claimed_by: null`)._
 
 ---
 
@@ -60,14 +63,11 @@ _None active. Run `/night-shift <F-NNN>` to start an autonomous run (requires by
 
 none
 
-_**Construction is COMPLETE** — Build (20/20 tasks), Review (approved, fix cycle 1), Test (all layers
-resolved) and Wrap-up (episode 002 drafted) are all done. Next: `/ship`._
-
 ---
 
 ## Last Checkpoint
 
-Construction / Complete / 2026-08-18T23:55:00Z — **Construction Complete, ready for `/ship`.** PR #38 open and green.
+Operation / Complete / 2026-08-22T15:25:00Z — F-016 shipped and closed out. Episode 002 Final, metrics recorded, context refreshed.
 
 ---
 
@@ -93,36 +93,31 @@ agent-teams
 
 ## Active Blockers
 
-> ### 🔖 RESUME MARKER — updated 2026-08-18T23:55Z, **CONSTRUCTION COMPLETE**
+> ### 🔖 RESUME MARKER — updated 2026-08-22T15:25Z, **F-016 SHIPPED AND CLOSED**
 >
-> **F-016 `secure-public-endpoints` is Construction Complete and ready for `/ship`.**
-> Branch `feat/F-016-secure-public-endpoints`, **pushed**, **[PR #38](https://github.com/ogdevlabs/agenda-buddy/pull/38) open, mergeable, CI green.**
+> **Nothing is in flight.** `main` is at `v0.2.0` (`2134b8d`), all three suites green, working tree clean of
+> feature work. The next action is `/brainstorm` on **F-021 `identity-hardening`**, which has a feature record
+> (`docs/pdlc/tasks/F-021/_feature.md`) and **no PRD, design or tasks yet** — Inception has not started.
 >
-> All four sub-phases done: **Build** 20/20 tasks · **Review** approved (0 Critical; fix cycle 1 closed I-3 and
-> I-4) · **Test** all layers resolved · **Wrap-up** episode 002 drafted.
+> **F-021's scope, all four verified present in code:** `RefreshAsync`'s delete-then-insert
+> (`IdentityService.cs:135`→`:155` — a fault between those lines permanently destroys the account: email,
+> password hash and role, unlogged and unrecoverable) · `UseHttpsRedirection` **after** `UseAuthentication` in
+> 6 services, so the bearer token is parsed from the plaintext request before the redirect is issued · no rate
+> limiting or lockout on `POST /api/v1/auth/login` · `AssertOwner`'s null-claim pass, where
+> `string.Equals(null, null)` is `true` so the guard *succeeds* (`AssertOwnerAny` handles this, `AssertOwner`
+> does not).
 >
-> **Gates:** backend **358** / integration **99** / mobile **74** = **531**, 0 failing, 0 warnings.
-> All **7** threat-derived security ACs have linked tests; `tasks.cjs check` → 0 `security-ac-untested`.
+> ⚠️ **Design constraint to carry into F-021's PRD:** its rate limiter must ship with a test-environment
+> escape, or it will break F-016's integration harness — 99 tests hammer `login` from one address.
 >
-> **Read before shipping:**
-> - `docs/pdlc/design/secure-public-endpoints/verification.md` — the 26-AC attestation, every deviation named
-> - `docs/pdlc/reviews/REVIEW_secure-public-endpoints_2026-08-18.md` — 0 Critical, 5 Important (2 fixed, 3
->   accepted), 7 Advisory, and the approval-outcome table
-> - `docs/pdlc/episodes/EPISODE_secure-public-endpoints_2026-08-18.md` — **Status: Draft**, needs human sign-off
->
-> **Three things `/ship` must not skip:**
->
+> **Two things F-016 left for someone with GitHub admin, not for code:**
 > 1. **Add `Integration — real services + MongoDB` to `main`'s required status checks.** "Blocking" is a
->    branch-protection setting, not YAML. Until then the job can fail and a PR still merge — which would leave
->    this feature's central claim enforced by habit.
-> 2. **The context refresh (Reflect 16c-bis) must fix `docs/pdlc/context/15-cqrs-and-messaging.md:161`** —
->    "10 queries, 10 handlers" above a 9-row table. That line is the origin of an error that reached four
->    approved artifacts. Review finding I-5.
-> 3. **§7's Integration checkbox stays unchecked** (gated on 10 consecutive green runs, tracked separately),
->    and §7's security-scan gate was satisfied **by hand** again — F-017 still owns automating it.
->
-> ⚠️ **Still unrotated: the Atlas credential (`ISSUE-002`).** Human-only, and it is what makes the harness's
-> fail-closed guard load-bearing.
+>    branch-protection setting, not YAML. Until it is set, that job can fail and a PR still merge — which
+>    leaves F-016's central claim enforced by habit. `gh` here is authenticated to a different work identity,
+>    so this needs the web UI or an API call with the credential `git` uses.
+> 2. **§7's Integration checkbox stays unchecked**, gated on 10 consecutive green runs (2 so far), and §7's
+>    security-scan gate was satisfied **by hand** for the second consecutive release. **F-017** owns
+>    automating it.
 
 <!-- PENDING MARKER — read this first at the start of the next session. Each item below is either
      an action only a human can take, or work that is written but not yet exercised. Nothing here is
@@ -174,7 +169,7 @@ returned 200); and both JWT parameters render **masked** on the `identity` resou
 
 **Nothing in F-013 is now recorded as unverified.**
 
-### 4. Roadmap ordering — **REVERSED, then decomposed 2026-08-18. New order: F-016 → F-021 → F-014 → F-015 → F-017**
+### 4. Roadmap ordering — F-016 ✅ **SHIPPED 2026-08-18**. Remaining order: **F-021 → F-014 → F-015 → F-017 → F-018–F-020**
 
 F-018 was being worked ahead of F-014–F-017 at the user's request. That is **no longer the case**:
 F-018 finished Inception (PR #37 merged) and then had Construction **aborted at the wave-1 standup,
@@ -202,10 +197,9 @@ The known-bad conditions this order addresses, in the order they now get address
   marked Shipped on code nothing can call.
 - **F-015** — the mobile client cannot reach the backend: missing `api/v1/` prefixes, three wrong base
   URLs, no gateway, refresh-token flow wired but unused, `LogoutAsync` never calls the server.
-- **F-016** — **unauthenticated PII exposure.** `GET /api/v1/providers` returns every provider's full
-  record including customer emails, anonymous and unpaginated. Both Calendar routes are IDOR-able and
-  `OwnershipGuard.AssertRole` is never actually called. **This is the highest-severity item in the
-  four and is worth considering ahead of F-014.**
+- **F-016** — ✅ **SHIPPED `v0.2.0`, 2026-08-18.** The anonymous PII exposure, the Calendar IDOR and the
+  never-called `AssertRole` are all closed — verified live at the ship gate, not by inspection. It also
+  delivered the integration harness and the `Persistence` rename, both absorbed from F-018's plan.
 - **F-017** — three Dockerfiles publish `net10.0` onto a `dotnet/runtime:8.0` base and cannot run;
   CONSTITUTION §7's dependency-audit + secret-scan gate is still mandated-but-unimplemented.
 
@@ -329,151 +323,12 @@ re-planning (`/continue`).
 
 ```json
 {
-  "phase_completed": "Construction (Build + Review + Test + Wrap-up)",
-  "next_phase": "Operation (/ship)",
-  "feature": "secure-public-endpoints",
-  "feature_id": "F-016",
-  "branch": "feat/F-016-secure-public-endpoints",
-  "branch_pushed": true,
-  "pr": "https://github.com/ogdevlabs/agenda-buddy/pull/38 \u2014 open, mergeable, CI green",
-  "tests": "531 total: backend 358 / integration 99 / mobile 74 (67 pass, 7 skip). 0 failing, 0 warnings.",
-  "task_status": "20 of 20 done",
-  "review": "0 Critical / 5 Important / 7 Advisory. Approved with fix cycle 1: I-3 and I-4 FIXED; I-1, I-2, I-5 accepted as logged warnings.",
-  "key_outputs": [
-    "docs/pdlc/reviews/REVIEW_secure-public-endpoints_2026-08-18.md",
-    "docs/pdlc/reviews/BLAST-RADIUS_secure-public-endpoints_2026-08-18.md",
-    "docs/pdlc/design/secure-public-endpoints/verification.md \u2014 26-AC attestation",
-    "docs/pdlc/episodes/EPISODE_secure-public-endpoints_2026-08-18.md \u2014 Status: Draft, needs human sign-off",
-    "docs/pdlc/mom/party-review_F-016_2026-08-18.md",
-    "AgendaBuddy.IntegrationTests/ \u2014 99 tests, the first integration suite in the solution",
-    "DECISIONS.md ADR-022..ADR-031 (ADR-023 and ADR-027 amended during Build)"
-  ],
-  "decisions_made": [
-    "Review approved with fix cycle 1 of 3. I-3: AC-14 now verified on all 6 remaining ForbiddenException catch sites, not 1. I-4: CLAUDE.md corrected to 531 tests and the missing integration command added.",
-    "I-1 (providers-list cache holds unprojected entities), I-2 (GET /customers returns full CustomerEntity to Provider-role callers, per ADR-026's deferral) and I-5 (catalog handler count) ACCEPTED as logged warnings with named owners.",
-    "AC-19 deviation accepted: one pre-existing test deleted because ADR-025 removed its subject. Net -1 unit test, +3 integration tests.",
-    "Layer 7 security scan run BY HAND again. One HIGH (SSH.NET) \u2014 new on this branch, disposition already in ADR-030, not re-asked.",
-    "Nordstrom standards gate could not run for the FIFTH time; recommended folding into F-017 or retiring it."
-  ],
-  "ship_must_not_skip": [
-    "Add 'Integration \u2014 real services + MongoDB' to main's REQUIRED STATUS CHECKS. Blocking is a branch-protection setting, not YAML \u2014 until then the job can fail and a PR still merge.",
-    "Reflect 16c-bis context refresh MUST fix docs/pdlc/context/15-cqrs-and-messaging.md:161 ('10 queries, 10 handlers' above a 9-row table) \u2014 the origin of an error that reached four approved artifacts. Review finding I-5.",
-    "Do NOT tick CONSTITUTION section 7's Integration checkbox \u2014 gated on 10 consecutive green runs, tracked separately (F-018 T04, not absorbed).",
-    "Episode 002 is Status: Draft and needs human sign-off before commit.",
-    "ROTATE the Atlas credential (ISSUE-002) \u2014 still unrotated, still recoverable from this PUBLIC repo's history."
-  ],
-  "next_action": "Run /ship. Merge PR #38, tag, update CHANGELOG (at docs/pdlc/memory/CHANGELOG.md, NOT the repo root), refresh the context catalog, fill the episode's Reflect Notes.",
-  "pending_questions": []
-}
-```
-
-_Superseded Construction handoff (F-013), retained because its gotchas and do-not-redo list are still live:_
-
-```json
-{
-  "phase_completed": "Construction / Build + Review + ISSUE-001 fix",
-  "next_phase": "Ship",
-  "feature": "aspire-wiring",
-  "feature_id": "F-013",
-  "branch": "feat/F-013-aspire-wiring",
-  "branch_pushed": true,
-  "commits": 24,
-  "tests": "294 passing, 0 failing, 0 warnings (dotnet test agenda-buddy-backend.slnf)",
-  "baseline_before_feature": "189 passing across 10 projects",
-  "READ_FIRST": [
-    "docs/issues/ISSUE-001-apphost-never-launches-services.md — the blocker, with the full resolution path",
-    "docs/pdlc/design/aspire-wiring/verification.md — which acceptance criteria are verified vs unverified",
-    "docs/pdlc/reviews/REVIEW_aspire-wiring_2026-08-17.md — findings, incl. the Critical Echo caught late",
-    "docs/pdlc/episodes/EPISODE_aspire-wiring_2026-08-17.md — what the plan got wrong and why"
-  ],
-  "task_status": "14 of 14 done. F-013-T14 closed 2026-08-18.",
-  "next_action": "Commit the ISSUE-001 fix (uncommitted), do the 3 dashboard visual checks, then /ship.",
-  "do_not_redo": [
-    "Do not re-run the T-01 spike: R-1 is settled. Aspire.MongoDB.Driver is excluded, driver pinned at 2.25.0, Aspire 13.4.6 hosting-only, no workload exists.",
-    "Do not try to run the Nordstrom standards gate (Step 12.6): the six .nordstrom-standards/* repos do not resolve under this gh auth. Needs SSO or VPN.",
-    "Do not re-trust the dev certificate: already done, and it did not fix ISSUE-001.",
-    "Do not re-investigate ISSUE-001 as an AddProject<TProject> or endpoint-annotation problem: both were disproven. Root cause was the missing launchSettings.json / non-Development environment.",
-    "Do not add MobileApp to CI's api job: it does not compile (agenda-buddy-prr). CI targets agenda-buddy-backend.slnf on purpose."
-  ],
-  "decisions_made": [
-    "R-1 escape hatch taken — no Aspire MongoDB client integration; AddSingleton<IMongoClient> + custom MongoHealthCheck",
-    "IRequestCollection registered Scoped — a pre-existing captive dependency stopped 6 of 7 services starting in Development",
-    "Profession seeding moved from DI-registration-time .Wait() to a hosted service",
-    "PiiRedactingProcessor added — url.path was exporting email addresses (threat T-004 was real, not theoretical)",
-    "Dead IMongoDbConfiguration registrations deleted (review I-3)",
-    "Atlas credential removed from 17 tracked files — removal is NOT remediation"
-  ],
-  "outstanding_not_closed_by_merge": [
-    "⚠️ ROTATE the agenda_buddy Atlas credential and review the cluster access log — still in git history, still valid (threat T-001 / OQ-1)",
-    "3 dashboard visual checks: AC-3.4 rendering, threat T-004 span inspection, review finding A-3 JWT masking",
-    "CONSTITUTION §7 dependency-audit + secret-scan gate still unimplemented — deferred to F-017",
-    "agenda-buddy-prr — MobileApp CS0103; also breaks the build-mobile-tests CI job",
-    "Echo's 2 advisory test gaps: the guarded legacy MongoDbConfiguration ctor throw, and ProfessionSeedHostedService.StartAsync",
-    "scripts/seed/seed-mongo.sh is stale — hardcodes mongo:27017 and targets databases no service reads"
-  ],
-  "environment_gotchas": [
-    "Rancher Desktop: docker lives at ~/.rd/bin and is NOT on PATH. Aspire shells out to docker — export PATH=\"$HOME/.rd/bin:$PATH\" first.",
-    "Rancher VM is 2 CPUs / 4.1 GB and already runs a k8s cluster. Mongo + Kafka + 7 services is tight.",
-    "AppHost secrets are in user secrets and ONLY load in Development: Parameters:jwt-public-key, Parameters:jwt-private-key, Parameters:mongodb-password. AgendaBuddy.AppHost/Properties/launchSettings.json sets DOTNET_ENVIRONMENT=Development — deleting it silently breaks the whole graph (ISSUE-001).",
-    "MongoDB runs on a persistent volume, so its password must stay stable. If auth ever breaks: docker volume rm agendabuddy.apphost-<hash>-mongodb-data.",
-    "Debug the app model with Logging__LogLevel__Aspire=Debug — resource state transitions and parameter ValueMissing states are only logged at Debug.",
-    "Services run standalone with --no-launch-profile, else launchSettings forces Development and overrides ASPNETCORE_ENVIRONMENT.",
-    "macOS has no `timeout`; use background + sleep + kill."
-  ],
-  "pending_questions": []
-}
-```
-
-_Superseded handoff (F-012 mobile-app, shipped) retained for reference:_
-
-```json
-{
-  "phase_completed": "Construction / Build",
-  "next_phase": "Ship",
-  "feature": "mobile-app",
-  "branch": "feature/mobile-app",
-  "key_outputs": [
-    "MobileApp/MobileApp.csproj",
-    "MobileApp/MauiProgram.cs",
-    "MobileApp/AppShell.xaml",
-    "MobileApp/Infrastructure/JwtDelegatingHandler.cs",
-    "MobileApp/Infrastructure/ISecureStorageService.cs",
-    "MobileApp/Services/AuthService.cs",
-    "MobileApp/Services/BookingApiService.cs",
-    "MobileApp/Services/CalendarApiService.cs",
-    "MobileApp/Services/CustomerApiService.cs",
-    "MobileApp/Services/MessagingApiService.cs",
-    "MobileApp/Services/NotificationApiService.cs",
-    "MobileApp/Services/PushNotificationService.cs",
-    "MobileApp/ViewModels/LoginViewModel.cs",
-    "MobileApp/ViewModels/DashboardViewModel.cs",
-    "MobileApp/ViewModels/CalendarViewModel.cs",
-    "MobileApp/ViewModels/CustomersViewModel.cs",
-    "MobileApp/ViewModels/AppointmentDetailViewModel.cs",
-    "MobileApp/ViewModels/MessagingViewModel.cs",
-    "MobileApp/ViewModels/MessageThreadViewModel.cs",
-    "MobileApp/ViewModels/NotificationsViewModel.cs",
-    "Library/Entities/DeviceTokenEntity.cs",
-    "Library/Services/DeviceTokenService.cs",
-    "Identity/Program.cs (POST /identity/device-token)",
-    "Identity.Tests/Security/LoginLogSanitizationTest.cs",
-    ".github/workflows/dotnet.yml (Android + iOS CI jobs)"
-  ],
-  "test_counts": {
-    "MobileApp.Tests": 63,
-    "Library.Tests": 74
-  },
-  "decisions_made": [
-    "All 14 plan tasks completed across 7 waves",
-    "AppointmentStatus enum extended with Confirmed + Cancelled values",
-    "Shell navigation: 5 tabs + login non-tab root + appointmentDetail + messageThread stack routes",
-    "Cancel/Complete use ActionSheet (bottom sheet) not DisplayAlert (UX F-005 fix)",
-    "All error banners include Try again button (UX F-002 fix)",
-    "Push payload body is PII-free generic text (T-002 mitigation)",
-    "POST /identity/device-token requires JWT auth; no device token logged (CONSTITUTION §4)",
-    "MobileWorkloads=false fallback TFM for local dev + CI unit tests"
-  ],
-  "next_action": "Run /pdlc ship mobile-app to open PR",
+  "phase_completed": null,
+  "next_phase": null,
+  "feature": null,
+  "key_outputs": [],
+  "decisions_made": [],
+  "next_action": null,
   "pending_questions": []
 }
 ```
@@ -563,4 +418,5 @@ _Superseded handoff (F-012 mobile-app, shipped) retained for reference:_
 | 2026-08-18T23:40:00Z | review_complete | **Party Review (solo)** — 0 Critical / 5 Important / 7 Advisory. Blast radius: **0 at-risk callers** across 19 public/signature-changed symbols, and the route sweep independently confirmed the PRD's "zero reachable consumers" premise *by a wider margin than claimed* (MobileApp calls `customer` singular, `booking/{id}`, `calendar?from=` and has **no provider service at all**). Phantom verified **7/7** threat mitigations with code *and* linked tests. Muse skipped (triage 0/3); Step 12.5 skipped for the same reason; Step 12.6 could not run. Approved with **fix cycle 1**: I-3 (AC-14 verified on 1 of 6 catch sites) and I-4 (`CLAUDE.md` stale, integration command missing) **fixed**; I-1/I-2/I-5 accepted as logged warnings | Review | secure-public-endpoints |
 | 2026-08-18T23:50:00Z | test_complete | **Test complete.** Layer 1 unit **358** / 0 failing / 0 warnings (required gate ✅). Layer 2 integration **99** (not required; run anyway). Layers 3–6 have no command in this project and are not required — logged skips. **Layer 7 security scan (always required) RAN by hand:** 7a found exactly one vulnerable package solution-wide (`SSH.NET` HIGH, ADR-030-accepted, and confirming the `NU1903` suppression does not hide it from the report); 7b clean on six patterns across 161 changed files. Mobile 74 untouched. **531 tests total** | Test | secure-public-endpoints |
 | 2026-08-18T23:55:00Z | construction_complete | **Construction Complete** — episode **002** drafted (`docs/pdlc/episodes/EPISODE_secure-public-endpoints_2026-08-18.md`, Status: Draft). PR #38 open, mergeable, CI green. Ready for `/ship` | — | secure-public-endpoints |
-
+| 2026-08-19T00:20:00Z | merged_and_tagged | Merged to `main` as `2134b8d` (true merge commit), tagged **v0.2.0**, PR #38 merged. CHANGELOG entry added at `docs/pdlc/memory/CHANGELOG.md` — **not** the repo root, which has no CHANGELOG. Cloud deploy **skipped**, second consecutive release, three unchanged blockers | Operation | secure-public-endpoints |
+| 2026-08-22T15:25:00Z | operation_complete | **F-016 shipped and Operation closed.** ⚠️ The gate stayed open **four days** — tag pushed 2026-08-18, closed 2026-08-22, with the STATE/DEPLOYMENTS edits uncommitted in a working tree the whole time. Verify ran against a live AppHost (no deployed environment exists): 9/9 authz checks as designed, register→login→authenticated-read end to end, non-owner projection confirmed live, backend re-run **358/358** on `main`, dependency audit + secret scan clean apart from the ADR-030 `SSH.NET` HIGH. **One new finding:** no cache invalidation exists anywhere in the solution (`agenda-buddy-xrw`, P2) — found by *running*, as in episode 001. Review finding **I-5 fixed** (9 queries, not 10) plus the same error in `00-overview.md`; context catalog refreshed for `01`/`11`/`13`/`15`/`00`; episode 002 **Final**; METRICS + Readiness reconciliation recorded | Idle | none |

@@ -185,4 +185,4 @@ Recorded because a design doc that survives contact with the code unchanged usua
 | `ARCHITECTURE.md` §5 | 9 query handlers, not 10; and `Event.actor` is **not** "one assignment per handler" — no handler can see the caller |
 | `ADR-023` | Annotated: DB-level paging, the cache key must carry the page, `skip` overflow guard |
 | `ADR-027` | Amended with the chosen mechanism (central stamp in `EventStore`) and the rejected alternative |
-| `docs/pdlc/context/15-cqrs-and-messaging.md:161` | ⚠️ **Not yet corrected** — "10 queries, 10 handlers" above a 9-row table. Needs the `/ship` context refresh |
+| `docs/pdlc/context/15-cqrs-and-messaging.md:160` | ✅ **Corrected 2026-08-22** at the Ship context refresh — now "9 queries, 9 handlers", with the origin of the phantom tenth recorded inline. `00-overview.md:107` carried the same error ("1 of 10 handlers read … the remaining 9") and was corrected with it |

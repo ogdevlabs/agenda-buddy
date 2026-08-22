@@ -1,13 +1,32 @@
 # 01 — API Surface
 
-> **⚠️ F-013 delta (2026-08-18, `v0.1.0`) — this file was written 2026-08-15 and has NOT been re-read since.**
+> **⚠️ F-016 delta (2026-08-18, `v0.2.0`) — refreshed 2026-08-22 at the ship gate. The authz column and
+> anchors below ARE current for the seven routes F-016 changed; everything else still dates from 2026-08-15.**
 >
-> Routes themselves are unchanged, but **every service gained two endpoints** not documented here: `GET /health` (readiness — 200 `Healthy` / 503 `Unhealthy`, includes a 5s-cached MongoDB check) and `GET /alive` (liveness — stays 200 when MongoDB is down, by design). Both are anonymous. Ports are now **dynamically assigned by the Aspire AppHost**, so any 603x port numbers here are wrong under the AppHost.
+> **The five anonymous PII GETs are gone.** `providers`, `providers/{email}`, `customers`,
+> `customers/{email}` and `services/{email}` all require authentication and return **401** anonymous —
+> verified live at the ship gate, not inferred. `professions*` stays anonymous as reference data.
+> **Both Calendar routes are now ownership-guarded** *before* the cache read, closing the IDOR.
+> **`POST /api/v1/professions` was deleted** rather than role-gated (ADR-025) — it answers **405**.
+> **`204` is retired** (ADR-023): list routes always return a parseable body.
+> **Both list routes are paginated** — `{items, totalCount, page, pageSize}` with a clamped, capped
+> `pageSize`; the cap is a security control, since an uncapped page size restores the full-dataset dump.
+> **Non-owners receive `ProviderSummary`** (`email`, `firstName`, `lastName`, `services`), never the embedded
+> appointment book or customer roster.
 >
-> `file:line` anchors below may have shifted. Authoritative sources for the change: `docs/pdlc/archive/design/aspire-wiring/ARCHITECTURE.md`, `docs/pdlc/episodes/EPISODE_aspire-wiring_2026-08-17.md`. A full targeted rehydration is queued as the first step of F-018.
+> **A generated OpenAPI spec now exists** — `docs/api/openapi/<Service>.json` plus an index, produced on
+> demand by `scripts/generate-openapi.sh`. It supersedes this file's claim that no spec is committed. There
+> is also a Bruno collection under `bruno/agenda-buddy/` encoding the expected status codes.
+>
+> **F-013 delta, still true:** every service also exposes anonymous `GET /health` (readiness, 5s-cached
+> MongoDB check) and `GET /alive` (liveness). Ports are **dynamically assigned by the Aspire AppHost**, so
+> any 603x port number here is wrong under the AppHost — it is right only for a standalone run.
+>
+> Sources: `docs/pdlc/episodes/EPISODE_secure-public-endpoints_2026-08-18.md`,
+> `docs/pdlc/design/secure-public-endpoints/verification.md`, ADR-022…031.
 
 
-**Source of truth:** the route registrations in each service's `Program.cs`. There is **no committed OpenAPI/Swagger spec file** — Swashbuckle 10.2.3 generates one at runtime, and only in `Development` (`Booking/Program.cs:38-41` and the equivalent block in each service).
+**Source of truth:** the route registrations in each service's `Program.cs`. Swashbuckle 10.2.3 serves a spec at runtime **only in `Development`** (`Booking/Program.cs:38-41` and the equivalent block in each service) — which is why it is absent under the AppHost, whose services do not run as `Development`. A **generated, committed** copy now lives at `docs/api/openapi/<Service>.json` (regenerate with `scripts/generate-openapi.sh`, which boots each service standalone as `Development` against a throwaway Mongo). Treat it as a build artifact: accurate as of its own timestamp, not hand-maintained.
 
 **Files:** `Booking/Program.cs`, `Calendar/Program.cs`, `Customer/Program.cs`, `Provider/Program.cs`, `Services/Program.cs`, `Profession/Program.cs`, `Identity/Program.cs`.
 
@@ -59,8 +78,8 @@ Each service pins its own Kestrel endpoints in `appsettings.json` (`"Kestrel": {
 | GET | `/availability/{email}` | ✅ `:119` | `:93` | `200 Ok<List<DateTime>>`, `404` |
 | GET | `/appointments/{email}` | ✅ `:141` | `:121` | `200 Ok<List<AppointmentEntity>>`, `404` |
 
-- Both are cached via `cache.GetOrCreateAsync($"availability-{email}")` / `$"appointments-{email}"` (`:101`, `:129`).
-- ⚠️ **Neither calls `OwnershipGuard`.** `RequireAuthorization()` proves the caller holds a valid JWT but *not* that `{email}` is theirs — any authenticated user can read any provider's appointment list. Compare `Provider/Program.cs:182`, which does guard. Cross-reference `13-security.md`.
+- Both are cached via `cache.GetOrCreateAsync($"availability-{email}")` / `$"appointments-{email}"`.
+- ✅ **Both now call `OwnershipGuard`, and they call it *before* the cache read** (F-016). Ordering matters: guarding after the read would still serve a cached body to a non-owner. Previously `RequireAuthorization()` proved only that the caller held a valid JWT, not that `{email}` was theirs — any authenticated user could read any provider's appointment book. Both answer **401** anonymous and **403** for an authenticated non-owner. Cross-reference `13-security.md`.
 
 ### Customer — `/api/v1/customers` (`Customer/Program.cs:88`)
 
@@ -68,32 +87,35 @@ Each service pins its own Kestrel endpoints in `appsettings.json` (`"Kestrel": {
 |------|------|------|--------------|---------|
 | POST | `/` | ✅ `:122` | `:93` | `201 Created<CustomerEntity>`, `400` |
 | PUT | `/{email}` | ✅ `:144` | `:124` | `202 Accepted`, `400`, `403`, `404` |
-| GET | `` (group root) | ❌ **anonymous** | `:146` | `200 Ok<List<CustomerEntity>>`, `204` |
-| GET | `/{email}` | ❌ **anonymous** | `:160` | `200 Ok<CustomerEntity>`, `404` |
+| GET | `` (group root) | ✅ `:215` *(F-016)* | `:183` | `200 Ok<PagedResponse<CustomerEntity>>`, `401` |
+| GET | `/{email}` | ✅ `:232` *(F-016)* | `:217` | `200 Ok<CustomerEntity>`, `401`, `404` |
 
-- ⚠️ **The two GETs are unauthenticated.** `GET /api/v1/customers` returns **every customer record including email addresses** to any caller. PII exposure — `CONSTITUTION.md` §4 flags email as PII. Highest-severity route-level finding.
-- PUT guards ownership at `:133`.
+- ✅ **The two GETs are authenticated as of F-016** and paginated; `204` is retired. Both answer **401** anonymous.
+- ⚠️ **Still returns the full `CustomerEntity`** — including `SubscribedProviderCollection`, `AppointmentCollection` and `KafkaTopic` — to *any* Provider-role caller, not just the owner. Owner-scoping was deliberately deferred (ADR-026); quantified as review finding I-2. So authentication closed the anonymous leak here, not the over-sharing.
+- PUT guards ownership at `:181`.
 
 ### Provider — `/api/v1/providers` (`Provider/Program.cs:93`)
 
 | Verb | Path | Auth | Handler line | Returns |
 |------|------|------|--------------|---------|
-| POST | `/` | ✅ `:129` | `:100` | `201 Created<ProviderEntity>`, `400` |
-| GET | `` (group root) | ❌ **anonymous** | `:132` | `200 Ok<List<ProviderEntity>>`, `204` |
-| GET | `/{email}` | ❌ **anonymous** | `:150` | `200 Ok<ProviderEntity>`, `404` |
-| PUT | `/{email}` | ✅ `:193` | `:171` | `202 Accepted`, `400`, `403`, `404` |
+| POST | `/` | ✅ `:174` — **role + owner** *(F-016)* | `:132` | `201 Created<ProviderEntity>`, `400`, `401`, `403` |
+| GET | `` (group root) | ✅ `:221` *(F-016)* | `:177` | `200 Ok<PagedResponse<ProviderSummary>>`, `401` |
+| GET | `/{email}` | ✅ `:258` *(F-016)* | `:224` | `200 Ok<ProviderEntity>` **(owner)** / `Ok<ProviderSummary>` **(non-owner)**, `401`, `404` |
+| PUT | `/{email}` | ✅ `:284` | `:262` | `202 Accepted`, `400`, `403`, `404` |
 
-- ⚠️ **`GET /api/v1/providers` is anonymous and returns the full `ProviderEntity`** — which embeds `ServiceEntities`, **`AppointmentEntities`** (with customer emails), and `SubscribedCustomerCollection` (`Library/Entities/ProviderEntity.cs:38-42`). An unauthenticated caller gets every provider's entire appointment book and customer list. This is the most serious data exposure in the API surface.
-- ⚠️ Duplicate-check happens before validation ordering matters: `topicName` is computed at `:111` but only used in the *failure* message at `:125` — dead on the success path.
-- POST does **not** call `OwnershipGuard`, so an authenticated Customer can create a Provider record for an arbitrary email.
+- ✅ **The anonymous full-entity dump is closed** (F-016, the feature's central claim). Reads now require a JWT, and a non-owner receives `ProviderSummary` — `email`, `firstName`, `lastName`, `services` — so the embedded `AppointmentEntities` (carrying customer emails) and `SubscribedCustomerCollection` (`Library/Entities/ProviderEntity.cs:38-42`) never leave the service for anyone but the owner. Verified live at the ship gate: owner got 9 fields, a second authenticated user got 4.
+- ⚠️ **The list is homogeneous** — every element is a `ProviderSummary`, *including the caller's own record*. `api-contracts.md` §5.1 describes owner-gets-full for the list route too; that was rejected during construction because a mixed `items` array is not deserialisable into a typed list. Owner-gets-full applies to `/{email}` only.
+- ⚠️ The list is served through a 5-minute cache with **no invalidation on write** (`agenda-buddy-xrw`), so a newly created provider is missing from it for up to five minutes. The projection is applied *after* the cache read, so the cache holds unprojected entities — correct today, a trap for F-019/F-020 (review finding I-1).
+- ✅ POST now requires **both** the Provider role and ownership of the email, so an authenticated Customer can no longer create a Provider record for an arbitrary address.
+- ⚠️ `topicName` is still computed and used only in the *failure* message — dead on the success path.
 
 ### Services — `api/v1/services` (`Services/Program.cs:89`)
 
 | Verb | Path | Auth | Handler line | Returns |
 |------|------|------|--------------|---------|
-| GET | `/{email}` | ❌ **anonymous** | `:94` | `200 Ok<List<ServiceEntity>>`, `404` |
-| PUT | `/{email}` | ✅ `:135` | `:113` | `200 Ok<ProviderEntity>`, `400`, `403`, `404` |
-| PATCH | `/{email}` | ✅ `:159` | `:137` | `200 Ok<ProviderEntity>`, `400`, `403`, `404` |
+| GET | `/{email}` | ✅ `:147` *(F-016)* | `:125` | `200 Ok<List<ServiceEntity>>`, `401`, `404` |
+| PUT | `/{email}` | ✅ `:171` | `:149` | `200 Ok<ProviderEntity>`, `400`, `403`, `404` |
+| PATCH | `/{email}` | ✅ `:195` | `:173` | `200 Ok<ProviderEntity>`, `400`, `403`, `404` |
 
 - PUT **appends** services (`AddServicesToProviderEvent`), PATCH **replaces** them (`UpdateServicesFromProviderEvent`) — the inverse of the usual REST reading of those verbs. ⚠️ Semantic surprise.
 - Both mutating routes guard ownership (`:122`, `:146`).
@@ -103,12 +125,12 @@ Each service pins its own Kestrel endpoints in `appsettings.json` (`"Kestrel": {
 
 | Verb | Path | Auth | Handler line | Returns |
 |------|------|------|--------------|---------|
-| POST | `/` | ✅ `:121` | `:93` | `201 Created<ProfessionEntity>`, `400` |
-| GET | `` (group root) | ❌ anonymous | `:123` | `200 Ok<List<ProfessionEntity>>`, `204` |
-| GET | `/{name}` | ❌ anonymous | `:136` | `200 Ok<ProfessionEntity>`, `404` |
+| ~~POST~~ | ~~`/`~~ | **route deleted** *(F-016, ADR-025)* | — | `405 Method Not Allowed` |
+| GET | `` (group root) | ❌ anonymous — **by design** | `:136` | `200 Ok<List<ProfessionEntity>>` |
+| GET | `/{name}` | ❌ anonymous — **by design** | `:149` | `200 Ok<ProfessionEntity>`, `404` |
 
-- Professions are reference data (seeded from `Library/Data/ProfessionSeedData.cs`), so anonymous reads here are defensible.
-- POST is authenticated but **not role-gated** — any Customer can add a profession to the global catalogue.
+- Professions are reference data (seeded from `Library/Data/ProfessionSeedData.cs`), so anonymous reads here are deliberate, and F-016 left them open on purpose.
+- ✅ **`POST` was deleted, not role-gated** (ADR-025): the catalogue is seeded, and no product requirement asked for runtime additions, so the route was removed rather than defended. It now answers **405** — confirmed at the ship gate.
 
 ### Identity — `api/v1/auth` (`Identity/Program.cs:94`) + one root route
 
@@ -153,9 +175,11 @@ The only client is `MobileApp`. Its API services build URLs relative to a single
 
 **Two independent defects compound here:**
 1. **Path prefix:** all domain calls omit `api/v1/` and use singular collection names (`booking`, `calendar`) that no route group declares.
-2. **Base address:** a single `ApiBaseUrl` cannot address seven processes on seven ports. `MobileApp/appsettings.json:2` is `https://localhost` (port 443) and `appsettings.Development.json:2` is `https://localhost:5001` — **neither matches any service port** (6030–6036), and no service is configured for HTTPS on those ports.
+2. **Base address:** a single `ApiBaseUrl` cannot address seven processes on seven ports. `MobileApp/appsettings.json:2` is `https://localhost` (port 443) and `appsettings.Development.json:2` is `https://localhost:5001` — neither matches any service port, and no service serves HTTPS on those ports.
+3. **Neither settings file is ever loaded.** *(Verified 2026-08-22.)* `MauiApp.CreateBuilder()` registers no configuration source, nothing in `MobileApp` calls `AddJsonFile`/`AddJsonStream`, and the two files are not embedded resources — so `Configuration["ApiBaseUrl"]` is always null and **both clients always use the hardcoded fallback `http://localhost:6036/`** (`MauiProgram.cs:32,38`). The configured values above are therefore dead text, not competing candidates.
+4. **There are no fixed ports left to be right about.** F-013 made the AppHost assign ports dynamically (`AppHostWiring.cs` nulls each endpoint's `Port`/`TargetPort`), so `6036` addresses nothing under the AppHost. The 603x numbers survive only for a standalone or Compose run.
 
-**Consequence:** only the three Identity routes are reachable, and only if `ApiBaseUrl` is corrected to `:6036`. Every domain read fails, which is why the ViewModels fall back to `MobileApp/Services/SeedDataProvider.cs`. See `16-mobile-client.md`.
+**Consequence:** every domain read fails and the ViewModels fall back to `MobileApp/Services/SeedDataProvider.cs`, so the app shows canned data. Only the Identity routes could ever match, and only in a standalone run. This is **F-015**'s scope, and it is why F-016 could change five route contracts at zero consumer cost. See `16-mobile-client.md`.
 
 ---
 

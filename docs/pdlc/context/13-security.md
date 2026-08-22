@@ -1,10 +1,37 @@
 # 13 — Security
 
-> **⚠️ F-013 delta (2026-08-18, `v0.1.0`) — this file was written 2026-08-15 and has NOT been re-read since.**
+> **⚠️ F-016 delta (2026-08-18, `v0.2.0`) — refreshed 2026-08-22 at the ship gate.**
 >
-> **Stale.** The committed Atlas credential is out of the working tree (17 files) but **still in git history and still valid** — removal is not rotation; see finding 1 in `00-overview.md` and `docs/issues/ISSUE-002-atlas-credential-rotation.md`. New: JWT keys are Aspire `secret: true` parameters and only Identity receives the private key; spans are PII-redacted (`PiiRedactingProcessor.cs`) because `url.path` was exporting customer emails. **Unchanged and still open:** the anonymous `GET /api/v1/providers` full-record exposure, and Calendar's authenticated-but-not-ownership-guarded IDOR. F-016 owns both.
+> **✅ CLOSED by F-016, and demonstrated live rather than by inspection:** the anonymous
+> `GET /api/v1/providers` full-record exposure and the four other anonymous PII GETs (all now **401**);
+> Calendar's authenticated-but-unguarded **IDOR** (both routes call `OwnershipGuard` **before** the cache
+> read); the unpaginated full-dataset dump (page size clamped and capped — a security control, not
+> ergonomics); `ForbiddenException` → **403** centrally, where a forgotten `try/catch` previously returned
+> **500**; `AssertRole` actually wired on provider creation; `POST /api/v1/professions` deleted (ADR-025);
+> and read queries no longer serialising full PII into the `events` audit collection.
 >
-> `file:line` anchors below may have shifted. Authoritative sources for the change: `docs/pdlc/archive/design/aspire-wiring/ARCHITECTURE.md`, `docs/pdlc/episodes/EPISODE_aspire-wiring_2026-08-17.md`. A full targeted rehydration is queued as the first step of F-018.
+> **⚠️ Still open after F-016:**
+> - **The Atlas credential is unrotated** — out of the working tree, still in git history, still valid.
+>   Removal is not rotation. **Corrected 2026-08-18:** the cluster holds **synthetic/development data only**,
+>   so this is dev-data destruction and resource abuse, not a personal-data breach — re-graded MEDIUM.
+>   Human-only: `docs/issues/ISSUE-002-atlas-credential-rotation.md` (`agenda-buddy-41s`).
+> - **`GET /api/v1/customers` returns the full `CustomerEntity`** to any Provider-role caller. Owner-scoping
+>   deferred by ADR-026; quantified as review finding I-2.
+> - **Authorization failures are entirely unlogged** — no log sink at all, so IDOR probing leaves no trace
+>   (advisory A-1). Belongs to F-021/F-024.
+> - **The whole of F-021** — `RefreshAsync`'s delete-then-insert can permanently destroy an account;
+>   `UseHttpsRedirection` runs *after* `UseAuthentication` in 6 services, so the bearer token is parsed from
+>   the plaintext request before the redirect; no rate limiting or lockout on login; and `AssertOwner`'s
+>   null-claim pass (`string.Equals(null, null)` is `true`, so the guard *succeeds* — `AssertOwnerAny`
+>   handles this, `AssertOwner` does not).
+> - **§7's security-scan gate is still manual** — satisfied by hand for the second consecutive release. F-017.
+>
+> **Still true from F-013:** JWT keys are Aspire `secret: true` parameters and only Identity receives the
+> private key; spans are PII-redacted by `PiiRedactingProcessor.cs` because `url.path` was exporting real
+> customer emails. **Do not remove it.**
+>
+> Sources: `docs/pdlc/episodes/EPISODE_secure-public-endpoints_2026-08-18.md`,
+> `docs/pdlc/reviews/REVIEW_secure-public-endpoints_2026-08-18.md`, ADR-022…031.
 
 
 **Files:** `Library.ServerAuth/AuthenticationExtensions.cs`, `Library.ServerAuth/Tools/OwnershipGuard.cs`, `Identity/Services/IdentityService.cs`, `Library/Entities/CredentialEntity.cs`, all 7 `Program.cs` pipelines, all `appsettings*.json`, `docker-compose.override.yml`, `MobileApp/Infrastructure/*`.
@@ -175,7 +202,7 @@ This is the second-most-serious finding after the credential. Full route table i
 
 ⚠️ **`ServicePointManager.SecurityProtocol = Tls12 | Tls13`** at the top of 5 `Program.cs` files and `ConfigurationLoader.cs:7` is **inert on .NET Core** — it does not affect `HttpClient` or the MongoDB driver's TLS negotiation. `SYSLIB0014` is suppressed solution-wide to hide the obsolescence warning (`Directory.Build.props:16`). It reads as a TLS control and is not one.
 
-⚠️ **Client-side:** `MobileApp/MauiProgram.cs:32,38` falls back to **`http://localhost:6036/`** — plaintext HTTP — when `ApiBaseUrl` is unset. `MobileApp/appsettings.json:2` is `https://localhost`, so the configured path is HTTPS but the hardcoded fallback is not. No certificate pinning.
+⚠️ **Client-side:** `MobileApp/MauiProgram.cs:32,38` falls back to **`http://localhost:6036/`** — plaintext HTTP. *(Sharpened 2026-08-22:* this is not merely a fallback — **nothing in `MobileApp` ever loads `appsettings.json`**: no `AddJsonFile`/`AddJsonStream` call exists and the file is not an embedded resource, so `ApiBaseUrl` is *always* null and the plaintext URL is *always* what ships. `appsettings.json:2`'s `https://localhost` is dead text.*)* `Platforms/iOS/Info.plist` carries an ATS exception allowing insecure loads to `localhost`. No certificate pinning.
 
 ---
 

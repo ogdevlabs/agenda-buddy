@@ -5,7 +5,7 @@
      Do not delete rows — they form the project's delivery history. -->
 
 **Project:** Agenda Buddy
-**Last updated:** 2026-08-18
+**Last updated:** 2026-08-22
 
 ---
 
@@ -14,6 +14,9 @@
 | Episode | Feature | Type | Cycle Days | Test Pass % | Review Rounds | Strikes | Tier1 Overrides | Security Findings | Tasks | Date Shipped |
 |---------|---------|------|-----------|-------------|---------------|---------|-----------------|-------------------|-------|-------------|
 | 001 | aspire-wiring | Feature | 3 | 100 | 1 | 0 | 0 | 2 | 14 | 2026-08-18 |
+| 002 | secure-public-endpoints | Feature | 1 | 100 | 1 | 0 | 0 | 2 | 20 | 2026-08-18 |
+
+*Notes on episode 002:* **Cycle days = 1** — roadmap claim 2026-08-18T17:52Z → merged and tagged the same day. The **ship gate then stayed open four days**, closing 2026-08-22; that lag is not in the cycle-day figure and is the episode's main process finding. **Test pass % = 100** over **531** tests (358 backend + 99 integration + 74 mobile, 7 of them skipped), re-verified green on `main` at the ship gate. **Review rounds = 1** (fix cycle 1 of 3: I-3 and I-4 fixed, I-1/I-2/I-5 accepted). **Overrides = 0** — four guardrail *warnings* were logged (standards gate unavailable, test layers 3–6 absent, the ADR-030 SSH.NET HIGH, §7 satisfied by hand), none of which is an override ceremony. **Security findings = 2** — both Phantom Importants: the unprojected providers-list cache (I-1) and the full-`CustomerEntity` payload to any Provider-role caller (I-2). **Tasks = 20**, of which **8 were absorbed from F-018's approved plan** to build the integration harness first.
 
 *Notes on episode 001:* **Cycle days** = roadmap claim 2026-08-15 → shipped 2026-08-18. **Test pass %** = 305/305 with 0 warnings (baseline before the feature was 189 across 10 projects). **Review rounds** counts 1 formal round, but that undercounts what happened — a late single-reviewer report (Echo) arrived *after* the approval gate and reopened it with a Critical. **Tier1 Overrides = 0**: no `/override` was invoked; two guardrail *warnings* were logged at ship (phase-marker mismatch, and the §7 security-scan gate being unimplemented), which are logged warnings, not override ceremonies. **Security findings = 2**: 1 Critical (C-1, PII in exported spans — Echo) + 1 Important (I-1, CI credential guard exempted `docs/pdlc` — Phantom).
 
@@ -21,17 +24,34 @@
 
 ## Trend Summary
 
-**Last updated:** 2026-08-18 (after Episode 001: aspire-wiring)
+**Last updated:** 2026-08-22 (after Episode 002: secure-public-endpoints)
 
-First episode — no trends to compare yet.
+### This episode vs project average
 
-Episode 001 establishes the baseline: **3 cycle days, 100% test pass, 1 review round, 0 strikes, 0 overrides, 2 security findings, 14 tasks.**
+| Metric | This Episode | Project Avg | Trend |
+|--------|-------------|-------------|-------|
+| Cycle time | 1 day | 2 days | ↓ faster |
+| Test pass rate | 100% | 100% | → same |
+| Review rounds | 1 | 1 | → same |
+| Strike escalations | 0 | 0 | → same |
+| Security findings | 2 | 2 | → same |
+
+### This episode vs previous (aspire-wiring)
+
+| Metric | This Episode | Previous | Change |
+|--------|-------------|----------|--------|
+| Cycle time | 1 day | 3 days | −2 |
+| Test pass rate | 100% | 100% | same |
+| Review rounds | 1 | 1 | same |
+| Tests in suite | 531 | 379 | +152 |
+| Tasks | 20 | 14 | +6 |
 
 ### Observations
 
-1. **This is the first PDLC-tracked release, not the first shipped feature.** F-001–F-012 are marked `Shipped` in ROADMAP.md but never went through `/ship` — no episode files, no CHANGELOG entries, no tags. So this table starts at 001 while the roadmap shows 13 features shipped. Treat the roadmap's earlier "Shipped" markers as claims without delivery records.
-2. **The most useful signal in episode 001 is not a number.** Both real defects — six of seven services unable to start in `Development`, and a per-HTTP-request MongoDB connection pool — were invisible to review and found only by *running* the thing. Every acceptance criterion whose evidence was "code review" passed by inspection while the software was broken. The 100% pass rate is true and was also true before those defects were found.
-3. **A late reviewer changed the outcome after the gate closed.** Echo reported after the review file was written and the approval gate answered, and its Critical was correct. Worth watching whether reviewer silence recurs — a silent reviewer was very nearly treated as a clean bill of health.
+1. **The two-episode sample is too small for trends, and the numbers hide the interesting part.** Both episodes report 100% pass and 1 review round. What actually differs is that 002 delivered 6 more tasks in a third of the cycle time — because 8 of its 20 tasks came from F-018's *already-approved* plan, so the planning cost had been paid in a prior feature.
+2. **The pattern from 001 repeated exactly: both features' real defects were found by running the software, not by reviewing it.** 001 found six services unable to start in `Development` and a per-request Mongo connection pool; 002 found, at the ship gate, that no cache invalidation exists anywhere in the solution (`agenda-buddy-xrw`) — a provider who finishes onboarding is missing from discovery for five minutes. Both times the pass rate was 100% before and after. **Any AC whose evidence is "code review" should be treated as unverified.**
+3. **Cycle time is now a misleading metric for this project.** 002's build took one day; its *ship gate* took four more, with the tag pushed and the memory files sitting uncommitted in a working tree the whole time. A cycle-days column that measures claim→merge will keep reporting improvement while the gate lag grows. Worth adding a gate-lag column if it happens a third time.
+4. **The standards-readiness gate has now been skipped five consecutive times and has never executed.** Not a delivery metric, but the most persistent process signal in the project: a gate marked `enforcing` that has never run.
 
 ---
 
@@ -74,9 +94,18 @@ When this log accumulates **3 fires**, Jarvis flags it at the next Reflect with 
 
 | Feature | Name | Triage | Readiness (overall + per-dim) | Gaps@plan (by category) | Gaps@surfaced-later (by category) | Planning-accuracy delta | Taxonomy ver | Date |
 |---------|------|--------|-------------------------------|-------------------------|-----------------------------------|-------------------------|--------------|------|
-| F-016 | secure-public-endpoints | Full | **Fair** — Completeness Fair · Traceability Fair · Durability Fair | **4** — `ac-contradicts-adr` ×1 *(corrected in-party: AC-12 required a 403 on a route ADR-025 deletes)* · `verification-unenforced` ×1 *(RESOLVED at the Step 18 gate — F-018 T18 absorbed as F-016-T20)* · `tooling-scope-leak` ×1 *(`tasks.cjs ready` returns paused-F-018 tasks)* · `requirement-without-dedicated-ac` ×2 *(reqs 8, 20 — distributed coverage)* | _pending Ship Reflect 16g_ | _pending_ | 1.0 | 2026-08-18 |
+| F-016 | secure-public-endpoints | Full | **Fair** — Completeness Fair · Traceability Fair · Durability Fair | **4** — `ac-contradicts-adr` ×1 *(corrected in-party: AC-12 required a 403 on a route ADR-025 deletes)* · `verification-unenforced` ×1 *(RESOLVED at the Step 18 gate — F-018 T18 absorbed as F-016-T20)* · `tooling-scope-leak` ×1 *(`tasks.cjs ready` returns paused-F-018 tasks)* · `requirement-without-dedicated-ac` ×2 *(reqs 8, 20 — distributed coverage)* | `ac-uncovered` ×1 *(AC-14 verified on 1 of 6 catch sites — I-3)* · `nfr-underspecified` ×1 *(no cache-invalidation requirement anywhere, surfaced at Verify — `agenda-buddy-xrw`)* · **`stale-context-propagated` ×3 — NOT a v2 category; proposed here** *(9-vs-10 handlers, 7-vs-8 catch sites, two non-existent entity fields; all three originated in the context catalog and reached approved artifacts)* | misses: `nfr-underspecified`:1, *(proposed)* `stale-context-propagated`:3; known: `ac-uncovered`:1; caught: 3 *(`ac-contradicts-adr`, `verification-unenforced`, `tooling-scope-leak` all closed before Build)* | v2 | 2026-08-22 |
 | F-013 | aspire-wiring | Skip | n/a | — | security-ac-unmaterialized:1, ac-uncovered:1, nfr-underspecified:2, dependency-missed:2, estimate-mis-scoped:1 | no-baseline (no Readiness Party row at plan) | v2 | 2026-08-18 |
 | F-018 | api-refactor-foundations | Full | Fair (C:Fair T:Fair D:Fair) | ac-uncovered:1, task-orphan:1, dependency-missed:1 | *(pending Ship Reflect 16g)* | *(pending)* | v2 | 2026-08-18 |
+
+> **Proposed taxonomy addition — `stale-context-propagated`.** F-016's three counting errors share a cause the
+> D7 v2 categories do not name: a wrong fact in `docs/pdlc/context/` was copied into a PRD, a design doc, a
+> plan and a task body, passing three approval gates on the way. It is not `requirement-missing` (the
+> requirement was there and correct in intent) nor `ac-uncovered` (the ACs were covered). All three were
+> caught by `grep` during Build, and one of them — `15-cqrs-and-messaging.md`'s "10 queries, 10 handlers"
+> above a 9-row table — was still unfixed at ship and is only corrected now. If this recurs in F-021 or
+> F-014, it should become a real category, because the mitigation is specific: **verify catalog counts
+> against code at the Define gate, not at the wave standup.**
 
 **Attribution for F-013's surfaced-later gaps** — recorded so a later reader can judge the classification rather than trust it:
 

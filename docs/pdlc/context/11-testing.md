@@ -1,10 +1,29 @@
 # 11 — Testing
 
-> **⚠️ F-013 delta (2026-08-18, `v0.1.0`) — this file was written 2026-08-15 and has NOT been re-read since.**
+> **⚠️ F-016 delta (2026-08-18, `v0.2.0`) — counts and the integration claim refreshed 2026-08-22 at the
+> ship gate. Everything else still dates from 2026-08-15.**
 >
-> **Stale count.** **305 tests across 12 projects** now, not 256 across 11 — F-013 added ~116, including `AgendaBuddy.AppHost.Tests` (47) and `AgendaBuddy.ServiceDefaults.Tests` (13). Baseline before the feature measured 189 across 10. **Corrected 2026-08-18:** `MobileApp.Tests` **does** now run — 67 passing, 7 skipped, 74 total, verified locally. `agenda-buddy-prr` is closed. CI covers mobile through three dedicated jobs (`build-android`, `build-ios` on `macos-latest`, `build-mobile-tests`); MobileApp is excluded from `agenda-buddy-backend.slnf` by design. **Project total is 379 tests, not 305.** Still **no integration-test harness**: `AppHostWiringTest` asserts the app *model*, not a real orchestrated run.
+> **THE INTEGRATION HARNESS NOW EXISTS.** `AgendaBuddy.IntegrationTests` — **99 tests** hosting real services
+> over HTTP against a **MongoDB Testcontainer** (container per test class, database per test), with
+> `Harness/MongoEndpointGuard.cs` failing the suite **closed** if the resolved endpoint is not this session's
+> own container. Every statement below that says "there is no integration test in the solution" describes
+> the world before F-016 and is retained only as the reason F-016 built the harness before touching an
+> endpoint. Endpoint authz **is** now verifiable end-to-end, which is precisely what the Calendar IDOR
+> escaped: 24 unit tests covered `OwnershipGuard` while nothing checked whether a route called it.
 >
-> `file:line` anchors below may have shifted. Authoritative sources for the change: `docs/pdlc/archive/design/aspire-wiring/ARCHITECTURE.md`, `docs/pdlc/episodes/EPISODE_aspire-wiring_2026-08-17.md`. A full targeted rehydration is queued as the first step of F-018.
+> **Counts (verified 2026-08-22): 531 total, in three suites no single command runs.**
+> **358** backend across 12 projects (`dotnet test agenda-buddy-backend.slnf` — re-run green on `main` at the
+> ship gate, 0 warnings) · **99** integration (`dotnet test AgendaBuddy.IntegrationTests/…csproj`, a
+> **separate command** — the project is excluded from the slnf by design, ADR-031, so the unit gate stays
+> Docker-free) · **74** mobile (67 passing, 7 skipped). Superseded counts, for anyone reading old artifacts:
+> 189 → 256 → 305 → 379 → **531**.
+>
+> ⚠️ **`Integration — real services + MongoDB` is not yet a required status check on `main`** — branch
+> protection is a GitHub setting, not YAML, so the job can fail and a PR still merge. Until that is set, the
+> harness's guarantee rests on habit. §7's Integration checkbox also stays unchecked, gated on 10
+> consecutive green runs.
+>
+> Sources: `docs/pdlc/episodes/EPISODE_secure-public-endpoints_2026-08-18.md`, ADR-030, ADR-031.
 
 
 **Framework:** xUnit + Moq. **Coverage collector:** `coverlet.collector` 6.0.3 → `XPlat Code Coverage` (Cobertura).
@@ -145,7 +164,7 @@ Reaches `internal` members via `<InternalsVisibleTo Include="MobileApp.Tests" />
 - **Collector:** `--collect:"XPlat Code Coverage"` produces `coverage.cobertura.xml` per test project; CI uploads them as an artifact (`.github/workflows/dotnet.yml:107-113`).
 - ⚠️ **No threshold, no report, no trend.** No ReportGenerator, no Codecov, no PR annotation, no minimum. `INTENT.md` targets ">80% unit test pass rate" and nothing measures it. `if-no-files-found: warn` (`:113`) means total collection failure is a warning.
 - ⚠️ **58 production files carry `[ExcludeFromCodeCoverage]`** — including every entity, every `RequestCollection`, every `ProblemDetailsServiceEndpointFilter`, every `HttpContextExtensions`, and every command/query DTO. Reported coverage is therefore computed over a deliberately narrowed denominator and **overstates** true coverage. Notably excluded-and-untested: the six copies of `ProblemDetailsServiceEndpointFilter` (the whole error-envelope mechanism, `10-error-handling.md`) and all six `RequestCollection` classes (the entire CQRS dispatch path, `15-cqrs-and-messaging.md`).
-- ⚠️ **`Program.cs` is not coverable.** With top-level statements and no `WebApplicationFactory`, none of the seven route tables is executed by any test. There is **no integration test in the solution** — no `Microsoft.AspNetCore.Mvc.Testing` reference anywhere, no in-memory `TestServer`. Every endpoint's auth attribute, validation call, ownership guard, and status-code mapping is unverified end-to-end.
+- ⚠️ **`Program.cs` is still not covered by the *unit* suite** — top-level statements, no coverage collection over the route tables. ✅ **But it is now exercised over HTTP** by `AgendaBuddy.IntegrationTests` (F-016), which hosts each real service against a MongoDB Testcontainer, so auth attributes, validation calls, ownership guards and status-code mappings *are* verified end-to-end. Note `WebApplicationFactory<Program>` is **unusable here** — `Program` is ambiguous across all seven assemblies; the harness uses per-service anchor aliases instead (`Harness/EntryPoints.cs`, `GlobalUsings.cs`). The sentence this bullet replaced — "there is no integration test in the solution" — was the single most consequential line in this catalog: it is why F-016 absorbed eight of F-018's tasks and built the harness first.
 
 ---
 
@@ -172,7 +191,7 @@ dotnet test MobileApp.Tests/MobileApp.Tests.csproj /p:MobileWorkloads=false \
 
 ## What is missing
 
-- **No integration tests.** No `WebApplicationFactory`/`TestServer`; no endpoint is ever invoked over HTTP. `CONSTITUTION.md` §5 Definition of Done requires "All integration tests pass" — there are none to pass.
+- ~~**No integration tests.**~~ **RESOLVED by F-016** — 99 tests invoke real endpoints over HTTP against a MongoDB Testcontainer, so `CONSTITUTION.md` §5's "All integration tests pass" finally has something to pass. Two caveats: the CI job is **not a required status check** on `main` yet, and §7's Integration checkbox stays unchecked pending 10 consecutive green runs.
 - **No contract tests** between `MobileApp` and the services. This is the single gap that would have caught the product's most serious functional defect (`01-api-surface.md`).
 - **No `CacheAside` test** — the mandated caching primitive, with three known defects.
 - **No `KafkaHelper` test** — topic-name collision across email domains.

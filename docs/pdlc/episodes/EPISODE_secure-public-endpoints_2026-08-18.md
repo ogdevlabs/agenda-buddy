@@ -4,9 +4,9 @@
 **Feature name:** Secure Public Endpoints — close unauthenticated PII exposure, add the verification harness
 **Feature slug:** secure-public-endpoints
 **Feature ID:** F-016
-**Date delivered:** *(not yet merged — PR #38 open)*
+**Date delivered:** 2026-08-18 (merged as `2134b8d`, tagged `v0.2.0`, PR #38)
 **Phase delivered in:** Construction
-**Status:** Draft
+**Status:** Final — signed off by the maintainer at the Ship/Verify gate, 2026-08-22
 
 > **File location note.** This project keeps episodes in `docs/pdlc/episodes/`, not
 > `docs/pdlc/memory/episodes/` — the convention is recorded in that directory's own `index.md`, and episode
@@ -95,7 +95,7 @@ unchanged usually means nobody checked it.
 
 | Artifact | Correction |
 |---|---|
-| `15-cqrs-and-messaging.md:161` | Says **"10 queries, 10 handlers"** directly above a **9-row table**. That one line propagated into the PRD's AC-17 note, `ARCHITECTURE.md` §5, the plan's threat table and T18's task body. Real count: 9 handlers, **18** audit call sites. ⚠️ **The catalog line is still unfixed** — due at the Ship context refresh. |
+| `15-cqrs-and-messaging.md:161` | Says **"10 queries, 10 handlers"** directly above a **9-row table**. That one line propagated into the PRD's AC-17 note, `ARCHITECTURE.md` §5, the plan's threat table and T18's task body. Real count: 9 handlers, **18** audit call sites. ✅ **Fixed 2026-08-22** at the Ship context refresh, along with the same error in `00-overview.md:107`. |
 | `api-contracts.md` §5.1 | Shows `"profession": "Fitness Coach"` and a service `"duration"`. **Neither field exists** on `ProviderEntity` or `ServiceEntity`. F-015 would have bound to fields that are not there. |
 | `api-contracts.md` §5.1 | Said an owner receives their full entity from the **list** route too, which would make `items` a mixed array of two shapes — not deserialisable into a typed list. Changed to a homogeneous `ProviderSummary[]`. |
 | `api-contracts.md` §3.1 | Said there were **8** hand-written `ForbiddenException` catch sites; there were **7**. A repo-wide grep returns 8 today only because a test doc comment mentions the pattern — very likely how the original 8 arose. |
@@ -219,6 +219,100 @@ makes T06's fail-closed guard load-bearing rather than pedantic. Human-only.
 
 ---
 
+## Deployment Record
+
+| Item | Detail |
+|---|---|
+| **Deployed to** | `local` (Aspire AppHost) only, at `v0.2.0`. **No remote environment** — the `cloud` target's three blockers are unchanged, making this the **second consecutive release** to skip deploy. Recorded in `DEPLOYMENTS.md` rather than omitted. |
+| **CI/CD method** | None exercised. `.github/workflows/deploy.yml` remains written, unit-tested and never run. |
+| **Custom deploy artifact** | No — default pipeline. |
+| **Deployment Review Party** | Not convened. |
+| **Overrides used** | **None.** Four guardrail *warnings* were logged (standards gate unavailable ×2, test layers 3–6 absent, SSH.NET HIGH accepted per ADR-030) — logged warnings, not override ceremonies. |
+| **Config changes introduced** | None at deploy level. The three AppHost secret parameters are unchanged. |
+| **New tags recorded** | None. |
+| **Rollback tested** | No. `v0.1.0` remains tagged and reachable, so a revert target exists, but reverting was not exercised. |
+| **DEPLOYMENTS.md updated** | Yes — a `v0.2.0` history row plus the skipped-deploy record with reasons. |
+
+### Ship / Verify evidence (2026-08-22)
+
+Verified against a live AppHost built from `main` at `2134b8d`, because there is no deployed environment to
+smoke-test. This is the feature's central claim exercised end to end rather than by inspection:
+
+| Check | Result |
+|---|---|
+| All 7 services `/health` + `/alive` | ✅ 200 |
+| The five formerly-anonymous PII GETs, anonymous | ✅ **401** — providers, providers/{email}, customers, customers/{email}, services/{email} |
+| Both Calendar routes, anonymous | ✅ **401** |
+| `GET /api/v1/professions` (reference data, must stay open) | ✅ **200** |
+| `POST /api/v1/professions` (deleted, ADR-025) | ✅ **405** |
+| register → login → authenticated read | ✅ 201 → 200 (RS256, 654-char JWT) → 200 |
+| Pagination envelope | ✅ `{items, totalCount, page, pageSize}` |
+| Owner reads own provider | ✅ full entity, 9 fields |
+| **Non-owner reads the same provider** | ✅ `email, firstName, lastName, services` — no `appointmentEntities`, no `subscribedCustomerCollection`, no `kafkaTopic` |
+| Dependency audit + secret scan on `main` | ✅ only the known ADR-030 `SSH.NET` HIGH; no secrets, no `.env` |
+| Backend suite re-run on `main` | ✅ 358/358, 12 projects, 0 warnings |
+
+**One new finding, filed as `agenda-buddy-xrw` (P2).** The list route served `totalCount: 0` while the
+provider just created was readable by email. Cause: **no cache invalidation exists anywhere in the
+solution** — nine `CacheAside.GetOrCreateAsync` read sites, zero `RemoveAsync` — against a 5-minute
+absolute TTL. A provider who completes onboarding is absent from discovery for up to five minutes.
+Pre-existing and not a regression: F-016 only moved the projection relative to the cache read (review
+finding I-1). It is recorded here because Verify *demonstrated* it, where review had only inferred it.
+
+---
+
 ## Reflect Notes
 
-<!-- Filled during the Reflect sub-phase of /ship. Left blank deliberately. -->
+### What went well
+
+1. **The harness earned its place immediately.** F-016 absorbed eight tasks from F-018's approved plan to
+   build `AgendaBuddy.IntegrationTests` first, on the argument that endpoint authz was the one thing the
+   solution could not verify. That argument held: the 99 integration tests are what turn "no endpoint leaks
+   PII" from a claim into something checkable, and the Ship smoke test above only confirmed what they
+   already asserted. The Calendar IDOR existed *because* 24 unit tests covered `OwnershipGuard` while
+   nothing checked whether an endpoint called it.
+2. **Three counting errors in approved artifacts were caught by grep, not by review.** 9 query handlers not
+   10, 7 catch sites not 8, and two fields (`profession`, service `duration`) that appear in `api-contracts`
+   §5.1 and exist on no entity. All three had already passed a PRD gate, a design gate and a plan gate.
+3. **Breaking the contract while it had zero consumers was the right sequencing call.** Authn plus
+   pagination on five routes is a breaking change; because the mobile client cannot reach those routes at
+   all, it cost nothing. Doing it after F-015 would have meant rewriting the mobile client twice.
+4. **Deviations were named rather than smoothed over.** The homogeneous-`ProviderSummary[]` decision
+   contradicts the approved `api-contracts.md` §5.1 and says so in the code comment, in `verification.md`
+   and here — with the reason (a mixed `items` array is not deserialisable into a typed list).
+
+### What broke or slowed us down
+
+1. **The standards gate has now blocked five consecutive gates and has never once executed.** F-013 ship,
+   F-018 Define, F-016 Define, F-016 Plan, F-016 Review. A gate marked `enforcing` that has never run is
+   governance theatre. It needs a reachable source (SSO/VPN or a vendored `.nordstrom-standards/`) or an
+   explicit decision to retire it — recommended folding into F-017, which already owns §7's unimplemented
+   scan gate.
+2. **§7's security scan was satisfied by hand for the second consecutive release.** Greps are not a
+   scanner. F-017 still owns automating it.
+3. **The ship gate then sat open for four days.** Merge and tag happened 2026-08-18; Verify closed
+   2026-08-22 with the STATE/DEPLOYMENTS edits sitting uncommitted in a working tree the whole time —
+   invisible to anyone else on the repo. Episode 002 stayed `Draft` and review finding I-5 stayed open
+   across the gap.
+4. **All meetings ran in `solo` mode.** One model roleplaying every agent, because a standing instruction
+   forbade spawning agents. Fidelity is lower than independent context windows; worth weighing when reading
+   any finding above.
+
+### What to improve next time
+
+1. **Close the ship gate in the same session as the merge, or record explicitly that it is open.** The tag
+   existing while STATE says `Verify` and the memory edits are uncommitted is the worst of both states.
+2. **Resolve the standards gate before the next `enforcing` invocation** rather than logging a sixth skip.
+3. **Verify by running, every time.** Both this episode and 001 found real defects only by exercising the
+   running system — the cache-staleness finding here, six services unable to start in 001. Any acceptance
+   criterion whose evidence is "code review" should be treated as unverified.
+
+### Metrics snapshot
+
+- **Cycle time:** 1 day (roadmap claim 2026-08-18T17:52Z → merged and tagged 2026-08-18). Ship gate closed
+  2026-08-22, four days later.
+- **Test pass rate:** 100% — 531 run, 0 failing (358 backend + 99 integration + 74 mobile, of which 7 skipped).
+- **Tasks completed:** 20 / 20, across 8 waves.
+- **Review findings:** 0 Critical · 5 Important (2 fixed, 3 accepted with rationale) · 7 Advisory.
+- **Security findings (Phantom, Critical + Important):** 2 — the unprojected providers-list cache (I-1) and
+  the full-`CustomerEntity` payload to any Provider-role caller (I-2). Both accepted, both quantified.

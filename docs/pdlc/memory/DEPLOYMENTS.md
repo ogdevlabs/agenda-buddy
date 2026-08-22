@@ -62,6 +62,7 @@
 | Date | Version | Deployed by | Episode | Notes |
 |------|---------|-------------|---------|-------|
 | 2026-08-18 | v0.1.0 | Pulse | EPISODE_aspire-wiring_2026-08-17.md | First tracked local run under the Aspire AppHost. **Verified:** all 7 services `/health` = `Healthy` and `/alive` = 200; both containers up; all 3 dashboard visual checks passed human inspection (AC-3.4, T-004, A-3). No deployment to any remote environment. |
+| 2026-08-18 | `v0.2.0` | Pulse | 002 | F-016 verified here **because the cloud target cannot be deployed from this machine** — see the cloud env's three blockers. Smoke-tested all 7 services' `/health` and `/alive` against a live AppHost. |
 
 #### Notes
 
@@ -100,6 +101,13 @@ Terminate the AppHost with `Ctrl-C`. Legacy Compose path: `docker compose down`.
 1. ⚠️ **Rotate the `agenda_buddy` Atlas credential first** (`docs/issues/ISSUE-002-atlas-credential-rotation.md`, tracker `agenda-buddy-41s`). It remains in git history and remains valid. Deploying against it means the deployment and whoever else holds that credential share a live database. *(Corrected 2026-08-18: that database holds only synthetic/development data — no real client records — so this is re-graded MEDIUM. Still rotate before any deploy: the credential is valid, publicly recoverable, and there are no backups.)*
 2. No Azure subscription is wired to this machine.
 3. After the first interactive `azd up`, the discovered parameter names must go into the `AZD_ENV_VARS` repository secret for `.github/workflows/deploy.yml` to work.
+
+> **Deploy SKIPPED again at v0.2.0 (F-016), 2026-08-18 — the second consecutive release.** All three blockers
+> above are unchanged. Recorded rather than omitted so the gap does not become invisible through repetition:
+> the cloud capability has now been carried, unexercised, through two tagged releases. Blocker 1 (rotate the
+> Atlas credential) is human-only and is also the item that makes the new integration harness's fail-closed
+> guard load-bearing. **`azd up` must be run interactively the first time**, so this cannot be automated from
+> a session — it needs a human at a terminal with an Azure subscription attached.
 
 #### Verification
 
@@ -143,3 +151,4 @@ Terminate the AppHost with `Ctrl-C`. Legacy Compose path: `docker compose down`.
 | 2026-08-18 | `local` re-described for the Aspire AppHost (primary) with Compose as legacy fallback; secrets table replaced with the three AppHost parameters; env gotchas and unverified checks recorded; first v0.1.0 history row added | Pulse |
 | 2026-08-18 | Registered `cloud` (Azure) as a known-but-never-deployed environment with its three blockers, tagged `tier: dev` provisionally, so the unexercised capability is visible rather than implied | Pulse |
 | 2026-08-18 | Deploy skipped for the v0.1.0 ship — recorded as skipped-with-reason, not as a deployment | Pulse |
+| 2026-08-18 | v0.2.0 (F-016): recorded the **second consecutive** cloud deploy skip with its three unchanged blockers, and logged the local AppHost verification used in its place | Pulse |
