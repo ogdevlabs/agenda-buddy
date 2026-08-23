@@ -2,13 +2,30 @@ using Stripe;
 
 namespace Library.Services;
 
-public class StripePaymentGateway(string apiKey) : IPaymentGateway
+/// <summary>
+/// The real gateway. Selected only when <see cref="PaymentGatewayFactory.ApiKeyConfigurationKey"/> is
+/// configured — see <see cref="RecordingPaymentGateway"/> for what runs otherwise.
+/// </summary>
+/// <remarks>
+/// <b>The API key is assigned once, at construction</b> (F-014, threat T-206). It used to be assigned inside
+/// <see cref="CreatePaymentIntentAsync"/>, and <c>StripeConfiguration.ApiKey</c> is a <b>process-global
+/// static</b>: writing a live payment credential to a global from request handling makes the key's lifetime
+/// the process's rather than the call's, and makes the assignment a data race the moment two requests
+/// overlap. Construction happens once per registration, which is the narrowest this can be without the
+/// Stripe SDK growing a per-client key.
+/// </remarks>
+public class StripePaymentGateway : IPaymentGateway
 {
     private readonly PaymentIntentService _intents = new();
 
+    public StripePaymentGateway(string apiKey)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(apiKey);
+        StripeConfiguration.ApiKey = apiKey;
+    }
+
     public async Task<string> CreatePaymentIntentAsync(decimal amount, string currency, string description)
     {
-        StripeConfiguration.ApiKey = apiKey;
         var options = new PaymentIntentCreateOptions
         {
             Amount = (long)(amount * 100),

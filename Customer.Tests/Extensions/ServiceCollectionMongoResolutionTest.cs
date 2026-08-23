@@ -96,7 +96,9 @@ public class ServiceCollectionMongoResolutionTest
                                  && descriptor.ServiceType.GetGenericTypeDefinition() == typeof(IRepository<>))
             .ToList();
 
-        Assert.Equal(2, repositories.Count);
+        // 2 -> 4 at F-014: MessageEntity and NotificationEntity, neither of which had ever been
+        // persisted because nothing registered a repository for them.
+        Assert.Equal(4, repositories.Count);
         Assert.All(repositories, descriptor => Assert.Equal(ServiceLifetime.Scoped, descriptor.Lifetime));
     }
 }

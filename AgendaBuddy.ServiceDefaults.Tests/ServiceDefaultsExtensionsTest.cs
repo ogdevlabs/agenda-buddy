@@ -10,6 +10,7 @@ using Xunit;
 
 namespace AgendaBuddy.ServiceDefaults.Tests;
 
+[Collection(InProcessServerCollection.Name)]
 public class ServiceDefaultsExtensionsTest
 {
     /// <summary>

@@ -69,9 +69,23 @@ _No tasks._
 | F-013-T12 | Record ADR-013 (Aspire adoption) in DECISIONS.md | done | 5 | F-013-T01, F-013-T02, F-013-T03, F-013-T07 |
 | F-013-T14 | Manual AppHost run attestation — 5 criteria blocked on a container runtime | done | 5 | — |
 
-## F-014 — wire-unreached-services  `planned`
+## F-014 — wire-unreached-services  `in progress`
 
-_No tasks._
+<!-- Hand-written: scripts/tasks.cjs is not present in this repository. See the F-021 section's note. -->
+
+| Task | Title | Status | Depends on |
+|---|---|---|---|
+| F-014-T01 | Register the four repositories and the collection names none of them had | done | — |
+| F-014-T02 | Non-charging payment gateway by default; Stripe only when a key is configured | done | T01 |
+| F-014-T03 | Server-owned appointment status, and the cancellation inversion it activates | done | T01 |
+| F-014-T04 | Session notes, provider-private, with existence hidden too | done | T01 |
+| F-014-T05 | Payment routes, with participants taken from the appointment | done | T02 |
+| F-014-T06 | Messages and notifications as caller-scoped route groups | done | T01 |
+| F-014-T07 | Reporting and deactivation, and a report that does not lie | done | T01, T03 |
+| F-014-T08 | Make `ObjectId` round-trip through JSON — **unplanned**, found by running the first test | done | T04 |
+| F-014-T09 | Verification, decisions, and the documentation this feature made false | done | T03, T05–T08 |
+
+**9 of 9 done.** 19 acceptance criteria, 10 of them `[security]`; threats T-201…T-208, seven mitigated and one partially accepted (T-205's unvalidatable amount).
 
 ## F-015 — api-gateway-and-mobile-contract  `planned`
 
@@ -169,3 +183,6 @@ _No tasks._
 
 _No tasks._
 
+## F-025 — booking-correctness  `planned`
+
+_No tasks._ Inception has not started. Split out of F-014 at Discover 2026-08-23; see `docs/pdlc/tasks/F-025/_feature.md` for the three candidate designs for the overlap check.

@@ -48,8 +48,16 @@ public class UpdateAppointmentCommandHandler(
         if (provider == null) return false;
         var appointment = provider.AppointmentEntities.FirstOrDefault(ap => ap.Identifier == identifier);
         if (appointment == null) return false;
-        appointment.AppointmentStatus = appointmentEntity.AppointmentStatus;
-        appointment.AppointmentDescription = appointmentEntity.AppointmentDescription;
+
+        // F-014 requirement 13 / threat T-203: appointment status is SERVER-OWNED, so the client's value is
+        // ignored here and the stored status is preserved. This line used to be
+        //     appointment.AppointmentStatus = appointmentEntity.AppointmentStatus;
+        // which copied whatever the caller put in the request body, bypassing AppointmentEntity.Book() and
+        // .Complete() entirely — the two methods that hold the transition rules and were, as a result, dead
+        // code. A customer could mark a brand-new appointment Completed, asserting that work was delivered.
+        // Status changes now go through POST /api/v1/booking/appointments/{identifier}/status, which applies
+        // the transition through the entity. The description is derived from the status for the same reason:
+        // it is a rendering of the status, so accepting it from the caller would let the two disagree.
         appointment.Start = appointmentEntity.Start;
         appointment.End = appointmentEntity.End;
         var updateAppointment = await UpdateAppointment(identifier, appointment);

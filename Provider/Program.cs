@@ -30,6 +30,14 @@ builder.Services.AddEventStore();
 // Add services required to support using MVC's model binders
 builder.Services.AddMvcCore();
 
+// F-014: ObjectId has no JSON representation of its own, so System.Text.Json serialises the struct's public
+// properties and emits `"id": { "timestamp": …, "machine": … }` — a shape that cannot be read back into an
+// ObjectId at all. Three of F-014's route families need the id from a create response in order to work
+// (PUT /notes/{id}, POST /messages/{id}/read, POST /notifications/{id}/read), so this is load-bearing rather
+// than cosmetic. Pre-existing for every other route that returns an entity; see ObjectIdJsonConverter.
+builder.Services.ConfigureHttpJsonOptions(options =>
+    options.SerializerOptions.Converters.Add(new ObjectIdJsonConverter()));
+
 // Register Singleton instances
 builder.Services.AddSingleton<IKafkaClient, KafkaClient>();
 // Scoped, not Singleton: RequestCollection consumes the scoped IEventStore, and a
@@ -286,6 +294,70 @@ providers.MapPut("/{email}", async Task<Results<ValidationProblem, ForbidHttpRes
 })
 .WithName("UpdateProvider")
 .RequireAuthorization();
+
+// ── F-014: reporting and deactivation ────────────────────────────────────────────────────────────────
+
+// A provider's own metrics. {email} is in the path for symmetry with the other provider routes, NOT as a
+// selector — it must equal the caller's own claim, so there is nothing to enumerate.
+//
+// ⚠️ The report carries NO revenue figure, deliberately (requirement 18). The old formula was completed
+// appointments × the whole service catalogue's fees, and it cannot be corrected by arithmetic because an
+// appointment does not record which service it was booked for. `revenueAvailable: false` plus a reason,
+// rather than a plausible number that would be believed.
+providers.MapGet("/{email}/report",
+        async Task<Results<Ok<ProviderReport>, ForbidHttpResult, NotFound>> (
+            string email, ClaimsPrincipal user, IReportingService reporting) =>
+        {
+            try
+            {
+                OwnershipGuard.AssertRole(user, "Provider");
+                OwnershipGuard.AssertOwner(user, email);
+
+                return TypedResults.Ok(await reporting.GetProviderReportAsync(email));
+            }
+            catch (ForbiddenException) { return TypedResults.Forbid(); }
+            // Safe: the caller has already proven the path email is their own claim, so this can only mean
+            // their own provider record is missing.
+            catch (KeyNotFoundException) { return TypedResults.NotFound(); }
+        })
+    .WithName("GetProviderReport")
+    .RequireAuthorization();
+
+// Threat T-207: a provider deactivates THEMSELVES. Role plus ownership, and no administrative bypass —
+// because there is no administrative role in this product (Identity's allow-list is exactly
+// {Provider, Customer}, ADR-025), so there is nobody else who could legitimately call this. An unguarded
+// version would let anyone take a business offline.
+providers.MapPost("/{email}/deactivate",
+        async Task<Results<Accepted<string>, ForbidHttpResult, NotFound>> (
+            string email,
+            ClaimsPrincipal user,
+            IMediator mediator,
+            ProviderService providerService,
+            IEventStore eventStore) =>
+        {
+            try
+            {
+                OwnershipGuard.AssertRole(user, "Provider");
+                OwnershipGuard.AssertOwner(user, email);
+            }
+            catch (ForbiddenException) { return TypedResults.Forbid(); }
+
+            var existing = await providerService.FindProvidersAsync(
+                SupportTools<ProviderEntity>.FilterByEmail(email));
+            if (existing is null) return TypedResults.NotFound();
+
+            // The handler is dispatched directly rather than through IRequestCollection: this is the first
+            // caller it has ever had, so there is no RequestCollection method to reuse, and adding one to all
+            // six services' interfaces to serve one route would be worse than this line.
+            var result = await new DeactivateProviderCommandHandler(mediator, providerService, eventStore)
+                .Handle(new DeactivateProviderCommand { ProviderEntity = existing }, CancellationToken.None);
+
+            return result is null
+                ? TypedResults.NotFound()
+                : TypedResults.Accepted($"/api/v1/providers/{email}", result);
+        })
+    .WithName("DeactivateProvider")
+    .RequireAuthorization();
 
 app.Run();
 

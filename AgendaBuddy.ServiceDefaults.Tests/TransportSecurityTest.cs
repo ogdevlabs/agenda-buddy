@@ -26,6 +26,7 @@ namespace AgendaBuddy.ServiceDefaults.Tests;
 /// to make itself easier would be testing a configuration nothing ships.
 /// </para>
 /// </remarks>
+[Collection(InProcessServerCollection.Name)]
 public class TransportSecurityTest
 {
     private const string HstsHeader = "Strict-Transport-Security";

@@ -41,6 +41,15 @@ public class BookingAppointmentCommandHandler(
         return null!;
     }
 
+    /// <remarks>
+    /// F-014 requirement 20 / ADR D-9. This used to read the provider, append to its embedded appointment
+    /// list, and call <c>UpdateProviderAsync</c> — a whole-document <c>ReplaceOneAsync</c>. Two concurrent
+    /// bookings for one provider both read, both appended, and the second replacement silently discarded the
+    /// first appointment, which then existed in the `appointments` collection and not in the provider
+    /// document. `ReportingService` counts from the embedded list, so the lost booking was the one that
+    /// vanished from the dashboard. <c>AppendAppointmentAsync</c> is a single atomic <c>$push</c> with no
+    /// read, so there is no window.
+    /// </remarks>
     private async Task<bool> SearchAndUpdateProviderAppointments()
     {
         var filter = SupportTools<ProviderEntity>.FilterByEmail(appointmentEntity.EmailProvider);
@@ -49,9 +58,11 @@ public class BookingAppointmentCommandHandler(
         if (providerEntity.Email == appointmentEntity.EmailProvider)
         {
             await AddAppointmentToCalendar();
-            providerEntity.AppointmentEntities.Add(
-                await bookingService.SearchAppointmentAsync(appointmentEntity.Identifier));
-            return await providerService.UpdateProviderAsync(providerEntity.Id.ToString(), providerEntity);
+
+            var stored = await bookingService.SearchAppointmentAsync(appointmentEntity.Identifier);
+            if (stored is null) return false;
+
+            return await providerService.AppendAppointmentAsync(providerEntity.Email, stored) is not null;
         }
 
         return false;
