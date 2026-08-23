@@ -69,7 +69,7 @@ _No tasks._
 | F-013-T12 | Record ADR-013 (Aspire adoption) in DECISIONS.md | done | 5 | F-013-T01, F-013-T02, F-013-T03, F-013-T07 |
 | F-013-T14 | Manual AppHost run attestation — 5 criteria blocked on a container runtime | done | 5 | — |
 
-## F-014 — wire-unreached-services  `in progress`
+## F-014 — wire-unreached-services  `shipped`
 
 <!-- Hand-written: scripts/tasks.cjs is not present in this repository. See the F-021 section's note. -->
 

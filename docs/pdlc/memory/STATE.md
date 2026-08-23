@@ -5,25 +5,27 @@
      Claude reads this file at the start of every session to auto-resume from the last checkpoint.
      If this file is missing or empty, PDLC will prompt you to run /pdlc init. -->
 
-**Last updated:** 2026-08-23T06:30:00Z
+**Last updated:** 2026-08-23T13:30:00Z
 
 ---
 
 ## Current Phase
 
-Construction Complete
+Idle — Ready for next /brainstorm
 
 ---
 
 ## Current Feature
 
-wire-unreached-services
+none
 
-_**F-016 `secure-public-endpoints` SHIPPED** as `v0.2.0` — merged `2134b8d`, PR #38, episode 002 (Final).
-Operation closed 2026-08-22: smoke-tested against a live AppHost (all five formerly-anonymous PII GETs 401,
-both Calendar routes 401/403, non-owners get `ProviderSummary` only, professions still 200, deleted POST 405),
-backend re-verified 358/358 green on `main`, context catalog refreshed, review finding I-5 fixed. Cloud deploy
-skipped for the second consecutive release — three unchanged blockers in `DEPLOYMENTS.md`._
+_**F-014 `wire-unreached-services` SHIPPED** as `v0.4.0` — merged `b760794`, PR #40, episode 004 (Final).
+Operation closed 2026-08-23: smoke-tested against a live AppHost (7/7 services Healthy/alive, anonymous 401
+confirmed live on the new notes/status routes, a freshly registered Provider's JWT reached real business
+logic on 4 of 9 new routes), dependency audit + secret scan clean on `main` post-merge. Cloud deploy skipped
+for the fourth consecutive release, second under the ADR-035 deferral. ⚠️ Two process gaps recorded: no
+Review sub-phase ran this cycle, and no episode draft existed before Ship — both drafted/backfilled at the
+Ship gate instead._
 
 _`api-refactor-foundations` (F-018) is **paused** — see `docs/pdlc/memory/.paused-feature.json`. Inception is
 complete and merged; Construction was aborted at the wave-1 standup before any code. ⚠️ **Its plan is now
@@ -46,15 +48,9 @@ none
 
 ## Roadmap Claim
 
-- **Feature ID:** F-014
-- **Feature record:** docs/pdlc/tasks/F-014/_feature.md
-- **Claimed by:** oscargarcia@ogdevlabs.onmicrosoft.com
-- **Claimed at:** 2026-08-23T04:30:00Z
-- **Branch:** `feat/F-014-wire-unreached-services`
+_None held. Run `/brainstorm` to claim the next priority feature._
 
-_F-021 shipped as `v0.3.0` and its claim was released. F-014 is built and awaiting review._
-
-**Next after it: F-015 `api-gateway-and-mobile-contract`**, then F-017 → F-018–F-020. **F-025
+**Next on the roadmap: F-015 `api-gateway-and-mobile-contract`**, then F-017 → F-018–F-020. **F-025
 `booking-correctness`** was split out of F-014 at Discover and is sequenced after it.
 
 ---
@@ -67,15 +63,31 @@ _None active. Run `/night-shift <F-NNN>` to start an autonomous run (requires by
 
 ## Current Sub-phase
 
-—
+none
 
 ---
 
 ## Last Checkpoint
 
-Construction Complete / 2026-08-23T06:00:00Z — **F-014 built**: 9/9 tasks, 19/19 ACs, threats T-201…T-208
-dispositioned, **701 tests** (452 + 175 + 74), 0 failing, 0 warnings. Four defects found by running the
-software, none of them in the plan (see `verification.md` §3). Awaiting review; `/ship` needs the PR merged.
+Operation / Complete / 2026-08-23T13:30:00Z — **F-014 shipped as `v0.4.0`.** Episode 004 Final; PRD,
+brainstorm and design artifacts archived to `docs/pdlc/archive/`; ROADMAP, OVERVIEW, METRICS updated; claim
+released. Verified against a live AppHost, not by inspection: 7/7 services Healthy/alive, anonymous 401
+confirmed live on the new notes/status routes, a freshly registered Provider's JWT reached real business
+logic (403/404, never 401) on 4 of 9 new routes. Dependency audit and secret scan on `main` post-merge both
+clean. ⚠️ Two process gaps recorded, not glossed: no Review sub-phase ran this cycle (no findings file), and
+no episode draft existed at Construction Complete (drafted retroactively at Ship). Next: F-015.
+
+_Previously: Operation / Verify / 2026-08-23T13:00:00Z — Verified against a live AppHost; human sign-off
+given; DEPLOYMENTS.md finalized with the verified results._
+
+_Previously: Operation / Ship / 2026-08-23T12:00:00Z — PR #40 merged to `main` as `b760794` (true merge
+commit, GitHub API, `merge_method=merge`), tagged `v0.4.0` and pushed. Cloud deploy skipped again by
+ADR-035 (fourth consecutive release, second under the deferral) — user confirmed at the deploy prompt._
+
+_Previously: Construction Complete / 2026-08-23T06:00:00Z — **F-014 built**: 9/9 tasks, 19/19 ACs, threats
+T-201…T-208 dispositioned, **701 tests** (452 + 175 + 74), 0 failing, 0 warnings. Four defects found by
+running the software, none of them in the plan (see `verification.md` §3). Awaiting review; `/ship` needs
+the PR merged._
 
 _Previously: Operation Complete / 2026-08-23T04:15:00Z — **F-021 shipped as `v0.3.0`.** Merged `f5d47d6` (PR #39, CI
 green), tagged, verified against a live stack, episode 003 Final, artifacts archived, claim released.
@@ -344,23 +356,13 @@ re-planning (`/continue`).
 
 ```json
 {
-  "phase_completed": "Operation (F-021 shipped as v0.3.0)",
-  "next_phase": "Inception on F-014 wire-unreached-services",
+  "phase_completed": null,
+  "next_phase": null,
   "feature": null,
-  "next_action": "/brainstorm F-014 — it has a feature record and no PRD, design or tasks",
-  "human_only_items": [
-    "Rotate the agenda_buddy Atlas credential (agenda-buddy-41s, P0). Independent of the cloud deferral: the credential is valid, publicly recoverable from git history, and grants write access to a live cluster with no backups.",
-    "Add `Integration — real services + MongoDB` to main's required status checks. Third of ten consecutive green runs is now banked; blocking is a branch-protection setting, not YAML.",
-    "Decide the standards-readiness gate's fate — reachable source, or explicit retirement. Seven consecutive skips, never executed once."
-  ],
-  "decisions_recorded_this_session": [
-    "ADR-032 — one partial-update primitive on IRepository<T>",
-    "ADR-033 — security controls gated on configuration, not IsProduction(); the AppHost declares local vs cloud; warn rather than fail fast",
-    "ADR-034 — replace the reflection guard forbidding a logger with a content assertion",
-    "ADR-035 — Azure deferred until every pending feature is complete AND the no-longer-needed tech debt is discharged",
-    "ADR-011 — superseded by F-021"
-  ],
-  "open_questions": []
+  "key_outputs": [],
+  "decisions_made": [],
+  "next_action": null,
+  "pending_questions": []
 }
 ```
 
@@ -470,3 +472,8 @@ re-planning (`/continue`).
 | 2026-08-23T05:00:00Z | prd_approved | 20 requirements / 19 ACs / 6 stories. Four Define-level questions answered in-line under the standing autonomy instruction: non-charging gateway by default; status server-owned via a dedicated route; notifications storage-only; and **no revenue figure published**, because the number cannot be computed and a plausible one would be believed | Define | wire-unreached-services |
 | 2026-08-23T05:10:00Z | design_approved | 5 artifacts. Threat model **Full** (3/3): eight threats, seven mitigated now, one **partially accepted** — T-205's payment amount cannot be validated for the same reason revenue cannot be computed. UX review **Skip** (0/3), carrying four client obligations to F-015. ADR-036…039 | Design | wire-unreached-services |
 | 2026-08-23T05:40:00Z | build_complete | **BUILD COMPLETE — 9/9 tasks, 19/19 ACs.** Backend **452** (+21) / integration **175** (+57) / mobile 74 = **701**. **Four defects found by running the software, none in the plan:** `ObjectId` does not round-trip through JSON (pre-existing, breaks three of this feature's own route families, `agenda-buddy-do5` files the rest); `DeactivateProviderCommandHandler` published a command where MediatR needs a notification, so it **could never have completed**; enums are integers on this API's wire and a string 400s with no explanation; and a telemetry test was flaky at one run in three because two `TracerProvider`s in one process lose spans — fixed with a non-parallel collection, six consecutive green runs | Review | wire-unreached-services |
+| 2026-08-23T12:00:00Z | operation_start | Ship started. Channel in-sync, remote sync 0 behind/2 ahead. No episode draft existed yet — test gates verified directly against `verification.md` instead: 452/175/74 = 701, 0 failing, 0 warnings, §7 clean | Ship | wire-unreached-services |
+| 2026-08-23T12:15:00Z | merged_and_tagged | **Merged to `main` as `b760794`** (GitHub API, `merge_method=merge`, true merge commit), PR #40, tagged **`v0.4.0`**. `dotnet format --verify-no-changes` clean on `main` post-merge | Ship | wire-unreached-services |
+| 2026-08-23T12:20:00Z | deploy_deferred | Cloud deploy **skipped again by ADR-035** — fourth consecutive release, second under the deferral. User confirmed at the deploy prompt | Ship | wire-unreached-services |
+| 2026-08-23T13:00:00Z | verify_complete | **Verified against a live AppHost, not by inspection.** 7/7 services Healthy/alive. Anonymous 401 confirmed live on the new notes/status routes. A freshly registered Provider's JWT reached real business logic (403/404, never 401) on 4 of 9 new routes. Dependency audit + secret scan on `main` clean. Known AppHost shutdown gotcha recurred, handled | Verify | wire-unreached-services |
+| 2026-08-23T13:30:00Z | operation_complete | **F-014 shipped as `v0.4.0`.** Episode 004 Final; PRD, brainstorm and design artifacts archived; ROADMAP, OVERVIEW, METRICS updated; claim released. ⚠️ **Two process gaps recorded, not glossed:** no Review sub-phase ran this cycle (no findings file), and no episode draft existed at Construction Complete (drafted retroactively at Ship). Next: F-015 | Idle | none |

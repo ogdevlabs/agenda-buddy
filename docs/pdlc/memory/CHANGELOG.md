@@ -19,6 +19,58 @@
 
 ---
 
+## v0.4.0 — 2026-08-23
+
+Makes six shipped-but-unreachable capabilities reachable (F-014): session notes, messages, notifications,
+payments, provider reporting, and provider self-deactivation all had implementations and unit tests, and —
+verified at Discover — zero non-test references outside their own definitions. Nine new routes, placed by
+data ownership, every one authenticated, ownership-guarded, and role-checked where a role distinction
+exists.
+
+### Added
+- **Nine new routes** across Booking, Customer, and Provider: session notes (write/read), messages (send,
+  inbox, thread, mark-read), notifications (list, mark-read), payments (create, read), a provider report,
+  provider self-deactivation, and an appointment-status transition route.
+- **Appointment status is now server-owned** (ADR-037). `POST /api/v1/booking/appointments/{id}/status`
+  applies transitions through `AppointmentEntity.TransitionTo`; illegal transitions answer 409. `PUT` no
+  longer accepts a client-asserted status.
+- **Payments are non-charging by default** (ADR-038). `Payments:Stripe:ApiKey` unset selects a recording
+  gateway; a `local_` intent-id prefix marks every such payment as having moved no money, permanently, in
+  the stored record rather than only in a log.
+- `Library/Tools/ObjectIdJsonConverter.cs`, registered in Booking, Customer, and Provider — `ObjectId`
+  otherwise serialises to an unreadable shape (`{timestamp, machine, …}`) that cannot round-trip through a
+  create response. Pre-existing; Calendar, Services, and Profession still emit the broken shape (filed).
+
+### Fixed
+- **`DeactivateProviderCommandHandler` could never have completed.** It published the command object to
+  MediatR, which requires an `INotification` — this compiled and threw at runtime. The defect and its
+  absence of callers arrived together; nothing had ever dispatched it.
+- **A booked appointment could not be cancelled.** `CancelAppointmentCommandHandler` refused a `Booked`
+  status — exactly the state a customer needs to cancel. Latent until the status fix above made anything
+  set `Booked` in the first place; fixed in the same change so it wouldn't look like a regression.
+- A flaky telemetry test (`TelemetryPiiTest`, ~1 run in 3) — two `TracerProvider`s alive in one process do
+  not reliably each receive every span. Fixed with a non-parallel xUnit collection.
+
+### Changed
+- **`ReportingService` no longer publishes `EstimatedRevenue`** (ADR-039). The formula was completed
+  appointments × the whole service catalogue's fees — correct only when a provider has exactly one service.
+  `AppointmentEntity` does not record which service it was booked for, so the number cannot be computed
+  correctly; the report now returns `revenueAvailable: false` with a reason instead of a plausible-but-wrong
+  figure.
+- One pre-existing test replaced: `ReportingServiceTest.GetProviderReportAsync_CalculatesEstimatedRevenue`
+  asserted the incorrect formula above and passed. Needs the same maintainer acknowledgement F-016's
+  ADR-025 and F-021's ADR-034 needed.
+
+### Not shipped in this release
+- **Revenue reporting** — the data model has no way to compute it (an appointment doesn't record its
+  service); filed rather than approximated.
+- **Notification delivery** — `NotificationService` is storage-only; nothing calls `SendAsync` yet, so
+  `GET /api/v1/notifications` correctly returns `[]`. F-022's dependency on it is not yet satisfied.
+- **Slot correctness** (`Start < End`, future-dating, overlap) — split out at Discover into F-025
+  `booking-correctness`, which needs its own concurrency design.
+- Cloud deployment remains deferred by decision (ADR-035); rotating the committed Atlas credential remains
+  outstanding and does not wait for it.
+
 ## v0.3.0 — 2026-08-22
 
 Hardens the auth system itself (F-021). F-016 established that no endpoint leaks PII; this release makes the

@@ -5,7 +5,7 @@
      Do not delete rows — they form the project's delivery history. -->
 
 **Project:** Agenda Buddy
-**Last updated:** 2026-08-23
+**Last updated:** 2026-08-23 (Episode 004)
 
 ---
 
@@ -16,6 +16,22 @@
 | 001 | aspire-wiring | Feature | 3 | 100 | 1 | 0 | 0 | 2 | 14 | 2026-08-18 |
 | 002 | secure-public-endpoints | Feature | 1 | 100 | 1 | 0 | 0 | 2 | 20 | 2026-08-18 |
 | 003 | identity-hardening | Feature | 1 | 100 | 0 | 0 | 0 | 0 | 7 | 2026-08-22 |
+| 004 | wire-unreached-services | Feature | 1 | 100 | 0 | 0 | 0 | 0 | 9 | 2026-08-23 |
+
+*Notes on episode 004:* **Cycle days = 1** — roadmap claim 2026-08-23T04:30Z, merged and tagged the same
+day, third same-day cycle in a row. **Test pass % = 100** over **701** tests (452 backend + 175 integration +
+74 mobile) — the largest single-feature test delta of the four episodes (+78). **Review rounds = 0**, and
+unlike 003 this is a **genuine process gap, not just the standing solo-session caveat**: no Review sub-phase
+ran at all this cycle (no findings file exists), and no episode draft existed at Construction Complete either
+— both drafted retroactively at the Ship gate. The human PR review that merged #40 stands in for it, but
+there is no independent-pass record. **Security findings = 0** *from review*, for the same reason as 003 —
+it measures the absence of a review, not a clean sheet. Separately, the feature's own security posture is
+positive: 15 anonymous-access cases pass, and all threats T-201…T-208 are dispositioned (7 mitigated, 1
+partially accepted). **Tasks = 9**, the second-smallest count for the largest test delta — the plan's task
+boundaries lined up cleanly with the six-capability, one-dependency (server-owned status) shape of the work.
+**Four defects were found by running the software**, continuing the pattern unbroken across all four
+episodes: `ObjectId`'s unreadable JSON shape, a `DeactivateProviderCommandHandler` that could never have
+completed, integer-only enum binding, and a telemetry test made flaky by this feature's own full-suite runs.
 
 *Notes on episode 003:* **Cycle days = 1** — roadmap claim 2026-08-22T15:35Z, merged and tagged the same day; and unlike 002 the **ship gate did not lag** (build complete → verified → tagged in one session, so the process finding recorded at 002 did not repeat). **Test pass % = 100** over **623** tests (431 backend + 118 integration + 74 mobile, 7 skipped). **Review rounds = 0** — no formal party review ran: the session carried a standing instruction not to spawn agents, so review was solo and inline. That is a **gap in this row, not an achievement**; a 0 here should be read as "not independently reviewed", which is exactly the fidelity caveat the threat model records. **Security findings = 0** *from review*, which for the same reason measures nothing — the security work is in the other direction: five threats (T-101…T-105) were mitigated and one accepted, all six with their decisions recorded. **Tasks = 7**, the smallest task count of any episode so far, for a feature that changed all seven services — because 5 of the 7 tasks are single-concern and the transport change was one shared extension plus seven one-line call sites rather than seven edits. **Three defects were found by *running* the software, not by reviewing it**, continuing the pattern from 001 and 002: a rejected refresh answering 500 instead of 401 (caught by the integration harness, invisible to every unit test), the first AC-16 live check being vacuous because Aspire streams service logs to the dashboard rather than stdout, and three pre-existing "sanitization" tests that had never asserted anything.
 
@@ -27,38 +43,39 @@
 
 ## Trend Summary
 
-**Last updated:** 2026-08-22 (after Episode 002: secure-public-endpoints)
+**Last updated:** 2026-08-23 (after Episode 004: wire-unreached-services)
 
 ### This episode vs project average
 
-| Metric | This Episode (003) | Project Avg | Trend |
+| Metric | This Episode (004) | Project Avg | Trend |
 |--------|-------------|-------------|-------|
-| Cycle time | 1 day | 1.7 days | ↓ faster |
+| Cycle time | 1 day | 1.5 days | ↓ faster |
 | Test pass rate | 100% | 100% | → same |
-| Review rounds | **0** | 1 | ⚠️ **down, and that is bad** — see observation 5 |
+| Review rounds | **0** | 0.5 | ⚠️ **down, and no Review sub-phase ran at all** — see observation 7 |
 | Strike escalations | 0 | 0 | → same |
-| Security findings (from review) | 0 | 1.3 | ⚠️ measures nothing this episode — no independent review ran |
+| Security findings (from review) | 0 | 1 | ⚠️ measures nothing this episode — no review ran |
 
-### This episode vs previous (secure-public-endpoints)
+### This episode vs previous (identity-hardening)
 
 | Metric | This Episode | Previous | Change |
 |--------|-------------|----------|--------|
 | Cycle time | 1 day | 1 day | same |
-| Ship-gate lag | **0 days** | 4 days | **−4** |
+| Ship-gate lag | 0 days | 0 days | same |
 | Test pass rate | 100% | 100% | same |
-| Review rounds | 0 | 1 | −1 ⚠️ |
-| Tests in suite | 623 | 531 | +92 |
-| Tasks | 7 | 20 | −13 |
-| Threats mitigated / accepted | 5 / 1 | 7 / 1 | −2 / same |
+| Review rounds | 0 | 0 | same ⚠️ (see observation 7) |
+| Tests in suite | 701 | 623 | +78 |
+| Tasks | 9 | 7 | +2 |
+| Threats mitigated / accepted | 7 / 1 | 5 / 1 | +2 / same |
 
 ### Observations
 
 1. **The two-episode sample is too small for trends, and the numbers hide the interesting part.** Both episodes report 100% pass and 1 review round. What actually differs is that 002 delivered 6 more tasks in a third of the cycle time — because 8 of its 20 tasks came from F-018's *already-approved* plan, so the planning cost had been paid in a prior feature.
 2. **The pattern from 001 repeated exactly: both features' real defects were found by running the software, not by reviewing it.** 001 found six services unable to start in `Development` and a per-request Mongo connection pool; 002 found, at the ship gate, that no cache invalidation exists anywhere in the solution (`agenda-buddy-xrw`) — a provider who finishes onboarding is missing from discovery for five minutes. Both times the pass rate was 100% before and after. **Any AC whose evidence is "code review" should be treated as unverified.**
 3. **Cycle time is now a misleading metric for this project.** 002's build took one day; its *ship gate* took four more, with the tag pushed and the memory files sitting uncommitted in a working tree the whole time. A cycle-days column that measures claim→merge will keep reporting improvement while the gate lag grows. Worth adding a gate-lag column if it happens a third time.
-4. **The standards-readiness gate has now been skipped SEVEN consecutive times and has never executed.** Not a delivery metric, but the most persistent process signal in the project: a gate marked `enforcing` that has never run once, across three shipped releases. Two more skips since this observation was written. It needs a reachable source or an explicit retirement — the recommendation has not changed since F-013 and is now the oldest unaddressed process finding here.
-5. **Episode 003's `Review Rounds = 0` is the first metric in this table that is worse for being lower.** No independent review ran: the session carried a standing instruction not to spawn agents, so every "party" was one model reasoning as each role. `Security Findings = 0` in that row therefore measures the *absence of reviewers*, not the absence of defects — and the three real defects that episode found all came from running the software. **Any row with 0 review rounds should be read as "not independently reviewed" and its findings count discounted entirely.** If this happens again, the honest fix is a separate column rather than a zero that looks like a clean sheet.
-6. **The ship-gate lag that observation 3 predicted "if it happens a third time" did not recur.** 002 took four days between tag and gate closure; 003 took none. One data point, but the mitigation was simply doing the memory-file writes in the same session as the build rather than leaving them in a working tree.
+4. **The standards-readiness gate has now been skipped EIGHT consecutive times and has never executed.** Not a delivery metric, but the most persistent process signal in the project: a gate marked `enforcing` that has never run once, across four shipped releases. It needs a reachable source or an explicit retirement — the recommendation has not changed since F-013 and is now the oldest unaddressed process finding here.
+5. **Episode 003's `Review Rounds = 0` was the first metric worse for being lower** — no independent review ran because the session carried a standing instruction not to spawn agents. `Security Findings = 0` there measured the *absence of reviewers*, not the absence of defects.
+6. **The ship-gate lag that observation 3 predicted "if it happens a third time" has not recurred in either 003 or 004.** Both closed same-day. The mitigation — doing the memory-file writes in the same session as the build — is holding.
+7. **Episode 004's `Review Rounds = 0` is a different, worse case than 003's.** 003's zero measured *reviewer independence* (solo session, but a review still happened, inline). 004's zero measures that **no Review sub-phase ran at all** — Construction went from `build_complete` straight to the human PR review that merged #40, with no findings file and no episode draft until the Ship gate drafted one retroactively. Two consecutive features (003, 004) now show `Review Rounds = 0` for two *different* reasons, which is worse than either alone: the metric can no longer distinguish "reviewed solo" from "not reviewed." **Recommendation: split this into two columns** — `Review Ran (Y/N)` and `Independent (Y/N)` — before a third zero arrives and the ambiguity compounds again.
 
 ---
 
@@ -103,6 +120,7 @@ When this log accumulates **3 fires**, Jarvis flags it at the next Reflect with 
 |---------|------|--------|-------------------------------|-------------------------|-----------------------------------|-------------------------|--------------|------|
 | F-016 | secure-public-endpoints | Full | **Fair** — Completeness Fair · Traceability Fair · Durability Fair | **4** — `ac-contradicts-adr` ×1 *(corrected in-party: AC-12 required a 403 on a route ADR-025 deletes)* · `verification-unenforced` ×1 *(RESOLVED at the Step 18 gate — F-018 T18 absorbed as F-016-T20)* · `tooling-scope-leak` ×1 *(`tasks.cjs ready` returns paused-F-018 tasks)* · `requirement-without-dedicated-ac` ×2 *(reqs 8, 20 — distributed coverage)* | `ac-uncovered` ×1 *(AC-14 verified on 1 of 6 catch sites — I-3)* · `nfr-underspecified` ×1 *(no cache-invalidation requirement anywhere, surfaced at Verify — `agenda-buddy-xrw`)* · **`stale-context-propagated` ×3 — NOT a v2 category; proposed here** *(9-vs-10 handlers, 7-vs-8 catch sites, two non-existent entity fields; all three originated in the context catalog and reached approved artifacts)* | misses: `nfr-underspecified`:1, *(proposed)* `stale-context-propagated`:3; known: `ac-uncovered`:1; caught: 3 *(`ac-contradicts-adr`, `verification-unenforced`, `tooling-scope-leak` all closed before Build)* | v2 | 2026-08-22 |
 | F-021 | identity-hardening | Full | **not assessed at plan** — no Readiness Party ran (solo session, no agents) | *(no baseline row)* | `design-not-implementable` ×2 *(ARCHITECTURE §4's "under their flags" could not apply to the redirect without removing an existing control; §3.2's flow omitted that the signing key must be read before the write)* · `ac-assumes-wrong-response-shape` ×1 *(AC-7 assumed an empty 401 body; `UseStatusCodePages` makes it ProblemDetails — the same surprise F-016 hit with 403)* · `tooling-absent` ×1 *(`scripts/tasks.cjs` does not exist in this repo, so the structural security-AC-to-test check could not run and the task store is hand-written)* · `test-asserts-nothing` ×1 *(three pre-existing sanitization tests iterated a logger wired to nothing)* | **no baseline** — nothing was flagged at planning because no planning-quality gate ran. All five surfaced in Build. The `stale-context-propagated` category F-016 proposed did **not** recur; `design-not-implementable` is proposed here as a new one | v2 | 2026-08-22 |
+| F-014 | wire-unreached-services | *(program-level Discover, not a per-feature brainstorm)* | **not assessed at plan** — no Readiness Party ran (claimed as the anchor of a program-level Discover across F-014–F-017, not a standalone `/brainstorm`) | *(no baseline row)* | `tooling-absent` ×1 *(`scripts/tasks.cjs` still does not exist; hand-written task store, recurring for the second consecutive feature)* · `review-not-run` ×1 *(proposed — no Review sub-phase ran at all this cycle, distinct from F-021's solo-but-run review)* · `episode-drafted-late` ×1 *(proposed — no episode draft existed at Construction Complete, drafted retroactively at Ship)* | **no baseline** — nothing was flagged at planning because no planning-quality gate ran for this feature specifically. All three surfaced in Build/Ship. `design-not-implementable` and `stale-context-propagated` did **not** recur | v2 | 2026-08-23 |
 | F-013 | aspire-wiring | Skip | n/a | — | security-ac-unmaterialized:1, ac-uncovered:1, nfr-underspecified:2, dependency-missed:2, estimate-mis-scoped:1 | no-baseline (no Readiness Party row at plan) | v2 | 2026-08-18 |
 | F-018 | api-refactor-foundations | Full | Fair (C:Fair T:Fair D:Fair) | ac-uncovered:1, task-orphan:1, dependency-missed:1 | *(pending Ship Reflect 16g)* | *(pending)* | v2 | 2026-08-18 |
 

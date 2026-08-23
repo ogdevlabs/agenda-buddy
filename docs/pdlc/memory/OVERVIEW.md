@@ -6,7 +6,7 @@
      Do not edit manually — let PDLC maintain it. If you need to correct something, update and note the reason. -->
 
 **Project:** Agenda Buddy
-**Last updated:** 2026-08-22T15:10:00Z
+**Last updated:** 2026-08-23T13:30:00Z
 
 ---
 
@@ -51,6 +51,21 @@ Agenda Buddy is a scheduling and appointment management platform for independent
 - Read queries **no longer serialise full PII into the `events` audit collection**
 - **`AgendaBuddy.IntegrationTests`** — the project's first integration suite: 99 tests hosting real services over HTTP against a MongoDB Testcontainer, with a fail-closed endpoint guard. Deliberately excluded from `agenda-buddy-backend.slnf` so the unit gate stays Docker-free (ADR-031)
 
+**Added by F-021 (`v0.3.0`, 2026-08-22):**
+
+- Token refresh is now a **single atomic update** — the credential document is never deleted and re-inserted, closing a window where a fault could destroy an account irrecoverably
+- **Rate limiting** on `login` and `register` (per-IP, sliding window, 429 + `Retry-After`) and **self-clearing account lockout** after repeated failed logins
+- **HSTS**, off by default, and `UseHttpsRedirection` now runs before `UseAuthentication` in all seven services
+- **Credential-mutation logging** — create, rotate, lock, reset and session-end recorded with a one-way `acct_<hash>` reference, never the address
+- `OwnershipGuard.AssertOwner`'s null-claim pass fixed — a token with no `sub` claim no longer passes ownership checks against an entity with no email
+
+**Added by F-014 (`v0.4.0`, 2026-08-23):**
+
+- Six previously-unreachable capabilities now have routes: **session notes** and **payments** on Booking, **messages** and **notifications** as new top-level groups on Customer, **provider reporting** and **self-deactivation** on Provider — all authenticated and ownership-guarded
+- **Appointment status is server-owned** — `PUT` ignores a client-asserted status; a dedicated route applies transitions through the entity's own `Book()`/`Complete()` methods, with illegal transitions answering 409
+- **Payments are non-charging by default** — a recording gateway unless `Payments:Stripe:ApiKey` is configured
+- The provider report **no longer publishes a revenue figure** it cannot compute correctly — `revenueAvailable: false` plus a reason, instead of a plausible-but-wrong number
+
 ---
 
 ## Shipped Features
@@ -62,6 +77,8 @@ Agenda Buddy is a scheduling and appointment management platform for independent
 | — | Pre-PDLC baseline | 2024-04-16 → 2026-07-30 | — | — |
 | 001 | F-013 aspire-wiring (`v0.1.0`) | 2026-08-18 | [EPISODE_aspire-wiring_2026-08-17.md](../episodes/EPISODE_aspire-wiring_2026-08-17.md) | [#35](https://github.com/ogdevlabs/agenda-buddy/pull/35) |
 | 002 | F-016 secure-public-endpoints (`v0.2.0`) | 2026-08-18 | [EPISODE_secure-public-endpoints_2026-08-18.md](../episodes/EPISODE_secure-public-endpoints_2026-08-18.md) | [#38](https://github.com/ogdevlabs/agenda-buddy/pull/38) |
+| 003 | F-021 identity-hardening (`v0.3.0`) | 2026-08-22 | [EPISODE_identity-hardening_2026-08-22.md](../episodes/EPISODE_identity-hardening_2026-08-22.md) | [#39](https://github.com/ogdevlabs/agenda-buddy/pull/39) |
+| 004 | F-014 wire-unreached-services (`v0.4.0`) | 2026-08-23 | [EPISODE_wire-unreached-services_2026-08-23.md](../episodes/EPISODE_wire-unreached-services_2026-08-23.md) | [#40](https://github.com/ogdevlabs/agenda-buddy/pull/40) |
 
 ---
 
@@ -99,7 +116,7 @@ Agenda Buddy is a scheduling and appointment management platform for independent
 - **`docs/pdlc/context/` describes pre-Aspire wiring** in places — refreshed incrementally at ship.
 - ~~**`agenda-buddy-prr`** — `MobileApp` does not compile under `/p:MobileWorkloads=false`~~ — **RESOLVED and verified 2026-08-18.** The bead is closed and `MobileApp.Tests` passes 67 (7 skipped) locally. CI already runs three dedicated mobile jobs (`build-android`, `build-ios` on `macos-latest`, `build-mobile-tests`). MobileApp stays out of `agenda-buddy-backend.slnf` **by design**, not because it is broken. A stale comment in `.github/workflows/dotnet.yml` still claims otherwise.
 - **Two advisory test gaps from Echo**: the guarded legacy `MongoDbConfiguration` ctor throw, and `ProfessionSeedHostedService.StartAsync` (which swallows exceptions, so a seeding bug surfaces only as an empty catalogue).
-- **Six shipped-but-unreachable capabilities** (NotificationService, MessageService, NoteService, PaymentService, ReportingService, DeactivateProviderCommand) — implemented and unit-tested but with no DI registration, collection config, or HTTP route, so F-006–F-010 read as Shipped while being unreachable. Owned by **F-014**.
+- ~~**Six shipped-but-unreachable capabilities**~~ — **RESOLVED by F-014** (`v0.4.0`). All six now have a route, authenticated and ownership-guarded, verified live against a running AppHost. Server-owned appointment status (ADR-037) and the non-charging payment gateway (ADR-038) shipped alongside.
 - **The mobile client cannot reach the backend** — wrong route prefixes, no gateway for 7 ports, and a seed-data fallback that masks all of it. Owned by **F-015**.
 - ~~**PII exposure on public endpoints**~~ — **RESOLVED by F-016** (`v0.2.0`), and demonstrated live at the Ship/Verify gate rather than by inspection: all five routes 401 anonymous, non-owners receive `ProviderSummary` only, both Calendar routes ownership-guarded.
 
@@ -110,6 +127,21 @@ Agenda Buddy is a scheduling and appointment management platform for independent
 - **Authorization failures are entirely unlogged** — there is no log sink at all, so IDOR probing leaves no trace. Advisory A-1; belongs to F-021/F-024.
 - **`SSH.NET 2024.2.0` (HIGH, `GHSA-q939-rpr3-3284`)** enters the dependency graph via Testcontainers in `AgendaBuddy.IntegrationTests`. Unreachable — Testcontainers only loads it for Docker-over-SSH, which this project does not use — and the unreachability is *tested* by `ContainerRuntimeGuardTest`. Disposition: ADR-030.
 - **The standards-readiness gate has now blocked five consecutive gates and has never executed once.** Marked `enforcing`, sources unreachable under this `gh` auth, no vendored cache. Needs a reachable source or an explicit retirement decision — recommended folding into **F-017**.
+
+**Added or exposed by F-021 (2026-08-22):**
+
+- **The per-IP rate limiter is per-process** (T-106, accepted) and **collapses to one bucket behind a proxy that does not forward the client address** (`agenda-buddy-end`) — F-017's topology work owns `UseForwardedHeaders`.
+- **`credentials` has no unique index on `email`** — confirmed live on the database (`agenda-buddy-b0w`); the one `createIndex` script that would create it is documented as stale.
+- One pre-existing reflection-guard test deleted (ADR-034), same class as F-016's ADR-025 deletion — needs maintainer acknowledgement.
+
+**Added or exposed by F-014 (2026-08-23, recorded at the ship gate):**
+
+- **`ObjectId` does not round-trip through JSON** for any entity-returning route (`agenda-buddy-do5`) — pre-existing since the entities were written, only now visible because a create response's id needed to be read back. Fixed in Booking, Customer, Provider (the three this feature touches); Calendar, Services and Profession still emit the broken shape.
+- **No `JsonStringEnumConverter` is registered anywhere** — every enum on this API's wire is an integer, and a string value 400s with no validation detail.
+- **Revenue cannot be computed** — `AppointmentEntity` records no service, no fee, no amount (ADR-039). Filed rather than approximated; touches F-015's contract and F-025's rules.
+- **The payment amount is unvalidated** for the same reason (T-205(c), accepted) — harmless with the default recording gateway, a real underpayment the moment a Stripe key is configured.
+- **`NotificationService` is storage-only** — nothing calls `SendAsync` yet, so F-022's dependency on it is not yet satisfied.
+- **No formal Party Review ran for this feature**, and no episode draft existed before the Ship gate — both a deviation from F-016/F-021 precedent, worth restoring next feature.
 
 ---
 
@@ -125,5 +157,7 @@ Agenda Buddy is a scheduling and appointment management platform for independent
 
 8. **Authenticated-by-default on PII reads** (ADR-022 … ADR-029, F-016) — authentication plus an owner/non-owner projection, pagination as a *security* control (an uncapped page size restores the full-dataset dump), a central `ForbiddenException` → 403 mapping, and `POST /api/v1/professions` deleted rather than role-gated (ADR-025). Owner-scoping of `GET /api/v1/customers` is explicitly deferred (ADR-026).
 9. **A Testcontainers integration suite, excluded from the unit gate** (ADR-030, ADR-031, F-016) — `AgendaBuddy.IntegrationTests` hosts real services over HTTP with a fail-closed endpoint guard, and stays out of `agenda-buddy-backend.slnf` so the unit gate needs no container runtime.
+10. **Auth hardened: partial updates, configuration-gated controls, warn-don't-fail** (ADR-032…034, F-021) — `IRepository<T>.FindOneAndUpdateAsync` is the one partial-update primitive and never upserts; HSTS and rate limiting are gated on configuration rather than `IsProduction()` because every service runs as Production under the local AppHost; each control warns loudly, naming the key, when off outside a local run. Cloud deployment itself is deferred until every pending feature ships and legacy tech debt is discharged (ADR-035).
+11. **Six unreachable capabilities land on three existing services, by data ownership, not an eighth service** (ADR-036, F-014) — a service is a deployment unit, not a URL prefix. Appointment status becomes server-owned via the entity's own transition methods (ADR-037); payments are non-charging unless a Stripe key is configured, assigned once at construction (ADR-038); the provider report states a revenue figure is unavailable rather than publish one it cannot compute correctly (ADR-039).
 
 See `docs/pdlc/memory/DECISIONS.md` for full ADR entries.
