@@ -5,19 +5,19 @@
      Claude reads this file at the start of every session to auto-resume from the last checkpoint.
      If this file is missing or empty, PDLC will prompt you to run /pdlc init. -->
 
-**Last updated:** 2026-08-22T15:25:00Z
+**Last updated:** 2026-08-22T16:40:00Z
 
 ---
 
 ## Current Phase
 
-Idle — Ready for next /brainstorm
+Inception
 
 ---
 
 ## Current Feature
 
-none
+identity-hardening
 
 _**F-016 `secure-public-endpoints` SHIPPED** as `v0.2.0` — merged `2134b8d`, PR #38, episode 002 (Final).
 Operation closed 2026-08-22: smoke-tested against a live AppHost (all five formerly-anonymous PII GETs 401,
@@ -46,10 +46,15 @@ none
 
 ## Roadmap Claim
 
-_None held. Run `/brainstorm` to claim the next priority feature._
+- **Feature ID:** F-021
+- **Feature record:** docs/pdlc/tasks/F-021/_feature.md
+- **Claimed by:** oscargarcia@ogdevlabs.onmicrosoft.com
+- **Claimed at:** 2026-08-22T15:35:00Z
+- **Branch:** (will be set at build pre-flight)
 
-_Next by priority: **F-021 `identity-hardening`** (priority 15, Planned) — the auth system's own defects.
-F-016's claim was released on its feature record at ship (`status: shipped`, `claimed_by: null`)._
+⚠️ **The claim is committed locally but NOT pushed** — `main` is 2 commits ahead of `origin/main` (F-016's
+closeout and the tooling commit), and pushing has not been authorized this session. Until it is pushed, no
+teammate pulling `main` can see that F-021 is held.
 
 ---
 
@@ -61,13 +66,13 @@ _None active. Run `/night-shift <F-NNN>` to start an autonomous run (requires by
 
 ## Current Sub-phase
 
-none
+Design
 
 ---
 
 ## Last Checkpoint
 
-Operation / Complete / 2026-08-22T15:25:00Z — F-016 shipped and closed out. Episode 002 Final, metrics recorded, context refreshed.
+Inception / Design / 2026-08-22T16:40:00Z — 5 design artifacts generated; threat model Full (6 threats); awaiting the Step 12 approval gate.
 
 ---
 
@@ -88,6 +93,7 @@ agent-teams
 | 2026-08-18T23:35:00Z | review_warnings_accepted | Review approval gate (fix cycle 1 of 3): **0 Critical**. Maintainer chose **fix I-3 + I-4, accept the rest**. FIXED: **I-3** — AC-14 was verified on only 1 of the 6 remaining `ForbiddenException` catch sites; `RemainingLocalCatchSitesTest` now covers Booking `:125`/`:149`/`:174` and Services `:153`/`:177` in Production (integration 93 → 99). **I-4** — `CLAUDE.md` claimed "379 tests total: 305 backend" and omitted the integration command entirely; corrected to 531 (358+99+74) with the ADR-031 warning and a Key Files entry. ACCEPTED as logged warnings: **I-1** the providers-list cache holds *unprojected* entities and the projection is applied after the cache read — correct today, a trap for F-019/F-020 which rewrite that file; **I-2** `GET /api/v1/customers` returns full `CustomerEntity` (incl. `SubscribedProviderCollection`, `AppointmentCollection`, `KafkaTopic`) to any Provider-role caller — consistent with ADR-026's deferral of owner-scoping, now quantified against the real payload; **I-5** the catalog's 10-vs-9 handler line, due at the Ship refresh; and **A-1…A-7** advisories, notably that authorization failures are entirely unlogged (no log sink at all) so IDOR probing leaves no trace (F-021/F-024). |
 | 2026-08-18T23:45:00Z | test_layers_skipped | Test Step 15: **layers 3–6 have no command in this project** and are **not required** gates in CONSTITUTION §7 — E2E (real Chromium), performance/load, accessibility, visual regression. Each discovered by searching every `.csproj`/`.json`/`.yml`/`.sh` for the usual runners (playwright/cypress, k6/NBomber/BenchmarkDotNet, axe/pa11y, percy/chromatic): no candidate found. Skipped with this warning rather than silently. Layer 7c (OWASP `dependency-check` CLI) is not installed → INFO. |
 | 2026-08-18T23:45:00Z | required_gate_flagged_accepted | Test Step 15 **Layer 7 (security scan — always required, un-uncheckable)** RAN. **7a dependency audit:** `dotnet list package --vulnerable --include-transitive` reports exactly **one** vulnerable package across the whole solution — `SSH.NET 2024.2.0`, **HIGH**, `GHSA-q939-rpr3-3284` — in exactly **one** project, `AgendaBuddy.IntegrationTests`. All 25 pre-existing projects clean. This is **new on this branch** (the project did not exist on `main`, whose baseline was 0 vulnerable at the F-013 ship gate). Per Step 15 a new HIGH is a flagged required gate — **disposition already recorded in ADR-030** (maintainer-approved at T02: unreachable because Testcontainers only loads SSH.NET for Docker-over-SSH, which this project does not use, and the unreachability is *tested* by `ContainerRuntimeGuardTest`). **Not re-asked**, because re-deciding an ADR the maintainer already approved would be re-litigation. Confirms ADR-030's promise that the project-scoped `NU1903` suppression does not hide it from the audit report — it is listed. **7b secret scan on the 161 changed files:** clean on all six patterns (mongodb credential, AWS key, GitHub token, Stripe live key, PEM payload, assigned-secret literal); no `.env` files; every `appsettings` connection string still blank. ⚠️ Gate satisfied **by hand**, as at F-013 — CI still has only a credential grep, not a scanner. **F-017 still owns automating it.** |
+| 2026-08-22T16:05:00Z | standards_gate_skipped | Define Step 6.5 (`--ideate`, advisory tier) skipped for F-021. Re-checked all three conditions on 2026-08-22: plugin installed, no local `.nordstrom-standards/`, no `docs/standards-readiness/` report to `--delta` against. Light skip per the advisory tier; the Plan-gate `--design` check will re-attempt. ⚠️ **Sixth consecutive gate blocked by this condition** (F-013 ship · F-018 Define · F-016 Define · F-016 Plan · F-016 Review · F-021 Define). Recommendation unchanged: give it a reachable source or retire it explicitly, folded into F-017 |
 
 ---
 
@@ -323,13 +329,28 @@ re-planning (`/continue`).
 
 ```json
 {
-  "phase_completed": null,
-  "next_phase": null,
-  "feature": null,
-  "key_outputs": [],
-  "decisions_made": [],
-  "next_action": null,
-  "pending_questions": []
+  "phase_completed": "Inception / Define",
+  "next_phase": "Inception / Design",
+  "feature": "identity-hardening",
+  "feature_id": "F-021",
+  "key_outputs": [
+    "docs/pdlc/prds/PRD_F-021_identity-hardening_2026-08-22.md",
+    "docs/pdlc/brainstorm/brainstorm_identity-hardening_2026-08-22.md"
+  ],
+  "decisions_made": [
+    "Scope is THREE items, not four - item 4 (AssertOwner null-claim) was already fixed by F-016",
+    "HSTS is in scope: reordering middleware does not stop a credential that already crossed the wire",
+    "Both controls gated on explicit configuration, NOT IsProduction() - services run as Production under the local AppHost (verified: swagger 404s on all 7)",
+    "Lockout is time-based and self-clearing - no permanent lock, no admin unlock, because F-022 does not exist",
+    "Per-account throttling lives in IdentityService, not middleware - the partition key resolves before model binding; one counter serves both throttling and lockout",
+    "One narrow partial-update primitive added to IRepository<T>, shared rather than Identity-only"
+  ],
+  "next_action": "Read skills/brainstorm/steps/03-design.md and begin Bloom's Taxonomy design questioning",
+  "pending_questions": [
+    "R4: a deployment that forgets the config flags ships with both controls silently off - does the cloud config assert them on, or does startup log loudly when they are off outside local?",
+    "Requirement 20: measure BCrypt cost per attempt on this hardware before choosing thresholds",
+    "AC-2 needs a fault-injection capability InMemoryRepository does not have (11-testing.md:65) - it must land before AC-2 implementation"
+  ]
 }
 ```
 
