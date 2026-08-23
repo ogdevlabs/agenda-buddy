@@ -4,7 +4,7 @@
 **Feature name:** Identity Hardening — a refresh that cannot destroy an account, a login that cannot be hammered, credentials that stop crossing plaintext unremarked
 **Feature slug:** identity-hardening
 **Feature ID:** F-021
-**Date built:** 2026-08-22, on `feat/F-021-identity-hardening`
+**Date built:** 2026-08-22, on `feat/F-021-identity-hardening` — **PR [#39](https://github.com/ogdevlabs/agenda-buddy/pull/39)**, CI green (`build-and-test`, `Integration — real services + MongoDB`, `Mobile — Unit Tests`), mergeable
 **Phase delivered in:** Construction
 **Status:** **Draft** — not shipped. `main` was deliberately rolled back to `5ef3e10` to keep this work off
 it, so the episode closes when the PR merges and `/ship` runs.

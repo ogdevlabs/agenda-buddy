@@ -198,7 +198,7 @@ dotnet test MobileApp.Tests/MobileApp.Tests.csproj /p:MobileWorkloads=false \
 
 ## What is missing
 
-- ~~**No integration tests.**~~ **RESOLVED by F-016** — 99 tests invoke real endpoints over HTTP against a MongoDB Testcontainer, so `CONSTITUTION.md` §5's "All integration tests pass" finally has something to pass. Two caveats: the CI job is **not a required status check** on `main` yet, and §7's Integration checkbox stays unchecked pending 10 consecutive green runs.
+- ~~**No integration tests.**~~ **RESOLVED by F-016**, extended by F-021 — **118** tests invoke real endpoints over HTTP against a MongoDB Testcontainer, so `CONSTITUTION.md` §5's "All integration tests pass" finally has something to pass. Two caveats unchanged: the CI job is **not a required status check** on `main` yet, and §7's Integration checkbox stays unchecked pending 10 consecutive green runs — **3 of 10** after PR #39 (F-016's PR #38 supplied the first two).
 - **No contract tests** between `MobileApp` and the services. This is the single gap that would have caught the product's most serious functional defect (`01-api-surface.md`).
 - **No `CacheAside` test** — the mandated caching primitive, with three known defects.
 - **No `KafkaHelper` test** — topic-name collision across email domains.

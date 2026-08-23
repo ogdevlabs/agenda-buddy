@@ -121,7 +121,8 @@ agent-teams
 > before authentication) in all seven services. 7/7 tasks, 16/16 ACs attested, T-101…T-105 mitigated, T-106
 > accepted. **623 tests** (431 / 118 / 74), 0 failing, 0 warnings, integration 1 m 28 s of a 600 s budget.
 >
-> **The next action is a human one: review and merge the PR.** `/ship` cannot run before that.
+> **The next action is a human one: review and merge PR [#39](https://github.com/ogdevlabs/agenda-buddy/pull/39).**
+> CI is green on all four jobs and the PR is mergeable; `/ship` cannot run before it merges.
 >
 > **Three things a reviewer should be told rather than discover:**
 > 1. **One pre-existing test was deleted** — `IdentityService_ConstructorParameters_ContainNoILogger`
@@ -140,6 +141,8 @@ agent-teams
 >   is a GitHub setting, not YAML. Needs the web UI or an API call with the credential `git` uses — `gh`
 >   here is a different work identity.
 > - **§7's security scan was satisfied by hand again**, for the third consecutive feature. **F-017.**
+> - **§7's Integration checkbox: 3 of the 10 consecutive green runs** it is gated on. PR #39's run was the
+>   third; F-016's PR #38 supplied the first two.
 
 <!-- PENDING MARKER — read this first at the start of the next session. Each item below is either
      an action only a human can take, or work that is written but not yet exercised. Nothing here is
@@ -337,9 +340,9 @@ re-planning (`/continue`).
     "Replace the reflection guard that forbade a logger with a content assertion; log acct_<hash>, never the address (ADR-034)",
     "T-106 accepted (per-process limiter state); T-NL-2 accepted (a locked account answers faster than a wrong password, because hiding it re-arms T-101)"
   ],
-  "next_action": "Human: review and merge the PR on feat/F-021-identity-hardening, then run /ship",
+  "next_action": "Human: review and merge PR #39, then run /ship",
   "human_only_items": [
-    "Review and merge the PR. main is PR-protected, and it was deliberately rolled back to 5ef3e10 to keep this work off it.",
+    "Review and merge PR #39 (CI green, mergeable). main is PR-protected, and it was deliberately rolled back to 5ef3e10 to keep this work off it.",
     "Acknowledge the one deleted pre-existing test (ADR-034) — the same acknowledgement F-016's ADR-025 needed.",
     "Add `Integration — real services + MongoDB` to main's required status checks. Still not done; branch protection is a GitHub setting, not YAML.",
     "Rotate the Atlas credential (agenda-buddy-41s). Unchanged, still P0, still the hard prerequisite for any deployment."
