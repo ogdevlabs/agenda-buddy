@@ -63,8 +63,16 @@ public class CancelAppointmentCommandHandler(
     private async Task<bool> CancelAppointment(string identifier)
     {
         var appointment = await bookingService.SearchAppointmentAsync(identifier);
-        if (appointment.AppointmentStatus == AppointmentStatus.Booked) return false;
+
+        // F-014 requirement 15 / Discover finding F-3. This used to refuse a BOOKED appointment as well as a
+        // completed one, which is backwards: a booked appointment is exactly what a customer needs to be able
+        // to cancel, while a completed one is history. The bug was invisible because nothing in production
+        // ever set Booked — the status transitions were unenforced (threat T-203), so every appointment sat
+        // in Requested forever and cancellation happened to work. Making transitions real activates this,
+        // which is why both are fixed in the same feature: shipped separately, the status fix would have
+        // looked like the cause of "customers can no longer cancel their appointments".
         if (appointment.AppointmentStatus == AppointmentStatus.Completed) return false;
+
         return await bookingService.CancelAppointmentAsync(identifier);
     }
 }

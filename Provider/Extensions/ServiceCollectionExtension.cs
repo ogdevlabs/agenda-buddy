@@ -26,6 +26,10 @@ public static class ServiceCollectionExtension
 
         serviceCollection.AddScoped<ProviderService>();
 
+        // F-014: reporting. ReportingService reads the provider collection only — it needs no repository of
+        // its own, which is part of why nobody noticed it was never registered.
+        serviceCollection.AddScoped<IReportingService, ReportingService>();
+
         return serviceCollection;
     }
 }

@@ -25,6 +25,14 @@ builder.Services.AddEventStore();
 // Add services required to support using MVC's model binders
 builder.Services.AddMvcCore();
 
+// F-014: ObjectId has no JSON representation of its own, so System.Text.Json serialises the struct's public
+// properties and emits `"id": { "timestamp": …, "machine": … }` — a shape that cannot be read back into an
+// ObjectId at all. Three of F-014's route families need the id from a create response in order to work
+// (PUT /notes/{id}, POST /messages/{id}/read, POST /notifications/{id}/read), so this is load-bearing rather
+// than cosmetic. Pre-existing for every other route that returns an entity; see ObjectIdJsonConverter.
+builder.Services.ConfigureHttpJsonOptions(options =>
+    options.SerializerOptions.Converters.Add(new ObjectIdJsonConverter()));
+
 // Register Singleton instances
 builder.Services.AddSingleton<IKafkaClient, KafkaClient>();
 // Scoped, not Singleton: RequestCollection consumes the scoped IEventStore, and a
@@ -115,6 +123,16 @@ app.UseExceptionHandler();
 // bearer token out of a plaintext request and only then told the client to come back over TLS.
 app.UseAgendaBuddyTransportSecurity();
 
+// F-014 PRD risk R4: the residual risk of a non-charging default is that it becomes permanent — a deployment
+// forgets the key and records payments that never happened while every artifact says F-010 is delivered. Same
+// shape as threat T-103, same mitigation as ADR-033: say so loudly, do not refuse to start. A missing payment
+// key must not take appointment booking offline.
+if (PaymentGatewayFactory.RecordingModeWarning(
+        app.Configuration, SecurityFlags.IsLocalRun(app.Configuration, app.Environment)) is { } paymentWarning)
+{
+    app.Logger.LogWarning("PAYMENTS NOT REAL — {Warning}", paymentWarning);
+}
+
 app.UseAntiforgery();
 app.UseAuthentication();
 app.UseAuthorization();
@@ -198,6 +216,237 @@ booking.MapDelete("/appointments/",
                 new[] { "Error when trying to cancel appointment identifier:", $"{appointmentEntity.Identifier}" }));
         })
     .WithName("CancelAppointment")
+    .RequireAuthorization();
+
+// ── F-014: appointment status, session notes, payments ───────────────────────────────────────────────
+//
+const string ProviderRole = "Provider";
+//
+// Three route families that did not exist. Every one is authenticated, ownership-guarded, and role-checked
+// where a role distinction exists — F-016 is the reason that is stated rather than assumed: five routes in
+// this solution returned PII to anonymous callers, and the fix was a guard on every route.
+
+// F-014 requirement 14 / threat T-203. Status is SERVER-OWNED: the PUT above ignores the field, and this is
+// the only way to change it. The transition runs through AppointmentEntity.TransitionTo, so Book() and
+// Complete() — dead code until now — hold the rules.
+booking.MapPost("/appointments/{identifier}/status",
+        async Task<Results<Ok<AppointmentStatusResponse>, ForbidHttpResult, NotFound, Conflict<string>, BadRequest<string>>> (
+            string identifier,
+            ClaimsPrincipal user,
+            AppointmentStatusRequest request,
+            BookingService bookingService,
+            ProviderService providerService,
+            IEventStore eventStore) =>
+        {
+            // Enum.TryParse also accepts the NUMERIC form, and — less obviously — accepts undefined numbers:
+            // TryParse<AppointmentStatus>("99") succeeds with the value 99. Enum.IsDefined is what turns that
+            // into a 400 rather than letting it reach the transition and answer 409, which would imply the state
+            // exists and merely conflicts.
+            if (request is null
+                || !Enum.TryParse<AppointmentStatus>(request.Status, ignoreCase: true, out var target)
+                || !Enum.IsDefined(target))
+            {
+                return TypedResults.BadRequest("status must be one of: Booked, Completed.");
+            }
+
+            var appointment = await bookingService.SearchAppointmentAsync(identifier);
+            if (appointment is null) return TypedResults.NotFound();
+
+            // Either participant may book; only the provider may complete. A customer marking their own
+            // session complete is a claim about work delivered, not a scheduling action.
+            try
+            {
+                OwnershipGuard.AssertOwnerAny(user, appointment.EmailProvider, appointment.EmailCustomer);
+                if (target == AppointmentStatus.Completed)
+                    OwnershipGuard.AssertOwner(user, appointment.EmailProvider);
+            }
+            catch (ForbiddenException) { return TypedResults.Forbid(); }
+
+            try
+            {
+                var result = await new ChangeAppointmentStatusCommandHandler(providerService, bookingService, eventStore)
+                    .Handle(new ChangeAppointmentStatusCommand { Identifier = identifier, TargetStatus = target },
+                        CancellationToken.None);
+
+                if (result is null) return TypedResults.NotFound();
+            }
+            catch (InvalidOperationException ex)
+            {
+                // The entity's own guard refused the transition. 409 rather than 400: the request is
+                // well-formed, it conflicts with the current state.
+                return TypedResults.Conflict(ex.Message);
+            }
+
+            return TypedResults.Ok(new AppointmentStatusResponse(identifier, target.ToString()));
+        })
+    .WithName("ChangeAppointmentStatus")
+    .RequireAuthorization();
+
+// ── Session notes — the most sensitive data in the product ───────────────────────────────────────────
+//
+// Threat T-201: the owning provider is taken from the CALLER'S TOKEN and never from the request. NoteService
+// asks for a providerEmail, and a route that passed a client-supplied one through would hand any
+// authenticated caller every provider's notes for any appointment identifier they can guess — identifiers a
+// customer already receives in their own appointment responses. That is F-016's defect exactly.
+//
+// Threat T-202: KeyNotFoundException and UnauthorizedAccessException BOTH map to 403, so a caller cannot
+// tell "someone else's note" from "no such note". For a therapist, the existence of a note is itself
+// disclosure.
+booking.MapGet("/appointments/{identifier}/notes",
+        async Task<Results<Ok<IEnumerable<NoteEntity>>, ForbidHttpResult>> (
+            string identifier, ClaimsPrincipal user, BookingService bookingService, INoteService notes) =>
+        {
+            var providerEmail = user.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            try
+            {
+                OwnershipGuard.AssertRole(user, ProviderRole);
+
+                var appointment = await bookingService.SearchAppointmentAsync(identifier);
+                // A missing appointment answers 403 alongside a foreign one: distinguishing them would turn
+                // this route into an appointment-existence oracle for any authenticated provider.
+                OwnershipGuard.AssertOwner(user, appointment?.EmailProvider);
+            }
+            catch (ForbiddenException) { return TypedResults.Forbid(); }
+
+            return TypedResults.Ok(await notes.GetByAppointmentAsync(providerEmail!, identifier));
+        })
+    .WithName("GetAppointmentNotes")
+    .RequireAuthorization();
+
+booking.MapPost("/appointments/{identifier}/notes",
+        async Task<Results<Created<NoteEntity>, ForbidHttpResult, BadRequest<string>>> (
+            string identifier, ClaimsPrincipal user, NoteRequest request,
+            BookingService bookingService, INoteService notes) =>
+        {
+            if (string.IsNullOrWhiteSpace(request?.Content))
+                return TypedResults.BadRequest("content is required.");
+
+            var providerEmail = user.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            try
+            {
+                OwnershipGuard.AssertRole(user, ProviderRole);
+                var appointment = await bookingService.SearchAppointmentAsync(identifier);
+                OwnershipGuard.AssertOwner(user, appointment?.EmailProvider);
+            }
+            catch (ForbiddenException) { return TypedResults.Forbid(); }
+
+            // providerEmail from the token, appointmentIdentifier from the path. A body carrying either is
+            // ignored — NoteRequest has no such field, which is the cheapest way to guarantee it.
+            var created = await notes.CreateAsync(new NoteEntity
+            {
+                ProviderEmail = providerEmail!,
+                AppointmentIdentifier = identifier,
+                Content = request.Content
+            });
+
+            return TypedResults.Created($"/api/v1/booking/notes/{created.Id}", created);
+        })
+    .WithName("CreateAppointmentNote")
+    .RequireAuthorization();
+
+booking.MapPut("/notes/{id}",
+        async Task<Results<Ok<NoteEntity>, ForbidHttpResult, BadRequest<string>>> (
+            string id, ClaimsPrincipal user, NoteRequest request, INoteService notes) =>
+        {
+            if (string.IsNullOrWhiteSpace(request?.Content))
+                return TypedResults.BadRequest("content is required.");
+
+            var providerEmail = user.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            try
+            {
+                OwnershipGuard.AssertRole(user, ProviderRole);
+                if (providerEmail is null) throw new ForbiddenException();
+
+                return TypedResults.Ok(await notes.UpdateAsync(id, providerEmail, request.Content));
+            }
+            // Threat T-202: both causes answer the same way, deliberately.
+            catch (ForbiddenException) { return TypedResults.Forbid(); }
+            catch (UnauthorizedAccessException) { return TypedResults.Forbid(); }
+            catch (KeyNotFoundException) { return TypedResults.Forbid(); }
+        })
+    .WithName("UpdateAppointmentNote")
+    .RequireAuthorization();
+
+booking.MapDelete("/notes/{id}",
+        async Task<Results<NoContent, ForbidHttpResult>> (
+            string id, ClaimsPrincipal user, INoteService notes) =>
+        {
+            var providerEmail = user.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            try
+            {
+                OwnershipGuard.AssertRole(user, ProviderRole);
+                if (providerEmail is null) throw new ForbiddenException();
+
+                await notes.DeleteAsync(id, providerEmail);
+                return TypedResults.NoContent();
+            }
+            catch (ForbiddenException) { return TypedResults.Forbid(); }
+            catch (UnauthorizedAccessException) { return TypedResults.Forbid(); }
+            catch (KeyNotFoundException) { return TypedResults.Forbid(); }
+        })
+    .WithName("DeleteAppointmentNote")
+    .RequireAuthorization();
+
+// ── Payments ────────────────────────────────────────────────────────────────────────────────────────
+//
+// Threat T-205: both participant emails come from the STORED APPOINTMENT, never from the body, so a caller
+// cannot record a payment against someone else. A second charge for the same appointment answers 409.
+//
+// ⚠️ RESIDUAL, ACCEPTED: `amount` is client-supplied and there is nothing to validate it against, because an
+// appointment does not record which service it was booked for. With the default non-charging gateway a wrong
+// amount corrupts a record; with a real Stripe key it would be a real underpayment. Anyone configuring
+// Payments:Stripe:ApiKey must read threat T-205 first.
+booking.MapPost("/appointments/{identifier}/payment",
+        async Task<Results<Created<PaymentEntity>, ForbidHttpResult, NotFound, Conflict<string>, BadRequest<string>>> (
+            string identifier, ClaimsPrincipal user, PaymentRequest request,
+            BookingService bookingService, IPaymentService payments) =>
+        {
+            if (request is null || request.Amount <= 0)
+                return TypedResults.BadRequest("amount must be greater than zero.");
+
+            var appointment = await bookingService.SearchAppointmentAsync(identifier);
+            if (appointment is null) return TypedResults.NotFound();
+
+            try { OwnershipGuard.AssertOwnerAny(user, appointment.EmailProvider, appointment.EmailCustomer); }
+            catch (ForbiddenException) { return TypedResults.Forbid(); }
+
+            if (await payments.GetByAppointmentAsync(identifier) is not null)
+                return TypedResults.Conflict("This appointment has already been paid.");
+
+            var charged = await payments.ChargeAsync(new PaymentEntity
+            {
+                AppointmentIdentifier = identifier,
+                ProviderEmail = appointment.EmailProvider,
+                CustomerEmail = appointment.EmailCustomer,
+                Amount = request.Amount,
+                Currency = string.IsNullOrWhiteSpace(request.Currency) ? "usd" : request.Currency
+            });
+
+            return TypedResults.Created($"/api/v1/booking/appointments/{identifier}/payment", charged);
+        })
+    .WithName("PayForAppointment")
+    .RequireAuthorization();
+
+booking.MapGet("/appointments/{identifier}/payment",
+        async Task<Results<Ok<PaymentEntity>, ForbidHttpResult, NotFound>> (
+            string identifier, ClaimsPrincipal user,
+            BookingService bookingService, IPaymentService payments) =>
+        {
+            var appointment = await bookingService.SearchAppointmentAsync(identifier);
+            if (appointment is null) return TypedResults.NotFound();
+
+            try { OwnershipGuard.AssertOwnerAny(user, appointment.EmailProvider, appointment.EmailCustomer); }
+            catch (ForbiddenException) { return TypedResults.Forbid(); }
+
+            // 404 is safe here: the caller has already proven they are a participant in this appointment.
+            var payment = await payments.GetByAppointmentAsync(identifier);
+            return payment is null ? TypedResults.NotFound() : TypedResults.Ok(payment);
+        })
+    .WithName("GetAppointmentPayment")
     .RequireAuthorization();
 
 app.Run();

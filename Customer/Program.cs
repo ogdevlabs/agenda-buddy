@@ -28,6 +28,14 @@ builder.Services.AddEventStore();
 // Add services required to support using MVC's model binders
 builder.Services.AddMvcCore();
 
+// F-014: ObjectId has no JSON representation of its own, so System.Text.Json serialises the struct's public
+// properties and emits `"id": { "timestamp": …, "machine": … }` — a shape that cannot be read back into an
+// ObjectId at all. Three of F-014's route families need the id from a create response in order to work
+// (PUT /notes/{id}, POST /messages/{id}/read, POST /notifications/{id}/read), so this is load-bearing rather
+// than cosmetic. Pre-existing for every other route that returns an entity; see ObjectIdJsonConverter.
+builder.Services.ConfigureHttpJsonOptions(options =>
+    options.SerializerOptions.Converters.Add(new ObjectIdJsonConverter()));
+
 // Register Singleton instances
 builder.Services.AddSingleton<IKafkaClient, KafkaClient>();
 // Scoped, not Singleton: RequestCollection consumes the scoped IEventStore, and a
@@ -233,6 +241,131 @@ customers.MapGet("/{email}", async Task<Results<Ok<CustomerEntity>, NotFound>> (
 })
     // F-016 AC-8 / requirement 9: PII-bearing read, so no longer anonymous. Breaking change with zero reachable consumers (01-api-surface.md:158).
     .WithName("GetCustomerByEmail")
+    .RequireAuthorization();
+
+// ── F-014: messages and notifications ────────────────────────────────────────────────────────────────
+//
+// TWO NEW TOP-LEVEL ROUTE GROUPS in this process, not children of /api/v1/customers — and that is the point
+// (ADR D-2). A message is addressed to a PERSON: a provider has an inbox for exactly the same reason a
+// customer does, so a URL saying `customers` about a provider's inbox would assert something false and every
+// client would have to work around it. Identity already hosts two unrelated groups (`/api/v1/auth` and
+// `/device-token`), so this is a precedent rather than a novelty. The Customer service hosts them because it
+// already owns the provider↔customer relationship these messages travel along.
+
+var messages = app.MapGroup("/api/v1/messages")
+    .WithTags("MessageAPI")
+    .WithOpenApi()
+    .AddEndpointFilter<ProblemDetailsServiceEndpointFilter>();
+
+// Threat T-204: the recipient is the caller's `sub` claim and there is NO parameter. A recipient parameter
+// would be a thing to tamper with — `MessageService.GetInboxAsync` takes one, and passing a client-supplied
+// value through would hand any authenticated caller anyone else's inbox.
+messages.MapGet("/", async Task<Results<Ok<IEnumerable<MessageEntity>>, ForbidHttpResult>> (
+        ClaimsPrincipal user, IMessageService service) =>
+    {
+        var caller = user.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (caller is null) return TypedResults.Forbid();
+
+        return TypedResults.Ok(await service.GetInboxAsync(caller));
+    })
+    .WithName("GetInbox")
+    .RequireAuthorization();
+
+// Threat T-204: ONE counterpart in the URL. `MessageService` derives thread_id by sorting both addresses, so
+// with the caller always supplying one side, a thread between two other people has no representation in this
+// URL space at all — it is unrequestable rather than merely refused.
+messages.MapGet("/thread/{counterpartEmail}",
+        async Task<Results<Ok<IEnumerable<MessageEntity>>, ForbidHttpResult>> (
+            string counterpartEmail, ClaimsPrincipal user, IMessageService service) =>
+        {
+            var caller = user.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (caller is null) return TypedResults.Forbid();
+
+            return TypedResults.Ok(await service.GetThreadAsync(caller, counterpartEmail));
+        })
+    .WithName("GetMessageThread")
+    .RequireAuthorization();
+
+messages.MapPost("/", async Task<Results<Created<MessageEntity>, ForbidHttpResult, BadRequest<string>>> (
+        MessageRequest request, ClaimsPrincipal user, IMessageService service) =>
+    {
+        if (request is null || string.IsNullOrWhiteSpace(request.RecipientEmail)
+                            || string.IsNullOrWhiteSpace(request.Body))
+            return TypedResults.BadRequest("recipientEmail and body are required.");
+
+        var caller = user.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (caller is null) return TypedResults.Forbid();
+
+        // The sender is the caller. MessageRequest has no sender field, which is the cheapest guarantee that
+        // no future refactor trusts one from the body.
+        var message = new MessageEntity
+        {
+            SenderEmail = caller,
+            RecipientEmail = request.RecipientEmail,
+            Body = request.Body
+        };
+
+        await service.SendMessageAsync(message);
+        return TypedResults.Created($"/api/v1/messages/{message.Id}", message);
+    })
+    .WithName("SendMessage")
+    .RequireAuthorization();
+
+// Only the RECIPIENT may mark a message read. A sender marking their own message read is meaningless, and
+// permitting it would let a sender probe whether an id exists.
+messages.MapPost("/{id}/read", async Task<Results<NoContent, ForbidHttpResult>> (
+        string id, ClaimsPrincipal user, IMessageService service, IRepository<MessageEntity> repository) =>
+    {
+        var caller = user.FindFirstValue(ClaimTypes.NameIdentifier);
+        var message = await repository.FindOneAsync(new BsonDocument("_id", new ObjectId(id)));
+
+        // A missing message and someone else's answer identically — the same rule the notes routes follow, so
+        // this cannot be used to enumerate message ids.
+        try { OwnershipGuard.AssertOwner(user, message?.RecipientEmail); }
+        catch (ForbiddenException) { return TypedResults.Forbid(); }
+
+        await service.MarkReadAsync(id);
+        return TypedResults.NoContent();
+    })
+    .WithName("MarkMessageRead")
+    .RequireAuthorization();
+
+var notifications = app.MapGroup("/api/v1/notifications")
+    .WithTags("NotificationAPI")
+    .WithOpenApi()
+    .AddEndpointFilter<ProblemDetailsServiceEndpointFilter>();
+
+// ⚠️ THERE IS DELIBERATELY NO ROUTE THAT CREATES A NOTIFICATION (threat T-208). Notifications are produced by
+// domain events, not by users: a create route would let any authenticated caller write a convincing "Your
+// appointment was cancelled" into somebody else's list. `NotificationService.SendAsync` stays reachable
+// in-process to whatever writes one.
+//
+// The consequence, stated so an empty list is not read as a bug: NOTHING WRITES A NOTIFICATION YET. No domain
+// event calls SendAsync, so this route returns [] until something does. F-014 requirement 19 — storage
+// without delivery, and for now without production either.
+notifications.MapGet("/", async Task<Results<Ok<IEnumerable<NotificationEntity>>, ForbidHttpResult>> (
+        ClaimsPrincipal user, INotificationService service) =>
+    {
+        var caller = user.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (caller is null) return TypedResults.Forbid();
+
+        return TypedResults.Ok(await service.GetForRecipientAsync(caller));
+    })
+    .WithName("GetNotifications")
+    .RequireAuthorization();
+
+notifications.MapPost("/{id}/read", async Task<Results<NoContent, ForbidHttpResult>> (
+        string id, ClaimsPrincipal user, INotificationService service, IRepository<NotificationEntity> repository) =>
+    {
+        var notification = await repository.FindOneAsync(new BsonDocument("_id", new ObjectId(id)));
+
+        try { OwnershipGuard.AssertOwner(user, notification?.RecipientEmail); }
+        catch (ForbiddenException) { return TypedResults.Forbid(); }
+
+        await service.MarkReadAsync(id);
+        return TypedResults.NoContent();
+    })
+    .WithName("MarkNotificationRead")
     .RequireAuthorization();
 
 app.Run();

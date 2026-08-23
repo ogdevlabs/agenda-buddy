@@ -31,8 +31,26 @@ public static class ServiceCollectionExtensions
                 serviceProvider.GetRequiredService<IMongoClient>().GetDatabase(databaseName),
                 customersCollection));
 
+        // F-014: messages and notifications. Both entities were written by F-006 and F-007 and have NEVER
+        // been persisted, because nothing registered a repository for them. MongoDB creates each collection
+        // on first write, so there is no migration.
+        var messagesCollection = MongoConnectionResolver.ResolveSetting(configuration, "MessagesCollection", "messages");
+        var notificationsCollection = MongoConnectionResolver.ResolveSetting(configuration, "NotificationsCollection", "notifications");
+
+        serviceCollection.AddScoped<IRepository<MessageEntity>>(serviceProvider =>
+            new MongoDbRepository<MessageEntity>(
+                serviceProvider.GetRequiredService<IMongoClient>().GetDatabase(databaseName),
+                messagesCollection));
+
+        serviceCollection.AddScoped<IRepository<NotificationEntity>>(serviceProvider =>
+            new MongoDbRepository<NotificationEntity>(
+                serviceProvider.GetRequiredService<IMongoClient>().GetDatabase(databaseName),
+                notificationsCollection));
+
         serviceCollection.AddScoped<ProviderService>();
         serviceCollection.AddScoped<CustomerService>();
+        serviceCollection.AddScoped<IMessageService, MessageService>();
+        serviceCollection.AddScoped<INotificationService, NotificationService>();
 
         return serviceCollection;
     }

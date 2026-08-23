@@ -671,3 +671,72 @@ A cloud environment would make all of that a running cost without making any of 
 - `agenda-buddy-dwe` (first cloud deployment) is **deferred** rather than open-and-blocked, so `bd ready` stops offering work nobody intends to start.
 - **A re-evaluation trigger, not a date.** The condition is a state of the roadmap, so it is checked at each ship rather than scheduled. The first ship after the last pending feature closes should re-open this decision explicitly rather than inheriting it.
 - **The risk accepted:** the first deployment will exercise a capability that has by then been unexecuted for even longer, against an Azure surface that may have moved. That is the cost of the trade, and it is smaller than the alternative — carrying a live cloud environment for a product whose own roadmap says six features do not work.
+
+---
+
+## ADR-036 — Six capabilities land on three existing services, placed by data ownership
+
+**Date:** 2026-08-23 · **Status:** Accepted · **Feature:** F-014
+
+**Context.** Five `Library` services and one command handler had implementations, unit tests, and **zero** non-test references outside their own definitions. Making them reachable needs a host for each.
+
+**Decision.** No new service. Notes and payments go to **Booking** (both keyed by `appointment_identifier`, and appointments live there); messages and notifications to **Customer**, as two **new top-level route groups** (`/api/v1/messages`, `/api/v1/notifications`) rather than children of `/api/v1/customers`; reporting and deactivation to **Provider** (both computed from or mutating the provider document).
+
+**Rationale.** A message is addressed to a **person** — a provider has an inbox for exactly the same reason a customer does — so a URL saying `customers` about a provider's inbox asserts something false that every client then has to work around. **A service is a deployment unit, not a URL prefix**, and Identity already hosts two unrelated groups (`/api/v1/auth` and a top-level `/device-token`), so this is precedent rather than novelty. The alternative was an eighth service — a process, a Dockerfile, a health check, an AppHost resource and a `WaitFor` edge — to serve `InsertAsync` and `FindAllAsync` over two small collections.
+
+**Consequences.** Booking takes three of the six, which is why messaging went to Customer rather than piling a fourth family there. No cross-service reads were introduced. Four new repositories and four collection names; MongoDB creates each collection on first write, so there is no migration.
+
+---
+
+## ADR-037 — Appointment status becomes server-owned, and the transition rules become reachable
+
+**Date:** 2026-08-23 · **Status:** Accepted · **Feature:** F-014 · **Threat:** T-203
+
+**Context.** `AppointmentEntity.Book()` and `.Complete()` encode the transition rules and were **never called anywhere in production** — only in tests. What ran was `appointment.AppointmentStatus = appointmentEntity.AppointmentStatus` (`UpdateAppointmentCommandHandler.cs:51`), copying a public settable enum straight from the `PUT` body. **A caller could mark a brand-new appointment `Completed`** — a claim that work was delivered — or move a completed one back and erase it from the provider's count. `MobileApp` already drives status this way (`AppointmentDetailPage.xaml.cs:93`), so the design was live; only F-015's absence kept it harmless.
+
+This became F-014's business rather than a separate feature because **`ReportingService` is meaningless without it**: its two headline numbers derive from `AppointmentStatus`, so wiring reporting while status stayed unenforced would have shipped a dashboard structurally guaranteed to report zero completed appointments.
+
+**Decision.** The `PUT` **ignores** the status field and preserves the stored value. Status changes go through a dedicated route that applies the transition via **the entity's own methods**. Illegal transitions answer **409**. Completing is **provider-only**; either participant may book.
+
+**Rationale.** Routing through `Book()`/`Complete()` rather than a transition table in the handler keeps the invariant with the data, and makes a state added to the enum without a method **unreachable by construction** — the opposite of today. Leaving the field writable *and* adding the route would have added a door rather than closed one. Ignoring rather than rejecting the field is the compatible half: a `400` on a field the only existing client always sends would break a caller that has no other route yet.
+
+**Consequences.**
+- **Breaking for any client that sets status.** Free now, expensive after F-015 — the same argument that made F-016's breaking changes cheap.
+- **`Confirmed` and `Cancelled` stay unreachable.** `Confirmed` is only produced on a Calendar projection; `Cancelled` is never persisted because cancellation deletes. Adding them is a product question about what they mean.
+- **It activated a latent bug, which is fixed in the same feature.** `CancelAppointmentCommandHandler` refused to cancel a **`Booked`** appointment — the state a customer actually needs to cancel. Invisible while nothing set `Booked`; shipping the two changes separately would have looked like the status fix broke cancellation.
+- **Both stored copies are written** — the `appointments` document and the provider's embedded one — because `ReportingService` counts from the embedded list. They are not atomic together (separate documents, no replica set, no transaction); re-issuing the transition repairs a partial write, and that is recorded in the handler.
+
+---
+
+## ADR-038 — Payments are non-charging by default; Stripe only when a key is configured
+
+**Date:** 2026-08-23 · **Status:** Accepted · **Feature:** F-014 · **Threat:** T-206
+
+**Context.** `StripePaymentGateway(string apiKey)` took a raw string, no Stripe configuration section existed anywhere, and it assigned `StripeConfiguration.ApiKey` — a **process-global static** — inside request handling. There is no Stripe account, no key, and no deployment (ADR-035 defers cloud until every pending feature ships).
+
+**Decision.** `RecordingPaymentGateway` is registered by default: it mints an intent id prefixed **`local_`**, reports success, and contacts nothing. `StripePaymentGateway` is registered only when `Payments:Stripe:ApiKey` is present, which must be an **Aspire secret parameter** and never `appsettings.json`. The API key is assigned **once at construction**.
+
+**Rationale.** The two alternatives both fail. A gateway that throws leaves `PaymentService` unreachable — the exact condition F-014 exists to end — and makes AC-6 unwritable. A gateway that charges by default is unthinkable without an account. Recording locally is the only option that leaves the capability exercisable and the money untouched. Assigning the static once narrows a live credential's exposure from "written on every request" to "written at startup", which is as narrow as the Stripe SDK allows.
+
+**Consequences.**
+- **A `Succeeded` status is not proof of settlement**, and the signal is in the **stored data** rather than only a log: Stripe ids begin `pi_`, so `local_` is permanently identifiable. `api-contracts.md` §2 states it so a client cannot infer otherwise.
+- **Residual risk, accepted (PRD R4):** payments could stay permanently fake — a deployment forgets the key and records payments that never happened. Mitigated as ADR-033 mitigated the same shape: a loud startup warning naming the key, outside a local run.
+- **The amount stays unvalidated** (threat T-205(c)) and cannot be validated, because an appointment does not record which service it was booked for. Harmless while nothing charges; a real underpayment the moment a key is configured.
+
+---
+
+## ADR-039 — The provider report publishes no revenue figure
+
+**Date:** 2026-08-23 · **Status:** Accepted · **Feature:** F-014
+
+**Context.** `ReportingService` computed `EstimatedRevenue` as `completed.Count × sum(all active service fees)` — completed appointments multiplied by the **entire catalogue total**. A provider offering services at 50, 80 and 100 with two completed appointments was reported as having earned **460**.
+
+**It cannot be corrected by changing the formula.** `AppointmentEntity` records no service, no fee and no amount, so the input needed to compute revenue **does not exist in the stored data**.
+
+**Decision.** Remove `EstimatedRevenue`. Return `revenueAvailable: false` and `revenueUnavailableReason` instead.
+
+**Rationale.** Fixing appointment status (ADR-037) makes this number non-zero and **still wrong**, which is worse than zero: 0 reads as "no data yet", 460 reads as a fact. Publishing a number this system knows to be wrong is precisely the defect class F-014 exists to end — something marked delivered that does not do what its name says. A `bool` rather than a nullable number, so a client cannot render `null` as `0`. A stated absence rather than a silent omission, so a missing field reads as a decision rather than a serialisation bug.
+
+**Blast radius, swept before deciding.** `ProviderReport` and `EstimatedRevenue` appear **nowhere** outside `Library` and `Library.Tests`. Zero production consumers: free today, a client rewrite after F-015.
+
+**Consequences.** One pre-existing test replaced (`GetProviderReportAsync_CalculatesEstimatedRevenue`) — F-014's only deleted test, needing the same acknowledgement F-016's ADR-025 and F-021's ADR-034 needed. The data-model change that would make revenue computable — an appointment referencing its service — is filed, not built: it touches F-015's contract and F-025's rules and needs a product answer about historical appointments that have no service to reference.

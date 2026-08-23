@@ -25,6 +25,7 @@ namespace AgendaBuddy.ServiceDefaults.Tests;
 /// processor and could pass while real exports still leaked.
 /// </para>
 /// </remarks>
+[Collection(InProcessServerCollection.Name)]
 public class TelemetryPiiTest
 {
     private const string Email = "customer.pii@example.com";

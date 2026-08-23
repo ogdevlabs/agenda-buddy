@@ -63,4 +63,52 @@ public class AppointmentEntity
         else
             throw new InvalidOperationException("Only booked appointments can be completed.");
     }
+
+    /// <summary>
+    /// Moves this appointment to <paramref name="target"/> through the transition rules, and refreshes the
+    /// human-readable description to match.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">
+    /// The transition is not legal from the current status, or <paramref name="target"/> is not a state any
+    /// transition may reach.
+    /// </exception>
+    /// <remarks>
+    /// <para>
+    /// F-014 requirement 14 / threat T-203. <b>Until this existed, the rules above were dead code.</b>
+    /// Nothing in production called <see cref="Book"/> or <see cref="Complete"/>; what ran instead was
+    /// <c>appointment.AppointmentStatus = appointmentEntity.AppointmentStatus</c> in
+    /// <c>UpdateAppointmentCommandHandler</c> — the client's value, copied in, with the guards bypassed. A
+    /// customer could mark a brand-new appointment <c>Completed</c>, which is a claim that work was
+    /// delivered.
+    /// </para>
+    /// <para>
+    /// <b>This routes through the two existing methods rather than reimplementing the table</b> (ADR D-4):
+    /// the invariant stays in one place, and a state added to <see cref="AppointmentStatus"/> without a
+    /// method is unreachable by construction rather than silently permitted.
+    /// </para>
+    /// <para>
+    /// <c>Confirmed</c> and <c>Cancelled</c> are deliberately not reachable. <c>Confirmed</c> is only ever
+    /// produced on a Calendar projection, and <c>Cancelled</c> is never persisted because cancellation
+    /// deletes the document. Adding them is a product question about what those states mean, not a wiring
+    /// gap — see `api-contracts.md` §3.
+    /// </para>
+    /// </remarks>
+    public void TransitionTo(AppointmentStatus target)
+    {
+        switch (target)
+        {
+            case AppointmentStatus.Booked:
+                Book();
+                break;
+            case AppointmentStatus.Completed:
+                Complete();
+                break;
+            default:
+                throw new InvalidOperationException(
+                    $"'{target}' is not a state an appointment can be transitioned to. Legal targets are "
+                    + "Booked and Completed.");
+        }
+
+        AppointmentDescription = EnumHelper<AppointmentStatus>.GetEnumDescription(AppointmentStatus);
+    }
 }
