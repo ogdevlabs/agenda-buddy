@@ -11,13 +11,13 @@
 
 ## Current Phase
 
-Idle — Ready for next /brainstorm
+Inception
 
 ---
 
 ## Current Feature
 
-none
+api-gateway-and-mobile-contract
 
 _**F-014 `wire-unreached-services` SHIPPED** as `v0.4.0` — merged `b760794`, PR #40, episode 004 (Final).
 Operation closed 2026-08-23: smoke-tested against a live AppHost (7/7 services Healthy/alive, anonymous 401
@@ -48,10 +48,17 @@ none
 
 ## Roadmap Claim
 
-_None held. Run `/brainstorm` to claim the next priority feature._
+- **Feature ID:** F-015
+- **Feature record:** docs/pdlc/tasks/F-015/_feature.md
+- **Claimed by:** oscargarcia@ogdevlabs.onmicrosoft.com
+- **Claimed at:** 2026-08-23T14:00:00Z
+- **Branch:** (will be set at build pre-flight)
 
-**Next on the roadmap: F-015 `api-gateway-and-mobile-contract`**, then F-017 → F-018–F-020. **F-025
-`booking-correctness`** was split out of F-014 at Discover and is sequenced after it.
+_F-014 shipped as `v0.4.0` and its claim was released. `scripts/tasks.cjs` does not exist in this repo, so
+the claim above is tracked by hand (ROADMAP.md's Status/Claimed-by columns), same fallback used since F-013._
+
+**Next after it: F-017 → F-018–F-020.** **F-025 `booking-correctness`** was split out of F-014 at Discover
+and is sequenced after F-015.
 
 ---
 
@@ -63,19 +70,23 @@ _None active. Run `/night-shift <F-NNN>` to start an autonomous run (requires by
 
 ## Current Sub-phase
 
-none
+Discover
 
 ---
 
 ## Last Checkpoint
 
-Operation / Complete / 2026-08-23T13:30:00Z — **F-014 shipped as `v0.4.0`.** Episode 004 Final; PRD,
-brainstorm and design artifacts archived to `docs/pdlc/archive/`; ROADMAP, OVERVIEW, METRICS updated; claim
-released. Verified against a live AppHost, not by inspection: 7/7 services Healthy/alive, anonymous 401
-confirmed live on the new notes/status routes, a freshly registered Provider's JWT reached real business
-logic (403/404, never 401) on 4 of 9 new routes. Dependency audit and secret scan on `main` post-merge both
-clean. ⚠️ Two process gaps recorded, not glossed: no Review sub-phase ran this cycle (no findings file), and
-no episode draft existed at Construction Complete (drafted retroactively at Ship). Next: F-015.
+Inception / Discover / 2026-08-23T14:00:00Z — F-015 claimed (hand-tracked, `tasks.cjs` absent). Preflight
+clean: channel in-sync, remote sync 0 behind, standards plugin present (its six source repos' reachability
+under this `gh` auth is a separate, recurring condition — checked at the Define/Plan gates, not here).
+Starting Discover.
+
+_Previously: Operation / Complete / 2026-08-23T13:30:00Z — **F-014 shipped as `v0.4.0`.** Episode 004 Final;
+PRD, brainstorm and design artifacts archived to `docs/pdlc/archive/`; ROADMAP, OVERVIEW, METRICS updated;
+claim released. Verified against a live AppHost, not by inspection: 7/7 services Healthy/alive, anonymous
+401 confirmed live on the new notes/status routes, a freshly registered Provider's JWT reached real business
+logic (403/404, never 401) on 4 of 9 new routes. Two process gaps recorded, not glossed: no Review sub-phase
+ran this cycle, and no episode draft existed at Construction Complete._
 
 _Previously: Operation / Verify / 2026-08-23T13:00:00Z — Verified against a live AppHost; human sign-off
 given; DEPLOYMENTS.md finalized with the verified results._

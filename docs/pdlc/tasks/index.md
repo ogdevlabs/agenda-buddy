@@ -87,7 +87,7 @@ _No tasks._
 
 **9 of 9 done.** 19 acceptance criteria, 10 of them `[security]`; threats T-201…T-208, seven mitigated and one partially accepted (T-205's unvalidatable amount).
 
-## F-015 — api-gateway-and-mobile-contract  `planned`
+## F-015 — api-gateway-and-mobile-contract  `in progress`
 
 _No tasks._
 
