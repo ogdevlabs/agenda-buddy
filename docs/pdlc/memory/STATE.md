@@ -5,7 +5,7 @@
      Claude reads this file at the start of every session to auto-resume from the last checkpoint.
      If this file is missing or empty, PDLC will prompt you to run /pdlc init. -->
 
-**Last updated:** 2026-08-23T06:00:00Z
+**Last updated:** 2026-08-23T06:30:00Z
 
 ---
 
@@ -145,6 +145,10 @@ agent-teams
 > `agenda-buddy-e87` (appointments do not record which service they were booked for, so revenue is
 > uncomputable and a payment amount cannot be validated), plus F-025.
 >
+> **CI on PR #40 is GREEN** on all four jobs (`build-and-test`, `Integration — real services + MongoDB`,
+> `Mobile — Unit Tests`, `summary`) and the PR is mergeable/clean. **Session stopped here at the maintainer's
+> request** — see the Context Checkpoint below, which is written to be read cold.
+>
 > **Human-only, unchanged across four features:** rotate the Atlas credential (`agenda-buddy-41s`, P0); add
 > `Integration — real services + MongoDB` to `main`'s required checks (now **4** of the 10 consecutive greens);
 > §7's security scan satisfied by hand for the fourth time; the standards gate skipped for the **eighth**.
@@ -266,41 +270,68 @@ re-planning (`/continue`).
 
 ## Context Checkpoint
 
-<!-- F-021's cold-start block is retired — it lived here while the feature was in flight and is now
-     preserved in the episode and in verification.md. What remains is what a fresh session needs to
-     start the NEXT feature. -->
+<!-- ⚠️ STOP MARKER — written at the maintainer's request, 2026-08-23T06:30Z, at the end of a long session.
+     Read this block COLD: it is enough to resume without any of the prior conversation. -->
 
 ```json
 {
-  "written_at": "2026-08-23T04:15:00Z",
-  "phase": "Idle",
-  "feature": null,
-  "main_is_at": "v0.3.0 (f5d47d6)",
-  "next_feature": "F-014 wire-unreached-services",
-  "next_command": "/brainstorm F-014",
+  "written_at": "2026-08-23T06:30:00Z",
+  "reason": "maintainer asked for a marker and called a stop",
+  "phase": "Construction Complete",
+  "feature": "wire-unreached-services",
+  "feature_id": "F-014",
+  "active_task": null,
+  "resume_command": "review and merge PR #40, then /ship",
+
+  "where_everything_is": {
+    "main": "v0.3.0 (3d60896 + the f5d47d6 merge). F-021 shipped, tagged, verified live, Operation closed.",
+    "branch": "feat/F-014-wire-unreached-services @ 12c5286 — pushed, PR #40 OPEN, CI GREEN on all four jobs, mergeable/clean",
+    "working_tree": "clean apart from this marker",
+    "nothing_is_uncommitted": true
+  },
+
+  "what_happened_this_session": [
+    "Rolled origin/main back from 0d1a6ad to 5ef3e10 and put the in-flight F-021 work on a branch (maintainer's request). Only 0d1a6ad was rolled back; F-016's closeout and the tooling commit stayed on main deliberately.",
+    "Built F-021 identity-hardening, merged it as PR #39, verified it against a LIVE stack, tagged v0.3.0, closed Operation the same day (the four-day ship-gate lag F-016 had did not recur).",
+    "Recorded ADR-035: Azure is not reviewed until every pending feature ships AND the no-longer-needed tech debt is discharged. A skipped deploy is now EXPECTED, not a gap to report. Credential rotation does NOT wait for it.",
+    "Built F-014 wire-unreached-services end to end — Discover, PRD, 5 design artifacts, 9 tasks, implementation, 78 new tests — and opened PR #40. NOT merged.",
+    "Repaired 32 broken relative links across docs/pdlc (22 predated this session, including every artifact link in episode 002)."
+  ],
+
+  "the_single_most_important_thing_to_know": "F-014's PR #40 is green and unmerged. Merging it is the next action, then /ship. Do NOT rebuild any of it.",
+
+  "F014_FACTS_THAT_WILL_SAVE_TIME": {
+    "objectid_json": "System.Text.Json cannot serialise a MongoDB ObjectId usefully — it emits {timestamp, machine, pid, …} which cannot be read back. Library/Tools/ObjectIdJsonConverter.cs fixes it and IS registered in Booking, Customer, Provider. Calendar, Services and Profession still emit the broken shape (agenda-buddy-do5). Identity needs nothing: CredentialEntity.Id is a string with [BsonRepresentation(BsonType.ObjectId)] — arguably what every entity should have used.",
+    "enums_are_ints_on_the_wire": "No JsonStringEnumConverter is registered anywhere, so a string enum in a request body fails MODEL BINDING with a bare 400 and no validation detail. Send integers. The new status route takes a string on purpose and parses it (Enum.TryParse + Enum.IsDefined — TryParse accepts undefined numbers like \"99\").",
+    "appointment_status_is_server_owned": "The PUT ignores appointmentStatus. Status changes go through POST /api/v1/booking/appointments/{identifier}/status, applied via AppointmentEntity.TransitionTo, which routes through Book()/Complete(). Restoring the assignment in UpdateAppointmentCommandHandler reopens threat T-203.",
+    "both_status_copies_are_written": "An appointment lives in the `appointments` collection AND embedded in the provider document, and ReportingService counts from the EMBEDDED one. Writing only the collection leaves the dashboard stale. The two writes are not atomic together — no replica set, no transaction — and re-issuing the transition repairs a partial write.",
+    "payments_do_not_charge": "RecordingPaymentGateway is the default; StripePaymentGateway only when Payments:Stripe:ApiKey is set (an Aspire secret parameter, never appsettings.json). A `local_` intent-id prefix means no money moved. The AMOUNT IS UNVALIDATED and cannot be validated — see agenda-buddy-e87.",
+    "no_notification_writer_exists": "GET /api/v1/notifications returns [] and that is correct: nothing calls SendAsync. There is deliberately NO create route (threat T-208). F-022's dependency on NotificationService is NOT yet satisfied.",
+    "revenue_is_gone_on_purpose": "ProviderReport has revenueAvailable:false + revenueUnavailableReason instead of EstimatedRevenue. Do not 'restore' it: the old number was completed × the whole catalogue's fees, and the data to do it properly does not exist (agenda-buddy-e87)."
+  },
+
+  "GOTCHAS_THAT_COST_TIME_THIS_SESSION": [
+    "`scripts/tasks.cjs` DOES NOT EXIST in this repository, though docs/pdlc/tasks/index.md says it generates that file. F-021's and F-014's task stores are HAND-WRITTEN, and the structural security-AC-to-test check could not run.",
+    "Aspire streams service logs to the DASHBOARD over OTLP, not to the AppHost's stdout. Grepping the AppHost console for a service log line finds nothing and PROVES nothing — F-021's first AC-16 live check was vacuous for exactly this reason. Run the service standalone with --no-launch-profile to read its console.",
+    "The Aspire MongoDB container's root user is `admin`, not `root`, and ~/.microsoft/usersecrets/<id>/secrets.json is UTF-8 WITH A BOM (json.load needs encoding='utf-8-sig').",
+    "A bodyless 401 or 403 is NOT empty on the wire: UseStatusCodePages makes it ProblemDetails whose requestId differs per request. Compare normalised bodies.",
+    "Two TracerProviders in one process lose spans. Any new test class in AgendaBuddy.ServiceDefaults.Tests that starts a server MUST join InProcessServerCollection, or an unrelated telemetry test goes flaky at ~1 run in 3.",
+    "docker is NOT on PATH under Rancher Desktop: export PATH=\"$HOME/.rd/bin:$PATH\".",
+    "The integration suite takes ~2 minutes, which exceeds a 120 s foreground timeout — run it in the background."
+  ],
 
   "test_state": {
-    "backend": "431 via `dotnet test agenda-buddy-backend.slnf`",
-    "integration": "118 via `dotnet test AgendaBuddy.IntegrationTests/AgendaBuddy.IntegrationTests.csproj` — SEPARATE command (ADR-031), needs a container runtime",
-    "mobile": "74 (67 passing, 7 skipped) via `dotnet test MobileApp.Tests/MobileApp.Tests.csproj /p:MobileWorkloads=false`"
+    "backend": "452 via `dotnet test agenda-buddy-backend.slnf`",
+    "integration": "175 via `dotnet test AgendaBuddy.IntegrationTests/AgendaBuddy.IntegrationTests.csproj` (separate command, ADR-031, needs a container runtime)",
+    "mobile": "74 (67 passing, 7 skipped) via `/p:MobileWorkloads=false`",
+    "total": 701
   },
 
-  "WHAT_F014_WILL_HIT": {
-    "the_partial_update_primitive_now_exists": "IRepository<T>.FindOneAndUpdateAsync(filter, update) — ADR-032, added by F-021 partly FOR F-014. Six capabilities currently have to read-modify-write; they no longer do. Post-image, never upserts, and anything that must still be true at the moment of the write belongs in the FILTER.",
-    "transport_security_is_a_call_site": "Any new service must call app.UseAgendaBuddyTransportSecurity() immediately before UseAuthentication(). A test in Library.Tests reads all seven Program.cs files and will fail on an eighth that forgets — including its own completeness case, which fails if a new service directory appears unlisted.",
-    "the_harness_can_host_a_service": "Add a per-service anchor alias to AgendaBuddy.IntegrationTests/GlobalUsings.cs — never WebApplicationFactory<Program>, which is ambiguous across seven assemblies. StartService(environment:, settings:) takes per-instance configuration.",
-    "cache_invalidation_still_does_not_exist": "agenda-buddy-xrw. F-014 wires six capabilities onto a substrate where a write is invisible to reads for up to 5 minutes. Anything F-014 adds that writes then reads inherits this.",
-    "no_index_exists_on_any_collection": "agenda-buddy-b0w, observed on the live database: db.credentials.getIndexes() returns exactly [\"_id_\"]. Nothing in application code creates an index anywhere."
-  },
-
-  "GOTCHAS_THAT_SURVIVE_F021": [
-    "`scripts/tasks.cjs` DOES NOT EXIST in this repository, though docs/pdlc/tasks/index.md claims to be generated by it. F-021's task store is hand-written and the structural security-AC-to-test check could not run.",
-    "docker is NOT on PATH under Rancher Desktop: export PATH=\"$HOME/.rd/bin:$PATH\".",
-    "Aspire streams service logs to the DASHBOARD over OTLP, not to the AppHost's stdout. Grepping the AppHost console for a service's log line finds nothing and proves nothing — F-021's first AC-16 live check was vacuous for exactly this reason. To read a service's log, run it standalone with --no-launch-profile.",
-    "The Aspire MongoDB container's root user is `admin`, not `root`. Its password is the mongodb-password user secret, and secrets.json is UTF-8 with a BOM.",
-    "A bodyless 401 or 403 is NOT empty on the wire: UseStatusCodePages converts it to ProblemDetails, whose requestId differs per request. Compare normalised bodies, never raw ones.",
-    "Do NOT add AgendaBuddy.IntegrationTests to agenda-buddy-backend.slnf (ADR-031).",
-    "Cloud deployment is deferred by ADR-035 — a skipped deploy is expected, not a finding."
+  "next_actions_in_order": [
+    "1. Human: review and merge PR #40 (green, mergeable). Note the one replaced pre-existing test it asks you to acknowledge.",
+    "2. /ship F-014 — tag v0.4.0, CHANGELOG, episode 004, archive artifacts, release the claim. Verify against a live stack: the four defects this feature found were all found by running it.",
+    "3. Then F-015 api-gateway-and-mobile-contract, which inherits four client obligations recorded in F-014's ux-review.md, or F-025 booking-correctness, which is smaller.",
+    "4. Independent of all of the above and open across four features: rotate the Atlas credential (agenda-buddy-41s, P0)."
   ],
 
   "files_open": []
