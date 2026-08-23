@@ -139,9 +139,23 @@ _No tasks._
 
 _No tasks._
 
-## F-021 — identity-hardening  `planned`
+## F-021 — identity-hardening  `in progress`
 
-_No tasks._
+<!-- Hand-written: scripts/tasks.cjs is not present in this repository, so `tasks.cjs index` could not
+     regenerate this section. Everything else in this file is generated output — check before trusting a
+     diff here. -->
+
+| Task | Title | Status | Depends on |
+|---|---|---|---|
+| F-021-T01 | Add the `FindOneAndUpdateAsync` primitive to `IRepository<T>`, plus a fault-injection hook in the test double | done | — |
+| F-021-T02 | Replace `RefreshAsync`'s delete-then-insert with one atomic, targeted rotation | done | T01 |
+| F-021-T03 | Per-account failure counter and a self-clearing lock | done | T01 |
+| F-021-T04 | Log credential mutations with a hash prefix, never the address | done | T02, T03 |
+| F-021-T05 | Transport security: HSTS policy in ServiceDefaults, redirect before authentication in all seven services | done | — |
+| F-021-T06 | Per-IP limiter on `login` and `register`, and the AppHost declaring which run this is | done | T05 |
+| F-021-T07 | Verification, decisions, and the documentation that was made false by this feature | done | T02–T06 |
+
+**7 of 7 done.** 16 acceptance criteria, 9 of them `[security]`, each with a linked test; threats T-101…T-105 mitigated, T-106 accepted.
 
 ## F-022 — password-reset-flow  `planned`
 

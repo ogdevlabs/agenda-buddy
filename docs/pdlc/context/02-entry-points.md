@@ -32,7 +32,7 @@ All seven server entry points are C# **top-level statements** (no `Program` clas
 | 11 | `:31-32` | `AddEndpointsApiExplorer()` + `AddSwaggerGen()` |
 | 12 | `:35` | `builder.Build()` |
 | 13 | `:38-80` | **Development-only**: Swagger UI + `UseExceptionHandler` |
-| 14 | `:82-86` | `UseAntiforgery` → `UseAuthentication` → `UseAuthorization` → `UseStatusCodePages` → `UseHttpsRedirection` |
+| 14 | `:82-86` | ⚠️ **stale — F-021 reordered this.** Now `UseAgendaBuddyTransportSecurity` → `UseAntiforgery` → `UseAuthentication` → `UseAuthorization` → `UseStatusCodePages`. HSTS and the redirect run **first**, and the service no longer calls `UseHttpsRedirection` itself |
 | 15 | `:88-166` | Route group + endpoints |
 | 16 | `:168` | `app.Run()` |
 | 17 | `:171-179` | Local functions `CustomizeProblemDetails`, `GenerateErrorMessage` |
@@ -41,7 +41,9 @@ All seven server entry points are C# **top-level statements** (no `Program` clas
 
 ⚠️ **`UseHttpsRedirection()` is registered but no HTTPS endpoint is configured** — `appsettings.json` declares only `Http` (HTTP/1) and `gRPC` (h2c) endpoints. **Inference:** in Development the redirect silently no-ops because `launchSettings.json` supplies an `https` profile (`Booking/Properties/launchSettings.json:27` → `https://localhost:8033`), but running via `appsettings.json` alone there is nothing to redirect to.
 
-⚠️ **`UseHttpsRedirection()` is placed after `UseAuthentication`/`UseAuthorization`** (`:83-86`) — requests are authenticated on the insecure channel before the redirect is issued, so bearer tokens are read from plaintext HTTP requests.
+~~⚠️ **`UseHttpsRedirection()` is placed after `UseAuthentication`/`UseAuthorization`**~~ **CLOSED by F-021-T05** in all seven services, via one `UseAgendaBuddyTransportSecurity()` extension in `ServiceDefaults` called immediately before `UseAuthentication`. A test in `Library.Tests` reads all seven `Program.cs` files and fails on either the wrong order or a direct `UseHttpsRedirection` call.
+
+⚠️ **The observation above about "no HTTPS endpoint configured" still holds, and it is why the reorder was safe to make everywhere at once**: the redirect middleware is a no-op when it cannot determine an HTTPS port, which is every local run, every CI run and the whole integration suite. It also means the reorder fixes an exposure that only *materialises* once a real HTTPS listener exists — and HSTS, which F-021 added alongside it, is the control that matters for a credential that has already crossed the wire.
 
 ---
 
@@ -58,7 +60,9 @@ This table is the important content of this file: the seven services were copy-p
 | `AddSingleton<IRequestCollection>` | ✅ `:18` | ✅ `:19` | ✅ `:21` | ✅ `:22` | ✅ `:19` | ✅ `:19` | ❌ absent |
 | `AddAntiforgery` / `UseAntiforgery` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ **deliberate** `:87` |
 | `AddAuthorization()` | ✅ `:29` | ✅ `:7` | ✅ `:32` | ✅ `:33` | ✅ `:31` | ✅ `:31` | ✅ `:29` |
-| `UseHttpsRedirection` | ✅ unconditional | ✅ | ✅ | ✅ | ✅ | ✅ | ⚠️ **conditional** `:91` |
+| `UseHttpsRedirection` | ✅ **F-021: via `UseAgendaBuddyTransportSecurity()`, before auth** | ✅ same | ✅ same | ✅ same | ✅ same | ✅ same | ✅ **same — the Development-only guard is gone** |
+| `UseAgendaBuddyTransportSecurity` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ with `includeRateLimitingInAudit: true` |
+| `UseRateLimiter` | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ **F-021, when `Security:RateLimiting:Enabled`** |
 | `UseHttpLogging` | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ **documented** `:81-86` |
 | MSBuild SDK | `.Web` | `.Web` | `.Web` | `.Web` | `.Web` | ⚠️ **`.Worker`** | `.Web` |
 | `IDateTimeProvider` registered | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ `:23` |

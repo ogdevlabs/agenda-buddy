@@ -95,7 +95,20 @@ public class ServiceHostFixture<TEntryPoint>(CryptoSessionFixture crypto) : IAsy
     /// <c>if (app.Environment.IsDevelopment())</c>, so several F-016 criteria (notably AC-23 / threat
     /// T-004, which is about the <c>Production</c> 403 body) are only meaningful with this set.
     /// </param>
-    public ServiceHost StartService(string? environment = null)
+    /// <param name="settings">
+    /// Extra configuration for this instance, applied through <c>UseSetting</c> exactly as the
+    /// connection string is. Added by F-021 so the harness can switch on controls that are
+    /// <b>off by default</b> — <c>Security:RateLimiting:Enabled</c> and <c>Security:Hsts:Enabled</c>.
+    /// <para>
+    /// That capability is the mitigation for threat T-103: both controls are gated on configuration
+    /// rather than on <c>IsProduction()</c>, because the AppHost runs every service as Production
+    /// locally — so without a way to enable them here, the only tests that could reach them would be
+    /// ones that never run, and "shipped but never switched on" is precisely F-016's original defect.
+    /// </para>
+    /// </param>
+    public ServiceHost StartService(
+        string? environment = null,
+        IReadOnlyDictionary<string, string>? settings = null)
     {
         if (ContainerConnectionString is null)
         {
@@ -117,6 +130,11 @@ public class ServiceHostFixture<TEntryPoint>(CryptoSessionFixture crypto) : IAsy
             if (environment is not null)
             {
                 builder.UseEnvironment(environment);
+            }
+
+            foreach (var setting in settings ?? new Dictionary<string, string>())
+            {
+                builder.UseSetting(setting.Key, setting.Value);
             }
         });
 

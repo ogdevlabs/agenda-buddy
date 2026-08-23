@@ -86,6 +86,23 @@ public class MongoDbRepository<TEntity> : IRepository<TEntity> where TEntity : c
         return await _collection.Find(filter).ToListAsync();
     }
 
+    /// <inheritdoc />
+    /// <remarks>
+    /// <c>IsUpsert</c> is left at its default of <c>false</c> and no option sets it — F-021 AC-9 depends
+    /// on that, and it is stated here because the next person to add an overload will be tempted.
+    /// <c>ReturnDocument.After</c> is what makes the returned counter usable for the lockout decision.
+    /// </remarks>
+    public async Task<TEntity?> FindOneAndUpdateAsync(BsonDocument filter, BsonDocument update)
+    {
+        var options = new FindOneAndUpdateOptions<TEntity>
+        {
+            ReturnDocument = ReturnDocument.After,
+            IsUpsert = false
+        };
+
+        return await _collection.FindOneAndUpdateAsync<TEntity>(filter, update, options);
+    }
+
     public async Task<(IEnumerable<TEntity> Items, long TotalCount)> GetPagedAsync(int skip, int take)
     {
         // Normalised because Skip(-1) throws on the driver but is a silent no-op in LINQ, and

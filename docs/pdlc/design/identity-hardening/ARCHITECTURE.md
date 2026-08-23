@@ -1,7 +1,21 @@
 # Architecture — Identity Hardening (F-021)
 
 **Date:** 2026-08-22 · **PRD:** [`PRD_F-021_identity-hardening_2026-08-22.md`](../../prds/PRD_F-021_identity-hardening_2026-08-22.md)
-**Status:** Draft — pending the Step 12 design approval gate
+**Status:** Approved 2026-08-22 · **Built** 2026-08-22 — see [`verification.md`](verification.md)
+
+> **Two things this design got wrong, corrected during Construction rather than papered over:**
+>
+> 1. **§5's primitive returns a post-image, and §3.2's flow needs one more step than shown.** Minting the
+>    access token needs the email and role, which only the matched document supplies — so the signing key
+>    has to be in hand *before* the write, or a key failure would discover itself after the client's
+>    refresh token was already consumed. The integration harness then caught the consequence of reading
+>    it too strictly: hosting Identity without `JWT_PRIVATE_KEY` turned every *rejected* refresh into a
+>    500 instead of a 401. The key is now read without throwing, and the throw moved behind the match.
+>    No unit test could have seen this — they all set the variable in their constructor.
+> 2. **§4's "under their flags" was not literally implementable for the redirect.** `UseHttpsRedirection`
+>    is registered **unconditionally**: six services already called it that way, so a flag defaulting to
+>    off would have silently removed an existing control, and one defaulting to on would be decorative.
+>    Only HSTS is flag-gated. Recorded in ADR-033.
 
 ---
 

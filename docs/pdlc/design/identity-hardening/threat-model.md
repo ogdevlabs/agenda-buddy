@@ -48,7 +48,7 @@
 - **Current mitigation status:** **None.** Zero rate-limiter references solution-wide.
 - **Proposed action (party recommendation):** **Mitigate now** — per-IP sliding-window limiter on **both** `login` and `register`, evaluated before any BCrypt work or database access. 10 requests/minute ≈ 2.6 s of CPU/min/IP against a legitimate need of 2–3 attempts.
   - **Testable acceptance criterion:** Given rate limiting enabled, when more than the configured number of requests arrive from one IP inside the window, then the excess receive `429` with `Retry-After`, **and no BCrypt work is performed for them** — asserted against a running service. *(PRD AC-6)*
-- **Decision (human, at Step 12 approval):** *pending*
+- **Decision (human, at Step 12 approval):** **approved — mitigate now** (see Approval Outcomes)
 - **Cross-talk note:** This threat **inverted the feature's own premise.** F-021 was written around credential guessing; the measurement showed guessing runs at 3.8 attempts/sec/core, while the *same* cost makes DoS trivial. Pulse's measurement + Phantom's reading of the T-005 dummy-hash mitigation together produced it — neither lens alone would have.
 
 ### T-102 — Write amplification against the credential collection
@@ -63,7 +63,7 @@
 - **Current mitigation status:** N/A — introduced by this feature.
 - **Proposed action (party recommendation):** **Mitigate now**, by ordering: the per-IP limiter is evaluated **before** the per-account write, so the write is rate-limited before it happens. The lock's **automatic expiry** bounds the targeted-lock damage to one window; there is deliberately no permanent lock (`ARCHITECTURE.md` D-5).
   - **Testable acceptance criterion:** Given N consecutive failed logins, when the counter is written, then the write is a targeted atomic increment and never a whole-document replacement. *(PRD AC-11)* — and, given a throttled IP, no counter write occurs at all *(PRD AC-6 side effect)*.
-- **Decision (human, at Step 12 approval):** *pending*
+- **Decision (human, at Step 12 approval):** **approved — mitigate now** (see Approval Outcomes)
 - **Cross-talk note:** Echo raised the read-path-becomes-write-path concern; Phantom sharpened it into an attacker-controlled write; Neo's ordering answer (per-IP first) resolves both at once.
 
 ### T-103 — Security control silently disabled by configuration
@@ -78,7 +78,7 @@
 - **Current mitigation status:** N/A — introduced by this feature's own design choice.
 - **Proposed action (party recommendation):** **Mitigate now** — each service **warns loudly at startup** when a flag is off while it is not running locally (`ARCHITECTURE.md` D-7), and the integration harness switches both **on** so neither control can ship unexercised.
   - **Testable acceptance criterion:** Given the harness enables both flags, when the suite runs, then the `429` behaviour and the `Strict-Transport-Security` header are each asserted against a running service. *(PRD AC-15)*
-- **Decision (human, at Step 12 approval):** *pending*
+- **Decision (human, at Step 12 approval):** **approved — mitigate now** (see Approval Outcomes)
 - **Cross-talk note:** Surfaced as risk R4 at Define and deliberately left unresolved for Design; the maintainer chose "warn loudly" over "fail fast" so a config slip is visible without becoming an outage.
 
 ### T-104 — Lockout bypass via a live refresh token
@@ -93,7 +93,7 @@
 - **Current mitigation status:** N/A — the lock does not exist yet.
 - **Proposed action (party recommendation):** **Mitigate now** — the lock condition is part of the rotation **filter**, so a locked account cannot refresh, at no extra query cost (`data-model.md` §5).
   - **Testable acceptance criterion:** Given a locked account and a valid refresh token, when the token is presented, then the response is `401` and no token pair is issued. *(PRD AC-4)*
-- **Decision (human, at Step 12 approval):** *pending*
+- **Decision (human, at Step 12 approval):** **approved — mitigate now** (see Approval Outcomes)
 
 ### T-105 — PII disclosure through the new log sink
 
@@ -107,7 +107,7 @@
 - **Current mitigation status:** N/A — introduced by this feature.
 - **Proposed action (party recommendation):** **Mitigate now** — log the operation, the outcome, and a **non-reversible hash prefix** of the account identifier. Never the address.
   - **Testable acceptance criterion:** Given any credential mutation, when log output is inspected, then the operation and outcome are recorded and **no raw email address appears** in any line. *(PRD AC-16)*
-- **Decision (human, at Step 12 approval):** *pending*
+- **Decision (human, at Step 12 approval):** **approved — mitigate now** (see Approval Outcomes)
 - **Cross-talk note:** Jarvis flagged the collision between "log credential mutations" and §4; Phantom escalated it to a threat because the F-013 precedent is exact — telemetry was switched on and immediately began exporting real customer emails in `url.path` (threat T-004).
 
 ### T-106 — Distributed rate-limit evasion across replicas
@@ -122,7 +122,7 @@
 - **Current mitigation status:** Partial by accident — there is only one instance.
 - **Proposed action (party recommendation):** **Accept**, documented. Fixing it needs a distributed store F-021 is not scoped to add, and the per-account counter (which *is* shared, being in MongoDB) still holds across replicas — so the two controls degrade unevenly rather than both failing. Re-evaluation trigger: **the first deployment that runs more than one Identity replica**, which cannot happen before F-017.
   - **Residual risk:** an attacker with access to N replicas gets N× the per-IP allowance for the CPU-exhaustion attack. The per-account lock is unaffected.
-- **Decision (human, at Step 12 approval):** *pending*
+- **Decision (human, at Step 12 approval):** **approved — mitigate now** (see Approval Outcomes)
 
 ---
 
@@ -150,12 +150,22 @@
 
 | Threat ID | Party recommendation | Human decision | Rationale |
 |---|---|---|---|
-| T-101 | Mitigate now | *pending* | |
-| T-102 | Mitigate now | *pending* | |
-| T-103 | Mitigate now | *pending* | |
-| T-104 | Mitigate now | *pending* | |
-| T-105 | Mitigate now | *pending* | |
-| T-106 | Accept (documented) | *pending* | |
+| T-101 | Mitigate now | **Mitigated** | Per-IP sliding window on `login` **and** `register`, evaluated before any BCrypt work or database access. Asserted against a running Identity service (`AuthRateLimitTest`), not against a policy object |
+| T-102 | Mitigate now | **Mitigated** | Atomic `$inc`, never a read-modify-write and never an upsert, ordered behind the limiter. Both the write *shape* (unit) and "a throttled request moves the counter by zero" (integration) are asserted |
+| T-103 | Mitigate now | **Mitigated** | Startup warning naming the exact key when a control is off outside a local run; the AppHost declares `Security__Local=true` locally and turns both controls **on** in the cloud graph; the harness switches them on so neither can ship unexercised |
+| T-104 | Mitigate now | **Mitigated** | The "not locked" condition is part of the rotation filter, so a locked account cannot refresh, at no extra query cost. Refusing also does not consume the token |
+| T-105 | Mitigate now | **Mitigated** | Mutations log an operation, an outcome and `acct_<12 hex>`; a test asserts no log line contains the address, the local part, the password or either token |
+| T-106 | Accept (documented) | **Accepted** | Per-process limiter state, no distributed cache in this project. One Identity replica exists and none is deployed. Re-evaluation trigger: the first deployment running more than one replica, which cannot happen before F-017 |
+
+**Open questions, answered at the same gate:**
+
+1. **T-NL-2 (a locked account answers faster than a wrong password) — accepted as a trade.** Hiding the
+   oracle means burning 262 ms of CPU per locked attempt, which re-arms T-101, a higher-severity threat.
+   The design chooses fast and says so. Recorded here rather than left implicit.
+2. **T-106 — accepted**, as above.
+3. **The missing unique index on `credentials.email`** was confirmed at Construction and **filed rather
+   than fixed**: it is a registration-correctness issue, not a hardening one, and F-021 changed nothing
+   about it.
 
 ---
 

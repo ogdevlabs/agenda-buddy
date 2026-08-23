@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Library.Repositories;
+using MongoDB.Bson;
 using Xunit;
 
 namespace Common.Tests.Repositories;
@@ -81,5 +82,63 @@ public class MongoDbRepositoryTest
         var implementation = typeof(MongoDbRepository<>).GetMethod(PagedMethod);
 
         Assert.NotNull(implementation);
+    }
+
+    // ── F-021-T01 · the partial-update primitive (ADR-032) ───────────────────────────────────────
+    //
+    // Same three-way split as GetPagedAsync above: contract here, semantics against the in-memory
+    // implementer in Identity.Tests/Helpers/InMemoryCredentialRepositoryUpdateTest.cs, and MongoDB's
+    // own behaviour — including that it never upserts — in the integration harness's
+    // CredentialUpdatePrimitiveTest. Stated so F-021's verification does not claim the Mongo half is
+    // covered by a unit test.
+
+    private const string UpdateMethod = "FindOneAndUpdateAsync";
+
+    [Fact]
+    public void IRepository_DeclaresFindOneAndUpdateAsync_TakingAFilterAndAnUpdate()
+    {
+        var method = typeof(IRepository<>).GetMethod(UpdateMethod);
+
+        Assert.NotNull(method);
+        Assert.Equal(
+            new[] { typeof(BsonDocument), typeof(BsonDocument) },
+            method!.GetParameters().Select(parameter => parameter.ParameterType).ToArray());
+        Assert.Equal(
+            new[] { "filter", "update" },
+            method.GetParameters().Select(parameter => parameter.Name).ToArray());
+    }
+
+    [Fact]
+    public void FindOneAndUpdateAsync_ReturnsTheMatchedEntity_SoNullMeansNothingMatched()
+    {
+        var entityType = typeof(IRepository<>).GetGenericArguments()[0];
+        var returnType = typeof(IRepository<>).GetMethod(UpdateMethod)!.ReturnType;
+
+        Assert.Equal(typeof(Task<>), returnType.GetGenericTypeDefinition());
+        Assert.Equal(entityType, returnType.GetGenericArguments()[0]);
+    }
+
+    [Fact]
+    public void IRepository_HasExactlyOnePartialUpdatePrimitive()
+    {
+        // PRD requirement 3 forbids this growing into a query-builder abstraction. The cheapest
+        // enforcement is a count: the next person who adds FindOneAndUpdateAsync(filter, update,
+        // options) or an UpdateManyAsync has to come here and argue for it.
+        var partialUpdateMembers = typeof(IRepository<>)
+            .GetMethods()
+            .Where(method => method.Name.Contains("Update", StringComparison.Ordinal))
+            .Select(method => method.Name)
+            .OrderBy(name => name, StringComparer.Ordinal)
+            .ToArray();
+
+        Assert.Equal(
+            new[] { "FindOneAndUpdateAsync", "UpdateAsync", "UpdateByIdentifierAsync" },
+            partialUpdateMembers);
+    }
+
+    [Fact]
+    public void MongoDbRepository_ImplementsFindOneAndUpdateAsync()
+    {
+        Assert.NotNull(typeof(MongoDbRepository<>).GetMethod(UpdateMethod));
     }
 }

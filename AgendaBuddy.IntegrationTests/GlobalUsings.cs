@@ -11,3 +11,4 @@ global using ProviderAnchor = Provider.Configurations.MongoDbConfiguration;
 global using CalendarAnchor = Calendar.Configurations.MongoDbConfiguration;
 global using ServicesAnchor = Services.Configurations.MongoDbConfiguration;
 global using BookingAnchor = Booking.Configuration.MongoDbConfiguration;   // NOTE: Configuration, SINGULAR — Booking is the odd one out
+global using IdentityAnchor = Identity.Configurations.MongoDbConfiguration;  // F-021: the auth routes

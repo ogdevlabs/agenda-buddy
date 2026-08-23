@@ -193,7 +193,7 @@ The only client is `MobileApp`. Its API services build URLs relative to a single
 
 - No `GET` route for a single appointment anywhere in the solution.
 - No pagination, filtering, or sorting on any list endpoint — `GET /api/v1/providers` and `GET /api/v1/customers` return unbounded collections.
-- No rate limiting (`AddRateLimiter` appears nowhere).
+- ~~No rate limiting (`AddRateLimiter` appears nowhere).~~ **F-021:** per-IP sliding window on `POST /api/v1/auth/login` and `POST /api/v1/auth/register` — the two routes that spend BCrypt — gated on `Security:RateLimiting:Enabled`, default off, on in the cloud graph. Excess requests get **429** with `Retry-After`. `refresh` and `logout` are deliberately unlimited.
 - No CORS policy registered in any service.
 - No API versioning package — `v1` is a literal string in the route, so there is no version negotiation.
 - No `/health` or `/ready` endpoint on any service (see `12-observability.md`).

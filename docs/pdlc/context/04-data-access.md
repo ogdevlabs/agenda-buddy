@@ -30,6 +30,8 @@ Single generic interface, `where TEntity : class`, 11 members:
 | `Task<TEntity?> FindOneAsync(BsonDocument filter)` | `:13` | Nullable — correct |
 | `Task<TEntity?> FindOneAndDeleteAsync(BsonDocument filter)` | `:14` | Atomic read-and-remove |
 | `Task<IEnumerable<TEntity>> FindAllAsync(BsonDocument filter)` | `:15` | Unbounded |
+| `Task<(IEnumerable<TEntity> Items, long TotalCount)> GetPagedAsync(int skip, int take)` | `:39` | F-016-T10 / ADR-023. Negatives normalised to 0 in **both** implementers |
+| `Task<TEntity?> FindOneAndUpdateAsync(BsonDocument filter, BsonDocument update)` | `:78` | **F-021-T01 / ADR-032.** Post-image, **never upserts**. The only partial-update primitive — everything else here replaces whole documents |
 
 ⚠️ **Nullability contract is inconsistent and wrong.** `GetByIdAsync` (`:6`) and `Find` (`:12`) declare non-nullable `TEntity` but their implementations use `FirstOrDefaultAsync()` (`MongoDbRepository.cs:30,71`) which returns `null` on a miss. Callers that trust the signature get an unguarded `NullReferenceException`; callers that check get a compiler nullable warning. Live examples:
 - `CancelAppointmentCommandHandler.cs:52` — `appointment.EmailProvider` immediately after `SearchAppointmentAsync`, no null check.
@@ -60,10 +62,17 @@ Two constructors:
 | `DeleteAsync` | `:56-59` | `DeleteOneAsync` on `_id` | |
 | `DeleteByIdentifierAsync` | `:63-66` | `DeleteOneAsync` on `identifier` | |
 | `Find` / `FindOneAsync` | `:71`, `:76` | `Find(filter).FirstOrDefaultAsync()` | Identical implementations |
-| `FindOneAndDeleteAsync` | `:81` | `FindOneAndDeleteAsync` | Used only by `IdentityService.RefreshAsync` |
+| `FindOneAndDeleteAsync` | `:81` | `FindOneAndDeleteAsync` | ⚠️ **Now has NO callers.** Its only caller was `IdentityService.RefreshAsync`, whose delete-then-insert F-021-T02 replaced. Left in place rather than removed: it is a legitimate primitive, and the interface is implemented by two types |
+| `FindOneAndUpdateAsync` | `:90` | `FindOneAndUpdateAsync` with `ReturnDocument.After`, `IsUpsert = false` | **F-021.** All F-021 writes go through it: rotation, the failed-attempt `$inc`, the lock, the counter reset, and logout's `$unset`. No upsert is a property of the method, which is what AC-9 rests on |
 | `FindAllAsync` | `:86` | `Find(filter).ToListAsync()` | No limit |
 
 ⚠️ **`UpdateAsync`/`UpdateByIdentifierAsync` return `ModifiedCount > 0`, so a no-op update reads as failure.** Writing a document identical to the stored one yields `ModifiedCount == 0` → `false`. Callers treat that as "not found": `UpdateProviderCommandHandler.cs:24` skips the success audit event, and `Provider/Program.cs:188-190` returns `404 NotFound`. **Failure scenario:** a client PUTs an unchanged provider record and gets a 404. `MatchedCount` would be the correct predicate.
+
+> **F-021 delta.** The three whole-document replacements on the `credentials` collection are gone: refresh
+> rotation, the login refresh-token write and the logout unset are all targeted updates now. That leaves
+> `UpdateAsync`/`UpdateByIdentifierAsync` — and the `ModifiedCount` defect below — reachable only from the
+> six domain services. The underlying cause the security catalog named ("`IRepository<T>` offers no
+> partial-update primitive") no longer holds.
 
 ⚠️ **No projections anywhere.** Every read materialises the full document. For `ProviderEntity` — which embeds the whole appointment history and service catalogue (`05-data-model.md`) — `GetAllProvidersAsync()` on the anonymous `GET /api/v1/providers` route pulls every provider's entire nested graph into memory and serialises it to the wire.
 

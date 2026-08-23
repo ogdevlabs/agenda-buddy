@@ -98,6 +98,28 @@ There are **two different config shapes** for the same MongoDB settings, and the
 
 Both JWT keys are RSA PEM and are passed through `.Replace("\\n", "\n")` (`AuthenticationExtensions.cs:23`, `IdentityService.cs:193`) so they can be supplied as single-line env values.
 
+### F-021's security keys — optional, and **off** unless something sets them
+
+None of these are required, and that is the design (ADR-033): they are gated on **configuration** rather
+than on `IsProduction()`, because every service runs as *Production* under the local AppHost, so the
+environment name cannot carry "this is a laptop".
+
+| Key | Read at | Default | Effect |
+|---|---|---|---|
+| `Security:Hsts:Enabled` | `AgendaBuddy.ServiceDefaults/TransportSecurity.cs` | `false` | `Strict-Transport-Security` on responses served over TLS. All 7 services |
+| `Security:Hsts:MaxAgeDays` | same | `30` | `max-age`. Conservative on purpose — a browser honours it for the whole window whatever the server later says |
+| `Security:RateLimiting:Enabled` | `Identity/Program.cs` | `false` | Registers the limiter **and** attaches the policy to `login`/`register`. With it off, neither exists — the pipeline is byte-for-byte pre-F-021 |
+| `Security:RateLimiting:PermitPerMinute` | `Identity/Extensions/RateLimitingExtensions.cs` | `10` | Per-IP sliding window. Clamped to ≥ 1, because a configured `0` would take `login` down entirely |
+| `Security:Lockout:MaxFailedAttempts` | `Identity/Configurations/SecurityOptions.cs` | `10` | Consecutive failures before a lock. **No enable flag** — a self-clearing lock needs nothing switched off locally |
+| `Security:Lockout:WindowMinutes` | same | `15` | How long a lock lasts before it expires by itself |
+| `Security:Local` | `SecurityFlags.LocalRunKey` | unset | ⚠️ **Set by the AppHost, not by a human.** It tells a service that "off" is deliberate, so it logs no startup warning |
+
+⚠️ **These keys are deliberately absent from every `appsettings.json`.** The defaults live in code, and each
+service warns at startup — naming the exact key — when a control is off while `Security:Local` is unset and
+the environment is not Development. Six redundant `false` values to keep in sync would be a worse discovery
+path than a log line that tells you what to set. The **cloud** graph sets them in `AppHostWiring.cs`, so
+shipping without them takes an edit rather than an omission (threat T-103).
+
 ⚠️ **There is no `.env.example`** in the repo, yet `docker-compose.override.yml:137-138` interpolates `${JWT_PUBLIC_KEY}` / `${JWT_PRIVATE_KEY}` from a `.env` that is gitignored and undocumented. A fresh clone cannot start the Identity container without out-of-band knowledge. `README.md` `[not verified — not read in this scan]`.
 
 ### appsettings keys, by service

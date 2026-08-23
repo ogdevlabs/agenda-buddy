@@ -130,11 +130,13 @@ Domain methods: `Book()` (`:51`) enforces `Requested → Booked`; `Complete()` (
 | Field | Column | Notes |
 |---|---|---|
 | `Id` | `_id` | `:9-11` — `[BsonId] [BsonRepresentation(BsonType.ObjectId)]` on a **`string`** (the only entity to do this; all others use `ObjectId`) |
-| `Email` | `email` | `:16` — `[Required] [EmailAddress]`; unique index created by `seed-mongo.sh:39` |
+| `Email` | `email` | `:16` — `[Required] [EmailAddress]`. ⚠️ **The "unique index created by `seed-mongo.sh:39`" is effectively no constraint at all:** that script is stale (see `14-glossary.md`) and no application code creates any index, so a database provisioned by the AppHost or the harness has nothing beyond `_id`. Filed as `agenda-buddy-b0w` at F-021 Construction |
 | `PasswordHash` | `password_hash` | `:20` — BCrypt, work factor 12 |
 | `Role` | `role` | `:25` — `"Provider"` or `"Customer"`, single role in v1 |
 | `MustResetPassword` | `must_reset_password` | `:29` — default `false` |
-| `RefreshToken` | `refresh_token` | `:33` — embedded `RefreshTokenDocument?`, null when no session |
+| `RefreshToken` | `refresh_token` | `:33` — embedded `RefreshTokenDocument?`, null when no session. **F-021:** rotated by a targeted `$set` through `FindOneAndUpdateAsync`; the document is never deleted, and logout `$unset`s just this field |
+| `FailedAttempts` | `failed_attempts` | **F-021**, `[BsonIgnoreIfDefault]`. Consecutive failed logins; written **only** by an atomic `$inc`, reset to 0 by a successful login. Absent ⇒ 0, which is why no migration was needed |
+| `LockUntil` | `lock_until` | **F-021**, `[BsonIgnoreIfNull]`. UTC instant a lockout expires; `null` **or in the past** means unlocked, so the lock clears itself with no write and no sweeper job. There is deliberately no permanent lock and no admin unlock — F-022 does not exist, so a lock needing a human to clear it would strand a real provider, and let an attacker strand one on purpose |
 
 `RefreshTokenDocument` (`:38-47`): `hash` (SHA-256 hex of the opaque token — raw token never stored) and `expiry` (UTC).
 

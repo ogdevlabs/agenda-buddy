@@ -36,6 +36,20 @@ builder.Services.AddSingleton<IDateTimeProvider, SystemDateTimeProvider>();
 builder.Services.AddScoped<IdentityService>();
 builder.Services.AddScoped<IDeviceTokenService, DeviceTokenService>();
 
+// F-021: lockout thresholds. No enable flag — with the defaults an account locks only after 10
+// consecutive wrong passwords and unlocks itself 15 minutes later, so there is nothing a local run
+// needs switched off, and a third flag would only be a third way for a control to go missing (T-103).
+builder.Services.Configure<LockoutOptions>(
+    builder.Configuration.GetSection(LockoutOptions.Section));
+
+// F-021 / threat T-101: per-IP limiting on the two routes that spend BCrypt. Read eagerly because the
+// flag decides whether the limiter is registered at all — with it off, neither this nor UseRateLimiter
+// runs and the pipeline is exactly what it was before F-021, which is what makes the feature revertible
+// by configuration alone.
+var rateLimiting = new RateLimitingOptions();
+builder.Configuration.GetSection(RateLimitingOptions.Section).Bind(rateLimiting);
+if (rateLimiting.Enabled) builder.Services.AddAuthRateLimiter(rateLimiting);
+
 // JWT Bearer authentication (reads JWT_PUBLIC_KEY env var — fails fast if absent)
 builder.Services.AddAgendaBuddyAuthentication();
 builder.Services.AddAuthorization();
@@ -52,6 +66,13 @@ var app = builder.Build();
 // /health runs every check; /alive only the live-tagged ones, so a service waiting on MongoDB is
 // not restarted for being unready.
 app.MapDefaultEndpoints();
+
+// FIRST in the pipeline, and that is the whole point (threat T-101): a throttled request must be
+// refused before it can reach BCrypt or the database, so it costs no CPU and takes no write. A limiter
+// registered behind the handler would still let the denial of service land. Routing runs ahead of any
+// middleware registered here — WebApplication inserts it at the head of the pipeline when it is not
+// called explicitly — so the per-endpoint policy metadata is already resolved by this point.
+if (rateLimiting.Enabled) app.UseRateLimiter();
 
 if (app.Environment.IsDevelopment())
 {
@@ -101,17 +122,28 @@ if (app.Environment.IsDevelopment())
 // logging middleware without first excluding POST /api/v1/auth/login and
 // POST /api/v1/auth/device-token from the logged paths.
 // Identity is API-only — no HTML forms, no antiforgery
+// F-021 PRD requirement 13: HSTS (under its flag) and the HTTPS redirect run BEFORE authentication.
+// This service receives plaintext passwords, and until F-021 its redirect ran last — and only outside
+// Development, a condition that meant nothing here because the AppHost runs every service as
+// Production (ARCHITECTURE.md D-6). The environment guard is gone: the flag is the switch now, and the
+// redirect is a no-op wherever no HTTPS port is configured.
+// `includeRateLimitingInAudit` is true for Identity alone: it owns the only two routes that spend
+// BCrypt, so it is the only service where a missing limiter flag is worth a startup warning.
+app.UseAgendaBuddyTransportSecurity(includeRateLimitingInAudit: true);
+
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseStatusCodePages();
-if (!app.Environment.IsDevelopment())
-    app.UseHttpsRedirection();
 
 var auth = app.MapGroup("api/v1/auth")
     .WithTags("IdentityAPI")
     .WithOpenApi();
 
-auth.MapPost("/register", async (RegisterRequest req, IdentityService svc) =>
+// Applied to `register` and `login` only, and only when the limiter is registered — RequireRateLimiting
+// with no registered policy throws at request time, so the two conditions have to agree. `refresh` and
+// `logout` stay unlimited: neither spends BCrypt, and throttling refresh would break the hourly
+// rotation a legitimate mobile client performs (D-4).
+var register = auth.MapPost("/register", async (RegisterRequest req, IdentityService svc) =>
 {
     var emailValidator = new System.ComponentModel.DataAnnotations.EmailAddressAttribute();
     if (string.IsNullOrWhiteSpace(req.Email) || !emailValidator.IsValid(req.Email))
@@ -131,7 +163,7 @@ auth.MapPost("/register", async (RegisterRequest req, IdentityService svc) =>
     catch (ServiceUnavailableException ex) { return Results.Problem(detail: ex.Message, statusCode: 503, title: "service_unavailable"); }
 }).WithName("Register");
 
-auth.MapPost("/login", async (LoginRequest req, IdentityService svc) =>
+var login = auth.MapPost("/login", async (LoginRequest req, IdentityService svc) =>
 {
     try
     {
@@ -141,6 +173,12 @@ auth.MapPost("/login", async (LoginRequest req, IdentityService svc) =>
     catch (UnauthorizedException) { return Results.Unauthorized(); }
     catch (ServiceUnavailableException ex) { return Results.Problem(detail: ex.Message, statusCode: 503, title: "service_unavailable"); }
 }).WithName("Login");
+
+if (rateLimiting.Enabled)
+{
+    register.RequireRateLimiting(RateLimitingOptions.PolicyName);
+    login.RequireRateLimiting(RateLimitingOptions.PolicyName);
+}
 
 auth.MapPost("/refresh", async (RefreshRequest req, IdentityService svc) =>
 {

@@ -10,6 +10,7 @@ Delivery records, one per shipped feature. Permanent — episodes are never arch
 |---------|---------|------|------|----|--------|
 | 001 | aspire-wiring | 2026-08-18 | [EPISODE_aspire-wiring_2026-08-17.md](EPISODE_aspire-wiring_2026-08-17.md) | #35 | Shipped (`v0.1.0`) |
 | 002 | secure-public-endpoints | 2026-08-18 | [EPISODE_secure-public-endpoints_2026-08-18.md](EPISODE_secure-public-endpoints_2026-08-18.md) | #38 | Shipped (`v0.2.0`) |
+| 003 | identity-hardening | 2026-08-22 | [EPISODE_identity-hardening_2026-08-22.md](EPISODE_identity-hardening_2026-08-22.md) | *(open)* | **Draft — built, not shipped** |
 
 **Naming:** `EPISODE_<feature-slug>_<YYYY-MM-DD>.md`, where the date is when the episode was opened, not
 when the feature shipped — 002 opened 2026-08-18 and its ship gate closed 2026-08-22.
