@@ -36,6 +36,10 @@ public static class Extensions
         builder.ConfigureOpenTelemetry();
         builder.AddDefaultHealthChecks();
 
+        // F-021: the HSTS *policy*, shared by all seven services. Placing the middleware is each
+        // service's own call — see TransportSecurityExtensions for why that cannot be centralised here.
+        builder.Services.AddAgendaBuddyTransportSecurity(builder.Configuration);
+
         builder.Services.AddServiceDiscovery();
 
         builder.Services.ConfigureHttpClientDefaults(http =>

@@ -1,5 +1,35 @@
 # 13 — Security
 
+> **⚠️ F-021 delta (2026-08-22, branch `feat/F-021-identity-hardening`, not yet merged).**
+>
+> **✅ CLOSED by F-021, with the test that reaches each one named in
+> `docs/pdlc/design/identity-hardening/verification.md`:**
+> - **`RefreshAsync`'s delete-then-insert is gone.** Rotation is one `FindOneAndUpdateAsync` whose filter
+>   carries the presented hash, the expiry check and a "not locked" condition; the credential is never
+>   deleted, so no fault can destroy it. The fault case is now an actual test — `InMemoryRepository` gained
+>   a hook that fires between matching and writing, which is what `11-testing.md:65` said was impossible.
+> - **`UseHttpsRedirection` runs before `UseAuthentication` in all seven services**, via one shared
+>   `UseAgendaBuddyTransportSecurity()`. Identity's `if (!IsDevelopment())` guard is removed — under the
+>   AppHost that condition was always true. A source-level test asserts the order in all seven and bans
+>   direct `UseHttpsRedirection` calls.
+> - **HSTS exists** (`Security:Hsts:Enabled`, conservative `max-age`, no `includeSubDomains`, no `preload`).
+> - **Rate limiting and lockout exist**: a per-IP sliding window on `login` **and** `register` — both spend
+>   262 ms of BCrypt, measured — plus a per-account counter and a **self-clearing** 15-minute lock.
+> - **Identity has a log sink**, and credential mutations are recorded with `acct_<12 hex>` rather than an
+>   address, because `PiiRedactingProcessor` redacts spans and not logs.
+>
+> **⚠️ New or still open after F-021:**
+> - Both controls are **gated on configuration and default off** (ADR-033) — services run as *Production*
+>   locally, so environment cannot carry the distinction. A deployment that never sets the keys ships
+>   without them (threat T-103); mitigated by a startup warning naming the key, by the cloud graph in
+>   `AppHostWiring.cs` setting them, and by the harness switching them on so neither ships unexercised.
+> - **The limiter is per-process** (T-106, accepted) and collapses to one bucket behind a proxy that does
+>   not forward the client address (`agenda-buddy-end`, F-017).
+> - **A locked account answers faster than a wrong password** (T-NL-2, accepted): hiding that oracle costs
+>   262 ms per attempt and re-arms the CPU-exhaustion threat.
+> - **HSTS is inert until TLS is terminated somewhere** — F-017.
+> - **`credentials` has no unique index on `email`** (`agenda-buddy-b0w`), confirmed not fixed.
+>
 > **⚠️ F-016 delta (2026-08-18, `v0.2.0`) — refreshed 2026-08-22 at the ship gate.**
 >
 > **✅ CLOSED by F-016, and demonstrated live rather than by inspection:** the anonymous
@@ -19,11 +49,8 @@
 >   deferred by ADR-026; quantified as review finding I-2.
 > - **Authorization failures are entirely unlogged** — no log sink at all, so IDOR probing leaves no trace
 >   (advisory A-1). Belongs to F-021/F-024.
-> - **The whole of F-021** — `RefreshAsync`'s delete-then-insert can permanently destroy an account;
->   `UseHttpsRedirection` runs *after* `UseAuthentication` in 6 services, so the bearer token is parsed from
->   the plaintext request before the redirect; no rate limiting or lockout on login; and `AssertOwner`'s
->   null-claim pass (`string.Equals(null, null)` is `true`, so the guard *succeeds* — `AssertOwnerAny`
->   handles this, `AssertOwner` does not).
+> - ~~**The whole of F-021**~~ — **all three items closed on the F-021 branch; see the delta above.** The
+>   fourth item once listed here (`AssertOwner`'s null-claim pass) was closed earlier, by F-016-T09.
 > - **§7's security-scan gate is still manual** — satisfied by hand for the second consecutive release. F-017.
 >
 > **Still true from F-013:** JWT keys are Aspire `secret: true` parameters and only Identity receives the
@@ -103,9 +130,14 @@ ValidAlgorithms = ["RS256"],                      // :45  ✅ algorithm confusio
 
 ⚠️ **No token revocation.** `jti` is issued (`:204`) but never recorded or checked. Logout clears the refresh token (`IdentityService.LogoutAsync:176`) but the **access token stays valid for up to 60 minutes after logout**. There is no denylist.
 
-### ⚠️ `RefreshAsync` — delete-then-insert data-loss window
+### ~~⚠️ `RefreshAsync` — delete-then-insert data-loss window~~ — CLOSED by F-021-T02
 
-`Identity/Services/IdentityService.cs:123-163`:
+> **Kept in full, not deleted.** This is the highest-severity defect the project has fixed, and the
+> shape of it — an atomic operation that was correct about *concurrency* and wrong about *granularity*,
+> made survivable by 20 passing tests that could not express the failure — is worth being able to
+> recognise again. What it looks like now is below the original.
+
+**As it was:** `Identity/Services/IdentityService.cs:123-163`:
 
 ```csharp
 credential = await repository.FindOneAndDeleteAsync(filter);   // :135  ⚠️ removes the account document
@@ -122,6 +154,36 @@ The atomic `FindOneAndDeleteAsync` on `{ refresh_token.hash, refresh_token.expir
 
 The correct operation is a targeted `$set`/`$unset` on `refresh_token` (or `FindOneAndUpdate`), never a whole-document delete. `IRepository<T>` offers no partial-update primitive (`04-data-access.md`), which is the underlying cause.
 
+**As it is now (F-021-T02).** One round trip, one document, no delete:
+
+```csharp
+var filter = new BsonDocument
+{
+    { "refresh_token.hash", presentedHash },                       // single use: the OLD hash is the match
+    { "refresh_token.expiry", new BsonDocument("$gt", now) },       // expiry, as before
+    { "$or", NotLocked(now) }                                      // AC-4 / T-104, at no extra query cost
+};
+credential = await repository.FindOneAndUpdateAsync(filter, /* $set refresh_token */);
+if (credential is null) throw new UnauthorizedException(...);      // unknown, expired, used, or locked
+```
+
+Both failure scenarios above are gone, and neither by accident:
+
+1. There is no window in which the credential does not exist, because it is never removed. Asserted under
+   an **injected fault** — `InMemoryRepository.FaultBetweenMatchAndWrite` fires between matching and
+   writing, which is precisely the capability `11-testing.md:65` said was missing.
+2. A concurrent `LoginAsync` can no longer find nothing, for the same reason.
+
+Single use survives the change because the old hash moved into the **filter**: the update matches only
+while that hash is still stored, so a replay matches no document. Verified against real MongoDB, not only
+against the in-memory double (`CredentialUpdatePrimitiveTest`).
+
+⚠️ **One thing to know if you read the code:** the signing key is read *before* the write, because minting
+the access token needs the email and role that only the matched document can supply — but it is read
+**without throwing**, and the throw sits behind the match. Reading it strictly turned every *rejected*
+refresh into a 500, which the integration harness caught and no unit test could (they all set
+`JWT_PRIVATE_KEY` in their constructor).
+
 ⚠️ This is very unlikely to be covered by the 21 `IdentityServiceTest` cases — `InMemoryRepository` cannot simulate a mid-operation fault (`11-testing.md`).
 
 ### Password handling — sound
@@ -133,7 +195,7 @@ The correct operation is a targeted `$set`/`$unset` on `refresh_token` (or `Find
 
 ⚠️ **Password policy is length-only** — no complexity requirement, no breached-password check, no maximum length. BCrypt silently truncates inputs beyond 72 bytes, so a passphrase longer than that has its tail ignored with no warning.
 
-⚠️ **No account lockout and no rate limiting.** `AddRateLimiter` appears nowhere in the solution. `POST /api/v1/auth/login` accepts unlimited attempts. The T-005 timing mitigation defends against enumeration but nothing defends against credential stuffing or brute force.
+~~⚠️ **No account lockout and no rate limiting.**~~ **CLOSED by F-021** (`Identity/Extensions/RateLimitingExtensions.cs`, `IdentityService.CountFailedAttemptAsync`). Per-IP sliding window on `login` **and** `register`, off by default and switched on by configuration; per-account counter with a self-clearing 15-minute lock. Note what the measurement changed about the *reason*: at **262 ms per BCrypt verify** an attacker gets 3.8 guesses/sec/core, so the dominant threat was never guessing — it was the attacker spending **the server's** CPU (T-101). The T-005 timing mitigation still stands, and is why the per-account counter alone would be blind: an attacker using random addresses generates no per-account state.
 
 ⚠️ **`MustResetPassword` is written but never read.** `CredentialEntity.cs:29` and `SeedAuthCredentials.cs:68` set it, but `LoginAsync` (`:79-121`) never inspects it — so the forced-reset flow the field exists for does not exist. And there is **no password-reset or change-password endpoint at all** (`01-api-surface.md`), so a user who forgets their password has no recovery path.
 
@@ -188,15 +250,15 @@ This is the second-most-serious finding after the credential. Full route table i
 
 | Control | Status |
 |---|---|
-| `UseHttpsRedirection` | ⚠️ Called in 6 services unconditionally, **conditionally in Identity** (`Identity/Program.cs:91-92`, skipped in Development) |
+| `UseHttpsRedirection` | ✅ **F-021:** called in all seven via `UseAgendaBuddyTransportSecurity()`, **before** `UseAuthentication`. Identity's Development guard removed. Still a no-op where no HTTPS port is configured |
 | HTTPS endpoint configured | ⚠️ **No.** `appsettings.json` declares only `Http` (HTTP/1) and `gRPC` (h2c). Only `launchSettings.json` supplies an HTTPS URL (`Booking/Properties/launchSettings.json:27` → `:8033`) |
-| HSTS | ❌ **`UseHsts()` appears nowhere** |
+| HSTS | ✅ **F-021:** `AgendaBuddy.ServiceDefaults/TransportSecurity.cs`, gated on `Security:Hsts:Enabled` (default off). No `includeSubDomains`, no `preload` — both are the hard-to-reverse parts. Inert until F-017 terminates TLS |
 | Antiforgery | ✅ `AddAntiforgery`/`UseAntiforgery` in 6 services; Identity deliberately excluded (API-only, `:87`) |
 | CORS | ❌ No policy registered in any service |
 | Rate limiting | ❌ Absent |
 | `AllowedHosts` | ⚠️ Set in Customer, Services, Profession, Identity; **omitted** in Booking, Calendar, Provider |
 
-⚠️ **`UseHttpsRedirection()` is registered *after* `UseAuthentication()`/`UseAuthorization()`** (`Booking/Program.cs:83-86` and equivalents). Bearer tokens are parsed and validated from the **plaintext HTTP request** before the redirect is issued — so the credential has already traversed the insecure channel. Redirection must precede authentication.
+~~⚠️ **`UseHttpsRedirection()` is registered *after* `UseAuthentication()`/`UseAuthorization()`**~~ **CLOSED by F-021**, in all seven services. Worth keeping the correction the fix carried: reordering does **not** fix what it appears to fix — by the time any middleware runs, the password or bearer token has already crossed the wire. Redirection protects nothing already sent; HSTS is what stops the client repeating the mistake, which is why F-021 added both.
 
 ⚠️ **No HTTPS listener exists**, so `UseHttpsRedirection` has nothing to redirect to outside the `launchSettings` `https` profile. Combined with `EXPOSE 8080/8081` in the Dockerfiles versus `localhost:60xx` in `appsettings.json` (`08-cicd-deploy.md`), the deployed transport posture is plain HTTP.
 
@@ -294,9 +356,9 @@ All of this to emit one informational line. The correct approach is to log from 
 ## Negative findings — controls that do not exist
 
 - ❌ **No CI security scan** — no `dotnet list package --vulnerable`, no CodeQL, no Dependabot (`.github/dependabot.yml` absent), no secret scanner, no container image scan. `CONSTITUTION.md` §7 marks this mandatory and un-uncheckable. **Unmet gate.**
-- ❌ **No rate limiting / account lockout** anywhere.
+- ✅ **Rate limiting and account lockout** — F-021.
 - ❌ **No CORS policy** in any service.
-- ❌ **No HSTS.**
+- ✅ **HSTS** — F-021, configuration-gated, inert until TLS is terminated (F-017).
 - ❌ **No role-based authorization** — `AssertRole` is dead.
 - ❌ **No token revocation / denylist** — `jti` unused.
 - ❌ **No password reset, change, or forced-reset flow** — `MustResetPassword` unread.
@@ -313,11 +375,11 @@ All of this to emit one informational line. The correct approach is to log from 
 2. **Add the mandatory CI security scan** — secret scanning first, then dependency audit. This is a constitution gate that is currently unimplemented.
 3. **Authenticate and ownership-guard the six anonymous PII endpoints**; add pagination.
 4. **Add `OwnershipGuard` to the two Calendar routes** (authenticated-but-unscoped IDOR).
-5. **Replace `RefreshAsync`'s delete-then-insert** with a targeted partial update — this can permanently destroy accounts.
-6. **Move `UseHttpsRedirection` before `UseAuthentication`**, add `UseHsts`, and configure a real HTTPS endpoint.
+5. ~~**Replace `RefreshAsync`'s delete-then-insert**~~ — **DONE, F-021-T02.**
+6. ~~**Move `UseHttpsRedirection` before `UseAuthentication`**, add `UseHsts`~~ — **DONE, F-021-T05.** Configuring a real HTTPS endpoint remains **F-017's**, and until it exists HSTS is decorative.
 7. **Wire the mobile refresh-token flow** — currently a hard logout at 60 minutes.
 8. **Map `ForbiddenException → 403` centrally** so a forgotten `try/catch` cannot silently become a 500.
-9. **Add rate limiting and lockout** on `POST /api/v1/auth/login`.
+9. ~~**Add rate limiting and lockout** on `POST /api/v1/auth/login`~~ — **DONE, F-021-T03/T06**, and on `register` too, which hashes at the same cost.
 10. **Add role checks** on provider creation and profession creation.
 11. **Replace `services.BuildServiceProvider()`** in `AuthenticationExtensions`.
 12. **Define retention and pruning for the `events` collection**, and stop writing full payloads on read queries.

@@ -11,12 +11,19 @@
 > endpoint. Endpoint authz **is** now verifiable end-to-end, which is precisely what the Calendar IDOR
 > escaped: 24 unit tests covered `OwnershipGuard` while nothing checked whether a route called it.
 >
-> **Counts (verified 2026-08-22): 531 total, in three suites no single command runs.**
-> **358** backend across 12 projects (`dotnet test agenda-buddy-backend.slnf` — re-run green on `main` at the
-> ship gate, 0 warnings) · **99** integration (`dotnet test AgendaBuddy.IntegrationTests/…csproj`, a
-> **separate command** — the project is excluded from the slnf by design, ADR-031, so the unit gate stays
-> Docker-free) · **74** mobile (67 passing, 7 skipped). Superseded counts, for anyone reading old artifacts:
-> 189 → 256 → 305 → 379 → **531**.
+> **Counts (verified 2026-08-22, on `feat/F-021-identity-hardening`): 623 total, in three suites no single
+> command runs.**
+> **431** backend across 12 projects (`dotnet test agenda-buddy-backend.slnf`, 0 warnings) · **118**
+> integration (`dotnet test AgendaBuddy.IntegrationTests/…csproj`, a **separate command** — the project is
+> excluded from the slnf by design, ADR-031, so the unit gate stays Docker-free; **1 m 28 s** against the
+> 600 s CI budget) · **74** mobile (67 passing, 7 skipped). Superseded counts, for anyone reading old
+> artifacts: 189 → 256 → 305 → 379 → 531 → **623**.
+>
+> F-021 added **+73** backend and **+19** integration. Two of those are worth knowing about as *kinds* of
+> test this suite did not previously have: `TransportSecurityOrderTest` asserts middleware **order** by
+> reading the seven `Program.cs` files, because `IApplicationBuilder` exposes no ordered list of registered
+> middleware; and `CredentialUpdatePrimitiveTest` exercises `MongoDbRepository<T>`'s **Mongo semantics**
+> against the container, which closes for the new primitive the debt F-016 recorded for `GetPagedAsync`.
 >
 > ⚠️ **`Integration — real services + MongoDB` is not yet a required status check on `main`** — branch
 > protection is a GitHub setting, not YAML, so the job can fail and a PR still merge. Until that is set, the
@@ -81,7 +88,7 @@ The only area with genuine security-behaviour coverage, and it maps to named thr
 
 **Inference:** `FakeDateTimeProvider` exists precisely because `IdentityService` takes `IDateTimeProvider` (`IdentityService.cs:16`) — the only service in the solution designed for time injection. Every other service calls `DateTime.UtcNow` statically, which is why none of them has expiry/timing tests.
 
-⚠️ **The `RefreshAsync` delete-then-insert data-loss window is very unlikely to be covered.** `IdentityService.RefreshAsync:135` calls `FindOneAndDeleteAsync` and `:155` re-inserts; a fault between them destroys the account (`13-security.md`). `InMemoryRepository` cannot simulate a mid-operation process failure, so this remains untested.
+~~⚠️ **The `RefreshAsync` delete-then-insert data-loss window is very unlikely to be covered.**~~ **CLOSED by F-021.** It was not covered, and the reason was exactly the one stated: `InMemoryRepository` could not simulate a fault between a read and a write. It now can — `FaultBetweenMatchAndWrite` fires after the filter matches and before any mutation — and the defect it made testable is fixed (`Rotation_WhenTheWriteFaults_LeavesTheCredentialIntact`). **The general lesson stands and is worth keeping: a defect that no test can express is a defect that survives a green suite.** The same gap still applies to any other read-modify-write path in a service whose double lacks a hook.
 
 ### `Library.Tests` — broadest, but weighted toward the unreachable (74 tests)
 
@@ -191,7 +198,7 @@ dotnet test MobileApp.Tests/MobileApp.Tests.csproj /p:MobileWorkloads=false \
 
 ## What is missing
 
-- ~~**No integration tests.**~~ **RESOLVED by F-016** — 99 tests invoke real endpoints over HTTP against a MongoDB Testcontainer, so `CONSTITUTION.md` §5's "All integration tests pass" finally has something to pass. Two caveats: the CI job is **not a required status check** on `main` yet, and §7's Integration checkbox stays unchecked pending 10 consecutive green runs.
+- ~~**No integration tests.**~~ **RESOLVED by F-016**, extended by F-021 — **118** tests invoke real endpoints over HTTP against a MongoDB Testcontainer, so `CONSTITUTION.md` §5's "All integration tests pass" finally has something to pass. Two caveats unchanged: the CI job is **not a required status check** on `main` yet, and §7's Integration checkbox stays unchecked pending 10 consecutive green runs — **3 of 10** after PR #39 (F-016's PR #38 supplied the first two).
 - **No contract tests** between `MobileApp` and the services. This is the single gap that would have caught the product's most serious functional defect (`01-api-surface.md`).
 - **No `CacheAside` test** — the mandated caching primitive, with three known defects.
 - **No `KafkaHelper` test** — topic-name collision across email domains.

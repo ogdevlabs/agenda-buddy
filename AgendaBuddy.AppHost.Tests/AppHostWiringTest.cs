@@ -259,6 +259,85 @@ public class AppHostWiringTest
         }
     }
 
+    // ── F-021: the two configuration-gated security controls ─────────────────────────────────────
+    //
+    // These live here rather than in a service's own tests because the composition root is what decides
+    // them. Gating on IsProduction() would have been wrong in a way no service-level test could show:
+    // every service runs as PRODUCTION under this AppHost, so "production" does not mean "deployed"
+    // here (ARCHITECTURE.md D-6).
+
+    /// <summary>Environment variables this resource would be started with.</summary>
+    private static async Task<Dictionary<string, object>> EnvironmentOf(
+        IDistributedApplicationBuilder builder, string name)
+    {
+        var context = new EnvironmentCallbackContext(
+            new DistributedApplicationExecutionContext(DistributedApplicationOperation.Run));
+
+        foreach (var annotation in Resource(builder, name).Annotations
+                     .OfType<EnvironmentCallbackAnnotation>())
+        {
+            await annotation.Callback(context);
+        }
+
+        return context.EnvironmentVariables;
+    }
+
+    // AC-14: a developer running the AppHost is not throttled and gets no HSTS header, and — the part
+    // that needs the marker — the services know the flags are off deliberately, so they log no warning.
+    [Theory]
+    [InlineData("booking")]
+    [InlineData("calendar")]
+    [InlineData("customer")]
+    [InlineData("identity")]
+    [InlineData("profession")]
+    [InlineData("provider")]
+    [InlineData("services")]
+    public async Task ALocalRunMarksItselfLocal_AndEnablesNeitherControl(string serviceName)
+    {
+        var environment = await EnvironmentOf(BuildModel(), serviceName);
+
+        Assert.Equal("true", Assert.Contains("Security__Local", environment));
+        Assert.DoesNotContain("Security__Hsts__Enabled", environment.Keys);
+        Assert.DoesNotContain("Security__RateLimiting__Enabled", environment.Keys);
+    }
+
+    // Threat T-103 / PRD requirement 16: the cloud graph turns both controls on, so shipping without
+    // them requires editing this file rather than merely forgetting a key somewhere else. This is the
+    // one test that distinguishes "the feature was written" from "the feature is switched on".
+    [Theory]
+    [InlineData("booking")]
+    [InlineData("calendar")]
+    [InlineData("customer")]
+    [InlineData("identity")]
+    [InlineData("profession")]
+    [InlineData("provider")]
+    [InlineData("services")]
+    public async Task ACloudDeploymentEnablesHstsEverywhere(string serviceName)
+    {
+        var environment = await EnvironmentOf(BuildModel(DeploymentTarget.Cloud), serviceName);
+
+        Assert.Equal("true", Assert.Contains("Security__Hsts__Enabled", environment));
+        Assert.DoesNotContain("Security__Local", environment.Keys);
+    }
+
+    // The limiter goes only where BCrypt is spent (D-4). Enabling it on Calendar would throttle reads
+    // that cost nothing, and would suggest the control is about traffic rather than about CPU.
+    [Fact]
+    public async Task ACloudDeploymentEnablesTheLimiterForIdentityOnly()
+    {
+        var builder = BuildModel(DeploymentTarget.Cloud);
+
+        Assert.Equal(
+            "true",
+            Assert.Contains("Security__RateLimiting__Enabled", await EnvironmentOf(builder, "identity")));
+
+        foreach (var name in ExpectedServices.Where(service => service != "identity"))
+        {
+            Assert.DoesNotContain(
+                "Security__RateLimiting__Enabled", (await EnvironmentOf(builder, name)).Keys);
+        }
+    }
+
     // E-6: a service that starts before MongoDB accepts connections fails its first request.
     [Fact]
     public void EveryServiceWaitsForMongoDb()

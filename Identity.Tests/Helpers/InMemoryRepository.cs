@@ -29,6 +29,9 @@ public class InMemoryCredentialRepository : IRepository<CredentialEntity>
         var idx = _store.FindIndex(e => e.Id == id);
         if (idx < 0) return Task.FromResult(false);
         _store[idx] = entity;
+        // Counted, not forbidden: this is a whole-document replacement (MongoDbRepository issues
+        // ReplaceOneAsync), and F-021 AC-11 asserts that no credential write takes this path.
+        WholeDocumentReplacements++;
         return Task.FromResult(true);
     }
 
@@ -69,6 +72,240 @@ public class InMemoryCredentialRepository : IRepository<CredentialEntity>
         Task.FromResult<(IEnumerable<CredentialEntity>, long)>((
             _store.Skip(Math.Max(0, skip)).Take(Math.Max(0, take)).ToList(),
             _store.Count));
+
+    /// <summary>
+    /// Runs between matching a document and applying the update, so a test can inject the fault that
+    /// used to destroy an account.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// F-021 PRD requirement 4 / AC-2. Before this existed, "a fault between the read and the write of a
+    /// rotation" was <b>unexpressible</b> as a test (<c>11-testing.md:65</c>) — which is precisely how a
+    /// delete-then-insert survived in <c>RefreshAsync</c> with 20 passing tests around it. The hook fires
+    /// after the filter has matched and before any mutation, which is the window the old code left open.
+    /// </para>
+    /// <para>
+    /// Throw a <see cref="MongoDB.Driver.MongoException"/> from it to reproduce the case the PRD calls
+    /// out: a transient database fault on the <b>handled</b> path, where the caller returns a tidy 503 to
+    /// a user whose account no longer exists.
+    /// </para>
+    /// </remarks>
+    public Action? FaultBetweenMatchAndWrite { get; set; }
+
+    /// <summary>
+    /// Every update document this repository has applied, in order — so a test can assert on the
+    /// <i>shape</i> of a write and not merely its effect (F-021 AC-11).
+    /// </summary>
+    public List<BsonDocument> AppliedUpdates { get; } = [];
+
+    /// <summary>
+    /// How many times a whole document was replaced. F-021's writes must never replace a credential
+    /// document, so the assertion is that this stays at zero.
+    /// </summary>
+    public int WholeDocumentReplacements { get; private set; }
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// A deliberately narrow evaluator: it supports exactly the operators F-021 uses and
+    /// <b>throws on anything else</b>. A test double that silently ignored an unsupported operator
+    /// would report green for a filter MongoDB would have evaluated differently, which is worse than
+    /// having no double at all.
+    /// </remarks>
+    public Task<CredentialEntity?> FindOneAndUpdateAsync(BsonDocument filter, BsonDocument update)
+    {
+        var match = _store.FirstOrDefault(e => MatchesStrictFilter(e, filter));
+        if (match is null) return Task.FromResult<CredentialEntity?>(null);
+
+        FaultBetweenMatchAndWrite?.Invoke();
+
+        Apply(match, update);
+        AppliedUpdates.Add(update);
+
+        // A COPY, because MongoDB returns a deserialized document and not a handle on the stored one.
+        // Returning the live instance would let a caller mutate the store by accident, and would make
+        // two successive post-images compare equal — which is the opposite of what the post-image
+        // guarantee is for.
+        return Task.FromResult<CredentialEntity?>(Snapshot(match));
+    }
+
+    private static CredentialEntity Snapshot(CredentialEntity entity) => new()
+    {
+        Id = entity.Id,
+        Email = entity.Email,
+        PasswordHash = entity.PasswordHash,
+        Role = entity.Role,
+        MustResetPassword = entity.MustResetPassword,
+        FailedAttempts = entity.FailedAttempts,
+        LockUntil = entity.LockUntil,
+        RefreshToken = entity.RefreshToken is null
+            ? null
+            : new RefreshTokenDocument
+            {
+                Hash = entity.RefreshToken.Hash,
+                Expiry = entity.RefreshToken.Expiry
+            }
+    };
+
+    private static void Apply(CredentialEntity entity, BsonDocument update)
+    {
+        foreach (var op in update)
+        {
+            var operand = op.Value.AsBsonDocument;
+            switch (op.Name)
+            {
+                case "$set":
+                    foreach (var field in operand) Set(entity, field.Name, field.Value);
+                    break;
+                case "$unset":
+                    foreach (var field in operand) Unset(entity, field.Name);
+                    break;
+                case "$inc":
+                    foreach (var field in operand) Increment(entity, field.Name, field.Value.ToInt32());
+                    break;
+                default:
+                    throw new NotSupportedException(
+                        $"InMemoryCredentialRepository does not implement the update operator '{op.Name}'. " +
+                        "Implement it here rather than letting a test pass on a write MongoDB would " +
+                        "have applied differently.");
+            }
+        }
+    }
+
+    private static void Set(CredentialEntity entity, string field, BsonValue value)
+    {
+        switch (field)
+        {
+            case "refresh_token":
+                entity.RefreshToken = value.IsBsonNull
+                    ? null
+                    : new RefreshTokenDocument
+                    {
+                        Hash = value.AsBsonDocument["hash"].AsString,
+                        // MongoDB stores milliseconds, so a round trip through BSON truncates. Faithful
+                        // to the real driver on purpose: a test asserting sub-millisecond equality
+                        // should fail here too, not only against a container.
+                        Expiry = value.AsBsonDocument["expiry"].ToUniversalTime()
+                    };
+                break;
+            case "failed_attempts":
+                entity.FailedAttempts = value.ToInt32();
+                break;
+            case "lock_until":
+                entity.LockUntil = value.IsBsonNull ? null : value.ToUniversalTime();
+                break;
+            default:
+                throw new NotSupportedException($"$set on unmapped field '{field}'.");
+        }
+    }
+
+    private static void Unset(CredentialEntity entity, string field)
+    {
+        switch (field)
+        {
+            case "lock_until": entity.LockUntil = null; break;
+            case "refresh_token": entity.RefreshToken = null; break;
+            default: throw new NotSupportedException($"$unset on unmapped field '{field}'.");
+        }
+    }
+
+    private static void Increment(CredentialEntity entity, string field, int by)
+    {
+        if (field != "failed_attempts")
+            throw new NotSupportedException($"$inc on unmapped field '{field}'.");
+
+        // $inc on a missing field creates it at the increment value — the C# default of 0 gives the
+        // same answer, which is why F-021 needs no migration (data-model.md §7).
+        entity.FailedAttempts += by;
+    }
+
+    /// <summary>
+    /// Filter evaluation that refuses what it does not understand, unlike
+    /// <see cref="MatchesFilter"/> which predates F-021 and ignores unknown fields.
+    /// </summary>
+    private static bool MatchesStrictFilter(CredentialEntity e, BsonDocument filter)
+    {
+        foreach (var clause in filter)
+        {
+            if (!MatchesClause(e, clause.Name, clause.Value)) return false;
+        }
+
+        return true;
+    }
+
+    private static bool MatchesClause(CredentialEntity e, string name, BsonValue condition)
+    {
+        if (name == "$or")
+        {
+            return condition.AsBsonArray.Any(
+                alternative => MatchesStrictFilter(e, alternative.AsBsonDocument));
+        }
+
+        return name switch
+        {
+            "email" => Compare(e.Email, condition),
+            "role" => Compare(e.Role, condition),
+            "refresh_token.hash" => Compare(e.RefreshToken?.Hash, condition),
+            "refresh_token.expiry" => Compare(e.RefreshToken?.Expiry, condition),
+            "failed_attempts" => Compare(e.FailedAttempts, condition),
+            "lock_until" => Compare(e.LockUntil, condition),
+            _ => throw new NotSupportedException(
+                $"InMemoryCredentialRepository cannot evaluate the filter field '{name}'. Add it here " +
+                "rather than letting a test pass on a filter it never really applied.")
+        };
+    }
+
+    private static bool Compare(string? actual, BsonValue condition) =>
+        condition.IsBsonNull ? actual is null : actual == condition.AsString;
+
+    private static bool Compare(int actual, BsonValue condition)
+    {
+        if (!condition.IsBsonDocument) return actual == condition.ToInt32();
+
+        foreach (var op in condition.AsBsonDocument)
+        {
+            var expected = op.Value.ToInt32();
+            var satisfied = op.Name switch
+            {
+                "$gte" => actual >= expected,
+                "$gt" => actual > expected,
+                "$lte" => actual <= expected,
+                "$lt" => actual < expected,
+                _ => throw new NotSupportedException($"Unsupported int operator '{op.Name}'.")
+            };
+            if (!satisfied) return false;
+        }
+
+        return true;
+    }
+
+    private static bool Compare(DateTime? actual, BsonValue condition)
+    {
+        if (condition.IsBsonNull) return actual is null;
+
+        if (!condition.IsBsonDocument)
+            return actual == condition.ToUniversalTime();
+
+        foreach (var op in condition.AsBsonDocument)
+        {
+            var expected = op.Value.ToUniversalTime();
+
+            // A missing field satisfies no comparison operator in MongoDB, which is what makes the
+            // "lock_until is null OR in the past" filter need both branches of its $or.
+            if (actual is null) return false;
+
+            var satisfied = op.Name switch
+            {
+                "$gt" => actual > expected,
+                "$gte" => actual >= expected,
+                "$lt" => actual < expected,
+                "$lte" => actual <= expected,
+                _ => throw new NotSupportedException($"Unsupported date operator '{op.Name}'.")
+            };
+            if (!satisfied) return false;
+        }
+
+        return true;
+    }
 
     // Simple filter evaluation for test purposes
     private CredentialEntity? FindByFilter(BsonDocument filter)

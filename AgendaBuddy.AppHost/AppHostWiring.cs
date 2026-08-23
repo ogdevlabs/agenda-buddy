@@ -107,7 +107,10 @@ internal static class AppHostWiring
             kafka = builder.AddConnectionString("kafka");
         }
 
-        AddApi<Projects.Identity>("identity", identityDb, needsPrivateKey: true);
+        // spendsBcrypt: Identity's login and register are the only routes in the system that hash a
+        // password — 262 ms of CPU each, measured — so it is the only service the per-IP limiter applies
+        // to (threat T-101, ARCHITECTURE.md D-4).
+        AddApi<Projects.Identity>("identity", identityDb, needsPrivateKey: true, spendsBcrypt: true);
         AddApi<Projects.Booking>("booking", agendaDb, needsKafka: true);
         AddApi<Projects.Customer>("customer", agendaDb, needsKafka: true);
         AddApi<Projects.Provider>("provider", agendaDb, needsKafka: true);
@@ -121,7 +124,8 @@ internal static class AppHostWiring
             string name,
             IResourceBuilder<IResourceWithConnectionString> database,
             bool needsKafka = false,
-            bool needsPrivateKey = false)
+            bool needsPrivateKey = false,
+            bool spendsBcrypt = false)
             where TProject : IProjectMetadata, new()
         {
             // launchProfileName: null keeps Aspire from adopting the launch profile's
@@ -138,6 +142,31 @@ internal static class AppHostWiring
                 .WithReference(database)
                 .WithEnvironment("ConnectionStrings__mongodb", database)
                 .WithEnvironment("JWT_PUBLIC_KEY", jwtPublicKey);
+
+            // F-021's two configuration-gated controls. Gating them on configuration rather than on
+            // IsProduction() is not a preference: services run as PRODUCTION under this AppHost, because
+            // AddProject is called with launchProfileName: null while launchSettings.json sets
+            // DOTNET_ENVIRONMENT=Development for the AppHost process alone. An environment-gated HSTS
+            // would therefore emit Strict-Transport-Security for localhost — which browsers cache
+            // stickily and across projects — and an environment-gated limiter would throttle every local
+            // run (ARCHITECTURE.md D-6).
+            //
+            // So the composition root states which it is, and the services stop guessing:
+            if (deployTarget == DeploymentTarget.Local)
+            {
+                // Both controls stay off, and the service knows that is deliberate rather than a
+                // forgotten deployment key, so it logs no startup warning (D-7).
+                service.WithEnvironment("Security__Local", "true");
+            }
+            else
+            {
+                // Threat T-103: the cloud graph turns them ON here, so shipping without them takes an
+                // edit to this file rather than an omission somewhere else. HSTS everywhere; the limiter
+                // only where BCrypt is spent.
+                service.WithEnvironment("Security__Hsts__Enabled", "true");
+
+                if (spendsBcrypt) service.WithEnvironment("Security__RateLimiting__Enabled", "true");
+            }
 
             // That alone is not enough. Aspire also adopts each service's Kestrel:Endpoints from
             // appsettings.json, which pins the same 603x/703x ports by another route. Those keys

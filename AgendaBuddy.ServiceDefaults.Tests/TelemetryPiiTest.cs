@@ -103,7 +103,14 @@ public class TelemetryPiiTest
     {
         var exported = await RequestWithPiiAsync($"/api/v1/providers/{Uri.EscapeDataString(Email)}");
 
+        // Selected by route, for the reason ExportedSpan_IdentifiesTheEndpointByRouteTemplate already
+        // gives: the tracer listens process-wide, so spans from other test classes' in-process servers
+        // land in this exporter too. Taking the first non-empty url.path was a latent order dependency —
+        // it passed only while this was the sole class in the assembly that started a server and issued a
+        // request. F-021 added a second (TransportSecurityTest), and this test began failing on some runs
+        // and passing on others while asserting a path belonging to /probe.
         var path = exported
+            .Where(activity => (activity.GetTagItem("http.route") as string) == RouteTemplate)
             .Select(activity => activity.GetTagItem("url.path") as string)
             .FirstOrDefault(value => !string.IsNullOrEmpty(value));
 

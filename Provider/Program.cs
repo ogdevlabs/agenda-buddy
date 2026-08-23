@@ -115,11 +115,15 @@ if (app.Environment.IsDevelopment())
 // ForbiddenException and the central 403 would fail in Development only. See AgendaBuddyExceptionHandler.
 app.UseExceptionHandler();
 
+// F-021 PRD requirement 13: HSTS (under its flag) and the HTTPS redirect run BEFORE authentication.
+// Registered after UseAuthentication, as it was until F-021, the redirect parsed and validated the
+// bearer token out of a plaintext request and only then told the client to come back over TLS.
+app.UseAgendaBuddyTransportSecurity();
+
 app.UseAntiforgery();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseStatusCodePages();
-app.UseHttpsRedirection();
 
 
 var providers = app.MapGroup("/api/v1/providers")

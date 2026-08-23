@@ -1,0 +1,135 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using Xunit;
+
+namespace Common.Tests.Security;
+
+/// <summary>
+/// Pins F-021 AC-12: every service registers transport security <b>before</b> authentication.
+/// </summary>
+/// <remarks>
+/// <para>
+/// All seven services used to call <c>UseHttpsRedirection</c> <i>after</i> <c>UseAuthentication</c> — so
+/// the bearer token was parsed and validated out of a plaintext request, and only then was the client
+/// told to come back over TLS. Identity, which receives passwords, additionally wrapped its redirect in
+/// <c>if (!IsDevelopment())</c>, a condition that means nothing here because the AppHost runs every
+/// service as <b>Production</b>.
+/// </para>
+/// <para>
+/// <b>Why a source-text assertion.</b> Middleware order is not observable from a built application:
+/// <c>IApplicationBuilder</c> exposes no ordered list of registered components, and the pipeline is a
+/// composed delegate by the time anything can look at it. The alternatives were hosting all seven
+/// services (a container each, for a question about two lines of text) or asserting nothing. F-016
+/// established the precedent for tree-level checks living in <c>Library.Tests</c>, where the existing
+/// <c>api</c> CI job runs them on every pull request rather than only when someone remembers the
+/// Docker-dependent suite.
+/// </para>
+/// <para>
+/// ⚠️ <b>This test reads source, so it is sensitive to how the calls are written</b> — a
+/// <c>using</c>-alias or a wrapper helper would evade it. That is the accepted cost of asserting order at
+/// all; the failure mode is a false pass, never a false failure, and the second assertion below closes
+/// the most likely evasion by banning direct <c>UseHttpsRedirection</c> calls outright.
+/// </para>
+/// </remarks>
+public class TransportSecurityOrderTest
+{
+    private static readonly string[] Services =
+        ["Booking", "Calendar", "Customer", "Identity", "Profession", "Provider", "Services"];
+
+    private const string TransportSecurityCall = "UseAgendaBuddyTransportSecurity(";
+    private const string AuthenticationCall = "app.UseAuthentication()";
+    private const string RedirectionCall = "app.UseHttpsRedirection()";
+
+    [Fact]
+    public void EverySevenServices_AreAccountedFor()
+    {
+        // Guards the way this test could quietly stop covering things: a new service appears, nobody
+        // adds it here, and the suite still reports green for "all seven".
+        var actual = Directory
+            .GetDirectories(RepositoryRoot())
+            .Select(Path.GetFileName)
+            .Where(name => name is not null
+                           && File.Exists(Path.Combine(RepositoryRoot(), name, "Program.cs"))
+                           && !name.StartsWith("AgendaBuddy.", StringComparison.Ordinal))
+            .OrderBy(name => name, StringComparer.Ordinal)
+            .ToArray();
+
+        Assert.Equal(Services.OrderBy(name => name, StringComparer.Ordinal).ToArray(), actual);
+    }
+
+    [Theory]
+    [InlineData("Booking")]
+    [InlineData("Calendar")]
+    [InlineData("Customer")]
+    [InlineData("Identity")]
+    [InlineData("Profession")]
+    [InlineData("Provider")]
+    [InlineData("Services")]
+    public void TransportSecurity_IsRegisteredBeforeAuthentication(string service)
+    {
+        var source = ProgramSource(service);
+
+        var transportSecurity = source.IndexOf(TransportSecurityCall, StringComparison.Ordinal);
+        var authentication = source.IndexOf(AuthenticationCall, StringComparison.Ordinal);
+
+        Assert.True(
+            transportSecurity >= 0,
+            $"{service}/Program.cs does not call {TransportSecurityCall} at all, so it registers no HSTS "
+            + "and no HTTPS redirect (F-021 AC-12). ServiceDefaults owns the policy, but placing the "
+            + "middleware is each service's own line — AddServiceDefaults runs on the builder, before a "
+            + "pipeline exists, so it cannot position anything.");
+
+        Assert.True(
+            authentication >= 0,
+            $"{service}/Program.cs does not call {AuthenticationCall}, which this assertion is relative "
+            + "to. If the pipeline was restructured, update this test deliberately rather than deleting "
+            + "it.");
+
+        Assert.True(
+            transportSecurity < authentication,
+            $"{service}/Program.cs registers transport security AFTER authentication (character "
+            + $"{transportSecurity} vs {authentication}). The bearer token is then parsed out of a "
+            + "plaintext request before the redirect is issued — the exact defect F-021 requirement 13 "
+            + "exists to fix.");
+    }
+
+    [Theory]
+    [InlineData("Booking")]
+    [InlineData("Calendar")]
+    [InlineData("Customer")]
+    [InlineData("Identity")]
+    [InlineData("Profession")]
+    [InlineData("Provider")]
+    [InlineData("Services")]
+    public void NoService_CallsUseHttpsRedirectionDirectly(string service)
+    {
+        // One implementation, seven call sites. A service that adds its own redirect back gets a second,
+        // unordered one — which is how the original defect would return: not by someone moving a line,
+        // but by someone adding one.
+        Assert.DoesNotContain(RedirectionCall, ProgramSource(service), StringComparison.Ordinal);
+    }
+
+    private static string ProgramSource(string service) =>
+        File.ReadAllText(Path.Combine(RepositoryRoot(), service, "Program.cs"));
+
+    /// <summary>
+    /// The repository root, found by walking up for <c>.git</c>. Fails closed rather than reporting a
+    /// vacuous pass, exactly as <see cref="KeyMaterialHygieneTest"/> does.
+    /// </summary>
+    private static string RepositoryRoot()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null)
+        {
+            var gitPath = Path.Combine(directory.FullName, ".git");
+            if (Directory.Exists(gitPath) || File.Exists(gitPath)) return directory.FullName;
+            directory = directory.Parent;
+        }
+
+        throw new InvalidOperationException(
+            $"No `.git` found above {AppContext.BaseDirectory}. This test reads the seven Program.cs "
+            + "files from the working tree and fails closed rather than passing vacuously (F-021 AC-12).");
+    }
+}

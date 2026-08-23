@@ -147,10 +147,17 @@
 
 ---
 
-## ADR-011 — No rate limiting on /auth/login in v1 (F-001) *(accepted risk)*
+## ADR-011 — No rate limiting on /auth/login in v1 (F-001) *(accepted risk)* — **[SUPERSEDED by ADR-033]**
 
 **Date:** 2026-07-30
-**Status:** Accepted — deferred to security-hardening feature
+**Status:** **Superseded 2026-08-22 by F-021.** `login` and `register` are now rate-limited per IP, and
+consecutive failed logins lock an account for a self-clearing window. Two of this ADR's premises turned
+out to be wrong, and the way they were wrong is worth keeping:
+its bcrypt-cost estimate of "~100–300 ms" was accurate (**262 ms measured** at work factor 12 on this
+hardware), but it read that cost only as a defence — the same 262 ms is what makes **unauthenticated CPU
+exhaustion** trivial, because the attacker spends the server's CPU, not their own (threat T-101). And its
+re-evaluation trigger, "if any auth anomaly is detected in logs", could never have fired: Identity had no
+log sink at all until F-021 added one.
 **Feature:** F-001 auth-and-identity
 **Risk reference:** Threat model T-001, T-007
 
@@ -555,3 +562,76 @@ Every published version is covered by the advisory. There is no safe version to 
 - **The 305/309 headline count stays meaningful.** AC-19 counts the backend slnf; mixing in container tests would make the number depend on whether Docker was running.
 - **Duration stays honest.** Measured on the maintainer's machine: **3 s warm, 62 s cold** per container (the cold figure is the 1.13 GB `mongo:7.0` pull). T20 must enforce a duration budget, which is far easier for a job that contains only integration tests.
 - **Cost:** two commands instead of one, and a project that a naive `dotnet test agenda-buddy-backend.slnf` will not run. Mitigated by T20's blocking CI job — without it this would be the wrong trade, which is precisely why T20 was absorbed at the Plan gate.
+
+---
+
+## ADR-032 — One partial-update primitive on `IRepository<T>`, shared rather than Identity-only
+
+**Date:** 2026-08-22 · **Status:** Accepted · **Feature:** F-021 (T01)
+
+**Context.** `RefreshAsync` rotated a refresh token by deleting the whole `CredentialEntity` and re-inserting it (`IdentityService.cs:135`→`:155`). Any fault between those lines destroyed the account irrecoverably — and because the re-insert sat inside `catch … when (IsMongoDown(ex))`, **the destructive path was the handled path**: a transient database blip returned a tidy 503 to a user whose account no longer existed. The atomic delete was a correct single-use-token guard; its **granularity** was the defect. `IRepository<T>` offered no primitive that could express "change this one field": `UpdateAsync` replaces the entire document.
+
+**Decision.** Add exactly one member to the shared interface:
+
+```csharp
+Task<TEntity?> FindOneAndUpdateAsync(BsonDocument filter, BsonDocument update);
+```
+
+Post-image (`ReturnDocument.After`), never upserting, `BsonDocument` in and out.
+
+**Rationale.**
+- **Smallest thing that fixes the defect.** Rotation needs "match these conditions, apply this change, atomically, and tell me what you matched" — and the conditions have to be in the *filter*, because that is what makes single use atomic without a delete.
+- **`$inc`, `$set` and `$unset` all fit it**, so the failed-attempt counter, the lock, the counter reset and the logout unset are the same primitive. No second method.
+- **Post-image earns its keep**: the incremented counter comes back with the write, so the lockout decision costs no extra query.
+- **No upsert is a property of the primitive, not of its callers.** AC-9 ("a failed login for an unknown email creates nothing") is therefore not something each call site has to remember.
+- **Shared, because two more features need it.** F-014 wires six capabilities that currently read-modify-write; F-019/F-020 rewrite this layer. Adding it once here is the cheapest point.
+
+**Alternatives rejected.** A transaction around delete-and-insert — heavier, needs a replica set, and still deletes. An Identity-only method — the next caller re-solves it. A general query-builder — explicitly forbidden by PRD requirement 3, and the thing this convention exists to avoid.
+
+**Blast radius, measured.** Exactly **two** implementers, both updated by this feature: `MongoDbRepository<TEntity>` and `Identity.Tests/Helpers/InMemoryRepository.cs`. Verified by grep over `: IRepository<`, the same sweep F-016 ran across its 19 changed symbols. Mocked usages (`Mock<IRepository<T>>` in six `Library.Tests` service tests) are unaffected by an added member.
+
+**Consequences.**
+- Coverage splits three ways, as it did for `GetPagedAsync` (F-016-T10): contract in `Library.Tests`, semantics against the in-memory implementer in `Identity.Tests`, and **MongoDB's own behaviour** in `AgendaBuddy.IntegrationTests/Harness/CredentialUpdatePrimitiveTest.cs`. The third one is new here — F-016 recorded "no test of `GetPagedAsync`'s Mongo semantics" as debt, and this feature does not repeat that.
+- `PRD requirement 3` is enforced by a test that counts the interface's update members, so the next overload has to be argued for.
+- Two whole-document replacements were removed from Identity while it was open: the login refresh-token write and the logout unset. Neither was the reported defect, but both replaced a credential document from a stale read.
+
+---
+
+## ADR-033 — Security controls gated on configuration, not on `IsProduction()`, with the AppHost declaring "local"
+
+**Date:** 2026-08-22 · **Status:** Accepted · **Feature:** F-021 (T05, T06) · **Threat:** T-103
+
+**Context.** Rate limiting and HSTS must be on when deployed and off on a developer's machine. The intuitive switch is `IsProduction()`, and here it is **wrong**: every service runs as **Production under the local AppHost**, because `AppHostWiring.cs` adds each project with `launchProfileName: null` while `launchSettings.json` sets `DOTNET_ENVIRONMENT=Development` for the AppHost process alone. Verified independently at Design: `/swagger/v1/swagger.json` returns 404 on all seven running services. An environment-gated HSTS would emit `Strict-Transport-Security` for `localhost` — which browsers cache stickily, for the whole `max-age`, across projects — and an environment-gated limiter would throttle every local run.
+
+**Decision.** Gate both on explicit configuration (`Security:Hsts:Enabled`, `Security:RateLimiting:Enabled`), default **off**, and have the **composition root state which kind of run this is**: the AppHost injects `Security__Local=true` for a local run and `Security__Hsts__Enabled=true` (plus the limiter for Identity) for a cloud publish.
+
+**Rationale.** The marker is the part that makes "default off" safe. Without it a service cannot tell "off because this is a laptop" from "off because a deployment forgot a key" — which is threat T-103, and the same failure shape as F-016's original defect, where `AssertRole` was present in the codebase and never called by anything. With it, each service warns loudly at startup when a control is off outside a local run, naming the exact key to set.
+
+**Warn, do not fail fast** (the R4 question carried from Define). A config slip should be visible and fixable, not an outage: refusing to start would turn a missing key into downtime for a service six others depend on for token validation.
+
+**Consequences.**
+- Turning both flags off returns the services to exactly pre-F-021 behaviour, so the feature is revertible by configuration in an incident. Neither the limiter middleware nor its policy is even registered when the flag is off, so this is not merely a runtime branch.
+- The cloud graph turns the controls on **in code**, which means shipping without them takes an edit to `AppHostWiring.cs` rather than an omission somewhere else. Asserted by `AppHostWiringTest` for all seven services.
+- The integration harness can switch both on (`ServiceHostFixture.StartService(settings:)`), so neither control can ship unexercised (AC-15).
+- A standalone `dotnet run` and `scripts/generate-openapi.sh` count as local via `IsDevelopment()`, so they emit no warning.
+- **`UseHttpsRedirection` is deliberately NOT flag-gated.** Six services already called it unconditionally, so a flag defaulting to off would silently remove an existing control and one defaulting to on would be decorative. It is a no-op wherever no HTTPS port is configured, which is why every local run and the whole integration suite are unaffected. Identity's `if (!IsDevelopment())` guard around its redirect is removed — under the AppHost that condition was always true anyway.
+
+---
+
+## ADR-034 — F-021 replaces the reflection guard that forbade a logger in `IdentityService`
+
+**Date:** 2026-08-22 · **Status:** Accepted · **Feature:** F-021 (T04) · **Threats:** T-001 (F-001), T-105
+
+**Context.** `Identity.Tests/Security/LoginLogSanitizationTest.cs` carried `IdentityService_ConstructorParameters_ContainNoILogger`, which asserted **by reflection** that `IdentityService` had no logger parameter at all — a structural proxy for "no credential material in logs", written when nothing in Identity logged anything. F-021 PRD requirement 17 requires credential mutations to be logged: the account-destroying refresh was silent *as well as* destructive, so an account lost that way left no trace of ever having existed.
+
+**Decision.** Delete the reflection guard and replace it with the assertion it was standing in for: the logger exists, and no log line contains the email address, the password, the access token or the refresh token. Account identity is logged as `acct_` plus a 12-hex-character SHA-256 prefix.
+
+**Rationale.** The proxy and the requirement are in direct conflict, and the proxy is the weaker statement. It also turns out the three sanitization tests beside it were **vacuous**: they iterated `GetMessages(Information)` on a logger factory wired to nothing, so they asserted over an empty list and could not have failed. They now run against real log output, with a `NotEmpty` guard so they cannot silently become vacuous again.
+
+**Why a hash prefix rather than truncation.** `PiiRedactingProcessor` protects **spans, not logs** — nothing downstream would catch an address written here, and F-013's telemetry rollout is this project's own precedent for that (threat T-004: real customer emails exported in `url.path` the moment telemetry was switched on). Truncation is not redaction: `aud…@example.com` still identifies a person in a user base this size. The honest claim for the hash is "not an address", not "anonymous" — with a known address list any digest is reversible.
+
+**Consequences.**
+- One pre-existing test deleted. This is F-021's only such deviation, the same class of decision as F-016's ADR-025, and it needs the same maintainer acknowledgement.
+- `IdentityService` takes `IOptions<LockoutOptions>` and `ILogger<IdentityService>`, both **optional with defaults**, so the twenty-odd unit tests that predate F-021 compile unchanged and the shipped defaults apply to any caller that configures nothing.
+- Identity still writes no audit events. Adopting the EventStore here would put credential-shaped documents into the collection every other service writes to; logs are the record, which is stated in `data-model.md` §6 rather than left implicit.
+

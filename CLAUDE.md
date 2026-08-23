@@ -11,7 +11,7 @@ Agenda Buddy is a scheduling and appointment management platform for independent
 - **Messaging:** Kafka (Confluent) + MediatR (CQRS)
 - **Caching:** IDistributedCache (cache-aside pattern, 5-min TTL)
 - **Observability:** OpenTelemetry traces/metrics/logs via ServiceDefaults, exported to the Aspire dashboard
-- **Testing:** xUnit — **531 tests total**, in **three separate suites** that no single command runs: **358** across 12 backend projects (`agenda-buddy-backend.slnf`), **99** in `AgendaBuddy.IntegrationTests` (real services over HTTP against a MongoDB Testcontainer — needs a container runtime), and **74** in `MobileApp.Tests` (67 passing, 7 skipped)
+- **Testing:** xUnit — **623 tests total**, in **three separate suites** that no single command runs: **431** across 12 backend projects (`agenda-buddy-backend.slnf`), **118** in `AgendaBuddy.IntegrationTests` (real services over HTTP against a MongoDB Testcontainer — needs a container runtime), and **74** in `MobileApp.Tests` (67 passing, 7 skipped)
 - **Infrastructure:** Aspire AppHost (primary local) · Docker + Docker Compose (legacy fallback) · GitHub Actions CI
 
 > **Aspire caveat:** do **not** add `Aspire.MongoDB.Driver`. It requires MongoDB.Driver ≥ 3.9.0 against the pinned 2.25.0 and fails restore with `NU1605`. The project registers `AddSingleton<IMongoClient>` with a custom `MongoHealthCheck` instead (ADR-013). There is no Aspire workload to install.
@@ -35,8 +35,8 @@ Agenda Buddy is a scheduling and appointment management platform for independent
 - **Dev server (primary):** `dotnet run --project AgendaBuddy.AppHost` — starts MongoDB, Kafka, and all 7 services
 - **Dev server (legacy):** `docker compose -f docker-compose.yml -f docker-compose.override.yml up -d`
 - **Build:** `dotnet build --no-restore`
-- **Test (backend, 358 tests):** `dotnet test agenda-buddy-backend.slnf --collect:"XPlat Code Coverage"` — use the solution filter, not the full solution
-- **Test (integration, 99 tests):** `dotnet test AgendaBuddy.IntegrationTests/AgendaBuddy.IntegrationTests.csproj` — ⚠️ a **separate command**. `AgendaBuddy.IntegrationTests` is deliberately excluded from the slnf (ADR-031) so the unit gate stays Docker-free, which means the backend command above **does not run it**. Needs a container runtime; `export PATH="$HOME/.rd/bin:$PATH"` first under Rancher Desktop
+- **Test (backend, 431 tests):** `dotnet test agenda-buddy-backend.slnf --collect:"XPlat Code Coverage"` — use the solution filter, not the full solution
+- **Test (integration, 118 tests):** `dotnet test AgendaBuddy.IntegrationTests/AgendaBuddy.IntegrationTests.csproj` — ⚠️ a **separate command**. `AgendaBuddy.IntegrationTests` is deliberately excluded from the slnf (ADR-031) so the unit gate stays Docker-free, which means the backend command above **does not run it**. Needs a container runtime; `export PATH="$HOME/.rd/bin:$PATH"` first under Rancher Desktop
 - **Test (mobile, 74 tests):** `dotnet test MobileApp.Tests/MobileApp.Tests.csproj /p:MobileWorkloads=false`
 - **Format:** `dotnet format agenda-buddy-backend.slnf` — there is no `.editorconfig`, so this applies built-in defaults
 - **Regenerate the OpenAPI specs:** `./scripts/generate-openapi.sh [Service…]` → `docs/api/openapi/`. Runs each service **standalone as Development** against a throwaway Mongo container, because Swashbuckle is registered only in Development and the AppHost's services do not run as Development
@@ -75,6 +75,9 @@ See [docs/pdlc/archive/design/aspire-wiring/ARCHITECTURE.md](docs/pdlc/archive/d
 - `Library/Entities/` — all domain entity definitions (AppointmentEntity, ProviderEntity, CustomerEntity, ServiceEntity, ProfessionEntity)
 - `Library/Repositories/MongoDbRepository.cs` — generic MongoDB CRUD implementation
 - `Library/Tools/CacheAside.cs` — distributed cache-aside extension (use this for all cached reads)
+- `Library/Repositories/IRepository.cs` — `FindOneAndUpdateAsync(filter, update)` is the **only** partial-update primitive (ADR-032). Every other write here replaces a whole document. It **never upserts**, which is what stops a failed login for an unknown address creating an account
+- `AgendaBuddy.ServiceDefaults/TransportSecurity.cs` — HSTS policy plus `UseAgendaBuddyTransportSecurity()`. **All seven services must call it immediately before `UseAuthentication()`** — `AddServiceDefaults()` runs on the builder, so it cannot position middleware itself. A test in `Library.Tests` fails if any service gets the order wrong or calls `UseHttpsRedirection` directly
+- `Identity/Extensions/RateLimitingExtensions.cs` — per-IP limiter on `login` **and** `register`, the two routes that spend BCrypt (262 ms each, measured). `refresh` is deliberately unlimited
 - `EventAndCommands/ConfigurationLoader.cs` — MongoDB config bootstrap for EventAndCommands
 - `EventAndCommands/Persistence/EventStore.cs` — audit event persistence. Takes an injected `IMongoClient`; it no longer builds one per request scope. *(The long-standing `Persitency` misspelling was corrected in F-016; CONSTITUTION §9's prohibition against renaming it is retired.)*
 - `Booking/Program.cs` — representative Minimal API entry point showing the full wiring pattern
@@ -92,6 +95,15 @@ See [docs/pdlc/archive/design/aspire-wiring/ARCHITECTURE.md](docs/pdlc/archive/d
 - `.github/workflows/dotnet.yml` — CI pipeline: restore → build → test → coverage upload, plus AppHost build and startup guards
 
 ---
+
+### Security controls that default OFF
+
+`Security:RateLimiting:Enabled` and `Security:Hsts:Enabled` are **off unless configured**, and gated on
+configuration rather than `IsProduction()` — every service runs as **Production** under the local AppHost,
+so the environment name cannot distinguish a laptop from a deployment (ADR-033). The AppHost injects
+`Security__Local=true` locally and turns both **on** in the cloud graph; each service warns at startup,
+naming the key, when a control is off outside a local run. Full surface in
+`docs/pdlc/context/06-configuration.md`.
 
 **PDLC memory:** `docs/pdlc/memory/` — CONSTITUTION.md, INTENT.md, OVERVIEW.md, DECISIONS.md, ROADMAP.md, STATE.md
 
