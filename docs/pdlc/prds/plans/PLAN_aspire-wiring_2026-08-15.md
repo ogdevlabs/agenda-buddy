@@ -3,8 +3,8 @@
 **Author:** Neo (Architect)
 **Date:** 2026-08-15
 **Status:** Approved (pre-approved by user instruction)
-**PRD:** [PRD_aspire-wiring_2026-08-15.md](../PRD_aspire-wiring_2026-08-15.md)
-**Design:** [ARCHITECTURE.md](../../design/aspire-wiring/ARCHITECTURE.md) · [threat-model.md](../../design/aspire-wiring/threat-model.md)
+**PRD:** [PRD_aspire-wiring_2026-08-15.md](../../archive/prds/PRD_aspire-wiring_2026-08-15.md)
+**Design:** [ARCHITECTURE.md](../../archive/design/aspire-wiring/ARCHITECTURE.md) · [threat-model.md](../../archive/design/aspire-wiring/threat-model.md)
 **Task records:** `docs/pdlc/tasks/F-013/`
 
 ---

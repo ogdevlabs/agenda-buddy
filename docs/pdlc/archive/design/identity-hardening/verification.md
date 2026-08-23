@@ -218,7 +218,104 @@ Run by hand, as at F-013 and F-016. **F-017 still owns automating it.**
 
 ---
 
-## 6. What a reviewer should look at first
+## 6. Live verification at the Ship gate — 2026-08-22
+
+Run against a live stack after the merge, because "the tests pass" and "the feature works" are different
+claims and F-016's ship gate established that this project checks the second one. Two configurations:
+the **Aspire AppHost** (all seven services, both controls off — the default a developer meets) and
+**Identity standalone in `Production` against the AppHost's MongoDB** with both controls **armed**, which
+is the only way to observe them in a real process rather than in `TestServer`.
+
+### 6.1 The regression risk of reordering seven pipelines
+
+| Check | Result |
+|---|---|
+| All 7 services under the AppHost | ✅ `/health` = `Healthy`, `/alive` = 200 on every one, after the transport-security reorder |
+
+### 6.2 The end-to-end flow no integration test covers (deviation 4, now closed by observation)
+
+Against a live Identity + MongoDB:
+
+| Step | Expected | Observed |
+|---|---|---|
+| `POST /register` | 201 + token pair | ✅ 201 |
+| `POST /refresh` with that token | 200, a **different** refresh token | ✅ 200, rotated |
+| `POST /refresh` replaying the consumed token | 401 | ✅ 401 |
+| `POST /login` with the original password | 200 — **the credential survived rotation** | ✅ 200 |
+| The stored document afterwards | every field intact, `failed_attempts: 0`, `lock_until` **field absent**, exactly one document | ✅ all four |
+
+That last row is the whole feature in one line: before F-021 this sequence had a window in which the
+document did not exist at all.
+
+### 6.3 Threat T-103's mitigation, observed in both directions
+
+| Configuration | Expected | Observed |
+|---|---|---|
+| Under the AppHost (`Security__Local=true`) | silent — "off" is deliberate here | ✅ zero warnings |
+| Standalone `Production`, no local marker, both flags unset | warn, naming each key | ✅ both warnings, verbatim: *"HSTS is OFF: set `Security:Hsts:Enabled=true`…"* and *"Rate limiting is OFF: set `Security:RateLimiting:Enabled=true`. login and register each spend ~262 ms of CPU on BCrypt per request…"* |
+| Standalone with both flags on | silent | ✅ zero warnings |
+
+### 6.4 The limiter, in a real process with a real client address
+
+`TestServer` leaves `RemoteIpAddress` null, so the harness could only exercise the `unattributed`
+partition. This run has an actual address.
+
+| Check | Result |
+|---|---|
+| Requests beyond a 3/minute allowance | ✅ 400, 400, then **429** for every subsequent request |
+| `Retry-After` on the 429 | ✅ `Retry-After: 60` |
+| BCrypt spent on a throttled request | ✅ none — the bodies were invalid, and the limiter answers before validation, so a throttled caller gets 429 rather than 400 (as `api-contracts.md` §2 predicted) |
+
+### 6.5 Lockout and indistinguishability, live
+
+Threshold set to 3 for the run:
+
+| Step | Expected | Observed |
+|---|---|---|
+| 3 wrong passwords | 401 each | ✅ 401, 401, 401 |
+| The **correct** password afterwards | 401 — refused by the lock | ✅ 401 |
+| Wrong-password body vs locked body | identical apart from `requestId` | ✅ byte-identical after removing it: `{"status":401,"title":"Unauthorized","type":"…rfc9110#section-15.5.2"}` |
+| The stored document | `failed_attempts: 3`, `lock_until` set, every other field intact, one document | ✅ all four |
+
+### 6.6 AC-16, and the check that stops it being a vacuous pass
+
+The first attempt at this **was** vacuous and is worth recording: grepping the AppHost console for the
+address returned zero occurrences — but so did grepping it for `credential.`, because Aspire streams
+service logs to the dashboard over OTLP and not to the AppHost's stdout. Zero occurrences of a leak in a
+file containing none of the relevant output proves nothing. Repeated against a real Identity process whose
+console was captured:
+
+| Check | Result |
+|---|---|
+| `credential.*` lines present at all | ✅ **6** — the non-vacuity guard |
+| What they say | `credential.created ok for acct_01fa6a06332a as Customer` · three `credential.login-failed wrong-password … N consecutive` · `credential.locked … until … after 3 consecutive failures` · `credential.login-failed locked for acct_… until …` |
+| The address anywhere in the log | ✅ 0 |
+| Its local part anywhere | ✅ 0 |
+| The character `@` anywhere | ✅ 0 |
+| The password anywhere | ✅ 0 |
+
+The last log line is worth reading twice: it names the **lock**, not a wrong password, which is the lock
+check firing *before* `BCrypt.Verify` (D-9) observed rather than argued.
+
+### 6.7 What the live run could not check
+
+- **HSTS over TLS.** No HTTPS listener is configured locally, so only the negative half is observable
+  live: with the flag **on**, a plain-HTTP response carries no `Strict-Transport-Security` (✅ confirmed).
+  The positive half is covered by `ServiceDefaults.Tests.TransportSecurityTest` and
+  `TransportSecurityHeaderTest`, both of which issue `https://` requests. Nothing here can close it —
+  F-017 owns TLS termination.
+- **Lock expiry.** The window is 15 minutes at its shortest useful setting; the unit tests advance a fake
+  clock instead. AC-8 is a test claim, not a live one.
+
+### 6.8 An empirical upgrade to a filed finding
+
+`db.credentials.getIndexes()` on the live AppHost database returns exactly `["_id_"]`. `agenda-buddy-b0w`
+was filed from a grep for `CreateIndex`; it is now **observed** on a running database. Nothing enforces
+one credential per email anywhere in a path this project actually uses.
+
+---
+
+## 7. What a reviewer should look at first
 
 1. **`IdentityService.RefreshAsync`** — one filter now carries the single-use guard, the expiry check and
    the lock check. If any condition leaves that filter, a defect returns silently.

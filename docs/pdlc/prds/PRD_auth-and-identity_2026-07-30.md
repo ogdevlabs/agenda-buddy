@@ -215,11 +215,11 @@ And no plaintext password is generated or stored at any point
 
 ## Design Docs
 
-- Architecture: [ARCHITECTURE.md](../../design/auth-and-identity/ARCHITECTURE.md)
-- Data model: [data-model.md](../../design/auth-and-identity/data-model.md)
-- API contracts: [api-contracts.md](../../design/auth-and-identity/api-contracts.md)
-- Threat model: [threat-model.md](../../design/auth-and-identity/threat-model.md) *(triage: Full — 8 threats, 5 mitigate now, 3 accept/mitigate later)*
-- UX review: [ux-review.md](../../design/auth-and-identity/ux-review.md) *(triage: Skip — pure backend API, no UI surface)*
+- Architecture: [ARCHITECTURE.md](../design/auth-and-identity/ARCHITECTURE.md)
+- Data model: [data-model.md](../design/auth-and-identity/data-model.md)
+- API contracts: [api-contracts.md](../design/auth-and-identity/api-contracts.md)
+- Threat model: [threat-model.md](../design/auth-and-identity/threat-model.md) *(triage: Full — 8 threats, 5 mitigate now, 3 accept/mitigate later)*
+- UX review: [ux-review.md](../design/auth-and-identity/ux-review.md) *(triage: Skip — pure backend API, no UI surface)*
 
 ---
 

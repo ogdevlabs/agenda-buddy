@@ -635,3 +635,39 @@ Post-image (`ReturnDocument.After`), never upserting, `BsonDocument` in and out.
 - `IdentityService` takes `IOptions<LockoutOptions>` and `ILogger<IdentityService>`, both **optional with defaults**, so the twenty-odd unit tests that predate F-021 compile unchanged and the shipped defaults apply to any caller that configures nothing.
 - Identity still writes no audit events. Adopting the EventStore here would put credential-shaped documents into the collection every other service writes to; logs are the record, which is stated in `data-model.md` §6 rather than left implicit.
 
+
+---
+
+## ADR-035 — Azure is not reviewed until every pending feature ships and the no-longer-needed tech debt is discharged
+
+**Date:** 2026-08-22 · **Status:** Accepted · **Decided by:** maintainer (ogdevlabs) · **Feature:** F-021 (Ship gate)
+
+**Context.** The cloud capability has been written, unit-tested (47 AppHost model tests, now 62) and **never executed** since F-013. Each of the three tagged releases has recorded a "deploy skipped" with the same three blockers, and each recorded it as a gap widening by repetition. Meanwhile the roadmap says plainly that six features' worth of the product does not work yet.
+
+**Decision.** Azure is **not reviewed, provisioned or deployed** until **both**:
+
+1. **Every pending feature is completed** — F-014, F-015, F-017, F-018, F-019, F-020, and F-022–F-024 if they are still on the roadmap at that point.
+2. **The tech debt of "things no longer needed" is discharged** — the code, containers, Compose services, scripts and configuration that exist only because of earlier shapes of this project and that a deployment would otherwise carry into a cloud environment.
+
+Until both hold, "deploy skipped" is the **expected** outcome of a ship and is not reported as a gap.
+
+**Rationale.** Deploying now would provision infrastructure, cost and attack surface for a system that cannot serve its own use cases:
+
+- **F-014** exists because `NotificationService`, `MessageService`, `NoteService`, `PaymentService`, `ReportingService` and `DeactivateProviderCommand` have no DI registration, no configured collection and no HTTP route — so F-006 through F-010 are marked `Shipped` on code nothing can call.
+- **F-015** exists because the mobile client cannot reach the backend at all.
+- **F-017** owns the container story, and three Dockerfiles currently publish `net10.0` output onto a `dotnet/runtime:8.0` base and **cannot run**. There is no deployable artifact to deploy.
+
+A cloud environment would make all of that a running cost without making any of it work. The second condition exists because deployment is the point at which dead weight stops being untidy and starts being deployed: a Compose file with services nothing uses, a seed script that writes to databases no service reads, and three unrunnable Dockerfiles are cheap in a repository and expensive in an environment.
+
+**What this explicitly does NOT defer.**
+
+- **Rotating the `agenda_buddy` Atlas credential** (`agenda-buddy-41s`, P0). It is a blocker *for* deployment, but its justification does not depend on deployment: the credential is valid, publicly recoverable from git history, and grants write access to a live cluster with **no backups**. Deferring the deploy does not defer this.
+- **F-017's dependency-audit and secret-scan gate.** CONSTITUTION §7 mandates it, it has been satisfied by hand for three consecutive features, and it is about the repository rather than about any environment.
+- **Keeping the cloud path buildable.** `azure.yaml`, `.github/workflows/deploy.yml` and the `DeploymentTarget.Cloud` graph stay covered by tests, so the capability does not rot while it waits. F-021 added assertions there for exactly this reason: the cloud branch is where its two security controls are switched on.
+
+**Consequences.**
+
+- `/ship` stops treating a skipped deploy as a finding. The Operation phase's deploy step records "deferred per ADR-035" and moves on, which is a materially different record from "skipped, blockers unchanged".
+- `agenda-buddy-dwe` (first cloud deployment) is **deferred** rather than open-and-blocked, so `bd ready` stops offering work nobody intends to start.
+- **A re-evaluation trigger, not a date.** The condition is a state of the roadmap, so it is checked at each ship rather than scheduled. The first ship after the last pending feature closes should re-open this decision explicitly rather than inheriting it.
+- **The risk accepted:** the first deployment will exercise a capability that has by then been unexecuted for even longer, against an Azure surface that may have moved. That is the cost of the trade, and it is smaller than the alternative — carrying a live cloud environment for a product whose own roadmap says six features do not work.

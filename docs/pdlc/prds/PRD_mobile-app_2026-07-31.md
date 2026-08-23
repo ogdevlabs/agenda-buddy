@@ -159,11 +159,11 @@ And the app does not crash or display a blank white screen
 
 ## Design Docs
 
-- Architecture: [ARCHITECTURE.md](../../design/mobile-app/ARCHITECTURE.md)
-- Data model: [data-model.md](../../design/mobile-app/data-model.md)
-- API contracts: [api-contracts.md](../../design/mobile-app/api-contracts.md)
-- Threat model: [threat-model.md](../../design/mobile-app/threat-model.md) *(triage: Full — 2 mitigate-now, 1 accepted)*
-- UX review: [ux-review.md](../../design/mobile-app/ux-review.md) *(triage: Full — 3 fix-now P1, 3 mitigate-later P2; 29/40 heuristics)*
+- Architecture: [ARCHITECTURE.md](../design/mobile-app/ARCHITECTURE.md)
+- Data model: [data-model.md](../design/mobile-app/data-model.md)
+- API contracts: [api-contracts.md](../design/mobile-app/api-contracts.md)
+- Threat model: [threat-model.md](../design/mobile-app/threat-model.md) *(triage: Full — 2 mitigate-now, 1 accepted)*
+- UX review: [ux-review.md](../design/mobile-app/ux-review.md) *(triage: Full — 3 fix-now P1, 3 mitigate-later P2; 29/40 heuristics)*
 
 ---
 

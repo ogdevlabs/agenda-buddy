@@ -38,14 +38,14 @@ integration + 74 mobile.
 
 ## Links
 
-- **PRD:** [PRD_F-016_secure-public-endpoints_2026-08-18.md](../prds/PRD_F-016_secure-public-endpoints_2026-08-18.md)
-- **Plan:** [plan_F-016_secure-public-endpoints_2026-08-18.md](../prds/plans/plan_F-016_secure-public-endpoints_2026-08-18.md)
+- **PRD:** [PRD_F-016_secure-public-endpoints_2026-08-18.md](../archive/prds/PRD_F-016_secure-public-endpoints_2026-08-18.md)
+- **Plan:** [plan_F-016_secure-public-endpoints_2026-08-18.md](../archive/prds/plan_F-016_secure-public-endpoints_2026-08-18.md)
 - **PR:** [#38](https://github.com/ogdevlabs/agenda-buddy/pull/38) — open, mergeable, CI green
-- **Review file:** [REVIEW_secure-public-endpoints_2026-08-18.md](../reviews/REVIEW_secure-public-endpoints_2026-08-18.md)
-- **Blast radius:** [BLAST-RADIUS_secure-public-endpoints_2026-08-18.md](../reviews/BLAST-RADIUS_secure-public-endpoints_2026-08-18.md)
-- **Verification (26-AC attestation):** [verification.md](../design/secure-public-endpoints/verification.md)
-- **Design docs:** [ARCHITECTURE.md](../design/secure-public-endpoints/ARCHITECTURE.md) · [api-contracts.md](../design/secure-public-endpoints/api-contracts.md) · [threat-model.md](../design/secure-public-endpoints/threat-model.md) · [data-model.md](../design/secure-public-endpoints/data-model.md) · [ux-review.md](../design/secure-public-endpoints/ux-review.md)
-- **MOMs:** wave-3, wave-4, wave-6 standups + [party-review](../mom/party-review_F-016_2026-08-18.md)
+- **Review file:** [REVIEW_secure-public-endpoints_2026-08-18.md](../archive/reviews/REVIEW_secure-public-endpoints_2026-08-18.md)
+- **Blast radius:** [BLAST-RADIUS_secure-public-endpoints_2026-08-18.md](../archive/reviews/BLAST-RADIUS_secure-public-endpoints_2026-08-18.md)
+- **Verification (26-AC attestation):** [verification.md](../archive/design/secure-public-endpoints/verification.md)
+- **Design docs:** [ARCHITECTURE.md](../archive/design/secure-public-endpoints/ARCHITECTURE.md) · [api-contracts.md](../archive/design/secure-public-endpoints/api-contracts.md) · [threat-model.md](../archive/design/secure-public-endpoints/threat-model.md) · [data-model.md](../archive/design/secure-public-endpoints/data-model.md) · [ux-review.md](../archive/design/secure-public-endpoints/ux-review.md)
+- **MOMs:** wave-3, wave-4, wave-6 standups + [party-review](../archive/mom/party-review_F-016_2026-08-18.md)
 
 ---
 

@@ -19,6 +19,63 @@
 
 ---
 
+## v0.3.0 — 2026-08-22
+
+Hardens the auth system itself (F-021). F-016 established that no endpoint leaks PII; this release makes the
+equivalent claim about signing in and staying signed in. Every defect was reproduced as a failing test before
+being fixed, and each control was then observed against a live stack rather than inferred from a green suite.
+
+### Fixed
+- **A token refresh could permanently destroy an account.** `RefreshAsync` deleted the entire credential
+  document and re-inserted it, so any fault between the two lost the email, password hash, role and reset
+  flag irrecoverably — with no audit trail and no log line. Worse, the re-insert sat inside the
+  `IsMongoDown` catch, so **the destructive path was the handled path**: a transient database blip returned
+  a tidy 503 to a user whose account no longer existed. A mobile client refreshes hourly.
+  Rotation is now a single atomic update whose filter carries the presented token hash, the expiry check and
+  a not-locked condition. The document is never deleted, so there is no window in which it does not exist.
+- **`AssertOwner`'s null-claim pass** — no change needed; already closed by F-016. Recorded because F-021's
+  inherited scope listed four items and delivered three.
+
+### Added
+- **Rate limiting on `POST /api/v1/auth/login` and `POST /api/v1/auth/register`** — per source IP, sliding
+  window, default 10 requests/minute, returning **429** with `Retry-After`. Both routes, not just login:
+  BCrypt at work factor 12 was **measured at 262 ms** on the reference machine, and `register` hashes at the
+  same cost. That measurement also reframed the threat — password guessing runs at ~3.8 attempts/sec/core,
+  while the same cost lets an attacker spend *the server's* CPU, so roughly 4 unauthenticated requests per
+  second pin a core of the service that issues every other service's tokens.
+- **Account lockout** — consecutive failed logins are counted with an atomic increment; after 10 (default)
+  the account locks for 15 minutes and then **unlocks itself**. No permanent lock and no administrative
+  unlock: password reset does not exist yet, so a lock needing a human to clear it would strand a real
+  provider — and let an attacker strand one deliberately. A refusal-because-locked is indistinguishable from
+  a wrong password in status code and body.
+- **HSTS**, off by default, conservative `max-age`, no `includeSubDomains` and no `preload` — those are the
+  hard-to-reverse parts. Emitted only over TLS.
+- **Credential-mutation logging.** Identity previously had no log sink at all. Create, rotate, lock, reset
+  and session-end are now recorded with an operation, an outcome and a one-way `acct_<hash>` reference —
+  never the address, because span redaction does not cover logs.
+- `IRepository<T>.FindOneAndUpdateAsync(filter, update)` — one narrow partial-update primitive, post-image,
+  and it **never upserts**, which is what stops a failed login for an unknown address creating an account
+  (ADR-032).
+- Two optional fields on the credential document: `failed_attempts` and `lock_until`. No migration: an
+  absent counter reads as zero and an absent lock reads as unlocked.
+
+### Changed
+- **`UseHttpsRedirection` now runs before `UseAuthentication` in all seven services.** It previously ran
+  last, so a bearer token was parsed and validated out of a plaintext request before the redirect was
+  issued. Identity's `if (!IsDevelopment())` guard around its redirect is gone — under the AppHost that
+  condition was always true, so it never meant what it looked like it meant.
+- Login and logout no longer replace the whole credential document to update the refresh token.
+- Both new controls are gated on **configuration**, not on `IsProduction()`, and default **off** — services
+  run as Production under the local AppHost, so the environment name cannot tell a laptop from a deployment.
+  The AppHost turns them on in its cloud graph and marks a local run as local; each service warns loudly at
+  startup, naming the key, when a control is off outside a local run (ADR-033).
+
+### Not shipped in this release
+- **Cloud deployment is deferred by decision, not by blocker** (ADR-035): Azure is not reviewed until every
+  pending feature is complete and the no-longer-needed tech debt is discharged. This is the third
+  consecutive release without a remote deployment, and the first where that is a schedule rather than a gap.
+- Rotating the committed Atlas credential remains outstanding and does **not** wait for the above.
+
 ## v0.2.0 — 2026-08-18
 
 Closes unauthenticated PII exposure across the six domain services, and adds the integration harness that

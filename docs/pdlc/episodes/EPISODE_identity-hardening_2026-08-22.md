@@ -6,8 +6,8 @@
 **Feature ID:** F-021
 **Date built:** 2026-08-22, on `feat/F-021-identity-hardening` — **PR [#39](https://github.com/ogdevlabs/agenda-buddy/pull/39)**, CI green (`build-and-test`, `Integration — real services + MongoDB`, `Mobile — Unit Tests`), mergeable
 **Phase delivered in:** Construction
-**Status:** **Draft** — not shipped. `main` was deliberately rolled back to `5ef3e10` to keep this work off
-it, so the episode closes when the PR merges and `/ship` runs.
+**Date shipped:** 2026-08-22 — merged as `f5d47d6`, tagged **`v0.3.0`**, PR #39
+**Status:** **Final** — Operation phase closed 2026-08-22 after live verification against a running stack
 
 ---
 
@@ -50,10 +50,10 @@ Suites went from 358 + 99 + 74 to **431 + 118 + 74 = 623**.
 
 | Artifact | Path |
 |---|---|
-| PRD | [`PRD_F-021_identity-hardening_2026-08-22.md`](../prds/PRD_F-021_identity-hardening_2026-08-22.md) |
-| Brainstorm | [`brainstorm_identity-hardening_2026-08-22.md`](../brainstorm/brainstorm_identity-hardening_2026-08-22.md) |
-| Design | [`docs/pdlc/design/identity-hardening/`](../design/identity-hardening/) — ARCHITECTURE, data-model, api-contracts, threat-model, ux-review |
-| Verification | [`verification.md`](../design/identity-hardening/verification.md) — 16/16 ACs, the red run, and eleven things this feature does *not* claim |
+| PRD | [`PRD_F-021_identity-hardening_2026-08-22.md`](../archive/prds/PRD_F-021_identity-hardening_2026-08-22.md) |
+| Brainstorm | [`brainstorm_identity-hardening_2026-08-22.md`](../archive/brainstorm/brainstorm_identity-hardening_2026-08-22.md) |
+| Design | [`docs/pdlc/archive/design/identity-hardening/`](../archive/design/identity-hardening/) — ARCHITECTURE, data-model, api-contracts, threat-model, ux-review |
+| Verification | [`verification.md`](../archive/design/identity-hardening/verification.md) — 16/16 ACs, the red run, and eleven things this feature does *not* claim |
 | Tasks | [`docs/pdlc/tasks/F-021/`](../tasks/F-021/) — T01…T07 |
 | Decisions | ADR-032, ADR-033, ADR-034; **ADR-011 superseded** |
 
@@ -167,10 +167,43 @@ sanitization tests had never asserted anything.
 
 ---
 
+## Verified at the Ship gate — not inferred from a green suite
+
+Full record in [`verification.md`](../archive/design/identity-hardening/verification.md) §6. The headlines:
+
+- **All 7 services `Healthy` under the AppHost** after reordering seven middleware pipelines.
+- **The end-to-end flow no integration test covers, executed live**: register → refresh (rotated) → replay
+  the consumed token (401) → **log in with the original password (200)**. The stored document afterwards has
+  every field intact, `failed_attempts: 0`, no `lock_until`, and exactly one document. Before F-021 that
+  sequence had a window in which the document did not exist at all.
+- **Threat T-103 observed in both directions**: silent under the AppHost (which declares the run local),
+  and both warnings firing verbatim — naming each key — on a `Production` run that does not.
+- **The limiter in a real process with a real client address**, which `TestServer` cannot provide: 429 with
+  `Retry-After: 60` past the allowance, and a throttled request answered before validation.
+- **Lockout live**: three wrong passwords, then the *correct* password refused, with the two response
+  bodies **byte-identical** after removing the per-request `requestId`.
+- **AC-16 live, and the first attempt at it was vacuous** — grepping the AppHost console found no email,
+  but also no `credential.*` lines at all, because Aspire streams service logs to the dashboard over OTLP
+  rather than to stdout. Zero leaks in a file containing none of the relevant output proves nothing.
+  Repeated against a captured Identity process: **6** mutation lines, all carrying `acct_01fa6a06332a`, and
+  zero occurrences of the address, its local part, `@`, or the password.
+
+Two things the live run could **not** settle, stated rather than implied: HSTS over TLS (no HTTPS listener
+exists locally — only the negative half is observable, and F-017 owns TLS), and lock expiry (15 minutes at
+its shortest useful setting; the unit tests advance a fake clock instead).
+
+One filed finding was upgraded from inference to observation: `db.credentials.getIndexes()` on the live
+database returns exactly `["_id_"]` (`agenda-buddy-b0w`).
+
+---
+
 ## Deployment Record
 
 | Item | Detail |
 |---|---|
-| **Deployed to** | Nothing. Not merged, not tagged, not deployed. `main` is at `5ef3e10` by deliberate rollback |
-| **Next action** | Human: review and merge the PR, then `/ship` |
-| **Cloud** | Still blocked by the same three items, the first of which is the unrotated Atlas credential (`agenda-buddy-41s`) |
+| **Merged** | `f5d47d6` (merge commit), PR #39, CI green on `build-and-test`, `Integration — real services + MongoDB` and `Mobile — Unit Tests` |
+| **Tagged** | `v0.3.0` |
+| **Deployed to** | `local` (Aspire AppHost) only — where the verification above was performed |
+| **Cloud** | ⚠️ **Deferred by decision, not blocked** — ADR-035: Azure is not reviewed until every pending feature is complete and the no-longer-needed tech debt is discharged. Third consecutive release without a remote deployment, and the first where that is a schedule rather than a gap |
+| **Note for whoever runs the first deploy** | Both of this feature's security controls are **off unless configuration turns them on**. `AppHostWiring.cs`'s cloud branch sets them and `AppHostWiringTest` asserts it, but a deployment that bypasses the AppHost graph ships without either while every artifact records the feature as delivered (threat T-103) |
+| **Still outstanding, and independent of the deferral** | Rotating the Atlas credential (`agenda-buddy-41s`, P0) |

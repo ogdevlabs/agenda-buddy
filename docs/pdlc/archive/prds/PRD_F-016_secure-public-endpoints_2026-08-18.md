@@ -7,7 +7,7 @@
 **Episode:** _assigned after delivery_
 
 > **First feature of the Platform Remediation program** (F-016 → F-021 → F-014 → F-015 → F-017).
-> Program Discover: [`brainstorm_platform-remediation_2026-08-18.md`](../brainstorm/brainstorm_platform-remediation_2026-08-18.md) — approved 2026-08-18.
+> Program Discover: [`brainstorm_platform-remediation_2026-08-18.md`](../../brainstorm/brainstorm_platform-remediation_2026-08-18.md) — approved 2026-08-18.
 
 ---
 
@@ -349,7 +349,7 @@ Two further items are **scope additions the design proposes and the human must d
 
 ## Related Episodes
 
-- [EPISODE_aspire-wiring_2026-08-17.md](../episodes/EPISODE_aspire-wiring_2026-08-17.md) — F-013 (`v0.1.0`). Established `MongoConnectionResolver`, the shared `IMongoClient` singleton, and `PiiRedactingProcessor`. Directly relevant: F-013 discovered that enabling telemetry exported real customer emails via `url.path`, which is why this feature's NFRs treat the redaction processor as load-bearing. F-013 also demonstrated the failure mode this PRD guards against — a threat "mitigated" by reasoning rather than observation.
+- [EPISODE_aspire-wiring_2026-08-17.md](../../episodes/EPISODE_aspire-wiring_2026-08-17.md) — F-013 (`v0.1.0`). Established `MongoConnectionResolver`, the shared `IMongoClient` singleton, and `PiiRedactingProcessor`. Directly relevant: F-013 discovered that enabling telemetry exported real customer emails via `url.path`, which is why this feature's NFRs treat the redaction processor as load-bearing. F-013 also demonstrated the failure mode this PRD guards against — a threat "mitigated" by reasoning rather than observation.
 - F-018 `api-refactor-foundations` — Inception complete, Construction aborted before any code (PR #37). Its PRD, architecture, threat model and both passed spikes are the source of this feature's section A. Not an episode; not shipped.
 
 ---

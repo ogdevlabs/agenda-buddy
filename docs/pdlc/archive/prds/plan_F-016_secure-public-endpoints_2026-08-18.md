@@ -2,8 +2,8 @@
 
 **Feature:** `secure-public-endpoints` (F-016) — first of the Platform Remediation program
 **Date:** 2026-08-18
-**PRD:** [`PRD_F-016_secure-public-endpoints_2026-08-18.md`](../PRD_F-016_secure-public-endpoints_2026-08-18.md)
-**Design:** [`docs/pdlc/design/secure-public-endpoints/`](../../design/secure-public-endpoints/)
+**PRD:** [`PRD_F-016_secure-public-endpoints_2026-08-18.md`](PRD_F-016_secure-public-endpoints_2026-08-18.md)
+**Design:** [`docs/pdlc/design/secure-public-endpoints/`](../../archive/design/secure-public-endpoints/)
 **Branch:** `feat/F-016-secure-public-endpoints` *(created at build pre-flight)*
 
 **20 tasks · 8 waves · 26 acceptance criteria (19 from Define + 7 threat-derived `[security]`) · 9 user stories**

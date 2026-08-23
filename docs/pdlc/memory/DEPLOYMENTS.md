@@ -5,7 +5,7 @@
      team on every ship to understand the current deployment surface. -->
 
 **Project:** Agenda Buddy
-**Last updated:** 2026-08-18
+**Last updated:** 2026-08-22
 
 ---
 
@@ -81,7 +81,38 @@ Terminate the AppHost with `Ctrl-C`. Legacy Compose path: `docker compose down`.
 
 ---
 
-### Environment: cloud (Azure) — REGISTERED, NEVER DEPLOYED
+### Environment: cloud (Azure) — REGISTERED, NEVER DEPLOYED, **AND NOW DELIBERATELY DEFERRED**
+
+> ## 🛑 Maintainer decision, 2026-08-22: Azure is not reviewed until two conditions are met
+>
+> **1. Every pending feature is completed** — F-014, F-015, F-017, F-018, F-019, F-020 (and F-022–F-024 if
+> they are still on the roadmap by then).
+> **2. The tech debt of "things no longer needed" is discharged** — the code, containers, scripts and
+> configuration that exist only because of earlier shapes of this project, and that a deployment would
+> otherwise carry into a cloud environment.
+>
+> **Until both hold, "deploy skipped" is the expected outcome of every ship and is no longer a gap to
+> report.** This changes what the skip *means*: at v0.1.0 and v0.2.0 it was an unexercised capability being
+> carried release after release, and each ship recorded it as a widening gap. It is now a **scheduled**
+> deferral with named exit conditions, which is a different thing and should be read differently.
+>
+> **Why this is the right call and not procrastination.** Deploying now would provision infrastructure for a
+> system whose own roadmap says six of its features do not work yet: F-014 exists because
+> `NotificationService`, `MessageService`, `NoteService`, `PaymentService`, `ReportingService` and
+> `DeactivateProviderCommand` have no DI registration, no collection and no route, so F-006–F-010 are marked
+> Shipped on code nothing can call; F-015 exists because the mobile client cannot reach the backend at all.
+> A cloud environment would make all of that a running cost and a security surface without making any of it
+> work — and F-017, which owns the container story, has three Dockerfiles that publish `net10.0` onto a
+> `dotnet/runtime:8.0` base and **cannot run**. There is nothing deployable to deploy yet.
+>
+> **What does NOT wait for this.** Rotating the Atlas credential (`agenda-buddy-41s`, P0) is independent and
+> still urgent: the credential is valid, publicly recoverable from git history, and grants write access to a
+> live cluster with no backups. It is a blocker *for* deployment, but its own justification does not depend
+> on deployment ever happening.
+>
+> **Trackers:** `agenda-buddy-dwe` (first cloud deployment) is deferred against this decision. See ADR-035.
+
+
 
 **Purpose:** Intended Azure Container Apps target, provisioned via `azd`.
 **URL:** unknown — no deployment has been performed
@@ -102,7 +133,17 @@ Terminate the AppHost with `Ctrl-C`. Legacy Compose path: `docker compose down`.
 2. No Azure subscription is wired to this machine.
 3. After the first interactive `azd up`, the discovered parameter names must go into the `AZD_ENV_VARS` repository secret for `.github/workflows/deploy.yml` to work.
 
-> **Deploy SKIPPED again at v0.2.0 (F-016), 2026-08-18 — the second consecutive release.** All three blockers
+> **Deploy SKIPPED at `v0.3.0` (F-021), 2026-08-22 — the third consecutive release, and the first one where
+> the skip is a scheduled deferral rather than a gap.** See the maintainer decision above. F-021 was verified
+> against the local AppHost instead, exactly as F-016 was. One F-021-specific note for whoever eventually
+> runs the first deploy: **both of this feature's security controls are off unless the cloud configuration
+> turns them on.** `AppHostWiring.cs`'s `DeploymentTarget.Cloud` branch sets `Security__Hsts__Enabled` for all
+> seven services and `Security__RateLimiting__Enabled` for `identity`, and `AppHostWiringTest` asserts it —
+> but a deployment that bypasses the AppHost graph would ship without either control while every artifact
+> records the feature as delivered (threat T-103). HSTS additionally does nothing until TLS is terminated,
+> which is **F-017's**.
+>
+> **Deploy SKIPPED at v0.2.0 (F-016), 2026-08-18 — the second consecutive release.** All three blockers
 > above are unchanged. Recorded rather than omitted so the gap does not become invisible through repetition:
 > the cloud capability has now been carried, unexercised, through two tagged releases. Blocker 1 (rotate the
 > Atlas credential) is human-only and is also the item that makes the new integration harness's fail-closed
@@ -152,3 +193,5 @@ Terminate the AppHost with `Ctrl-C`. Legacy Compose path: `docker compose down`.
 | 2026-08-18 | Registered `cloud` (Azure) as a known-but-never-deployed environment with its three blockers, tagged `tier: dev` provisionally, so the unexercised capability is visible rather than implied | Pulse |
 | 2026-08-18 | Deploy skipped for the v0.1.0 ship — recorded as skipped-with-reason, not as a deployment | Pulse |
 | 2026-08-18 | v0.2.0 (F-016): recorded the **second consecutive** cloud deploy skip with its three unchanged blockers, and logged the local AppHost verification used in its place | Pulse |
+| 2026-08-22 | **Azure review deferred by maintainer decision** until every pending feature is complete and the no-longer-needed tech debt is discharged (ADR-035). The skip stops being reported as a widening gap and becomes a scheduled deferral with named exit conditions. Credential rotation explicitly does **not** wait for it | Pulse |
+| 2026-08-22 | `v0.3.0` (F-021): third consecutive cloud deploy skip, first under the deferral. Added the note that F-021's two security controls are configuration-gated and off unless the cloud graph turns them on | Pulse |

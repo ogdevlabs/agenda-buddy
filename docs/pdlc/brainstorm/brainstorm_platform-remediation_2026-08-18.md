@@ -502,8 +502,8 @@ Phantom's framing. Two changed the design rather than annotating it:
   table. **Pagination bounds the response, not the extraction.** Proposed fix is a scope addition
   beyond the approved PRD → escalated to the human.
 
-Full detail: [`threat-model.md`](../design/secure-public-endpoints/threat-model.md) ·
-MOM: [`MOM_threat-model_secure-public-endpoints_2026-08-18.md`](../mom/MOM_threat-model_secure-public-endpoints_2026-08-18.md)
+Full detail: [`threat-model.md`](../archive/design/secure-public-endpoints/threat-model.md) ·
+MOM: [`MOM_threat-model_secure-public-endpoints_2026-08-18.md`](../archive/mom/MOM_threat-model_secure-public-endpoints_2026-08-18.md)
 
 ---
 
@@ -519,7 +519,7 @@ the provider-browse screen must be designed as an *authenticated* screen with re
 60-minute token expiry is currently a hard logout because the refresh flow is stored but never
 called), and a browsing customer receives `ProviderSummary` with **no availability** — so a
 "browse providers with open slots" design would need the Calendar route, which is now
-ownership-guarded and returns 403 to a customer. Detail: [`ux-review.md`](../design/secure-public-endpoints/ux-review.md)
+ownership-guarded and returns 403 to a customer. Detail: [`ux-review.md`](../archive/design/secure-public-endpoints/ux-review.md)
 
 ---
 
@@ -557,7 +557,7 @@ tasks, verified against the raw task records after `ac list --json` produced a f
 `security-ac-unmaterialized` reading (a projection artifact, not a data gap — recorded in the MOM
 because the next person to run that command will draw the same wrong conclusion).
 
-MOM: [`MOM_readiness-party_secure-public-endpoints_2026-08-18.md`](../mom/MOM_readiness-party_secure-public-endpoints_2026-08-18.md)
+MOM: [`MOM_readiness-party_secure-public-endpoints_2026-08-18.md`](../archive/mom/MOM_readiness-party_secure-public-endpoints_2026-08-18.md)
 
 ---
 

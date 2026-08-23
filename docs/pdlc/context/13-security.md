@@ -3,7 +3,7 @@
 > **⚠️ F-021 delta (2026-08-22, branch `feat/F-021-identity-hardening`, not yet merged).**
 >
 > **✅ CLOSED by F-021, with the test that reaches each one named in
-> `docs/pdlc/design/identity-hardening/verification.md`:**
+> `docs/pdlc/archive/design/identity-hardening/verification.md`:**
 > - **`RefreshAsync`'s delete-then-insert is gone.** Rotation is one `FindOneAndUpdateAsync` whose filter
 >   carries the presented hash, the expiry check and a "not locked" condition; the credential is never
 >   deleted, so no fault can destroy it. The fault case is now an actual test — `InMemoryRepository` gained

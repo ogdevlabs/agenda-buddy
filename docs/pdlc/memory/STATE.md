@@ -5,19 +5,19 @@
      Claude reads this file at the start of every session to auto-resume from the last checkpoint.
      If this file is missing or empty, PDLC will prompt you to run /pdlc init. -->
 
-**Last updated:** 2026-08-22T23:55:00Z
+**Last updated:** 2026-08-23T04:15:00Z
 
 ---
 
 ## Current Phase
 
-Construction Complete
+Idle
 
 ---
 
 ## Current Feature
 
-identity-hardening
+none
 
 _**F-016 `secure-public-endpoints` SHIPPED** as `v0.2.0` — merged `2134b8d`, PR #38, episode 002 (Final).
 Operation closed 2026-08-22: smoke-tested against a live AppHost (all five formerly-anonymous PII GETs 401,
@@ -46,17 +46,11 @@ none
 
 ## Roadmap Claim
 
-- **Feature ID:** F-021
-- **Feature record:** docs/pdlc/tasks/F-021/_feature.md
-- **Claimed by:** oscargarcia@ogdevlabs.onmicrosoft.com
-- **Claimed at:** 2026-08-22T15:35:00Z
-- **Branch:** `feat/F-021-identity-hardening` (pushed)
+_None. **F-021 `identity-hardening` shipped as `v0.3.0` on 2026-08-22** (merged `f5d47d6`, PR #39, episode
+003) and the claim was released at the Operation gate._
 
-⚠️ **The claim lives only on the feature branch.** The maintainer rolled `origin/main` back from `0d1a6ad`
-to `5ef3e10` on 2026-08-22 — deliberately, to get in-flight F-021 work off `main` — so anyone pulling
-`main` sees F-021 as *unclaimed* and sees none of its Inception or Construction artifacts. That resolves
-when the PR merges. `main` still carries F-016's closeout and the tooling commit, which were in the same
-push and were **not** rolled back.
+**Next in the roadmap order: F-014 `wire-unreached-services`.** Remaining sequence after it:
+F-015 → F-017 → F-018–F-020, with F-022–F-024 filed.
 
 ---
 
@@ -74,10 +68,9 @@ _None active. Run `/night-shift <F-NNN>` to start an autonomous run (requires by
 
 ## Last Checkpoint
 
-Construction Complete / 2026-08-22T23:55:00Z — F-021 built: 7/7 tasks, 16/16 ACs attested in
-`docs/pdlc/design/identity-hardening/verification.md`, threats T-101…T-105 mitigated and T-106 accepted.
-**623 tests** (431 backend / 118 integration / 74 mobile), 0 failing, 0 warnings. Ready for `/ship`, which
-needs the PR merged first.
+Operation Complete / 2026-08-23T04:15:00Z — **F-021 shipped as `v0.3.0`.** Merged `f5d47d6` (PR #39, CI
+green), tagged, verified against a live stack, episode 003 Final, artifacts archived, claim released.
+**623 tests** (431 / 118 / 74), 0 failing, 0 warnings. Cloud deploy **deferred by ADR-035**, not blocked.
 
 ---
 
@@ -108,41 +101,42 @@ agent-teams
 
 ## Active Blockers
 
-> ### 🔖 RESUME MARKER — updated 2026-08-22T23:55Z, **F-021 BUILT, NOT SHIPPED**
+> ### 🔖 RESUME MARKER — updated 2026-08-23T04:15Z, **F-021 SHIPPED AND CLOSED**
 >
-> **Everything F-021 is on `feat/F-021-identity-hardening`, and nothing of it is on `main`.** The maintainer
-> rolled `origin/main` back from `0d1a6ad` to `5ef3e10` on 2026-08-22, deliberately, to take in-flight F-021
-> work off `main`; the branch was created at `0d1a6ad` first, so nothing was lost. `main` keeps F-016's
-> closeout (`2a8ee43`) and the tooling commit (`5ef3e10`), which were part of the same push and were **not**
-> rolled back.
+> **Nothing is in flight.** `main` is at `v0.3.0`, all three suites green (431 / 118 / 74 = 623), working
+> tree clean. The next action is `/brainstorm` on **F-014 `wire-unreached-services`**, which has a feature
+> record and **no PRD, design or tasks** — Inception has not started.
 >
-> **Built and green:** all three defects closed — non-destructive refresh rotation, per-IP limiting on
-> `login` **and** `register` plus a self-clearing per-account lock, and transport security (HSTS + redirect
-> before authentication) in all seven services. 7/7 tasks, 16/16 ACs attested, T-101…T-105 mitigated, T-106
-> accepted. **623 tests** (431 / 118 / 74), 0 failing, 0 warnings, integration 1 m 28 s of a 600 s budget.
+> **F-021 closed cleanly**, verified against a live stack rather than by inspection: all 7 services Healthy
+> after reordering seven pipelines; register → refresh → replay-refused → login executed end to end (the one
+> flow no integration test covers); the limiter answering 429 + `Retry-After` in a real process with a real
+> client address; lockout refusing the *correct* password with a body byte-identical to a wrong-password
+> refusal; and six credential-mutation log lines carrying `acct_<hash>` with zero occurrences of the address.
 >
-> **The next action is a human one: review and merge PR [#39](https://github.com/ogdevlabs/agenda-buddy/pull/39).**
-> CI is green on all four jobs and the PR is mergeable; `/ship` cannot run before it merges.
+> **⚠️ Two things about F-021 that will matter to the next person:**
+> 1. **Its two security controls are OFF unless configuration turns them on** (ADR-033) — `Security:Hsts:Enabled`
+>    and `Security:RateLimiting:Enabled`. The AppHost's cloud graph sets them and `AppHostWiringTest` asserts
+>    it; a deployment that bypasses that graph ships without either while every artifact says the feature is
+>    delivered (threat T-103). Each service warns at startup, naming the key, when a control is off outside a
+>    local run — verified live in both directions.
+> 2. **`IRepository<T>.FindOneAndUpdateAsync` is now the only partial-update primitive** (ADR-032), and
+>    anything that must still be true at the moment of a write belongs in its **filter**, not in a preceding
+>    read. `FindOneAndDeleteAsync` now has **no callers** — its only one was the defect this feature fixed.
 >
-> **Three things a reviewer should be told rather than discover:**
-> 1. **One pre-existing test was deleted** — `IdentityService_ConstructorParameters_ContainNoILogger`
->    asserted by reflection that `IdentityService` had no logger, which contradicts requirement 17 head-on.
->    Replaced by the stronger content assertion. ADR-034. **This needs acknowledgement**, as F-016's ADR-025
->    deletion did.
-> 2. **Both new controls default OFF** and are gated on configuration, not `IsProduction()` (ADR-033),
->    because the AppHost runs every service as *Production* locally. The AppHost's cloud graph turns them
->    on; a startup warning names the key when they are off outside a local run.
-> 3. **Three pre-existing tests were vacuous** (`Login_ValidCredentials_DoesNotLog*` asserted over an empty
->    list) and one F-016 test had a latent order dependency that F-021's new test class exposed
->    (`TelemetryPiiTest.RedactionPreservesThePathShape`). Both fixed; details in `verification.md` §3.
+> **⚠️ Cloud deployment is DEFERRED BY DECISION, not blocked** (ADR-035, maintainer, 2026-08-22). Azure is not
+> reviewed until **every pending feature is complete** and **the tech debt of things no longer needed is
+> discharged**. A skipped deploy is now the expected outcome of a ship and should not be reported as a gap.
+> **Rotating the Atlas credential does not wait for this** (`agenda-buddy-41s`, P0).
 >
-> **Still not F-021's, and still true:**
-> - **`Integration — real services + MongoDB` is not a required status check on `main`.** Branch protection
->   is a GitHub setting, not YAML. Needs the web UI or an API call with the credential `git` uses — `gh`
->   here is a different work identity.
-> - **§7's security scan was satisfied by hand again**, for the third consecutive feature. **F-017.**
-> - **§7's Integration checkbox: 3 of the 10 consecutive green runs** it is gated on. PR #39's run was the
->   third; F-016's PR #38 supplied the first two.
+> **Human-only, and still open after three releases:**
+> 1. **Add `Integration — real services + MongoDB` to `main`'s required status checks.** Branch protection is
+>    a GitHub setting, not YAML. Its run for PR #39 was the **third of the ten consecutive greens** §7's
+>    Integration checkbox is gated on.
+> 2. **§7's security scan was satisfied by hand for the third consecutive feature.** **F-017** owns
+>    automating it.
+> 3. **The standards-readiness gate has now been skipped seven consecutive times and has never once
+>    executed.** It needs a reachable source or an explicit retirement — the oldest unaddressed process
+>    finding in this project.
 
 <!-- PENDING MARKER — read this first at the start of the next session. Each item below is either
      an action only a human can take, or work that is written but not yet exercised. Nothing here is
@@ -170,9 +164,22 @@ the project owner, and the first prerequisite for any cloud deployment. Document
 not progress; only the rotation closes it. ISSUE-002 has the exact Atlas steps, the access-log review
 window, and the command that finds the first commit containing it.
 
-### 2. Cloud deployment capability is written but never run
+### 2. Cloud deployment capability is written but never run — **NOW DEFERRED BY DECISION (ADR-035)**
 
-**→ `docs/deployment.md`** (tracker: `agenda-buddy-dwe`, blocked by `agenda-buddy-41s`)
+> **Maintainer decision, 2026-08-22:** Azure is **not reviewed** until (1) every pending feature is complete
+> — F-014, F-015, F-017, F-018–F-020, plus F-022–F-024 if still on the roadmap — and (2) the tech debt of
+> **things no longer needed** is discharged. Until both hold, a skipped deploy is the **expected** outcome of
+> a ship and is not a gap to report. The paragraph below is retained because it is still accurate about the
+> *capability*; what changed is that the gap is now scheduled rather than accumulating.
+>
+> Why: deploying now would provision cost and attack surface for a system whose own roadmap says six
+> features do not work. F-014 exists because six capabilities have no route; F-015 because the mobile client
+> cannot reach the backend at all; F-017 because three Dockerfiles publish `net10.0` onto a
+> `dotnet/runtime:8.0` base and **cannot run**. There is nothing deployable to deploy.
+>
+> ⚠️ **Item 1 above — rotating the Atlas credential — does NOT wait for this.**
+
+**→ `docs/deployment.md`** (tracker: `agenda-buddy-dwe`, **deferred by ADR-035**, and blocked by `agenda-buddy-41s` regardless)
 
 `azure.yaml`, `.github/workflows/deploy.yml` and the `DeploymentTarget.Cloud` shape of the AppHost all
 exist and are covered by 47 AppHost tests, but **no deployment has been performed** — there is no Azure
@@ -248,66 +255,41 @@ re-planning (`/continue`).
 
 ## Context Checkpoint
 
-<!-- Written to be read COLD: a fresh session should be able to pick F-021 up from this block alone. -->
+<!-- F-021's cold-start block is retired — it lived here while the feature was in flight and is now
+     preserved in the episode and in verification.md. What remains is what a fresh session needs to
+     start the NEXT feature. -->
 
 ```json
 {
-  "written_at": "2026-08-22T23:55:00Z",
-  "reason": "Construction complete; the next step is a human review-and-merge",
-  "phase": "Construction Complete",
-  "sub_phase": null,
-  "feature": "identity-hardening",
-  "feature_id": "F-021",
-  "active_task": null,
-  "resume_command": "/ship (BLOCKED until the PR merges)",
-
-  "branch": "feat/F-021-identity-hardening",
-  "branch_base": "0d1a6ad — the commit the maintainer rolled off main on 2026-08-22. The branch was cut FIRST, so nothing was lost.",
-  "main_is_at": "5ef3e10 (F-016 closeout + tooling commit; NO F-021 work)",
-  "working_tree": "clean",
-
-  "progress": "7 of 7 tasks. 16 of 16 ACs attested in docs/pdlc/design/identity-hardening/verification.md.",
+  "written_at": "2026-08-23T04:15:00Z",
+  "phase": "Idle",
+  "feature": null,
+  "main_is_at": "v0.3.0 (f5d47d6)",
+  "next_feature": "F-014 wire-unreached-services",
+  "next_command": "/brainstorm F-014",
 
   "test_state": {
-    "backend": "431 passing / 0 failing / 0 warnings across 12 projects via `dotnet test agenda-buddy-backend.slnf`. 358 -> 431 (+73).",
-    "integration": "118 passing in 1 m 28 s via `dotnet test AgendaBuddy.IntegrationTests/AgendaBuddy.IntegrationTests.csproj` — a SEPARATE command (ADR-031). 99 -> 118 (+19). Needs a container runtime: export PATH=\"$HOME/.rd/bin:$PATH\" first.",
-    "mobile": "74 (67 passing, 7 skipped) via `dotnet test MobileApp.Tests/MobileApp.Tests.csproj /p:MobileWorkloads=false` — re-verified, unchanged"
+    "backend": "431 via `dotnet test agenda-buddy-backend.slnf`",
+    "integration": "118 via `dotnet test AgendaBuddy.IntegrationTests/AgendaBuddy.IntegrationTests.csproj` — SEPARATE command (ADR-031), needs a container runtime",
+    "mobile": "74 (67 passing, 7 skipped) via `dotnet test MobileApp.Tests/MobileApp.Tests.csproj /p:MobileWorkloads=false`"
   },
 
-  "WHAT_F021_ESTABLISHED": {
-    "the_only_partial_update_primitive": "IRepository<T>.FindOneAndUpdateAsync(BsonDocument filter, BsonDocument update). Post-image (ReturnDocument.After) so the incremented counter comes back with the write. NEVER upserts — that is a property of the METHOD, and AC-9 rests on it. ADR-032 forbids growing it into a query builder, and a test counts the interface's update members so the next overload has to be argued for.",
-    "filters_carry_the_guard": "Anything that must still be true at the moment of the write belongs in the FILTER, not in a preceding read. Refresh rotation's filter carries the presented hash (single use), the expiry, and 'not locked' — all three in one atomic operation.",
-    "not_locked_needs_both_or_branches": "{$or: [{lock_until: null}, {lock_until: {$lte: now}}]}. In MongoDB a missing field satisfies NO comparison operator, so `lock_until <= now` alone never matches an account that has never been locked — which is nearly all of them. Verified against real Mongo, not just the double.",
-    "in_memory_double_is_strict": "Identity.Tests/Helpers/InMemoryRepository.cs THROWS on any filter field or update operator it does not implement. Add support there rather than working around it: a double that silently ignores a clause reports green for a query MongoDB would answer differently. It also returns a SNAPSHOT, not the live stored object.",
-    "fault_injection": "InMemoryCredentialRepository.FaultBetweenMatchAndWrite — an Action invoked after the filter matches and before any mutation. Throw a MongoException from it to reproduce a fault on the HANDLED path. This is what made AC-2 expressible; 11-testing.md:65 said it was not.",
-    "config_gated_not_environment_gated": "Security:RateLimiting:Enabled and Security:Hsts:Enabled, BOTH DEFAULT OFF. Do NOT switch either to IsProduction(): every service runs as Production under the local AppHost. The AppHost injects Security__Local=true locally and turns both on in the Cloud branch of AppHostWiring.cs. ADR-033.",
-    "harness_can_enable_them": "ServiceHostFixture.StartService(environment:, settings:) — pass settings to switch a control on for one hosted service. That capability IS threat T-103's mitigation; without it the only tests that could reach these controls would be ones nobody runs.",
-    "logging_vocabulary": "credential.created / .login-ok / .login-failed / .locked / .reset / .rotated / .session-ended, each with acct_<12 hex of SHA-256(email)> and NEVER the address. PiiRedactingProcessor redacts SPANS, NOT LOGS."
+  "WHAT_F014_WILL_HIT": {
+    "the_partial_update_primitive_now_exists": "IRepository<T>.FindOneAndUpdateAsync(filter, update) — ADR-032, added by F-021 partly FOR F-014. Six capabilities currently have to read-modify-write; they no longer do. Post-image, never upserts, and anything that must still be true at the moment of the write belongs in the FILTER.",
+    "transport_security_is_a_call_site": "Any new service must call app.UseAgendaBuddyTransportSecurity() immediately before UseAuthentication(). A test in Library.Tests reads all seven Program.cs files and will fail on an eighth that forgets — including its own completeness case, which fails if a new service directory appears unlisted.",
+    "the_harness_can_host_a_service": "Add a per-service anchor alias to AgendaBuddy.IntegrationTests/GlobalUsings.cs — never WebApplicationFactory<Program>, which is ambiguous across seven assemblies. StartService(environment:, settings:) takes per-instance configuration.",
+    "cache_invalidation_still_does_not_exist": "agenda-buddy-xrw. F-014 wires six capabilities onto a substrate where a write is invisible to reads for up to 5 minutes. Anything F-014 adds that writes then reads inherits this.",
+    "no_index_exists_on_any_collection": "agenda-buddy-b0w, observed on the live database: db.credentials.getIndexes() returns exactly [\"_id_\"]. Nothing in application code creates an index anywhere."
   },
 
-  "GOTCHAS_THAT_WILL_BITE": [
-    "`scripts/tasks.cjs` DOES NOT EXIST in this repository, though docs/pdlc/tasks/index.md says it generates that file and F-016's records assume it. F-021's task files and the F-021 section of index.md are HAND-WRITTEN. `tasks.cjs check` could not enforce the security-AC-to-test linkage structurally, so each [security] AC names its test in the task body instead.",
-    "The 401 body is NOT empty. UseStatusCodePages turns a bodyless 401 into ProblemDetails — the same surprise F-016 hit with 403. Assert indistinguishability as IDENTICAL bodies (after stripping the per-request requestId), never as ABSENT.",
-    "ASP.NET's HSTS middleware SKIPS localhost, 127.0.0.1 and [::1] by default. A test asserting the header must use a non-localhost Host. Do not clear ExcludedHosts to make a test easier — that default is what stops a local experiment poisoning a browser's HSTS cache for weeks.",
-    "TestServer leaves Connection.RemoteIpAddress NULL, so every harness request shares the limiter's 'unattributed' partition. Convenient here; it is also the shape of a real deployment behind a proxy that does not forward the address (agenda-buddy-end).",
-    "UseHttpsRedirection is a NO-OP wherever no HTTPS port is known, which is every local run, every CI run and the whole integration suite. That is why the reorder was safe to do in all seven services at once — and why it fixes an exposure that only materialises once F-017 terminates TLS.",
-    "docker is NOT on PATH under Rancher Desktop: export PATH=\"$HOME/.rd/bin:$PATH\" before anything that touches containers.",
+  "GOTCHAS_THAT_SURVIVE_F021": [
+    "`scripts/tasks.cjs` DOES NOT EXIST in this repository, though docs/pdlc/tasks/index.md claims to be generated by it. F-021's task store is hand-written and the structural security-AC-to-test check could not run.",
+    "docker is NOT on PATH under Rancher Desktop: export PATH=\"$HOME/.rd/bin:$PATH\".",
+    "Aspire streams service logs to the DASHBOARD over OTLP, not to the AppHost's stdout. Grepping the AppHost console for a service's log line finds nothing and proves nothing — F-021's first AC-16 live check was vacuous for exactly this reason. To read a service's log, run it standalone with --no-launch-profile.",
+    "The Aspire MongoDB container's root user is `admin`, not `root`. Its password is the mongodb-password user secret, and secrets.json is UTF-8 with a BOM.",
+    "A bodyless 401 or 403 is NOT empty on the wire: UseStatusCodePages converts it to ProblemDetails, whose requestId differs per request. Compare normalised bodies, never raw ones.",
     "Do NOT add AgendaBuddy.IntegrationTests to agenda-buddy-backend.slnf (ADR-031).",
-    "Party mode is `solo` for this whole feature — the session carried a standing instruction not to call the Agent tool, which overrides STATE's `Party Mode: agent-teams`."
-  ],
-
-  "MEASURED_FACTS": {
-    "bcrypt_verify_wf12": "262 ms on this hardware (20 iterations after JIT warm-up, BCrypt.Net-Next 4.0.3). 3.8 attempts/sec/core. This number is the reason the limiter exists, the reason it covers `register`, and the reason the lock is checked before the verify.",
-    "limiter_defaults": "10 requests/minute per IP = ~2.6 s of BCrypt CPU/minute/IP, against a legitimate need of 2-3 attempts.",
-    "lockout_defaults": "10 consecutive failures, 15-minute self-clearing window. No permanent lock and no admin unlock, because F-022 does not exist.",
-    "integration_suite": "118 tests, 1 m 28 s warm."
-  },
-
-  "READ_FIRST_ON_RESUME": [
-    "docs/pdlc/design/identity-hardening/verification.md — all 16 ACs, the red run, and the eleven things this feature does NOT claim",
-    "docs/pdlc/memory/DECISIONS.md ADR-032/033/034, and ADR-011 which is now superseded",
-    "Identity/Services/IdentityService.cs RefreshAsync + LoginAsync — the two orderings that are load-bearing",
-    "AgendaBuddy.ServiceDefaults/TransportSecurity.cs — why the policy is central but the placement is not"
+    "Cloud deployment is deferred by ADR-035 — a skipped deploy is expected, not a finding."
   ],
 
   "files_open": []
@@ -320,32 +302,21 @@ re-planning (`/continue`).
 
 ```json
 {
-  "phase_completed": "Construction",
-  "next_phase": "Operation (/ship) — BLOCKED on a human merging the PR",
-  "feature": "identity-hardening",
-  "feature_id": "F-021",
-  "key_outputs": [
-    "Identity/Services/IdentityService.cs — non-destructive rotation, lock check before verify, atomic counter, credential-mutation logging",
-    "Library/Repositories/IRepository.cs + MongoDbRepository.cs — FindOneAndUpdateAsync (ADR-032)",
-    "AgendaBuddy.ServiceDefaults/TransportSecurity.cs — HSTS policy, UseAgendaBuddyTransportSecurity(), the startup flag audit",
-    "Identity/Extensions/RateLimitingExtensions.cs + Identity/Configurations/SecurityOptions.cs",
-    "AgendaBuddy.AppHost/AppHostWiring.cs — Security__Local locally, both controls on in the cloud graph",
-    "docs/pdlc/design/identity-hardening/verification.md — 16/16 ACs attested",
-    "DECISIONS.md ADR-032/033/034; ADR-011 superseded"
-  ],
-  "decisions_made": [
-    "One narrow partial-update primitive on IRepository<T>, shared rather than Identity-only (ADR-032)",
-    "Configuration-gated controls with the AppHost declaring local-vs-cloud; warn loudly rather than fail fast (ADR-033)",
-    "UseHttpsRedirection stays unconditional — only HSTS is flag-gated, because six services already redirected unconditionally",
-    "Replace the reflection guard that forbade a logger with a content assertion; log acct_<hash>, never the address (ADR-034)",
-    "T-106 accepted (per-process limiter state); T-NL-2 accepted (a locked account answers faster than a wrong password, because hiding it re-arms T-101)"
-  ],
-  "next_action": "Human: review and merge PR #39, then run /ship",
+  "phase_completed": "Operation (F-021 shipped as v0.3.0)",
+  "next_phase": "Inception on F-014 wire-unreached-services",
+  "feature": null,
+  "next_action": "/brainstorm F-014 — it has a feature record and no PRD, design or tasks",
   "human_only_items": [
-    "Review and merge PR #39 (CI green, mergeable). main is PR-protected, and it was deliberately rolled back to 5ef3e10 to keep this work off it.",
-    "Acknowledge the one deleted pre-existing test (ADR-034) — the same acknowledgement F-016's ADR-025 needed.",
-    "Add `Integration — real services + MongoDB` to main's required status checks. Still not done; branch protection is a GitHub setting, not YAML.",
-    "Rotate the Atlas credential (agenda-buddy-41s). Unchanged, still P0, still the hard prerequisite for any deployment."
+    "Rotate the agenda_buddy Atlas credential (agenda-buddy-41s, P0). Independent of the cloud deferral: the credential is valid, publicly recoverable from git history, and grants write access to a live cluster with no backups.",
+    "Add `Integration — real services + MongoDB` to main's required status checks. Third of ten consecutive green runs is now banked; blocking is a branch-protection setting, not YAML.",
+    "Decide the standards-readiness gate's fate — reachable source, or explicit retirement. Seven consecutive skips, never executed once."
+  ],
+  "decisions_recorded_this_session": [
+    "ADR-032 — one partial-update primitive on IRepository<T>",
+    "ADR-033 — security controls gated on configuration, not IsProduction(); the AppHost declares local vs cloud; warn rather than fail fast",
+    "ADR-034 — replace the reflection guard forbidding a logger with a content assertion",
+    "ADR-035 — Azure deferred until every pending feature is complete AND the no-longer-needed tech debt is discharged",
+    "ADR-011 — superseded by F-021"
   ],
   "open_questions": []
 }
@@ -448,3 +419,7 @@ re-planning (`/continue`).
 | 2026-08-22T22:50:00Z | task_complete | **F-021-T05 done** — `UseAgendaBuddyTransportSecurity()` in ServiceDefaults plus one call per service, before `UseAuthentication` in all seven; Identity's Development-only guard removed (under the AppHost that condition was always true). HSTS flag-gated, conservative defaults, no `preload`/`includeSubDomains`. **The redirect is deliberately NOT flag-gated** — six services already called it unconditionally, so a flag defaulting to off would silently remove a control (ADR-033, amending ARCHITECTURE §4). AC-12 is a source-text test because `IApplicationBuilder` exposes no ordered list of middleware; it also bans direct `UseHttpsRedirection` calls, which is the likelier regression | Build | identity-hardening |
 | 2026-08-22T23:15:00Z | task_complete | **F-021-T06 done** — per-IP sliding window on `login` **and** `register`, registered first in the pipeline so a throttled request costs no CPU and takes no write, 429 with `Retry-After` (the framework default is 503, which tells a client nothing). AppHost declares the run: `Security__Local=true` locally, both controls **on** in the cloud graph — the only artifact distinguishing "written" from "switched on". **The harness caught a defect no unit test could:** reading the signing key strictly at the top of `RefreshAsync` turned every *rejected* refresh into a 500, because the harness hosts Identity with no `JWT_PRIVATE_KEY` and every unit test sets it in its constructor | Build | identity-hardening |
 | 2026-08-22T23:50:00Z | build_complete | **BUILD COMPLETE — 7/7 tasks, 16/16 ACs.** Backend **431** (+73) / integration **118** (+19) / mobile **74** unchanged = **623**, 0 failing, 0 warnings; integration 1 m 28 s against 600 s. Context catalog refreshed where this feature made it false: `13-security.md`, `01-api-surface.md`, `02-entry-points.md`, `04-data-access.md`, `05-data-model.md`, `06-configuration.md`, `11-testing.md`. Two findings filed rather than fixed: `agenda-buddy-b0w` (no unique index on `credentials.email` on any path anyone uses — the one `createIndex` lives in a script documented as stale) and `agenda-buddy-end` (the limiter collapses to one bucket behind a proxy that does not forward the client address). Also fixed in passing: a latent order dependency in F-016's `TelemetryPiiTest` that F-021's new test class exposed | Review | identity-hardening |
+| 2026-08-23T03:30:00Z | merged_and_tagged | **Merged to `main` as `f5d47d6`** (PR #39, CI green on `build-and-test`, `Integration — real services + MongoDB` and `Mobile — Unit Tests`), tagged **`v0.3.0`**. CHANGELOG entry at `docs/pdlc/memory/CHANGELOG.md` — **not** the repo root, which has no CHANGELOG. The integration job's run was the **third** of the ten consecutive greens §7's Integration checkbox is gated on | Operation | identity-hardening |
+| 2026-08-23T04:00:00Z | verify_complete | **Verified against a live stack, not by inspection.** All 7 services `Healthy` after reordering seven middleware pipelines. **The end-to-end flow no integration test covers, executed for real:** register → refresh (rotated) → replay the consumed token (401) → **log in with the original password (200)**, with the stored document intact, `failed_attempts: 0`, no `lock_until`, one document. Threat T-103 observed in **both** directions (silent under the AppHost, both warnings firing verbatim on a `Production` run that does not declare itself local). Limiter answered **429 + `Retry-After: 60`** in a real process with a real client address — something `TestServer` cannot provide. Lockout refused the **correct** password with a body byte-identical to a wrong-password refusal. ⚠️ **The first AC-16 live check was VACUOUS and is recorded as such**: grepping the AppHost console found no email, but also no `credential.*` lines at all, because Aspire streams service logs to the dashboard over OTLP rather than stdout. Redone against a captured Identity process: **6** mutation lines, all `acct_01fa6a06332a`, zero occurrences of the address, its local part, `@`, or the password | Verify | identity-hardening |
+| 2026-08-23T04:05:00Z | deploy_deferred | Cloud deploy **deferred by maintainer decision (ADR-035)**, not skipped-with-blockers: Azure is not reviewed until every pending feature is complete and the no-longer-needed tech debt is discharged. Third consecutive release without a remote deployment, and the **first where that is a schedule rather than a gap**. `agenda-buddy-dwe` re-scoped to record the deferral; credential rotation explicitly does **not** wait for it | Operation | identity-hardening |
+| 2026-08-23T04:15:00Z | operation_complete | **F-021 shipped and Operation closed the same day it was built** — the four-day ship-gate lag recorded at F-016 did not recur. Episode 003 **Final**; PRD, brainstorm and all six design artifacts archived; METRICS + Readiness rows added; claim released. Context catalog refreshed across seven pages. **Also repaired 32 broken relative links across the whole PDLC tree — 22 of them predating F-021**, including every artifact link in episode 002, which F-016's own archiving had left dangling. Two findings filed rather than fixed (`agenda-buddy-b0w`, `agenda-buddy-end`), one of them upgraded from inference to observation against the live database | Idle | none |
