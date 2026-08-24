@@ -76,7 +76,19 @@ Build
 
 ## Last Checkpoint
 
-Construction / Build / 2026-08-23T20:30:00Z — **Wave 2 complete.** F-015-T02 (YARP/Aspire spike) and
+Construction / Build / 2026-08-23T22:30:00Z — **Wave 3 complete — the biggest wave.** F-015-T03 (YARP
+allowlist, closes T-302), F-015-T07 (corrected every `*ApiService` route/verb/payload, the status-route
+swap, hid "mark complete" for customers), F-015-T09 (refresh-on-401, ambiguous-write protection), F-015-T12
+(`run-ios.sh` gateway discovery) — four real subagents in parallel worktrees. **All four hit the same
+stale-worktree-snapshot bug**; proactively warned all four after the first one surfaced it, all
+self-corrected by fast-forwarding onto the branch tip before writing code. **No merge conflicts this wave**
+— T07/T09/T12 all touched `MauiProgram.cs`/`MobileApp/` but in non-overlapping ways; git auto-merged clean.
+T07 found and recorded a real spec-vs-reality gap: `api-contracts.md`
+documented Booking GET routes that don't exist; rewired the client to compose with Calendar's real route
+instead of shipping a call that would 404. **Backend steady at 468, mobile 90→130, integration 177→209 —
+807 total, 0 failing.** Worktrees cleaned up. Starting Wave 4 (F-015-T04, T08, T10).
+
+_Previously: Construction / Build / 2026-08-23T20:30:00Z — **Wave 2 complete.** F-015-T02 (YARP/Aspire spike) and
 F-015-T05 (AppHostWiring) built by real subagents in parallel worktrees. **Wave-order bug caught before
 either was built wrong:** AC3/AC4 (JWT passthrough) were reassigned from T05 to T04 — AppHost wiring alone
 can't prove a full request flow without T03's route table, one wave later. **T02's finding:** Aspire's DCP
@@ -573,3 +585,4 @@ re-planning (`/continue`).
 | 2026-08-23T19:30:00Z | wave_complete | **Wave 1 done — F-015-T01, T06, T13**, three real subagents in parallel worktrees, merged `--no-ff`. Gateway project scaffolded (8th process, `AddServiceDefaults`/`UseAgendaBuddyTransportSecurity`/`MapDefaultEndpoints`, hosted over real HTTP in the integration harness via a new `GatewayAnchor`, added to the transport-security order test). MobileApp's six `*ApiService` classes now delegate route-building to seven new plain, Maui-free, testable classes under `MobileApp/Routing/` (16 new tests pin the *current*, still-wrong routes — F-015-T07 corrects them next). OpenAPI specs regenerated for F-014's nine routes. **Backend 452→453, mobile 74→90, integration 175→177 — 720 total, 0 failing.** Worktrees cleaned up | Build | api-gateway-and-mobile-contract |
 | 2026-08-23T19:35:00Z | task_split | AC3/AC4 reassigned from F-015-T05 to F-015-T04 before either was built — AppHost wiring alone can't prove end-to-end auth passthrough without T03's route table (one wave later). T04 now depends on T03 and T05 both. The readiness party's own flagged wave-order risk, caught one task earlier than the pair it actually named | Build | api-gateway-and-mobile-contract |
 | 2026-08-23T20:30:00Z | wave_complete | **Wave 2 done — F-015-T02, T05**, two real subagents in parallel worktrees. T02's spike: Aspire's DCP orchestrator fronts every `WithReference` address with a stable local proxy port, so a destination's dynamic-port reassignment never reaches the Gateway's config — confirmed with two live Booking restarts against a running AppHost. Merge conflict in `AppHostWiring.cs`/`AgendaBuddy.AppHost.csproj` (both wired Gateway) resolved keeping T05's full seven-service wiring + T02's actual deliverable (`Yarp.ReverseProxy`, `AspireServiceDiscoveryProxyConfigProvider`). **Backend 453→468, integration steady 177, mobile steady 90 — 735 total, 0 failing.** Worktrees cleaned up | Build | api-gateway-and-mobile-contract |
+| 2026-08-23T22:30:00Z | wave_complete | **Wave 3 done — the biggest wave — F-015-T03, T07, T09, T12**, four real subagents in parallel worktrees. All four hit the same stale-worktree-snapshot bug; proactively warned after the first surfaced it, all self-corrected. No merge conflicts. T03 closed T-302 (explicit route allowlist, 404 on any unmapped path). T07 corrected every `*ApiService` route/verb/payload, swapped the status route, hid "mark complete" for customers, and found a real spec-vs-reality gap (Booking has no GET route for an appointment at all — `api-contracts.md` was wrong; rewired to compose with Calendar's real route instead of shipping a 404). T09 wired refresh-on-401 and ambiguous-write protection. T12 wired `run-ios.sh`'s gateway discovery into `MAUI_API_BASE_URL`. **Backend steady 468, mobile 90→130, integration 177→209 — 807 total, 0 failing.** Worktrees cleaned up | Build | api-gateway-and-mobile-contract |
