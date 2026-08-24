@@ -76,11 +76,22 @@ Build
 
 ## Last Checkpoint
 
-Construction / Build / 2026-08-23T19:30:00Z — **Wave 1 complete.** F-015-T01 (Gateway scaffold), F-015-T06
-(extract MobileApp route-building), F-015-T13 (regenerate OpenAPI specs) all built by real subagents in
-isolated worktrees, merged `--no-ff` into the feature branch, verified together: backend 452→453, mobile
-74→90 (16 new route-builder tests), integration 175→177 (2 new Gateway host tests) — **720 total, 0
-failing.** Worktrees and branches cleaned up. Starting Wave 2 (F-015-T02 spike, F-015-T05 AppHostWiring).
+Construction / Build / 2026-08-23T20:30:00Z — **Wave 2 complete.** F-015-T02 (YARP/Aspire spike) and
+F-015-T05 (AppHostWiring) built by real subagents in parallel worktrees. **Wave-order bug caught before
+either was built wrong:** AC3/AC4 (JWT passthrough) were reassigned from T05 to T04 — AppHost wiring alone
+can't prove a full request flow without T03's route table, one wave later. **T02's finding:** Aspire's DCP
+orchestrator fronts every `WithReference`-injected address with a stable local proxy port, so a
+destination's dynamic-port reassignment never reaches the Gateway's config — confirmed with two live
+Booking restarts against a running AppHost, not asserted. Merge conflict in `AppHostWiring.cs`/
+`AgendaBuddy.AppHost.csproj` (both agents wired Gateway, T02 minimally for its spike) resolved in favor of
+T05's full seven-service wiring, keeping T02's actual deliverable (`Yarp.ReverseProxy`,
+`AspireServiceDiscoveryProxyConfigProvider`, the ARCHITECTURE.md findings). **Backend 453→468, integration
+steady at 177, mobile steady at 90 — 735 total, 0 failing.** Worktrees cleaned up. Starting Wave 3 (F-015-T03,
+T07, T09, T12).
+
+_Previously: Construction / Build / 2026-08-23T19:30:00Z — **Wave 1 complete.** F-015-T01 (Gateway scaffold),
+F-015-T06 (extract MobileApp route-building), F-015-T13 (regenerate OpenAPI specs). Backend 452→453, mobile
+74→90, integration 175→177 — 720 total, 0 failing._
 
 _Previously: Construction / Build / 2026-08-23T18:00:00Z — Build pre-flight passed: channel in-sync, remote
 sync 0 behind, task store fallback confirmed (14 tasks + `_feature.md`, `tasks.cjs` absent). Branch
@@ -560,3 +571,5 @@ re-planning (`/continue`).
 | 2026-08-23T17:30:00Z | inception_complete | **Inception Complete — 14 tasks, 15 ACs (13 + 2 threat-derived security), 5 waves.** PRD, 5 design artifacts, plan file all approved. Nordstrom standards gate retired for this project (ADR-042). Ready for `/build` | Plan | api-gateway-and-mobile-contract |
 | 2026-08-23T18:00:00Z | construction_start | Build started on `feat/F-015-api-gateway-and-mobile-contract`, branched off `main`. Party Mode set to **subagents** at explicit user request — real Sub-Agent execution per task, worktree-isolated and parallelized within a wave, a deviation from every prior feature's solo build | Build | api-gateway-and-mobile-contract |
 | 2026-08-23T19:30:00Z | wave_complete | **Wave 1 done — F-015-T01, T06, T13**, three real subagents in parallel worktrees, merged `--no-ff`. Gateway project scaffolded (8th process, `AddServiceDefaults`/`UseAgendaBuddyTransportSecurity`/`MapDefaultEndpoints`, hosted over real HTTP in the integration harness via a new `GatewayAnchor`, added to the transport-security order test). MobileApp's six `*ApiService` classes now delegate route-building to seven new plain, Maui-free, testable classes under `MobileApp/Routing/` (16 new tests pin the *current*, still-wrong routes — F-015-T07 corrects them next). OpenAPI specs regenerated for F-014's nine routes. **Backend 452→453, mobile 74→90, integration 175→177 — 720 total, 0 failing.** Worktrees cleaned up | Build | api-gateway-and-mobile-contract |
+| 2026-08-23T19:35:00Z | task_split | AC3/AC4 reassigned from F-015-T05 to F-015-T04 before either was built — AppHost wiring alone can't prove end-to-end auth passthrough without T03's route table (one wave later). T04 now depends on T03 and T05 both. The readiness party's own flagged wave-order risk, caught one task earlier than the pair it actually named | Build | api-gateway-and-mobile-contract |
+| 2026-08-23T20:30:00Z | wave_complete | **Wave 2 done — F-015-T02, T05**, two real subagents in parallel worktrees. T02's spike: Aspire's DCP orchestrator fronts every `WithReference` address with a stable local proxy port, so a destination's dynamic-port reassignment never reaches the Gateway's config — confirmed with two live Booking restarts against a running AppHost. Merge conflict in `AppHostWiring.cs`/`AgendaBuddy.AppHost.csproj` (both wired Gateway) resolved keeping T05's full seven-service wiring + T02's actual deliverable (`Yarp.ReverseProxy`, `AspireServiceDiscoveryProxyConfigProvider`). **Backend 453→468, integration steady 177, mobile steady 90 — 735 total, 0 failing.** Worktrees cleaned up | Build | api-gateway-and-mobile-contract |

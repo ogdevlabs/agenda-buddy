@@ -92,10 +92,10 @@ _No tasks._
 | ID | Title | Status | Prio | Depends on |
 |----|-------|--------|------|------------|
 | F-015-T01 | Scaffold the Gateway project — AddServiceDefaults, health/alive, no routing yet | done | — | — |
-| F-015-T02 | Spike: confirm YARP re-resolves Aspire's dynamic destination ports without a gateway restart | planned | — | F-015-T01 |
+| F-015-T02 | Spike: confirm YARP re-resolves Aspire's dynamic destination ports without a gateway restart | done | — | F-015-T01 |
 | F-015-T03 | YARP route table: explicit api/v1/{service}/** allowlist, no catch-all forward | planned | — | F-015-T02 |
 | F-015-T04 | Gateway failure translation, JWT-passthrough proof (AC3/AC4, reassigned), and proof the forwarded Host header doesn't break transport security | planned | — | F-015-T03, F-015-T05 |
-| F-015-T05 | Wire the Gateway into AppHostWiring.cs — WithReference/WaitFor on all seven services | planned | — | F-015-T01 |
+| F-015-T05 | Wire the Gateway into AppHostWiring.cs — WithReference/WaitFor on all seven services | done | — | F-015-T01 |
 | F-015-T06 | Extract MobileApp's *ApiService route-building logic into plain, Maui-free classes | done | — | — |
 | F-015-T07 | Correct every *ApiService's route, verb, and payload; swap status updates to F-014's dedicated route | planned | — | F-015-T06, F-015-T05 |
 | F-015-T08 | Remove SeedDataProvider; let the real error banner and empty-state UI take over | planned | — | F-015-T07 |
@@ -106,7 +106,7 @@ _No tasks._
 | F-015-T13 | Regenerate the OpenAPI specs to include F-014's nine new routes | done | — | — |
 | F-015-T14 | Verification: all 13 ACs attested end to end against a live AppHost, and the documentation this feature made false | planned | — | F-015-T07, F-015-T08, F-015-T09, F-015-T10, F-015-T12 |
 
-**3 of 14 done.** 15 acceptance criteria (13 + 2 threat-derived `[security]`); threats T-301…T-303, two mitigated now (T-302, T-303) and one accepted (T-301, ADR-040). Wave 1 complete: backend 452→453, mobile 74→90, integration 175→177 (720 total, 0 failing).
+**5 of 14 done.** 15 acceptance criteria (13 + 2 threat-derived `[security]`); threats T-301…T-303, two mitigated now (T-302, T-303) and one accepted (T-301, ADR-040). Wave 1: backend 452→453, mobile 74→90, integration 175→177. Wave 2: backend 453→468 (AppHost wiring tests), integration steady at 177, mobile steady at 90 — **735 total, 0 failing.** T02's spike confirmed Aspire's DCP-fronted addresses never go stale across a destination restart.
 
 ## F-016 — secure-public-endpoints  `shipped`
 
