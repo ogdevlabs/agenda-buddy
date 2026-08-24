@@ -5,13 +5,13 @@
      Claude reads this file at the start of every session to auto-resume from the last checkpoint.
      If this file is missing or empty, PDLC will prompt you to run /pdlc init. -->
 
-**Last updated:** 2026-08-23T13:30:00Z
+**Last updated:** 2026-08-24T12:14:03Z
 
 ---
 
 ## Current Phase
 
-Construction
+Operation
 
 ---
 
@@ -70,13 +70,20 @@ _None active. Run `/night-shift <F-NNN>` to start an autonomous run (requires by
 
 ## Current Sub-phase
 
-Review
+Ship
 
 ---
 
 ## Last Checkpoint
 
-Construction / Build / 2026-08-24T02:15:00Z — **Build loop complete — 14/14 tasks, all 15 ACs closed, all
+Operation / Ship / 2026-08-24T12:14:03Z — **Ship pre-flight passed.** Channel in-sync, remote sync 0
+behind / 43 ahead. Phase-mismatch guardrail (Current Phase was `Construction`/`Review`, not `Construction
+Complete` — no formal Review/Test sub-phase ran, no episode draft existed) logged and user-confirmed, same
+precedent as F-014. Required test gates verified directly against `verification.md`: 867 tests (468 backend
++ 234 integration + 165 mobile), 0 failing; security scan (dependency audit + secret scan) run by hand,
+clean. Proceeding to the merge gate.
+
+_Previously: Construction / Build / 2026-08-24T02:15:00Z — **Build loop complete — 14/14 tasks, all 15 ACs closed, all
 three threats dispositioned.** F-015-T14's live AppHost run found one real defect invisible to all 863
 automated tests: the Gateway's route allowlist had no entry for `api/v1/messages/**`/`api/v1/notifications/**`
 (both real Customer-service top-level route groups, per ADR-036) — `MobileApp`'s Messaging and Notifications
@@ -85,7 +92,7 @@ since it directly contradicted the feature's own claim: a two-line `_routeSpecs`
 (`Gateway/AspireServiceDiscoveryProxyConfigProvider.cs`) plus 4 regression tests (one pre-existing test
 needed a matching fix — it asserted a single route per cluster, which broke once "customer" stopped being
 one). `verification.md` updated to record found-and-fixed, not deferred. **Final: backend 468 + mobile 165 +
-integration 234 = 867 total, 0 failing.** Moving to Review.
+integration 234 = 867 total, 0 failing.** Moving to Review._
 
 _Previously: Construction / Build / 2026-08-24T01:30:00Z — **Wave 5 complete.** F-015-T11 finalized the four `ux-review.md`
 fix-now findings — and found a real deviation: the report and payment "screens" the design assumed already
@@ -220,6 +227,7 @@ the feature branch after each wave completes.
 | 2026-08-22T23:50:00Z | test_layers_skipped | Test layers 3–6 (E2E, performance/load, accessibility, visual regression) skipped for F-021, as for F-016: no command exists in this project and none is a required §7 gate. Layers 1 (unit, **required**) and 2 (integration, required *by this PRD* because AC-6/AC-13/AC-15 are only meaningful against a running service) both ran green. |
 | 2026-08-23T15:35:00Z | standards_check_skipped | Define Step 6.5 (`--ideate`, advisory tier) skipped for F-015. Same condition re-checked and unchanged: plugin installed, its six source repos do not resolve under this `gh` auth (SSO/VPN issue, not a wrong name — see reference memory). **Ninth consecutive gate blocked by this condition**, and the sixth marked `enforcing` (at Plan/Review) that has never once executed. User chose the light skip (advisory tier, no reason required). Recommendation unchanged since F-013: give it a reachable source or retire it explicitly — **F-017**. |
 | 2026-08-23T17:15:00Z | standards_check_skipped | Plan Step 17.5 (`--design`, **enforcing** tier) skipped for F-015 — same unreachable-source-repos condition, re-checked and unchanged. **Tenth consecutive gate blocked**, and the seventh marked `enforcing` that has never once executed. Treated as an `/override`-equivalent per the gate's own protocol: one-line reason given, recorded as **ADR-041**. Recommendation unchanged since F-013 and now the oldest unaddressed process finding in the project — **F-017**. |
+| 2026-08-24T12:14:03Z | ship_phase_mismatch | `/ship` started for F-015 with Current Phase `Construction` (sub-phase `Review`), not `Construction Complete`. No formal Review or Test sub-phase ran this cycle and no episode draft existed at the time — same process gap recorded at F-014's ship gate. User confirmed proceeding: build is complete (14/14 tasks, 15/15 ACs, 3/3 threats dispositioned) and `verification.md` stands in for the missing episode's Test Summary. Required test gates verified directly against it: 867 tests (468 backend + 234 integration + 165 mobile), 0 failing; security scan (dependency audit + secret scan) run by hand, clean. |
 
 ---
 
@@ -624,3 +632,4 @@ re-planning (`/continue`).
 | 2026-08-24T01:30:00Z | wave_complete | **Wave 5 done — F-015-T11 (solo, the last content task).** Found a real deviation: the report/payment screens AC13's wording assumed existed did not — F-015-T07 wired the API calls with no ViewModel/Page/route consuming them. Built the minimal `ProviderReportPage`/`PaymentPage` + ViewModels to satisfy AC13 literally, plus the `GatewayErrorMapper` (failed-service → display name in the error banner) and a loading indicator on "mark complete". **All 15 ACs closed; all three threats dispositioned.** Backend steady 468 (one confirmed-transient flaky test on the full-suite run), mobile 136→165, integration steady 230 — 863 total, 0 failing | Build | api-gateway-and-mobile-contract |
 | 2026-08-24T02:00:00Z | task_complete | **F-015-T14 done (closing verification, solo).** All 15 ACs attested against a real 8-process live AppHost (register→login→real data→status transition→notes→payment→report→stopped-service failover→anonymous 401→T-302 probes→live logout-then-refresh-rejection). Corrected `CLAUDE.md`, the context catalog, and `INTENT.md`'s two stale lines. **Found one real defect invisible to all 863 automated tests:** the Gateway's route allowlist had no entry for `api/v1/messages/**`/`api/v1/notifications/**` | Build | api-gateway-and-mobile-contract |
 | 2026-08-24T02:15:00Z | build_complete | **BUILD COMPLETE — 14/14 tasks, 15/15 ACs, 3/3 threats dispositioned.** T14's found defect **fixed in the same gate, not filed** — a two-line `_routeSpecs` addition plus 4 regression tests (one pre-existing test corrected: it asserted one route per cluster, which broke once "customer" stopped being one). `verification.md` updated to record found-and-fixed. **Backend 468 / integration 234 / mobile 165 = 867, 0 failing.** Moving to Review | Review | api-gateway-and-mobile-contract |
+| 2026-08-24T12:14:03Z | operation_start | Ship started. Channel in-sync, remote sync 0 behind / 43 ahead. Phase-mismatch guardrail logged and user-confirmed (no Review/Test sub-phase, no episode draft — same as F-014). Test gates verified against `verification.md`: 867 tests, 0 failing; security scan clean | Ship | api-gateway-and-mobile-contract |

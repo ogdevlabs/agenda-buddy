@@ -19,6 +19,52 @@
 
 ---
 
+## v0.5.0 — 2026-08-24
+
+Gives `MobileApp` a single address to call and makes every route it calls correct (F-015). Adds the
+Gateway — an eighth AppHost process, a thin YARP reverse proxy in front of all seven backend services —
+as `MobileApp`'s only configured base address, resolving destinations live from the same Aspire
+service-discovery config every service already reads. Removes the fabricated seed data that had been
+masking the fact that no client could reach the real backend since F-012 shipped.
+
+### Added
+- **`Gateway`, the eighth AppHost process.** A thin YARP reverse proxy with an explicit
+  `api/v1/{service}/**` route allowlist built from live Aspire service-discovery config — never a
+  catch-all forward. No business logic, no auth validation; JWT passthrough only, forwarded byte-for-byte
+  to the destination.
+- **Destination failure translation.** A stopped or unreachable backend returns a shaped `ProblemDetails`
+  body naming the failed cluster (`failedService`), so the client can say "Booking is unavailable" instead
+  of a generic error.
+- **`MobileApp/Routing/`** — seven plain, Maui-free, DI-free route-builder classes, one per `*ApiService`,
+  extracted so route/verb/payload logic is testable under `MobileApp.Tests`'s `net10.0` fallback TFM.
+- **`MobileApp/Infrastructure/GatewayErrorMapper.cs`** — maps the Gateway's `failedService` cluster id to a
+  human-readable display name in the error banner.
+- **`MobileApp/Infrastructure/ApiBaseUrlResolver.cs`** — `MAUI_API_BASE_URL` env var → `ApiBaseUrl` config →
+  hardcoded fallback, in that priority order. `scripts/run-ios.sh` now discovers the Gateway's dynamic
+  address and injects it.
+- Minimal `ProviderReportPage`/`PaymentPage` + ViewModels so the report and payment API calls this feature
+  wires have a screen to render into.
+- A loading indicator on the "mark complete" action, and a copy pass across revenue/payment/notification
+  screens (non-charging payments never claim to be "paid"; unavailable revenue never renders a number).
+
+### Changed
+- **Every `MobileApp` `*ApiService` route, verb, and payload corrected** against the real backend contract
+  — including a status-route swap onto F-014's server-owned transition endpoint, and hiding (not just
+  disabling) the customer-facing "mark complete" control.
+- **`LogoutAsync` now calls the server-side logout endpoint** and the refresh flow transparently retries a
+  request once on a 401, guarding non-idempotent writes so an ambiguous timeout is never silently
+  auto-retried.
+- `scripts/run-ios.sh` injects `MAUI_API_BASE_URL` from the Gateway's discovered port.
+
+### Fixed
+- **`SeedDataProvider` deleted entirely.** Five ViewModels' error banners and empty-state UI are reachable
+  for the first time since F-012 shipped — a real error or a real empty result reaches the UI instead of a
+  fabricated fallback.
+- **The Gateway's route allowlist had no entry for `api/v1/messages/**` or `api/v1/notifications/**`** —
+  both real Customer-service route groups added by F-014 — found by running the software against a live
+  AppHost, not by any of the 863 tests in place before the fix. Closed with a two-line allowlist addition
+  and four regression tests in the same gate that found it.
+
 ## v0.4.0 — 2026-08-23
 
 Makes six shipped-but-unreachable capabilities reachable (F-014): session notes, messages, notifications,
