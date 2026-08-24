@@ -31,6 +31,10 @@
         <ProjectReference Include="..\Profession\Profession.csproj" />
         <ProjectReference Include="..\Provider\Provider.csproj" />
         <ProjectReference Include="..\Services\Services.csproj" />
+        <!-- F-015-T02: the eighth process, wired minimally (booking only) to prove the live
+             re-resolution spike. F-015-T05 supersedes the AppHostWiring.cs wiring with the full
+             seven-service allowlist. -->
+        <ProjectReference Include="..\Gateway\Gateway.csproj" />
     </ItemGroup>
 
     <ItemGroup>

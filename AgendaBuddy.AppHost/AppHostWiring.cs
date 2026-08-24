@@ -111,16 +111,26 @@ internal static class AppHostWiring
         // password — 262 ms of CPU each, measured — so it is the only service the per-IP limiter applies
         // to (threat T-101, ARCHITECTURE.md D-4).
         AddApi<Projects.Identity>("identity", identityDb, needsPrivateKey: true, spendsBcrypt: true);
-        AddApi<Projects.Booking>("booking", agendaDb, needsKafka: true);
+        var booking = AddApi<Projects.Booking>("booking", agendaDb, needsKafka: true);
         AddApi<Projects.Customer>("customer", agendaDb, needsKafka: true);
         AddApi<Projects.Provider>("provider", agendaDb, needsKafka: true);
         AddApi<Projects.Calendar>("calendar", agendaDb);
         AddApi<Projects.Services>("services", agendaDb);
         AddApi<Projects.Profession>("profession", agendaDb);
 
+        // F-015-T02 spike: a minimal wiring proving the mechanism against one destination
+        // ("booking"). WithReference is what injects the services__booking__http__0 /
+        // services__booking__https__0 configuration keys AspireServiceDiscoveryProxyConfigProvider
+        // reads; WaitFor means the gateway only reports healthy once booking is too. F-015-T05
+        // supersedes this with the full seven-service WithReference/WaitFor wiring — if that task
+        // lands first, this block should be replaced by its version rather than merged alongside it.
+        builder.AddProject<Projects.Gateway>("gateway", launchProfileName: null)
+            .WithReference(booking)
+            .WaitFor(booking);
+
         return builder;
 
-        void AddApi<TProject>(
+        IResourceBuilder<ProjectResource> AddApi<TProject>(
             string name,
             IResourceBuilder<IResourceWithConnectionString> database,
             bool needsKafka = false,
@@ -194,6 +204,8 @@ internal static class AppHostWiring
             // can reach. See docs/deployment.md on fronting these with a gateway before this is
             // anything more than a staging deployment.
             if (deployTarget == DeploymentTarget.Cloud) service.WithExternalHttpEndpoints();
+
+            return service;
         }
     }
 }
