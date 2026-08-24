@@ -12,3 +12,4 @@ global using CalendarAnchor = Calendar.Configurations.MongoDbConfiguration;
 global using ServicesAnchor = Services.Configurations.MongoDbConfiguration;
 global using BookingAnchor = Booking.Configuration.MongoDbConfiguration;   // NOTE: Configuration, SINGULAR — Booking is the odd one out
 global using IdentityAnchor = Identity.Configurations.MongoDbConfiguration;  // F-021: the auth routes
+global using GatewayAnchor = Gateway.GatewayAnchor;  // F-015-T01: no MongoDB config type to reuse, so this is a dedicated marker — see Gateway/GatewayAnchor.cs
