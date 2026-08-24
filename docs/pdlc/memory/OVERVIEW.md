@@ -6,7 +6,7 @@
      Do not edit manually — let PDLC maintain it. If you need to correct something, update and note the reason. -->
 
 **Project:** Agenda Buddy
-**Last updated:** 2026-08-24T14:00:00Z
+**Last updated:** 2026-08-24T15:00:00Z
 
 ---
 
@@ -161,6 +161,8 @@ Agenda Buddy is a scheduling and appointment management platform for independent
 - **No formal Party Review ran for this feature either** — second consecutive occurrence after F-014.
 - **T-301 (Gateway single point of failure) accepted, not mitigated** — re-score if a real (non-Aspire) deployment materializes.
 - **A minor, unreproduced observation**: a `GET api/v1/customers` response briefly showed a zeroed `ObjectId` during the AC5 stopped-service test — not root-caused, noted rather than dropped.
+- ⚠️ **`AppHostWiring.cs`'s cloud shape gives ingress to the wrong processes, found reviewing the docs, not exercised** (cloud deploy is deferred, ADR-035). All seven domain services get `.WithExternalHttpEndpoints()`; the Gateway gets none — backwards since F-015 shipped, when the mobile client stopped calling services directly. Filed under **F-017**.
+- **No working provider-subscription capability exists**, found reviewing customer onboarding immediately after F-015 shipped. `CustomerEntity.SubscribedProviderCollection` is a `List<string>?` (always supported many, not one), but no command, handler, or route exists to set it, and `UpdateCustomerCommandHandler` actively discards any client-supplied value for the field. Same shape as the six capabilities F-014 fixed, missed because the original feature (F-003) predates PDLC tracking. Filed as **F-026**.
 
 ---
 
