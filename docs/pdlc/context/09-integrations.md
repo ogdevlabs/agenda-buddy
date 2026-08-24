@@ -1,5 +1,18 @@
 # 09 — Integrations
 
+> **⚠️ F-015 delta (2026-08-23) — the "no service-to-service communication" / "no API gateway" findings
+> below are partly superseded.** `Gateway/` (YARP, `Yarp.ReverseProxy` 2.3.0) is a new, eighth AppHost
+> resource sitting in front of all seven services — `MobileApp`'s only configured base address. It is
+> **routing only, not service-to-service business communication**: no backend service calls another
+> backend service, and the Gateway itself has no business logic, so the substantive finding ("integration is
+> solely by shared database") is unchanged for the seven services themselves. Live-verified at F-015-T14: all
+> 8 processes healthy; register/login/booking/notes/payment/report resolve through the Gateway; a stopped
+> service returns a `failedService`-tagged 502 while the other six keep working; anonymous/invalid-JWT
+> requests get 401 through the Gateway, never a proxied 200. **Gap found live:** the Gateway's route
+> allowlist has no entry for `api/v1/messages/**`/`api/v1/notifications/**` (real Customer-service routes) —
+> see `01-api-surface.md`'s F-015 delta box and `docs/pdlc/design/api-gateway-and-mobile-contract/verification.md`
+> §3.
+>
 > **⚠️ F-013 delta (2026-08-18, `v0.1.0`) — this file was written 2026-08-15 and has NOT been re-read since.**
 >
 > **Partially stale.** `KafkaClient` no longer hardcodes the broker: `Kafka/KafkaClient.cs:38` tries `ConnectionStrings:kafka` then `Kafka:BootstrapServers`, falling back to `localhost:9092` (`:18`). Under the AppHost, Kafka and MongoDB run as **Aspire-managed containers**. The substantive finding is unchanged: Kafka still only creates topics; nothing produces or consumes.
@@ -151,8 +164,8 @@ The T-002 threat mitigation is honoured: `STATE.md`'s handoff records "Push payl
 
 These absences are findings in their own right:
 
-- **No service-to-service communication.** Grep for `HttpClient`/`BaseAddress` across all non-`MobileApp` code returns **nothing**. The seven "microservices" never call each other. They integrate solely by sharing the `agenda_buddy` database — a shared-database integration pattern, not a microservices one. There is no service discovery, no service registry, no `IHttpClientFactory` on the server side at all.
-- **No API gateway / reverse proxy.** No YARP, no nginx/Envoy config, no Ingress. The `PATH_BASE` env vars in Compose (`:115`, `:139`) anticipate path-prefix routing that no code implements (`06-configuration.md`).
+- **No service-to-service communication.** Grep for `HttpClient`/`BaseAddress` across all non-`MobileApp`, non-`Gateway` code returns **nothing**. The seven "microservices" never call each other. They integrate solely by sharing the `agenda_buddy` database — a shared-database integration pattern, not a microservices one. There is no service discovery *between domain services*, no service registry, no `IHttpClientFactory` on any of the seven services. (The Gateway, F-015, is a proxy in front of them, not a peer calling them as a client would use `IHttpClientFactory` — see the F-015 delta box above.)
+- ~~No API gateway / reverse proxy.~~ **F-015:** `Gateway/` (YARP) now exists — see the delta box above. The `PATH_BASE` env vars in Compose (`:115`, `:139`) anticipating path-prefix routing are still unrelated dead configuration; the Gateway does no path rewriting at all (`ARCHITECTURE.md` §2 in the F-015 design docs).
 - **No email provider.** F-006 shipped as "**Email** or in-app notifications"; there is no SMTP client, no SendGrid/SES/Postmark SDK, no email template. `NotificationService.SendAsync` writes a document (`03-services.md`). The email half of F-006 does not exist.
 - **No distributed cache backend.** `AddDistributedMemoryCache()` in five services (`02-entry-points.md`) — no Redis, no `StackExchange.Redis`, no SQL cache. "Distributed" is in-process.
 - **No message queue in use** despite the Kafka infrastructure — no outbox, no saga, no event bus.
@@ -165,22 +178,29 @@ These absences are findings in their own right:
 ## Integration-surface sketch
 
 ```
-                       ┌──────────────────────────────┐
-   MobileApp (MAUI) ───┤ ApiBaseUrl (single base URL)  │
-     │                 └──────────────────────────────┘
-     │                        │  ⚠️ only Identity's 3 auth routes resolve;
-     │                        │     all domain paths 404 (01-api-surface.md)
+                       ┌──────────────────────────────────┐
+   MobileApp (MAUI) ───┤ Gateway's address (F-015; was     │
+     │                 │ ApiBaseUrl→Identity's fallback)   │
+     │                 └──────────────────────────────────┘
+     │                        │  F-015: real routes resolve through the Gateway's
+     │                        │  explicit allowlist — except api/v1/messages|notifications,
+     │                        │  which have no allowlist entry (found live, 01-api-surface.md)
      │                        ▼
      │            ┌───────────────────────┐
-     │            │ Identity      :6036   │──┐
+     │            │ Gateway (YARP), 8th   │  api/v1/{service}/** per service, no rewriting
+     │            │ AppHost resource      │
+     │            └───────────┬───────────┘
+     │                        ▼
+     │            ┌───────────────────────┐
+     │            │ Identity   (dynamic)  │──┐
      │            └───────────────────────┘  │
      │            ┌───────────────────────┐  │
-     │            │ Booking       :6033   │  │
-     │            │ Calendar      :6032   │  │   ⚠️ no HTTP between services
-     │            │ Customer      :6034   │  ├──▶ MongoDB Atlas
-     │            │ Provider      :6030   │  │    (agenda_buddy + IdentityDb)
-     │            │ Services      :6031   │  │
-     │            │ Profession    :6035   │──┘
+     │            │ Booking    (dynamic)  │  │
+     │            │ Calendar   (dynamic)  │  │   ⚠️ still no HTTP between the seven services
+     │            │ Customer   (dynamic)  │  ├──▶ MongoDB Atlas
+     │            │ Provider   (dynamic)  │  │    (agenda_buddy + IdentityDb)
+     │            │ Services   (dynamic)  │  │
+     │            │ Profession (dynamic)  │──┘
      │            └───────────┬───────────┘
      │                        │ CreateTopicIfNotExist only
      │                        ▼

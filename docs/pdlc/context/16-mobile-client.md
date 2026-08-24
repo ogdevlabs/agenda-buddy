@@ -1,6 +1,41 @@
 # 16 — Mobile Client (.NET MAUI)
 
-**Files:** `MobileApp/` — 1 `MauiProgram.cs`, 1 `AppShell`, 3 `Infrastructure/`, 15 `Services/`, 9 `ViewModels/`, 9 `Views/` (+ 11 `.xaml`), 8 `Models/`, `Platforms/{Android,iOS}`.
+> **⚠️ F-015 delta (2026-08-23) — the central defect below ("the client cannot reach the backend") is
+> fixed.** Live-verified against a real AppHost at F-015-T14's ship gate: register, login, create-provider,
+> create-customer, book-appointment, the `POST .../status` transition, session notes (GET/POST), payment
+> (GET/POST), and the provider report all resolved with real data through the **Gateway** (F-015's new
+> eighth process, `Gateway/`) — not a 404, not seed data. `SeedDataProvider` is **deleted**
+> (`MobileApp/Services/SeedDataProvider.cs` no longer exists — confirmed by reflection test,
+> `MobileApp.Tests/ViewModels/SeedDataProviderRemovalTests.cs`); the error banner and empty-state UI are
+> reachable for the first time since F-012. `AuthService.RefreshAsync`/`LogoutAsync` are wired to the real
+> `POST api/v1/auth/refresh`/`logout` endpoints — live-verified: a logout, then a refresh attempt with the
+> same (never-otherwise-used) refresh token, returned `401`. Details in
+> `docs/pdlc/design/api-gateway-and-mobile-contract/verification.md`.
+>
+> **Base address:** `MobileApp/Infrastructure/ApiBaseUrlResolver.cs` — `MAUI_API_BASE_URL` env var →
+> `ApiBaseUrl` config → the old hardcoded fallback (now a last resort, not the only path).
+> `scripts/run-ios.sh` sets the env var to the **Gateway's** discovered address (not any one service's).
+>
+> **Route/verb/payload corrections:** extracted into Maui-free, DI-free classes under `MobileApp/Routing/`
+> (testable under `MobileApp.Tests`'s `net10.0` fallback TFM — closing finding #10 below). One deviation
+> from the original design doc, recorded by F-015-T07: Booking has no `GET` route for an appointment at
+> all, so `BookingApiService.GetTodayAppointmentsAsync`/`GetAppointmentAsync` compose with Calendar's real
+> `GET api/v1/calendar/appointments/{email}` instead of a Booking GET that doesn't exist.
+>
+> **⚠️ Gap found live at F-015-T14, not caught by any automated test:** `MessagingApiService`/
+> `NotificationApiService` call `api/v1/messages/...`/`api/v1/notifications/...` — real routes, correctly
+> pathed — but the **Gateway's** route allowlist has no entry for either (only `api/v1/customers/**` is
+> allowlisted), so every such request gets the Gateway's `gateway-no-route` 404. The Messaging and
+> Notifications screens therefore still cannot reach the backend through the one address `MobileApp` is
+> configured to call. No test in `MobileClientRouteResolutionTest` (F-015-T07) caught this because it fires
+> requests directly at the hosted domain services, bypassing the Gateway entirely. Filed as a follow-up;
+> see `docs/pdlc/design/api-gateway-and-mobile-contract/verification.md` §3.
+>
+> Findings 1–9 and 11–15 below (except where struck through inline) remain otherwise accurate as a record of
+> what F-015 fixed and how; they are not re-verified line-by-line here — see the design docs/verification.md
+> for the current, authoritative picture of the client-server contract.
+
+**Files:** `MobileApp/` — 1 `MauiProgram.cs`, 1 `AppShell`, 3 `Infrastructure/`, 15 `Services/`, 9 `ViewModels/`, 9 `Views/` (+ 11 `.xaml`), 8 `Models/`, `Platforms/{Android,iOS}`. **F-015 additions:** `Routing/` (7 route-builder classes), `Infrastructure/ApiBaseUrlResolver.cs`, `Infrastructure/GatewayErrorMapper.cs`, `Infrastructure/AmbiguousWriteException.cs`, `Services/ProviderApiService.cs`, `ViewModels/ProviderReportViewModel.cs`, `ViewModels/PaymentViewModel.cs`, `Views/ProviderReportPage.xaml`, `Views/PaymentPage.xaml`. **F-015 removal:** `Services/SeedDataProvider.cs`.
 
 `MobileApp` is the **only client** of the seven backend services. Delivered by F-012 `mobile-app` (PR #31) and restyled by F-012's UX redesign (PRs #32–#34).
 
@@ -225,22 +260,28 @@ Resources: `Resources/AppIcon/` (2 svg), `Resources/Images/` (5 tab icons), `Res
 
 ## Summary of mobile-side findings
 
-| # | Finding | Severity |
-|---|---|---|
-| 1 | Every domain API path omits `api/v1/` and targets nonexistent routes/verbs | **Blocking** |
-| 2 | A single `ApiBaseUrl` cannot address 7 ports; no gateway exists | **Blocking** |
-| 3 | All three configured/fallback base URLs point at no service (or at Identity) | **Blocking** |
-| 4 | Seed-data fallback silently masks 1–3, so the app *looks* functional | **High** — hides the blockers |
-| 5 | Refresh token stored but never used → hard logout at 60 min | High |
-| 6 | `ErrorMessage` never assigned → error banner and empty state unreachable | High |
-| 7 | Seed fallback fires on legitimate "no data", showing fabricated client PII | High |
-| 8 | `LogoutAsync` never calls the server; refresh token stays valid 24 h | Medium |
-| 9 | iOS never registers for push; no Firebase config files committed | Medium |
-| 10 | `net10.0` test slice excludes `MauiProgram`/`AppShell`, so wiring is untestable | Medium |
-| 11 | Static `UnauthorizedAccess` event never unsubscribed | Low |
-| 12 | `Library` reference ships Stripe + BCrypt + Mongo driver to devices | Low |
-| 13 | `DateTime.Now` vs UTC backend in counts and greetings | Low |
-| 14 | `RegisterViewModel` untested; zero UI tests | Low |
-| 15 | Empty `Resources/Fonts/*` glob | Trivial |
+| # | Finding | Severity | F-015 status |
+|---|---|---|---|
+| 1 | Every domain API path omits `api/v1/` and targets nonexistent routes/verbs | **Blocking** | ✅ Fixed — `MobileApp/Routing/*` |
+| 2 | A single `ApiBaseUrl` cannot address 7 ports; no gateway exists | **Blocking** | ✅ Fixed — `Gateway/`, one address |
+| 3 | All three configured/fallback base URLs point at no service (or at Identity) | **Blocking** | ✅ Fixed — `ApiBaseUrlResolver.cs` |
+| 4 | Seed-data fallback silently masks 1–3, so the app *looks* functional | **High** — hides the blockers | ✅ Fixed — `SeedDataProvider.cs` deleted |
+| 5 | Refresh token stored but never used → hard logout at 60 min | High | ✅ Fixed — `JwtDelegatingHandler` refresh-on-401 |
+| 6 | `ErrorMessage` never assigned → error banner and empty state unreachable | High | ✅ Fixed — reachable for the first time |
+| 7 | Seed fallback fires on legitimate "no data", showing fabricated client PII | High | ✅ Fixed — no fallback left to fire |
+| 8 | `LogoutAsync` never calls the server; refresh token stays valid 24 h | Medium | ✅ Fixed — live-verified: logout then refresh → 401 |
+| 9 | iOS never registers for push; no Firebase config files committed | Medium | Not in F-015's scope — unchanged |
+| 10 | `net10.0` test slice excludes `MauiProgram`/`AppShell`, so wiring is untestable | Medium | ✅ Fixed for routing/base-URL — `MobileApp/Routing/*`, `ApiBaseUrlResolver` are DI-free and directly tested (AC12) |
+| 11 | Static `UnauthorizedAccess` event never unsubscribed | Low | Unchanged |
+| 12 | `Library` reference ships Stripe + BCrypt + Mongo driver to devices | Low | Unchanged |
+| 13 | `DateTime.Now` vs UTC backend in counts and greetings | Low | Unchanged |
+| 14 | `RegisterViewModel` untested; zero UI tests | Low | Unchanged |
+| 15 | Empty `Resources/Fonts/*` glob | Trivial | Unchanged |
 
-**Findings 1–4 together are the most consequential defect in the product.** F-012 `mobile-app` is marked Shipped, and the client is not integrated with the backend — it renders local fixtures. The backend-side counterpart (no gateway, port-per-service, `api/v1/` prefix) is documented in `01-api-surface.md` and `09-integrations.md`.
+**Historical note, no longer the current state:** findings 1–4 together were once the most consequential
+defect in the product — the client looked functional but was not integrated with the backend at all. F-015
+fixed all four. The one residual gap in the same spirit, found live during F-015's own closing verification
+rather than by any of the 863 automated tests, is narrower: the Gateway's route allowlist has no entry for
+`api/v1/messages/**`/`api/v1/notifications/**`, so those two screens still cannot reach the backend through
+the address the app is actually configured to call. See the F-015 delta box above and
+`docs/pdlc/design/api-gateway-and-mobile-contract/verification.md` §3.

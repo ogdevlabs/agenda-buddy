@@ -26,11 +26,28 @@ Every service uses a **C# 12 primary constructor** taking one or more `IReposito
 | `ReportingService` | `IReportingService` | `IRepository<ProviderEntity>` | ⚠️ **nowhere** |
 | `DeviceTokenService` | `IDeviceTokenService` | `IRepository<DeviceTokenEntity>` | Identity (`Program.cs:25`) |
 
-### ⚠️ Six services are unreachable
+### ✅ F-014 wired all six into HTTP routes; F-015 wired (most of) the mobile client to them
 
-`NotificationService`, `MessageService`, `NoteService`, `PaymentService`, `StripePaymentGateway`, and `ReportingService` are **not registered in any service collection and have no HTTP route**. They exist, are unit-tested (`Library.Tests/Services/*`), and correspond to shipped roadmap features F-006 (notifications), F-007 (messaging), F-008 (journal/notes), F-009 (reporting), F-010 (payments) — but none is wired into a running process.
+**Superseded finding, kept for history:** the six services below were once unregistered in every service
+collection with no HTTP route. **F-014** (`docs/pdlc/archive/design/wire-unreached-services/verification.md`)
+registered all six and gave each an HTTP route: `NoteService` → Booking's `.../notes` routes,
+`PaymentService`/`StripePaymentGateway` → Booking's `.../payment` routes, `MessageService`/
+`NotificationService` → Customer's `api/v1/messages`/`api/v1/notifications` route groups, `ReportingService`
+→ Provider's `.../report` route.
 
-**Inference:** F-006 through F-010 landed the domain layer and its tests without landing the API surface or DI wiring. The mobile app's Messaging and Notifications pages are backed by `SeedDataProvider` (`16-mobile-client.md`), which is consistent with this.
+**F-015** wired `MobileApp` to call all six — `ProviderApiService` (new), and extensions to
+`BookingApiService`, live-verified against a real AppHost at F-015-T14's ship gate: a note was written and
+read back, a `local_`-prefixed payment was recorded and read back, and a provider report correctly returned
+`revenueAvailable: false` with a reason, never a number — all through the Gateway.
+
+**⚠️ Exception, found live at F-015-T14, not caught by any automated test:** `MessageService` and
+`NotificationService`'s routes (`api/v1/messages/**`, `api/v1/notifications/**`) are **not** in the
+Gateway's route allowlist (`Gateway/AspireServiceDiscoveryProxyConfigProvider.cs`) — only
+`api/v1/customers/**` is. A request to either through the Gateway (the only address `MobileApp` is
+configured to call) gets a `gateway-no-route` 404, even though the same request against Customer directly
+succeeds. `MobileApp`'s Messaging and Notifications screens therefore still cannot reach the backend in
+practice. See `docs/pdlc/context/01-api-surface.md`'s F-015 delta box and
+`docs/pdlc/design/api-gateway-and-mobile-contract/verification.md` §3.
 
 ---
 
