@@ -110,17 +110,34 @@ internal static class AppHostWiring
         // spendsBcrypt: Identity's login and register are the only routes in the system that hash a
         // password — 262 ms of CPU each, measured — so it is the only service the per-IP limiter applies
         // to (threat T-101, ARCHITECTURE.md D-4).
-        AddApi<Projects.Identity>("identity", identityDb, needsPrivateKey: true, spendsBcrypt: true);
-        AddApi<Projects.Booking>("booking", agendaDb, needsKafka: true);
-        AddApi<Projects.Customer>("customer", agendaDb, needsKafka: true);
-        AddApi<Projects.Provider>("provider", agendaDb, needsKafka: true);
-        AddApi<Projects.Calendar>("calendar", agendaDb);
-        AddApi<Projects.Services>("services", agendaDb);
-        AddApi<Projects.Profession>("profession", agendaDb);
+        var identity = AddApi<Projects.Identity>("identity", identityDb, needsPrivateKey: true, spendsBcrypt: true);
+        var booking = AddApi<Projects.Booking>("booking", agendaDb, needsKafka: true);
+        var customer = AddApi<Projects.Customer>("customer", agendaDb, needsKafka: true);
+        var provider = AddApi<Projects.Provider>("provider", agendaDb, needsKafka: true);
+        var calendar = AddApi<Projects.Calendar>("calendar", agendaDb);
+        var services = AddApi<Projects.Services>("services", agendaDb);
+        var profession = AddApi<Projects.Profession>("profession", agendaDb);
+
+        // F-015-T05: the eighth resource. launchProfileName: null for the same reason as the seven
+        // services (AC-1.4) — Gateway has no appsettings.json/launchSettings.json of its own yet, but
+        // the AppHost must still assign its port rather than adopt one.
+        //
+        // WithReference injects services__<name>__http__0 for each destination — the service-discovery
+        // keys F-015-T02/T03's routing config reads to resolve where to forward a request. WaitFor on
+        // all seven means the gateway only reports healthy once every destination it could route to is
+        // also healthy, mirroring how every service above waits on mongodb/kafka before it is
+        // considered up.
+        var gateway = builder.AddProject<Projects.Gateway>("gateway", launchProfileName: null);
+
+        foreach (var service in new[] { booking, calendar, customer, provider, services, profession, identity })
+        {
+            gateway.WithReference(service);
+            gateway.WaitFor(service);
+        }
 
         return builder;
 
-        void AddApi<TProject>(
+        IResourceBuilder<ProjectResource> AddApi<TProject>(
             string name,
             IResourceBuilder<IResourceWithConnectionString> database,
             bool needsKafka = false,
@@ -194,6 +211,8 @@ internal static class AppHostWiring
             // can reach. See docs/deployment.md on fronting these with a gateway before this is
             // anything more than a staging deployment.
             if (deployTarget == DeploymentTarget.Cloud) service.WithExternalHttpEndpoints();
+
+            return service;
         }
     }
 }
