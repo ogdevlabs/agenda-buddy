@@ -41,8 +41,10 @@ public class CustomersViewModelTests
         Assert.False(vm.HasError);
     }
 
+    // F-015-T08 AC1/AC8: a genuine zero-result success surfaces the empty state (IsEmpty), never
+    // fabricated seed contacts.
     [Fact]
-    public async Task LoadAsync_EmptyResult_FallsBackToSeedData()
+    public async Task LoadAsync_EmptyResult_SetsIsEmptyTrue_NoFabricatedData()
     {
         var service = new Mock<ICustomerApiService>();
         service.Setup(s => s.GetCustomersAsync(It.IsAny<CancellationToken>()))
@@ -51,14 +53,16 @@ public class CustomersViewModelTests
         var vm = new CustomersViewModel(service.Object, CreateMockSession().Object);
         await vm.LoadCommand.ExecuteAsync(null);
 
-        Assert.NotEmpty(vm.Customers);
-        Assert.False(vm.IsEmpty);
+        Assert.Empty(vm.Customers);
+        Assert.True(vm.IsEmpty);
         Assert.False(vm.HasError);
         Assert.False(vm.IsLoading);
     }
 
+    // F-015-T08 AC8: a genuine failure surfaces the error banner (HasError + a real ErrorMessage),
+    // never fabricated seed contacts.
     [Fact]
-    public async Task LoadAsync_NetworkError_FallsBackToSeedData()
+    public async Task LoadAsync_NetworkError_SetsHasErrorTrueWithRealMessage_NoFabricatedData()
     {
         var service = new Mock<ICustomerApiService>();
         service.Setup(s => s.GetCustomersAsync(It.IsAny<CancellationToken>()))
@@ -67,8 +71,9 @@ public class CustomersViewModelTests
         var vm = new CustomersViewModel(service.Object, CreateMockSession().Object);
         await vm.LoadCommand.ExecuteAsync(null);
 
-        Assert.NotEmpty(vm.Customers);
-        Assert.False(vm.HasError);
+        Assert.Empty(vm.Customers);
+        Assert.True(vm.HasError);
+        Assert.False(string.IsNullOrWhiteSpace(vm.ErrorMessage));
         Assert.False(vm.IsLoading);
     }
 

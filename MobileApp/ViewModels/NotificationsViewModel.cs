@@ -43,92 +43,19 @@ public partial class NotificationsViewModel : ObservableObject
         try
         {
             var results = await _notificationApiService.GetNotificationsAsync();
-            if (results.Count == 0)
-                results = GenerateSeedNotifications();
             Notifications = results;
             UnreadCount = Notifications.Count(n => !n.IsRead);
         }
-        catch (HttpRequestException)
+        catch (Exception)
         {
-            Notifications = GenerateSeedNotifications();
-            UnreadCount = Notifications.Count(n => !n.IsRead);
+            // Real failure (network, timeout, malformed response, ambiguous write, etc.) — surface it
+            // through the error banner rather than masking it with fabricated data (F-015-T08, AC8).
+            ErrorMessage = "Could not load notifications. Check your connection and try again.";
         }
         finally
         {
             IsLoading = false;
         }
-    }
-
-    private List<NotificationSummary> GenerateSeedNotifications()
-    {
-        var now = DateTime.Now;
-
-        if (_session.IsCustomer)
-        {
-            return
-            [
-                new NotificationSummary
-                {
-                    Id = "notif-c1",
-                    NotificationType = NotificationType.AppointmentBooked,
-                    Message = "Your session with Sarah Mitchell is confirmed for tomorrow at 9:00 AM",
-                    CreatedAt = now.AddMinutes(-30),
-                    IsRead = false
-                },
-                new NotificationSummary
-                {
-                    Id = "notif-c2",
-                    NotificationType = NotificationType.AppointmentUpdated,
-                    Message = "Sarah Mitchell rescheduled your Friday session to 2:30 PM",
-                    CreatedAt = now.AddHours(-4),
-                    IsRead = true
-                }
-            ];
-        }
-
-        return
-        [
-            new NotificationSummary
-            {
-                Id = "notif-1",
-                NotificationType = NotificationType.AppointmentBooked,
-                Message = "Alex Chen booked a session for tomorrow at 9:00 AM",
-                CreatedAt = now.AddMinutes(-15),
-                IsRead = false
-            },
-            new NotificationSummary
-            {
-                Id = "notif-2",
-                NotificationType = NotificationType.AppointmentUpdated,
-                Message = "Priya Sharma rescheduled Friday's session to 2:30 PM",
-                CreatedAt = now.AddHours(-2),
-                IsRead = false
-            },
-            new NotificationSummary
-            {
-                Id = "notif-3",
-                NotificationType = NotificationType.AppointmentCompleted,
-                Message = "Session with David Thompson marked as completed",
-                CreatedAt = now.AddHours(-5),
-                IsRead = true
-            },
-            new NotificationSummary
-            {
-                Id = "notif-4",
-                NotificationType = NotificationType.AppointmentCancelled,
-                Message = "Alex Chen cancelled next Monday's 3:00 PM session",
-                CreatedAt = now.AddDays(-1),
-                IsRead = true
-            },
-            new NotificationSummary
-            {
-                Id = "notif-5",
-                NotificationType = NotificationType.AppointmentBooked,
-                Message = "David Thompson booked a new session for Wednesday at 1:00 PM",
-                CreatedAt = now.AddDays(-1).AddHours(-4),
-                IsRead = true
-            }
-        ];
     }
 
     [RelayCommand]
