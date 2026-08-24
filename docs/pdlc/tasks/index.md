@@ -89,7 +89,24 @@ _No tasks._
 
 ## F-015 — api-gateway-and-mobile-contract  `in progress`
 
-_No tasks._
+| ID | Title | Status | Prio | Depends on |
+|----|-------|--------|------|------------|
+| F-015-T01 | Scaffold the Gateway project — AddServiceDefaults, health/alive, no routing yet | planned | — | — |
+| F-015-T02 | Spike: confirm YARP re-resolves Aspire's dynamic destination ports without a gateway restart | planned | — | F-015-T01 |
+| F-015-T03 | YARP route table: explicit api/v1/{service}/** allowlist, no catch-all forward | planned | — | F-015-T02 |
+| F-015-T04 | Gateway failure translation, and proof the forwarded Host header doesn't break transport security | planned | — | F-015-T03 |
+| F-015-T05 | Wire the Gateway into AppHostWiring.cs — WithReference/WaitFor on all seven services | planned | — | F-015-T01 |
+| F-015-T06 | Extract MobileApp's *ApiService route-building logic into plain, Maui-free classes | planned | — | — |
+| F-015-T07 | Correct every *ApiService's route, verb, and payload; swap status updates to F-014's dedicated route | planned | — | F-015-T06, F-015-T05 |
+| F-015-T08 | Remove SeedDataProvider; let the real error banner and empty-state UI take over | planned | — | F-015-T07 |
+| F-015-T09 | Wire transparent refresh-on-401; never auto-retry a non-idempotent write on ambiguous timeout | planned | — | F-015-T06, F-015-T05 |
+| F-015-T10 | LogoutAsync calls the server; the old refresh token is rejected afterward | planned | — | F-015-T09 |
+| F-015-T11 | Finalize revenue/payment/notification copy; map the failed-service error into the banner; add the status-button loading state | planned | — | F-015-T04, F-015-T08 |
+| F-015-T12 | run-ios.sh discovers the gateway's address and injects MAUI_API_BASE_URL | planned | — | F-015-T05 |
+| F-015-T13 | Regenerate the OpenAPI specs to include F-014's nine new routes | planned | — | — |
+| F-015-T14 | Verification: all 13 ACs attested end to end against a live AppHost, and the documentation this feature made false | planned | — | F-015-T07, F-015-T08, F-015-T09, F-015-T10, F-015-T12 |
+
+**0 of 14 done.** 15 acceptance criteria (13 + 2 threat-derived `[security]`); threats T-301…T-303, two mitigated now (T-302, T-303) and one accepted (T-301, ADR-040).
 
 ## F-016 — secure-public-endpoints  `shipped`
 

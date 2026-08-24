@@ -11,7 +11,7 @@
 
 ## Current Phase
 
-Inception
+Inception Complete — Ready for /build
 
 ---
 
@@ -70,16 +70,37 @@ _None active. Run `/night-shift <F-NNN>` to start an autonomous run (requires by
 
 ## Current Sub-phase
 
-Discover
+none
 
 ---
 
 ## Last Checkpoint
 
-Inception / Discover / 2026-08-23T14:00:00Z — F-015 claimed (hand-tracked, `tasks.cjs` absent). Preflight
-clean: channel in-sync, remote sync 0 behind, standards plugin present (its six source repos' reachability
-under this `gh` auth is a separate, recurring condition — checked at the Define/Plan gates, not here).
-Starting Discover.
+Inception / Plan / 2026-08-23T17:30:00Z — **Inception complete for F-015.** 14 tasks / 5 waves created
+(hand-written, `tasks.cjs` absent). Standards `--design` gate skipped (ADR-041), then the whole Nordstrom
+standards gate **retired outright for this project** (ADR-042, CONSTITUTION §9) — a decade of skips revealed
+it was never applicable, not just unreachable. Readiness party (solo, Full triage): overall **Fair**, 1 open
+gap (`estimate-mis-scoped` — Wave 3's T07/T09 parallelism claim). Plan approved as-is. Ready for `/build`.
+
+_Previously: Inception / Plan / 2026-08-23T17:00:00Z — **Design approved for F-015.** Bloom's Taxonomy (3
+rounds + synthesis), then all five design artifacts written and approved: `ARCHITECTURE.md` (gateway as an
+8th AppHost resource, YARP, programmatic Aspire-service-discovery-based routing), `data-model.md` (no
+changes), `api-contracts.md`, `threat-model.md` (Full triage, 3 threats — T-302/T-303 mitigate now, T-301
+accept → ADR-040), `ux-review.md` (Lite triage, 4 fix-now findings)._
+
+_Previously: Inception / Design / 2026-08-23T16:00:00Z — **PRD approved for F-015.** 13 requirements, 13
+acceptance criteria (all 🧪 test-first), 6 user stories, NFRs, known risks, out-of-scope. Standards Define
+gate skipped (ninth consecutive, logged). Approved by `ogdevlabs`._
+
+_Previously: Inception / Define / 2026-08-23T15:30:00Z — **Discover complete for F-015.** Socratic (3
+rounds), Progressive Thinking (solo, MOM written), Adversarial Review (12 findings, 3 followed up), and Edge
+Case Analysis (6 findings, triaged 4 in-scope / 2 known-risk) all done. Key decisions: real YARP gateway
+(spike vs. Aspire's dynamic ports before Design), remove `SeedDataProvider` entirely, fix MobileApp
+testability in this same feature, wire refresh+logout verified live. Kept as one PRD, split into waves at
+Plan._
+
+_Previously: Inception / Discover / 2026-08-23T14:00:00Z — F-015 claimed (hand-tracked, `tasks.cjs` absent).
+Preflight clean: channel in-sync, remote sync 0 behind, standards plugin present. Starting Discover._
 
 _Previously: Operation / Complete / 2026-08-23T13:30:00Z — **F-014 shipped as `v0.4.0`.** Episode 004 Final;
 PRD, brainstorm and design artifacts archived to `docs/pdlc/archive/`; ROADMAP, OVERVIEW, METRICS updated;
@@ -128,10 +149,18 @@ agent-teams
 | 2026-08-22T23:40:00Z | required_gate_flagged_accepted | §7's always-required security scan RAN, **by hand for the third consecutive feature**. **Dependency audit:** unchanged from F-016 — one vulnerable package solution-wide, `SSH.NET` HIGH `GHSA-q939-rpr3-3284`, in `AgendaBuddy.IntegrationTests` only, dispositioned by ADR-030. **F-021 adds no package reference at all**: rate limiting and HSTS are both in the ASP.NET Core shared framework. **Secret scan:** clean on the six F-016 patterns over the changed files. The one place this feature could have introduced a leak is the new log sink, and that is asserted rather than reviewed (AC-16). ⚠️ CI still has a credential grep, not a scanner. **F-017 still owns automating it.** |
 | 2026-08-22T23:45:00Z | pre_existing_test_deleted | `IdentityService_ConstructorParameters_ContainNoILogger` deleted — it asserted by reflection that `IdentityService` had **no** logger, which PRD requirement 17 contradicts directly. Replaced by the stronger content assertion (no address, password or token in any line). **F-021's only such deviation**, same class as F-016's ADR-025 deletion, recorded in ADR-034 and awaiting maintainer acknowledgement. Found while wiring it: the three sanitization tests beside it were **vacuous** — they iterated a logger factory connected to nothing. |
 | 2026-08-22T23:50:00Z | test_layers_skipped | Test layers 3–6 (E2E, performance/load, accessibility, visual regression) skipped for F-021, as for F-016: no command exists in this project and none is a required §7 gate. Layers 1 (unit, **required**) and 2 (integration, required *by this PRD* because AC-6/AC-13/AC-15 are only meaningful against a running service) both ran green. |
+| 2026-08-23T15:35:00Z | standards_check_skipped | Define Step 6.5 (`--ideate`, advisory tier) skipped for F-015. Same condition re-checked and unchanged: plugin installed, its six source repos do not resolve under this `gh` auth (SSO/VPN issue, not a wrong name — see reference memory). **Ninth consecutive gate blocked by this condition**, and the sixth marked `enforcing` (at Plan/Review) that has never once executed. User chose the light skip (advisory tier, no reason required). Recommendation unchanged since F-013: give it a reachable source or retire it explicitly — **F-017**. |
+| 2026-08-23T17:15:00Z | standards_check_skipped | Plan Step 17.5 (`--design`, **enforcing** tier) skipped for F-015 — same unreachable-source-repos condition, re-checked and unchanged. **Tenth consecutive gate blocked**, and the seventh marked `enforcing` that has never once executed. Treated as an `/override`-equivalent per the gate's own protocol: one-line reason given, recorded as **ADR-041**. Recommendation unchanged since F-013 and now the oldest unaddressed process finding in the project — **F-017**. |
 
 ---
 
 ## Active Blockers
+
+> **⚠️ SUPERSEDED 2026-08-23T15:30Z — F-014 has since shipped as `v0.4.0` (episode 004, PR #40 merged) and
+> F-015's Discover sub-phase is now complete (see Last Checkpoint above).** The marker below is kept as-is
+> for its still-useful "facts that will save time" — the `ObjectId`/enum/status-transition details remain
+> true of the shipped code — but its top-line status ("BUILT, NOT SHIPPED") and next-action are stale. Do not
+> act on its `resume_command` or `next_action` fields.
 
 > ### 🔖 RESUME MARKER — updated 2026-08-23T06:00Z, **F-014 BUILT, NOT SHIPPED**
 >
@@ -293,6 +322,15 @@ re-planning (`/continue`).
 
 ## Context Checkpoint
 
+<!-- ⚠️ SUPERSEDED 2026-08-23T15:30Z. The block below is a stop marker from BEFORE F-014 shipped —
+     it is now historical only. Current state: F-014 shipped as v0.4.0 (episode 004), F-015's Discover
+     sub-phase is complete (see the top-of-file Last Checkpoint / Current Sub-phase: Define), and the
+     brainstorm log at docs/pdlc/brainstorm/brainstorm_api-gateway-and-mobile-contract_2026-08-23.md has
+     the full record. Do NOT act on this block's resume_command or next_actions_in_order — read the
+     Last Checkpoint at the top of this file instead. Retained below for its still-useful
+     F014_FACTS_THAT_WILL_SAVE_TIME and GOTCHAS_THAT_COST_TIME_THIS_SESSION, which remain true of the
+     shipped code. -->
+
 <!-- ⚠️ STOP MARKER — written at the maintainer's request, 2026-08-23T06:30Z, at the end of a long session.
      Read this block COLD: it is enough to resume without any of the prior conversation. -->
 
@@ -304,7 +342,7 @@ re-planning (`/continue`).
   "feature": "wire-unreached-services",
   "feature_id": "F-014",
   "active_task": null,
-  "resume_command": "review and merge PR #40, then /ship",
+  "resume_command": "SUPERSEDED — see top-of-file Last Checkpoint instead",
 
   "where_everything_is": {
     "main": "v0.3.0 (3d60896 + the f5d47d6 merge). F-021 shipped, tagged, verified live, Operation closed.",
@@ -367,12 +405,22 @@ re-planning (`/continue`).
 
 ```json
 {
-  "phase_completed": null,
-  "next_phase": null,
-  "feature": null,
-  "key_outputs": [],
-  "decisions_made": [],
-  "next_action": null,
+  "phase_completed": "Inception / Plan",
+  "next_phase": "Construction / Build",
+  "feature": "api-gateway-and-mobile-contract",
+  "key_outputs": [
+    "docs/pdlc/prds/PRD_F-015_api-gateway-and-mobile-contract_2026-08-23.md",
+    "docs/pdlc/design/api-gateway-and-mobile-contract/ARCHITECTURE.md",
+    "docs/pdlc/design/api-gateway-and-mobile-contract/data-model.md",
+    "docs/pdlc/design/api-gateway-and-mobile-contract/api-contracts.md",
+    "docs/pdlc/prds/plans/plan_F-015_api-gateway-and-mobile-contract_2026-08-23.md"
+  ],
+  "decisions_made": [
+    "14 tasks in 5 waves — largest task count for this project's remediation-program features so far",
+    "Nordstrom standards gate retired outright for this project (ADR-042) — not just skipped",
+    "Readiness: Fair, 1 open gap (Wave 3's T07/T09 parallelism), approved as-is"
+  ],
+  "next_action": "Start Construction — run `/build` or read skills/build/SKILL.md",
   "pending_questions": []
 }
 ```
@@ -488,3 +536,12 @@ re-planning (`/continue`).
 | 2026-08-23T12:20:00Z | deploy_deferred | Cloud deploy **skipped again by ADR-035** — fourth consecutive release, second under the deferral. User confirmed at the deploy prompt | Ship | wire-unreached-services |
 | 2026-08-23T13:00:00Z | verify_complete | **Verified against a live AppHost, not by inspection.** 7/7 services Healthy/alive. Anonymous 401 confirmed live on the new notes/status routes. A freshly registered Provider's JWT reached real business logic (403/404, never 401) on 4 of 9 new routes. Dependency audit + secret scan on `main` clean. Known AppHost shutdown gotcha recurred, handled | Verify | wire-unreached-services |
 | 2026-08-23T13:30:00Z | operation_complete | **F-014 shipped as `v0.4.0`.** Episode 004 Final; PRD, brainstorm and design artifacts archived; ROADMAP, OVERVIEW, METRICS updated; claim released. ⚠️ **Two process gaps recorded, not glossed:** no Review sub-phase ran this cycle (no findings file), and no episode draft existed at Construction Complete (drafted retroactively at Ship). Next: F-015 | Idle | none |
+| 2026-08-23T14:00:00Z | roadmap_claim | F-015 `api-gateway-and-mobile-contract` claimed (hand-tracked, `tasks.cjs` absent), next on the roadmap after F-014 | Discover | api-gateway-and-mobile-contract |
+| 2026-08-23T15:30:00Z | discover_complete | Socratic (3 rounds), Progressive Thinking (solo, MOM written), Adversarial Review (12 findings, 3 followed up), Edge Case Analysis (6 findings, 4 in-scope / 2 known-risk). **Key decisions:** real YARP gateway spiked against Aspire's dynamic ports before Design; `SeedDataProvider` removed entirely; MobileApp testability fixed in this same feature; refresh+logout wired and verified live. Kept as one PRD, split into waves at Plan — flagged for extra Plan-readiness scrutiny given its size (four independently risky work-streams, larger than any prior shipped feature here) | Discover | api-gateway-and-mobile-contract |
+| 2026-08-23T15:35:00Z | standards_check_skipped | Define Step 6.5 (`--ideate`, advisory) skipped for F-015 — ninth consecutive gate blocked by the same unreachable-source-repos condition. Light skip, no reason required | Define | api-gateway-and-mobile-contract |
+| 2026-08-23T16:00:00Z | prd_approved | 13 requirements / 13 ACs / 6 BDD user stories, all test-first. Test layers: Unit + Integration (required by this PRD) + Mobile + Security scan. Approved by `ogdevlabs` | Define | api-gateway-and-mobile-contract |
+| 2026-08-23T16:45:00Z | design_complete_pending_approval | 5 artifacts. Threat model **Full** (3/3): 3 threats — T-302 (route allowlist) and T-303 (forwarded-Host/redirect interaction) mitigate now, T-301 (gateway is a new SPOF) accept. UX review **Lite** (1/3): 4 findings, all fix now — copy, hide-not-disable, loading state, failed-service error mapping. Bloom's Taxonomy locked the gateway as an 8th AppHost resource (YARP, programmatic Aspire-service-discovery routing, live per-request destination resolution pending a spike) | Design | api-gateway-and-mobile-contract |
+| 2026-08-23T17:00:00Z | design_approved | All recommendations confirmed as drafted. ADR-040 recorded (T-301 accepted, local-dev-scoped SPOF, re-score if ADR-035's cloud deferral changes). Both open questions resolved at the gate | Design | api-gateway-and-mobile-contract |
+| 2026-08-23T17:15:00Z | standards_check_skipped | Plan Step 17.5 (`--design`, enforcing) skipped for F-015 — ADR-041. Immediately superseded by the maintainer's decision to retire the gate outright for this project (ADR-042) rather than log an eleventh skip next time | Plan | api-gateway-and-mobile-contract |
+| 2026-08-23T17:20:00Z | plan_complete_pending_approval | 14 tasks / 5 waves. Readiness party (solo, Full triage): overall **Fair**, 1 open gap (`estimate-mis-scoped` — Wave 3's T07/T09 parallelism claim, both touching MobileApp's Infrastructure/Services layer with no formal dependency edge) | Plan | api-gateway-and-mobile-contract |
+| 2026-08-23T17:30:00Z | inception_complete | **Inception Complete — 14 tasks, 15 ACs (13 + 2 threat-derived security), 5 waves.** PRD, 5 design artifacts, plan file all approved. Nordstrom standards gate retired for this project (ADR-042). Ready for `/build` | Plan | api-gateway-and-mobile-contract |

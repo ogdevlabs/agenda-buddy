@@ -740,3 +740,103 @@ This became F-014's business rather than a separate feature because **`Reporting
 **Blast radius, swept before deciding.** `ProviderReport` and `EstimatedRevenue` appear **nowhere** outside `Library` and `Library.Tests`. Zero production consumers: free today, a client rewrite after F-015.
 
 **Consequences.** One pre-existing test replaced (`GetProviderReportAsync_CalculatesEstimatedRevenue`) — F-014's only deleted test, needing the same acknowledgement F-016's ADR-025 and F-021's ADR-034 needed. The data-model change that would make revenue computable — an appointment referencing its service — is filed, not built: it touches F-015's contract and F-025's rules and needs a product answer about historical appointments that have no service to reference.
+
+---
+
+## ADR-040 — The gateway's single-instance posture is accepted as a local-dev-scoped risk (T-301)
+
+**Date:** 2026-08-23 · **Status:** Accepted · **Feature:** F-015 · **Threat:** T-301
+
+**Context.** F-015 introduces a gateway in front of all seven backend services so `MobileApp` has one
+address to call. Before this feature, no client could reach any service, so no single component's failure
+could take down "all of them" for the client — there was nothing reachable to lose. After this feature, if
+the one gateway process is down, every backend service becomes unreachable to the mobile client even if all
+seven are individually healthy: a new aggregated single point of failure.
+
+**Decision.** Accept the risk for this feature's scope. A single Aspire-run gateway instance matches how
+every other resource in this AppHost already runs — no service, MongoDB, or Kafka resource runs with more
+than one instance today. This feature does not regress local development, and no real (multi-replica,
+load-balanced) deployment exists yet to make this a production concern.
+
+**Rationale.** Building redundancy (multiple gateway replicas, a load balancer in front of them) into a
+local-development-only orchestration model would be speculative infrastructure for a deployment target that
+doesn't exist — the same reasoning ADR-035 already applied to deferring cloud review generally. The
+mitigation belongs with whichever feature first stands up a real deployment target, since that is also where
+"single instance of anything" stops being an acceptable default across the whole graph, not just the
+gateway.
+
+**Consequences.** Re-evaluation trigger: the first real (non-Aspire) deployment. That work is F-017's scope
+and remains gated by ADR-035's deferral (every pending feature complete, plus the no-longer-needed tech debt
+discharged). Until then, "the gateway is down" and "the AppHost isn't running" are the same failure mode
+from the mobile client's perspective, which is an acceptable local-development trade — the alternative is
+building HA infrastructure nobody can deploy yet.
+
+---
+
+**Note (issue #55 bookkeeping):** Threat-derived security ACs added to the F-015 PRD post-Define, at the
+Design threat-modeling gate (Step 10.5/14.5): T-302 (gateway route allowlist) and T-303 (forwarded-`Host`
+header / transport-security interaction). Both are `[security]`-tagged, test-first, and materialized on
+tasks F-015-T03 and F-015-T04 respectively.
+
+---
+
+## ADR-041 — Skipped the Nordstrom standards `--design` gate at Plan (Step 17.5) for F-015
+
+**Date:** 2026-08-23 · **Status:** Accepted · **Feature:** F-015
+
+**Context.** Plan Step 17.5 runs the Nordstrom Standards Readiness check in **enforcing** mode against the
+approved PRD — a MUST-level finding would block Plan approval, the same tier as a Phantom Critical finding.
+Skipping an enforcing gate is therefore treated like `/override`: it requires a one-line reason and is
+recorded here as an ADR.
+
+**Decision.** Skip, with reason: **the plugin's six source standards repos have failed to resolve under this
+machine's `gh` auth for the tenth consecutive gate across this project** (an SSO/VPN condition, confirmed
+unchanged from F-013 through F-015; see the project's reference memory
+`nordstrom-standards-repos-unreachable`). This is not a judgment that the standards don't apply — it is that
+the check has never once been able to run.
+
+**Rationale.** Re-attempting an already-confirmed-broken network condition ten times running has stopped
+being due diligence and started being ritual. The condition needs a structural fix (SSO/VPN access, or a
+vendored `.nordstrom-standards/` cache) or an explicit retirement decision — both recommended repeatedly
+since F-013, both still owned by **F-017**.
+
+**Consequences.** F-015 proceeds to Plan approval without a design-level standards analysis. If F-017
+resolves the access condition, a `--delta` run against F-015's shipped shape can retroactively confirm or
+flag findings after the fact. This is now the **tenth** consecutive gate blocked by this condition — the
+oldest unaddressed process finding in the project, unchanged since F-013.
+
+---
+
+## ADR-042 — Nordstrom Standards Readiness is retired for this project — not applicable, not merely unreachable
+
+**Date:** 2026-08-23 · **Status:** Accepted
+
+**Context.** Ten consecutive gates (F-013 ship through F-015 Plan), across six distinct gate call sites
+(Define `--ideate` ×3, Plan/Review `--design`/enforcing ×7), have all skipped for the identical reason: the
+`nordstrom-standards-readiness` plugin's six source standards repos do not resolve under this machine's `gh`
+auth. Every prior entry treated this as a **transient access problem** — "give it a reachable source" —
+and recommended a fix owned by F-017. That recommendation has never been actioned, and the underlying reason
+it never will be is more fundamental than access: **Agenda Buddy is a personal `fererelabs` project, not a
+Nordstrom enterprise engagement.** The six standards bodies this plugin assesses against (Engineering,
+Security, Privacy, Data Science & Analytics, Data Governance, AI Tooling) are Nordstrom's internal
+enterprise standards. They were never going to apply here regardless of whether the repos resolved.
+
+**Decision.** Retire the Nordstrom Standards Readiness gate for this project, explicitly and durably — not
+as another skip-with-notice, but as a standing decision that the gate does not apply. Recorded in
+`CONSTITUTION.md` §9 so every future `/brainstorm`, `/build`, `/ship`, and `/hotfix` gate call site can see
+the exemption without re-deriving it, and does not need to re-attempt a network probe that was never going
+to be relevant even if it succeeded.
+
+**Rationale.** The distinction matters: "unreachable" implies the gate is real and should eventually run;
+"not applicable" says the gate is answering a question this project doesn't have. Continuing to log a tenth,
+eleventh, twelfth skip-with-notice for an inapplicable enterprise-standards check is process theater — it
+manufactures the appearance of a governance gap where none exists. `docs/issues/ISSUE-002` and this
+project's actual security posture (ADR-030, ADR-033, F-016's PII closures, F-021's auth hardening) are
+carried by this project's own CONSTITUTION §7 test gates and threat-modeling practice, which are real and
+do run.
+
+**Consequences.** No future gate call site should prompt for or attempt the Nordstrom standards check on
+this repository. `F-017`'s backlog item "give the standards gate a reachable source or retire it explicitly"
+is **closed by this ADR** — retirement was the answer, not a VPN fix. If this project is ever formally
+brought under Nordstrom's enterprise standards program (a change of organizational context, not a technical
+one), this ADR should be revisited and superseded.

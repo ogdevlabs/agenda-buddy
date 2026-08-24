@@ -126,7 +126,7 @@ Agenda Buddy is a scheduling and appointment management platform for independent
 - **`GET /api/v1/customers` returns the full `CustomerEntity`** — including `SubscribedProviderCollection`, `AppointmentCollection` and `KafkaTopic` — to any Provider-role caller. Accepted at review (I-2) per ADR-026's deferral of owner-scoping, now quantified against the real payload.
 - **Authorization failures are entirely unlogged** — there is no log sink at all, so IDOR probing leaves no trace. Advisory A-1; belongs to F-021/F-024.
 - **`SSH.NET 2024.2.0` (HIGH, `GHSA-q939-rpr3-3284`)** enters the dependency graph via Testcontainers in `AgendaBuddy.IntegrationTests`. Unreachable — Testcontainers only loads it for Docker-over-SSH, which this project does not use — and the unreachability is *tested* by `ContainerRuntimeGuardTest`. Disposition: ADR-030.
-- **The standards-readiness gate has now blocked five consecutive gates and has never executed once.** Marked `enforcing`, sources unreachable under this `gh` auth, no vendored cache. Needs a reachable source or an explicit retirement decision — recommended folding into **F-017**.
+- ~~**The standards-readiness gate has now blocked five consecutive gates and has never executed once.**~~ — **RETIRED 2026-08-23 (ADR-042).** Ten consecutive skips revealed the real reason: Agenda Buddy is a personal `fererelabs` project the six Nordstrom enterprise standards bodies never applied to, independent of the access problem. The gate no longer runs on this repository; `CONSTITUTION.md` §9 records the exemption.
 
 **Added or exposed by F-021 (2026-08-22):**
 
