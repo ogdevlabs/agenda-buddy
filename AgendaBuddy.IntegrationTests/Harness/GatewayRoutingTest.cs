@@ -65,13 +65,35 @@ public class GatewayRoutingTest
         using var factory = CreateFactory();
         var config = factory.Services.GetRequiredService<IProxyConfigProvider>().GetConfig();
 
-        var route = Assert.Single(config.Routes, r => r.ClusterId == clusterId);
+        // Filter by RouteId, not ClusterId: since the messages/notifications fix, "customer" is no
+        // longer a single-route cluster (RouteId == ClusterId still holds for this specific route
+        // for every service here, including the plain "customer" -> /api/v1/customers/** entry).
+        var route = Assert.Single(config.Routes, r => r.RouteId == clusterId);
         Assert.Equal(expectedPath, route.Match.Path);
+        Assert.Equal(clusterId, route.ClusterId);
 
         var cluster = Assert.Single(config.Clusters, c => c.ClusterId == clusterId);
         Assert.Equal(
             FakeServiceAddresses[$"services:{clusterId}:http:0"],
             Assert.Single(cluster.Destinations!.Values).Address);
+    }
+
+    // Found live at F-015-T14: messages/notifications are two new TOP-LEVEL route groups on Customer
+    // (ADR-036), not children of /api/v1/customers/**, so no InlineData row above ever matched them —
+    // MobileApp's Messaging/Notifications screens were unreachable through the gateway. Both share the
+    // "customer" cluster (RouteTable_HasExactlySevenClusters_NoMoreNoFewer below still holds — this adds
+    // routes to an existing cluster, not a new one).
+    [Theory]
+    [InlineData("customer-messages", "/api/v1/messages/{**catch-all}")]
+    [InlineData("customer-notifications", "/api/v1/notifications/{**catch-all}")]
+    public void RouteTable_MapsTopLevelCustomerGroupsToTheCustomerCluster(string routeId, string expectedPath)
+    {
+        using var factory = CreateFactory();
+        var config = factory.Services.GetRequiredService<IProxyConfigProvider>().GetConfig();
+
+        var route = Assert.Single(config.Routes, r => r.RouteId == routeId);
+        Assert.Equal(expectedPath, route.Match.Path);
+        Assert.Equal("customer", route.ClusterId);
     }
 
     [Fact]
@@ -119,6 +141,8 @@ public class GatewayRoutingTest
     [InlineData("/api/v1/professions")]
     [InlineData("/api/v1/auth/login")]
     [InlineData("/device-token")]
+    [InlineData("/api/v1/messages")] // found unreachable live at F-015-T14 — regression guard
+    [InlineData("/api/v1/notifications")] // found unreachable live at F-015-T14 — regression guard
     public async Task AllowlistedPrefix_IsRoutedNotRejected(string path)
     {
         using var factory = CreateFactory();

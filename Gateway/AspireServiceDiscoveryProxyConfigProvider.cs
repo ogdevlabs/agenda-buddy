@@ -69,6 +69,12 @@ public sealed class AspireServiceDiscoveryProxyConfigProvider : IProxyConfigProv
         ("profession", "profession", "/api/v1/professions/{**catch-all}"),
         ("identity", "identity-auth", "/api/v1/auth/{**catch-all}"),
         ("identity", "identity-device-token", "/device-token"),
+        // Found live at F-015-T14's closing verification: messages/notifications are two new
+        // TOP-LEVEL route groups on Customer (ADR-036), not children of /api/v1/customers/**, so
+        // the "customer" entry above never matched them. MobileApp's Messaging/Notifications
+        // screens were unreachable through the gateway despite every other check passing.
+        ("customer", "customer-messages", "/api/v1/messages/{**catch-all}"),
+        ("customer", "customer-notifications", "/api/v1/notifications/{**catch-all}"),
     ];
 
     /// <summary>The distinct logical/Aspire resource names <see cref="_routeSpecs"/> covers.</summary>

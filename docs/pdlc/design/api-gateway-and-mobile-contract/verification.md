@@ -6,9 +6,10 @@
 **Claim: a provider or customer using `MobileApp` against a live AppHost sees their real data, on every
 screen, with zero fabricated fallback — ever.**
 
-**This claim is now true for every screen except two.** Messaging and Notifications are wired correctly at
-every layer *except* the one address `MobileApp` actually calls — the Gateway's route allowlist has no entry
-for either. See §3.
+**This claim is now true for every screen, including Messaging and Notifications.** §3 records a real defect
+this gate found by running the software — the Gateway's route allowlist had no entry for either — and the
+fix that closed it before Construction ended, with a regression test added at the exact layer that missed it
+the first time (the Gateway's own routing table, not the client or the backend).
 
 ---
 
@@ -17,15 +18,16 @@ for either. See §3.
 | Suite | Command | Before (F-014 baseline) | After |
 |---|---|---|---|
 | Backend unit | `dotnet test agenda-buddy-backend.slnf` | 452 | **468** (+16) |
-| Integration | `dotnet test AgendaBuddy.IntegrationTests/…csproj` | 175 | **230** (+55) |
+| Integration | `dotnet test AgendaBuddy.IntegrationTests/…csproj` | 175 | **234** (+59) |
 | Mobile | `…/MobileApp.Tests.csproj /p:MobileWorkloads=false` | 74 (67 passing, 7 skipped) | **165** (158 passing, 7 skipped) (+91) |
-| **Total** | three commands | 701 | **863** |
+| **Total** | three commands | 701 | **867** |
 
-0 failing across all three suites, re-run in full at this ship gate (not taken on faith from the task
-closing notes). Integration duration **2 m 18 s** against the 600 s CI budget, against a real MongoDB
+0 failing across all three suites, re-run in full after the §3.1 fix (not taken on faith from the task
+closing notes). Integration duration **2 m 37 s** against the 600 s CI budget, against a real MongoDB
 Testcontainer (Rancher Desktop). The backend `slnf` now also carries `Gateway` itself as a 13th, non-test
 project — it builds under the same command but contributes no test count of its own; its behavior is proved
-by `AgendaBuddy.IntegrationTests`' Gateway-hosted tests instead.
+by `AgendaBuddy.IntegrationTests`' Gateway-hosted tests instead. The final +4 (863→867) are the regression
+tests §3.1's fix added.
 
 **The +55 integration tests are where the gateway's own claims live** (routing allowlist, JWT passthrough,
 failure translation, transport-security parity, logout/refresh) — the same shape of observation F-014's
@@ -39,7 +41,7 @@ it.
 | AC | Criterion | Test | Live evidence (this gate) | Verdict |
 |---|---|---|---|---|
 | 1 | Real dashboard/calendar/customers/messages/notifications data, zero `SeedDataProvider`, whether the cause was failure or emptiness | `DashboardViewModelTests.LoadAsync_Success_SetsAppointmentsAndClearsError`, `LoadAsync_NetworkError_SetsHasErrorTrueWithRealMessage_NoFabricatedData`, `LoadAsync_EmptyResult_SetsIsEmptyTrue_NoFabricatedData`; `CalendarViewModelTests` (same three shapes); `SeedDataProviderRemovalTests.SeedDataProviderType_NoLongerExistsInMobileAppAssembly` | Registered provider+customer, created a Provider/Customer/Appointment through the gateway, read it back via `GET api/v1/calendar/appointments/{email}` — real data, not seed fixtures. `GET api/v1/notifications` returned a genuine `[]`, not a fabricated list | ✅ |
-| 2 | Every `*ApiService` call resolves against its backend route with 2xx or a correctly-typed error — not a 404 from a wrong path/verb/prefix — verified live | `MobileClientRouteResolutionTest` (13 tests: `UpdateAppointmentStatus_ResolvesAndTransitions`, `CreateNote_ResolvesAndCreates`, `GetNotes_Resolves`, `UpdateNote_Resolves`, `CreatePayment_ResolvesAndCreates`, `GetPayment_Resolves`, `Appointments_Resolves`, `Availability_Resolves`, `Customers_ResolvesForAProviderCaller`, `SendMessage_InboxThreadAndMarkRead_AllResolve`, …) | register/login/create-provider/create-customer/book/status-transition/notes(GET+POST)/payment(GET+POST)/report/calendar all returned 2xx **through the gateway**. `messages`/`notifications` returned `gateway-no-route` 404 **through the gateway** (see §3) | ⚠️ **Partial** — true for every route family except messages/notifications, and specifically **not** true through the one address `MobileApp` calls for those two, even though `MobileClientRouteResolutionTest` itself passes (it targets the hosted services directly, bypassing the gateway) |
+| 2 | Every `*ApiService` call resolves against its backend route with 2xx or a correctly-typed error — not a 404 from a wrong path/verb/prefix — verified live | `MobileClientRouteResolutionTest` (13 tests) + `GatewayRoutingTest.RouteTable_MapsTopLevelCustomerGroupsToTheCustomerCluster`/`AllowlistedPrefix_IsRoutedNotRejected(path: "/api/v1/messages"\|"/api/v1/notifications")` (added by this gate's §3.1 fix) | register/login/create-provider/create-customer/book/status-transition/notes(GET+POST)/payment(GET+POST)/report/calendar all returned 2xx **through the gateway**. `messages`/`notifications` initially returned `gateway-no-route` 404 through the gateway (§3.1) — fixed in the same gate; re-verified routed (not 404) after the fix | ✅ *(found `⚠️ Partial` mid-gate, fixed before this row was closed — see §3.1)* |
 | 3 | JWT forwarded unmodified; destination validates exactly as a direct call would | `GatewayJwtPassthroughTest.AC3_AValidJwt_TransitionsTheAppointment_ExactlyAsADirectCallWould`, `AC3_AValidJwtForTheWrongRole_IsForbidden_ExactlyAsADirectCallWould`, `AC3_AValidJwtForAStranger_IsForbidden_ExactlyAsADirectCallWould` | Provider JWT completed the status transition (200); the same route with the customer's JWT got 403 — the destination's own role check, reached unmodified through the gateway | ✅ |
 | 4 | Anonymous/invalid JWT gets the same 401/403 a direct call would, never a proxied 200 | `GatewayJwtPassthroughTest.AC4_AnAnonymousRequest_Gets401_ExactlyAsADirectCallWould`, `AC4_AnExpiredJwt_Gets401_...`, `AC4_ATamperedJwt_Gets401_...` | `GET api/v1/calendar/appointments/{email}` with no header → 401; with `garbage.invalid.token` → 401 | ✅ |
 | 5 | A stopped service returns a `failedService`-named error; the other six keep working | `GatewayFailureTranslationTest.AC5_UnreachableDestination_ReturnsTheShapedProblemDetails`, `AC5_TheOtherSixServices_AreUnaffectedByOneBeingDown` | `aspire resource profession-smcxvqes stop` → `GET api/v1/professions` through the gateway returned `502` + `"failedService":"profession"`; `GET api/v1/customers` (a different cluster) returned `200` in the same window | ✅ |
@@ -65,9 +67,9 @@ surfaced the gap in §3.
 
 ---
 
-## 3. One defect found by running the software, invisible to all 863 automated tests
+## 3. One defect found by running the software, invisible to all 863 automated tests — fixed in this gate
 
-### 3.1 🔴 The Gateway's route allowlist has no entry for `api/v1/messages/**` or `api/v1/notifications/**`
+### 3.1 🔴→✅ The Gateway's route allowlist had no entry for `api/v1/messages/**` or `api/v1/notifications/**`
 
 **Reproduction, live, through the real Gateway (port 5000) in front of a real Customer service:**
 
@@ -122,11 +124,22 @@ because the one address the app is configured to call has no path to them. This 
 F-015 exists to close for the other five capability areas, recurring in the one place F-015's own plan didn't
 re-check the allowlist against F-014's route table.
 
-**Not fixed here.** F-015-T14 is a verification task; this is an implementation gap. Filed as a follow-up —
-the fix is almost certainly a two-line addition to `_routeSpecs` (`("customer", "messages",
-"/api/v1/messages/{**catch-all}")`, `("customer", "notifications", "/api/v1/notifications/{**catch-all}")`),
-but making that change and re-running `GatewayRoutingTest`/`MobileClientRouteResolutionTest` against the real
-Gateway belongs to whoever picks up the follow-up, not to a closing verification pass.
+**Fixed in this gate, not deferred.** F-015-T14 found the gap; because it directly contradicts F-015's own
+claim (a provider/customer sees their real messages and notifications, which requires reaching them through
+the one address the client calls), it was fixed rather than filed. The fix was exactly the two-line addition
+predicted above — `("customer", "customer-messages", "/api/v1/messages/{**catch-all}")` and
+`("customer", "customer-notifications", "/api/v1/notifications/{**catch-all}")` added to `_routeSpecs`
+(`Gateway/AspireServiceDiscoveryProxyConfigProvider.cs`). One pre-existing test needed a matching fix:
+`GatewayRoutingTest.RouteTable_MapsEachDomainPrefixToItsOwnCluster`'s customer case used
+`Assert.Single(config.Routes, r => r.ClusterId == clusterId)`, which broke once "customer" stopped being a
+single-route cluster — changed to filter by `RouteId` (still unique per route) instead, which is what the
+test actually meant to assert. Two new tests added as a direct regression guard: a
+`RouteTable_MapsTopLevelCustomerGroupsToTheCustomerCluster` theory (asserts both new `RouteId`s map to the
+`customer` cluster with the right path) and two new cases on `AllowlistedPrefix_IsRoutedNotRejected`
+(`/api/v1/messages`, `/api/v1/notifications`) so this exact regression is caught by the routing suite next
+time, not left to a live verification pass to rediscover. Suites re-run in full after the fix (§1's After
+column); `RouteTable_HasExactlySevenClusters_NoMoreNoFewer` still passes unchanged — the fix adds routes to
+an existing cluster, not a new one.
 
 ### 3.2 A minor, unexplained observation — not diagnosed, not claimed as a defect
 
@@ -151,8 +164,9 @@ depends on Customer list-route id fidelity.
    `AppHostWiring.cs` has an HTTPS endpoint, so `UseHttpsRedirection()` is a no-op everywhere, live or
    direct — T04's own finding, not new here. The test suite's mutation-testing (T-303) is the strongest
    available proof until a real HTTPS/TLS topology exists (F-017).
-3. **Messaging and Notifications are unreachable through the Gateway** (§3.1) — the one gap this gate found
-   that none of 863 tests did. Everything else the PRD claims is real.
+3. ~~Messaging and Notifications are unreachable through the Gateway~~ — **found and fixed in this same
+   gate** (§3.1), not an open item. Recorded here because it's the one gap 863 automated tests missed and a
+   live run caught; the fix and its regression tests are what make the total 867.
 4. **T-301 (gateway as a new single point of failure) is accepted, not mitigated**, per the threat model's
    own Step-12 disposition (ADR-040) — a single Aspire-run Gateway instance, matching every other resource's
    single-instance posture locally. Re-scored only if a real (non-Aspire) deployment materializes (F-017).
@@ -196,7 +210,7 @@ Run by hand, for the **fifth** consecutive feature. **F-017 still owns automatin
   T-302/T-303, mitigated and tested — AC14/AC15 above). It has no business logic and does not parse,
   validate, or terminate the caller's JWT (auth passthrough only, confirmed live at AC3/AC4) — there is
   structurally nothing in it that could weaken authorization, only a routing table that could (and, per §3.1,
-  currently does for two route families) fail to route at all.
+  briefly did for two route families) fail to route at all.
 - **PII in Gateway telemetry** — not independently re-verified live at this gate (would require inspecting
   OTLP export payloads); T01's scaffold inherits `PiiRedactingProcessor` automatically via
   `AddServiceDefaults()`, the same mechanism every other service already relies on (threat T-NL-3,
@@ -207,11 +221,11 @@ Run by hand, for the **fifth** consecutive feature. **F-017 still owns automatin
 ## 6. What a reviewer should look at first
 
 1. **`Gateway/AspireServiceDiscoveryProxyConfigProvider.cs`'s `_routeSpecs` allowlist.** This is where §3.1's
-   gap lives, and it is the single point where a future F-014-shaped feature (a backend service growing a new
-   top-level route group not nested under its own service's plural collection name) will silently become
-   unreachable from the mobile client again — with every test in the routing/route-resolution suites still
-   green, exactly as happened here. Any PR that adds a backend route should be required to show this file's
-   diff, not just the backend `Program.cs`'s.
+   gap lived (now fixed, with regression tests), and it remains the single point where a future
+   F-014-shaped feature (a backend service growing a new top-level route group not nested under its own
+   service's plural collection name) can silently become unreachable from the mobile client again — with
+   every test in the routing/route-resolution suites still green, exactly as happened here. Any PR that adds
+   a backend route should be required to show this file's diff, not just the backend `Program.cs`'s.
 2. **The Gateway's failure-translation transform** (`Gateway/Program.cs`'s `AddResponseTransform` +
    `TranslateDestinationFailureAsync`, F-015-T04). It is a global YARP response transform, not middleware
    wrapped around `MapReverseProxy` — the ordering (default copy → transform → body-copy decision) is what
