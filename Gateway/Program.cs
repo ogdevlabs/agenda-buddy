@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Gateway;
 using Yarp.ReverseProxy.Configuration;
 
@@ -7,14 +8,15 @@ var builder = WebApplication.CreateBuilder(args);
 // all seven domain services (see Booking/Program.cs). Inherits PiiRedactingProcessor automatically.
 builder.AddServiceDefaults();
 
-// F-015-T02 spike: routes/clusters are built programmatically from the same Aspire service-discovery
-// configuration keys (services__<name>__http__0) that AddServiceDefaults() above already resolves for
-// every service's own outbound HttpClient calls — never a static appsettings.json cluster file
-// (ARCHITECTURE.md §2/§5). AspireServiceDiscoveryProxyConfigProvider re-polls IConfiguration on an
-// interval so a destination's reassigned port is (attempted to be) picked up without this process
-// restarting; see ARCHITECTURE.md §6 for what the spike actually found when tested against a live
-// AppHost restart. One destination ("booking") is enough to prove the mechanism — F-015-T03 covers the
-// full seven-service allowlist.
+// F-015-T02 spiked this against a single ("booking") destination; F-015-T03 expands
+// AspireServiceDiscoveryProxyConfigProvider to the full seven-service api/v1/{service}/** allowlist
+// (plus api/v1/auth/** and the root-mapped /device-token, both -> identity) — routes/clusters are built
+// programmatically from the same Aspire service-discovery configuration keys
+// (services__<name>__http__0) that AddServiceDefaults() above already resolves for every service's own
+// outbound HttpClient calls — never a static appsettings.json cluster file (ARCHITECTURE.md §2/§5).
+// AspireServiceDiscoveryProxyConfigProvider re-polls IConfiguration on an interval so a destination's
+// reassigned port is (attempted to be) picked up without this process restarting; see ARCHITECTURE.md §6
+// for what the spike actually found when tested against a live AppHost restart.
 builder.Services.AddSingleton<IProxyConfigProvider, AspireServiceDiscoveryProxyConfigProvider>();
 builder.Services.AddReverseProxy();
 
@@ -33,9 +35,32 @@ app.UseAgendaBuddyTransportSecurity();
 // seven services.
 app.MapDefaultEndpoints();
 
-// F-015-T02 spike: proxies the one route the spike's Gateway->booking wiring configures. F-015-T03
-// replaces AspireServiceDiscoveryProxyConfigProvider's single-destination table with the full
-// seven-service allowlist and failure-translation middleware from ARCHITECTURE.md §2.
+// Proxies every path matched by AspireServiceDiscoveryProxyConfigProvider's explicit
+// api/v1/{service}/** allowlist. Anything YARP doesn't match falls through to the MapFallback below —
+// the failure-translation middleware for a matched-but-unreachable destination (5xx/timeout) is
+// F-015-T04's job, not this one.
 app.MapReverseProxy();
 
+// T-302 (threat-model.md): the allowlist above is explicit, never a catch-all — so a path outside every
+// configured prefix (e.g. a probe at a backend's own bare /health, reached through the gateway rather
+// than an api/v1/{service}/** prefix) matches no YARP route and no other endpoint here. Without this,
+// ASP.NET Core's routing default for "no endpoint matched" is a bare 404 with an empty body — not the
+// gateway-no-route ProblemDetails shape api-contracts.md §1 specifies. MapFallback is deliberately the
+// lowest-priority endpoint in this app: every real route (YARP's, /health, /alive) is tried first, and
+// only a genuinely unmatched request reaches this handler.
+app.MapFallback(HandleNoRoute);
+
 app.Run();
+
+/// <summary>
+/// T-302's mitigation made concrete: the shaped 404 for "no configured route matches this path", never
+/// a proxied response. Narrowly scoped to the no-match case only — a matched route whose destination is
+/// unreachable or returns 5xx is F-015-T04's failure-translation handler, not this one.
+/// </summary>
+static IResult HandleNoRoute(HttpContext context) =>
+    Results.Problem(
+        type: "https://agendabuddy.dev/errors/gateway-no-route",
+        title: "No backend service matches this path",
+        statusCode: StatusCodes.Status404NotFound,
+        detail: $"No destination configured for '{context.Request.Path}'.",
+        extensions: new Dictionary<string, object?> { ["requestId"] = Activity.Current?.Id });
