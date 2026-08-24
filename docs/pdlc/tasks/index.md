@@ -94,7 +94,7 @@ _No tasks._
 | F-015-T01 | Scaffold the Gateway project — AddServiceDefaults, health/alive, no routing yet | done | — | — |
 | F-015-T02 | Spike: confirm YARP re-resolves Aspire's dynamic destination ports without a gateway restart | planned | — | F-015-T01 |
 | F-015-T03 | YARP route table: explicit api/v1/{service}/** allowlist, no catch-all forward | planned | — | F-015-T02 |
-| F-015-T04 | Gateway failure translation, and proof the forwarded Host header doesn't break transport security | planned | — | F-015-T03 |
+| F-015-T04 | Gateway failure translation, JWT-passthrough proof (AC3/AC4, reassigned), and proof the forwarded Host header doesn't break transport security | planned | — | F-015-T03, F-015-T05 |
 | F-015-T05 | Wire the Gateway into AppHostWiring.cs — WithReference/WaitFor on all seven services | planned | — | F-015-T01 |
 | F-015-T06 | Extract MobileApp's *ApiService route-building logic into plain, Maui-free classes | done | — | — |
 | F-015-T07 | Correct every *ApiService's route, verb, and payload; swap status updates to F-014's dedicated route | planned | — | F-015-T06, F-015-T05 |

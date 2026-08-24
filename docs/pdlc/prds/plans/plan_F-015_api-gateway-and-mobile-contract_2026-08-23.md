@@ -13,7 +13,7 @@
 | F-015-T01 | Scaffold the Gateway project | backend, devops | — | ogdevlabs | 2026-08-23 |
 | F-015-T02 | Spike: YARP vs. Aspire dynamic ports | backend, devops | F-015-T01 | ogdevlabs | 2026-08-23 |
 | F-015-T03 | YARP route table: explicit allowlist | backend, security | F-015-T02 | ogdevlabs | 2026-08-23 |
-| F-015-T04 | Gateway failure translation + Host-header proof | backend, security | F-015-T03 | ogdevlabs | 2026-08-23 |
+| F-015-T04 | Gateway failure translation + Host-header proof + JWT-passthrough proof (AC3/AC4, reassigned from T05) | backend, security | F-015-T03, F-015-T05 | ogdevlabs | 2026-08-23 |
 | F-015-T05 | Wire Gateway into AppHostWiring.cs | backend, devops | F-015-T01 | ogdevlabs | 2026-08-23 |
 | F-015-T06 | Extract *ApiService route-building logic | frontend | — | ogdevlabs | 2026-08-23 |
 | F-015-T07 | Correct every *ApiService route/verb/payload | frontend | F-015-T06, F-015-T05 | ogdevlabs | 2026-08-23 |
@@ -49,6 +49,7 @@ flowchart TD
     T01 --> T02
     T02 --> T03
     T03 --> T04
+    T05 --> T04
     T01 --> T05
     T06 --> T07
     T05 --> T07
@@ -85,6 +86,13 @@ SeedDataProvider, needs T07), F-015-T10 (LogoutAsync, needs T09).
 **Wave 5** (closing): F-015-T11 (finalize copy, needs T04 + T08), F-015-T14 (verification, needs T07, T08,
 T09, T10, T12 — the gateway-only tasks T01–T05 and the copy task T11 are exercised transitively through the
 tasks that depend on them).
+
+**Wave-order correction, made during Build (2026-08-23):** AC3/AC4 (JWT-passthrough proof) were reassigned
+from F-015-T05 to F-015-T04. The Plan had assigned them to T05 on the mistaken assumption that AppHost
+wiring alone makes a full client→gateway→destination request provable — it doesn't without T03's route
+table. T04 now depends on both T03 and T05. This is exactly the readiness party's flagged wave-order risk
+(`estimate-mis-scoped`) materializing, one task earlier than the flagged T07/T09 pair — caught before any
+code was written against the wrong assignment, not after.
 
 **Sizing note (Discover/Adversarial finding #10):** 14 tasks across 5 waves — larger than any prior shipped
 feature in this project (F-016's 20 tasks/8 waves is bigger by task count but had 8 tasks pre-approved from
