@@ -76,7 +76,18 @@ Build
 
 ## Last Checkpoint
 
-Construction / Build / 2026-08-23T22:30:00Z — **Wave 3 complete — the biggest wave.** F-015-T03 (YARP
+Construction / Build / 2026-08-24T00:15:00Z — **Wave 4 complete.** F-015-T04 (gateway failure translation,
+JWT-passthrough proof for AC3/AC4, and T-303's transport-security-parity proof — found non-vacuous by
+mutation-testing: temporarily added `UseForwardedHeaders()` to Profession, watched the test go red, reverted),
+F-015-T08 (`SeedDataProvider` deleted — five ViewModels' error banners and empty states are reachable for
+the first time since F-012 shipped), F-015-T10 (`LogoutAsync` calls the server; proved live that the old
+refresh token is rejected afterward) — three real subagents in parallel worktrees, no conflicts. **All 15
+ACs now closed** (13 PRD + 2 threat-derived `[security]`); all three threats dispositioned (T-302/T-303
+mitigated and closed, T-301 accepted per ADR-040). **Backend steady 468, mobile 130→136, integration
+209→230 — 834 total, 0 failing.** Worktrees cleaned up. Remaining: F-015-T11 (UX copy/loading state, no
+hard dependency left unmet) and F-015-T14 (closing verification). Starting Wave 5.
+
+_Previously: Construction / Build / 2026-08-23T22:30:00Z — **Wave 3 complete — the biggest wave.** F-015-T03 (YARP
 allowlist, closes T-302), F-015-T07 (corrected every `*ApiService` route/verb/payload, the status-route
 swap, hid "mark complete" for customers), F-015-T09 (refresh-on-401, ambiguous-write protection), F-015-T12
 (`run-ios.sh` gateway discovery) — four real subagents in parallel worktrees. **All four hit the same
@@ -586,3 +597,4 @@ re-planning (`/continue`).
 | 2026-08-23T19:35:00Z | task_split | AC3/AC4 reassigned from F-015-T05 to F-015-T04 before either was built — AppHost wiring alone can't prove end-to-end auth passthrough without T03's route table (one wave later). T04 now depends on T03 and T05 both. The readiness party's own flagged wave-order risk, caught one task earlier than the pair it actually named | Build | api-gateway-and-mobile-contract |
 | 2026-08-23T20:30:00Z | wave_complete | **Wave 2 done — F-015-T02, T05**, two real subagents in parallel worktrees. T02's spike: Aspire's DCP orchestrator fronts every `WithReference` address with a stable local proxy port, so a destination's dynamic-port reassignment never reaches the Gateway's config — confirmed with two live Booking restarts against a running AppHost. Merge conflict in `AppHostWiring.cs`/`AgendaBuddy.AppHost.csproj` (both wired Gateway) resolved keeping T05's full seven-service wiring + T02's actual deliverable (`Yarp.ReverseProxy`, `AspireServiceDiscoveryProxyConfigProvider`). **Backend 453→468, integration steady 177, mobile steady 90 — 735 total, 0 failing.** Worktrees cleaned up | Build | api-gateway-and-mobile-contract |
 | 2026-08-23T22:30:00Z | wave_complete | **Wave 3 done — the biggest wave — F-015-T03, T07, T09, T12**, four real subagents in parallel worktrees. All four hit the same stale-worktree-snapshot bug; proactively warned after the first surfaced it, all self-corrected. No merge conflicts. T03 closed T-302 (explicit route allowlist, 404 on any unmapped path). T07 corrected every `*ApiService` route/verb/payload, swapped the status route, hid "mark complete" for customers, and found a real spec-vs-reality gap (Booking has no GET route for an appointment at all — `api-contracts.md` was wrong; rewired to compose with Calendar's real route instead of shipping a 404). T09 wired refresh-on-401 and ambiguous-write protection. T12 wired `run-ios.sh`'s gateway discovery into `MAUI_API_BASE_URL`. **Backend steady 468, mobile 90→130, integration 177→209 — 807 total, 0 failing.** Worktrees cleaned up | Build | api-gateway-and-mobile-contract |
+| 2026-08-24T00:15:00Z | wave_complete | **Wave 4 done — F-015-T04, T08, T10**, three real subagents in parallel worktrees, no conflicts. T04 closed T-303 (verified non-vacuous by mutation-testing — temporarily broke transport-security parity on purpose, watched the test catch it, reverted) and proved AC3/AC4 (JWT passthrough) live through the real gateway pipeline to a real Booking service. T08 deleted `SeedDataProvider` — the error banner and empty-state UI are reachable for the first time since F-012 shipped. T10 wired `LogoutAsync`'s server call and proved live that the old refresh token is rejected afterward. **All 15 ACs now closed; all three threats dispositioned.** Backend steady 468, mobile 130→136, integration 209→230 — 834 total, 0 failing | Build | api-gateway-and-mobile-contract |

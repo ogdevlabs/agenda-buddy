@@ -94,19 +94,19 @@ _No tasks._
 | F-015-T01 | Scaffold the Gateway project — AddServiceDefaults, health/alive, no routing yet | done | — | — |
 | F-015-T02 | Spike: confirm YARP re-resolves Aspire's dynamic destination ports without a gateway restart | done | — | F-015-T01 |
 | F-015-T03 | YARP route table: explicit api/v1/{service}/** allowlist, no catch-all forward | done | — | F-015-T02 |
-| F-015-T04 | Gateway failure translation, JWT-passthrough proof (AC3/AC4, reassigned), and proof the forwarded Host header doesn't break transport security | planned | — | F-015-T03, F-015-T05 |
+| F-015-T04 | Gateway failure translation, JWT-passthrough proof (AC3/AC4, reassigned), and proof the forwarded Host header doesn't break transport security | done | — | F-015-T03, F-015-T05 |
 | F-015-T05 | Wire the Gateway into AppHostWiring.cs — WithReference/WaitFor on all seven services | done | — | F-015-T01 |
 | F-015-T06 | Extract MobileApp's *ApiService route-building logic into plain, Maui-free classes | done | — | — |
 | F-015-T07 | Correct every *ApiService's route, verb, and payload; swap status updates to F-014's dedicated route | done | — | F-015-T06, F-015-T05 |
-| F-015-T08 | Remove SeedDataProvider; let the real error banner and empty-state UI take over | planned | — | F-015-T07 |
+| F-015-T08 | Remove SeedDataProvider; let the real error banner and empty-state UI take over | done | — | F-015-T07 |
 | F-015-T09 | Wire transparent refresh-on-401; never auto-retry a non-idempotent write on ambiguous timeout | done | — | F-015-T06, F-015-T05 |
-| F-015-T10 | LogoutAsync calls the server; the old refresh token is rejected afterward | planned | — | F-015-T09 |
+| F-015-T10 | LogoutAsync calls the server; the old refresh token is rejected afterward | done | — | F-015-T09 |
 | F-015-T11 | Finalize revenue/payment/notification copy; map the failed-service error into the banner; add the status-button loading state | planned | — | F-015-T04, F-015-T08 |
 | F-015-T12 | run-ios.sh discovers the gateway's address and injects MAUI_API_BASE_URL | done | — | F-015-T05 |
 | F-015-T13 | Regenerate the OpenAPI specs to include F-014's nine new routes | done | — | — |
 | F-015-T14 | Verification: all 13 ACs attested end to end against a live AppHost, and the documentation this feature made false | planned | — | F-015-T07, F-015-T08, F-015-T09, F-015-T10, F-015-T12 |
 
-**9 of 14 done.** 15 acceptance criteria (13 + 2 threat-derived `[security]`); threats T-301…T-303, two mitigated now (T-302 ✅ closed, T-303 pending T-04) and one accepted (T-301, ADR-040). Wave 1: backend 452→453, mobile 74→90, integration 175→177. Wave 2: backend 453→468, integration/mobile steady. Wave 3: integration 177→209 (T03's route allowlist +19, T07's live client-route proof +13), mobile 90→130 (T07 +28, T09 +9, T12 +3) — **backend 468 + mobile 130 + integration 209 = 807 total, 0 failing.**
+**12 of 14 done.** 15 acceptance criteria (13 + 2 threat-derived `[security]`), all now closed except AC11's task (T10, also done). Threats T-301…T-303 all dispositioned: T-302 and T-303 both mitigated now and closed, T-301 accepted (ADR-040). Wave 4: integration 209→230 (T04 +18, T10 +3), mobile 130→136 (T08 +3, T10 +3) — **backend 468 + mobile 136 + integration 230 = 834 total, 0 failing.** Remaining: F-015-T11 (UX copy/loading state), F-015-T14 (closing verification).
 
 ## F-016 — secure-public-endpoints  `shipped`
 
