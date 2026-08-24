@@ -5,7 +5,7 @@
      team on every ship to understand the current deployment surface. -->
 
 **Project:** Agenda Buddy
-**Last updated:** 2026-08-23
+**Last updated:** 2026-08-24
 
 ---
 
@@ -64,6 +64,7 @@
 | 2026-08-18 | v0.1.0 | Pulse | EPISODE_aspire-wiring_2026-08-17.md | First tracked local run under the Aspire AppHost. **Verified:** all 7 services `/health` = `Healthy` and `/alive` = 200; both containers up; all 3 dashboard visual checks passed human inspection (AC-3.4, T-004, A-3). No deployment to any remote environment. |
 | 2026-08-18 | `v0.2.0` | Pulse | 002 | F-016 verified here **because the cloud target cannot be deployed from this machine** — see the cloud env's three blockers. Smoke-tested all 7 services' `/health` and `/alive` against a live AppHost. |
 | 2026-08-23 | `v0.4.0` | Pulse | 004 | F-014's nine new routes verified here, same reason as v0.2.0/v0.3.0 — see the cloud env's blockers. **Verified:** all 7 services `/health`=`Healthy`/`/alive`=200; anonymous calls to the new notes/status routes 401 live; a freshly registered Provider's JWT validated across services and reached business logic (403/404, never 401) on notes, report, deactivate and notifications routes. Known shutdown gotcha recurred: `SIGTERM` on the AppHost left all 7 service processes orphaned, needing a second `pkill` on the project-path pattern. |
+| 2026-08-24 | `v0.5.0` | Pulse | 005 (pending) | **Provisional** — merged and tagged; smoke tests against a live 8-process AppHost (including the new Gateway) to be run at Verify. |
 
 #### Notes
 
@@ -134,6 +135,11 @@ Terminate the AppHost with `Ctrl-C`. Legacy Compose path: `docker compose down`.
 2. No Azure subscription is wired to this machine.
 3. After the first interactive `azd up`, the discovered parameter names must go into the `AZD_ENV_VARS` repository secret for `.github/workflows/deploy.yml` to work.
 
+> **Deploy SKIPPED at `v0.5.0` (F-015), 2026-08-24 — the fifth consecutive release, third under the
+> deferral.** All three blockers unchanged. F-015's attack surface (the new Gateway process, JWT
+> passthrough, the route allowlist) is verified against the local AppHost instead, per the pattern below.
+> User confirmed at the deploy prompt.
+>
 > **Deploy SKIPPED at `v0.4.0` (F-014), 2026-08-23 — the fourth consecutive release, second under the
 > deferral.** All three blockers unchanged. F-014's own attack surface (nine new authenticated routes,
 > non-charging payments) is verified against the local AppHost instead, per the pattern below.
@@ -202,3 +208,4 @@ Terminate the AppHost with `Ctrl-C`. Legacy Compose path: `docker compose down`.
 | 2026-08-22 | `v0.3.0` (F-021): third consecutive cloud deploy skip, first under the deferral. Added the note that F-021's two security controls are configuration-gated and off unless the cloud graph turns them on | Pulse |
 | 2026-08-23 | `v0.4.0` (F-014): fourth consecutive cloud deploy skip, second under the deferral. Nine new routes and non-charging payments verified against the local AppHost instead | Pulse |
 | 2026-08-23 | Local Deployment History row finalized with smoke-test results: 7/7 Healthy, anonymous 401 confirmed live, authenticated round trip reached business logic on 4 of 9 new routes | Pulse |
+| 2026-08-24 | `v0.5.0` (F-015): fifth consecutive cloud deploy skip, third under the deferral. New Gateway process, JWT passthrough, and the route allowlist verified against the local AppHost instead | Pulse |

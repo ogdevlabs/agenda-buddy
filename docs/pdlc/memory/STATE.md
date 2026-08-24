@@ -70,18 +70,30 @@ _None active. Run `/night-shift <F-NNN>` to start an autonomous run (requires by
 
 ## Current Sub-phase
 
-Ship
+Verify
 
 ---
 
 ## Last Checkpoint
 
-Operation / Ship / 2026-08-24T12:14:03Z — **Ship pre-flight passed.** Channel in-sync, remote sync 0
+Operation / Ship / 2026-08-24T13:05:00Z — **Merged, tagged, deploy skipped.** PR #41 merged to `main` as
+`1d61955` (GitHub API, `merge_method=merge`, true merge commit), tagged **`v0.5.0`**, pushed.
+`dotnet format agenda-buddy-backend.slnf --verify-no-changes` clean on `main` post-merge. Cloud deploy
+skipped again by ADR-035 — fifth consecutive release, third under the deferral; user confirmed at the
+prompt. **Two real defects found and fixed at this gate**, both invisible to all 867 pre-existing tests
+because `Mobile — iOS/Android Build` and `Integration — real services + MongoDB` had never run on this
+branch before PR #41 (they trigger only on push/PR to `main`): a `Routing.RegisterRoute` namespace collision
+(`AppShell.xaml.cs` vs. the new `MobileApp.Routing` namespace) broke both mobile TFMs, and a missing
+`/p:MobileWorkloads=false` on the Integration job's restore broke it too (`AgendaBuddy.IntegrationTests`
+now references `MobileApp.csproj`). Both fixed and verified locally before pushing; second CI run on PR #41
+went fully green (6/6 jobs) before merge. `verification.md` §3.3 records both. Moving to Verify.
+
+_Previously: Operation / Ship / 2026-08-24T12:14:03Z — **Ship pre-flight passed.** Channel in-sync, remote sync 0
 behind / 43 ahead. Phase-mismatch guardrail (Current Phase was `Construction`/`Review`, not `Construction
 Complete` — no formal Review/Test sub-phase ran, no episode draft existed) logged and user-confirmed, same
 precedent as F-014. Required test gates verified directly against `verification.md`: 867 tests (468 backend
 + 234 integration + 165 mobile), 0 failing; security scan (dependency audit + secret scan) run by hand,
-clean. Proceeding to the merge gate.
+clean. Proceeding to the merge gate._
 
 _Previously: Construction / Build / 2026-08-24T02:15:00Z — **Build loop complete — 14/14 tasks, all 15 ACs closed, all
 three threats dispositioned.** F-015-T14's live AppHost run found one real defect invisible to all 863
@@ -482,22 +494,21 @@ re-planning (`/continue`).
 
 ```json
 {
-  "phase_completed": "Inception / Plan",
-  "next_phase": "Construction / Build",
+  "phase_completed": "Operation / Ship",
+  "next_phase": "Operation / Verify",
   "feature": "api-gateway-and-mobile-contract",
   "key_outputs": [
-    "docs/pdlc/prds/PRD_F-015_api-gateway-and-mobile-contract_2026-08-23.md",
-    "docs/pdlc/design/api-gateway-and-mobile-contract/ARCHITECTURE.md",
-    "docs/pdlc/design/api-gateway-and-mobile-contract/data-model.md",
-    "docs/pdlc/design/api-gateway-and-mobile-contract/api-contracts.md",
-    "docs/pdlc/prds/plans/plan_F-015_api-gateway-and-mobile-contract_2026-08-23.md"
+    "docs/pdlc/memory/CHANGELOG.md",
+    "docs/pdlc/memory/DEPLOYMENTS.md",
+    "docs/pdlc/design/api-gateway-and-mobile-contract/verification.md"
   ],
   "decisions_made": [
-    "14 tasks in 5 waves — largest task count for this project's remediation-program features so far",
-    "Nordstrom standards gate retired outright for this project (ADR-042) — not just skipped",
-    "Readiness: Fair, 1 open gap (Wave 3's T07/T09 parallelism), approved as-is"
+    "Tagged v0.5.0",
+    "Merged PR #41 via GitHub API (merge_method=merge, true merge commit) — 1d61955",
+    "Cloud deploy skipped again per ADR-035 (fifth consecutive, third under the deferral), user-confirmed",
+    "Two real CI-only defects (Routing namespace collision, Integration restore workload gap) found and fixed at the ship gate — see verification.md §3.3"
   ],
-  "next_action": "Start Construction — run `/build` or read skills/build/SKILL.md",
+  "next_action": "Run smoke tests against a live AppHost — read skills/ship/steps/02-verify.md",
   "pending_questions": []
 }
 ```
@@ -635,3 +646,5 @@ re-planning (`/continue`).
 | 2026-08-24T12:14:03Z | operation_start | Ship started. Channel in-sync, remote sync 0 behind / 43 ahead. Phase-mismatch guardrail logged and user-confirmed (no Review/Test sub-phase, no episode draft — same as F-014). Test gates verified against `verification.md`: 867 tests, 0 failing; security scan clean | Ship | api-gateway-and-mobile-contract |
 | 2026-08-24T12:35:00Z | ci_failure | PR #41 opened (branch pushed for the first time — `Mobile — iOS/Android Build` and `Integration — real services + MongoDB` only trigger on push/PR to `main`, so none had run across F-015's whole Construction). **Two real defects found, both fixed in the same gate, not filed:** (1) `AppShell.xaml.cs`'s unqualified `Routing.RegisterRoute` resolved to the sibling `MobileApp.Routing` namespace F-015-T06 introduced instead of `Microsoft.Maui.Controls.Routing` — CS0234 on both mobile TFMs, fixed by fully qualifying four call sites; (2) `AgendaBuddy.IntegrationTests.csproj`'s new `ProjectReference` to `MobileApp.csproj` (F-015-T07) restored MobileApp's default android/ios TargetFrameworks with no MAUI workloads on that runner (NETSDK1147), fixed by adding `/p:MobileWorkloads=false` to the Integration job's restore/build steps, matching the backend job. Verified locally before pushing: integration suite 234/234 green with the flag; Android TFM's CS0234 gone. `verification.md` §3.3 records both | Ship | api-gateway-and-mobile-contract |
 | 2026-08-24T12:52:00Z | ci_green | Second CI run on PR #41 (`b51d5a8`) — **all 6 jobs green**: `changes`, `build-and-test`, `Mobile — Unit Tests`, `Integration — real services + MongoDB`, `Mobile — Android Build`, `Mobile — iOS Build`, `summary`. Both mobile build jobs and the integration job ran green for the first time ever on this feature | Ship | api-gateway-and-mobile-contract |
+| 2026-08-24T13:00:00Z | merged_and_tagged | **Merged to `main` as `1d61955`** (PR #41, GitHub API, `merge_method=merge`, true merge commit; final CI run on the docs-only commit `1fd71aa` also green 6/6), tagged **`v0.5.0`**. `docs/pdlc/memory/CHANGELOG.md` entry added. `dotnet format --verify-no-changes` clean on `main` post-merge | Operation | api-gateway-and-mobile-contract |
+| 2026-08-24T13:05:00Z | deploy_deferred | Cloud deploy **skipped again by ADR-035** — fifth consecutive release, third under the deferral. User confirmed at the deploy prompt | Ship | api-gateway-and-mobile-contract |
