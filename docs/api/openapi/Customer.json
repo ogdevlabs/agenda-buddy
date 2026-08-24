@@ -157,6 +157,169 @@
                     }
                 }
             }
+        },
+        "/api/v1/messages": {
+            "get": {
+                "tags": [
+                    "MessageAPI"
+                ],
+                "operationId": "GetInbox",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/MessageEntity"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "MessageAPI"
+                ],
+                "operationId": "SendMessage",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/MessageRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MessageEntity"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/messages/thread/{counterpartEmail}": {
+            "get": {
+                "tags": [
+                    "MessageAPI"
+                ],
+                "operationId": "GetMessageThread",
+                "parameters": [
+                    {
+                        "name": "counterpartEmail",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/MessageEntity"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/messages/{id}/read": {
+            "post": {
+                "tags": [
+                    "MessageAPI"
+                ],
+                "operationId": "MarkMessageRead",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            }
+        },
+        "/api/v1/notifications": {
+            "get": {
+                "tags": [
+                    "NotificationAPI"
+                ],
+                "operationId": "GetNotifications",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/NotificationEntity"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/notifications/{id}/read": {
+            "post": {
+                "tags": [
+                    "NotificationAPI"
+                ],
+                "operationId": "MarkNotificationRead",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            }
         }
     },
     "components": {
@@ -267,6 +430,108 @@
                     }
                 },
                 "additionalProperties": {}
+            },
+            "MessageEntity": {
+                "required": [
+                    "body",
+                    "recipientEmail",
+                    "senderEmail"
+                ],
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "$ref": "#/components/schemas/ObjectId"
+                    },
+                    "senderEmail": {
+                        "minLength": 1,
+                        "type": "string",
+                        "format": "email"
+                    },
+                    "recipientEmail": {
+                        "minLength": 1,
+                        "type": "string",
+                        "format": "email"
+                    },
+                    "body": {
+                        "minLength": 1,
+                        "type": "string"
+                    },
+                    "sentAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "isRead": {
+                        "type": "boolean"
+                    },
+                    "threadId": {
+                        "type": "string",
+                        "nullable": true
+                    }
+                },
+                "additionalProperties": false
+            },
+            "MessageRequest": {
+                "type": "object",
+                "properties": {
+                    "recipientEmail": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "body": {
+                        "type": "string",
+                        "nullable": true
+                    }
+                },
+                "additionalProperties": false
+            },
+            "NotificationEntity": {
+                "required": [
+                    "recipientEmail",
+                    "subject"
+                ],
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "$ref": "#/components/schemas/ObjectId"
+                    },
+                    "recipientEmail": {
+                        "minLength": 1,
+                        "type": "string"
+                    },
+                    "subject": {
+                        "minLength": 1,
+                        "type": "string"
+                    },
+                    "body": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "type": {
+                        "$ref": "#/components/schemas/NotificationType"
+                    },
+                    "appointmentIdentifier": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "isRead": {
+                        "type": "boolean"
+                    }
+                },
+                "additionalProperties": false
+            },
+            "NotificationType": {
+                "enum": [
+                    0,
+                    1,
+                    2,
+                    3
+                ],
+                "type": "integer",
+                "format": "int32"
             },
             "ObjectId": {
                 "type": "object",
