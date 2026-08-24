@@ -5,19 +5,28 @@
      Claude reads this file at the start of every session to auto-resume from the last checkpoint.
      If this file is missing or empty, PDLC will prompt you to run /pdlc init. -->
 
-**Last updated:** 2026-08-24T12:14:03Z
+**Last updated:** 2026-08-24T14:15:00Z
 
 ---
 
 ## Current Phase
 
-Operation
+Idle — Ready for next /brainstorm
 
 ---
 
 ## Current Feature
 
-api-gateway-and-mobile-contract
+none
+
+_**F-015 `api-gateway-and-mobile-contract` SHIPPED** as `v0.5.0` — merged `1d61955`, PR #41, episode 005
+(Final). Operation closed 2026-08-24: smoke-tested against a live 8-process AppHost on the merged commit
+(all 8 processes Healthy/alive, the T14 messages/notifications fix confirmed live, T-302/anonymous-401 intact),
+dependency audit + secret scan clean. Cloud deploy skipped for the fifth consecutive release, third under
+the ADR-035 deferral. ⚠️ Three defects found by running the software/CI, all fixed in the same gates that
+found them — see episode 005. Two process gaps recorded, second consecutive occurrence: no Review sub-phase
+ran this cycle, and `docs/pdlc/memory/episodes/index.md` had not been updated since episode 001 (backfilled
+at this Reflect)._
 
 _**F-014 `wire-unreached-services` SHIPPED** as `v0.4.0` — merged `b760794`, PR #40, episode 004 (Final).
 Operation closed 2026-08-23: smoke-tested against a live AppHost (7/7 services Healthy/alive, anonymous 401
@@ -46,19 +55,13 @@ none
 
 ---
 
-## Roadmap Claim
+_None held. Run `/brainstorm` to claim the next priority feature._
 
-- **Feature ID:** F-015
-- **Feature record:** docs/pdlc/tasks/F-015/_feature.md
-- **Claimed by:** oscargarcia@ogdevlabs.onmicrosoft.com
-- **Claimed at:** 2026-08-23T14:00:00Z
-- **Branch:** `feat/F-015-api-gateway-and-mobile-contract`
+_F-015 shipped as `v0.5.0` and its claim was released. `scripts/tasks.cjs` does not exist in this repo, so
+claims are tracked by hand (ROADMAP.md's Status/Claimed-by columns), same fallback used since F-013._
 
-_F-014 shipped as `v0.4.0` and its claim was released. `scripts/tasks.cjs` does not exist in this repo, so
-the claim above is tracked by hand (ROADMAP.md's Status/Claimed-by columns), same fallback used since F-013._
-
-**Next after it: F-017 → F-018–F-020.** **F-025 `booking-correctness`** was split out of F-014 at Discover
-and is sequenced after F-015.
+**Next on the roadmap: F-017 → F-018–F-020.** **F-025 `booking-correctness`** was split out of F-014 at
+Discover and is sequenced after F-015 (now shipped).
 
 ---
 
@@ -70,13 +73,19 @@ _None active. Run `/night-shift <F-NNN>` to start an autonomous run (requires by
 
 ## Current Sub-phase
 
-Reflect
+none
 
 ---
 
 ## Last Checkpoint
 
-Operation / Verify / 2026-08-24T13:20:00Z — **Smoke tests passed against a live 8-process AppHost on
+Operation / Complete / 2026-08-24T14:15:00Z — **F-015 shipped as `v0.5.0`.** Episode 005 Final; PRD,
+brainstorm, design artifacts, and MOM archived to `docs/pdlc/archive/`; `episodes/index.md` backfilled
+(rows 002–005) and OVERVIEW, ROADMAP, METRICS updated; claim released. Three defects found by running the
+software/CI across Construction and Ship, all fixed in the gates that found them. Next on the roadmap:
+F-017.
+
+_Previously: Operation / Verify / 2026-08-24T13:20:00Z — **Smoke tests passed against a live 8-process AppHost on
 merged `main`.** All 8 processes (7 services + Gateway) reached `/health`=`Healthy`/`/alive`=200.
 Registered and logged in a fresh Customer through the Gateway; the F-015-T14 fix held live —
 `GET api/v1/notifications` and `GET api/v1/messages` both returned `200 []` through the Gateway (previously
@@ -503,20 +512,12 @@ re-planning (`/continue`).
 
 ```json
 {
-  "phase_completed": "Operation / Verify",
-  "next_phase": "Operation / Reflect",
-  "feature": "api-gateway-and-mobile-contract",
-  "key_outputs": [
-    "docs/pdlc/memory/episodes/005_api-gateway-and-mobile-contract_2026-08-24.md",
-    "docs/pdlc/memory/CHANGELOG.md",
-    "docs/pdlc/memory/DEPLOYMENTS.md"
-  ],
-  "decisions_made": [
-    "Smoke tests passed against a live 8-process AppHost on merged main",
-    "No critical vulnerabilities; deploy skipped per ADR-035, verified locally instead",
-    "DEPLOYMENTS.md finalized for local — v0.5.0 row records the live T-302/T14-fix re-verification"
-  ],
-  "next_action": "Generate the retrospective — read skills/ship/steps/03-reflect.md",
+  "phase_completed": null,
+  "next_phase": null,
+  "feature": null,
+  "key_outputs": [],
+  "decisions_made": [],
+  "next_action": null,
   "pending_questions": []
 }
 ```
@@ -656,3 +657,5 @@ re-planning (`/continue`).
 | 2026-08-24T12:52:00Z | ci_green | Second CI run on PR #41 (`b51d5a8`) — **all 6 jobs green**: `changes`, `build-and-test`, `Mobile — Unit Tests`, `Integration — real services + MongoDB`, `Mobile — Android Build`, `Mobile — iOS Build`, `summary`. Both mobile build jobs and the integration job ran green for the first time ever on this feature | Ship | api-gateway-and-mobile-contract |
 | 2026-08-24T13:00:00Z | merged_and_tagged | **Merged to `main` as `1d61955`** (PR #41, GitHub API, `merge_method=merge`, true merge commit; final CI run on the docs-only commit `1fd71aa` also green 6/6), tagged **`v0.5.0`**. `docs/pdlc/memory/CHANGELOG.md` entry added. `dotnet format --verify-no-changes` clean on `main` post-merge | Operation | api-gateway-and-mobile-contract |
 | 2026-08-24T13:05:00Z | deploy_deferred | Cloud deploy **skipped again by ADR-035** — fifth consecutive release, third under the deferral. User confirmed at the deploy prompt | Ship | api-gateway-and-mobile-contract |
+| 2026-08-24T13:20:00Z | verify_complete | **Verified against a live 8-process AppHost, not by inspection.** All 8 processes (7 services + Gateway) Healthy/alive. Registered and logged in a fresh Customer through the Gateway on merged `main`; the T14 messages/notifications fix confirmed live (200, not 404). Anonymous 401 and gateway-no-route 404 (T-302) both intact. Known AppHost shutdown gotcha recurred, handled | Verify | api-gateway-and-mobile-contract |
+| 2026-08-24T14:15:00Z | operation_complete | **F-015 shipped and Operation closed the same session it was built and ship-tested in.** Episode 005 **Final**; PRD, brainstorm, design artifacts, and MOM archived; `episodes/index.md` backfilled (rows 002–005, stale since episode 001); OVERVIEW, ROADMAP, METRICS updated (including the F-015 Readiness Trend reconciliation and a new UX Scorecard Trend row); claim released. Three defects found by running the software/CI — one in Construction (T14), two at the Ship gate itself — all fixed in the gates that found them. Second consecutive feature with no formal Review sub-phase (F-014, F-015) — flagged as a recurring pattern in METRICS.md's Trend Summary, with a concrete recommendation (open the PR as a draft at Construction start, not at Ship) | Idle | none |

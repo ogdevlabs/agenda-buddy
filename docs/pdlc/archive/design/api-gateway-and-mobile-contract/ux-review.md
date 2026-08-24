@@ -107,8 +107,18 @@ with an obvious single implementation, not a layout choice with genuine alternat
 
 ## As-Built Audit
 
-*(Populated during Construction Review, Wave 3.)*
+No formal Construction Review Wave ran for this feature (recorded as a process gap in episode 005's Reflect
+Notes — the same gap F-014 recorded). All four findings were implemented by F-015-T11 (Wave 5): the three
+copy strings finalized verbatim as drafted above, the `failedService` → display-name mapping built as
+`GatewayErrorMapper`, the customer "mark complete" control hidden via a role check at render time
+(`AppointmentDetailViewModel.ShowCompleteButton`), and a loading indicator added to the provider "mark
+complete" button. Confirmed by `MobileApp.Tests` (`ProviderReportViewModelTests`, `PaymentViewModelTests`,
+`NotificationsViewModelTests`, `AppointmentDetailViewModelTests` — see `verification.md` AC7/AC13 rows), not
+by an independent design-review pass.
 
 ## Ship Verify
 
-*(Populated during Ship Verify, Wave 4.)*
+Not independently re-audited at the Ship gate — the smoke test focused on Gateway routing/auth/failover
+(the claims automated tests cannot make), not UX surface, consistent with what every prior episode's live
+verification chose to spend its budget on. The four findings' implementation is exercised by the unit tests
+cited above, which ran green on the exact commit that shipped (`v0.5.0`, `1d61955`).

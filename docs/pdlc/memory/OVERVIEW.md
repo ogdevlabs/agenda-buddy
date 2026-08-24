@@ -6,7 +6,7 @@
      Do not edit manually — let PDLC maintain it. If you need to correct something, update and note the reason. -->
 
 **Project:** Agenda Buddy
-**Last updated:** 2026-08-23T13:30:00Z
+**Last updated:** 2026-08-24T14:00:00Z
 
 ---
 
@@ -66,6 +66,15 @@ Agenda Buddy is a scheduling and appointment management platform for independent
 - **Payments are non-charging by default** — a recording gateway unless `Payments:Stripe:ApiKey` is configured
 - The provider report **no longer publishes a revenue figure** it cannot compute correctly — `revenueAvailable: false` plus a reason, instead of a plausible-but-wrong number
 
+**Added by F-015 (`v0.5.0`, 2026-08-24):**
+
+- `MobileApp` now reaches the real backend, on every screen, with **zero fabricated fallback** — `SeedDataProvider` is deleted entirely
+- A new **Gateway** process (YARP reverse proxy, the eighth AppHost resource) is `MobileApp`'s single, only configured address, with an explicit `api/v1/{service}/**` route allowlist (never a catch-all) resolved live from Aspire service discovery
+- Every `MobileApp` route, verb, and payload is corrected against the real backend contract — including a status-route swap onto F-014's server-owned transition endpoint, and hiding (not disabling) the customer-facing "mark complete" control
+- **Logout calls the server**; a 401 mid-session transparently refreshes and retries once; a non-idempotent write is never silently auto-retried on an ambiguous timeout
+- A destination failure surfaces as a named, human-readable error ("Booking is unavailable right now. Try again."), not a generic error
+- Messaging and Notifications screens are reachable through the Gateway (found broken, fixed in the same gate that found it — see episode 005)
+
 ---
 
 ## Shipped Features
@@ -79,13 +88,15 @@ Agenda Buddy is a scheduling and appointment management platform for independent
 | 002 | F-016 secure-public-endpoints (`v0.2.0`) | 2026-08-18 | [EPISODE_secure-public-endpoints_2026-08-18.md](../episodes/EPISODE_secure-public-endpoints_2026-08-18.md) | [#38](https://github.com/ogdevlabs/agenda-buddy/pull/38) |
 | 003 | F-021 identity-hardening (`v0.3.0`) | 2026-08-22 | [EPISODE_identity-hardening_2026-08-22.md](../episodes/EPISODE_identity-hardening_2026-08-22.md) | [#39](https://github.com/ogdevlabs/agenda-buddy/pull/39) |
 | 004 | F-014 wire-unreached-services (`v0.4.0`) | 2026-08-23 | [EPISODE_wire-unreached-services_2026-08-23.md](../episodes/EPISODE_wire-unreached-services_2026-08-23.md) | [#40](https://github.com/ogdevlabs/agenda-buddy/pull/40) |
+| 005 | F-015 api-gateway-and-mobile-contract (`v0.5.0`) | 2026-08-24 | [EPISODE_api-gateway-and-mobile-contract_2026-08-24.md](../episodes/EPISODE_api-gateway-and-mobile-contract_2026-08-24.md) | [#41](https://github.com/ogdevlabs/agenda-buddy/pull/41) |
 
 ---
 
 ## Architecture Summary
 
-- **.NET Aspire orchestration** *(added F-013)*: `AgendaBuddy.AppHost` is the composition root for local development — it declares MongoDB and Kafka as container resources and all seven services as projects, assigning ports dynamically. `AgendaBuddy.ServiceDefaults` is referenced by every service and supplies OpenTelemetry, health/liveness endpoints, service discovery, HTTP resilience, and the `PiiRedactingProcessor`. Docker Compose remains as a legacy fallback.
+- **.NET Aspire orchestration** *(added F-013)*: `AgendaBuddy.AppHost` is the composition root for local development — it declares MongoDB and Kafka as container resources and all seven services plus the Gateway as projects, assigning ports dynamically. `AgendaBuddy.ServiceDefaults` is referenced by every service (and the Gateway) and supplies OpenTelemetry, health/liveness endpoints, service discovery, HTTP resilience, and the `PiiRedactingProcessor`. Docker Compose remains as a legacy fallback.
 - **Seven ASP.NET Minimal API microservices**: Booking, Calendar, Customer, Provider, Services, Profession — plus **Identity** — each with its own test project. *(The "six" count predates Identity.)*
+- **`Gateway`, an eighth process** *(added F-015)*: a thin YARP reverse proxy in front of all seven services — `MobileApp`'s only configured base address. Explicit `api/v1/{service}/**` route allowlist, built from live Aspire service-discovery config, never a catch-all. No business logic, no auth validation — JWT passthrough only.
 - **Shared Library project**: all domain entities (`AppointmentEntity`, `ProviderEntity`, `CustomerEntity`, `ServiceEntity`, `ProfessionEntity`), the generic `IRepository<T>` / `MongoDbRepository<T>`, domain services, and tools (CacheAside, EnumHelper) live here and are consumed by all services
 - **CQRS via MediatR**: the shared `EventAndCommands` project holds all commands, queries, and their handlers; each handler calls Library services and persists an audit event to EventStore
 - **Kafka**: Confluent stack (Kafka + Zookeeper + Schema Registry + Kafka UI) run via Docker Compose; per-provider topics created on-demand
@@ -117,7 +128,7 @@ Agenda Buddy is a scheduling and appointment management platform for independent
 - ~~**`agenda-buddy-prr`** — `MobileApp` does not compile under `/p:MobileWorkloads=false`~~ — **RESOLVED and verified 2026-08-18.** The bead is closed and `MobileApp.Tests` passes 67 (7 skipped) locally. CI already runs three dedicated mobile jobs (`build-android`, `build-ios` on `macos-latest`, `build-mobile-tests`). MobileApp stays out of `agenda-buddy-backend.slnf` **by design**, not because it is broken. A stale comment in `.github/workflows/dotnet.yml` still claims otherwise.
 - **Two advisory test gaps from Echo**: the guarded legacy `MongoDbConfiguration` ctor throw, and `ProfessionSeedHostedService.StartAsync` (which swallows exceptions, so a seeding bug surfaces only as an empty catalogue).
 - ~~**Six shipped-but-unreachable capabilities**~~ — **RESOLVED by F-014** (`v0.4.0`). All six now have a route, authenticated and ownership-guarded, verified live against a running AppHost. Server-owned appointment status (ADR-037) and the non-charging payment gateway (ADR-038) shipped alongside.
-- **The mobile client cannot reach the backend** — wrong route prefixes, no gateway for 7 ports, and a seed-data fallback that masks all of it. Owned by **F-015**.
+- ~~**The mobile client cannot reach the backend**~~ — **RESOLVED by F-015** (`v0.5.0`). A Gateway now gives it one address; every route/verb/payload is corrected; `SeedDataProvider` is deleted. Verified live against a running AppHost on the merged commit.
 - ~~**PII exposure on public endpoints**~~ — **RESOLVED by F-016** (`v0.2.0`), and demonstrated live at the Ship/Verify gate rather than by inspection: all five routes 401 anonymous, non-owners receive `ProviderSummary` only, both Calendar routes ownership-guarded.
 
 **Added or exposed by F-016 (2026-08-18, recorded at the ship gate 2026-08-22):**
@@ -143,6 +154,14 @@ Agenda Buddy is a scheduling and appointment management platform for independent
 - **`NotificationService` is storage-only** — nothing calls `SendAsync` yet, so F-022's dependency on it is not yet satisfied.
 - **No formal Party Review ran for this feature**, and no episode draft existed before the Ship gate — both a deviation from F-016/F-021 precedent, worth restoring next feature.
 
+**Added or exposed by F-015 (2026-08-24, recorded at the ship gate):**
+
+- **`Mobile — iOS/Android Build` and `Integration — real services + MongoDB` only trigger on push/PR to `main`** — a 14-task, 5-wave Construction phase produced two real defects (a namespace collision, a missing build flag) that sat undetected through 863 green tests because neither CI job had run even once until the Ship-gate PR. Recommend opening PRs as drafts at Construction start, not at Ship — see episode 005's Reflect Notes.
+- **The Gateway's route allowlist is the single point where a new backend route group becomes invisible to `MobileApp` silently** — found and fixed once already (messages/notifications), the mechanism that caused it (a plan built against a stale context-catalog snapshot instead of the live route table) is unfixed. Any PR adding a backend route should be required to show `Gateway/AspireServiceDiscoveryProxyConfigProvider.cs`'s diff.
+- **No formal Party Review ran for this feature either** — second consecutive occurrence after F-014.
+- **T-301 (Gateway single point of failure) accepted, not mitigated** — re-score if a real (non-Aspire) deployment materializes.
+- **A minor, unreproduced observation**: a `GET api/v1/customers` response briefly showed a zeroed `ObjectId` during the AC5 stopped-service test — not root-caused, noted rather than dropped.
+
 ---
 
 ## Decision Log Summary
@@ -159,5 +178,6 @@ Agenda Buddy is a scheduling and appointment management platform for independent
 9. **A Testcontainers integration suite, excluded from the unit gate** (ADR-030, ADR-031, F-016) — `AgendaBuddy.IntegrationTests` hosts real services over HTTP with a fail-closed endpoint guard, and stays out of `agenda-buddy-backend.slnf` so the unit gate needs no container runtime.
 10. **Auth hardened: partial updates, configuration-gated controls, warn-don't-fail** (ADR-032…034, F-021) — `IRepository<T>.FindOneAndUpdateAsync` is the one partial-update primitive and never upserts; HSTS and rate limiting are gated on configuration rather than `IsProduction()` because every service runs as Production under the local AppHost; each control warns loudly, naming the key, when off outside a local run. Cloud deployment itself is deferred until every pending feature ships and legacy tech debt is discharged (ADR-035).
 11. **Six unreachable capabilities land on three existing services, by data ownership, not an eighth service** (ADR-036, F-014) — a service is a deployment unit, not a URL prefix. Appointment status becomes server-owned via the entity's own transition methods (ADR-037); payments are non-charging unless a Stripe key is configured, assigned once at construction (ADR-038); the provider report states a revenue figure is unavailable rather than publish one it cannot compute correctly (ADR-039).
+12. **A Gateway *is* an eighth service, for the mobile client only** (F-015) — unlike ADR-036's decision for domain capabilities, `MobileApp` needs one address across seven dynamically-ported services, which no existing service can provide without becoming something else. The Gateway's single-instance posture is accepted as a local-dev-scoped risk (ADR-040, T-301). The Nordstrom standards-readiness gate is **retired outright** for this project (ADR-042) — ten consecutive unreachable-source skips resolved into an explicit exemption: this is a personal project, not a Nordstrom engagement.
 
 See `docs/pdlc/memory/DECISIONS.md` for full ADR entries.
