@@ -76,6 +76,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AgendaBuddy.AppHost.Tests",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AgendaBuddy.IntegrationTests", "AgendaBuddy.IntegrationTests\AgendaBuddy.IntegrationTests.csproj", "{15DC2D65-8751-4674-A37C-E5E6698B6ED5}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Gateway", "Gateway\Gateway.csproj", "{29F5790A-270D-496D-8DFE-88662D87BAA2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -422,6 +424,18 @@ Global
 		{15DC2D65-8751-4674-A37C-E5E6698B6ED5}.Release|x64.Build.0 = Release|Any CPU
 		{15DC2D65-8751-4674-A37C-E5E6698B6ED5}.Release|x86.ActiveCfg = Release|Any CPU
 		{15DC2D65-8751-4674-A37C-E5E6698B6ED5}.Release|x86.Build.0 = Release|Any CPU
+		{29F5790A-270D-496D-8DFE-88662D87BAA2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{29F5790A-270D-496D-8DFE-88662D87BAA2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{29F5790A-270D-496D-8DFE-88662D87BAA2}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{29F5790A-270D-496D-8DFE-88662D87BAA2}.Debug|x64.Build.0 = Debug|Any CPU
+		{29F5790A-270D-496D-8DFE-88662D87BAA2}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{29F5790A-270D-496D-8DFE-88662D87BAA2}.Debug|x86.Build.0 = Debug|Any CPU
+		{29F5790A-270D-496D-8DFE-88662D87BAA2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{29F5790A-270D-496D-8DFE-88662D87BAA2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{29F5790A-270D-496D-8DFE-88662D87BAA2}.Release|x64.ActiveCfg = Release|Any CPU
+		{29F5790A-270D-496D-8DFE-88662D87BAA2}.Release|x64.Build.0 = Release|Any CPU
+		{29F5790A-270D-496D-8DFE-88662D87BAA2}.Release|x86.ActiveCfg = Release|Any CPU
+		{29F5790A-270D-496D-8DFE-88662D87BAA2}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
