@@ -22,4 +22,12 @@
         <ProjectReference Include="..\AgendaBuddy.ServiceDefaults\AgendaBuddy.ServiceDefaults.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+        <!-- F-015-T02 spike: the one new package ARCHITECTURE.md §7 names explicitly. Read routes/
+             clusters programmatically from Aspire's service-discovery configuration keys via a custom
+             IProxyConfigProvider (AspireServiceDiscoveryProxyConfigProvider) rather than LoadFromConfig's
+             static appsettings-file binding. -->
+        <PackageReference Include="Yarp.ReverseProxy" Version="2.3.0" />
+    </ItemGroup>
+
 </Project>

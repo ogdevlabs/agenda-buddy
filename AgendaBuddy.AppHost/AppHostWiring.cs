@@ -123,10 +123,12 @@ internal static class AppHostWiring
         // the AppHost must still assign its port rather than adopt one.
         //
         // WithReference injects services__<name>__http__0 for each destination — the service-discovery
-        // keys F-015-T02/T03's routing config reads to resolve where to forward a request. WaitFor on
-        // all seven means the gateway only reports healthy once every destination it could route to is
-        // also healthy, mirroring how every service above waits on mongodb/kafka before it is
-        // considered up.
+        // keys F-015-T03's routing config reads to resolve where to forward a request (confirmed stable
+        // across a destination's restart by F-015-T02's spike — Aspire's DCP orchestrator fronts every
+        // WithReference-injected address with its own stable local proxy port, so it never goes stale).
+        // WaitFor on all seven means the gateway only reports healthy once every destination it could
+        // route to is also healthy, mirroring how every service above waits on mongodb/kafka before it
+        // is considered up.
         var gateway = builder.AddProject<Projects.Gateway>("gateway", launchProfileName: null);
 
         foreach (var service in new[] { booking, calendar, customer, provider, services, profession, identity })
