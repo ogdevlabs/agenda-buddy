@@ -88,15 +88,15 @@ public partial class CustomersViewModel : ObservableObject
         try
         {
             var results = await _customerApiService.GetCustomersAsync();
-
-            if (results.Count == 0)
-                results = SeedContacts();
-
             _allContacts = results;
         }
-        catch (HttpRequestException)
+        catch (Exception)
         {
-            _allContacts = SeedContacts();
+            // Real failure (network, timeout, malformed response, ambiguous write, etc.) — surface it
+            // through the error banner rather than masking it with fabricated data (F-015-T08, AC8).
+            ErrorMessage = _session.IsCustomer
+                ? "Could not load providers. Check your connection and try again."
+                : "Could not load customers. Check your connection and try again.";
         }
         finally
         {
@@ -131,47 +131,6 @@ public partial class CustomersViewModel : ObservableObject
         // this the only platform-conditional part of the view model.
         await Task.CompletedTask;
 #endif
-    }
-
-    private List<CustomerSummary> SeedContacts()
-    {
-        if (_session.IsCustomer)
-        {
-            return
-            [
-                new CustomerSummary
-                {
-                    Id = "seed-p1", FullName = "Sarah Mitchell", Email = "sarah.mitchell@agendabuddy.dev",
-                    Phone = "+1 (415) 555-0101", LastSession = "Personal Training, Yoga, HIIT, Meditation",
-                    TotalSessions = 4, IsProvider = true, Availability = "Mon–Fri, 8am – 6pm"
-                },
-                new CustomerSummary
-                {
-                    Id = "seed-p2", FullName = "James Rodriguez", Email = "james.rodriguez@agendabuddy.dev",
-                    Phone = "+1 (415) 555-0203", LastSession = "Piano, Music Theory, Sight Reading",
-                    TotalSessions = 3, IsProvider = true, Availability = "Tue–Sat, 10am – 7pm"
-                }
-            ];
-        }
-
-        return
-        [
-            new CustomerSummary
-            {
-                Id = "seed-c1", FullName = "Alex Chen", Email = "alex.chen@agendabuddy.dev",
-                Phone = "+1 (415) 555-0142", LastSession = "Personal Training", TotalSessions = 12
-            },
-            new CustomerSummary
-            {
-                Id = "seed-c2", FullName = "Priya Sharma", Email = "priya.sharma@agendabuddy.dev",
-                Phone = "+1 (628) 555-0198", LastSession = "Yoga Session", TotalSessions = 8
-            },
-            new CustomerSummary
-            {
-                Id = "seed-c3", FullName = "David Thompson", Email = "david.thompson@agendabuddy.dev",
-                Phone = "+1 (510) 555-0267", LastSession = "HIIT Coaching", TotalSessions = 3
-            }
-        ];
     }
 
     partial void OnErrorMessageChanged(string value)

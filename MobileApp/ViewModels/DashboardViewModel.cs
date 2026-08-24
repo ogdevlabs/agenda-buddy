@@ -76,9 +76,6 @@ public partial class DashboardViewModel : ObservableObject
         {
             var results = await _bookingApiService.GetTodayAppointmentsAsync();
 
-            if (results.Count == 0)
-                results = GenerateSeedAppointments();
-
             _allAppointments = results;
             _pageIndex = 0;
             UpdatePage();
@@ -86,14 +83,11 @@ public partial class DashboardViewModel : ObservableObject
             WeekCount = results.Count;
             AppointmentsLoaded?.Invoke(this, EventArgs.Empty);
         }
-        catch (HttpRequestException)
+        catch (Exception)
         {
-            var seed = GenerateSeedAppointments();
-            _allAppointments = seed;
-            _pageIndex = 0;
-            UpdatePage();
-            TodayCount = seed.Count(a => a.ScheduledAt.Date == DateTime.Today);
-            WeekCount = seed.Count;
+            // Real failure (network, timeout, malformed response, ambiguous write, etc.) — surface it
+            // through the error banner rather than masking it with fabricated data (F-015-T08, AC8).
+            ErrorMessage = "Could not load appointments. Check your connection and try again.";
         }
         finally
         {
@@ -125,9 +119,6 @@ public partial class DashboardViewModel : ObservableObject
         var totalPages = (int)Math.Ceiling((double)_allAppointments.Count / PageSize);
         PageLabel = totalPages > 1 ? $"{_pageIndex + 1} / {totalPages}" : "";
     }
-
-    private List<AppointmentSummary> GenerateSeedAppointments() =>
-        SeedDataProvider.GetForUser(_session.Email, _session.IsProvider, _session.IsCustomer);
 
     [RelayCommand]
     private void ToggleAppointment(AppointmentSummary item)
