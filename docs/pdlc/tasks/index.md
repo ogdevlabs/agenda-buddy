@@ -104,9 +104,15 @@ _No tasks._
 | F-015-T11 | Finalize revenue/payment/notification copy; map the failed-service error into the banner; add the status-button loading state | done | — | F-015-T04, F-015-T08 |
 | F-015-T12 | run-ios.sh discovers the gateway's address and injects MAUI_API_BASE_URL | done | — | F-015-T05 |
 | F-015-T13 | Regenerate the OpenAPI specs to include F-014's nine new routes | done | — | — |
-| F-015-T14 | Verification: all 13 ACs attested end to end against a live AppHost, and the documentation this feature made false | planned | — | F-015-T07, F-015-T08, F-015-T09, F-015-T10, F-015-T12 |
+| F-015-T14 | Verification: all 13 ACs attested end to end against a live AppHost, and the documentation this feature made false | done | — | F-015-T07, F-015-T08, F-015-T09, F-015-T10, F-015-T12 |
 
-**13 of 14 done.** All 15 acceptance criteria closed. All three threats dispositioned. Wave 5: mobile 136→165 (T11 +29 — also built the ProviderReportPage/PaymentPage screens AC13 needed, which didn't exist yet). **Backend 468 + mobile 165 + integration 230 = 863 total, 0 failing.** Remaining: F-015-T14 (closing verification against a live AppHost).
+**14 of 14 done.** All 15 acceptance criteria closed and, as of T14, attested against a live AppHost. All
+three threats dispositioned. Wave 5: mobile 136→165 (T11 +29 — also built the ProviderReportPage/PaymentPage
+screens AC13 needed, which didn't exist yet). **Backend 468 + mobile 165 + integration 230 = 863 total, 0
+failing** (re-confirmed at T14's gate). **One defect found live at T14, not caught by any of the 863
+automated tests:** the Gateway's route allowlist has no entry for `api/v1/messages/**`/`api/v1/notifications/**`
+— both real Customer-service routes, unreachable through the one address `MobileApp` calls. Filed as a
+follow-up; see `docs/pdlc/design/api-gateway-and-mobile-contract/verification.md` §3.1.
 
 ## F-016 — secure-public-endpoints  `shipped`
 

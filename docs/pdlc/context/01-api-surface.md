@@ -1,5 +1,33 @@
 # 01 — API Surface
 
+> **⚠️ F-015 delta (2026-08-23) — an eighth process, a Gateway, now exists.** `Gateway/Program.cs`
+> (`Gateway/`) is a YARP reverse proxy in front of all seven services, wired into
+> `AgendaBuddy.AppHost/AppHostWiring.cs` as an eighth resource (`WithReference`/`WaitFor` on all seven).
+> `MobileApp` uses the Gateway's discovered address as its **only** configured base URL — the "no API
+> gateway or reverse proxy exists" finding below is **no longer true**. Route table:
+> `Gateway/AspireServiceDiscoveryProxyConfigProvider.cs`'s explicit allowlist forwards `api/v1/booking/**`,
+> `api/v1/calendar/**`, `api/v1/customers/**`, `api/v1/providers/**`, `api/v1/services/**`,
+> `api/v1/professions/**`, `api/v1/auth/**`, and the root-mapped `/device-token` to their matching
+> service, by convention (no path rewriting) — anything outside that allowlist gets a `gateway-no-route`
+> 404, never a proxied response (threat T-302, mitigated). The Gateway does not validate, strip, or
+> terminate the caller's JWT (auth passthrough only); on a destination failure it attaches the failed
+> cluster's name (`failedService`) to a `ProblemDetails` body. Live-verified at F-015-T14's ship gate: all
+> eight processes `/health`/`/alive` = 200; register/login/create-provider/create-customer/book/status-
+> transition/notes/payment/report all resolve through the Gateway with real data; a stopped service (tested
+> live: `profession`) returns 502 + `failedService` while the other six keep working; anonymous/invalid-JWT
+> requests get 401, never a proxied 200; `aspire resource profession … stop`/`start` proved the Gateway
+> re-routes to the restarted service's new address without the Gateway process restarting (AC6).
+>
+> **⚠️ Gap found live, not caught by any automated test (F-015-T14):** the allowlist above has **no entry
+> for `api/v1/messages/**` or `api/v1/notifications/**`.** Both are real, working routes — but they live on
+> the Customer service (`Customer/Program.cs:255,333`), not nested under `api/v1/customers/`, so they fall
+> outside every pattern in the allowlist. A request to either through the Gateway gets `gateway-no-route`
+> 404 even though the same request against Customer directly (bypassing the Gateway) succeeds. `MobileApp`'s
+> `MessagingApiService`/`NotificationApiService` (wired to call these paths by F-015-T07) therefore cannot
+> reach the backend through the Gateway today. See `docs/pdlc/design/api-gateway-and-mobile-contract/verification.md`
+> §3 for the full write-up. Filed as a follow-up, not fixed in F-015-T14 (a verification task, not an
+> implementation one).
+>
 > **⚠️ F-016 delta (2026-08-18, `v0.2.0`) — refreshed 2026-08-22 at the ship gate. The authz column and
 > anchors below ARE current for the seven routes F-016 changed; everything else still dates from 2026-08-15.**
 >
@@ -48,7 +76,7 @@ Each service pins its own Kestrel endpoints in `appsettings.json` (`"Kestrel": {
 
 ⚠️ **A `gRPC` endpoint with `Protocols: Http2` is declared for all seven services but no gRPC service is ever registered** — no `.proto` files, no `Grpc.*` package reference, no `MapGrpcService` call. Dead configuration.
 
-⚠️ **No API gateway or reverse proxy exists** in the repo (no YARP, no nginx config, no Ingress manifest). Any client must know all seven ports. See the contract-drift section below.
+~~⚠️ No API gateway or reverse proxy exists in the repo.~~ **F-015:** `Gateway/` (YARP) now sits in front of all seven, at its own dynamically-assigned port (an eighth AppHost resource). `MobileApp` no longer needs to know any of the seven ports — see the F-015 delta box above and the contract-drift section below.
 
 ---
 
@@ -159,27 +187,36 @@ Each service pins its own Kestrel endpoints in `appsettings.json` (`"Kestrel": {
 
 ---
 
-## ⚠️ Contract drift: mobile client vs backend
+## ✅ Contract drift: mobile client vs backend — fixed by F-015 (with one gap found live)
 
-The only client is `MobileApp`. Its API services build URLs relative to a single `ApiBaseUrl` (`MobileApp/MauiProgram.cs:32,38`). Every path is wrong:
+**Historical (pre-F-015) state**, kept for record: the only client was `MobileApp`, its API services built
+URLs relative to a single `ApiBaseUrl` that was always dead configuration, both HTTP clients fell back to
+the hardcoded `http://localhost:6036/` (Identity's port, over plaintext HTTP), and every domain path omitted
+`api/v1/` and used singular collection names no route group declared. See `git blame`/F-014's episode for
+the exact prior table.
 
-| Mobile call | Anchor | Actual backend route | Verdict |
-|---|---|---|---|
-| `GET booking?date=yyyy-MM-dd` | `MobileApp/Services/BookingApiService.cs:23` | *(none — Booking exposes no GET)* | ❌ 404 |
-| `GET booking/{id}` | `BookingApiService.cs:38` | *(none)* | ❌ 404 |
-| `PUT booking/{id}` | `BookingApiService.cs:53` | `PUT api/v1/booking/appointments/` | ❌ 404 (path + shape) |
-| `GET calendar?from=…&days=…` | `CalendarApiService.cs:23` | `GET api/v1/calendar/availability/{email}` | ❌ 404 |
-| `POST api/v1/auth/login` | `AuthService.cs:31` | `POST api/v1/auth/login` | ✅ matches |
-| `POST api/v1/auth/register` | `AuthService.cs:57` | `POST api/v1/auth/register` | ✅ matches |
-| `POST device-token` | `PushNotificationService.cs:64` | `POST /device-token` | ✅ matches |
+**Current (F-015) state:** `MobileApp/Infrastructure/ApiBaseUrlResolver.cs` resolves the base address as
+`MAUI_API_BASE_URL` env var → `ApiBaseUrl` config → the same hardcoded fallback (now a last resort, not the
+only path) — and `scripts/run-ios.sh` sets that env var to the **Gateway's** discovered address, not any one
+service's. `MobileApp/Routing/*.cs` (one Maui-free class per `*ApiService`) builds every path/verb/payload
+against the corrected `api/v1/{service}/...` route table (`docs/pdlc/design/api-gateway-and-mobile-contract/api-contracts.md`
+§2), verified against a live AppHost at F-015-T14's ship gate: register, login, create-provider,
+create-customer, book-appointment, the `POST .../status` transition, session notes (GET/POST), payment
+(GET/POST), and the provider report all resolved through the Gateway with real data (2xx), not a 404.
 
-**Two independent defects compound here:**
-1. **Path prefix:** all domain calls omit `api/v1/` and use singular collection names (`booking`, `calendar`) that no route group declares.
-2. **Base address:** a single `ApiBaseUrl` cannot address seven processes on seven ports. `MobileApp/appsettings.json:2` is `https://localhost` (port 443) and `appsettings.Development.json:2` is `https://localhost:5001` — neither matches any service port, and no service serves HTTPS on those ports.
-3. **Neither settings file is ever loaded.** *(Verified 2026-08-22.)* `MauiApp.CreateBuilder()` registers no configuration source, nothing in `MobileApp` calls `AddJsonFile`/`AddJsonStream`, and the two files are not embedded resources — so `Configuration["ApiBaseUrl"]` is always null and **both clients always use the hardcoded fallback `http://localhost:6036/`** (`MauiProgram.cs:32,38`). The configured values above are therefore dead text, not competing candidates.
-4. **There are no fixed ports left to be right about.** F-013 made the AppHost assign ports dynamically (`AppHostWiring.cs` nulls each endpoint's `Port`/`TargetPort`), so `6036` addresses nothing under the AppHost. The 603x numbers survive only for a standalone or Compose run.
+**Known deviation from the original design (`api-contracts.md` §2), recorded by F-015-T07:** Booking has no
+`GET` route for an appointment (list or single) and never has — the design doc's
+`GET api/v1/booking/appointments`/`.../appointments/{identifier}` rows do not exist. `BookingApiService`
+composes with Calendar's real `GET api/v1/calendar/appointments/{email}` instead; filtering to "today" and
+finding a single appointment by id happens client-side.
 
-**Consequence:** every domain read fails and the ViewModels fall back to `MobileApp/Services/SeedDataProvider.cs`, so the app shows canned data. Only the Identity routes could ever match, and only in a standalone run. This is **F-015**'s scope, and it is why F-016 could change five route contracts at zero consumer cost. See `16-mobile-client.md`.
+**Gap found live at F-015-T14, not caught by any automated test:** `MessagingApiService`/
+`NotificationApiService` call `api/v1/messages/...`/`api/v1/notifications/...` — real routes on the Customer
+service — but the **Gateway's** route allowlist (`Gateway/AspireServiceDiscoveryProxyConfigProvider.cs`) has
+no entry for either, only for `api/v1/customers/**`. Every request to them through the Gateway gets
+`gateway-no-route` 404. `MobileApp`'s messaging and notifications screens are therefore still unreachable
+through the one address the app is actually configured to call, despite every route, verb, and payload
+being individually correct. See `docs/pdlc/design/api-gateway-and-mobile-contract/verification.md` §3.
 
 ---
 
