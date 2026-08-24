@@ -48,6 +48,7 @@ public static class MauiProgram
         builder.Services.AddTransient<ICustomerApiService, CustomerApiService>();
         builder.Services.AddTransient<IMessagingApiService, MessagingApiService>();
         builder.Services.AddTransient<INotificationApiService, NotificationApiService>();
+        builder.Services.AddTransient<IProviderApiService, ProviderApiService>();
         builder.Services.AddSingleton<PushNotificationService>();
 
         // ViewModels

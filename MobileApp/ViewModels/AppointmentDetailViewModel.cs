@@ -22,6 +22,7 @@ public class AppointmentActionEventArgs : EventArgs
 public partial class AppointmentDetailViewModel : ObservableObject
 {
     private readonly IBookingApiService _bookingApiService;
+    private readonly IUserSessionService _session;
 
     [ObservableProperty] private AppointmentDetail? _appointment;
     [ObservableProperty] private bool _isLoading;
@@ -32,13 +33,20 @@ public partial class AppointmentDetailViewModel : ObservableObject
     public bool IsNotLoading => !IsLoading;
     public bool HasAppointment => Appointment is not null;
 
+    // ux-review.md finding 3 / PRD requirement 6 / AC7: the customer-facing "mark complete" control must be
+    // HIDDEN entirely, not disabled — a disabled button with no explanation invites "why can't I do this?"
+    // Bound to the Complete button's IsVisible (not IsEnabled) in AppointmentDetailPage.xaml, and gates the
+    // command's CanExecute below so the action is genuinely unavailable, not merely invisible.
+    public bool ShowCompleteButton => _session.IsProvider;
+
     public string AppointmentId { get; set; } = string.Empty;
 
     public event EventHandler<AppointmentActionEventArgs>? ActionRequested;
 
-    public AppointmentDetailViewModel(IBookingApiService bookingApiService)
+    public AppointmentDetailViewModel(IBookingApiService bookingApiService, IUserSessionService session)
     {
         _bookingApiService = bookingApiService;
+        _session = session;
     }
 
     [RelayCommand]
@@ -98,7 +106,7 @@ public partial class AppointmentDetailViewModel : ObservableObject
     private void Cancel() =>
         ActionRequested?.Invoke(this, new AppointmentActionEventArgs(ActionType.Cancel));
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(ShowCompleteButton))]
     private void Complete() =>
         ActionRequested?.Invoke(this, new AppointmentActionEventArgs(ActionType.Complete));
 

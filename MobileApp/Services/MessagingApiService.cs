@@ -31,10 +31,14 @@ public class MessagingApiService : IMessagingApiService
                ?? new List<MessageThreadStub>();
     }
 
-    public async Task<List<MessageSummary>> GetThreadAsync(string threadId, CancellationToken ct = default)
+    // F-015-T07: the real backend route keys on the counterpart's EMAIL, not an opaque thread id — see
+    // MessagingRouteBuilder.Thread. Callers of this method must pass the other party's email; wiring the
+    // ViewModel layer to supply it (rather than the fabricated ThreadId it currently holds) is SeedDataProvider
+    // removal's concern (F-015-T08), not this route correction.
+    public async Task<List<MessageSummary>> GetThreadAsync(string counterpartEmail, CancellationToken ct = default)
     {
         var client = _httpClientFactory.CreateClient("AgendaBuddyApi");
-        var route = MessagingRouteBuilder.Thread(threadId);
+        var route = MessagingRouteBuilder.Thread(counterpartEmail);
         var response = await client.GetAsync(route.Path, ct);
 
         if (!response.IsSuccessStatusCode)
@@ -62,16 +66,21 @@ public class MessagingApiService : IMessagingApiService
         return JsonSerializer.Deserialize<MessageSummary>(json, JsonOptions);
     }
 
+    // F-015-T07: the real route (Customer/Program.cs, messages.MapPost("/{id}/read", ...)) answers
+    // 204 No Content, not the updated entity. See NotificationApiService.MarkReadAsync for the identical
+    // reasoning.
     public async Task<MessageSummary?> MarkReadAsync(string id, CancellationToken ct = default)
     {
         var client = _httpClientFactory.CreateClient("AgendaBuddyApi");
         var route = MessagingRouteBuilder.MarkRead(id);
-        var response = await client.PatchAsync(route.Path, null, ct);
+        var response = await client.PostAsync(route.Path, null, ct);
 
         if (!response.IsSuccessStatusCode)
             return null;
 
         var json = await response.Content.ReadAsStringAsync(ct);
-        return JsonSerializer.Deserialize<MessageSummary>(json, JsonOptions);
+        return string.IsNullOrWhiteSpace(json)
+            ? null
+            : JsonSerializer.Deserialize<MessageSummary>(json, JsonOptions);
     }
 }
