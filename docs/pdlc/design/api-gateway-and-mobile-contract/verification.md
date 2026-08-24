@@ -151,6 +151,38 @@ reproduced a second time, is unrelated to any of F-015's 15 ACs, and this gate's
 to a root-cause. Noted here rather than silently dropped; recommend a fresh, narrowly-scoped look if anyone
 depends on Customer list-route id fidelity.
 
+### 3.3 🔴→✅ Two real defects found by CI on the branch's first real PR run — fixed at the ship gate
+
+`Mobile — iOS Build`, `Mobile — Android Build`, and `Integration — real services + MongoDB` all trigger
+**only** on push/PR to `main` (by design, per each job's own comment in `dotnet.yml`) — so none of the three
+had run even once across F-015's 14 tasks and 5 waves, only on push to a feature branch with no PR. Opening
+PR #41 at the Ship gate was the first time any of them executed against this branch's code, and two of the
+three failed:
+
+1. **`AppShell.xaml.cs`'s `Routing.RegisterRoute(...)` resolved to the wrong `Routing`.** F-015-T06
+   introduced `namespace MobileApp.Routing`; `AppShell.xaml.cs` lives in namespace `MobileApp` and calls
+   the Maui Shell API `Microsoft.Maui.Controls.Routing.RegisterRoute` unqualified. C#'s namespace lookup
+   prefers the nested sibling namespace over a global-usings static class, so the unqualified call now
+   bound to `MobileApp.Routing` instead — `CS0234` on both mobile TFMs (`net10.0-android`, `net10.0-ios`).
+   Neither MobileApp.Tests (net10.0 fallback, doesn't compile the `#if MOBILE` block) nor any backend/
+   integration suite could have caught this — only an actual mobile-TFM compile exercises that file.
+   **Fixed** by fully qualifying all four call sites as `Microsoft.Maui.Controls.Routing.RegisterRoute`.
+2. **`AgendaBuddy.IntegrationTests.csproj`'s restore failed with `NETSDK1147`.** F-015-T07 added a
+   `ProjectReference` to `MobileApp.csproj` (so `MobileClientRouteResolutionTest` could call
+   `MobileApp.Routing.*RouteBuilder`), but the Integration CI job's `dotnet restore` didn't pass
+   `/p:MobileWorkloads=false` — so `MobileApp.csproj` restored its default `net10.0-android;net10.0-ios;
+   net10.0` TargetFrameworks, and the integration runner has no MAUI workloads installed. **Fixed** by
+   adding `/p:MobileWorkloads=false` to the Integration job's restore and build steps, the same flag the
+   backend job already uses.
+
+Both fixed in the same gate, not filed — re-verified: integration suite 234/234 green locally with the
+flag: 234/234; the Android TFM's `CS0234` errors are gone (only a local Android-SDK-platform gap remains,
+which is this machine's environment, not CI's). Full CI on PR #41's second push (`b51d5a8`): all 6 jobs
+green (`changes`, `build-and-test`, `Mobile — Unit Tests`, `Integration — real services + MongoDB`,
+`Mobile — Android Build`, `Mobile — iOS Build`, `summary`). **This is the same shape of finding as §3.1** —
+a real defect invisible to every test that had run before, caught only by actually running the thing (here,
+CI itself) for the first time.
+
 ---
 
 ## 4. What this feature does not claim
