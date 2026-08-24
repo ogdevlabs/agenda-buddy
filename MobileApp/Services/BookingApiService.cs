@@ -2,6 +2,7 @@ using System.Text;
 using System.Text.Json;
 using Library.Entities;
 using Library.Tools;
+using MobileApp.Infrastructure;
 using MobileApp.Models;
 using MobileApp.Routing;
 
@@ -78,7 +79,17 @@ public class BookingApiService : IBookingApiService
         var response = await client.PostAsync(route.Path, content, ct);
 
         if (!response.IsSuccessStatusCode)
+        {
+            // ux-review.md finding 2: a gateway-level failure (destination unreachable) carries a
+            // failedService field a domain-level 4xx does not — only surface it as a distinct
+            // exception when it's actually present, so an ordinary invalid-transition 400 still just
+            // returns null as before.
+            var failedService = await response.TryReadFailedServiceAsync(ct);
+            if (failedService is not null)
+                throw new GatewayServiceUnavailableException(failedService);
+
             return null;
+        }
 
         // The status route returns AppointmentStatusResponse(Identifier, Status), not a full entity — the
         // richer AppointmentDetail the ViewModel already holds is refreshed by re-reading, not by binding
@@ -138,7 +149,13 @@ public class BookingApiService : IBookingApiService
         var response = await client.GetAsync(route.Path, ct);
 
         if (!response.IsSuccessStatusCode)
+        {
+            var failedService = await response.TryReadFailedServiceAsync(ct);
+            if (failedService is not null)
+                throw new GatewayServiceUnavailableException(failedService);
+
             return null;
+        }
 
         var json = await response.Content.ReadAsStringAsync(ct);
         return JsonSerializer.Deserialize<PaymentEntity>(json, EntityJsonOptions);

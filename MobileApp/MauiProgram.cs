@@ -61,6 +61,8 @@ public static class MauiProgram
         builder.Services.AddTransient<MessagingViewModel>();
         builder.Services.AddTransient<MessageThreadViewModel>();
         builder.Services.AddTransient<NotificationsViewModel>();
+        builder.Services.AddTransient<ProviderReportViewModel>();
+        builder.Services.AddTransient<PaymentViewModel>();
 
         // Views
         builder.Services.AddTransient<LoginPage>();
@@ -72,6 +74,8 @@ public static class MauiProgram
         builder.Services.AddTransient<MessageThreadPage>();
         builder.Services.AddTransient<NotificationsPage>();
         builder.Services.AddTransient<AppointmentDetailPage>();
+        builder.Services.AddTransient<ProviderReportPage>();
+        builder.Services.AddTransient<PaymentPage>();
 
         // Shell
         builder.Services.AddSingleton<AppShell>();

@@ -80,6 +80,24 @@ public class NotificationsViewModelTests
         Assert.False(string.IsNullOrWhiteSpace(vm.ErrorMessage));
     }
 
+    // ux-review.md finding 1 / PRD Requirement 12 / AC13: the exact empty-state copy — acknowledgement
+    // + value prop, no error tone — on a genuinely empty list.
+    [Fact]
+    public async Task LoadAsync_EmptyResult_RendersExactEmptyStateCopy()
+    {
+        var service = new Mock<INotificationApiService>();
+        service.Setup(s => s.GetNotificationsAsync(It.IsAny<CancellationToken>()))
+               .ReturnsAsync(new List<NotificationSummary>());
+
+        var vm = new NotificationsViewModel(service.Object, CreateMockSession().Object);
+        await vm.LoadCommand.ExecuteAsync(null);
+
+        Assert.True(vm.IsEmpty);
+        Assert.Equal(
+            "No notifications yet — you'll see updates about your appointments here.",
+            vm.EmptyStateMessage);
+    }
+
     [Fact]
     public async Task MarkReadAsync_UpdatesItemAndDecrementsUnreadCount()
     {

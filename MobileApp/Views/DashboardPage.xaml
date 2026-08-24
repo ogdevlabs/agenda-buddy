@@ -315,26 +315,49 @@
 
         </RefreshView>
 
-        <!-- Fixed Sign Out pill at bottom -->
-        <Frame Grid.Row="1"
-               BackgroundColor="White"
-               CornerRadius="22"
-               BorderColor="{StaticResource iOSGray5}"
-               HasShadow="False"
-               Padding="0"
-               Margin="60,8,60,10"
-               HeightRequest="44"
-               HorizontalOptions="Center">
-            <Button Text="Sign Out"
-                    BackgroundColor="Transparent"
-                    TextColor="{StaticResource iOSRed}"
-                    FontSize="15"
-                    FontAttributes="Bold"
-                    HorizontalOptions="Center"
-                    VerticalOptions="Center"
-                    Padding="28,0"
-                    Clicked="OnLogoutClicked" />
-        </Frame>
+        <!-- Fixed bottom bar: report entry point (provider-only) + Sign Out -->
+        <Grid Grid.Row="1"
+              ColumnDefinitions="Auto,*,Auto"
+              Margin="16,8,16,10">
+
+            <Frame Grid.Column="0"
+                   BackgroundColor="White"
+                   CornerRadius="22"
+                   BorderColor="{StaticResource iOSGray5}"
+                   HasShadow="False"
+                   Padding="0"
+                   HeightRequest="44"
+                   IsVisible="{Binding IsProvider}">
+                <Button Text="Your Report"
+                        BackgroundColor="Transparent"
+                        TextColor="{StaticResource iOSBlue}"
+                        FontSize="15"
+                        FontAttributes="Bold"
+                        HorizontalOptions="Center"
+                        VerticalOptions="Center"
+                        Padding="16,0"
+                        Clicked="OnViewReportClicked"
+                        AutomationId="ViewReportButton" />
+            </Frame>
+
+            <Frame Grid.Column="2"
+                   BackgroundColor="White"
+                   CornerRadius="22"
+                   BorderColor="{StaticResource iOSGray5}"
+                   HasShadow="False"
+                   Padding="0"
+                   HeightRequest="44">
+                <Button Text="Sign Out"
+                        BackgroundColor="Transparent"
+                        TextColor="{StaticResource iOSRed}"
+                        FontSize="15"
+                        FontAttributes="Bold"
+                        HorizontalOptions="Center"
+                        VerticalOptions="Center"
+                        Padding="16,0"
+                        Clicked="OnLogoutClicked" />
+            </Frame>
+        </Grid>
 
     </Grid>
 

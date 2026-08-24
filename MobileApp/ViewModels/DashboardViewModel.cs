@@ -44,6 +44,9 @@ public partial class DashboardViewModel : ObservableObject
 
     public bool IsEmpty => !IsLoading && Appointments.Count == 0 && !HasError;
 
+    // F-014's provider report route (never surfaced in the client before F-015-T11) is provider-only.
+    public bool IsProvider => _session.IsProvider;
+
     public event EventHandler? AppointmentsLoaded;
 
     public DashboardViewModel(IBookingApiService bookingApiService, IUserSessionService session)
