@@ -101,12 +101,12 @@ _No tasks._
 | F-015-T08 | Remove SeedDataProvider; let the real error banner and empty-state UI take over | done | — | F-015-T07 |
 | F-015-T09 | Wire transparent refresh-on-401; never auto-retry a non-idempotent write on ambiguous timeout | done | — | F-015-T06, F-015-T05 |
 | F-015-T10 | LogoutAsync calls the server; the old refresh token is rejected afterward | done | — | F-015-T09 |
-| F-015-T11 | Finalize revenue/payment/notification copy; map the failed-service error into the banner; add the status-button loading state | planned | — | F-015-T04, F-015-T08 |
+| F-015-T11 | Finalize revenue/payment/notification copy; map the failed-service error into the banner; add the status-button loading state | done | — | F-015-T04, F-015-T08 |
 | F-015-T12 | run-ios.sh discovers the gateway's address and injects MAUI_API_BASE_URL | done | — | F-015-T05 |
 | F-015-T13 | Regenerate the OpenAPI specs to include F-014's nine new routes | done | — | — |
 | F-015-T14 | Verification: all 13 ACs attested end to end against a live AppHost, and the documentation this feature made false | planned | — | F-015-T07, F-015-T08, F-015-T09, F-015-T10, F-015-T12 |
 
-**12 of 14 done.** 15 acceptance criteria (13 + 2 threat-derived `[security]`), all now closed except AC11's task (T10, also done). Threats T-301…T-303 all dispositioned: T-302 and T-303 both mitigated now and closed, T-301 accepted (ADR-040). Wave 4: integration 209→230 (T04 +18, T10 +3), mobile 130→136 (T08 +3, T10 +3) — **backend 468 + mobile 136 + integration 230 = 834 total, 0 failing.** Remaining: F-015-T11 (UX copy/loading state), F-015-T14 (closing verification).
+**13 of 14 done.** All 15 acceptance criteria closed. All three threats dispositioned. Wave 5: mobile 136→165 (T11 +29 — also built the ProviderReportPage/PaymentPage screens AC13 needed, which didn't exist yet). **Backend 468 + mobile 165 + integration 230 = 863 total, 0 failing.** Remaining: F-015-T14 (closing verification against a live AppHost).
 
 ## F-016 — secure-public-endpoints  `shipped`
 
