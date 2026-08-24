@@ -11,7 +11,7 @@
 
 ## Current Phase
 
-Inception Complete — Ready for /build
+Construction
 
 ---
 
@@ -52,7 +52,7 @@ none
 - **Feature record:** docs/pdlc/tasks/F-015/_feature.md
 - **Claimed by:** oscargarcia@ogdevlabs.onmicrosoft.com
 - **Claimed at:** 2026-08-23T14:00:00Z
-- **Branch:** (will be set at build pre-flight)
+- **Branch:** `feat/F-015-api-gateway-and-mobile-contract`
 
 _F-014 shipped as `v0.4.0` and its claim was released. `scripts/tasks.cjs` does not exist in this repo, so
 the claim above is tracked by hand (ROADMAP.md's Status/Claimed-by columns), same fallback used since F-013._
@@ -70,17 +70,22 @@ _None active. Run `/night-shift <F-NNN>` to start an autonomous run (requires by
 
 ## Current Sub-phase
 
-none
+Build
 
 ---
 
 ## Last Checkpoint
 
-Inception / Plan / 2026-08-23T17:30:00Z — **Inception complete for F-015.** 14 tasks / 5 waves created
-(hand-written, `tasks.cjs` absent). Standards `--design` gate skipped (ADR-041), then the whole Nordstrom
-standards gate **retired outright for this project** (ADR-042, CONSTITUTION §9) — a decade of skips revealed
-it was never applicable, not just unreachable. Readiness party (solo, Full triage): overall **Fair**, 1 open
-gap (`estimate-mis-scoped` — Wave 3's T07/T09 parallelism claim). Plan approved as-is. Ready for `/build`.
+Construction / Build / 2026-08-23T18:00:00Z — Build pre-flight passed: channel in-sync, remote sync 0
+behind, task store fallback confirmed (14 tasks + `_feature.md`, `tasks.cjs` absent), YAGNI level defaults to
+`full` (no §2 override in CONSTITUTION.md). Branch `feat/F-015-api-gateway-and-mobile-contract` created off
+`main`. Starting the build loop at Wave 1 (F-015-T01, T06, T13).
+
+_Previously: Inception / Plan / 2026-08-23T17:30:00Z — **Inception complete for F-015.** 14 tasks / 5 waves
+created (hand-written, `tasks.cjs` absent). Standards `--design` gate skipped (ADR-041), then the whole
+Nordstrom standards gate **retired outright for this project** (ADR-042, CONSTITUTION §9). Readiness party
+(solo, Full triage): overall **Fair**, 1 open gap (`estimate-mis-scoped` — Wave 3's T07/T09 parallelism
+claim). Plan approved as-is._
 
 _Previously: Inception / Plan / 2026-08-23T17:00:00Z — **Design approved for F-015.** Bloom's Taxonomy (3
 rounds + synthesis), then all five design artifacts written and approved: `ARCHITECTURE.md` (gateway as an
@@ -129,7 +134,10 @@ green), tagged, verified against a live stack, episode 003 Final, artifacts arch
 
 ## Party Mode
 
-agent-teams
+subagents — real Sub-Agent (Step 7 "B") execution per task for F-015's Construction, at the user's explicit
+request (2026-08-23), a deviation from every prior feature's solo execution. One focused subagent per task,
+parallelized within a wave via worktree isolation where the wave has 2+ independent tasks; merged back to
+the feature branch after each wave completes.
 
 ---
 
