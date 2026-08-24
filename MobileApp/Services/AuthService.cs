@@ -78,11 +78,31 @@ public class AuthService : IAuthService
         return true;
     }
 
-    public Task LogoutAsync()
+    /// <summary>
+    /// F-015-T10 / AC11: calls the server-side logout endpoint (invalidating the refresh token,
+    /// per Identity's single-use semantics) in addition to clearing local storage. Both must
+    /// happen. The local clear runs in <c>finally</c> so a user tapping logout always ends up
+    /// logged out on this device, even when the server call fails — but that failure is not
+    /// swallowed: like <see cref="LoginAsync"/> and <see cref="RegisterAsync"/> above, this method
+    /// does not catch a network exception, so it propagates to the caller after the clear.
+    /// </summary>
+    public async Task LogoutAsync()
     {
-        _secureStorage.Remove(JwtDelegatingHandler.JwtKey);
-        _secureStorage.Remove(RefreshTokenKey);
-        return Task.CompletedTask;
+        try
+        {
+            var refreshToken = await _secureStorage.GetAsync(RefreshTokenKey);
+            if (!string.IsNullOrEmpty(refreshToken))
+            {
+                var client = _httpClientFactory.CreateClient("AgendaBuddyApiNoAuth");
+                var route = AuthRouteBuilder.Logout();
+                await client.PostAsJsonAsync(route.Path, new { refreshToken });
+            }
+        }
+        finally
+        {
+            _secureStorage.Remove(JwtDelegatingHandler.JwtKey);
+            _secureStorage.Remove(RefreshTokenKey);
+        }
     }
 
     public Task<string?> GetTokenAsync()
