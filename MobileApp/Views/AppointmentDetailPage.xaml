@@ -294,6 +294,7 @@
                         Padding="12,14"
                         Command="{Binding CompleteCommand}"
                         IsEnabled="{Binding IsNotLoading}"
+                        IsVisible="{Binding ShowCompleteButton}"
                         AutomationId="CompleteButton" />
 
             </Grid>

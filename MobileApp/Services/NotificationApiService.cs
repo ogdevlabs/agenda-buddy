@@ -30,16 +30,24 @@ public class NotificationApiService : INotificationApiService
                ?? new List<NotificationSummary>();
     }
 
+    // F-015-T07: the real route (Customer/Program.cs, notifications.MapPost("/{id}/read", ...)) answers
+    // 204 No Content, not the updated entity — unlike the shape this method previously assumed. Returning
+    // null on an empty body (rather than throwing on an empty-string deserialize) keeps the existing
+    // caller contract (NotificationsViewModel.MarkReadAsync already no-ops on null); reworking that
+    // ViewModel to optimistically flip IsRead locally on a bare success is SeedDataProvider removal's
+    // concern (F-015-T08), not this route correction.
     public async Task<NotificationSummary?> MarkReadAsync(string id, CancellationToken ct = default)
     {
         var client = _httpClientFactory.CreateClient("AgendaBuddyApi");
         var route = NotificationRouteBuilder.MarkRead(id);
-        var response = await client.PatchAsync(route.Path, null, ct);
+        var response = await client.PostAsync(route.Path, null, ct);
 
         if (!response.IsSuccessStatusCode)
             return null;
 
         var json = await response.Content.ReadAsStringAsync(ct);
-        return JsonSerializer.Deserialize<NotificationSummary>(json, JsonOptions);
+        return string.IsNullOrWhiteSpace(json)
+            ? null
+            : JsonSerializer.Deserialize<NotificationSummary>(json, JsonOptions);
     }
 }

@@ -6,37 +6,36 @@ namespace MobileApp.Tests.Routing;
 
 public class MessagingRouteBuilderTests
 {
-    // Pins MessagingApiService.GetInboxAsync's current route: GET "messages".
+    // F-015-T07: corrected to the real backend route — hosted by Customer under a top-level
+    // /api/v1/messages group (F-014, ADR D-2), not nested under /api/v1/customers.
     [Fact]
     public void Inbox_BuildsGet()
     {
         var route = MessagingRouteBuilder.Inbox();
 
         Assert.Equal(HttpMethod.Get, route.Method);
-        Assert.Equal("messages", route.Path);
+        Assert.Equal("api/v1/messages", route.Path);
     }
 
-    // Pins MessagingApiService.GetThreadAsync's current route: GET "messages/thread/{threadId}".
+    // The real route keys on the counterpart's email, not an opaque thread id.
     [Fact]
-    public void Thread_BuildsGetByThreadId()
+    public void Thread_BuildsGetByCounterpartEmail()
     {
-        var route = MessagingRouteBuilder.Thread("t1");
+        var route = MessagingRouteBuilder.Thread("alice@example.com");
 
         Assert.Equal(HttpMethod.Get, route.Method);
-        Assert.Equal("messages/thread/t1", route.Path);
+        Assert.Equal("api/v1/messages/thread/alice@example.com", route.Path);
     }
 
-    // Pins MessagingApiService.SendMessageAsync's current route: POST "messages".
     [Fact]
     public void SendMessage_BuildsPost()
     {
         var route = MessagingRouteBuilder.SendMessage();
 
         Assert.Equal(HttpMethod.Post, route.Method);
-        Assert.Equal("messages", route.Path);
+        Assert.Equal("api/v1/messages", route.Path);
     }
 
-    // Pins MessagingApiService.SendMessageAsync's current body shape: { recipientEmail, body }.
     [Fact]
     public void BuildSendMessagePayload_SerializesRecipientEmailAndBody()
     {
@@ -47,13 +46,13 @@ public class MessagingRouteBuilderTests
         Assert.Equal("""{"recipientEmail":"alice@example.com","body":"Hi there!"}""", json);
     }
 
-    // Pins MessagingApiService.MarkReadAsync's current route: PATCH "messages/{id}/read".
+    // F-015-T07: POST, not PATCH — the real route is messages.MapPost("/{id}/read", …).
     [Fact]
-    public void MarkRead_BuildsPatchById()
+    public void MarkRead_BuildsPostById()
     {
         var route = MessagingRouteBuilder.MarkRead("m1");
 
-        Assert.Equal(HttpMethod.Patch, route.Method);
-        Assert.Equal("messages/m1/read", route.Path);
+        Assert.Equal(HttpMethod.Post, route.Method);
+        Assert.Equal("api/v1/messages/m1/read", route.Path);
     }
 }

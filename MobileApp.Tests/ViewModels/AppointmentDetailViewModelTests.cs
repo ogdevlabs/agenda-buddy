@@ -19,6 +19,22 @@ public class AppointmentDetailViewModelTests
         ServiceId = "s1"
     };
 
+    private static Mock<IUserSessionService> ProviderSession()
+    {
+        var session = new Mock<IUserSessionService>();
+        session.SetupGet(s => s.IsProvider).Returns(true);
+        session.SetupGet(s => s.IsCustomer).Returns(false);
+        return session;
+    }
+
+    private static Mock<IUserSessionService> CustomerSession()
+    {
+        var session = new Mock<IUserSessionService>();
+        session.SetupGet(s => s.IsProvider).Returns(false);
+        session.SetupGet(s => s.IsCustomer).Returns(true);
+        return session;
+    }
+
     // ---------------------------------------------------------------------------
     // LoadAsync
     // ---------------------------------------------------------------------------
@@ -30,7 +46,7 @@ public class AppointmentDetailViewModelTests
         service.Setup(s => s.GetAppointmentAsync("a1", It.IsAny<CancellationToken>()))
                .ReturnsAsync(Appt());
 
-        var vm = new AppointmentDetailViewModel(service.Object) { AppointmentId = "a1" };
+        var vm = new AppointmentDetailViewModel(service.Object, ProviderSession().Object) { AppointmentId = "a1" };
 
         await vm.LoadCommand.ExecuteAsync(null);
 
@@ -46,7 +62,7 @@ public class AppointmentDetailViewModelTests
         service.Setup(s => s.GetAppointmentAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                .ThrowsAsync(new HttpRequestException("boom"));
 
-        var vm = new AppointmentDetailViewModel(service.Object) { AppointmentId = "a1" };
+        var vm = new AppointmentDetailViewModel(service.Object, ProviderSession().Object) { AppointmentId = "a1" };
 
         await vm.LoadCommand.ExecuteAsync(null);
 
@@ -66,7 +82,7 @@ public class AppointmentDetailViewModelTests
         service.Setup(s => s.UpdateStatusAsync("a1", AppointmentStatus.Confirmed, It.IsAny<CancellationToken>()))
                .ReturnsAsync(confirmed);
 
-        var vm = new AppointmentDetailViewModel(service.Object) { AppointmentId = "a1" };
+        var vm = new AppointmentDetailViewModel(service.Object, ProviderSession().Object) { AppointmentId = "a1" };
 
         await vm.ExecuteStatusUpdateAsync(AppointmentStatus.Confirmed);
 
@@ -83,7 +99,7 @@ public class AppointmentDetailViewModelTests
         service.Setup(s => s.UpdateStatusAsync("a1", AppointmentStatus.Cancelled, It.IsAny<CancellationToken>()))
                .ReturnsAsync(cancelled);
 
-        var vm = new AppointmentDetailViewModel(service.Object) { AppointmentId = "a1" };
+        var vm = new AppointmentDetailViewModel(service.Object, ProviderSession().Object) { AppointmentId = "a1" };
 
         await vm.ExecuteStatusUpdateAsync(AppointmentStatus.Cancelled);
 
@@ -100,7 +116,7 @@ public class AppointmentDetailViewModelTests
         service.Setup(s => s.UpdateStatusAsync("a1", AppointmentStatus.Completed, It.IsAny<CancellationToken>()))
                .ReturnsAsync(completed);
 
-        var vm = new AppointmentDetailViewModel(service.Object) { AppointmentId = "a1" };
+        var vm = new AppointmentDetailViewModel(service.Object, ProviderSession().Object) { AppointmentId = "a1" };
 
         await vm.ExecuteStatusUpdateAsync(AppointmentStatus.Completed);
 
@@ -120,7 +136,7 @@ public class AppointmentDetailViewModelTests
         service.Setup(s => s.UpdateStatusAsync(It.IsAny<string>(), It.IsAny<AppointmentStatus>(), It.IsAny<CancellationToken>()))
                .ReturnsAsync((AppointmentDetail?)null);
 
-        var vm = new AppointmentDetailViewModel(service.Object) { AppointmentId = "a1" };
+        var vm = new AppointmentDetailViewModel(service.Object, ProviderSession().Object) { AppointmentId = "a1" };
 
         await vm.ExecuteStatusUpdateAsync(AppointmentStatus.Confirmed);
 
@@ -135,7 +151,7 @@ public class AppointmentDetailViewModelTests
     [Fact]
     public void ConfirmCommand_RaisesActionRequestedWithConfirm()
     {
-        var vm = new AppointmentDetailViewModel(new Mock<IBookingApiService>().Object);
+        var vm = new AppointmentDetailViewModel(new Mock<IBookingApiService>().Object, ProviderSession().Object);
         ActionType? captured = null;
         vm.ActionRequested += (_, e) => captured = e.Action;
 
@@ -147,7 +163,7 @@ public class AppointmentDetailViewModelTests
     [Fact]
     public void CancelCommand_RaisesActionRequestedWithCancel()
     {
-        var vm = new AppointmentDetailViewModel(new Mock<IBookingApiService>().Object);
+        var vm = new AppointmentDetailViewModel(new Mock<IBookingApiService>().Object, ProviderSession().Object);
         ActionType? captured = null;
         vm.ActionRequested += (_, e) => captured = e.Action;
 
@@ -159,12 +175,48 @@ public class AppointmentDetailViewModelTests
     [Fact]
     public void CompleteCommand_RaisesActionRequestedWithComplete()
     {
-        var vm = new AppointmentDetailViewModel(new Mock<IBookingApiService>().Object);
+        var vm = new AppointmentDetailViewModel(new Mock<IBookingApiService>().Object, ProviderSession().Object);
         ActionType? captured = null;
         vm.ActionRequested += (_, e) => captured = e.Action;
 
         vm.CompleteCommand.Execute(null);
 
         Assert.Equal(ActionType.Complete, captured);
+    }
+
+    // ---------------------------------------------------------------------------
+    // AC7 / ux-review.md finding 3: "mark complete" must be genuinely absent for a customer, not disabled.
+    // ---------------------------------------------------------------------------
+
+    [Fact]
+    public void ShowCompleteButton_ProviderSession_IsTrue()
+    {
+        var vm = new AppointmentDetailViewModel(new Mock<IBookingApiService>().Object, ProviderSession().Object);
+
+        Assert.True(vm.ShowCompleteButton);
+    }
+
+    [Fact]
+    public void ShowCompleteButton_CustomerSession_IsFalse()
+    {
+        var vm = new AppointmentDetailViewModel(new Mock<IBookingApiService>().Object, CustomerSession().Object);
+
+        Assert.False(vm.ShowCompleteButton);
+    }
+
+    [Fact]
+    public void CompleteCommand_CustomerSession_CanExecuteIsFalse()
+    {
+        var vm = new AppointmentDetailViewModel(new Mock<IBookingApiService>().Object, CustomerSession().Object);
+
+        Assert.False(vm.CompleteCommand.CanExecute(null));
+    }
+
+    [Fact]
+    public void CompleteCommand_ProviderSession_CanExecuteIsTrue()
+    {
+        var vm = new AppointmentDetailViewModel(new Mock<IBookingApiService>().Object, ProviderSession().Object);
+
+        Assert.True(vm.CompleteCommand.CanExecute(null));
     }
 }
