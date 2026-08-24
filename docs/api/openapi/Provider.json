@@ -157,6 +157,72 @@
                     }
                 }
             }
+        },
+        "/api/v1/providers/{email}/report": {
+            "get": {
+                "tags": [
+                    "ProviderAPI"
+                ],
+                "operationId": "GetProviderReport",
+                "parameters": [
+                    {
+                        "name": "email",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProviderReport"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                }
+            }
+        },
+        "/api/v1/providers/{email}/deactivate": {
+            "post": {
+                "tags": [
+                    "ProviderAPI"
+                ],
+                "operationId": "DeactivateProvider",
+                "parameters": [
+                    {
+                        "name": "email",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Accepted",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                }
+            }
         }
     },
     "components": {
@@ -348,6 +414,47 @@
                     },
                     "isActive": {
                         "type": "boolean"
+                    }
+                },
+                "additionalProperties": false
+            },
+            "ProviderReport": {
+                "type": "object",
+                "properties": {
+                    "providerEmail": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "totalBookings": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "completedAppointments": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "cancelledAppointments": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "uniqueCustomers": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "retentionRate": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "revenueAvailable": {
+                        "type": "boolean"
+                    },
+                    "revenueUnavailableReason": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "generatedAt": {
+                        "type": "string",
+                        "format": "date-time"
                     }
                 },
                 "additionalProperties": false
