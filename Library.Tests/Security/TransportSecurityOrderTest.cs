@@ -32,21 +32,30 @@ namespace Common.Tests.Security;
 /// all; the failure mode is a false pass, never a false failure, and the second assertion below closes
 /// the most likely evasion by banning direct <c>UseHttpsRedirection</c> calls outright.
 /// </para>
+/// <para>
+/// <b>F-015-T01: Gateway is an eighth process, added to <see cref="AllServices"/> below, but it is not
+/// in the seven-item <c>[Theory]</c> data below.</b> It has no authentication middleware of its own
+/// (ARCHITECTURE.md §2's "Auth passthrough" decision — it forwards the <c>Authorization</c> header
+/// unvalidated once F-015-T03 adds YARP), so
+/// <c>TransportSecurity_IsRegisteredBeforeAuthentication</c>'s assertion relative to
+/// <c>app.UseAuthentication()</c> does not apply to it. <see cref="GatewayCallsTransportSecurity"/> below
+/// covers the part that does apply: the call must still be present.
+/// </para>
 /// </remarks>
 public class TransportSecurityOrderTest
 {
-    private static readonly string[] Services =
-        ["Booking", "Calendar", "Customer", "Identity", "Profession", "Provider", "Services"];
+    private static readonly string[] AllServices =
+        ["Booking", "Calendar", "Customer", "Gateway", "Identity", "Profession", "Provider", "Services"];
 
     private const string TransportSecurityCall = "UseAgendaBuddyTransportSecurity(";
     private const string AuthenticationCall = "app.UseAuthentication()";
     private const string RedirectionCall = "app.UseHttpsRedirection()";
 
     [Fact]
-    public void EverySevenServices_AreAccountedFor()
+    public void EveryServiceProgramFile_IsAccountedFor()
     {
         // Guards the way this test could quietly stop covering things: a new service appears, nobody
-        // adds it here, and the suite still reports green for "all seven".
+        // adds it here, and the suite still reports green for "all eight".
         var actual = Directory
             .GetDirectories(RepositoryRoot())
             .Select(Path.GetFileName)
@@ -56,7 +65,22 @@ public class TransportSecurityOrderTest
             .OrderBy(name => name, StringComparer.Ordinal)
             .ToArray();
 
-        Assert.Equal(Services.OrderBy(name => name, StringComparer.Ordinal).ToArray(), actual);
+        Assert.Equal(AllServices.OrderBy(name => name, StringComparer.Ordinal).ToArray(), actual);
+    }
+
+    [Fact]
+    public void GatewayCallsTransportSecurity()
+    {
+        // Gateway has no `app.UseAuthentication()` to be ordered against (no auth middleware of its own
+        // — ARCHITECTURE.md §2), so it gets its own assertion rather than joining the theory below.
+        var source = ProgramSource("Gateway");
+
+        Assert.True(
+            source.Contains(TransportSecurityCall, StringComparison.Ordinal),
+            $"Gateway/Program.cs does not call {TransportSecurityCall} at all, so it registers no HSTS "
+            + "and no HTTPS redirect (F-021 AC-12 / F-015-T01).");
+
+        Assert.DoesNotContain(RedirectionCall, source, StringComparison.Ordinal);
     }
 
     [Theory]
