@@ -14,10 +14,10 @@ public partial class AppShell : Shell
         InitializeComponent();
         _session = session;
 
-        Routing.RegisterRoute("messageThread", typeof(MessageThreadPage));
-        Routing.RegisterRoute("appointmentDetail", typeof(AppointmentDetailPage));
-        Routing.RegisterRoute("report", typeof(ProviderReportPage));
-        Routing.RegisterRoute("payment", typeof(PaymentPage));
+        Microsoft.Maui.Controls.Routing.RegisterRoute("messageThread", typeof(MessageThreadPage));
+        Microsoft.Maui.Controls.Routing.RegisterRoute("appointmentDetail", typeof(AppointmentDetailPage));
+        Microsoft.Maui.Controls.Routing.RegisterRoute("report", typeof(ProviderReportPage));
+        Microsoft.Maui.Controls.Routing.RegisterRoute("payment", typeof(PaymentPage));
 
         JwtDelegatingHandler.UnauthorizedAccess += async (_, _) =>
             await Shell.Current.GoToAsync("//login");
