@@ -29,13 +29,13 @@ public static class MauiProgram
         builder.Services.AddTransient<JwtDelegatingHandler>();
         builder.Services.AddHttpClient("AgendaBuddyApi", client =>
         {
-            client.BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"] ?? "http://localhost:6036/");
+            client.BaseAddress = new Uri(ApiBaseUrlResolver.Resolve(builder.Configuration, Environment.GetEnvironmentVariable));
         }).AddHttpMessageHandler<JwtDelegatingHandler>();
 
         // No-auth client for login (no JWT handler — token doesn't exist yet)
         builder.Services.AddHttpClient("AgendaBuddyApiNoAuth", client =>
         {
-            client.BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"] ?? "http://localhost:6036/");
+            client.BaseAddress = new Uri(ApiBaseUrlResolver.Resolve(builder.Configuration, Environment.GetEnvironmentVariable));
         });
 
         // User session (singleton — decoded JWT cached across pages)
