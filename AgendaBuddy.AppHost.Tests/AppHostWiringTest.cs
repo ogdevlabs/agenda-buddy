@@ -467,4 +467,48 @@ public class AppHostWiringTest
 
         Assert.True(parameter.Secret, $"{parameterName} must be declared secret when publishing.");
     }
+
+    // ── F-015-T05: the eighth resource — the gateway ──────────────────────────────────────────────
+    //
+    // No PRD acceptance criterion of its own (reassigned to F-015-T04 — see F-015-T05.md). This is
+    // pure AppHost composition: the gateway resource exists and is wired to every one of the seven
+    // services it could route to, mirroring how the file already wires dependents to mongodb/kafka.
+
+    [Fact]
+    public void GatewayIsRegistered()
+    {
+        var builder = BuildModel();
+
+        Assert.IsAssignableFrom<ProjectResource>(Resource(builder, "gateway"));
+    }
+
+    // WithReference injects services__<name>__http__0 for each destination — the discovery keys
+    // F-015-T02/T03's routing config reads to resolve where to forward a request.
+    [Theory]
+    [InlineData("booking")]
+    [InlineData("calendar")]
+    [InlineData("customer")]
+    [InlineData("identity")]
+    [InlineData("profession")]
+    [InlineData("provider")]
+    [InlineData("services")]
+    public void GatewayReferencesEveryService(string serviceName)
+    {
+        Assert.Contains(serviceName, References(BuildModel(), "gateway"));
+    }
+
+    // WaitFor on all seven means the gateway only reports healthy once every destination it could
+    // route to is also healthy.
+    [Theory]
+    [InlineData("booking")]
+    [InlineData("calendar")]
+    [InlineData("customer")]
+    [InlineData("identity")]
+    [InlineData("profession")]
+    [InlineData("provider")]
+    [InlineData("services")]
+    public void GatewayWaitsForEveryService(string serviceName)
+    {
+        Assert.Contains(serviceName, Waits(BuildModel(), "gateway"));
+    }
 }
