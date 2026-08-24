@@ -70,13 +70,24 @@ _None active. Run `/night-shift <F-NNN>` to start an autonomous run (requires by
 
 ## Current Sub-phase
 
-Build
+Review
 
 ---
 
 ## Last Checkpoint
 
-Construction / Build / 2026-08-24T01:30:00Z — **Wave 5 complete.** F-015-T11 finalized the four `ux-review.md`
+Construction / Build / 2026-08-24T02:15:00Z — **Build loop complete — 14/14 tasks, all 15 ACs closed, all
+three threats dispositioned.** F-015-T14's live AppHost run found one real defect invisible to all 863
+automated tests: the Gateway's route allowlist had no entry for `api/v1/messages/**`/`api/v1/notifications/**`
+(both real Customer-service top-level route groups, per ADR-036) — `MobileApp`'s Messaging and Notifications
+screens were unreachable through the one address the client calls. **Fixed in the same gate, not filed**,
+since it directly contradicted the feature's own claim: a two-line `_routeSpecs` addition
+(`Gateway/AspireServiceDiscoveryProxyConfigProvider.cs`) plus 4 regression tests (one pre-existing test
+needed a matching fix — it asserted a single route per cluster, which broke once "customer" stopped being
+one). `verification.md` updated to record found-and-fixed, not deferred. **Final: backend 468 + mobile 165 +
+integration 234 = 867 total, 0 failing.** Moving to Review.
+
+_Previously: Construction / Build / 2026-08-24T01:30:00Z — **Wave 5 complete.** F-015-T11 finalized the four `ux-review.md`
 fix-now findings — and found a real deviation: the report and payment "screens" the design assumed already
 existed did not (F-015-T07 wired the API calls, but nothing consumed them). Built the minimal
 `ProviderReportPage`/`PaymentPage` + ViewModels needed to satisfy AC13 literally, wired the gateway's
@@ -611,3 +622,5 @@ re-planning (`/continue`).
 | 2026-08-24T00:15:00Z | wave_complete | **Wave 4 done — F-015-T04, T08, T10**, three real subagents in parallel worktrees, no conflicts. T04 closed T-303 (verified non-vacuous by mutation-testing — temporarily broke transport-security parity on purpose, watched the test catch it, reverted) and proved AC3/AC4 (JWT passthrough) live through the real gateway pipeline to a real Booking service. T08 deleted `SeedDataProvider` — the error banner and empty-state UI are reachable for the first time since F-012 shipped. T10 wired `LogoutAsync`'s server call and proved live that the old refresh token is rejected afterward. **All 15 ACs now closed; all three threats dispositioned.** Backend steady 468, mobile 130→136, integration 209→230 — 834 total, 0 failing | Build | api-gateway-and-mobile-contract |
 | 2026-08-24T00:20:00Z | task_split | F-015-T14 given an explicit dependency on F-015-T11 — it attests AC13, which is T11's, not exercised transitively by the tasks it already depended on | Build | api-gateway-and-mobile-contract |
 | 2026-08-24T01:30:00Z | wave_complete | **Wave 5 done — F-015-T11 (solo, the last content task).** Found a real deviation: the report/payment screens AC13's wording assumed existed did not — F-015-T07 wired the API calls with no ViewModel/Page/route consuming them. Built the minimal `ProviderReportPage`/`PaymentPage` + ViewModels to satisfy AC13 literally, plus the `GatewayErrorMapper` (failed-service → display name in the error banner) and a loading indicator on "mark complete". **All 15 ACs closed; all three threats dispositioned.** Backend steady 468 (one confirmed-transient flaky test on the full-suite run), mobile 136→165, integration steady 230 — 863 total, 0 failing | Build | api-gateway-and-mobile-contract |
+| 2026-08-24T02:00:00Z | task_complete | **F-015-T14 done (closing verification, solo).** All 15 ACs attested against a real 8-process live AppHost (register→login→real data→status transition→notes→payment→report→stopped-service failover→anonymous 401→T-302 probes→live logout-then-refresh-rejection). Corrected `CLAUDE.md`, the context catalog, and `INTENT.md`'s two stale lines. **Found one real defect invisible to all 863 automated tests:** the Gateway's route allowlist had no entry for `api/v1/messages/**`/`api/v1/notifications/**` | Build | api-gateway-and-mobile-contract |
+| 2026-08-24T02:15:00Z | build_complete | **BUILD COMPLETE — 14/14 tasks, 15/15 ACs, 3/3 threats dispositioned.** T14's found defect **fixed in the same gate, not filed** — a two-line `_routeSpecs` addition plus 4 regression tests (one pre-existing test corrected: it asserted one route per cluster, which broke once "customer" stopped being one). `verification.md` updated to record found-and-fixed. **Backend 468 / integration 234 / mobile 165 = 867, 0 failing.** Moving to Review | Review | api-gateway-and-mobile-contract |
