@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text;
+using MobileApp.Infrastructure;
 using MobileApp.Services;
 using Moq;
 using Xunit;
@@ -63,6 +64,19 @@ public class ProviderApiServiceTests
         var result = await sut.GetReportAsync();
 
         Assert.Null(result);
+    }
+
+    // ux-review.md finding 2 / api-contracts.md §1: a gateway-shaped 5xx (carrying failedService) is
+    // distinguished from a plain domain 404 (empty body) — the latter still just returns null.
+    [Fact]
+    public async Task GetReport_GatewayFailure_ThrowsWithFailedService()
+    {
+        const string json = """{"failedService":"provider"}""";
+        var sut = new ProviderApiService(CreateFactory(HttpStatusCode.BadGateway, json), CreateSession());
+
+        var ex = await Assert.ThrowsAsync<GatewayServiceUnavailableException>(() => sut.GetReportAsync());
+
+        Assert.Equal("provider", ex.FailedService);
     }
 
     // F-015-T07: new — F-014's provider deactivation route, never called by the client before this task.

@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Library.Entities;
+using MobileApp.Infrastructure;
 using MobileApp.Routing;
 
 namespace MobileApp.Services;
@@ -25,7 +26,13 @@ public class ProviderApiService : IProviderApiService
         var response = await client.GetAsync(route.Path, ct);
 
         if (!response.IsSuccessStatusCode)
+        {
+            var failedService = await response.TryReadFailedServiceAsync(ct);
+            if (failedService is not null)
+                throw new GatewayServiceUnavailableException(failedService);
+
             return null;
+        }
 
         var json = await response.Content.ReadAsStringAsync(ct);
         return JsonSerializer.Deserialize<ProviderReport>(json, JsonOptions);

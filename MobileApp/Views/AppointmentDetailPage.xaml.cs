@@ -110,6 +110,12 @@ public partial class AppointmentDetailPage : ContentPage
         await Shell.Current.GoToAsync("..");
     }
 
+    private async void OnViewPaymentClicked(object? sender, EventArgs e)
+    {
+        var nav = new Dictionary<string, object> { ["appointmentId"] = _viewModel.AppointmentId };
+        await Shell.Current.GoToAsync("payment", nav);
+    }
+
     private void OnUnauthorizedAccess(object? sender, EventArgs e)
     {
         _viewModel.ErrorMessage = "Your session expired. Any unsaved changes were not saved.";

@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text;
 using Library.Entities;
+using MobileApp.Infrastructure;
 using MobileApp.Models;
 using MobileApp.Services;
 using Moq;
@@ -255,6 +256,36 @@ public class BookingApiServiceTests
         var result = await sut.CreatePaymentAsync("a1", 75m, "usd");
 
         Assert.Null(result);
+    }
+
+    // ---------------------------------------------------------------------------
+    // ux-review.md finding 2 / api-contracts.md §1: a gateway-shaped failure (carrying failedService)
+    // is distinguished from a plain domain 4xx (empty/non-gateway body) — the latter still just
+    // returns null, unchanged from before.
+    // ---------------------------------------------------------------------------
+
+    [Fact]
+    public async Task UpdateStatus_GatewayFailure_ThrowsWithFailedService()
+    {
+        const string json = """{"type":"https://agendabuddy.dev/errors/gateway-destination-unreachable","status":502,"failedService":"booking"}""";
+        var sut = new BookingApiService(CreateFactory(HttpStatusCode.BadGateway, json), new Mock<ICalendarApiService>().Object);
+
+        var ex = await Assert.ThrowsAsync<GatewayServiceUnavailableException>(
+            () => sut.UpdateStatusAsync("a1", AppointmentStatus.Completed));
+
+        Assert.Equal("booking", ex.FailedService);
+    }
+
+    [Fact]
+    public async Task GetPayment_GatewayFailure_ThrowsWithFailedService()
+    {
+        const string json = """{"failedService":"booking"}""";
+        var sut = new BookingApiService(CreateFactory(HttpStatusCode.BadGateway, json), new Mock<ICalendarApiService>().Object);
+
+        var ex = await Assert.ThrowsAsync<GatewayServiceUnavailableException>(
+            () => sut.GetPaymentAsync("a1"));
+
+        Assert.Equal("booking", ex.FailedService);
     }
 
     // ---------------------------------------------------------------------------

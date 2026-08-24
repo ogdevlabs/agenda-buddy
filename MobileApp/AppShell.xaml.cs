@@ -16,6 +16,8 @@ public partial class AppShell : Shell
 
         Routing.RegisterRoute("messageThread", typeof(MessageThreadPage));
         Routing.RegisterRoute("appointmentDetail", typeof(AppointmentDetailPage));
+        Routing.RegisterRoute("report", typeof(ProviderReportPage));
+        Routing.RegisterRoute("payment", typeof(PaymentPage));
 
         JwtDelegatingHandler.UnauthorizedAccess += async (_, _) =>
             await Shell.Current.GoToAsync("//login");

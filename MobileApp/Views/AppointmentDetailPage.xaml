@@ -261,6 +261,29 @@
                     </VerticalStackLayout>
                 </Frame>
 
+                <!-- Payment entry point (F-014's payment route, never surfaced before F-015-T11) -->
+                <Frame CornerRadius="20"
+                       BackgroundColor="White"
+                       BorderColor="#E2E8F0"
+                       HasShadow="True"
+                       Padding="20">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <Label Grid.Column="0"
+                               Text="Payment"
+                               FontSize="15"
+                               FontAttributes="Bold"
+                               TextColor="{StaticResource TextPrimary}"
+                               VerticalOptions="Center" />
+                        <Button Grid.Column="1"
+                                Text="View"
+                                Style="{StaticResource PrimaryButton}"
+                                FontSize="13"
+                                Padding="14,8"
+                                Clicked="OnViewPaymentClicked"
+                                AutomationId="ViewPaymentButton" />
+                    </Grid>
+                </Frame>
+
             </VerticalStackLayout>
         </ScrollView>
 
@@ -287,15 +310,24 @@
                         IsEnabled="{Binding IsNotLoading}"
                         AutomationId="CancelButton" />
 
-                <Button Grid.Column="2"
-                        Text="Complete"
-                        Style="{StaticResource PrimaryButton}"
-                        FontSize="14"
-                        Padding="12,14"
-                        Command="{Binding CompleteCommand}"
-                        IsEnabled="{Binding IsNotLoading}"
-                        IsVisible="{Binding ShowCompleteButton}"
-                        AutomationId="CompleteButton" />
+                <!-- Complete button + activity indicator (ux-review.md 8-state spot-check, finding
+                     P3), matching the Sign In button/ActivityIndicator overlay pattern on LoginPage. -->
+                <Grid Grid.Column="2">
+                    <Button Text="Complete"
+                            Style="{StaticResource PrimaryButton}"
+                            FontSize="14"
+                            Padding="12,14"
+                            Command="{Binding CompleteCommand}"
+                            IsEnabled="{Binding IsNotLoading}"
+                            IsVisible="{Binding ShowCompleteButtonIdle}"
+                            AutomationId="CompleteButton" />
+                    <ActivityIndicator IsRunning="{Binding ShowCompletingIndicator}"
+                                       IsVisible="{Binding ShowCompletingIndicator}"
+                                       Color="{StaticResource Primary}"
+                                       HorizontalOptions="Center"
+                                       VerticalOptions="Center"
+                                       AutomationId="CompleteButtonBusyIndicator" />
+                </Grid>
 
             </Grid>
         </Frame>

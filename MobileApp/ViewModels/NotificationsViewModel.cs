@@ -27,6 +27,12 @@ public partial class NotificationsViewModel : ObservableObject
 
     public bool IsEmpty => !IsLoading && Notifications.Count == 0 && !HasError;
 
+    /// <summary>
+    /// ux-review.md finding 1 / PRD Requirement 12 / AC13: an empty list is a normal state, not an
+    /// error — acknowledgement + value prop, no action pathway since there is nothing to do from empty.
+    /// </summary>
+    public string EmptyStateMessage => "No notifications yet — you'll see updates about your appointments here.";
+
     public NotificationsViewModel(INotificationApiService notificationApiService, IUserSessionService session)
     {
         _notificationApiService = notificationApiService;

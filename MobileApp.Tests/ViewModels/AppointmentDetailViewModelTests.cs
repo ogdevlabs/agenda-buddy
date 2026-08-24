@@ -1,4 +1,5 @@
 using Library.Entities;
+using MobileApp.Infrastructure;
 using MobileApp.Models;
 using MobileApp.Services;
 using MobileApp.ViewModels;
@@ -142,6 +143,83 @@ public class AppointmentDetailViewModelTests
 
         Assert.True(vm.HasError);
         Assert.Equal("Status update failed", vm.ErrorMessage);
+    }
+
+    // ux-review.md finding 2: the gateway's failedService maps to the display-name banner copy on the
+    // status-transition path too, not just a generic connectivity message.
+    [Fact]
+    public async Task UpdateStatusAsync_GatewayServiceUnavailable_MapsFailedServiceToDisplayName()
+    {
+        var service = new Mock<IBookingApiService>();
+        service.Setup(s => s.UpdateStatusAsync(It.IsAny<string>(), It.IsAny<AppointmentStatus>(), It.IsAny<CancellationToken>()))
+               .ThrowsAsync(new GatewayServiceUnavailableException("booking"));
+
+        var vm = new AppointmentDetailViewModel(service.Object, ProviderSession().Object) { AppointmentId = "a1" };
+
+        await vm.ExecuteStatusUpdateAsync(AppointmentStatus.Completed);
+
+        Assert.True(vm.HasError);
+        Assert.Equal("Booking is unavailable right now. Try again.", vm.ErrorMessage);
+    }
+
+    // ---------------------------------------------------------------------------
+    // ux-review.md 8-state spot-check, finding P3: the provider-view "mark complete" button needs a
+    // busy indicator while the POST .../status call is in flight (AC13's loading-state finding).
+    // ---------------------------------------------------------------------------
+
+    [Fact]
+    public async Task ExecuteStatusUpdateAsync_Completed_IsCompletingTrueWhileInFlight_FalseAfter()
+    {
+        var tcs = new TaskCompletionSource<AppointmentDetail?>();
+        var service = new Mock<IBookingApiService>();
+        service.Setup(s => s.UpdateStatusAsync("a1", AppointmentStatus.Completed, It.IsAny<CancellationToken>()))
+               .Returns(tcs.Task);
+
+        var vm = new AppointmentDetailViewModel(service.Object, ProviderSession().Object) { AppointmentId = "a1" };
+
+        Assert.False(vm.IsCompleting);
+
+        var updateTask = vm.ExecuteStatusUpdateAsync(AppointmentStatus.Completed);
+
+        Assert.True(vm.IsCompleting);
+        Assert.True(vm.ShowCompletingIndicator);
+        Assert.False(vm.ShowCompleteButtonIdle);
+
+        tcs.SetResult(Appt(status: AppointmentStatus.Completed));
+        await updateTask;
+
+        Assert.False(vm.IsCompleting);
+        Assert.False(vm.ShowCompletingIndicator);
+        Assert.True(vm.ShowCompleteButtonIdle);
+    }
+
+    [Fact]
+    public async Task ExecuteStatusUpdateAsync_NonCompleteTransition_DoesNotSetIsCompleting()
+    {
+        var tcs = new TaskCompletionSource<AppointmentDetail?>();
+        var service = new Mock<IBookingApiService>();
+        service.Setup(s => s.UpdateStatusAsync("a1", AppointmentStatus.Confirmed, It.IsAny<CancellationToken>()))
+               .Returns(tcs.Task);
+
+        var vm = new AppointmentDetailViewModel(service.Object, ProviderSession().Object) { AppointmentId = "a1" };
+
+        var updateTask = vm.ExecuteStatusUpdateAsync(AppointmentStatus.Confirmed);
+
+        Assert.False(vm.IsCompleting);
+
+        tcs.SetResult(Appt(status: AppointmentStatus.Confirmed));
+        await updateTask;
+
+        Assert.False(vm.IsCompleting);
+    }
+
+    [Fact]
+    public void ShowCompletingIndicator_CustomerSession_IsAlwaysFalse()
+    {
+        var vm = new AppointmentDetailViewModel(new Mock<IBookingApiService>().Object, CustomerSession().Object);
+
+        Assert.False(vm.ShowCompletingIndicator);
+        Assert.False(vm.ShowCompleteButtonIdle);
     }
 
     // ---------------------------------------------------------------------------
