@@ -11,4 +11,11 @@ public static class AuthRouteBuilder
     public static RouteSpec Login() => new(HttpMethod.Post, "api/v1/auth/login");
 
     public static RouteSpec Register() => new(HttpMethod.Post, "api/v1/auth/register");
+
+    /// <summary>
+    /// Added by F-015-T09: <see cref="Infrastructure.JwtDelegatingHandler"/>'s transparent
+    /// refresh-on-401 path calls this on the "AgendaBuddyApiNoAuth" client, since the access
+    /// token is what just failed.
+    /// </summary>
+    public static RouteSpec Refresh() => new(HttpMethod.Post, "api/v1/auth/refresh");
 }
