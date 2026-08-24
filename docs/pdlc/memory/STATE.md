@@ -76,10 +76,15 @@ Build
 
 ## Last Checkpoint
 
-Construction / Build / 2026-08-23T18:00:00Z — Build pre-flight passed: channel in-sync, remote sync 0
-behind, task store fallback confirmed (14 tasks + `_feature.md`, `tasks.cjs` absent), YAGNI level defaults to
-`full` (no §2 override in CONSTITUTION.md). Branch `feat/F-015-api-gateway-and-mobile-contract` created off
-`main`. Starting the build loop at Wave 1 (F-015-T01, T06, T13).
+Construction / Build / 2026-08-23T19:30:00Z — **Wave 1 complete.** F-015-T01 (Gateway scaffold), F-015-T06
+(extract MobileApp route-building), F-015-T13 (regenerate OpenAPI specs) all built by real subagents in
+isolated worktrees, merged `--no-ff` into the feature branch, verified together: backend 452→453, mobile
+74→90 (16 new route-builder tests), integration 175→177 (2 new Gateway host tests) — **720 total, 0
+failing.** Worktrees and branches cleaned up. Starting Wave 2 (F-015-T02 spike, F-015-T05 AppHostWiring).
+
+_Previously: Construction / Build / 2026-08-23T18:00:00Z — Build pre-flight passed: channel in-sync, remote
+sync 0 behind, task store fallback confirmed (14 tasks + `_feature.md`, `tasks.cjs` absent). Branch
+`feat/F-015-api-gateway-and-mobile-contract` created off `main`._
 
 _Previously: Inception / Plan / 2026-08-23T17:30:00Z — **Inception complete for F-015.** 14 tasks / 5 waves
 created (hand-written, `tasks.cjs` absent). Standards `--design` gate skipped (ADR-041), then the whole
@@ -553,3 +558,5 @@ re-planning (`/continue`).
 | 2026-08-23T17:15:00Z | standards_check_skipped | Plan Step 17.5 (`--design`, enforcing) skipped for F-015 — ADR-041. Immediately superseded by the maintainer's decision to retire the gate outright for this project (ADR-042) rather than log an eleventh skip next time | Plan | api-gateway-and-mobile-contract |
 | 2026-08-23T17:20:00Z | plan_complete_pending_approval | 14 tasks / 5 waves. Readiness party (solo, Full triage): overall **Fair**, 1 open gap (`estimate-mis-scoped` — Wave 3's T07/T09 parallelism claim, both touching MobileApp's Infrastructure/Services layer with no formal dependency edge) | Plan | api-gateway-and-mobile-contract |
 | 2026-08-23T17:30:00Z | inception_complete | **Inception Complete — 14 tasks, 15 ACs (13 + 2 threat-derived security), 5 waves.** PRD, 5 design artifacts, plan file all approved. Nordstrom standards gate retired for this project (ADR-042). Ready for `/build` | Plan | api-gateway-and-mobile-contract |
+| 2026-08-23T18:00:00Z | construction_start | Build started on `feat/F-015-api-gateway-and-mobile-contract`, branched off `main`. Party Mode set to **subagents** at explicit user request — real Sub-Agent execution per task, worktree-isolated and parallelized within a wave, a deviation from every prior feature's solo build | Build | api-gateway-and-mobile-contract |
+| 2026-08-23T19:30:00Z | wave_complete | **Wave 1 done — F-015-T01, T06, T13**, three real subagents in parallel worktrees, merged `--no-ff`. Gateway project scaffolded (8th process, `AddServiceDefaults`/`UseAgendaBuddyTransportSecurity`/`MapDefaultEndpoints`, hosted over real HTTP in the integration harness via a new `GatewayAnchor`, added to the transport-security order test). MobileApp's six `*ApiService` classes now delegate route-building to seven new plain, Maui-free, testable classes under `MobileApp/Routing/` (16 new tests pin the *current*, still-wrong routes — F-015-T07 corrects them next). OpenAPI specs regenerated for F-014's nine routes. **Backend 452→453, mobile 74→90, integration 175→177 — 720 total, 0 failing.** Worktrees cleaned up | Build | api-gateway-and-mobile-contract |
