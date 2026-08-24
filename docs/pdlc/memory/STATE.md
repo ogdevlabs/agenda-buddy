@@ -70,13 +70,22 @@ _None active. Run `/night-shift <F-NNN>` to start an autonomous run (requires by
 
 ## Current Sub-phase
 
-Verify
+Reflect
 
 ---
 
 ## Last Checkpoint
 
-Operation / Ship / 2026-08-24T13:05:00Z — **Merged, tagged, deploy skipped.** PR #41 merged to `main` as
+Operation / Verify / 2026-08-24T13:20:00Z — **Smoke tests passed against a live 8-process AppHost on
+merged `main`.** All 8 processes (7 services + Gateway) reached `/health`=`Healthy`/`/alive`=200.
+Registered and logged in a fresh Customer through the Gateway; the F-015-T14 fix held live —
+`GET api/v1/notifications` and `GET api/v1/messages` both returned `200 []` through the Gateway (previously
+`gateway-no-route` 404 before the T14 fix). Anonymous request to the same route: 401. Unmapped path
+(`/booking/health`): still `gateway-no-route` 404, confirming T-302 intact post-merge. Known AppHost
+shutdown gotcha recurred; cleaned up by explicit PID. Human sign-off given. `DEPLOYMENTS.md`'s v0.5.0 row
+finalized. Moving to Reflect.
+
+_Previously: Operation / Ship / 2026-08-24T13:05:00Z — **Merged, tagged, deploy skipped.** PR #41 merged to `main` as
 `1d61955` (GitHub API, `merge_method=merge`, true merge commit), tagged **`v0.5.0`**, pushed.
 `dotnet format agenda-buddy-backend.slnf --verify-no-changes` clean on `main` post-merge. Cloud deploy
 skipped again by ADR-035 — fifth consecutive release, third under the deferral; user confirmed at the
@@ -494,21 +503,20 @@ re-planning (`/continue`).
 
 ```json
 {
-  "phase_completed": "Operation / Ship",
-  "next_phase": "Operation / Verify",
+  "phase_completed": "Operation / Verify",
+  "next_phase": "Operation / Reflect",
   "feature": "api-gateway-and-mobile-contract",
   "key_outputs": [
+    "docs/pdlc/memory/episodes/005_api-gateway-and-mobile-contract_2026-08-24.md",
     "docs/pdlc/memory/CHANGELOG.md",
-    "docs/pdlc/memory/DEPLOYMENTS.md",
-    "docs/pdlc/design/api-gateway-and-mobile-contract/verification.md"
+    "docs/pdlc/memory/DEPLOYMENTS.md"
   ],
   "decisions_made": [
-    "Tagged v0.5.0",
-    "Merged PR #41 via GitHub API (merge_method=merge, true merge commit) — 1d61955",
-    "Cloud deploy skipped again per ADR-035 (fifth consecutive, third under the deferral), user-confirmed",
-    "Two real CI-only defects (Routing namespace collision, Integration restore workload gap) found and fixed at the ship gate — see verification.md §3.3"
+    "Smoke tests passed against a live 8-process AppHost on merged main",
+    "No critical vulnerabilities; deploy skipped per ADR-035, verified locally instead",
+    "DEPLOYMENTS.md finalized for local — v0.5.0 row records the live T-302/T14-fix re-verification"
   ],
-  "next_action": "Run smoke tests against a live AppHost — read skills/ship/steps/02-verify.md",
+  "next_action": "Generate the retrospective — read skills/ship/steps/03-reflect.md",
   "pending_questions": []
 }
 ```
