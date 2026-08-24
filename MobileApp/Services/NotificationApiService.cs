@@ -1,5 +1,6 @@
 using System.Text.Json;
 using MobileApp.Models;
+using MobileApp.Routing;
 
 namespace MobileApp.Services;
 
@@ -18,7 +19,8 @@ public class NotificationApiService : INotificationApiService
     public async Task<List<NotificationSummary>> GetNotificationsAsync(CancellationToken ct = default)
     {
         var client = _httpClientFactory.CreateClient("AgendaBuddyApi");
-        var response = await client.GetAsync("notifications", ct);
+        var route = NotificationRouteBuilder.Notifications();
+        var response = await client.GetAsync(route.Path, ct);
 
         if (!response.IsSuccessStatusCode)
             return new List<NotificationSummary>();
@@ -31,7 +33,8 @@ public class NotificationApiService : INotificationApiService
     public async Task<NotificationSummary?> MarkReadAsync(string id, CancellationToken ct = default)
     {
         var client = _httpClientFactory.CreateClient("AgendaBuddyApi");
-        var response = await client.PatchAsync($"notifications/{id}/read", null, ct);
+        var route = NotificationRouteBuilder.MarkRead(id);
+        var response = await client.PatchAsync(route.Path, null, ct);
 
         if (!response.IsSuccessStatusCode)
             return null;

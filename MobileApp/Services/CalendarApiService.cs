@@ -1,5 +1,6 @@
 using System.Text.Json;
 using MobileApp.Models;
+using MobileApp.Routing;
 
 namespace MobileApp.Services;
 
@@ -20,9 +21,9 @@ public class CalendarApiService : ICalendarApiService
     public async Task<List<CalendarDaySummary>> GetAvailabilityAsync(int days = 30, CancellationToken ct = default)
     {
         var client = _httpClientFactory.CreateClient("AgendaBuddyApi");
-        var url = $"calendar?from={DateTime.UtcNow:yyyy-MM-dd}&days={days}";
+        var route = CalendarRouteBuilder.Availability(DateOnly.FromDateTime(DateTime.UtcNow), days);
 
-        var response = await client.GetAsync(url, ct);
+        var response = await client.GetAsync(route.Path, ct);
 
         if (!response.IsSuccessStatusCode)
             return new List<CalendarDaySummary>();

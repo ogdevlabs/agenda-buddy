@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.Json;
 using MobileApp.Models;
+using MobileApp.Routing;
 
 namespace MobileApp.Services;
 
@@ -19,7 +20,8 @@ public class MessagingApiService : IMessagingApiService
     public async Task<List<MessageThreadStub>> GetInboxAsync(CancellationToken ct = default)
     {
         var client = _httpClientFactory.CreateClient("AgendaBuddyApi");
-        var response = await client.GetAsync("messages", ct);
+        var route = MessagingRouteBuilder.Inbox();
+        var response = await client.GetAsync(route.Path, ct);
 
         if (!response.IsSuccessStatusCode)
             return new List<MessageThreadStub>();
@@ -32,7 +34,8 @@ public class MessagingApiService : IMessagingApiService
     public async Task<List<MessageSummary>> GetThreadAsync(string threadId, CancellationToken ct = default)
     {
         var client = _httpClientFactory.CreateClient("AgendaBuddyApi");
-        var response = await client.GetAsync($"messages/thread/{threadId}", ct);
+        var route = MessagingRouteBuilder.Thread(threadId);
+        var response = await client.GetAsync(route.Path, ct);
 
         if (!response.IsSuccessStatusCode)
             return new List<MessageSummary>();
@@ -45,10 +48,12 @@ public class MessagingApiService : IMessagingApiService
     public async Task<MessageSummary?> SendMessageAsync(string recipientEmail, string body, CancellationToken ct = default)
     {
         var client = _httpClientFactory.CreateClient("AgendaBuddyApi");
-        var payload = JsonSerializer.Serialize(new { recipientEmail, body }, JsonOptions);
+        var route = MessagingRouteBuilder.SendMessage();
+        var payload = JsonSerializer.Serialize(
+            MessagingRouteBuilder.BuildSendMessagePayload(recipientEmail, body), JsonOptions);
         var content = new StringContent(payload, Encoding.UTF8, "application/json");
 
-        var response = await client.PostAsync("messages", content, ct);
+        var response = await client.PostAsync(route.Path, content, ct);
 
         if (!response.IsSuccessStatusCode)
             return null;
@@ -60,7 +65,8 @@ public class MessagingApiService : IMessagingApiService
     public async Task<MessageSummary?> MarkReadAsync(string id, CancellationToken ct = default)
     {
         var client = _httpClientFactory.CreateClient("AgendaBuddyApi");
-        var response = await client.PatchAsync($"messages/{id}/read", null, ct);
+        var route = MessagingRouteBuilder.MarkRead(id);
+        var response = await client.PatchAsync(route.Path, null, ct);
 
         if (!response.IsSuccessStatusCode)
             return null;
