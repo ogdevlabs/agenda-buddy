@@ -4,12 +4,15 @@ using Yarp.ReverseProxy.Configuration;
 namespace Gateway;
 
 /// <summary>
-/// F-015-T02 spike deliverable. Builds YARP's route/cluster table by reading the same Aspire
+/// F-015-T02 spiked this against a single ("booking") destination; F-015-T03 expands it to the full
+/// seven-service allowlist. Builds YARP's route/cluster table by reading the same Aspire
 /// service-discovery configuration keys (<c>services:&lt;name&gt;:http:0</c> /
 /// <c>services:&lt;name&gt;:https:0</c>, i.e. the <c>services__&lt;name&gt;__http__0</c> environment
 /// variables <see cref="AgendaBuddy.ServiceDefaults.Extensions.AddServiceDefaults{TBuilder}"/> already
 /// resolves via <c>AddServiceDiscovery()</c> for every service's own outbound <see cref="HttpClient"/>)
-/// — never a static <c>appsettings.json</c> cluster file (ARCHITECTURE.md §2/§5).
+/// — never a static <c>appsettings.json</c> cluster file (ARCHITECTURE.md §2/§5), and never a
+/// catch-all forward (T-302, threat-model.md): <see cref="_routeSpecs"/> is the whole allowlist, and
+/// nothing outside it becomes a <see cref="RouteConfig"/>.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -21,26 +24,56 @@ namespace Gateway;
 /// (Aspire restarting a backend resource) is picked up without the Gateway process itself restarting.
 /// </para>
 /// <para>
-/// <b>Spike finding, recorded in ARCHITECTURE.md §6:</b> polling alone is necessary but not
-/// sufficient. Aspire's <c>WithReference</c> injects the destination address as a plain process
-/// environment variable at the Gateway's own launch. The .NET environment-variables configuration
-/// provider reads the OS environment block exactly once, at process start — a running process's
-/// environment cannot be externally mutated, so <see cref="IConfiguration"/>'s in-process value for
-/// <c>services:booking:http:0</c> is frozen for the Gateway's lifetime no matter how often this
-/// provider polls it. See the measurement and evidence in ARCHITECTURE.md §6 for what was actually
-/// observed running a live AppHost.
+/// <b>Spike finding, recorded in ARCHITECTURE.md §6:</b> a destination address never actually goes
+/// stale under this project's <c>WithReference</c> wiring — Aspire's DCP fronts every
+/// <c>WithReference</c>-injected address with its own stable local proxy port, one level below
+/// <see cref="IConfiguration"/>, and re-points that proxy internally on a restart. The polling logic
+/// here is kept anyway (it costs nothing, and is the correct defense if that behavior ever changes),
+/// but §6 is explicit that T03 should not budget engineering time toward a more aggressive
+/// invalidation strategy — the 2-second poll is already more than sufficient headroom.
 /// </para>
 /// </remarks>
 public sealed class AspireServiceDiscoveryProxyConfigProvider : IProxyConfigProvider, IDisposable
 {
     /// <summary>
     /// How often this provider re-reads <see cref="IConfiguration"/> and re-signals YARP's change
-    /// token. Short enough for a spike measurement; not tuned for production (that's F-015-T03).
+    /// token. ARCHITECTURE.md §6's spike found this headroom already more than sufficient — Aspire's
+    /// DCP proxy absorbs a destination's dynamic-port reassignment one level below
+    /// <see cref="IConfiguration"/>, so a more aggressive interval buys nothing for this project's
+    /// resource-to-resource references. Kept unchanged from the spike rather than re-tuned.
     /// </summary>
     private static readonly TimeSpan _pollInterval = TimeSpan.FromSeconds(2);
 
-    /// <summary>The logical service names this minimal spike proxies to. T03 covers all seven.</summary>
-    private static readonly string[] _destinationNames = ["booking"];
+    /// <summary>
+    /// One entry per route this gateway serves — the explicit <c>api/v1/{service}/**</c> allowlist
+    /// T-302 (threat-model.md) requires. <b>Never a catch-all forward:</b> a path outside every
+    /// pattern here gets no <see cref="RouteConfig"/> at all, so YARP cannot match it — Program.cs's
+    /// <c>MapFallback</c> is what turns that "no match" into the shaped <c>gateway-no-route</c> 404.
+    /// </summary>
+    /// <remarks>
+    /// Path prefixes verified against <c>docs/pdlc/context/01-api-surface.md</c>, not assumed from the
+    /// logical/Aspire resource name — <c>customer</c>, <c>provider</c> and <c>profession</c> map to the
+    /// *plural* route groups (<c>customers</c>, <c>providers</c>, <c>professions</c>) each service
+    /// actually registers. Identity is the only service with two entries: its own
+    /// <c>api/v1/auth/**</c> group, plus the one route in the whole solution mapped outside the
+    /// <c>api/v1/</c> convention — <c>POST /device-token</c>, registered on the app root
+    /// (<c>Identity/Program.cs:154</c>), not under the <c>auth</c> group.
+    /// </remarks>
+    private static readonly (string ServiceName, string RouteId, string PathPattern)[] _routeSpecs =
+    [
+        ("booking", "booking", "/api/v1/booking/{**catch-all}"),
+        ("calendar", "calendar", "/api/v1/calendar/{**catch-all}"),
+        ("customer", "customer", "/api/v1/customers/{**catch-all}"),
+        ("provider", "provider", "/api/v1/providers/{**catch-all}"),
+        ("services", "services", "/api/v1/services/{**catch-all}"),
+        ("profession", "profession", "/api/v1/professions/{**catch-all}"),
+        ("identity", "identity-auth", "/api/v1/auth/{**catch-all}"),
+        ("identity", "identity-device-token", "/device-token"),
+    ];
+
+    /// <summary>The distinct logical/Aspire resource names <see cref="_routeSpecs"/> covers.</summary>
+    private static readonly string[] _destinationNames =
+        _routeSpecs.Select(spec => spec.ServiceName).Distinct(StringComparer.Ordinal).ToArray();
 
     private readonly IConfiguration _configuration;
     private readonly ILogger<AspireServiceDiscoveryProxyConfigProvider> _logger;
@@ -71,12 +104,19 @@ public sealed class AspireServiceDiscoveryProxyConfigProvider : IProxyConfigProv
         var previous = _snapshot;
         var next = BuildSnapshot();
 
-        if (next.DestinationAddress != previous.DestinationAddress)
+        foreach (var name in _destinationNames)
         {
-            _logger.LogInformation(
-                "Aspire service discovery reported a new 'booking' destination address: {Previous} -> {Next}",
-                previous.DestinationAddress,
-                next.DestinationAddress);
+            var previousAddress = previous.DestinationAddresses.GetValueOrDefault(name);
+            var nextAddress = next.DestinationAddresses.GetValueOrDefault(name);
+
+            if (previousAddress != nextAddress)
+            {
+                _logger.LogInformation(
+                    "Aspire service discovery reported a new '{Name}' destination address: {Previous} -> {Next}",
+                    name,
+                    previousAddress,
+                    nextAddress);
+            }
         }
 
         _snapshot = next;
@@ -84,50 +124,61 @@ public sealed class AspireServiceDiscoveryProxyConfigProvider : IProxyConfigProv
     }
 
     /// <summary>
-    /// Builds one route/cluster pair per entry in <see cref="_destinationNames"/>, resolving each
-    /// destination's current address straight from <see cref="IConfiguration"/> — the same
-    /// <c>services:&lt;name&gt;:http:0</c> / <c>:https:0</c> keys <c>AddServiceDiscovery()</c> reads.
+    /// Builds one <see cref="RouteConfig"/> per <see cref="_routeSpecs"/> entry and one
+    /// <see cref="ClusterConfig"/> per distinct service name, resolving each destination's current
+    /// address straight from <see cref="IConfiguration"/> — the same <c>services:&lt;name&gt;:http:0</c>
+    /// / <c>:https:0</c> keys <c>AddServiceDiscovery()</c> reads. A service whose address cannot be
+    /// resolved contributes no route at all (never a route pointing nowhere) — its path(s) fall through
+    /// to Program.cs's <c>MapFallback</c> exactly like any other unmapped path, until the address
+    /// appears.
     /// </summary>
     private ProxyConfigSnapshot BuildSnapshot()
     {
         var routes = new List<RouteConfig>();
-        var clusters = new List<ClusterConfig>();
-        string? firstDestinationAddress = null;
+        var clusters = new Dictionary<string, ClusterConfig>(StringComparer.Ordinal);
+        var destinationAddresses = new Dictionary<string, string?>(StringComparer.Ordinal);
 
         foreach (var name in _destinationNames)
         {
-            var address = ResolveDestinationAddress(name);
-            firstDestinationAddress ??= address;
+            destinationAddresses[name] = ResolveDestinationAddress(name);
+        }
+
+        foreach (var spec in _routeSpecs)
+        {
+            var address = destinationAddresses[spec.ServiceName];
 
             if (address is null)
             {
                 _logger.LogWarning(
                     "No 'services:{Name}:http:0' or 'services:{Name}:https:0' configuration key found; " +
-                    "route for '{Name}' will 503 until it appears.",
-                    name,
-                    name,
-                    name);
+                    "route '{RouteId}' will not be registered until it appears.",
+                    spec.ServiceName,
+                    spec.ServiceName,
+                    spec.RouteId);
                 continue;
             }
 
             routes.Add(new RouteConfig
             {
-                RouteId = name,
-                ClusterId = name,
-                Match = new RouteMatch { Path = $"/api/v1/{name}/{{**catch-all}}" }
+                RouteId = spec.RouteId,
+                ClusterId = spec.ServiceName,
+                Match = new RouteMatch { Path = spec.PathPattern }
             });
 
-            clusters.Add(new ClusterConfig
+            if (!clusters.ContainsKey(spec.ServiceName))
             {
-                ClusterId = name,
-                Destinations = new Dictionary<string, DestinationConfig>(StringComparer.Ordinal)
+                clusters[spec.ServiceName] = new ClusterConfig
                 {
-                    [$"{name}-1"] = new DestinationConfig { Address = address }
-                }
-            });
+                    ClusterId = spec.ServiceName,
+                    Destinations = new Dictionary<string, DestinationConfig>(StringComparer.Ordinal)
+                    {
+                        [$"{spec.ServiceName}-1"] = new DestinationConfig { Address = address }
+                    }
+                };
+            }
         }
 
-        return new ProxyConfigSnapshot(routes, clusters, firstDestinationAddress);
+        return new ProxyConfigSnapshot(routes, clusters.Values.ToList(), destinationAddresses);
     }
 
     /// <summary>
@@ -141,8 +192,8 @@ public sealed class AspireServiceDiscoveryProxyConfigProvider : IProxyConfigProv
 
     /// <summary>
     /// An immutable point-in-time route/cluster table plus the change token YARP subscribes to for
-    /// the next reload. <see cref="DestinationAddress"/> is kept alongside purely so
-    /// <see cref="Refresh"/> can log when it actually changes.
+    /// the next reload. <see cref="DestinationAddresses"/> is kept alongside purely so
+    /// <see cref="Refresh"/> can log when any one of them actually changes.
     /// </summary>
     private sealed class ProxyConfigSnapshot : IProxyConfig
     {
@@ -151,11 +202,11 @@ public sealed class AspireServiceDiscoveryProxyConfigProvider : IProxyConfigProv
         public ProxyConfigSnapshot(
             IReadOnlyList<RouteConfig> routes,
             IReadOnlyList<ClusterConfig> clusters,
-            string? destinationAddress)
+            IReadOnlyDictionary<string, string?> destinationAddresses)
         {
             Routes = routes;
             Clusters = clusters;
-            DestinationAddress = destinationAddress;
+            DestinationAddresses = destinationAddresses;
             ChangeToken = new CancellationChangeToken(_cts.Token);
         }
 
@@ -165,7 +216,7 @@ public sealed class AspireServiceDiscoveryProxyConfigProvider : IProxyConfigProv
 
         public IChangeToken ChangeToken { get; }
 
-        public string? DestinationAddress { get; }
+        public IReadOnlyDictionary<string, string?> DestinationAddresses { get; }
 
         /// <summary>Fires the change token, telling YARP a fresher snapshot is available.</summary>
         public void SignalChange() => _cts.Cancel();
