@@ -44,8 +44,10 @@ public class NotificationsViewModelTests
         Assert.False(vm.HasError);
     }
 
+    // F-015-T08 AC1/AC8: a genuine zero-result success surfaces the empty state (IsEmpty), never
+    // fabricated seed notifications.
     [Fact]
-    public async Task LoadAsync_EmptyResult_FallsBackToSeedData()
+    public async Task LoadAsync_EmptyResult_SetsIsEmptyTrue_NoFabricatedData()
     {
         var service = new Mock<INotificationApiService>();
         service.Setup(s => s.GetNotificationsAsync(It.IsAny<CancellationToken>()))
@@ -55,12 +57,15 @@ public class NotificationsViewModelTests
 
         await vm.LoadCommand.ExecuteAsync(null);
 
-        Assert.NotEmpty(vm.Notifications);
+        Assert.Empty(vm.Notifications);
         Assert.False(vm.HasError);
+        Assert.True(vm.IsEmpty);
     }
 
+    // F-015-T08 AC8: a genuine failure surfaces the error banner (HasError + a real ErrorMessage),
+    // never fabricated seed notifications.
     [Fact]
-    public async Task LoadAsync_NetworkError_FallsBackToSeedData()
+    public async Task LoadAsync_NetworkError_SetsHasErrorTrueWithRealMessage_NoFabricatedData()
     {
         var service = new Mock<INotificationApiService>();
         service.Setup(s => s.GetNotificationsAsync(It.IsAny<CancellationToken>()))
@@ -70,8 +75,27 @@ public class NotificationsViewModelTests
 
         await vm.LoadCommand.ExecuteAsync(null);
 
-        Assert.NotEmpty(vm.Notifications);
-        Assert.False(vm.HasError);
+        Assert.Empty(vm.Notifications);
+        Assert.True(vm.HasError);
+        Assert.False(string.IsNullOrWhiteSpace(vm.ErrorMessage));
+    }
+
+    // ux-review.md finding 1 / PRD Requirement 12 / AC13: the exact empty-state copy — acknowledgement
+    // + value prop, no error tone — on a genuinely empty list.
+    [Fact]
+    public async Task LoadAsync_EmptyResult_RendersExactEmptyStateCopy()
+    {
+        var service = new Mock<INotificationApiService>();
+        service.Setup(s => s.GetNotificationsAsync(It.IsAny<CancellationToken>()))
+               .ReturnsAsync(new List<NotificationSummary>());
+
+        var vm = new NotificationsViewModel(service.Object, CreateMockSession().Object);
+        await vm.LoadCommand.ExecuteAsync(null);
+
+        Assert.True(vm.IsEmpty);
+        Assert.Equal(
+            "No notifications yet — you'll see updates about your appointments here.",
+            vm.EmptyStateMessage);
     }
 
     [Fact]

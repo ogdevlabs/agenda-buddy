@@ -42,8 +42,10 @@ public class CalendarViewModelTests
         Assert.Empty(vm.ErrorMessage);
     }
 
+    // F-015-T08 AC8: a genuine failure surfaces the error banner (HasError + a real ErrorMessage),
+    // never fabricated SeedDataProvider calendar days.
     [Fact]
-    public async Task LoadAsync_NetworkError_FallsBackToSeedData()
+    public async Task LoadAsync_NetworkError_SetsHasErrorTrueWithRealMessage_NoFabricatedData()
     {
         var service = new Mock<ICalendarApiService>();
         service.Setup(s => s.GetAvailabilityAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
@@ -53,7 +55,25 @@ public class CalendarViewModelTests
 
         await vm.LoadCommand.ExecuteAsync(null);
 
-        Assert.NotEmpty(vm.Days);
+        Assert.Empty(vm.Days);
+        Assert.True(vm.HasError);
+        Assert.False(string.IsNullOrWhiteSpace(vm.ErrorMessage));
+    }
+
+    // F-015-T08 AC1: a genuine zero-result success is assigned as-is, never replaced with
+    // fabricated SeedDataProvider calendar days.
+    [Fact]
+    public async Task LoadAsync_EmptyResult_NoFabricatedData()
+    {
+        var service = new Mock<ICalendarApiService>();
+        service.Setup(s => s.GetAvailabilityAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
+               .ReturnsAsync(new List<CalendarDaySummary>());
+
+        var vm = new CalendarViewModel(service.Object, CreateMockSession().Object);
+
+        await vm.LoadCommand.ExecuteAsync(null);
+
+        Assert.Empty(vm.Days);
         Assert.False(vm.HasError);
     }
 }

@@ -64,18 +64,15 @@ public partial class CalendarViewModel : ObservableObject
         {
             var result = await _calendarApiService.GetAvailabilityAsync(7);
 
-            if (result.Count == 0)
-                result = GenerateSeedWeek();
-
             _allDays = result;
             _pageIndex = 0;
             UpdatePage();
         }
-        catch (HttpRequestException)
+        catch (Exception)
         {
-            _allDays = GenerateSeedWeek();
-            _pageIndex = 0;
-            UpdatePage();
+            // Real failure (network, timeout, malformed response, ambiguous write, etc.) — surface it
+            // through ErrorMessage rather than masking it with fabricated data (F-015-T08, AC8).
+            ErrorMessage = "Could not load the calendar. Check your connection and try again.";
         }
         finally
         {
@@ -130,9 +127,6 @@ public partial class CalendarViewModel : ObservableObject
         foreach (var d in Days)
             d.IsSelected = d == value;
     }
-
-    private List<CalendarDaySummary> GenerateSeedWeek() =>
-        SeedDataProvider.GetCalendarWeek(_session.Email, _session.IsProvider, _session.IsCustomer);
 
     [RelayCommand]
     private void ToggleDay(CalendarDaySummary day)

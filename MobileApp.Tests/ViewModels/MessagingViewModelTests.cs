@@ -43,8 +43,10 @@ public class MessagingViewModelTests
         Assert.Empty(vm.ErrorMessage);
     }
 
+    // F-015-T08 AC8: a genuine failure surfaces the error banner (HasError + a real ErrorMessage),
+    // never fabricated seed threads.
     [Fact]
-    public async Task LoadAsync_NetworkError_FallsBackToSeedData()
+    public async Task LoadAsync_NetworkError_SetsHasErrorTrueWithRealMessage_NoFabricatedData()
     {
         var service = new Mock<IMessagingApiService>();
         service.Setup(s => s.GetInboxAsync(It.IsAny<CancellationToken>()))
@@ -54,12 +56,15 @@ public class MessagingViewModelTests
 
         await vm.LoadCommand.ExecuteAsync(null);
 
-        Assert.NotEmpty(vm.Threads);
-        Assert.False(vm.HasError);
+        Assert.Empty(vm.Threads);
+        Assert.True(vm.HasError);
+        Assert.False(string.IsNullOrWhiteSpace(vm.ErrorMessage));
     }
 
+    // F-015-T08 AC1/AC8: a genuine zero-result success surfaces the empty state (IsEmpty), never
+    // fabricated seed threads.
     [Fact]
-    public async Task LoadAsync_EmptyResult_FallsBackToSeedData()
+    public async Task LoadAsync_EmptyResult_SetsIsEmptyTrue_NoFabricatedData()
     {
         var service = new Mock<IMessagingApiService>();
         service.Setup(s => s.GetInboxAsync(It.IsAny<CancellationToken>()))
@@ -69,9 +74,9 @@ public class MessagingViewModelTests
 
         await vm.LoadCommand.ExecuteAsync(null);
 
-        Assert.NotEmpty(vm.Threads);
+        Assert.Empty(vm.Threads);
         Assert.False(vm.HasError);
         Assert.False(vm.IsLoading);
-        Assert.False(vm.IsEmpty);
+        Assert.True(vm.IsEmpty);
     }
 }

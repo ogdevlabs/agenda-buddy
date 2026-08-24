@@ -342,13 +342,17 @@ jobs:
       - name: Pre-pull the MongoDB image
         run: docker pull mongo:7.0
 
+      # /p:MobileWorkloads=false, same fix as the backend job: this project references MobileApp.csproj
+      # (F-015-T07, so MobileClientRouteResolutionTest can call MobileApp.Routing.*RouteBuilder). Without
+      # the flag, MobileApp.csproj's default TargetFrameworks include net10.0-android/net10.0-ios, and
+      # restore fails on this runner with NETSDK1147 (maui-android/maui-ios workloads not installed).
       - name: Restore dependencies
-        run: dotnet restore AgendaBuddy.IntegrationTests/AgendaBuddy.IntegrationTests.csproj
+        run: dotnet restore AgendaBuddy.IntegrationTests/AgendaBuddy.IntegrationTests.csproj /p:MobileWorkloads=false
 
       - name: Build
         run: >
           dotnet build AgendaBuddy.IntegrationTests/AgendaBuddy.IntegrationTests.csproj
-          --no-restore --configuration Release
+          --no-restore --configuration Release /p:MobileWorkloads=false
 
       # DURATION ENFORCEMENT. A slow integration suite is a suite people stop running, and then
       # delete. The budget is asserted rather than merely reported, so growth has to be argued for by

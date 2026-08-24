@@ -5,13 +5,13 @@
      Claude reads this file at the start of every session to auto-resume from the last checkpoint.
      If this file is missing or empty, PDLC will prompt you to run /pdlc init. -->
 
-**Last updated:** 2026-08-23T13:30:00Z
+**Last updated:** 2026-08-24T12:14:03Z
 
 ---
 
 ## Current Phase
 
-Inception Complete — Ready for /build
+Operation
 
 ---
 
@@ -52,7 +52,7 @@ none
 - **Feature record:** docs/pdlc/tasks/F-015/_feature.md
 - **Claimed by:** oscargarcia@ogdevlabs.onmicrosoft.com
 - **Claimed at:** 2026-08-23T14:00:00Z
-- **Branch:** (will be set at build pre-flight)
+- **Branch:** `feat/F-015-api-gateway-and-mobile-contract`
 
 _F-014 shipped as `v0.4.0` and its claim was released. `scripts/tasks.cjs` does not exist in this repo, so
 the claim above is tracked by hand (ROADMAP.md's Status/Claimed-by columns), same fallback used since F-013._
@@ -70,17 +70,90 @@ _None active. Run `/night-shift <F-NNN>` to start an autonomous run (requires by
 
 ## Current Sub-phase
 
-none
+Ship
 
 ---
 
 ## Last Checkpoint
 
-Inception / Plan / 2026-08-23T17:30:00Z — **Inception complete for F-015.** 14 tasks / 5 waves created
-(hand-written, `tasks.cjs` absent). Standards `--design` gate skipped (ADR-041), then the whole Nordstrom
-standards gate **retired outright for this project** (ADR-042, CONSTITUTION §9) — a decade of skips revealed
-it was never applicable, not just unreachable. Readiness party (solo, Full triage): overall **Fair**, 1 open
-gap (`estimate-mis-scoped` — Wave 3's T07/T09 parallelism claim). Plan approved as-is. Ready for `/build`.
+Operation / Ship / 2026-08-24T12:14:03Z — **Ship pre-flight passed.** Channel in-sync, remote sync 0
+behind / 43 ahead. Phase-mismatch guardrail (Current Phase was `Construction`/`Review`, not `Construction
+Complete` — no formal Review/Test sub-phase ran, no episode draft existed) logged and user-confirmed, same
+precedent as F-014. Required test gates verified directly against `verification.md`: 867 tests (468 backend
++ 234 integration + 165 mobile), 0 failing; security scan (dependency audit + secret scan) run by hand,
+clean. Proceeding to the merge gate.
+
+_Previously: Construction / Build / 2026-08-24T02:15:00Z — **Build loop complete — 14/14 tasks, all 15 ACs closed, all
+three threats dispositioned.** F-015-T14's live AppHost run found one real defect invisible to all 863
+automated tests: the Gateway's route allowlist had no entry for `api/v1/messages/**`/`api/v1/notifications/**`
+(both real Customer-service top-level route groups, per ADR-036) — `MobileApp`'s Messaging and Notifications
+screens were unreachable through the one address the client calls. **Fixed in the same gate, not filed**,
+since it directly contradicted the feature's own claim: a two-line `_routeSpecs` addition
+(`Gateway/AspireServiceDiscoveryProxyConfigProvider.cs`) plus 4 regression tests (one pre-existing test
+needed a matching fix — it asserted a single route per cluster, which broke once "customer" stopped being
+one). `verification.md` updated to record found-and-fixed, not deferred. **Final: backend 468 + mobile 165 +
+integration 234 = 867 total, 0 failing.** Moving to Review._
+
+_Previously: Construction / Build / 2026-08-24T01:30:00Z — **Wave 5 complete.** F-015-T11 finalized the four `ux-review.md`
+fix-now findings — and found a real deviation: the report and payment "screens" the design assumed already
+existed did not (F-015-T07 wired the API calls, but nothing consumed them). Built the minimal
+`ProviderReportPage`/`PaymentPage` + ViewModels needed to satisfy AC13 literally, wired the gateway's
+`failedService` field into the error banner via a new `GatewayErrorMapper`, and added a loading indicator
+to the "mark complete" button. **All 15 ACs now closed; all three threats dispositioned.** Backend steady
+468 (one flaky `AgendaBuddy.ServiceDefaults.Tests` failure on the full-suite run, confirmed transient —
+22/22 in isolation, the known cross-test `TracerProvider` flakiness), mobile 136→165, integration steady
+230 — **863 total, 0 failing.** Worktree cleaned up. Only F-015-T14 (closing verification against a live
+AppHost) remains.
+
+_Previously: Construction / Build / 2026-08-24T00:15:00Z — **Wave 4 complete.** F-015-T04 (gateway failure translation,
+JWT-passthrough proof for AC3/AC4, and T-303's transport-security-parity proof — found non-vacuous by
+mutation-testing: temporarily added `UseForwardedHeaders()` to Profession, watched the test go red, reverted),
+F-015-T08 (`SeedDataProvider` deleted — five ViewModels' error banners and empty states are reachable for
+the first time since F-012 shipped), F-015-T10 (`LogoutAsync` calls the server; proved live that the old
+refresh token is rejected afterward) — three real subagents in parallel worktrees, no conflicts. **All 15
+ACs now closed** (13 PRD + 2 threat-derived `[security]`); all three threats dispositioned (T-302/T-303
+mitigated and closed, T-301 accepted per ADR-040). **Backend steady 468, mobile 130→136, integration
+209→230 — 834 total, 0 failing.** Worktrees cleaned up. Remaining: F-015-T11 (UX copy/loading state, no
+hard dependency left unmet) and F-015-T14 (closing verification). Starting Wave 5.
+
+_Previously: Construction / Build / 2026-08-23T22:30:00Z — **Wave 3 complete — the biggest wave.** F-015-T03 (YARP
+allowlist, closes T-302), F-015-T07 (corrected every `*ApiService` route/verb/payload, the status-route
+swap, hid "mark complete" for customers), F-015-T09 (refresh-on-401, ambiguous-write protection), F-015-T12
+(`run-ios.sh` gateway discovery) — four real subagents in parallel worktrees. **All four hit the same
+stale-worktree-snapshot bug**; proactively warned all four after the first one surfaced it, all
+self-corrected by fast-forwarding onto the branch tip before writing code. **No merge conflicts this wave**
+— T07/T09/T12 all touched `MauiProgram.cs`/`MobileApp/` but in non-overlapping ways; git auto-merged clean.
+T07 found and recorded a real spec-vs-reality gap: `api-contracts.md`
+documented Booking GET routes that don't exist; rewired the client to compose with Calendar's real route
+instead of shipping a call that would 404. **Backend steady at 468, mobile 90→130, integration 177→209 —
+807 total, 0 failing.** Worktrees cleaned up. Starting Wave 4 (F-015-T04, T08, T10).
+
+_Previously: Construction / Build / 2026-08-23T20:30:00Z — **Wave 2 complete.** F-015-T02 (YARP/Aspire spike) and
+F-015-T05 (AppHostWiring) built by real subagents in parallel worktrees. **Wave-order bug caught before
+either was built wrong:** AC3/AC4 (JWT passthrough) were reassigned from T05 to T04 — AppHost wiring alone
+can't prove a full request flow without T03's route table, one wave later. **T02's finding:** Aspire's DCP
+orchestrator fronts every `WithReference`-injected address with a stable local proxy port, so a
+destination's dynamic-port reassignment never reaches the Gateway's config — confirmed with two live
+Booking restarts against a running AppHost, not asserted. Merge conflict in `AppHostWiring.cs`/
+`AgendaBuddy.AppHost.csproj` (both agents wired Gateway, T02 minimally for its spike) resolved in favor of
+T05's full seven-service wiring, keeping T02's actual deliverable (`Yarp.ReverseProxy`,
+`AspireServiceDiscoveryProxyConfigProvider`, the ARCHITECTURE.md findings). **Backend 453→468, integration
+steady at 177, mobile steady at 90 — 735 total, 0 failing.** Worktrees cleaned up. Starting Wave 3 (F-015-T03,
+T07, T09, T12).
+
+_Previously: Construction / Build / 2026-08-23T19:30:00Z — **Wave 1 complete.** F-015-T01 (Gateway scaffold),
+F-015-T06 (extract MobileApp route-building), F-015-T13 (regenerate OpenAPI specs). Backend 452→453, mobile
+74→90, integration 175→177 — 720 total, 0 failing._
+
+_Previously: Construction / Build / 2026-08-23T18:00:00Z — Build pre-flight passed: channel in-sync, remote
+sync 0 behind, task store fallback confirmed (14 tasks + `_feature.md`, `tasks.cjs` absent). Branch
+`feat/F-015-api-gateway-and-mobile-contract` created off `main`._
+
+_Previously: Inception / Plan / 2026-08-23T17:30:00Z — **Inception complete for F-015.** 14 tasks / 5 waves
+created (hand-written, `tasks.cjs` absent). Standards `--design` gate skipped (ADR-041), then the whole
+Nordstrom standards gate **retired outright for this project** (ADR-042, CONSTITUTION §9). Readiness party
+(solo, Full triage): overall **Fair**, 1 open gap (`estimate-mis-scoped` — Wave 3's T07/T09 parallelism
+claim). Plan approved as-is._
 
 _Previously: Inception / Plan / 2026-08-23T17:00:00Z — **Design approved for F-015.** Bloom's Taxonomy (3
 rounds + synthesis), then all five design artifacts written and approved: `ARCHITECTURE.md` (gateway as an
@@ -129,7 +202,10 @@ green), tagged, verified against a live stack, episode 003 Final, artifacts arch
 
 ## Party Mode
 
-agent-teams
+subagents — real Sub-Agent (Step 7 "B") execution per task for F-015's Construction, at the user's explicit
+request (2026-08-23), a deviation from every prior feature's solo execution. One focused subagent per task,
+parallelized within a wave via worktree isolation where the wave has 2+ independent tasks; merged back to
+the feature branch after each wave completes.
 
 ---
 
@@ -151,6 +227,7 @@ agent-teams
 | 2026-08-22T23:50:00Z | test_layers_skipped | Test layers 3–6 (E2E, performance/load, accessibility, visual regression) skipped for F-021, as for F-016: no command exists in this project and none is a required §7 gate. Layers 1 (unit, **required**) and 2 (integration, required *by this PRD* because AC-6/AC-13/AC-15 are only meaningful against a running service) both ran green. |
 | 2026-08-23T15:35:00Z | standards_check_skipped | Define Step 6.5 (`--ideate`, advisory tier) skipped for F-015. Same condition re-checked and unchanged: plugin installed, its six source repos do not resolve under this `gh` auth (SSO/VPN issue, not a wrong name — see reference memory). **Ninth consecutive gate blocked by this condition**, and the sixth marked `enforcing` (at Plan/Review) that has never once executed. User chose the light skip (advisory tier, no reason required). Recommendation unchanged since F-013: give it a reachable source or retire it explicitly — **F-017**. |
 | 2026-08-23T17:15:00Z | standards_check_skipped | Plan Step 17.5 (`--design`, **enforcing** tier) skipped for F-015 — same unreachable-source-repos condition, re-checked and unchanged. **Tenth consecutive gate blocked**, and the seventh marked `enforcing` that has never once executed. Treated as an `/override`-equivalent per the gate's own protocol: one-line reason given, recorded as **ADR-041**. Recommendation unchanged since F-013 and now the oldest unaddressed process finding in the project — **F-017**. |
+| 2026-08-24T12:14:03Z | ship_phase_mismatch | `/ship` started for F-015 with Current Phase `Construction` (sub-phase `Review`), not `Construction Complete`. No formal Review or Test sub-phase ran this cycle and no episode draft existed at the time — same process gap recorded at F-014's ship gate. User confirmed proceeding: build is complete (14/14 tasks, 15/15 ACs, 3/3 threats dispositioned) and `verification.md` stands in for the missing episode's Test Summary. Required test gates verified directly against it: 867 tests (468 backend + 234 integration + 165 mobile), 0 failing; security scan (dependency audit + secret scan) run by hand, clean. |
 
 ---
 
@@ -545,3 +622,16 @@ re-planning (`/continue`).
 | 2026-08-23T17:15:00Z | standards_check_skipped | Plan Step 17.5 (`--design`, enforcing) skipped for F-015 — ADR-041. Immediately superseded by the maintainer's decision to retire the gate outright for this project (ADR-042) rather than log an eleventh skip next time | Plan | api-gateway-and-mobile-contract |
 | 2026-08-23T17:20:00Z | plan_complete_pending_approval | 14 tasks / 5 waves. Readiness party (solo, Full triage): overall **Fair**, 1 open gap (`estimate-mis-scoped` — Wave 3's T07/T09 parallelism claim, both touching MobileApp's Infrastructure/Services layer with no formal dependency edge) | Plan | api-gateway-and-mobile-contract |
 | 2026-08-23T17:30:00Z | inception_complete | **Inception Complete — 14 tasks, 15 ACs (13 + 2 threat-derived security), 5 waves.** PRD, 5 design artifacts, plan file all approved. Nordstrom standards gate retired for this project (ADR-042). Ready for `/build` | Plan | api-gateway-and-mobile-contract |
+| 2026-08-23T18:00:00Z | construction_start | Build started on `feat/F-015-api-gateway-and-mobile-contract`, branched off `main`. Party Mode set to **subagents** at explicit user request — real Sub-Agent execution per task, worktree-isolated and parallelized within a wave, a deviation from every prior feature's solo build | Build | api-gateway-and-mobile-contract |
+| 2026-08-23T19:30:00Z | wave_complete | **Wave 1 done — F-015-T01, T06, T13**, three real subagents in parallel worktrees, merged `--no-ff`. Gateway project scaffolded (8th process, `AddServiceDefaults`/`UseAgendaBuddyTransportSecurity`/`MapDefaultEndpoints`, hosted over real HTTP in the integration harness via a new `GatewayAnchor`, added to the transport-security order test). MobileApp's six `*ApiService` classes now delegate route-building to seven new plain, Maui-free, testable classes under `MobileApp/Routing/` (16 new tests pin the *current*, still-wrong routes — F-015-T07 corrects them next). OpenAPI specs regenerated for F-014's nine routes. **Backend 452→453, mobile 74→90, integration 175→177 — 720 total, 0 failing.** Worktrees cleaned up | Build | api-gateway-and-mobile-contract |
+| 2026-08-23T19:35:00Z | task_split | AC3/AC4 reassigned from F-015-T05 to F-015-T04 before either was built — AppHost wiring alone can't prove end-to-end auth passthrough without T03's route table (one wave later). T04 now depends on T03 and T05 both. The readiness party's own flagged wave-order risk, caught one task earlier than the pair it actually named | Build | api-gateway-and-mobile-contract |
+| 2026-08-23T20:30:00Z | wave_complete | **Wave 2 done — F-015-T02, T05**, two real subagents in parallel worktrees. T02's spike: Aspire's DCP orchestrator fronts every `WithReference` address with a stable local proxy port, so a destination's dynamic-port reassignment never reaches the Gateway's config — confirmed with two live Booking restarts against a running AppHost. Merge conflict in `AppHostWiring.cs`/`AgendaBuddy.AppHost.csproj` (both wired Gateway) resolved keeping T05's full seven-service wiring + T02's actual deliverable (`Yarp.ReverseProxy`, `AspireServiceDiscoveryProxyConfigProvider`). **Backend 453→468, integration steady 177, mobile steady 90 — 735 total, 0 failing.** Worktrees cleaned up | Build | api-gateway-and-mobile-contract |
+| 2026-08-23T22:30:00Z | wave_complete | **Wave 3 done — the biggest wave — F-015-T03, T07, T09, T12**, four real subagents in parallel worktrees. All four hit the same stale-worktree-snapshot bug; proactively warned after the first surfaced it, all self-corrected. No merge conflicts. T03 closed T-302 (explicit route allowlist, 404 on any unmapped path). T07 corrected every `*ApiService` route/verb/payload, swapped the status route, hid "mark complete" for customers, and found a real spec-vs-reality gap (Booking has no GET route for an appointment at all — `api-contracts.md` was wrong; rewired to compose with Calendar's real route instead of shipping a 404). T09 wired refresh-on-401 and ambiguous-write protection. T12 wired `run-ios.sh`'s gateway discovery into `MAUI_API_BASE_URL`. **Backend steady 468, mobile 90→130, integration 177→209 — 807 total, 0 failing.** Worktrees cleaned up | Build | api-gateway-and-mobile-contract |
+| 2026-08-24T00:15:00Z | wave_complete | **Wave 4 done — F-015-T04, T08, T10**, three real subagents in parallel worktrees, no conflicts. T04 closed T-303 (verified non-vacuous by mutation-testing — temporarily broke transport-security parity on purpose, watched the test catch it, reverted) and proved AC3/AC4 (JWT passthrough) live through the real gateway pipeline to a real Booking service. T08 deleted `SeedDataProvider` — the error banner and empty-state UI are reachable for the first time since F-012 shipped. T10 wired `LogoutAsync`'s server call and proved live that the old refresh token is rejected afterward. **All 15 ACs now closed; all three threats dispositioned.** Backend steady 468, mobile 130→136, integration 209→230 — 834 total, 0 failing | Build | api-gateway-and-mobile-contract |
+| 2026-08-24T00:20:00Z | task_split | F-015-T14 given an explicit dependency on F-015-T11 — it attests AC13, which is T11's, not exercised transitively by the tasks it already depended on | Build | api-gateway-and-mobile-contract |
+| 2026-08-24T01:30:00Z | wave_complete | **Wave 5 done — F-015-T11 (solo, the last content task).** Found a real deviation: the report/payment screens AC13's wording assumed existed did not — F-015-T07 wired the API calls with no ViewModel/Page/route consuming them. Built the minimal `ProviderReportPage`/`PaymentPage` + ViewModels to satisfy AC13 literally, plus the `GatewayErrorMapper` (failed-service → display name in the error banner) and a loading indicator on "mark complete". **All 15 ACs closed; all three threats dispositioned.** Backend steady 468 (one confirmed-transient flaky test on the full-suite run), mobile 136→165, integration steady 230 — 863 total, 0 failing | Build | api-gateway-and-mobile-contract |
+| 2026-08-24T02:00:00Z | task_complete | **F-015-T14 done (closing verification, solo).** All 15 ACs attested against a real 8-process live AppHost (register→login→real data→status transition→notes→payment→report→stopped-service failover→anonymous 401→T-302 probes→live logout-then-refresh-rejection). Corrected `CLAUDE.md`, the context catalog, and `INTENT.md`'s two stale lines. **Found one real defect invisible to all 863 automated tests:** the Gateway's route allowlist had no entry for `api/v1/messages/**`/`api/v1/notifications/**` | Build | api-gateway-and-mobile-contract |
+| 2026-08-24T02:15:00Z | build_complete | **BUILD COMPLETE — 14/14 tasks, 15/15 ACs, 3/3 threats dispositioned.** T14's found defect **fixed in the same gate, not filed** — a two-line `_routeSpecs` addition plus 4 regression tests (one pre-existing test corrected: it asserted one route per cluster, which broke once "customer" stopped being one). `verification.md` updated to record found-and-fixed. **Backend 468 / integration 234 / mobile 165 = 867, 0 failing.** Moving to Review | Review | api-gateway-and-mobile-contract |
+| 2026-08-24T12:14:03Z | operation_start | Ship started. Channel in-sync, remote sync 0 behind / 43 ahead. Phase-mismatch guardrail logged and user-confirmed (no Review/Test sub-phase, no episode draft — same as F-014). Test gates verified against `verification.md`: 867 tests, 0 failing; security scan clean | Ship | api-gateway-and-mobile-contract |
+| 2026-08-24T12:35:00Z | ci_failure | PR #41 opened (branch pushed for the first time — `Mobile — iOS/Android Build` and `Integration — real services + MongoDB` only trigger on push/PR to `main`, so none had run across F-015's whole Construction). **Two real defects found, both fixed in the same gate, not filed:** (1) `AppShell.xaml.cs`'s unqualified `Routing.RegisterRoute` resolved to the sibling `MobileApp.Routing` namespace F-015-T06 introduced instead of `Microsoft.Maui.Controls.Routing` — CS0234 on both mobile TFMs, fixed by fully qualifying four call sites; (2) `AgendaBuddy.IntegrationTests.csproj`'s new `ProjectReference` to `MobileApp.csproj` (F-015-T07) restored MobileApp's default android/ios TargetFrameworks with no MAUI workloads on that runner (NETSDK1147), fixed by adding `/p:MobileWorkloads=false` to the Integration job's restore/build steps, matching the backend job. Verified locally before pushing: integration suite 234/234 green with the flag; Android TFM's CS0234 gone. `verification.md` §3.3 records both | Ship | api-gateway-and-mobile-contract |
+| 2026-08-24T12:52:00Z | ci_green | Second CI run on PR #41 (`b51d5a8`) — **all 6 jobs green**: `changes`, `build-and-test`, `Mobile — Unit Tests`, `Integration — real services + MongoDB`, `Mobile — Android Build`, `Mobile — iOS Build`, `summary`. Both mobile build jobs and the integration job ran green for the first time ever on this feature | Ship | api-gateway-and-mobile-contract |

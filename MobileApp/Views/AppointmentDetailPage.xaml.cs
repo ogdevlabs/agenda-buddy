@@ -70,7 +70,10 @@ public partial class AppointmentDetailPage : ContentPage
         switch (e.Action)
         {
             case ActionType.Confirm:
-                await _viewModel.ExecuteStatusUpdateAsync(AppointmentStatus.Confirmed);
+                // F-015-T07: F-014's dedicated status route only accepts Booked or Completed as a target
+                // (AppointmentEntity.TransitionTo) — Confirmed is not a legal transition through it. "Confirm"
+                // maps to the real Requested→Booked transition, which either participant may perform.
+                await _viewModel.ExecuteStatusUpdateAsync(AppointmentStatus.Booked);
                 break;
 
             case ActionType.Cancel:
@@ -80,6 +83,13 @@ public partial class AppointmentDetailPage : ContentPage
                     null,
                     "Cancel appointment");
                 if (cancelChoice == "Cancel appointment")
+                    // KNOWN GAP (F-015-T07): F-014's status route also does not accept Cancelled as a target —
+                    // only Booked/Completed. Cancelling an appointment is really Booking's DELETE
+                    // /api/v1/booking/appointments/ route, not a status transition, and IBookingApiService has
+                    // no such method yet. This call will now get a real, correctly-typed 400 from the backend
+                    // (not a 404) rather than silently succeeding against the old wrong-shape PUT — a behavior
+                    // change surfaced here rather than fixed, since wiring cancellation is new client
+                    // functionality outside this task's route-correction scope. Filed for a follow-up task.
                     await _viewModel.ExecuteStatusUpdateAsync(AppointmentStatus.Cancelled);
                 break;
 
@@ -98,6 +108,12 @@ public partial class AppointmentDetailPage : ContentPage
     private async void OnBackClicked(object? sender, EventArgs e)
     {
         await Shell.Current.GoToAsync("..");
+    }
+
+    private async void OnViewPaymentClicked(object? sender, EventArgs e)
+    {
+        var nav = new Dictionary<string, object> { ["appointmentId"] = _viewModel.AppointmentId };
+        await Shell.Current.GoToAsync("payment", nav);
     }
 
     private void OnUnauthorizedAccess(object? sender, EventArgs e)

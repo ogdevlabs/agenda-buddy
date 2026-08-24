@@ -58,7 +58,11 @@ Only Agenda Buddy lets independent service providers manage their entire client 
 
 ## Out of Scope
 
-- Mobile app (web API only for now — mobile client is a future phase)
+- ~~Mobile app (web API only for now — mobile client is a future phase)~~ **Stale as of F-012/F-015.** The
+  mobile app shipped (F-012, `MobileApp/`, .NET MAUI) and, as of F-015 (2026-08-23), it actually reaches the
+  live backend through a gateway (`Gateway/`) — real dashboard/calendar/customers data, real session notes,
+  payments, and provider reports, with the `SeedDataProvider` fixture fallback removed. Flagged as stale at
+  this feature's own Discover step; corrected here at F-015-T14's closing verification.
 - Payment processing (fee tracking exists on ServiceEntity but no payment flow)
 - Journal and notes feature (listed in README as future)
 - Provider-to-customer messaging (Kafka infrastructure is in place but messaging UI is not built)
@@ -73,4 +77,9 @@ Only Agenda Buddy lets independent service providers manage their entire client 
 - MongoDB as the primary datastore — no relational DB migration planned
 - Kafka already wired in for async messaging — new async features should use the existing Kafka infrastructure
 - Docker Compose for local development — all services must run containerized
-- No authentication layer exists yet — this is a critical gap before any public exposure
+- ~~No authentication layer exists yet — this is a critical gap before any public exposure~~ **Stale as of
+  F-001/F-021.** JWT-based authentication has existed since F-001, and F-021 (identity-hardening) added
+  login/register throttling, transport security, and closed the account-destroying-refresh gap. Every
+  service requires a valid JWT except the seven routes deliberately left anonymous (register/login/refresh/
+  logout, and reference-data reads on Professions). Flagged as stale at this feature's own Discover step;
+  corrected here at F-015-T14's closing verification.

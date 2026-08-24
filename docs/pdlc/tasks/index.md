@@ -91,22 +91,29 @@ _No tasks._
 
 | ID | Title | Status | Prio | Depends on |
 |----|-------|--------|------|------------|
-| F-015-T01 | Scaffold the Gateway project — AddServiceDefaults, health/alive, no routing yet | planned | — | — |
-| F-015-T02 | Spike: confirm YARP re-resolves Aspire's dynamic destination ports without a gateway restart | planned | — | F-015-T01 |
-| F-015-T03 | YARP route table: explicit api/v1/{service}/** allowlist, no catch-all forward | planned | — | F-015-T02 |
-| F-015-T04 | Gateway failure translation, and proof the forwarded Host header doesn't break transport security | planned | — | F-015-T03 |
-| F-015-T05 | Wire the Gateway into AppHostWiring.cs — WithReference/WaitFor on all seven services | planned | — | F-015-T01 |
-| F-015-T06 | Extract MobileApp's *ApiService route-building logic into plain, Maui-free classes | planned | — | — |
-| F-015-T07 | Correct every *ApiService's route, verb, and payload; swap status updates to F-014's dedicated route | planned | — | F-015-T06, F-015-T05 |
-| F-015-T08 | Remove SeedDataProvider; let the real error banner and empty-state UI take over | planned | — | F-015-T07 |
-| F-015-T09 | Wire transparent refresh-on-401; never auto-retry a non-idempotent write on ambiguous timeout | planned | — | F-015-T06, F-015-T05 |
-| F-015-T10 | LogoutAsync calls the server; the old refresh token is rejected afterward | planned | — | F-015-T09 |
-| F-015-T11 | Finalize revenue/payment/notification copy; map the failed-service error into the banner; add the status-button loading state | planned | — | F-015-T04, F-015-T08 |
-| F-015-T12 | run-ios.sh discovers the gateway's address and injects MAUI_API_BASE_URL | planned | — | F-015-T05 |
-| F-015-T13 | Regenerate the OpenAPI specs to include F-014's nine new routes | planned | — | — |
-| F-015-T14 | Verification: all 13 ACs attested end to end against a live AppHost, and the documentation this feature made false | planned | — | F-015-T07, F-015-T08, F-015-T09, F-015-T10, F-015-T12 |
+| F-015-T01 | Scaffold the Gateway project — AddServiceDefaults, health/alive, no routing yet | done | — | — |
+| F-015-T02 | Spike: confirm YARP re-resolves Aspire's dynamic destination ports without a gateway restart | done | — | F-015-T01 |
+| F-015-T03 | YARP route table: explicit api/v1/{service}/** allowlist, no catch-all forward | done | — | F-015-T02 |
+| F-015-T04 | Gateway failure translation, JWT-passthrough proof (AC3/AC4, reassigned), and proof the forwarded Host header doesn't break transport security | done | — | F-015-T03, F-015-T05 |
+| F-015-T05 | Wire the Gateway into AppHostWiring.cs — WithReference/WaitFor on all seven services | done | — | F-015-T01 |
+| F-015-T06 | Extract MobileApp's *ApiService route-building logic into plain, Maui-free classes | done | — | — |
+| F-015-T07 | Correct every *ApiService's route, verb, and payload; swap status updates to F-014's dedicated route | done | — | F-015-T06, F-015-T05 |
+| F-015-T08 | Remove SeedDataProvider; let the real error banner and empty-state UI take over | done | — | F-015-T07 |
+| F-015-T09 | Wire transparent refresh-on-401; never auto-retry a non-idempotent write on ambiguous timeout | done | — | F-015-T06, F-015-T05 |
+| F-015-T10 | LogoutAsync calls the server; the old refresh token is rejected afterward | done | — | F-015-T09 |
+| F-015-T11 | Finalize revenue/payment/notification copy; map the failed-service error into the banner; add the status-button loading state | done | — | F-015-T04, F-015-T08 |
+| F-015-T12 | run-ios.sh discovers the gateway's address and injects MAUI_API_BASE_URL | done | — | F-015-T05 |
+| F-015-T13 | Regenerate the OpenAPI specs to include F-014's nine new routes | done | — | — |
+| F-015-T14 | Verification: all 13 ACs attested end to end against a live AppHost, and the documentation this feature made false | done | — | F-015-T07, F-015-T08, F-015-T09, F-015-T10, F-015-T12 |
 
-**0 of 14 done.** 15 acceptance criteria (13 + 2 threat-derived `[security]`); threats T-301…T-303, two mitigated now (T-302, T-303) and one accepted (T-301, ADR-040).
+**14 of 14 done.** All 15 acceptance criteria closed and attested against a live AppHost. All three threats
+dispositioned. Wave 5: mobile 136→165 (T11 +29 — also built the ProviderReportPage/PaymentPage screens AC13
+needed, which didn't exist yet). **One defect found live at T14, invisible to 863 automated tests: the
+Gateway's route allowlist had no entry for `api/v1/messages/**`/`api/v1/notifications/**`** — both real
+Customer-service routes, unreachable through the one address `MobileApp` calls. **Fixed in the same gate**
+(two-line allowlist addition + 4 regression tests), not filed — see
+`docs/pdlc/design/api-gateway-and-mobile-contract/verification.md` §3.1. **Final: backend 468 + mobile 165 +
+integration 234 = 867 total, 0 failing.**
 
 ## F-016 — secure-public-endpoints  `shipped`
 

@@ -23,14 +23,22 @@ public class CustomerApiServiceTests
         return factory.Object;
     }
 
+    // F-015-T07: Customer's real list route returns F-016/ADR-023's paginated envelope
+    // ({items, totalCount, page, pageSize}) of full CustomerEntity objects, not a bare array of
+    // CustomerSummary — the previous fixture (a bare array) does not match the real backend shape.
     [Fact]
-    public async Task GetCustomers_Returns200_DeserializesList()
+    public async Task GetCustomers_Returns200_DeserializesPagedEnvelope()
     {
         const string json = """
-            [
-                {"id":"1","email":"alice@example.com","fullName":"Alice Smith"},
-                {"id":"2","email":"bob@example.com","fullName":"Bob Jones"}
-            ]
+            {
+                "items": [
+                    {"id":"1","email":"alice@example.com","firstName":"Alice","lastName":"Smith"},
+                    {"id":"2","email":"bob@example.com","firstName":"Bob","lastName":"Jones"}
+                ],
+                "totalCount": 2,
+                "page": 1,
+                "pageSize": 25
+            }
             """;
 
         var factory = CreateFactory(HttpStatusCode.OK, json);
@@ -54,6 +62,19 @@ public class CustomerApiServiceTests
         var result = await sut.GetCustomersAsync();
 
         Assert.NotNull(result);
+        Assert.Empty(result);
+    }
+
+    [Fact]
+    public async Task GetCustomers_EmptyPage_ReturnsEmptyList()
+    {
+        const string json = """{"items": [], "totalCount": 0, "page": 1, "pageSize": 25}""";
+
+        var factory = CreateFactory(HttpStatusCode.OK, json);
+        var sut = new CustomerApiService(factory);
+
+        var result = await sut.GetCustomersAsync();
+
         Assert.Empty(result);
     }
 

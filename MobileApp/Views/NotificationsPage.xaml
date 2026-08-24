@@ -78,15 +78,11 @@
                              HorizontalOptions="Center"
                              Spacing="8"
                              Padding="40">
-            <Label Text="No Notifications"
-                   FontSize="20"
-                   FontAttributes="Bold"
-                   TextColor="{StaticResource iOSLabel}"
-                   HorizontalOptions="Center" />
-            <Label Text="You're all caught up."
-                   FontSize="15"
+            <Label Text="{Binding EmptyStateMessage}"
+                   FontSize="16"
                    TextColor="{StaticResource iOSGray}"
-                   HorizontalTextAlignment="Center" />
+                   HorizontalTextAlignment="Center"
+                   AutomationId="EmptyStateLabel" />
         </VerticalStackLayout>
 
         <!-- Notifications list (iOS Notification Center style) -->

@@ -51,5 +51,10 @@ public partial class DashboardPage : ContentPage
         _secureStorage.Remove(JwtDelegatingHandler.JwtKey);
         await Shell.Current.GoToAsync("//login");
     }
+
+    private async void OnViewReportClicked(object? sender, EventArgs e)
+    {
+        await Shell.Current.GoToAsync("report");
+    }
 }
 #endif

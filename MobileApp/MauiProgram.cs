@@ -29,13 +29,13 @@ public static class MauiProgram
         builder.Services.AddTransient<JwtDelegatingHandler>();
         builder.Services.AddHttpClient("AgendaBuddyApi", client =>
         {
-            client.BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"] ?? "http://localhost:6036/");
+            client.BaseAddress = new Uri(ApiBaseUrlResolver.Resolve(builder.Configuration, Environment.GetEnvironmentVariable));
         }).AddHttpMessageHandler<JwtDelegatingHandler>();
 
         // No-auth client for login (no JWT handler — token doesn't exist yet)
         builder.Services.AddHttpClient("AgendaBuddyApiNoAuth", client =>
         {
-            client.BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"] ?? "http://localhost:6036/");
+            client.BaseAddress = new Uri(ApiBaseUrlResolver.Resolve(builder.Configuration, Environment.GetEnvironmentVariable));
         });
 
         // User session (singleton — decoded JWT cached across pages)
@@ -48,6 +48,7 @@ public static class MauiProgram
         builder.Services.AddTransient<ICustomerApiService, CustomerApiService>();
         builder.Services.AddTransient<IMessagingApiService, MessagingApiService>();
         builder.Services.AddTransient<INotificationApiService, NotificationApiService>();
+        builder.Services.AddTransient<IProviderApiService, ProviderApiService>();
         builder.Services.AddSingleton<PushNotificationService>();
 
         // ViewModels
@@ -60,6 +61,8 @@ public static class MauiProgram
         builder.Services.AddTransient<MessagingViewModel>();
         builder.Services.AddTransient<MessageThreadViewModel>();
         builder.Services.AddTransient<NotificationsViewModel>();
+        builder.Services.AddTransient<ProviderReportViewModel>();
+        builder.Services.AddTransient<PaymentViewModel>();
 
         // Views
         builder.Services.AddTransient<LoginPage>();
@@ -71,6 +74,8 @@ public static class MauiProgram
         builder.Services.AddTransient<MessageThreadPage>();
         builder.Services.AddTransient<NotificationsPage>();
         builder.Services.AddTransient<AppointmentDetailPage>();
+        builder.Services.AddTransient<ProviderReportPage>();
+        builder.Services.AddTransient<PaymentPage>();
 
         // Shell
         builder.Services.AddSingleton<AppShell>();

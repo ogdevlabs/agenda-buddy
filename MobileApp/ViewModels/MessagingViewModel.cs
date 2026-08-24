@@ -38,65 +38,19 @@ public partial class MessagingViewModel : ObservableObject
         try
         {
             var results = await _messagingService.GetInboxAsync();
-            Threads = results.Count > 0 ? results : GenerateSeedThreads();
+            Threads = results;
         }
         catch (Exception)
         {
-            Threads = GenerateSeedThreads();
+            // Real failure (network, timeout, malformed response, ambiguous write, etc.) — surface it
+            // through the error banner rather than masking it with fabricated data (F-015-T08, AC8).
+            ErrorMessage = "Could not load messages. Check your connection and try again.";
         }
         finally
         {
             IsLoading = false;
             OnPropertyChanged(nameof(IsEmpty));
         }
-    }
-
-    private List<MessageThreadStub> GenerateSeedThreads()
-    {
-        var now = DateTime.Now;
-
-        if (_session.IsCustomer)
-        {
-            return
-            [
-                new MessageThreadStub
-                {
-                    ThreadId = "thread-p1",
-                    OtherPartyEmail = "sarah.mitchell@agendabuddy.dev",
-                    LastMessageBody = "See you tomorrow at 9 AM! Don't forget to hydrate.",
-                    LastMessageAt = now.AddHours(-1),
-                    UnreadCount = 1
-                }
-            ];
-        }
-
-        return
-        [
-            new MessageThreadStub
-            {
-                ThreadId = "thread-1",
-                OtherPartyEmail = "alex.chen@agendabuddy.dev",
-                LastMessageBody = "Hey! Can we move tomorrow's session to 10:30 AM instead?",
-                LastMessageAt = now.AddMinutes(-23),
-                UnreadCount = 2
-            },
-            new MessageThreadStub
-            {
-                ThreadId = "thread-2",
-                OtherPartyEmail = "priya.sharma@agendabuddy.dev",
-                LastMessageBody = "Thanks for the great session today! See you next week.",
-                LastMessageAt = now.AddHours(-3),
-                UnreadCount = 0
-            },
-            new MessageThreadStub
-            {
-                ThreadId = "thread-3",
-                OtherPartyEmail = "david.thompson@agendabuddy.dev",
-                LastMessageBody = "I'd like to add an extra session on Friday if you have availability.",
-                LastMessageAt = now.AddHours(-8),
-                UnreadCount = 1
-            }
-        ];
     }
 
     [RelayCommand]
