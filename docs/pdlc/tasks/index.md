@@ -210,3 +210,7 @@ _No tasks._
 ## F-025 — booking-correctness  `planned`
 
 _No tasks._ Inception has not started. Split out of F-014 at Discover 2026-08-23; see `docs/pdlc/tasks/F-025/_feature.md` for the three candidate designs for the overlap check.
+
+## F-026 — provider-subscription  `planned`
+
+_No tasks._ Inception has not started. Filed 2026-08-24 while reviewing customer onboarding; no working subscribe capability exists today, for any cardinality — see `docs/pdlc/tasks/F-026/_feature.md` for the full finding.
