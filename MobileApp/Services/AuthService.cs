@@ -2,6 +2,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using MobileApp.Infrastructure;
 using MobileApp.Models;
+using MobileApp.Routing;
 
 namespace MobileApp.Services;
 
@@ -27,8 +28,9 @@ public class AuthService : IAuthService
     {
         var client = _httpClientFactory.CreateClient("AgendaBuddyApiNoAuth");
 
+        var route = AuthRouteBuilder.Login();
         var payload = new { email, password };
-        var response = await client.PostAsJsonAsync("api/v1/auth/login", payload, ct);
+        var response = await client.PostAsJsonAsync(route.Path, payload, ct);
 
         if (!response.IsSuccessStatusCode)
             return false;
@@ -53,8 +55,9 @@ public class AuthService : IAuthService
     {
         var client = _httpClientFactory.CreateClient("AgendaBuddyApiNoAuth");
 
+        var route = AuthRouteBuilder.Register();
         var payload = new { email, password, role };
-        var response = await client.PostAsJsonAsync("api/v1/auth/register", payload, ct);
+        var response = await client.PostAsJsonAsync(route.Path, payload, ct);
 
         if (!response.IsSuccessStatusCode)
             return false;

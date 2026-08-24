@@ -2,6 +2,7 @@ using System.Text;
 using System.Text.Json;
 using Library.Entities;
 using MobileApp.Models;
+using MobileApp.Routing;
 
 namespace MobileApp.Services;
 
@@ -20,9 +21,9 @@ public class BookingApiService : IBookingApiService
     public async Task<List<AppointmentSummary>> GetTodayAppointmentsAsync(CancellationToken ct = default)
     {
         var client = _httpClientFactory.CreateClient("AgendaBuddyApi");
-        var url = $"booking?date={DateTime.UtcNow:yyyy-MM-dd}";
+        var route = BookingRouteBuilder.TodayAppointments(DateOnly.FromDateTime(DateTime.UtcNow));
 
-        var response = await client.GetAsync(url, ct);
+        var response = await client.GetAsync(route.Path, ct);
 
         if (!response.IsSuccessStatusCode)
             return new List<AppointmentSummary>();
@@ -35,7 +36,8 @@ public class BookingApiService : IBookingApiService
     public async Task<AppointmentDetail?> GetAppointmentAsync(string id, CancellationToken ct = default)
     {
         var client = _httpClientFactory.CreateClient("AgendaBuddyApi");
-        var response = await client.GetAsync($"booking/{id}", ct);
+        var route = BookingRouteBuilder.Appointment(id);
+        var response = await client.GetAsync(route.Path, ct);
 
         if (!response.IsSuccessStatusCode)
             return null;
@@ -47,10 +49,11 @@ public class BookingApiService : IBookingApiService
     public async Task<AppointmentDetail?> UpdateStatusAsync(string id, AppointmentStatus status, CancellationToken ct = default)
     {
         var client = _httpClientFactory.CreateClient("AgendaBuddyApi");
-        var body = JsonSerializer.Serialize(new { status = status.ToString() }, JsonOptions);
+        var route = BookingRouteBuilder.UpdateAppointmentStatus(id);
+        var body = JsonSerializer.Serialize(BookingRouteBuilder.BuildUpdateStatusPayload(status), JsonOptions);
         var content = new StringContent(body, Encoding.UTF8, "application/json");
 
-        var response = await client.PutAsync($"booking/{id}", content, ct);
+        var response = await client.PutAsync(route.Path, content, ct);
 
         if (!response.IsSuccessStatusCode)
             return null;
