@@ -13,19 +13,18 @@
 # ─────────────────────────────────────────────────────────────────────────────────────────────────
 # WHAT THIS SCRIPT CANNOT DO FOR YOU, AND WHY
 #
-# 1. THE APP CANNOT REACH THE BACKEND. This is a known, documented defect, not a bug in this script.
-#    MobileApp/MauiProgram.cs:32,38 resolves one base address from `Configuration["ApiBaseUrl"]` —
-#    but nothing ever loads MobileApp/appsettings.json (there is no AddJsonFile/AddJsonStream call
-#    anywhere in the project, and the file is not an embedded resource), so the key is always null
-#    and both HttpClients fall back to the hardcoded `http://localhost:6036/`. Three problems stack
-#    on top of that: one base URL cannot address seven services; every mobile path omits the
-#    `api/v1/` prefix the backend actually serves; and F-013 deliberately removed the fixed 603x
-#    ports (AC-1.4), so 6036 belongs to nothing under the AppHost. The ViewModels therefore fall
-#    back to MobileApp/Services/SeedDataProvider.cs and the app runs on canned data.
-#    Fixing that is F-015 (api-gateway-and-mobile-contract, Planned) — a gateway plus a contract
-#    change, not something a launch script can paper over. See docs/pdlc/context/01-api-surface.md
-#    and docs/pdlc/context/16-mobile-client.md. So: this script gets both halves running and prints
-#    the real, dynamically assigned service URLs; the app itself will show seed data.
+# 1. THE APP CAN NOW REACH A GATEWAY, BUT NOT EVERY ROUTE THROUGH IT YET. F-015-T12 closed the base-
+#    address half of this: this script discovers the Gateway's dynamically-assigned port the same way
+#    it already discovers the seven services' (see WHY PORTS ARE DISCOVERED, below), and injects it
+#    into the simulator process as the MAUI_API_BASE_URL environment variable, which
+#    MobileApp/Infrastructure/ApiBaseUrlResolver.cs (read from MauiProgram.cs) now prefers over the
+#    `ApiBaseUrl` configuration key (still never populated — nothing loads MobileApp/appsettings.json)
+#    and the hardcoded `http://localhost:6036/` fallback, which addresses nothing under the AppHost
+#    (F-013 removed the fixed 603x ports, AC-1.4). What F-015-T12 does NOT fix: every mobile path
+#    still needs the `api/v1/` prefix the backend actually serves (F-015-T07, Planned). Until that
+#    lands, calls through the now-correctly-addressed gateway still 404, and the ViewModels still fall
+#    back to MobileApp/Services/SeedDataProvider.cs. See docs/pdlc/context/01-api-surface.md and
+#    docs/pdlc/context/16-mobile-client.md.
 #
 # 2. TWO XCODE STEPS NEED sudo, so they are checked and explained, never performed:
 #    accepting the Xcode license, and pointing xcode-select at Xcode.app. The second is worked
@@ -38,7 +37,10 @@
 # EndpointAnnotation's Port and TargetPort). Nothing prints those ports to stdout, so they are
 # recovered from the OS: find each service process, list what it listens on, and ask each candidate
 # port for /alive. Each service binds both an HTTP and an HTTPS endpoint and only the HTTP one
-# answers plaintext, which is what the 200 check settles.
+# answers plaintext, which is what the 200 check settles. The Gateway (F-015-T05, the eighth AppHost
+# resource) is found the exact same way — it is one more entry probed by the same loop, not a new
+# discovery mechanism — and its port is the one difference from the seven services: it is also
+# injected into the simulator launch as MAUI_API_BASE_URL (F-015-T12), not just printed for a human.
 #
 # Requires: dotnet, docker (Rancher Desktop: docker lives in ~/.rd/bin, added to PATH below),
 #           curl, lsof, python3, Xcode + an iOS simulator runtime, and the maui workload.
@@ -52,6 +54,7 @@ export PATH="$HOME/.rd/bin:$PATH"
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 APPHOST_LOG="${TMPDIR:-/tmp}/agenda-buddy-apphost.log"
 SERVICES=(Identity Booking Customer Provider Calendar Services Profession)
+GATEWAY="Gateway"         # the eighth AppHost resource (F-015-T05) — project dir matches AppHostWiring.cs's Projects.Gateway
 READY_TIMEOUT=300          # a cold run builds seven services first
 XCODE_APP="/Applications/Xcode.app"
 
@@ -164,10 +167,12 @@ start_apphost() {
   started_apphost=1
 }
 
-# Populates PORTS with "Service port" lines, or fails once READY_TIMEOUT is spent.
+# Populates PORTS with "Service port" lines and GATEWAY_PORT with the gateway's port, or fails once
+# READY_TIMEOUT is spent. The gateway is probed with the exact same http_port_of_pid/pid_of_service
+# mechanism as the seven services (F-015-T12) — it is just one more entry, not a new discovery path.
 wait_for_services() {
-  local waited=0 found
-  say "waiting for all ${#SERVICES[@]} services to answer /health (up to ${READY_TIMEOUT}s; a cold run builds first)"
+  local waited=0 found gw_pid gw_port
+  say "waiting for all ${#SERVICES[@]} services and the gateway to answer /health (up to ${READY_TIMEOUT}s; a cold run builds first)"
   while [ "$waited" -lt "$READY_TIMEOUT" ]; do
     found=""
     for svc in "${SERVICES[@]}"; do
@@ -178,8 +183,19 @@ wait_for_services() {
       [ "$(curl -s -o /dev/null -w '%{http_code}' --max-time 3 "http://127.0.0.1:$port/health")" = "200" ] || continue
       found+="$svc $port"$'\n'
     done
-    if [ "$(printf '%s' "$found" | grep -c .)" = "${#SERVICES[@]}" ]; then
+
+    gw_port=""
+    gw_pid="$(pid_of_service "$GATEWAY")" || true
+    if [ -n "$gw_pid" ]; then
+      port="$(http_port_of_pid "$gw_pid")" || true
+      if [ -n "${port:-}" ] && [ "$(curl -s -o /dev/null -w '%{http_code}' --max-time 3 "http://127.0.0.1:$port/health")" = "200" ]; then
+        gw_port="$port"
+      fi
+    fi
+
+    if [ "$(printf '%s' "$found" | grep -c .)" = "${#SERVICES[@]}" ] && [ -n "$gw_port" ]; then
       PORTS="$found"
+      GATEWAY_PORT="$gw_port"
       return 0
     fi
     if [ "$started_apphost" = "1" ] && ! kill -0 "$apphost_pid" 2>/dev/null; then
@@ -189,13 +205,14 @@ wait_for_services() {
     fi
     sleep 3
     waited=$((waited + 3))
-    printf '    %ss — %s/%s up\r' "$waited" "$(printf '%s' "$found" | grep -c . || true)" "${#SERVICES[@]}"
+    printf '    %ss — %s/%s services up, gateway %s\r' \
+      "$waited" "$(printf '%s' "$found" | grep -c . || true)" "${#SERVICES[@]}" "$([ -n "$gw_port" ] && echo up || echo down)"
   done
   echo
   cat >&2 <<'EOF'
-!! not every service came up. The usual cause is the AppHost's silent-Waiting failure mode: if a
-   secret parameter cannot resolve, its resource goes ValueMissing and every project that depends
-   on it parks in Waiting with NOTHING logged. Check, in order:
+!! not every service (or the gateway) came up. The usual cause is the AppHost's silent-Waiting
+   failure mode: if a secret parameter cannot resolve, its resource goes ValueMissing and every
+   project that depends on it parks in Waiting with NOTHING logged. Check, in order:
 
      1. dotnet user-secrets --project AgendaBuddy.AppHost list
         must contain Parameters:mongodb-password, Parameters:jwt-public-key, Parameters:jwt-private-key
@@ -205,6 +222,9 @@ wait_for_services() {
         transitions are Debug-level only
      4. if MongoDB auth is broken after a password change, drop its volume:
         docker volume ls | grep mongodb-data   # then docker volume rm <name>
+     5. the gateway (AppHostWiring.cs's "gateway" resource) WaitFor()s all seven services, so it
+        will never report healthy before they do — if the seven are up and the gateway still isn't,
+        check the AppHost log for the gateway resource specifically
 EOF
   die "backend not ready after ${READY_TIMEOUT}s"
 }
@@ -218,6 +238,7 @@ report_backend() {
     [ -n "$svc" ] || continue
     printf '    %-12s http://localhost:%s\n' "$svc" "$port"
   done <<< "$PORTS"
+  printf '    %-12s http://localhost:%s\n' "gateway" "$GATEWAY_PORT"
   dash="$(grep -ao 'https://localhost:[0-9]*/login?t=[0-9a-f]*' "$APPHOST_LOG" 2>/dev/null | tail -1 || true)"
   if [ -n "$dash" ]; then
     printf '    %-12s %s\n' "dashboard" "$dash"
@@ -296,6 +317,19 @@ if [ "$run_app" = "1" ]; then
     *)     rid="iossimulator-x64" ;;
   esac
 
+  # F-015-T12: inject the gateway's discovered address into the simulator process. `dotnet build
+  # -t:Run` for an iossimulator RID does not shell out to `xcrun simctl launch` directly here — the
+  # .NET iOS build tooling does that several process-levels down — so there is no simctl invocation
+  # in this script to attach a flag to. Since Xcode 11, simctl (and everything under it) reads any
+  # environment variable prefixed SIMCTL_CHILD_ off the *invoking* process's environment, strips the
+  # prefix, and sets it in the launched app's environment — this is the documented mechanism for
+  # exactly this case (a build/launch chain you don't control the innermost step of). Exporting it
+  # here means it is present in the environment of every process `dotnet build -t:Run` spawns,
+  # including whichever one eventually calls simctl launch.
+  gateway_url="http://localhost:${GATEWAY_PORT}/"
+  say "injecting MAUI_API_BASE_URL=$gateway_url into the simulator launch (via SIMCTL_CHILD_MAUI_API_BASE_URL)"
+  export SIMCTL_CHILD_MAUI_API_BASE_URL="$gateway_url"
+
   say "building and launching MobileApp on the simulator ($rid) — a cold build takes a few minutes"
   dotnet build "$REPO_ROOT/MobileApp/MobileApp.csproj" \
     -p:MobilePlatform=ios \
@@ -303,13 +337,15 @@ if [ "$run_app" = "1" ]; then
     -t:Run \
     -p:_DeviceName=":v2:udid=$udid"
 
-  cat <<'EOF'
+  cat <<EOF
 
-==> NOTE — the app is running on seed data, not on the services above.
-    MobileApp/MauiProgram.cs:32,38 falls back to a single hardcoded http://localhost:6036/ because
-    appsettings.json is never loaded, and no service binds 6036 under the AppHost (ports are dynamic
-    by design, AC-1.4). Every mobile path is also missing the api/v1/ prefix. So the ViewModels use
-    MobileApp/Services/SeedDataProvider.cs. This is F-015 (Planned), not a fault in this script.
+==> NOTE — the app now points at the gateway ($gateway_url), but most routes still 404.
+    F-015-T12 fixed the base address: MobileApp/Infrastructure/ApiBaseUrlResolver.cs reads
+    MAUI_API_BASE_URL (set above) ahead of the ApiBaseUrl config key and the hardcoded
+    http://localhost:6036/ fallback (which addressed nothing under the AppHost — ports are dynamic
+    by design, AC-1.4). Still outstanding: every mobile path is missing the api/v1/ prefix the
+    backend actually serves (F-015-T07, Planned). Until that lands, the ViewModels still fall back
+    to MobileApp/Services/SeedDataProvider.cs for most calls.
     Details: docs/pdlc/context/01-api-surface.md, docs/pdlc/context/16-mobile-client.md
 EOF
 fi
