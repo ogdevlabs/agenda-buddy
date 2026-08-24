@@ -1,6 +1,7 @@
 using Library.Configuration;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
 using MongoDB.Driver;
 using Testcontainers.MongoDb;
@@ -139,7 +140,7 @@ public class ServiceHostFixture<TEntryPoint>(CryptoSessionFixture crypto) : IAsy
         });
 
         var host = new ServiceHost(
-            factory, factory.CreateClient(), databaseName, ContainerConnectionString);
+            factory, factory.CreateClient(), databaseName, ContainerConnectionString, factory.Server);
         _started.Add(host);
         return host;
     }
@@ -200,16 +201,35 @@ public sealed class ServiceHost : IDisposable
 {
     private readonly IDisposable _factory;
 
-    internal ServiceHost(IDisposable factory, HttpClient client, string databaseName, string connectionString)
+    internal ServiceHost(
+        IDisposable factory, HttpClient client, string databaseName, string connectionString, TestServer server)
     {
         _factory = factory;
         Client = client;
         DatabaseName = databaseName;
         Database = new MongoClient(connectionString).GetDatabase(databaseName);
+        Server = server;
     }
 
     /// <summary>A client whose requests traverse the service's full middleware pipeline.</summary>
     public HttpClient Client { get; }
+
+    /// <summary>
+    /// The same <see cref="TestServer"/> <see cref="Client"/> is bound to, exposed so a caller can build
+    /// its own <see cref="HttpMessageHandler"/> against it via <see cref="TestServer.CreateHandler()"/>.
+    /// </summary>
+    /// <remarks>
+    /// F-015-T04: proving JWT passthrough and transport-security parity <b>through the gateway</b> needs
+    /// a real backend reachable by YARP's own outbound <c>HttpClient</c> — but this fixture's backend is
+    /// hosted in-memory, with no TCP socket for a separate Gateway process to dial. Rather than stand up
+    /// a real Kestrel listener (a second, parallel hosting mode this fixture would then have to maintain
+    /// forever), the gateway's tests substitute a custom <c>IForwarderHttpClientFactory</c> that hands
+    /// YARP this exact <see cref="TestServer"/>'s handler for the matching cluster — the request still
+    /// crosses YARP's real proxying code (routing, header transforms, status/error translation), it just
+    /// does so over the same in-memory transport every other harness test already relies on (see
+    /// <see cref="ServiceHost"/>'s class remarks on what "real HTTP" means here).
+    /// </remarks>
+    public TestServer Server { get; }
 
     /// <summary>This test's database, for arranging fixtures and asserting on what was written.</summary>
     public IMongoDatabase Database { get; }

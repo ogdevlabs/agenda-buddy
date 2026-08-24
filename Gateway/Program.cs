@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Gateway;
 using Yarp.ReverseProxy.Configuration;
+using Yarp.ReverseProxy.Transforms;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,7 +19,14 @@ builder.AddServiceDefaults();
 // reassigned port is (attempted to be) picked up without this process restarting; see ARCHITECTURE.md §6
 // for what the spike actually found when tested against a live AppHost restart.
 builder.Services.AddSingleton<IProxyConfigProvider, AspireServiceDiscoveryProxyConfigProvider>();
-builder.Services.AddReverseProxy();
+
+// F-015-T04 / PRD AC5: a response transform, registered once via AddTransforms so it runs for every
+// route regardless of which of the seven clusters it targets, rewrites a destination failure into the
+// gateway-destination-unreachable ProblemDetails shape (api-contracts.md §1) instead of letting YARP's
+// bare 502/504 (or the destination's own untranslated 5xx body) reach MobileApp.
+builder.Services.AddReverseProxy()
+    .AddTransforms(transformBuilderContext =>
+        transformBuilderContext.AddResponseTransform(TranslateDestinationFailureAsync));
 
 var app = builder.Build();
 
@@ -64,3 +72,60 @@ static IResult HandleNoRoute(HttpContext context) =>
         statusCode: StatusCodes.Status404NotFound,
         detail: $"No destination configured for '{context.Request.Path}'.",
         extensions: new Dictionary<string, object?> { ["requestId"] = Activity.Current?.Id });
+
+/// <summary>
+/// F-015-T04 / PRD AC5. YARP's default behavior when a matched destination is unreachable, times out,
+/// or itself answers with a 5xx is to proxy through whatever it got (a bare 502/504 with no body on a
+/// forwarding failure, or the destination's own untranslated 5xx body) — MobileApp would have to infer
+/// which of the seven backend services failed from the route it called. This response transform rewrites
+/// both cases into the one shaped ProblemDetails body <c>api-contracts.md</c> §1 specifies, naming the
+/// failed cluster so the client's error-display logic doesn't have to guess.
+/// </summary>
+/// <remarks>
+/// <para>
+/// <c>ProxyResponse is null</c> is YARP's signal for a forwarding-level failure — connection refused,
+/// timed out, or any other exception before a response was received
+/// (<c>Yarp.ReverseProxy.Forwarder.IForwarderErrorFeature</c> carries the detail, not read here because
+/// the client only needs "which service", not "how it failed"). A destination that DID respond, just
+/// with its own 5xx, is the other half of AC5's "5xx" wording; both are folded into the same shape here
+/// rather than distinguished, because MobileApp's error-display logic treats them identically.
+/// </para>
+/// <para>
+/// Response transforms run before any bytes reach the client — copying the default response
+/// headers/status happens first (see the class remarks on <c>ResponseTransformContext</c>), then each
+/// transform gets a chance to override, and only afterward does YARP decide whether to copy a body.
+/// Setting <see cref="ResponseTransformContext.SuppressResponseBody"/> is what stops it copying the
+/// destination's own body afterward — there is none to copy on the null-response path, but there IS one
+/// on the real-5xx path, and letting that copy proceed after this transform has already written its own
+/// body would corrupt the response.
+/// </para>
+/// </remarks>
+static async ValueTask TranslateDestinationFailureAsync(ResponseTransformContext responseContext)
+{
+    var proxyResponse = responseContext.ProxyResponse;
+    var isDestinationFailure = proxyResponse is null || (int)proxyResponse.StatusCode >= 500;
+    if (!isDestinationFailure)
+    {
+        return;
+    }
+
+    var httpContext = responseContext.HttpContext;
+    var failedService = httpContext.GetReverseProxyFeature().Cluster?.Config.ClusterId ?? "unknown";
+
+    // Stops YARP's default body copy running after this transform, and clears whatever headers the
+    // default header-copy step (which runs before any transform) already applied from the destination's
+    // real 5xx response, so this ProblemDetails body — not the destination's — is what the client sees.
+    responseContext.SuppressResponseBody = true;
+    httpContext.Response.Headers.Clear();
+
+    await Results.Problem(
+        type: "https://agendabuddy.dev/errors/gateway-destination-unreachable",
+        title: "The service handling this request is unavailable",
+        statusCode: StatusCodes.Status502BadGateway,
+        detail: $"The '{failedService}' service did not respond.",
+        extensions: new Dictionary<string, object?>
+        {
+            ["failedService"] = failedService,
+            ["requestId"] = Activity.Current?.Id,
+        }).ExecuteAsync(httpContext);
+}
