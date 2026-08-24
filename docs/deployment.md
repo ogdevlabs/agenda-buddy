@@ -15,15 +15,15 @@ publisher walks that graph and emits infrastructure. Azure Container Apps is the
 supports first-class, via the Azure Developer CLI (`azd`), and it is the right fit here for reasons
 specific to this app:
 
-- **Seven small HTTP services** map one-to-one onto container apps, with scale-to-zero. Nothing here
-  justifies managing Kubernetes.
+- **Eight small HTTP processes** (seven domain services + the Gateway) map one-to-one onto container
+  apps, with scale-to-zero. Nothing here justifies managing Kubernetes.
 - **The AppHost already knows the topology** — who talks to whom, who waits on what, which service
   gets which connection string. AKS would mean re-describing all of it in YAML.
 - **Aspire's telemetry lands somewhere useful for free**: `AddServiceDefaults` exports OTLP, and the
   ACA environment ships a Log Analytics workspace.
 
 The alternatives were considered and rejected for this stage: **AKS** (real cost, real operator
-burden, no benefit at seven small services), **App Service** (no first-class Aspire publisher, and
+burden, no benefit at eight small processes), **App Service** (no first-class Aspire publisher, and
 no scale-to-zero for containers), and **Aspir8 / plain Kubernetes manifests** (adds a toolchain
 without removing one).
 
@@ -36,7 +36,8 @@ The graph is built in one of two shapes, chosen by `AppHostWiring.DeploymentTarg
 |---|---|---|
 | MongoDB | container + persistent volume, password from user secrets | **connection string parameter** — managed cluster (Atlas) |
 | Kafka | container, no volume (E-10) | **connection string parameter** — managed Kafka |
-| The 7 services | processes on dynamic localhost ports | one container app each, external HTTP ingress |
+| The 7 domain services | processes on dynamic localhost ports | one container app each, external HTTP ingress *(⚠️ see gap below — added before the Gateway existed, unchanged since)* |
+| The Gateway | process on a dynamic localhost port, `MobileApp`'s only address | one container app, **no external ingress configured** *(⚠️ backwards — see gap below)* |
 | JWT keys | user secrets, masked in the dashboard | `azd` parameters, stored in Key Vault |
 | `WaitFor` gating | yes — mongo and kafka health-gate startup | **no** — a connection string has no lifecycle to wait on |
 
@@ -46,10 +47,24 @@ whose lifetime is a developer's laptop, and neither has backups, failover or an 
 name. Cloud MongoDB is a managed cluster whose connection string is supplied at deploy time, so
 **nothing in this repository decides anything about production storage.**
 
-Both shapes are asserted by `AgendaBuddy.AppHost.Tests` (47 tests): the cloud shape provisions no
-data containers, supplies each data service as a connection string under the same resource name as
-locally, exposes all seven services externally, waits for nothing, binds no hardcoded port, and keeps
-the JWT keys secret.
+Both shapes are asserted by `AgendaBuddy.AppHost.Tests`: the cloud shape provisions no data
+containers, supplies each data service as a connection string under the same resource name as
+locally, waits for nothing, binds no hardcoded port, and keeps the JWT keys secret.
+
+### ⚠️ Known gap, found in code review, not yet exercised: cloud ingress is backwards post-Gateway
+
+`AppHostWiring.cs`'s `AddApi` helper still unconditionally calls `.WithExternalHttpEndpoints()` on
+each of the seven domain services in the `Cloud` shape — a comment there reads *"the mobile app calls
+every service directly, so each one needs ingress."* That was true before the Gateway (F-015)
+shipped. It is not true now: `MobileApp` calls only the Gateway, and the Gateway resource itself has
+**no** `.WithExternalHttpEndpoints()` call anywhere in the file. Deploying today (against ADR-035's
+deferral, so nobody has) would produce a cloud graph with all seven domain services publicly
+reachable and the one process meant to be the public entry point internal-only — the opposite of the
+intended topology, and a wider attack surface than the local-dev threat model item 2 below describes.
+**Fix before any real deployment**: swap which resource(s) get `.WithExternalHttpEndpoints()` — the
+Gateway should have it, the seven domain services should not. Tracked under **F-017**, which owns the
+container/CD story; not fixed here because cloud deploy is deferred and unexercised (ADR-035), so
+nothing has hit this yet, but the next person to actually run `azd up` will.
 
 ## Prerequisites
 
@@ -137,10 +152,10 @@ specific:
    `docs/issues/ISSUE-002-atlas-credential-rotation.md`. Deploying to the cloud while a credential
    with full read/write access to the cluster sits in public git history means the deployment and the
    attacker share a database.
-2. **All seven services get public ingress.** The mobile app calls them directly, so they must be
-   reachable — but that means seven internet-facing surfaces with no rate limiting, no WAF and no
-   single place to revoke a token. Front them with Azure Front Door or API Management, and make the
-   container apps internal-only, before real users exist.
+2. **The ingress topology needs the fix described above before anything else.** Even once the Gateway
+   is the only externally-reachable process, it alone has no rate limiting, no WAF, and no single
+   place to revoke a token — front it with Azure Front Door or API Management before real users
+   exist.
 3. **No staging/production separation.** One `azd` environment and one Atlas cluster. A deploy is a
    deploy.
 4. **The dashboard is a privileged surface.** The Aspire dashboard exposes environment variables,

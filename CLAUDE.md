@@ -106,8 +106,6 @@ See [docs/pdlc/archive/design/aspire-wiring/ARCHITECTURE.md](docs/pdlc/archive/d
 - `docker-compose.yml` — legacy Kafka + Zookeeper + Schema Registry + service definitions
 - `.github/workflows/dotnet.yml` — CI pipeline: restore → build → test → coverage upload, plus AppHost build and startup guards
 
----
-
 ### Security controls that default OFF
 
 `Security:RateLimiting:Enabled` and `Security:Hsts:Enabled` are **off unless configured**, and gated on

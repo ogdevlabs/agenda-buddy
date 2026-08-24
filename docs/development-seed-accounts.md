@@ -77,6 +77,13 @@ mongoimport --uri="<connection-string>" --db=ProviderDb --collection=providers -
 mongoimport --uri="<connection-string>" --db=CustomerDb --collection=customers --jsonArray --file=compose/data/seed-customers.json
 ```
 
+⚠️ **Unverified against the current database name.** Since F-013 (Aspire), services resolve
+`LibrarySettings:MongoDB:DatabaseName` from a single configured database, not per-entity databases
+named `ProviderDb`/`CustomerDb` — the same staleness the README already flags for
+`scripts/seed/seed-mongo.sh`. Confirm the actual database name from a running AppHost
+(`dotnet user-secrets list` won't show it; check the Aspire dashboard's `mongodb` resource or
+`appsettings.json`) before relying on this option.
+
 ## Testing Flows
 
 With these accounts you can test:
