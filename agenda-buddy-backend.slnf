@@ -14,6 +14,7 @@
       "Customer\\Customer.csproj",
       "EventAndCommands\\EventAndCommands.csproj",
       "EventsAndCommands.Tests\\EventsAndCommands.Tests.csproj",
+      "Gateway\\Gateway.csproj",
       "Identity.Tests\\Identity.Tests.csproj",
       "Identity\\Identity.csproj",
       "Kafka.Tests\\Kafka.Tests.csproj",

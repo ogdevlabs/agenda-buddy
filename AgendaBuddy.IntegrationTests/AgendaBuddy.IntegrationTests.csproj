@@ -45,6 +45,9 @@
     <ProjectReference Include="..\Services\Services.csproj" />
     <ProjectReference Include="..\Profession\Profession.csproj" />
     <ProjectReference Include="..\Identity\Identity.csproj" />
+    <!-- F-015-T01: the eighth process. No MongoDB dependency, so it needs no Testcontainer — see
+         Harness/GatewayHostTest.cs. -->
+    <ProjectReference Include="..\Gateway\Gateway.csproj" />
   </ItemGroup>
 
 </Project>
