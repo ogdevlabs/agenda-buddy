@@ -53,6 +53,9 @@ Agenda Buddy is a scheduling and appointment management platform for independent
 - **MongoDB uses a persistent volume**, so its password must stay stable. If auth breaks: `docker volume rm agendabuddy.apphost-<hash>-mongodb-data`.
 - **Running a service standalone** needs `--no-launch-profile`, else launchSettings overrides `ASPNETCORE_ENVIRONMENT`.
 - macOS has no `timeout` — use background + sleep + kill.
+- **A full `dotnet build agenda-buddy.sln` fails on two independent things, and having "the SDKs" installed does not mean they're wired correctly:**
+  - **iOS:** the `net10.0-ios` target needs `xcode-select -p` pointing at a full `Xcode.app`, not the Command Line Tools (`/Library/Developer/CommandLineTools`) — a fresh macOS setup (or one where CLT was ever installed standalone) defaults to the latter even with Xcode.app present in `/Applications`. Fix: `sudo xcode-select -s /Applications/Xcode.app/Contents/Developer`. `scripts/run-ios.sh` works around this per-process via `DEVELOPER_DIR` (no sudo) rather than changing the global pointer — a plain `dotnet build` gets none of that and needs the global fix.
+  - **Android:** the `net10.0-android` target has no explicit `-android36.0`-style suffix in `MobileApp.csproj`, so the exact `android.jar` it compiles against is whatever the installed `android` dotnet workload manifest pins — currently **API 36** (`Microsoft.Android.Sdk.Darwin/36.1.69`), regardless of which Android SDK Platform you last installed through Android Studio. **Having a newer platform installed (e.g. API 37) does not satisfy this** — `~/Library/Android/sdk/platforms/android-36/` has to exist specifically, or the build fails `XA5207`. Install it via Android Studio's SDK Manager (or `sdkmanager "platforms;android-36"` if you have the standalone cmdline-tools) alongside whatever newer platform you already have.
 
 ## Architecture
 
