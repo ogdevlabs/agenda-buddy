@@ -88,7 +88,18 @@ Design
 
 ## Last Checkpoint
 
-Inception / Design / 2026-08-25T21:49:59Z — **F-017 PRD approved** by `ogdevlabs`. 11 requirements, 12
+Inception / Design / 2026-08-25T22:38:26Z — **F-017 PRD revised and re-approved mid-Design after two real
+findings**, both verified live rather than inferred: (1) this project's actual Aspire/`azd` deployment path
+builds its own container images via .NET SDK container support and never reads the hand-written
+Dockerfiles — the new image-build CI job was re-scoped from Dockerfile-based to SDK-container-based; (2) a
+second, more severe defect found while testing that pivot — `EventAndCommands.csproj`'s own
+`appsettings.json` collides with every service's own file at `dotnet publish` time (`NETSDK1152`), blocking
+**any** containerization path for all 7 services, not just the 3 already known broken. Fix verified
+end-to-end (`dotnet publish -t:PublishContainer` succeeded after the one-line metadata removal; reverted
+after verification, real fix lands at Construction). Now 12 requirements, 13 ACs, 5 user stories. Generating
+design documents next.
+
+_Previously: Inception / Design / 2026-08-25T21:49:59Z — **F-017 PRD approved** by `ogdevlabs`. 11 requirements, 12
 acceptance criteria (all 🧪 test-first), 4 BDD user stories. No UX section (no UI/UX surface). Moving to
 Design — Bloom's Taxonomy questioning next.
 
