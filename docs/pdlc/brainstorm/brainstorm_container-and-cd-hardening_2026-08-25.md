@@ -60,6 +60,34 @@ _Not run._
 **Q4:** Acceptance proof that the new image-build CI job actually works?
 **A:** A live test — edit one Dockerfile on a throwaway branch/PR, confirm the job triggers, builds successfully, and Trivy runs against it. Proven once at Construction's closing verification, the same "found live, not by inspection" standard every prior feature here has used.
 
+## Progressive Thinking (Agent Team Meeting)
+
+**MOM:** [container-and-cd-hardening_progressive-thinking_mom_2026_08_25.md](../mom/container-and-cd-hardening_progressive-thinking_mom_2026_08_25.md)
+
+### Confirmed Facts
+The 3 broken Dockerfiles (`Library`, `Kafka`, `EventAndCommands`) are the only ones misconfigured — the 7 service Dockerfiles are correct on the base-image axis. CI has zero Docker or security-scan awareness today. No container registry exists anywhere in the repo. No roadmap dependency blocks this feature.
+
+### Accepted Inferences
+The new image-build job builds then scans in one job (not two separate jobs). gitleaks scans the full PR diff history, not just the working tree, so a secret added-then-removed within the same PR is still caught. Dependabot (`.github/dependabot.yml`) is added in this feature (user-confirmed). The structural regression test lives alongside `AppHostWiringTest`.
+
+### Key Consequences
+One new CI job, gated on a new `docker` path filter (Dockerfiles + `docker-compose*.yml` + the 7 service dirs): `docker build` → Trivy scan → fail on HIGH/CRITICAL from project-introduced findings. The `ADR-030` `NU1903` suppression must ship in the same PR as the dependency-audit step, or the feature's own first CI run fails on an already-accepted risk. `CLAUDE.md` needs a line for the new required jobs and for Dependabot.
+
+### Risks & Unknowns
+A new CI path filter that's computed but never wired into an `if:` condition would make the whole feature a silent no-op — this pipeline has that exact bug already (the `library` filter). A structural test guarding only the 3 *named* Dockerfiles wouldn't stop a ninth file repeating the same `runtime:8.0` mistake — generalize to "final-stage base image major version matches the SDK stage's." Trivy flagging a CVE inherited from the base image itself has no existing ADR precedent — resolved below.
+
+### Conflicts Resolved
+No agent-vs-agent disagreement arose. Two open decisions were escalated to the user directly:
+1. **Dependabot in scope for F-017?** User: **yes.**
+2. **Base-image-inherited Trivy findings — fail or warn?** User: **warn only** — this project can't fix a base-image CVE directly; failing the build on something unfixable would block unrelated PRs.
+
+### Design Priorities
+1. Verify the new CI filter is actually consumed by an `if:` condition (not dead, like `library`).
+2. `ADR-030` suppression ships atomically with the dependency-audit step.
+3. Delete-and-verify the 3 broken Dockerfiles/Compose services first, independent of the CI work.
+4. Structural test generalized to the base-image-version pattern, not just the 3 named files.
+5. Trivy severity threshold starts conservative — HIGH/CRITICAL only, and only for project-introduced findings (base-image-inherited ones warn).
+
 ## Adversarial Review
 _Not run._
 
