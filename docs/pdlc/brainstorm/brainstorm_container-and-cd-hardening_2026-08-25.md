@@ -1,10 +1,10 @@
 ---
 feature: container-and-cd-hardening
 date: 2026-08-25
-status: prd-approved
-last-updated: 2026-08-25T21:49:59Z
+status: design-in-progress
+last-updated: 2026-08-25T22:38:26Z
 approved-by: ogdevlabs
-approved-date: 2026-08-25T21:49:59Z
+approved-date: 2026-08-25T22:38:26Z
 prd: docs/pdlc/prds/PRD_F-017_container-and-cd-hardening_2026-08-25.md
 ---
 
@@ -149,6 +149,34 @@ _None ingested._
 
 ## UX Discovery
 Skipped: this feature has no UI/UX surface — pure CI/Docker/security-scan infrastructure work with no end-user-facing component. Confirmed at Socratic Round 1 Q2 and reconfirmed by Friday/Muse at the Progressive Thinking meeting ("nothing in our domains").
+
+## Design Discovery (Bloom's Taxonomy)
+
+### Round 1 — Mechanics / Round 2 — Apply (merged; most mechanics were already settled during Discover)
+
+**Q1:** Does the new security-scan step (dependency audit + gitleaks) live inside the existing `build-and-test` job, or as a new separate job?
+**A:** New separate job (`security-scan`), gated on the same `api` filter `build-and-test` already uses.
+
+**Q2:** Does the new image-build-and-scan matrix job live in the same `dotnet.yml`, or a new workflow file?
+**A:** Same `dotnet.yml` — the only workflow file in the repo by deliberate convention.
+
+**Q3:** Do the 3 waves land as 3 separate PRs, or 3 commits in one PR/branch?
+**A:** 3 separate PRs, merged sequentially — each independently valuable, matching this project's one-PR-per-logical-change convention.
+
+### Round 3 — Trade-offs and Judgments
+
+**Q4:** If the dependency-audit tool and Trivy report conflicting severity for the same underlying CVE, which source wins?
+**A:** They never conflict in practice — they scan disjoint layers (dependency audit: .NET/NuGet packages only; Trivy: OS-layer packages inside the built image only). No tie-breaker rule needed.
+
+### Synthesis
+
+Neo proposed a design sketch (jobs, no data model, no API surface, key decisions on job placement). Before validating it, the user asked Neo to verify Aspire's actual deployment model against https://aspire.dev/deployment/ first. This surfaced two material findings that revised the PRD (re-approved 2026-08-25T22:38:26Z):
+
+1. **This project's actual Aspire/`azd` deployment path (`AppHostWiring.cs`'s `DeploymentTarget.Cloud`) builds its own container images directly from each service's project file via .NET SDK container support — it never reads the hand-written Dockerfiles.** Those Dockerfiles serve only the already-broken legacy `docker compose up` path. User decision (of three options offered): re-scope the new image-build-and-scan job to target SDK container support instead of the Dockerfiles.
+2. **A second, more severe defect, found and verified live while testing the pivot:** `EventAndCommands.csproj`'s own `appsettings.json` (`CopyToOutputDirectory: Always`) collides with every consuming service's own `appsettings.json` at `dotnet publish` time (`NETSDK1152`) — confirmed by both a local `dotnet publish` repro and an actual `docker build` of `Booking/Dockerfile` failing at its publish step. This blocks **any** containerization path, Dockerfile-based or SDK-container-based, for **all seven** services, not just the three already known to be broken. User decision: add to Wave 1 as a new PRD requirement.
+3. **The fix was verified end-to-end**, not just inferred: removed the `CopyToOutputDirectory` metadata experimentally, re-ran `dotnet publish -t:PublishContainer` for `Booking`, confirmed a real image (`booking:test-scan`) was built and loaded into the local Docker daemon with the correct entrypoint and exposed port — then reverted the experimental change (Construction's job to land it for real, with a test).
+
+Revised synthesis, confirmed by the user via PRD re-approval: `dotnet.yml` gains a `security-scan` job and a `docker-build-and-scan` job (matrix, SDK container support, no Dockerfile); `EventAndCommands.csproj`'s publish conflict is fixed in Wave 1 alongside the 3 deletions; 3 sequential PRs; no data model or API surface changes anywhere.
 
 ## Discovery Summary
 
