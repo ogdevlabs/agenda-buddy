@@ -158,11 +158,11 @@ _The Nordstrom Standards Readiness gate does not apply to this project (`ADR-042
 
 ## Design Docs
 
-- Architecture: _pending Design sub-phase_
-- Data model: _pending Design sub-phase — no data-model change expected_
-- API contracts: _pending Design sub-phase — no API contract change expected_
-- Threat model: _pending Design sub-phase — always present; triage outcome may be Skip / Lite / Full_
-- UX review: _not applicable — UX Discovery was skipped at Discover (no UI/UX surface)_
+- Architecture: [ARCHITECTURE.md](../design/container-and-cd-hardening/ARCHITECTURE.md)
+- Data model: [data-model.md](../design/container-and-cd-hardening/data-model.md) — no changes
+- API contracts: [api-contracts.md](../design/container-and-cd-hardening/api-contracts.md) — no changes
+- Threat model: [threat-model.md](../design/container-and-cd-hardening/threat-model.md) — Full triage, 6 threats, 2 mitigate-now
+- UX review: [ux-review.md](../design/container-and-cd-hardening/ux-review.md) — Skip triage, no UI surface
 - Additional: —
 
 ---
