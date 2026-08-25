@@ -923,3 +923,10 @@ one file would be inconsistent with how every other file in the repository is pr
 
 **Consequences.** None specific to this feature. Re-evaluation trigger: none identified — this is the same
 residual risk every CI pipeline with human-reviewed changes carries.
+
+---
+
+**Note (issue #55 bookkeeping):** Threat-derived security ACs added to the F-017 PRD post-Define, at the
+Design threat-modeling gate (Step 10.5/14.5): T-001 (unpinned third-party Actions) and T-002 (secret-value
+CI-log leakage). Both are `[security]`-tagged, test-first, added as PRD ACs 14-15, and materialized on tasks
+F-017-T09 and F-017-T05 respectively via `tasks.cjs ac add`.

@@ -70,6 +70,10 @@ Entirely internal/operational — this feature has no end-user-facing component.
 11. The new image-build job carries `timeout-minutes: 10`; none of the five pre-existing jobs are modified. 🧪 test-first
 12. `.github/dependabot.yml` exists, and a live Dependabot pull request is confirmed to open after this feature merges to `main`. 🧪 test-first
 13. The new image-build job does not execute `docker run` or any container health/smoke check against a built image. 🧪 test-first
+14. `[security] (T-001)` Every `uses:` line referencing `gitleaks-action` or the Trivy action in `dotnet.yml` matches a 40-character hex commit SHA, not a tag or branch name. 🧪 test-first
+15. `[security] (T-002)` Given the gitleaks canary test runs against the Atlas-credential-shaped fixture, the job's captured log output contains the fixture's file path and line number but never the fixture's literal secret string. 🧪 test-first
+
+*(ACs 14-15 added post-Define at the Design threat-modeling gate, Step 10.5/14.5 — logged as a PRD addendum, not a Define-gate reopen. See `threat-model.md` T-001/T-002 and `DECISIONS.md`'s threat-derived-AC log entry.)*
 
 ---
 
