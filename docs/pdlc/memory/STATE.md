@@ -82,13 +82,17 @@ _None active. Run `/night-shift <F-NNN>` to start an autonomous run (requires by
 
 ## Current Sub-phase
 
-Define
+Design
 
 ---
 
 ## Last Checkpoint
 
-Inception / Define / 2026-08-25T21:38:15Z — **F-017 Discover complete.** Socratic (3 rounds), Progressive
+Inception / Design / 2026-08-25T21:49:59Z — **F-017 PRD approved** by `ogdevlabs`. 11 requirements, 12
+acceptance criteria (all 🧪 test-first), 4 BDD user stories. No UX section (no UI/UX surface). Moving to
+Design — Bloom's Taxonomy questioning next.
+
+_Previously: Inception / Define / 2026-08-25T21:38:15Z — **F-017 Discover complete.** Socratic (3 rounds), Progressive
 Thinking (solo, 2 escalations resolved: Dependabot in scope, base-image-inherited CVEs warn-only), Adversarial
 Review (11 findings, 3 follow-ups), Edge Case Analysis (7 findings triaged) all done. Discovery summary
 confirmed by `ogdevlabs`. Key decision: stays one PRD, but delivered as 3 independently-mergeable waves at
@@ -531,19 +535,19 @@ re-planning (`/continue`).
 
 ```json
 {
-  "phase_completed": "Inception / Discover",
-  "next_phase": "Inception / Define",
+  "phase_completed": "Inception / Define",
+  "next_phase": "Inception / Design",
   "feature": "container-and-cd-hardening",
   "key_outputs": [
-    "docs/pdlc/brainstorm/brainstorm_container-and-cd-hardening_2026-08-25.md",
-    "docs/pdlc/mom/container-and-cd-hardening_progressive-thinking_mom_2026_08_25.md"
+    "docs/pdlc/prds/PRD_F-017_container-and-cd-hardening_2026-08-25.md",
+    "docs/pdlc/brainstorm/brainstorm_container-and-cd-hardening_2026-08-25.md"
   ],
   "decisions_made": [
-    "Delete the 3 broken class-library Dockerfiles/Compose services rather than fix their base image",
-    "Security scan = 3 distinct tools (dotnet list package --vulnerable, gitleaks, Trivy for image layers), not one",
-    "Delivered as 3 independently-mergeable waves at Plan; Dependabot added; base-image-inherited Trivy findings warn-only"
+    "11 requirements, 12 test-first ACs, 4 BDD user stories; no User Experience section (non-UI feature)",
+    "Standards Alignment section records the ADR-042 retirement rather than a skip-with-notice placeholder",
+    "PRD approved as drafted (2 minor copyedits only, no scope change) — approved by ogdevlabs"
   ],
-  "next_action": "Read skills/brainstorm/steps/02-define.md and generate the PRD draft",
+  "next_action": "Read skills/brainstorm/steps/03-design.md and begin Bloom's Taxonomy design questioning",
   "pending_questions": []
 }
 ```
@@ -687,3 +691,4 @@ re-planning (`/continue`).
 | 2026-08-24T14:15:00Z | operation_complete | **F-015 shipped and Operation closed the same session it was built and ship-tested in.** Episode 005 **Final**; PRD, brainstorm, design artifacts, and MOM archived; `episodes/index.md` backfilled (rows 002–005, stale since episode 001); OVERVIEW, ROADMAP, METRICS updated (including the F-015 Readiness Trend reconciliation and a new UX Scorecard Trend row); claim released. Three defects found by running the software/CI — one in Construction (T14), two at the Ship gate itself — all fixed in the gates that found them. Second consecutive feature with no formal Review sub-phase (F-014, F-015) — flagged as a recurring pattern in METRICS.md's Trend Summary, with a concrete recommendation (open the PR as a draft at Construction start, not at Ship) | Idle | none |
 | 2026-08-25T19:51:32Z | roadmap_claim | **F-017 `container-and-cd-hardening` claimed** (`oscargarcia@ogdevlabs.onmicrosoft.com`). Corrected F-021's stale task-store record (`in_progress`→`shipped`) while claiming — ROADMAP.md already had it right. Inception bookkeeping put on branch `pdlc/F-017-container-and-cd-hardening` instead of pushed straight to `main`, per user override of the skill's default | Discover | container-and-cd-hardening |
 | 2026-08-25T21:38:15Z | discover_complete | **Socratic (3 rounds, Sketch mode), Progressive Thinking (solo, 8-agent team meeting, 2 escalations resolved), Adversarial Review (11 findings, 3 follow-ups), Edge Case Analysis (7 findings triaged).** Key decisions: delete the 3 broken class-library Dockerfiles rather than fix them; security scan is 3 distinct tools (dependency audit, gitleaks, Trivy), not one; delivered as 3 independently-mergeable waves at Plan; Dependabot added to scope; base-image-inherited Trivy findings warn-only. Discovery summary confirmed by `ogdevlabs`. Moving to Define | Define | container-and-cd-hardening |
+| 2026-08-25T21:49:59Z | prd_approved | **F-017 PRD approved** by `ogdevlabs`. 11 requirements, 12 acceptance criteria (all 🧪 test-first), 4 BDD user stories (`F-017-US-01`–`04`). Standards Alignment section records the ADR-042 retirement directly. Copyedit pass (elements-of-style) made 2 minor prose fixes, no scope change. Moving to Design | Design | container-and-cd-hardening |

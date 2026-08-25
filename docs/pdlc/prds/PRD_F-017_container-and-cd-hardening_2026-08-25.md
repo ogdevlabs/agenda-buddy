@@ -1,7 +1,7 @@
 # PRD: Container and CI/CD Hardening
 
 **Date:** 2026-08-25
-**Status:** Draft
+**Status:** Approved
 **Feature slug:** container-and-cd-hardening
 **Episode:** _Will be assigned after delivery_
 
@@ -164,6 +164,6 @@ _The Nordstrom Standards Readiness gate does not apply to this project (`ADR-042
 
 ## Approval
 
-**Approved by:**
-**Date approved:**
+**Approved by:** ogdevlabs
+**Date approved:** 2026-08-25
 **Notes:**

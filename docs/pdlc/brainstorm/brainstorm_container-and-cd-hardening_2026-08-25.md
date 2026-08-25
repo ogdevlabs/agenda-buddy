@@ -1,11 +1,11 @@
 ---
 feature: container-and-cd-hardening
 date: 2026-08-25
-status: discover-complete
-last-updated: 2026-08-25T21:38:15Z
+status: prd-approved
+last-updated: 2026-08-25T21:49:59Z
 approved-by: ogdevlabs
-approved-date: 2026-08-25T21:38:15Z
-prd:
+approved-date: 2026-08-25T21:49:59Z
+prd: docs/pdlc/prds/PRD_F-017_container-and-cd-hardening_2026-08-25.md
 ---
 
 # Brainstorm Log: container-and-cd-hardening
