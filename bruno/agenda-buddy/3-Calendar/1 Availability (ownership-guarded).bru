@@ -4,7 +4,7 @@ meta {
   seq: 1
 }
 get {
-  url: {{calendarUrl}}/api/v1/calendar/availability/{{providerEmail}}
+  url: {{gatewayUrl}}/api/v1/calendar/availability/{{providerEmail}}
 }
 tests {
   test("200 for the owner, 403 for anyone else", function () {

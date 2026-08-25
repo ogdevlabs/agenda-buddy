@@ -4,7 +4,7 @@ meta {
   seq: 2
 }
 get {
-  url: {{customerUrl}}/api/v1/customers/{{customerEmail}}
+  url: {{gatewayUrl}}/api/v1/customers/{{customerEmail}}
 }
 docs {
   Authenticated but **not** role-gated — a customer legitimately reads their own record through here.

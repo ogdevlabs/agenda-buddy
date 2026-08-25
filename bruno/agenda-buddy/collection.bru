@@ -13,8 +13,12 @@ headers {
 docs {
   # Agenda Buddy — local API collection
 
-  Seven independent microservices, so **one base URL per service**, not one for the whole API.
-  There is no gateway (F-015 is the feature that adds one).
+  As of **F-015 (v0.5.0)** every request outside `7-Health` goes through the **Gateway** at
+  `{{gatewayUrl}}` — the same `api/v1/{service}/**` allowlist `MobileApp` uses, forwarded byte-for-byte
+  with no path rewriting. `7-Health` is the one exception: `/health` and `/alive` are not in the
+  Gateway's allowlist by design (T-302), so each service's health still has to be checked directly
+  against its own `*Url` variable — that's the only place those seven per-service variables are still
+  used.
 
   ## Read this first: run `0-Auth/2 Login` before anything else
 
@@ -28,13 +32,15 @@ docs {
 
   ## Which environment to pick
 
-  - **Local (standalone)** — fixed ports from each service's `appsettings.json`. Start only what you
-    need: `dotnet run --project Provider --no-launch-profile`. Ports are stable, so this is the one to
-    use day to day.
+  - **Local (standalone)** — fixed ports from each service's `appsettings.json` for the seven `*Url`
+    (health-check) variables: `dotnet run --project Provider --no-launch-profile`, etc. **`gatewayUrl`
+    still needs to be filled in by hand even here** — the Gateway has no `appsettings.json` /
+    `launchSettings.json` of its own yet, so it only ever runs under the AppHost with a dynamic port,
+    regardless of which environment you picked.
   - **Local (Aspire AppHost)** — `dotnet run --project AgendaBuddy.AppHost` starts everything, but
-    **Aspire assigns ports dynamically**, so you must fill the port variables in yourself each run
-    (the dashboard lists them). Also note: Aspire does **not** run the services as `Development`, so
-    Swagger UI is unavailable there.
+    **Aspire assigns every port dynamically**, so you must fill `gatewayUrl` (and, only if you need
+    `7-Health`, the seven `*Url` variables) in yourself each run — the dashboard lists them. Also note:
+    Aspire does **not** run the services as `Development`, so Swagger UI is unavailable there.
 
   ## Regenerating the OpenAPI specs
 
