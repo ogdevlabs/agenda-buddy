@@ -178,6 +178,14 @@ Neo proposed a design sketch (jobs, no data model, no API surface, key decisions
 
 Revised synthesis, confirmed by the user via PRD re-approval: `dotnet.yml` gains a `security-scan` job and a `docker-build-and-scan` job (matrix, SDK container support, no Dockerfile); `EventAndCommands.csproj`'s publish conflict is fixed in Wave 1 alongside the 3 deletions; 3 sequential PRs; no data model or API surface changes anywhere.
 
+## Threat Modeling Triage
+- Trust boundary changes: yes — two new third-party GitHub Actions (gitleaks, Trivy) enter the CI pipeline's trust boundary for the first time
+- Regulated data: no
+- New attack surface: yes — third-party Actions running with CI job context is a supply-chain attack surface, even though no new user-facing HTTP surface is added
+- Triage tier: Full (2/3)
+
+Full party convened (solo mode). MOM: [MOM_threat-model_container-and-cd-hardening_2026-08-25.md](../mom/MOM_threat-model_container-and-cd-hardening_2026-08-25.md). 6 threats identified across 4 trust boundaries — 2 "mitigate now" (T-001 unpinned Actions, T-002 secret-value log leakage), 4 "accept" (T-003 transitive-package risk already pre-existing, T-004 resource exhaustion already bounded, T-005 Dependabot review-bypass already mitigated by branch protection, T-006 workflow tampering already mitigated by branch protection). Full record: [threat-model.md](../design/container-and-cd-hardening/threat-model.md). One open question for the human: external-contributor policy if this repo is/becomes public.
+
 ## Discovery Summary
 
 **Feature:** container-and-cd-hardening (F-017)
