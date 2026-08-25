@@ -840,3 +840,86 @@ this repository. `F-017`'s backlog item "give the standards gate a reachable sou
 is **closed by this ADR** — retirement was the answer, not a VPN fix. If this project is ever formally
 brought under Nordstrom's enterprise standards program (a change of organizational context, not a technical
 one), this ADR should be revisited and superseded.
+
+---
+
+## ADR-043 — Malicious transitive NuGet package risk during the new per-service publish step is accepted (T-003)
+
+**Date:** 2026-08-25 · **Status:** Accepted · **Feature:** F-017 · **Threat:** T-003
+
+**Context.** F-017 adds a CI job that runs `dotnet publish -t:PublishContainer` for each of the seven
+remaining services. NuGet packages can execute arbitrary code via MSBuild targets/install scripts at
+restore or build time; a compromised transitive dependency could exfiltrate the CI job's ambient token
+during any of these seven new publish invocations.
+
+**Decision.** Accept the risk. This is not new exposure — `build-and-test` already runs `dotnet
+restore`/`dotnet build` on every pull request today, the same risk class this feature's seven new
+invocations extend, not introduce.
+
+**Rationale.** Fixing "arbitrary NuGet packages can execute code at build time" is a generic .NET
+supply-chain concern that would require a solution-wide control (a package allowlist, `dotnet nuget
+verify`) applicable to every project in the solution, not just the seven this feature touches — out of
+scope for a CI/container-hardening feature. F-017's own dependency-audit job (Requirement 4) is itself a
+partial mitigation for the broader concern.
+
+**Consequences.** Re-evaluation trigger: if this repository begins accepting external contributions, or if
+a solution-wide NuGet-supply-chain control is scoped as its own feature. No task or acceptance criterion
+follows from this decision.
+
+---
+
+## ADR-044 — Resource exhaustion from the 7-way parallel image-build matrix is accepted (T-004)
+
+**Date:** 2026-08-25 · **Status:** Accepted · **Feature:** F-017 · **Threat:** T-004
+
+**Context.** F-017's new `docker-build-and-scan` job runs a 7-way parallel matrix (`dotnet publish
+-t:PublishContainer` + Trivy scan per service) on every pull request touching a service directory. Combined
+with Trivy's uncached CVE-database download, this could slow CI turnaround on a busy day.
+
+**Decision.** Accept the risk. The job already carries `timeout-minutes: 10` per matrix entry (Requirement
+10), bounding the worst case.
+
+**Rationale.** This is a reliability/cost concern, not a security threat with attacker benefit — this
+repository has no external contributors triggering CI at volume today. The `timeout-minutes` bound is
+sufficient for the actual usage pattern.
+
+**Consequences.** Re-evaluation trigger: if CI cost or turnaround time becomes a real problem in practice,
+revisit Trivy CVE-database caching (already recorded as a Known Risk in the F-017 PRD, not actioned here).
+
+---
+
+## ADR-045 — Dependabot bypassing PR-review discipline is accepted, because it cannot (T-005)
+
+**Date:** 2026-08-25 · **Status:** Accepted · **Feature:** F-017 · **Threat:** T-005
+
+**Context.** F-017 adds `.github/dependabot.yml`. If Dependabot PRs were auto-merged, a compromised upstream
+package version could land on `main` without human review.
+
+**Decision.** Accept the risk. This feature adds no auto-merge capability — Dependabot PRs go through the
+identical PR-review process as any other PR.
+
+**Rationale.** `CONSTITUTION.md` §6 already requires PR + human approval on `main`, unchanged by this
+feature. There is nothing new to mitigate: the existing control already covers the new PR source.
+
+**Consequences.** Re-evaluation trigger: if a future feature proposes Dependabot auto-merge, that feature's
+own threat model must re-examine this decision — it does not carry forward automatically.
+
+---
+
+## ADR-046 — A workflow-file change weakening F-017's own new gates is accepted, because branch protection already covers it (T-006)
+
+**Date:** 2026-08-25 · **Status:** Accepted · **Feature:** F-017 · **Threat:** T-006
+
+**Context.** Anyone with PR access could propose a change to `dotnet.yml` that silently weakens or removes
+the `security-scan` or `docker-build-and-scan` jobs this feature adds (e.g., changing a `fail` condition to
+a `warn`).
+
+**Decision.** Accept the risk. This is a pre-existing, generic CI-governance risk that applies equally to
+every workflow change ever made in this repository — not specific to what F-017 adds.
+
+**Rationale.** The same branch-protection + human-review requirement that governs every other change to
+this repository already governs changes to `dotnet.yml` itself. Requiring a *different* control for this
+one file would be inconsistent with how every other file in the repository is protected.
+
+**Consequences.** None specific to this feature. Re-evaluation trigger: none identified — this is the same
+residual risk every CI pipeline with human-reviewed changes carries.

@@ -1,8 +1,8 @@
 ---
 feature: container-and-cd-hardening
 date: 2026-08-25
-status: design-in-progress
-last-updated: 2026-08-25T22:38:26Z
+status: design-approved
+last-updated: 2026-08-25T22:48:19Z
 approved-by: ogdevlabs
 approved-date: 2026-08-25T22:38:26Z
 prd: docs/pdlc/prds/PRD_F-017_container-and-cd-hardening_2026-08-25.md

@@ -5,7 +5,7 @@
 **Convened:** 2026-08-25
 **Lead:** Phantom (Security Reviewer)
 **Participants:** Phantom, Neo, Bolt, Echo, Pulse, Atlas, Muse, Jarvis, Friday (solo mode — single LLM roleplaying all agents, per Party Mode's documented fallback; consistent with this feature's Progressive Thinking meeting)
-**Status:** Pending human approval (Step 12)
+**Status:** Approved
 
 ---
 
@@ -125,22 +125,22 @@
 
 ## Open Questions for Human
 
-1. If this repository is or becomes public on GitHub, does the maintainer want an explicit policy for external (fork) pull requests before this feature ships — beyond the existing safe `pull_request` (not `pull_request_target`) trigger already in use? T-003's residual-risk acceptance assumes no active external contribution; that assumption should be confirmed.
+1. ~~If this repository is or becomes public on GitHub, does the maintainer want an explicit policy for external (fork) pull requests before this feature ships?~~ **Not resolved explicitly at the Step 12 gate** — approval given without an answer. Left open rather than assumed: no new policy is adopted now, T-003's "no active external contribution" acceptance stands as-is, and this question should be re-asked if a real external PR is ever received.
 
 ---
 
 ## Approval Outcomes (filled in at Step 12)
 
-*(Pending human review.)*
+**Approved 2026-08-25 by `ogdevlabs`** — all six party recommendations confirmed as-is, no overrides.
 
 | Threat ID | Party recommendation | Human decision | Rationale |
 |---|---|---|---|
-| T-001 | Mitigate now | | |
-| T-002 | Mitigate now | | |
-| T-003 | Accept | | |
-| T-004 | Accept | | |
-| T-005 | Accept | | |
-| T-006 | Accept | | |
+| T-001 | Mitigate now | Mitigate now ✓ | — |
+| T-002 | Mitigate now | Mitigate now ✓ | — |
+| T-003 | Accept | Accept ✓ | ADR-043 |
+| T-004 | Accept | Accept ✓ | ADR-044 |
+| T-005 | Accept | Accept ✓ | ADR-045 |
+| T-006 | Accept | Accept ✓ | ADR-046 |
 
 **Tasks + security acceptance criteria to be created at Plan (Step 13):**
 
