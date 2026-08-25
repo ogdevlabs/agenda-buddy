@@ -160,6 +160,22 @@ _The Nordstrom Standards Readiness gate does not apply to this project (`ADR-042
 
 ---
 
+## Readiness Assessment
+
+**Triage:** Full (9 tasks, 4 waves, 2 domains — multi-wave and ≥6 tasks both independently trigger Full)
+**Overall:** Fair — Completeness Strong · Traceability Fair · Durability Strong
+**Mode:** Solo (Atlas + Neo + Echo + Phantom, consistent with this feature's other solo-mode party meetings)
+
+**Completeness (Strong):** All 5 user stories map to at least one task (US-01→T01, US-02→T02, US-03→T03/T04/T05, US-04→T06/T07, US-05→T08); all 15 acceptance criteria (13 original + 2 threat-derived) map to at least one task, verified explicitly below.
+
+**Traceability (Fair — 1 gap, caught and corrected in-party):** Step 14.5 (materializing the threat model's two "mitigate now" findings as formal `[security]`-tagged acceptance criteria) had been skipped during initial task creation — T-001 and T-002 existed only as prose references in task descriptions, not as PRD ACs or structured task ACs. **Corrected before this assessment concluded:** back-wrote PRD ACs 14-15, logged the addition in `DECISIONS.md`, and materialized both via `tasks.cjs ac add` on `F-017-T09` and `F-017-T05` respectively — confirmed via `tasks.cjs check --json` showing the expected `security-ac-untested` state pending Construction. AC↔task mapping for all 15 ACs: 1-3→T01, 4→T02, 5→T03, 6→T04, 7→T05, 8→T06, 9→T07, 10-11→T06, 12→T08, 13→T06/T07, 14→T09, 15→T05.
+
+**Durability (Strong):** Dependency graph is acyclic and functionally justified (T06 depends on T02 because `dotnet publish -t:PublishContainer` is verified to fail without T02's fix, not by preference). No task exceeds a coherent single unit of work. The 4-wave structure maps cleanly onto the PRD's 3-sequential-PR decision, with `F-017-T09` (cross-cutting Actions-pinning) explicitly folded into whichever of the last two PRs lands last — no ambiguity left for Construction to resolve.
+
+**Gap category recorded:** `security-ac-unmaterialized` ×1 (F-013 previously surfaced this same category post-hoc, at Ship rather than at Plan — this is the first time it was caught during Plan itself, before Construction started).
+
+---
+
 ## Design Docs
 
 - Architecture: [ARCHITECTURE.md](../design/container-and-cd-hardening/ARCHITECTURE.md)
