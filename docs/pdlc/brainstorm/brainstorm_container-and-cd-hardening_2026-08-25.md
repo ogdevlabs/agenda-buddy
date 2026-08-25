@@ -119,5 +119,33 @@ No agent-vs-agent disagreement arose. Two open decisions were escalated to the u
 ## External Context
 _None ingested._
 
+## Edge Case Analysis
+
+**Completed:** 2026-08-25T21:36:21Z
+
+### Findings
+
+| # | Category | Scenario | Trigger Condition | Addressed? | Risk if Unhandled |
+|---|----------|----------|--------------------|------------|--------------------|
+| 1 | Empty/boundary data | PR edits `docker-compose.yml` only, no Dockerfile touched | Compose-only change | Yes (already scoped in the path filter) | — |
+| 2 | Scale/load | One PR touches all 7 remaining service Dockerfiles at once | Bulk base-image bump | No | Unclear sequential vs. matrix |
+| 3 | Invalid input | A Dockerfile has a syntax error unrelated to this feature | Malformed Dockerfile in a PR | No | No `timeout-minutes` anywhere in this pipeline — a bad build could hang |
+| 4 | Integration failure | Trivy's CVE-DB fetch or the gitleaks Action is rate-limited/down | Transient upstream outage | No | Unrelated PR blocked on a required gate for reasons unrelated to its changes |
+| 5 | Migration/transition | PRs already open when this feature merges gain new required checks | Existing open PR + this feature merges | No | Those PRs unexpectedly blocked until rebased |
+| 6 | Partial completion | Matrix build across 7 services: some succeed, one fails | One broken Dockerfile among many | Resolved by #2's matrix decision | — |
+| 7 | Permission boundary | Dependabot needs write access to open PRs | Enabling Dependabot via the yml file alone | No | Config file alone might not activate it if repo Dependabot settings are off |
+
+### Triage Decisions
+
+| # | Decision | Notes |
+|---|----------|-------|
+| 1 | Out of scope (already addressed) | Round 3's Consequences already scoped the path filter to include `docker-compose*.yml` |
+| 2 | In scope | AC: new image-build job uses a GitHub Actions matrix, one entry per remaining service Dockerfile |
+| 3 | In scope | AC: new job carries `timeout-minutes: 10`. Explicitly **not** retroactive to the 5 existing untimed jobs — real pre-existing gap, but out of scope for F-017, same treatment as the EXPOSE/HEALTHCHECK exclusion |
+| 4 | Known risk | No clean fix for an external dependency outage; accepted, same class as other external-dependency risk already accepted in this project |
+| 5 | Known risk | One-time transition cost, self-resolving via rebase; not worth engineering around |
+| 6 | Out of scope (resolved by #2) | A matrix build reports per-entry status natively |
+| 7 | In scope (verification, not design) | AC: confirm live at Construction that a Dependabot PR actually opens post-merge, not just that the config file exists |
+
 ## Discovery Summary
 _Pending._
