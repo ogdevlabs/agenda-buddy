@@ -11,7 +11,7 @@
 
 ## Current Phase
 
-Inception
+Inception Complete — Ready for /build
 
 ---
 
@@ -82,13 +82,17 @@ _None active. Run `/night-shift <F-NNN>` to start an autonomous run (requires by
 
 ## Current Sub-phase
 
-Plan
+none
 
 ---
 
 ## Last Checkpoint
 
-Inception / Plan / 2026-08-25T22:48:19Z — **F-017 Design approved** by `ogdevlabs`. All five design artifacts
+Inception / Plan / 2026-08-25T23:33:05Z — **F-017 Inception complete.** 9 tasks (F-017-T01…T09), 4 waves,
+plan file saved. Readiness: Fair (1 gap — `security-ac-unmaterialized` — caught and fixed in-party: PRD ACs
+14-15 back-written, materialized via `tasks.cjs ac add`). Plan approved by `ogdevlabs`. Ready for `/build`.
+
+_Previously: Inception / Plan / 2026-08-25T22:48:19Z — **F-017 Design approved** by `ogdevlabs`. All five design artifacts
 in place: `ARCHITECTURE.md`, `data-model.md` (no changes), `api-contracts.md` (no changes), `threat-model.md`
 (Full triage, 6 threats — 2 mitigate-now confirmed as-is, 4 accept confirmed as-is with ADR-043…046 minted),
 `ux-review.md` (Skip triage, no UI surface). One open question (external-contributor policy) left explicitly
@@ -552,23 +556,22 @@ re-planning (`/continue`).
 
 ```json
 {
-  "phase_completed": "Inception / Design",
-  "next_phase": "Inception / Plan",
+  "phase_completed": "Inception / Plan",
+  "next_phase": "Construction / Build",
   "feature": "container-and-cd-hardening",
   "key_outputs": [
     "docs/pdlc/prds/PRD_F-017_container-and-cd-hardening_2026-08-25.md",
     "docs/pdlc/design/container-and-cd-hardening/ARCHITECTURE.md",
     "docs/pdlc/design/container-and-cd-hardening/data-model.md",
     "docs/pdlc/design/container-and-cd-hardening/api-contracts.md",
-    "docs/pdlc/design/container-and-cd-hardening/threat-model.md",
-    "docs/pdlc/design/container-and-cd-hardening/ux-review.md"
+    "docs/pdlc/prds/plans/plan_F-017_container-and-cd-hardening_2026-08-25.md"
   ],
   "decisions_made": [
-    "SDK container support (dotnet publish -t:PublishContainer), not hand-written Dockerfiles, for the new image-build CI job",
-    "EventAndCommands.csproj's appsettings.json publish conflict fixed in Wave 1 (blocks all 7 services' containerization)",
-    "Threat model Full triage: T-001/T-002 mitigate-now (Actions pinning, log-redaction proof); T-003-006 accept (ADR-043...046)"
+    "9 tasks in 4 waves: delete+test / EventAndCommands fix / security-scan gate / image-build+Trivy, with Actions-pinning cross-cutting last",
+    "Step 14.5 gap caught during readiness check and fixed same-session: security ACs 14-15 materialized on F-017-T09/T05",
+    "Readiness Fair (C:Strong T:Fair D:Strong), 1 gap, caught before Construction — not carried forward"
   ],
-  "next_action": "Read skills/brainstorm/steps/04-plan.md and break the feature into tasks",
+  "next_action": "Start Construction — run /build or read skills/build/SKILL.md",
   "pending_questions": ["External-contributor policy if this repo is/becomes public — left open at Step 12, not resolved"]
 }
 ```
@@ -715,3 +718,4 @@ re-planning (`/continue`).
 | 2026-08-25T21:49:59Z | prd_approved | **F-017 PRD approved** by `ogdevlabs`. 11 requirements, 12 acceptance criteria (all 🧪 test-first), 4 BDD user stories (`F-017-US-01`–`04`). Standards Alignment section records the ADR-042 retirement directly. Copyedit pass (elements-of-style) made 2 minor prose fixes, no scope change. Moving to Design | Design | container-and-cd-hardening |
 | 2026-08-25T22:38:26Z | prd_revised | **User asked Neo to verify Aspire's actual deployment model (aspire.dev/deployment/) before locking the design — found 2 real defects.** (1) The Aspire/`azd` deployment path builds its own container images via .NET SDK container support and never reads the hand-written Dockerfiles; re-scoped the new image-build job accordingly. (2) While testing that pivot, found and live-verified `EventAndCommands.csproj`'s `appsettings.json` colliding with every service's own file at `dotnet publish` time (`NETSDK1152`), blocking any containerization path for all 7 services. Fix verified end-to-end, then reverted (real fix lands at Construction). PRD revised to 12 requirements / 13 ACs / 5 user stories and re-approved | Design | container-and-cd-hardening |
 | 2026-08-25T22:48:19Z | design_approved | **F-017 Design approved** by `ogdevlabs`. `ARCHITECTURE.md`, `data-model.md` (none), `api-contracts.md` (none), `threat-model.md` (Full triage — 6 threats, T-001/T-002 mitigate-now, T-003–006 accept via ADR-043…046), `ux-review.md` (Skip — no UI surface). One open question (external-contributor policy) explicitly left unresolved. Moving to Plan | Plan | container-and-cd-hardening |
+| 2026-08-25T23:33:05Z | inception_complete | **Inception Complete — 9 tasks (F-017-T01…T09), 4 waves.** PRD, 3 design artifacts, threat model, ux-review, and plan file all approved. Readiness Party (solo, Full triage): Fair (C:Strong T:Fair D:Strong), 1 gap — Step 14.5 (threat-derived security ACs) had been skipped, caught during the readiness check itself and fixed same-session before this row was written. Nordstrom standards gate retired for this project (ADR-042). Ready for `/build` | Plan | container-and-cd-hardening |
