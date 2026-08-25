@@ -1,10 +1,10 @@
 ---
 feature: container-and-cd-hardening
 date: 2026-08-25
-status: in-progress
-last-updated: 2026-08-25T20:29:23Z
-approved-by:
-approved-date:
+status: discover-complete
+last-updated: 2026-08-25T21:38:15Z
+approved-by: ogdevlabs
+approved-date: 2026-08-25T21:38:15Z
 prd:
 ---
 
@@ -147,5 +147,32 @@ _None ingested._
 | 6 | Out of scope (resolved by #2) | A matrix build reports per-entry status natively |
 | 7 | In scope (verification, not design) | AC: confirm live at Construction that a Dependabot PR actually opens post-merge, not just that the config file exists |
 
+## UX Discovery
+Skipped: this feature has no UI/UX surface — pure CI/Docker/security-scan infrastructure work with no end-user-facing component. Confirmed at Socratic Round 1 Q2 and reconfirmed by Friday/Muse at the Progressive Thinking meeting ("nothing in our domains").
+
 ## Discovery Summary
-_Pending._
+
+**Feature:** container-and-cd-hardening (F-017)
+**Problem:** Three Dockerfiles (`Library`, `Kafka`, `EventAndCommands`) publish `net10.0` onto a broken `dotnet/runtime:8.0` base and can't run — invisible because CI never builds a single Docker image. Separately, CONSTITUTION §7's mandatory security scan (dependency audit + secret scan) has never run automatically; it's been satisfied "by hand" at every ship gate since F-013, and a real cost of that gap already materialized (the committed Atlas credential).
+**User:** Internal/operational only — no end-user surface. The maintainer (local `docker compose`/image builds) and CI itself.
+**Success metric:** The 3 broken images are deleted (not fixed — they're class libraries with no `ENTRYPOINT` and shouldn't be containerized); the remaining 7 service Dockerfiles build in CI on every touching PR; the security scan (dependency audit + secret scan + container-image scan) runs automatically in CI instead of by hand.
+**Technical constraints:**
+- No roadmap dependency — unblocked, next in sequence.
+- New CI job(s) must actually be wired into an `if:` condition — this pipeline has a precedent dead-filter bug (`library` output computed, never consumed) that must not repeat.
+- `ADR-030`'s existing `NU1903` SSH.NET suppression must ship atomically with the new dependency-audit step, or day-one CI fails on an already-accepted risk.
+- No container registry exists; build+scan only, no push (ADR-035 defers cloud deploy).
+
+**Out of scope:**
+- The Gateway (F-015, postdates this feature record) gets no Dockerfile.
+- The 7 remaining service Dockerfiles' smaller hygiene defects (EXPOSE/port mismatch, missing HEALTHCHECK, restore-before-COPY layer-cache defeat, unpinned base-image digests).
+- Retroactively adding `timeout-minutes` to the 5 existing untimed CI jobs — new job only.
+- Any run-time smoke test of the built images (build+scan only, decoupled from the EXPOSE/HEALTHCHECK exclusion above).
+
+**Key risks / assumptions:**
+- Trivy flagging a CVE inherited from the base image itself (not introduced by this project) → warn only, don't fail the build (user-confirmed).
+- An external Trivy/gitleaks outage could block an unrelated PR on a required gate — accepted as a known risk.
+- Already-open PRs gain new required checks the moment this merges — accepted as a one-time, self-resolving transition cost.
+- The chosen secret-scan tool (gitleaks) needs a canary test proving it actually catches this project's real leaked-credential shape — captured as a formal AC, not just an implementation detail.
+- Scope grew materially during Discover beyond the original 4 bullets (Dependabot, Trivy, generalized structural test, atomic ADR-030 suppression) — will be delivered as 3 independently-mergeable waves at Plan.
+
+**Confirmed by user 2026-08-25T21:38:15Z: "it does capture properly, confirm."**
