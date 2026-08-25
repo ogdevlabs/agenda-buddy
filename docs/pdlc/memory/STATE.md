@@ -5,19 +5,19 @@
      Claude reads this file at the start of every session to auto-resume from the last checkpoint.
      If this file is missing or empty, PDLC will prompt you to run /pdlc init. -->
 
-**Last updated:** 2026-08-24T14:15:00Z
+**Last updated:** 2026-08-25T19:51:32Z
 
 ---
 
 ## Current Phase
 
-Idle — Ready for next /brainstorm
+Inception
 
 ---
 
 ## Current Feature
 
-none
+container-and-cd-hardening
 
 _**F-015 `api-gateway-and-mobile-contract` SHIPPED** as `v0.5.0` — merged `1d61955`, PR #41, episode 005
 (Final). Operation closed 2026-08-24: smoke-tested against a live 8-process AppHost on the merged commit
@@ -55,13 +55,22 @@ none
 
 ---
 
-_None held. Run `/brainstorm` to claim the next priority feature._
+- **Feature ID:** F-017
+- **Feature record:** docs/pdlc/tasks/F-017/_feature.md
+- **Claimed by:** oscargarcia@ogdevlabs.onmicrosoft.com
+- **Claimed at:** 2026-08-25T19:51:32Z
+- **Branch:** pdlc/F-017-container-and-cd-hardening (Inception bookkeeping only — per-user override of the skill's default `git push origin main`; see `/brainstorm` Step B note below. Construction will create its own `feat/F-017-...` branch at build pre-flight, per usual.)
 
-_F-015 shipped as `v0.5.0` and its claim was released. `scripts/tasks.cjs` does not exist in this repo, so
-claims are tracked by hand (ROADMAP.md's Status/Claimed-by columns), same fallback used since F-013._
+_F-015 shipped as `v0.5.0` and its claim was released. `scripts/tasks.cjs` **does exist** in this repo (confirmed
+2026-08-25, claiming F-017) — the "does not exist" note above was stale; last verified absent at F-021 (2026-08-22)._
 
-**Next on the roadmap: F-017 → F-018–F-020.** **F-025 `booking-correctness`** was split out of F-014 at
-Discover and is sequenced after F-015 (now shipped).
+**While claiming F-017, also corrected task-store drift:** F-021's feature record still showed
+`status: in_progress` / claimed, though ROADMAP.md has recorded it Shipped (v0.3.0, PR #39) since
+2026-08-22. Updated to `status: shipped`, `claimed_by: null` (commit `8fe2ace`, pushed to `main` — see the
+Guardrail Log entry below for why that one went straight to `main` and future PDLC bookkeeping won't).
+
+**Next on the roadmap after F-017: F-018–F-020.** **F-025 `booking-correctness`** was split out of F-014 at
+Discover and is sequenced after F-015 (shipped).
 
 ---
 
@@ -73,13 +82,16 @@ _None active. Run `/night-shift <F-NNN>` to start an autonomous run (requires by
 
 ## Current Sub-phase
 
-none
+Discover
 
 ---
 
 ## Last Checkpoint
 
-Operation / Complete / 2026-08-24T14:15:00Z — **F-015 shipped as `v0.5.0`.** Episode 005 Final; PRD,
+Inception / Discover / 2026-08-25T19:51:32Z — **F-017 `container-and-cd-hardening` claimed.** Corrected
+stale F-021 task-store drift (shipped, not in_progress) while claiming. Starting Discover.
+
+_Previously: Operation / Complete / 2026-08-24T14:15:00Z — **F-015 shipped as `v0.5.0`.** Episode 005 Final; PRD,
 brainstorm, design artifacts, and MOM archived to `docs/pdlc/archive/`; `episodes/index.md` backfilled
 (rows 002–005) and OVERVIEW, ROADMAP, METRICS updated; claim released. Three defects found by running the
 software/CI across Construction and Ship, all fixed in the gates that found them. Next on the roadmap:
@@ -258,6 +270,7 @@ the feature branch after each wave completes.
 | 2026-08-23T15:35:00Z | standards_check_skipped | Define Step 6.5 (`--ideate`, advisory tier) skipped for F-015. Same condition re-checked and unchanged: plugin installed, its six source repos do not resolve under this `gh` auth (SSO/VPN issue, not a wrong name — see reference memory). **Ninth consecutive gate blocked by this condition**, and the sixth marked `enforcing` (at Plan/Review) that has never once executed. User chose the light skip (advisory tier, no reason required). Recommendation unchanged since F-013: give it a reachable source or retire it explicitly — **F-017**. |
 | 2026-08-23T17:15:00Z | standards_check_skipped | Plan Step 17.5 (`--design`, **enforcing** tier) skipped for F-015 — same unreachable-source-repos condition, re-checked and unchanged. **Tenth consecutive gate blocked**, and the seventh marked `enforcing` that has never once executed. Treated as an `/override`-equivalent per the gate's own protocol: one-line reason given, recorded as **ADR-041**. Recommendation unchanged since F-013 and now the oldest unaddressed process finding in the project — **F-017**. |
 | 2026-08-24T12:14:03Z | ship_phase_mismatch | `/ship` started for F-015 with Current Phase `Construction` (sub-phase `Review`), not `Construction Complete`. No formal Review or Test sub-phase ran this cycle and no episode draft existed at the time — same process gap recorded at F-014's ship gate. User confirmed proceeding: build is complete (14/14 tasks, 15/15 ACs, 3/3 threats dispositioned) and `verification.md` stands in for the missing episode's Test Summary. Required test gates verified directly against it: 867 tests (468 backend + 234 integration + 165 mobile), 0 failing; security scan (dependency audit + secret scan) run by hand, clean. |
+| 2026-08-25T19:51:32Z | pushed_directly_to_main | While claiming F-017, corrected F-021's stale task-store record (`status: in_progress`→`shipped`, unclaimed) and pushed that commit (`8fe2ace`) straight to `main` per the `/brainstorm` skill's literal Step B instructions — before checking the user's standing "never push directly to main" instruction. Caught immediately; user decided: leave that one commit as-is (small, correct, docs-only), but all further PDLC Inception bookkeeping for F-017 (this claim, STATE.md, the brainstorm log) goes on branch `pdlc/F-017-container-and-cd-hardening` instead of `main`, with a PR at the end of Inception rather than a direct push. |
 
 ---
 
@@ -659,3 +672,4 @@ re-planning (`/continue`).
 | 2026-08-24T13:05:00Z | deploy_deferred | Cloud deploy **skipped again by ADR-035** — fifth consecutive release, third under the deferral. User confirmed at the deploy prompt | Ship | api-gateway-and-mobile-contract |
 | 2026-08-24T13:20:00Z | verify_complete | **Verified against a live 8-process AppHost, not by inspection.** All 8 processes (7 services + Gateway) Healthy/alive. Registered and logged in a fresh Customer through the Gateway on merged `main`; the T14 messages/notifications fix confirmed live (200, not 404). Anonymous 401 and gateway-no-route 404 (T-302) both intact. Known AppHost shutdown gotcha recurred, handled | Verify | api-gateway-and-mobile-contract |
 | 2026-08-24T14:15:00Z | operation_complete | **F-015 shipped and Operation closed the same session it was built and ship-tested in.** Episode 005 **Final**; PRD, brainstorm, design artifacts, and MOM archived; `episodes/index.md` backfilled (rows 002–005, stale since episode 001); OVERVIEW, ROADMAP, METRICS updated (including the F-015 Readiness Trend reconciliation and a new UX Scorecard Trend row); claim released. Three defects found by running the software/CI — one in Construction (T14), two at the Ship gate itself — all fixed in the gates that found them. Second consecutive feature with no formal Review sub-phase (F-014, F-015) — flagged as a recurring pattern in METRICS.md's Trend Summary, with a concrete recommendation (open the PR as a draft at Construction start, not at Ship) | Idle | none |
+| 2026-08-25T19:51:32Z | roadmap_claim | **F-017 `container-and-cd-hardening` claimed** (`oscargarcia@ogdevlabs.onmicrosoft.com`). Corrected F-021's stale task-store record (`in_progress`→`shipped`) while claiming — ROADMAP.md already had it right. Inception bookkeeping put on branch `pdlc/F-017-container-and-cd-hardening` instead of pushed straight to `main`, per user override of the skill's default | Discover | container-and-cd-hardening |
