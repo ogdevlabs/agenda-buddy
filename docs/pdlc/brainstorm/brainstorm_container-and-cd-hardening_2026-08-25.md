@@ -89,7 +89,32 @@ No agent-vs-agent disagreement arose. Two open decisions were escalated to the u
 5. Trivy severity threshold starts conservative — HIGH/CRITICAL only, and only for project-introduced findings (base-image-inherited ones warn).
 
 ## Adversarial Review
-_Not run._
+
+**Completed:** 2026-08-25T21:32:44Z
+
+### Findings
+1. Assumption checked directly against `docker-compose.yml`/`docker-compose.override.yml`: no other Compose service `depends_on` `events`, `kafka-library`, or `common-library` — deletion is safe on that axis. Verified, not a real risk.
+2. Scope leak: the new image-build job (build+scan only, no run) could collide with the explicitly-out-of-scope EXPOSE/port-mismatch/HEALTHCHECK defects if it ever grows a smoke test.
+3. Success-metric fragility: "the scan runs" is a binary on job existence, not on whether the chosen tool (gitleaks default ruleset) actually recognizes this project's real leaked-secret shape (a MongoDB/Atlas connection string).
+4. Technical risk blindspot: unverified assumption that `ubuntu-latest` GitHub runners have a working Docker daemon + BuildKit for `docker build` out of the box.
+5. Dependency blindspot: Trivy's CVE database download isn't cached anywhere in the plan — cost/rate-limit risk on every Dockerfile-touching PR.
+6. Edge case silence: no defined behavior for a PR that *deletes* a Dockerfile rather than editing one.
+7. Requirement/documentation drift: CONSTITUTION §7 lists "security scan" as one checkbox; this feature adds a third distinct scan type (Trivy image scan) that §7's wording doesn't reflect.
+8. Definition-of-done gap: every prior feature was verified against a live AppHost; a CI-only artifact needs a different, explicitly stated verification method.
+9. Timeline/sizing naivety: the original 4-bullet feature record grew materially during Discover (Dependabot, Trivy, generalized structural test, atomic ADR-030 suppression, CI-filter-verification requirement) — real scope is bigger than it looked at claim time.
+10. User-problem framing risk: framing this as "Dockerfiles are broken" undersells the real driver — preventing another Atlas-credential-class incident (a still-open P0).
+11. Scope leak on the legacy dev path: `docker compose up` was already a broken full-stack path (1 of 7 services wired in) before this feature and stays broken after — worth an explicit PRD note that this feature doesn't touch that.
+
+### Follow-up Q&A
+
+**Q1 (Finding #2 — build-only vs. smoke-test):** Should the PRD explicitly state the new CI job is build+scan only, no `docker run`/smoke test?
+**A:** Yes — confirmed explicitly in the PRD. Decouples this feature entirely from the out-of-scope EXPOSE/HEALTHCHECK hygiene issues.
+
+**Q2 (Finding #9 — sizing):** One PRD, or split into a multi-stage program like the API-refactor work?
+**A:** One PRD, split into 3 independently-mergeable waves at Plan: Wave 1 = delete the 3 Dockerfiles + generalized structural test; Wave 2 = dependency-audit + secret-scan gate + Dependabot + ADR-030 suppression; Wave 3 = image-build job + Trivy.
+
+**Q3 (Finding #3 — does the chosen tool actually catch our real leak-shape):** Formal acceptance criterion, or just an implementation detail verified without a dedicated AC?
+**A:** Formal AC — a canary test at Construction's closing verification: run gitleaks against a fixture matching the leaked-credential's shape (not the real value) and confirm it fires; add a custom rule if the default ruleset misses it. Matches this project's existing convention of 100% test-first ACs.
 
 ## External Context
 _None ingested._
