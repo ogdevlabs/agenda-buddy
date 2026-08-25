@@ -1,5 +1,11 @@
-meta { name: 2 Get customer by email, type: http, seq: 2 }
-get { url: {{customerUrl}}/api/v1/customers/{{customerEmail}} }
+meta {
+  name: 2 Get customer by email
+  type: http
+  seq: 2
+}
+get {
+  url: {{customerUrl}}/api/v1/customers/{{customerEmail}}
+}
 docs {
   Authenticated but **not** role-gated — a customer legitimately reads their own record through here.
   Only the *list* route requires the `Provider` role.

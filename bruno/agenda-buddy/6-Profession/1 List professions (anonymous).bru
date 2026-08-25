@@ -1,5 +1,12 @@
-meta { name: 1 List professions (anonymous), type: http, seq: 1 }
-get { url: {{professionUrl}}/api/v1/professions, auth: none }
+meta {
+  name: 1 List professions (anonymous)
+  type: http
+  seq: 1
+}
+get {
+  url: {{professionUrl}}/api/v1/professions
+  auth: none
+}
 tests {
   test("200 WITHOUT a token — this must stay anonymous", function () {
     expect(res.getStatus()).to.equal(200);

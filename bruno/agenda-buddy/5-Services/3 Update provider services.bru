@@ -1,5 +1,12 @@
-meta { name: 3 Update provider services, type: http, seq: 3 }
-patch { url: {{servicesUrl}}/api/v1/services/{{providerEmail}} , body: json }
+meta {
+  name: 3 Update provider services
+  type: http
+  seq: 3
+}
+patch {
+  url: {{servicesUrl}}/api/v1/services/{{providerEmail}}
+  body: json
+}
 body:json {
   [
     {

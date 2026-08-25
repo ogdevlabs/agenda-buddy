@@ -1,5 +1,12 @@
-meta { name: 3 Create profession — MUST be 404 or 405, seq: 3, type: http }
-post { url: {{professionUrl}}/api/v1/professions, body: json }
+meta {
+  name: 3 Create profession — MUST be 404 or 405
+  seq: 3
+  type: http
+}
+post {
+  url: {{professionUrl}}/api/v1/professions
+  body: json
+}
 body:json {
   {
     "name": "Smuggled Profession"

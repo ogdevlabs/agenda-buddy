@@ -1,5 +1,12 @@
-meta { name: 2 Update appointment, type: http, seq: 2 }
-put { url: {{bookingUrl}}/api/v1/booking/appointments/, body: json }
+meta {
+  name: 2 Update appointment
+  type: http
+  seq: 2
+}
+put {
+  url: {{bookingUrl}}/api/v1/booking/appointments/
+  body: json
+}
 body:json {
   {
     "emailProvider": "{{providerEmail}}",

@@ -1,5 +1,11 @@
-meta { name: 1 List providers (paged), type: http, seq: 1 }
-get { url: {{providerUrl}}/api/v1/providers?page=1&pageSize=25 }
+meta {
+  name: 1 List providers (paged)
+  type: http
+  seq: 1
+}
+get {
+  url: {{providerUrl}}/api/v1/providers?page=1&pageSize=25
+}
 params:query {
   page: 1
   pageSize: 25

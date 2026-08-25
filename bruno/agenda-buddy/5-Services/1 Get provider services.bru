@@ -1,5 +1,11 @@
-meta { name: 1 Get provider services, type: http, seq: 1 }
-get { url: {{servicesUrl}}/api/v1/services/{{providerEmail}} }
+meta {
+  name: 1 Get provider services
+  type: http
+  seq: 1
+}
+get {
+  url: {{servicesUrl}}/api/v1/services/{{providerEmail}}
+}
 docs {
   **Newly requires auth in F-016** — the fifth of the five PII GETs, and the one that was missed in the
   original scoping and added at Define. Anonymous callers now get `401`.

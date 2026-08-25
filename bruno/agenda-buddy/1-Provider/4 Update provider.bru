@@ -1,5 +1,12 @@
-meta { name: 4 Update provider, type: http, seq: 5 }
-put { url: {{providerUrl}}/api/v1/providers/{{providerEmail}} , body: json }
+meta {
+  name: 4 Update provider
+  type: http
+  seq: 5
+}
+put {
+  url: {{providerUrl}}/api/v1/providers/{{providerEmail}}
+  body: json
+}
 body:json {
   {
     "firstName": "Grace",

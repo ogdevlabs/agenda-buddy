@@ -1,5 +1,13 @@
-meta { name: 3 Refresh, type: http, seq: 3 }
-post { url: {{identityUrl}}/api/v1/auth/refresh, body: json, auth: none }
+meta {
+  name: 3 Refresh
+  type: http
+  seq: 3
+}
+post {
+  url: {{identityUrl}}/api/v1/auth/refresh
+  body: json
+  auth: none
+}
 body:json {
   {
     "refreshToken": "{{refreshToken}}"

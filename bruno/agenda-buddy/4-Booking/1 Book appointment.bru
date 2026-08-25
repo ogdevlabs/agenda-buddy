@@ -1,5 +1,12 @@
-meta { name: 1 Book appointment, type: http, seq: 1 }
-post { url: {{bookingUrl}}/api/v1/booking/appointments, body: json }
+meta {
+  name: 1 Book appointment
+  type: http
+  seq: 1
+}
+post {
+  url: {{bookingUrl}}/api/v1/booking/appointments
+  body: json
+}
 body:json {
   {
     "emailProvider": "{{providerEmail}}",

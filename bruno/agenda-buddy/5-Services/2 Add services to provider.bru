@@ -1,5 +1,12 @@
-meta { name: 2 Add services to provider, type: http, seq: 2 }
-put { url: {{servicesUrl}}/api/v1/services/{{providerEmail}} , body: json }
+meta {
+  name: 2 Add services to provider
+  type: http
+  seq: 2
+}
+put {
+  url: {{servicesUrl}}/api/v1/services/{{providerEmail}}
+  body: json
+}
 body:json {
   [
     {
