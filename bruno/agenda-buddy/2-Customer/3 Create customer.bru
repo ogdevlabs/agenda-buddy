@@ -1,5 +1,12 @@
-meta { name: 3 Create customer, type: http, seq: 3 }
-post { url: {{customerUrl}}/api/v1/customers, body: json }
+meta {
+  name: 3 Create customer
+  type: http
+  seq: 3
+}
+post {
+  url: {{customerUrl}}/api/v1/customers
+  body: json
+}
 body:json {
   {
     "firstName": "Ada",

@@ -1,3 +1,10 @@
-meta { name: 8 Liveness — Provider, type: http, seq: 8 }
-get { url: {{providerUrl}}/alive, auth: none }
+meta {
+  name: 8 Liveness — Provider
+  type: http
+  seq: 8
+}
+get {
+  url: {{providerUrl}}/alive
+  auth: none
+}
 docs { Liveness only. Returns 200 even while MongoDB is still coming up — that is the point of splitting it from /health. }

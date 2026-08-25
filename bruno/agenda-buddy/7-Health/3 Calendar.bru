@@ -1,5 +1,12 @@
-meta { name: 3 Calendar, type: http, seq: 3 }
-get { url: {{calendarUrl}}/health, auth: none }
+meta {
+  name: 3 Calendar
+  type: http
+  seq: 3
+}
+get {
+  url: {{calendarUrl}}/health
+  auth: none
+}
 tests {
   test("200 and Healthy", function () {
     expect(res.getStatus()).to.equal(200);

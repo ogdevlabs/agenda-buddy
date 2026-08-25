@@ -1,5 +1,11 @@
-meta { name: 1 List customers (Provider role only), type: http, seq: 1 }
-get { url: {{customerUrl}}/api/v1/customers?page=1&pageSize=25 }
+meta {
+  name: 1 List customers (Provider role only)
+  type: http
+  seq: 1
+}
+get {
+  url: {{customerUrl}}/api/v1/customers?page=1&pageSize=25
+}
 params:query {
   page: 1
   pageSize: 25

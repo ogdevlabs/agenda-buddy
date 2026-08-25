@@ -1,5 +1,12 @@
-meta { name: 3 Cancel appointment, type: http, seq: 3 }
-delete { url: {{bookingUrl}}/api/v1/booking/appointments/, body: json }
+meta {
+  name: 3 Cancel appointment
+  type: http
+  seq: 3
+}
+delete {
+  url: {{bookingUrl}}/api/v1/booking/appointments/
+  body: json
+}
 body:json {
   {
     "emailProvider": "{{providerEmail}}",

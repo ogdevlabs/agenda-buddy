@@ -1,5 +1,12 @@
-meta { name: 5 Register device token, type: http, seq: 5 }
-post { url: {{identityUrl}}/device-token, body: json }
+meta {
+  name: 5 Register device token
+  type: http
+  seq: 5
+}
+post {
+  url: {{identityUrl}}/device-token
+  body: json
+}
 body:json {
   {
     "token": "fake-device-token-for-local-testing",

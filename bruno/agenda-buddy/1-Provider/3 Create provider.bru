@@ -1,5 +1,12 @@
-meta { name: 3 Create provider, type: http, seq: 4 }
-post { url: {{providerUrl}}/api/v1/providers, body: json }
+meta {
+  name: 3 Create provider
+  type: http
+  seq: 4
+}
+post {
+  url: {{providerUrl}}/api/v1/providers
+  body: json
+}
 body:json {
   {
     "firstName": "Grace",

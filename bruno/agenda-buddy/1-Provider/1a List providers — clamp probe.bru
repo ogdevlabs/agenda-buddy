@@ -1,5 +1,11 @@
-meta { name: 1a List providers — clamp probe, type: http, seq: 2 }
-get { url: {{providerUrl}}/api/v1/providers?page=1&pageSize=100000 }
+meta {
+  name: 1a List providers — clamp probe
+  type: http
+  seq: 2
+}
+get {
+  url: {{providerUrl}}/api/v1/providers?page=1&pageSize=100000
+}
 params:query {
   page: 1
   pageSize: 100000

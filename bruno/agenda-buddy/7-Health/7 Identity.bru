@@ -1,5 +1,12 @@
-meta { name: 7 Identity, type: http, seq: 7 }
-get { url: {{identityUrl}}/health, auth: none }
+meta {
+  name: 7 Identity
+  type: http
+  seq: 7
+}
+get {
+  url: {{identityUrl}}/health
+  auth: none
+}
 tests {
   test("200 and Healthy", function () {
     expect(res.getStatus()).to.equal(200);
