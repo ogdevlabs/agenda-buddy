@@ -1,12 +1,12 @@
 ---
 id: F-021
 title: identity-hardening
-status: in_progress
+status: shipped
 priority: 15
 labels: [roadmap, "priority:15"]
-claimed_by: oscargarcia@ogdevlabs.onmicrosoft.com
+claimed_by: null
 created: 2026-08-18
-updated: 2026-08-22
+updated: 2026-08-25
 ---
 Second in the Platform Remediation program. Split out of F-016 at Discover 2026-08-18 because F-016 plus the absorbed defects plus the verification harness grew past one PRD. Where F-016 closes endpoint exposure, this fixes the auth system's own defects.
 
