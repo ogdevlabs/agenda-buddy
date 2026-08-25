@@ -4,7 +4,7 @@ meta {
   seq: 3
 }
 get {
-  url: {{providerUrl}}/api/v1/providers/{{providerEmail}}
+  url: {{gatewayUrl}}/api/v1/providers/{{providerEmail}}
 }
 tests {
   test("200 or 404", function () { expect([200, 404]).to.include(res.getStatus()); });

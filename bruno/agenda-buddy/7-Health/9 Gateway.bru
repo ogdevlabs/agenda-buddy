@@ -1,0 +1,26 @@
+meta {
+  name: 9 Gateway
+  type: http
+  seq: 9
+}
+get {
+  url: {{gatewayUrl}}/health
+  auth: none
+}
+tests {
+  test("200 and Healthy", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody()).to.match(/Healthy/i);
+  });
+}
+docs {
+  The Gateway is the eighth AppHost resource (F-015) and calls `AddServiceDefaults()` like every other
+  service, so it gets the same `/health` (readiness) and `/alive` (liveness) pair. This checks the
+  Gateway process itself — not the destinations it proxies to. `WaitFor` on all seven services means the
+  Gateway only reports `Healthy` once every destination it could route to is also healthy.
+
+  Every other request in this collection (everything outside `7-Health`) now goes through
+  `{{gatewayUrl}}` rather than a per-service URL. The seven `*Url` variables still exist only because
+  `/health` and `/alive` are not in the Gateway's `api/v1/{service}/**` allowlist — routes it doesn't
+  carry, by design (T-302), so each service's own health still has to be checked directly.
+}
