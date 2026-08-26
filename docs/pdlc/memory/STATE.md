@@ -74,7 +74,7 @@ fake and final verification. The task store needs this reflected before Build st
      Example: F-002-T03 — Add OAuth2 login with GitHub
      Set to "none" when no task is active. -->
 
-none — Wave 1a complete (T02, T04, T10, T11, T12, T15, T16 all done); Wave 2 not yet claimed
+Wave 2a (3 parallel Sub-Agent builds, worktree-isolated) — F-018-T03, T13, T17. Wave 2b (T19) blocked on T13.
 
 ---
 
