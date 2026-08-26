@@ -70,7 +70,7 @@ insertions, 175 deletions — the deletions are line-level (the F-018-T03 whites
 
 | AC | Verified by | Status |
 |---|---|---|
-| 15 — permanent guard fails when EventStore write is removed; one-time mutation red/green recorded | `Audit/EventStoreWriteGuardTest.cs` (F-018-T13) — mutated `BookingAppointmentCommandHandler.cs` to remove both `SaveAsync` calls, guard went red (`Assert.Contains` failure naming the file), restored, guard green again (22/22) | ✅ *(F-018, this session)* — convention-based (scans every handler file for the literal call), so new handlers are covered automatically |
+| 15 — permanent guard fails when EventStore write is removed; one-time mutation red/green recorded | `Audit/EventStoreWriteGuardTest.cs` (F-018-T13) — mutated `BookingAppointmentCommandHandler.cs` to remove both `SaveAsync` calls, guard went red (`Assert.Contains` failure naming the file), restored, guard green again (22/22) | ✅ **with a narrowed claim, corrected at Party Review** — the guard proves the call site isn't deleted from the *file*, not that every *branch* calls it; see §3 |
 | 16 — `EventAndCommands/Persistence/` exists, zero `Persitency` matches, own commit before first integration test | F-016-T01, `EventsAndCommands.Tests/Persistence/PersistenceNamespaceTest.cs` | ✅ *(F-016)* |
 | 17 — OpenAPI generated for all 7 services, CI artifact, **not committed** *(as originally worded)* | `AgendaBuddy.IntegrationTests/OpenApi/OpenApiSpecGenerator.cs` + `OpenApiSpecCatalog.cs` (F-018-T16) | ✅ **with a deliberate, recorded deviation — see §3** |
 | 18 — exits non-zero, no partial/empty spec on boot failure | `OpenApiSpecGeneratorTest.cs`'s AC-18 case — malformed `JWT_PUBLIC_KEY` causes a real DI-registration throw, asserts the designated output path is never created | ✅ *(F-018, this session)* |
@@ -162,6 +162,16 @@ future wave briefs rather than silently absorbed.
 **One bookkeeping gap, self-corrected.** `F-018-T10`, `T11`, and `T12`'s `tasks.cjs done` file write was
 never committed by their respective worktree agents (only `T15`/`T16` remembered to `git add` it) — caught
 during post-merge verification and fixed with a dedicated commit before this task started.
+
+**One Important finding at Party Review, fixed.** Neo (N1) and Echo (E1) — linked, same root cause —
+found that `EventStoreWriteGuardTest` proves less than AC-15's literal wording claims: it checks the whole
+handler *file* for the audit call, not every *branch*. The exact gap it would need to catch to be a true
+per-branch guard (`UpdateServicesFromProviderCommandHandler`'s missing audit, `agenda-buddy-f49`) was already
+found and filed by hand, not by this guard — proving the finding's point. Fixed by narrowing the claim in
+`F-018-T13.md` rather than building a bigger per-branch static-analysis check, which Neo judged
+disproportionate under YAGNI for a "permanent guard" task. Three Advisory findings (stale `api-contracts.md`
+OpenAPI-commit line, a low-value missing test-isolation case) accepted as logged warnings — see STATE.md's
+Guardrail Log.
 
 ---
 

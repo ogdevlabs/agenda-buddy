@@ -299,12 +299,18 @@ doing now for 5 clauses.
 
 ## Human Decision
 
-**Decision:** <!-- pending -->
+**Decision:** Fix N1/E1, accept the rest.
 
-**Conditions / notes from human:**
+**Conditions / notes from human:** N1/E1 (linked, same root cause) fixed by narrowing AC-15's claim in
+`docs/pdlc/tasks/F-018/F-018-T13.md` to match what `EventStoreWriteGuardTest` actually checks (whole-file
+call-site presence, not per-branch coverage) — matches Neo's own recommendation (a); building the per-branch
+static-analysis alternative (b) was judged disproportionate. `verification.md`'s AC-15 row updated to match.
+N2/J1 (linked, `api-contracts.md` stale OpenAPI-commit line) and E2 (no isolating test for Profession's
+Mongo-unreachable workaround) accepted as logged warnings — deferred to Ship's doc-freshness pass and tech
+debt respectively, logged in STATE.md's Guardrail Log.
 
-**Reviewed by:** <!-- pending -->
-**Date of decision:** <!-- pending -->
+**Reviewed by:** oscargarcia@ogdevlabs.onmicrosoft.com
+**Date of decision:** 2026-08-26
 
 ---
 
