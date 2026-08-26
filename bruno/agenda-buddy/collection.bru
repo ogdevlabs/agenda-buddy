@@ -8,10 +8,15 @@ auth:bearer {
 
 headers {
   Content-Type: application/json
+  Accept: application/json
 }
 
 docs {
   # Agenda Buddy — local API collection
+
+  See `README.md` in this folder for the same content in a form you can read without opening Bruno
+  (GitHub, a file browser, etc.) — including why an error response is JSON, not HTML, and what to do if
+  you still see HTML somewhere.
 
   As of **F-015 (v0.5.0)** every request outside `7-Health` goes through the **Gateway** at
   `{{gatewayUrl}}` — the same `api/v1/{service}/**` allowlist `MobileApp` uses, forwarded byte-for-byte
