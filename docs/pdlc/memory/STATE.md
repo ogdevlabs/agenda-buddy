@@ -74,8 +74,7 @@ fake and final verification. The task store needs this reflected before Build st
      Example: F-002-T03 — Add OAuth2 login with GitHub
      Set to "none" when no task is active. -->
 
-Wave 1a (5 parallel Sub-Agent builds, worktree-isolated) — F-018-T10, T11, T12, T15, T16.
-T02 and T04 (docs/tracker-only, TDD-overridden) built directly, done.
+none — Wave 1a complete (T02, T04, T10, T11, T12, T15, T16 all done); Wave 2 not yet claimed
 
 ---
 
@@ -113,7 +112,30 @@ Build
 
 ## Last Checkpoint
 
-Construction / Build / 2026-08-26T14:30:00Z — **Build pre-flight passed.** Channel in-sync (`main`/`main`).
+Construction / Build / 2026-08-26T16:00:00Z — **Wave 1a complete — 7/7 tasks, 260 integration + 484 backend
+tests, 0 failing, 0 regressions.** T02 (CONSTITUTION §1/§4/§9 amended, Identity comment fixed) and T04 (filed
+`agenda-buddy-ym9`) built directly. T10/T11/T12/T15/T16 built as 5 real Sub-Agent worktree builds in parallel,
+all merged clean (one auto-merge in `ServiceHostFixture.cs`, both sides additive). **Two real defects found
+and fixed live, matching this feature's own thesis:** (1) T10 found `Provider/Requests/RequestCollection.cs`'s
+`(kafkaClient as KafkaClient)!` downcast silently NREs the moment `IKafkaClient` is substituted with anything
+but the concrete class — fixed (`AddProviderCommandHandler` now takes the interface), verified against the
+full backend suite (484/484 unchanged), and the identical dormant pattern in Booking/Customer filed as
+`agenda-buddy-5og` rather than fixed out-of-scope; (2) T15 found and fixed its own script bug (an `awk`
+field-index off-by-one parsing the literal word "Docker" as a container ID) before proving Ryuk actually
+reaps within ~10s of two real SIGKILL-mid-flight runs — not assumed from documentation, the exact "reasoned,
+not observed" trap this program's episode 001 named. **One process gap, caught and corrected same-session:**
+T15's agent committed two commits directly onto the shared feature branch instead of its isolated worktree
+branch (bypassing the worktree-merge step entirely) — its changes didn't collide with anything, so nothing
+was lost, but it's a deviation from the wave's stated worktree-isolation mode, noted for future wave briefs.
+**Also caught:** T10/T11/T12's `tasks.cjs done` file write was never committed by those three agents (only
+T15/T16 remembered to `git add` it) — silently lost on worktree cleanup until re-run and committed here.
+**T16 amendment applied per ADR-048** (written this session): F-016 having shipped clears ADR-020's commit
+deferral, so T16 committed byte-deterministic specs to `docs/api/openapi/*.json`, superseding F-015-T13's
+HTTP-scraped content (semantically identical, confirmed by structural diff — only whitespace differs).
+**Wave 2 now ready:** T03 (`.editorconfig` + CI format enforcement), T13 (Tier 3 audit-fired assertions),
+T17 (CI spec-drift check), T19 (headline count + skipped-mobile-test investigation) — standup next.
+
+_Previously: Construction / Build / 2026-08-26T14:30:00Z — **Build pre-flight passed.** Channel in-sync (`main`/`main`).
 Remote sync: 0 behind `origin/main`. `tasks.cjs check` clean of new findings (2 pre-existing F-017 warnings
 unrelated to F-018). 21 tasks confirmed under `epic:api-refactor-foundations`. Branch
 `feat/F-018-api-refactor-foundations` already checked out (created at the original 2026-08-18 Inception,
@@ -948,3 +970,4 @@ re-planning (`/continue`).
 | 2026-08-26T14:20:00Z | plan_amended | 8 F-016-absorbed tasks (T01/T05/T06/T07/T08/T09/T14/T18) marked done with absorption notes; T06/T08's security ACs linked to F-016's real tests instead of force-overridden; 4 stale dependency edges removed (T01→T02, T18→T11/T12/T13). `tasks.cjs check` clean of F-018 warnings; `ready` surfaces T02/T04/T10/T11/T12/T15/T16/T19. Two open decisions from the pause (T02/T04 TDD override, T19's CI-confirmation split) still owed before claiming a task | Plan | api-refactor-foundations |
 | 2026-08-26T14:25:00Z | open_decisions_resolved | Both pause-era open decisions answered by the user: TDD gate overridden for T02/T04 (docs/external-tracker-only, same exception class as F-017-T03/T08); T19 split into T19 (docs) + F-018-T21 (CI confirmation, depends on T19, gated on a maintainer-pushed throwaway branch, not agent-closable). F-018-T20 now depends on both T19 and T21. Ready to claim a task | Plan | api-refactor-foundations |
 | 2026-08-26T14:30:00Z | construction_start | Build pre-flight passed: channel in-sync, remote sync 0 behind, task store clean (21 tasks, 2 pre-existing unrelated F-017 warnings only). Branch `feat/F-018-api-refactor-foundations` already checked out. Starting the build loop against 8 ready tasks: T02, T04, T10, T11, T12, T15, T16, T19 | Build | api-refactor-foundations |
+| 2026-08-26T16:00:00Z | wave_complete | **Wave 1a complete — 7/7 tasks.** T02/T04 built directly (docs/tracker, TDD-overridden). T10/T11/T12/T15/T16 built as parallel worktree Sub-Agents, merged clean. 2 real defects found+fixed live (Provider's `IKafkaClient` downcast NRE; T15's own awk parsing bug before proving Ryuk reaps in ~10s via real SIGKILL). 1 process gap: T15 committed directly to the shared branch instead of its worktree (no collision, noted). T10/T11/T12's `done` status commit was dropped by their agents, caught and fixed post-merge. T16 committed byte-deterministic OpenAPI specs per new ADR-048 (F-016 shipping cleared ADR-020's deferral). Final: 484 backend + 260 integration, 0 failing, 0 regressions | Build | api-refactor-foundations |
