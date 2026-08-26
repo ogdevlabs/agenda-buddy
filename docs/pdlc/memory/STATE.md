@@ -11,13 +11,13 @@
 
 ## Current Phase
 
-Idle — Ready for next /brainstorm
+Inception
 
 ---
 
 ## Current Feature
 
-none
+api-refactor-pilot-booking (F-019)
 
 _**F-018 `api-refactor-foundations` SHIPPED** as `v0.7.0` — merged `f907b23`, PR #69, episode 007. Operation
 closed 2026-08-26T21:15:00Z: merged, tagged, cloud deploy skipped (7th consecutive, 6th under ADR-035).
@@ -86,11 +86,11 @@ none
 
 ---
 
-- **Feature ID:** none
-- **Feature record:** —
-- **Claimed by:** — (F-018's claim released 2026-08-26 — shipped as `v0.7.0`)
-- **Claimed at:** —
-- **Branch:** — (`feat/F-018-api-refactor-foundations` merged and can be deleted)
+- **Feature ID:** F-019
+- **Feature record:** `docs/pdlc/tasks/F-019/_feature.md`
+- **Claimed by:** oscargarcia@ogdevlabs.onmicrosoft.com
+- **Claimed at:** 2026-08-26T21:20:00Z
+- **Branch:** — (will be set at build pre-flight)
 
 _F-015 shipped as `v0.5.0` and its claim was released. `scripts/tasks.cjs` **does NOT exist** in this repo —
 re-confirmed at F-017 Build pre-flight (2026-08-25, `MODULE_NOT_FOUND`); an earlier F-017 Discover-time note
@@ -114,7 +114,7 @@ _None active. Run `/night-shift <F-NNN>` to start an autonomous run (requires by
 
 ## Current Sub-phase
 
-none
+Define
 
 ---
 
@@ -1038,4 +1038,6 @@ re-planning (`/continue`).
 | 2026-08-26T21:00:00Z | deploy_skipped | Cloud deploy skipped — 7th consecutive, 6th under ADR-035; F-022–F-026 remain. No live AppHost smoke test — user-approved given minimal production surface (one changed line, already exercised by 301 integration tests + 7-service CI Docker matrix) | Verify | api-refactor-foundations |
 | 2026-08-26T21:15:00Z | operation_complete | Episode 007 approved and committed. `episodes/index.md`, OVERVIEW, ROADMAP, METRICS updated. F-018 shipped, claim released | Reflect | api-refactor-foundations |
 | 2026-08-26T21:15:00Z | operation_complete | Idle | — | none |
+| 2026-08-26T21:20:00Z | roadmap_claim | F-019 claimed as next on the roadmap. Discover run condensed (user request): reused F-018's program-level brainstorm log rather than re-deriving the reference implementation/package decisions | Discover | api-refactor-pilot-booking |
+| 2026-08-26T21:35:00Z | discover_complete | Found Booking has 10 routes now, not the 3 the program log assumed — F-014 added 7 (status/notes/payment) already using typed `Results<>`, no `RequestCollection`. User decided: all 10 routes in scope; fold in the dormant `agenda-buddy-5og` Kafka-downcast fix; `Booking` → `Booking.Api` + 3 new sibling projects | Define | api-refactor-pilot-booking |
 | 2026-08-26T17:30:00Z | wave_complete | **Wave 2a complete — 3/3 tasks.** T03 (168-file whitespace reformat + `.editorconfig` + CI format gate), T13 (Tier 3 audit tests, 6 services, convention-based permanent EventStore guard covering 21 handler files), T17 (CI spec-drift check, reused T16's generator, no new CI job needed — ran in the existing `integration` job). All 3 merged clean, 0 conflicts. 2 more real defects found, not fixed (test-only tasks): `UpdateCustomerCommandHandler` audits under the wrong event `Type` (`agenda-buddy-id4`); `UpdateServicesFromProviderCommandHandler` skips the audit write entirely on its not-found branch (`agenda-buddy-f49`). T03 and T17's CI steps proven red→green locally only — live-CI confirmation deferred to a real PR, joining F-018-T21 (Wave 1b). Final: 484 backend + 301 integration, 0 failing, 0 regressions. Wave 2b: only T19 ready | Build | api-refactor-foundations |

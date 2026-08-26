@@ -5,9 +5,9 @@ status: planned
 priority: 20
 labels: [roadmap, "priority:20"]
 depends_on: [F-018, F-016]
-claimed_by: null
+claimed_by: oscargarcia@ogdevlabs.onmicrosoft.com
 created: 2026-08-18
-updated: 2026-08-18
+updated: 2026-08-26
 ---
 **Stage 2 of 3 in the API refactor program (F-018 → F-019 → F-020).** Apply the full target pattern to **one** service — `Booking` — end to end, proving the shape before it is replicated six more times. CLAUDE.md already describes `Booking/Program.cs` as "the representative Minimal API entry point showing the full wiring pattern", and Booking exercises every concern the pattern must handle: three write endpoints, ownership guards, Kafka, and the EventStore audit trail.
 
