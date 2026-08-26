@@ -106,7 +106,7 @@ _None active. Run `/night-shift <F-NNN>` to start an autonomous run (requires by
 
 ## Current Sub-phase
 
-Test
+Test (running)
 
 ---
 

@@ -163,6 +163,21 @@ future wave briefs rather than silently absorbed.
 never committed by their respective worktree agents (only `T15`/`T16` remembered to `git add` it) — caught
 during post-merge verification and fixed with a dedicated commit before this task started.
 
+**One structural CI security-scan gap found live at Test layer 7b, fixed.** Running gitleaks locally
+against the branch's full commit range (`origin/main..HEAD`) surfaced a match `gitleaks-action`'s own PR-scan
+step never reported on PR #69. Root cause, confirmed by replaying PR #69's exact CI-logged command locally:
+`gitleaks-action` always scans with `--first-parent --no-merges`, which never diffs a merge commit's second
+parent — exactly where this project's own worktree-agent Construction convention (`git merge --no-ff`) puts
+every line a sub-agent wrote. The specific match was a false positive (`GenerateThrowawayPrivateKeyPem`
+builds PEM-shaped text from a key generated fresh at test time, never persisted, documented in the test's
+own remarks) — resolved with a `.gitleaksignore` fingerprint + inline `gitleaks:allow` comment, same pattern
+as F-017's canary fix. **The structural gap is the real finding**, independent of this one instance: any
+secret introduced only via a worktree merge's second parent would have passed `gitleaks-action`'s step with
+"no leaks found" every time, silently defeating CONSTITUTION §7's "always required, cannot be unchecked"
+promise. Fixed by adding a second, independent full-range gitleaks step to `security-scan` with no
+`--first-parent`/`--no-merges`. Filed `agenda-buddy-wow` (P1) — live-CI confirmation of the new step is still
+owed, same class of gap as F-018-T21.
+
 **One Important finding at Party Review, fixed.** Neo (N1) and Echo (E1) — linked, same root cause —
 found that `EventStoreWriteGuardTest` proves less than AC-15's literal wording claims: it checks the whole
 handler *file* for the audit call, not every *branch*. The exact gap it would need to catch to be a true
