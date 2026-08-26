@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Driver;
 using Testcontainers.MongoDb;
 
@@ -107,9 +108,15 @@ public class ServiceHostFixture<TEntryPoint>(CryptoSessionFixture crypto) : IAsy
     /// ones that never run, and "shipped but never switched on" is precisely F-016's original defect.
     /// </para>
     /// </param>
+    /// <param name="configureServices">
+    /// Applied through <c>ConfigureTestServices</c>, so it runs after the service's own
+    /// <c>Program.cs</c> registrations — added by F-018-T10 so a singleton such as <c>IKafkaClient</c>
+    /// can be swapped for a recording fake without touching the service itself.
+    /// </param>
     public ServiceHost StartService(
         string? environment = null,
-        IReadOnlyDictionary<string, string>? settings = null)
+        IReadOnlyDictionary<string, string>? settings = null,
+        Action<IServiceCollection>? configureServices = null)
     {
         if (ContainerConnectionString is null)
         {
@@ -136,6 +143,11 @@ public class ServiceHostFixture<TEntryPoint>(CryptoSessionFixture crypto) : IAsy
             foreach (var setting in settings ?? new Dictionary<string, string>())
             {
                 builder.UseSetting(setting.Key, setting.Value);
+            }
+
+            if (configureServices is not null)
+            {
+                builder.ConfigureTestServices(configureServices);
             }
         });
 
