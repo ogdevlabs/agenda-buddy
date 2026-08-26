@@ -74,7 +74,7 @@ fake and final verification. The task store needs this reflected before Build st
      Example: F-002-T03 — Add OAuth2 login with GitHub
      Set to "none" when no task is active. -->
 
-Wave 2a (3 parallel Sub-Agent builds, worktree-isolated) — F-018-T03, T13, T17. Wave 2b (T19) blocked on T13.
+none — Wave 2a complete (T03, T13, T17 all done); Wave 2b (T19) ready, not yet claimed
 
 ---
 
@@ -134,6 +134,18 @@ deferral, so T16 committed byte-deterministic specs to `docs/api/openapi/*.json`
 HTTP-scraped content (semantically identical, confirmed by structural diff — only whitespace differs).
 **Wave 2 now ready:** T03 (`.editorconfig` + CI format enforcement), T13 (Tier 3 audit-fired assertions),
 T17 (CI spec-drift check), T19 (headline count + skipped-mobile-test investigation) — standup next.
+
+**Wave 2a complete — 3/3 tasks, all merged clean.** T03 (168-file whitespace-only reformat + CI format gate),
+T13 (Tier 3 audit tests for 6 services + a convention-based permanent EventStore guard, 22 handler files
+covered), T17 (CI spec-drift check reusing T16's generator, wired into the existing `integration` job — no
+new CI job needed). **Two more real defects found, not fixed** (test-only tasks, no
+production changes in scope): `UpdateCustomerCommandHandler` audits failures under the wrong event `Type`
+("UpdateProviderCommand", copy-paste) — filed `agenda-buddy-id4`; `UpdateServicesFromProviderCommandHandler`
+writes no audit event at all on its provider-not-found branch, a real CONSTITUTION §3 gap — filed
+`agenda-buddy-f49`. **Two live-CI-push verifications now deferred to a real PR**, alongside F-018-T21 from
+Wave 1b: T17's spec-drift check (proven red→green locally, not yet confirmed wired into a real GitHub Actions
+run) and T03's format-check CI step (same caveat). Final: 484 backend + 301 integration, 0 failing, 0
+regressions across both waves. **Wave 2b: only T19 ready** (single task, standup skipped per Step 4's rule).
 
 _Previously: Construction / Build / 2026-08-26T14:30:00Z — **Build pre-flight passed.** Channel in-sync (`main`/`main`).
 Remote sync: 0 behind `origin/main`. `tasks.cjs check` clean of new findings (2 pre-existing F-017 warnings
@@ -971,3 +983,4 @@ re-planning (`/continue`).
 | 2026-08-26T14:25:00Z | open_decisions_resolved | Both pause-era open decisions answered by the user: TDD gate overridden for T02/T04 (docs/external-tracker-only, same exception class as F-017-T03/T08); T19 split into T19 (docs) + F-018-T21 (CI confirmation, depends on T19, gated on a maintainer-pushed throwaway branch, not agent-closable). F-018-T20 now depends on both T19 and T21. Ready to claim a task | Plan | api-refactor-foundations |
 | 2026-08-26T14:30:00Z | construction_start | Build pre-flight passed: channel in-sync, remote sync 0 behind, task store clean (21 tasks, 2 pre-existing unrelated F-017 warnings only). Branch `feat/F-018-api-refactor-foundations` already checked out. Starting the build loop against 8 ready tasks: T02, T04, T10, T11, T12, T15, T16, T19 | Build | api-refactor-foundations |
 | 2026-08-26T16:00:00Z | wave_complete | **Wave 1a complete — 7/7 tasks.** T02/T04 built directly (docs/tracker, TDD-overridden). T10/T11/T12/T15/T16 built as parallel worktree Sub-Agents, merged clean. 2 real defects found+fixed live (Provider's `IKafkaClient` downcast NRE; T15's own awk parsing bug before proving Ryuk reaps in ~10s via real SIGKILL). 1 process gap: T15 committed directly to the shared branch instead of its worktree (no collision, noted). T10/T11/T12's `done` status commit was dropped by their agents, caught and fixed post-merge. T16 committed byte-deterministic OpenAPI specs per new ADR-048 (F-016 shipping cleared ADR-020's deferral). Final: 484 backend + 260 integration, 0 failing, 0 regressions | Build | api-refactor-foundations |
+| 2026-08-26T17:30:00Z | wave_complete | **Wave 2a complete — 3/3 tasks.** T03 (168-file whitespace reformat + `.editorconfig` + CI format gate), T13 (Tier 3 audit tests, 6 services, convention-based permanent EventStore guard covering 21 handler files), T17 (CI spec-drift check, reused T16's generator, no new CI job needed — ran in the existing `integration` job). All 3 merged clean, 0 conflicts. 2 more real defects found, not fixed (test-only tasks): `UpdateCustomerCommandHandler` audits under the wrong event `Type` (`agenda-buddy-id4`); `UpdateServicesFromProviderCommandHandler` skips the audit write entirely on its not-found branch (`agenda-buddy-f49`). T03 and T17's CI steps proven red→green locally only — live-CI confirmation deferred to a real PR, joining F-018-T21 (Wave 1b). Final: 484 backend + 301 integration, 0 failing, 0 regressions. Wave 2b: only T19 ready | Build | api-refactor-foundations |
