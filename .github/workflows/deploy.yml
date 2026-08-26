@@ -32,7 +32,7 @@ jobs:
     environment: ${{ inputs.environment }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # Fail fast and name every missing value. The "Assert every service starts in Development"
       # guard in dotnet.yml silently consumed two secrets that were never created and only failed
