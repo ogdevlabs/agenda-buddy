@@ -48,6 +48,8 @@ public class IdentityPersistenceTest(ServiceHostFixture<IdentityAnchor> host, Cr
 
     private readonly TokenFactory _tokens = new(crypto);
 
+    // gitleaks:allow — PEM header/footer built from a key generated fresh above, this call, never
+    // persisted; not a committed secret. Fingerprinted in .gitleaksignore (git history is immutable).
     private static string GenerateThrowawayPrivateKeyPem()
     {
         using var rsa = RSA.Create(2048);
