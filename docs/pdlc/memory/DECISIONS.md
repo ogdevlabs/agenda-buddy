@@ -979,3 +979,40 @@ introduce; (3) verify AC10 live the moment a real PR opens against `feat/F-017-c
 (I2) — this is `/ship`'s responsibility, not deferred indefinitely. Re-evaluation trigger: none of these
 block a future feature by default: only I4 recurring at a materially higher rate, or a real secret leak
 recurring in a path this feature's `security-scan` job now DOES cover (post-I1-fix), would warrant revisiting.
+
+---
+
+## ADR-048 — ADR-020's commit deferral has cleared; F-018-T16 commits the generated OpenAPI specs (F-018) *(design decision)*
+
+**Date:** 2026-08-26 · **Status:** Accepted · **Supersedes (partially):** ADR-020's "do not commit" clause
+
+**Context.** ADR-020 (2026-08-18) deferred committing generated OpenAPI specs because the repository is
+public and a committed spec would document `GET /api/v1/providers` as anonymous and full-record — the exact
+exposure F-016 existed to fix. It named committing an explicit **F-016 exit criterion**. F-016 shipped as
+`v0.2.0` on 2026-08-18 (same day, later): `GET /api/v1/providers` is now authenticated, non-owners get a
+projected `ProviderSummary` (F-016-T11), and both list endpoints are paginated (F-016-T15). F-018-T16's task
+text still read "Do NOT commit the specs," written before F-016 shipped and never revisited — F-018's own
+Construction was aborted at the 2026-08-18 wave-1 standup and resumed only on 2026-08-26, after F-016, F-021,
+F-014, F-015, and F-017 all shipped in between.
+
+**Decision.** Commit the specs T16 generates. ADR-020's stated blocking condition is satisfied; carrying the
+deferral forward literally would be enforcing a stale instruction against a codebase the ADR's own author
+would no longer recognize as unauthenticated. T16's byte-deterministic `ISwaggerProvider` output becomes the
+committed contract baseline at `docs/api/openapi/<service>.json` — the same location F-015-T13's shell-script
+mechanism already populated, so this supersedes that content rather than duplicating it. `scripts/generate-openapi.sh`
+is unchanged and remains the manual, on-demand regeneration path for a developer without CI access; T16/T17
+own the CI-enforced, byte-deterministic, drift-checked path. AC-17 in the original PRD ("generated and
+drift-checked" per ADR-020) is superseded to also require commit.
+
+**Consequences.** T17 (CI spec-drift check, still open, depends on T16) diffs against a committed baseline
+from day one rather than only "the previous run's artifact" ADR-020 anticipated as the interim measure — a
+stronger check, not a weaker one. No new threat is introduced: the endpoint the original deferral protected
+is closed, and the specs describe synthetic-service-shape metadata, not data. If F-019/F-020 reopen an
+anonymous full-record read anywhere, that is a new, separately-threat-modeled decision — not a reason to
+revert this one preemptively.
+
+**Alternatives rejected.** Leaving the deferral in place until T20 (final verification) or F-019 — rejected
+because the condition is already met today; carrying a satisfied blocking condition forward only accumulates
+confusion for whoever reads T16 next, and CONSTITUTION's own purpose (single source of truth for how the
+project is built now) argues for closing satisfied deferrals promptly, the same reasoning ADR-016 already
+applies to the retired `Persitency` rename prohibition.

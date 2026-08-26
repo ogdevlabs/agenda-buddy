@@ -226,6 +226,13 @@ jobs:
       - name: Build
         run: dotnet build agenda-buddy-backend.slnf --no-restore --configuration Release /p:MobileWorkloads=false
 
+      # F-018-T03: the root .editorconfig (added this task) is the only thing stopping whitespace
+      # drift from recurring — v0.1.0 fixed 69 such findings with nothing to keep them fixed, and
+      # F-019/F-020 rewrite every endpoint file next, where drift would hide real changes in review.
+      # `--no-restore` reuses the Restore step above; this only reports, it never rewrites files.
+      - name: Format check (dotnet format --verify-no-changes)
+        run: dotnet format agenda-buddy-backend.slnf --verify-no-changes --no-restore
+
       - name: Test
         run: >
           dotnet test agenda-buddy-backend.slnf
@@ -428,6 +435,34 @@ jobs:
       - name: Canary — gitleaks catches Atlas-credential shape and redacts it (F-017-T05)
         run: ./scripts/verify-gitleaks-canary.sh
 
+      # F-018-T20 (Test layer 7b). gitleaks-action's own PR-diff mode always runs
+      # `git log --no-merges --first-parent <base>^..<head>` — confirmed by reading its actual CI
+      # log output on this feature's own PR (#69). `--first-parent` walks only the direct-commit
+      # chain and NEVER diffs a merge commit's second parent — exactly where this project's own
+      # worktree-agent convention (`git merge --no-ff`, used by F-015/F-017/F-018's parallel-task
+      # builds) puts every line a sub-agent actually wrote. Verified live: the step above scanned 19
+      # of this branch's 38 commits (52 KB); the full range is 38 commits (280 KB). A secret
+      # introduced only via a worktree merge's second parent would pass the step above with
+      # "no leaks found" and never be flagged — silently defeating CONSTITUTION §7's "always
+      # required, cannot be unchecked" promise the moment this project's own build convention is
+      # used. This step re-scans the full range with no --first-parent, using the same ruleset
+      # (.gitleaks.toml, .gitleaksignore) so no existing accepted false positive needs a second
+      # entry. No checksum pin on the binary (residual, accepted risk — same posture as any `curl`
+      # step without one; revisit if this project starts checksum-pinning other tool downloads).
+      - name: Secret scan (gitleaks, full range — no --first-parent)
+        run: |
+          set -euo pipefail
+          curl -sSfL -o /tmp/gitleaks.tar.gz \
+            https://github.com/gitleaks/gitleaks/releases/download/v8.24.3/gitleaks_8.24.3_linux_x64.tar.gz
+          tar -xzf /tmp/gitleaks.tar.gz -C /tmp gitleaks
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            range="${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}"
+          else
+            range="${{ github.event.before }}..${{ github.event.after }}"
+          fi
+          echo "Scanning full range (all parents): $range"
+          /tmp/gitleaks detect --source . --log-opts="$range" --redact -v --exit-code=1
+
       # Review C1 (Party Review, 2026-08-26). Proves trivy-severity-gate.sh's project-vs-base-image
       # branching logic against synthetic fixtures — runs once here rather than per matrix entry in
       # docker-build-and-scan below, since it verifies the gate's generic logic, not any one
@@ -617,6 +652,15 @@ jobs:
             echo "::error::Either make it faster or raise DURATION_BUDGET_SECONDS deliberately, in a reviewed change."
             exit 1
           fi
+
+      # F-018-T15 / AC-13: proves Testcontainers' resource reaper (Ryuk) actually cleans up an
+      # orphaned container after a real, abnormal SIGKILL of the test process mid-flight — by
+      # performing that exact kill and watching what happens, not by trusting documentation of how
+      # Ryuk is supposed to behave (the same "reasoned, not observed" trap that made a threat wrong
+      # in F-013). Runs in this job specifically because it is the one that already has Docker and
+      # a real MongoDB Testcontainer path to kill.
+      - name: Verify container reaping after an abnormal kill (F-018-T15)
+        run: ./scripts/verify-container-reaping.sh
 
       # Container-per-class means a leaked container is possible if a fixture throws mid-startup.
       # Reported rather than cleaned up: the runner is ephemeral, so this is a diagnostic, and a

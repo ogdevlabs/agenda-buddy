@@ -9,7 +9,7 @@ public class RequestCollection(IKafkaClient kafkaClient, IEventStore eventStore)
     {
         var result = await new AddProviderCommandHandler(
                 mediator,
-                (kafkaClient as KafkaClient)!,
+                kafkaClient,
                 providerService,
                 providerEntity,
                 eventStore)

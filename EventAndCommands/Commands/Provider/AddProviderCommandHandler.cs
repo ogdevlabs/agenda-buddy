@@ -2,7 +2,7 @@ namespace EventAndCommands.Commands.Provider;
 
 public class AddProviderCommandHandler(
     IMediator mediator,
-    KafkaClient kafkaClient,
+    IKafkaClient kafkaClient,
     ProviderService providerService,
     ProviderEntity providerEntity,
     IEventStore eventStore)

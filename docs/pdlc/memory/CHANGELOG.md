@@ -19,6 +19,32 @@
 
 ---
 
+## v0.7.0 — 2026-08-26
+
+Stage 1/3 of the API refactor program (F-018). Completes the Testcontainers integration-test harness F-016
+started, adding route-contract, persistence round-trip, and audit-fired coverage across all seven services,
+plus a permanent guard proving CONSTITUTION §3's audit-trail invariant. Commits byte-deterministic OpenAPI
+specs to the repo for the first time and CI-drift-checks them. Fixes a real production bug (a `KafkaClient`
+substitution that silently null-referenced) and a structural gap in the secret-scan CI step that let content
+merged in via a worktree branch's second parent go unscanned.
+
+### Added
+- **Tier 1/2/3 integration test coverage** across all seven services (`AgendaBuddy.IntegrationTests/{Contract,Persistence,Audit}/`) — route-contract status codes, real Mongo write/read round-trips, and audit-event assertions read directly via `MongoDB.Driver`, plus a convention-based permanent guard (`EventStoreWriteGuardTest`) that fails if a handler's EventStore write is ever deleted.
+- **`KafkaClientFake`** — a recording `IKafkaClient` substitute, so the per-provider-topic convention (CONSTITUTION §3) stays test-guarded without a Kafka container.
+- **Byte-deterministic OpenAPI generation** via `ISwaggerProvider` (no HTTP call, no container) — specs are now committed to `docs/api/openapi/*.json` and drift-checked in CI (ADR-048 supersedes ADR-020's earlier commit deferral, now that F-016 has closed the anonymous-PII exposure that deferral protected against).
+- **`.editorconfig`** at the repo root, enforced in CI via `dotnet format --verify-no-changes`.
+- **`scripts/verify-container-reaping.sh`** — proves Testcontainers' Ryuk reaper actually cleans up orphan containers after a mid-flight kill, verified with a real `SIGKILL`, not assumed from documentation.
+
+### Changed
+- CONSTITUTION §1 (net10.0, not .NET 8), §4 (records the `Validot` migration target per ADR-016 without claiming it's already the code), §9 (records ADR-015's five pre-approved packages), §2 (`.editorconfig` replaces "not yet configured").
+- CI's secret-scan step now runs twice — `gitleaks-action`'s own PR-diff scan, plus a second, independent full-range scan with no `--first-parent` — after discovering the first never diffs a merge commit's second parent, exactly where this project's worktree-agent builds land their code.
+
+### Fixed
+- `Provider/Requests/RequestCollection.cs`'s `(kafkaClient as KafkaClient)!` downcast silently produced a `null` reference — and a `NullReferenceException` — the moment `IKafkaClient` was substituted with anything but the concrete class. `AddProviderCommandHandler` now depends on the interface.
+- `Identity/Program.cs`'s comment claiming a shared EventStore was corrected — Identity registers none.
+
+---
+
 ## v0.6.0 — 2026-08-26
 
 Closes CONSTITUTION §7's mandatory-but-unimplemented security scan and fixes the container images that

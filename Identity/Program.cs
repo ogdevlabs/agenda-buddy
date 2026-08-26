@@ -12,8 +12,9 @@ var builder = WebApplication.CreateBuilder(args);
 // Aspire defaults: telemetry, health checks, service discovery, HttpClient resilience.
 builder.AddServiceDefaults();
 
-// One MongoDB client per process, shared by the repositories and the EventStore. Aspire injects ConnectionStrings:mongodb; the resolver also accepts every legacy
-// shape, and fails with a message naming each key it tried rather than a null-argument throw.
+// One MongoDB client per process, shared by the repositories. Identity registers no EventStore — it has
+// no CQRS command handlers to audit. Aspire injects ConnectionStrings:mongodb; the resolver also accepts
+// every legacy shape, and fails with a message naming each key it tried rather than a null-argument throw.
 builder.Services.AddSingleton<IMongoClient>(_ =>
     new MongoClient(MongoConnectionResolver.Resolve(builder.Configuration)));
 

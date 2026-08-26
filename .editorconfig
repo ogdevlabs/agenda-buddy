@@ -1,0 +1,81 @@
+# Agenda Buddy — root .editorconfig
+#
+# Captures the conventions this codebase already follows (CONSTITUTION.md §2),
+# so `dotnet format agenda-buddy-backend.slnf --verify-no-changes` has a stable
+# baseline instead of drifting whitespace hiding real changes in review (F-018-T03).
+# This is a description of existing practice, not an aspirational style guide —
+# see docs/pdlc/context/07-build.md for the audit that confirmed indentation,
+# brace style, file-scoped namespaces, and `var` usage below against the repo.
+
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+[*.cs]
+# Allman brace style — every existing service/library file opens braces on their own line.
+csharp_new_line_before_open_brace = all
+csharp_new_line_before_else = true
+csharp_new_line_before_catch = true
+csharp_new_line_before_finally = true
+
+# File-scoped namespaces — exclusively what the codebase uses (1800+ files, zero block-style).
+csharp_style_namespace_declarations = file_scoped:suggestion
+
+# `var` is the codebase's overwhelming default over explicit types.
+csharp_style_var_for_built_in_types = true:suggestion
+csharp_style_var_when_type_is_apparent = true:suggestion
+csharp_style_var_elsewhere = true:suggestion
+
+# `this.` is not used to qualify member access anywhere in the codebase.
+dotnet_style_qualification_for_field = false:suggestion
+dotnet_style_qualification_for_property = false:suggestion
+dotnet_style_qualification_for_method = false:suggestion
+dotnet_style_qualification_for_event = false:suggestion
+
+# Naming conventions — CONSTITUTION.md §2 naming table.
+# Severity is `suggestion`, not `warning`/`error`: this documents the existing
+# convention for analyzers/IDEs without `dotnet format` renaming anything on
+# the retroactive reformat (the codebase already conforms).
+
+dotnet_naming_style.pascal_case_style.capitalization = pascal_case
+
+dotnet_naming_style.camel_case_underscore_style.capitalization = camel_case
+dotnet_naming_style.camel_case_underscore_style.required_prefix = _
+
+# Classes / interfaces — PascalCase (e.g. ProviderEntity, IBookingService)
+dotnet_naming_symbols.types_symbols.applicable_kinds = class, interface, struct, enum
+dotnet_naming_symbols.types_symbols.applicable_accessibilities = *
+
+dotnet_naming_rule.types_rule.symbols = types_symbols
+dotnet_naming_rule.types_rule.style = pascal_case_style
+dotnet_naming_rule.types_rule.severity = suggestion
+
+# Methods — PascalCase (e.g. BookAppointmentAsync)
+dotnet_naming_symbols.methods_symbols.applicable_kinds = method
+dotnet_naming_symbols.methods_symbols.applicable_accessibilities = *
+
+dotnet_naming_rule.methods_rule.symbols = methods_symbols
+dotnet_naming_rule.methods_rule.style = pascal_case_style
+dotnet_naming_rule.methods_rule.severity = suggestion
+
+# Properties — PascalCase (e.g. EmailProvider, KafkaTopic)
+dotnet_naming_symbols.properties_symbols.applicable_kinds = property
+dotnet_naming_symbols.properties_symbols.applicable_accessibilities = *
+
+dotnet_naming_rule.properties_rule.symbols = properties_symbols
+dotnet_naming_rule.properties_rule.style = pascal_case_style
+dotnet_naming_rule.properties_rule.severity = suggestion
+
+# Private fields — _camelCase (e.g. _collection)
+dotnet_naming_symbols.private_fields_symbols.applicable_kinds = field
+dotnet_naming_symbols.private_fields_symbols.applicable_accessibilities = private
+
+dotnet_naming_rule.private_fields_rule.symbols = private_fields_symbols
+dotnet_naming_rule.private_fields_rule.style = camel_case_underscore_style
+dotnet_naming_rule.private_fields_rule.severity = suggestion
