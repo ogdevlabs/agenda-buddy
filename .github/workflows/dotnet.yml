@@ -387,6 +387,15 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      # F-017-T05. Regression guard for the rule above: proves the configured ruleset (.gitleaks.toml)
+      # still detects an Atlas-credential-shaped secret (PRD AC 7), and that gitleaks-action's own
+      # invocation (--redact -v --report-format=sarif, reproduced exactly here) never leaks the
+      # fixture's literal value into console output or the SARIF report while still preserving
+      # file:line ([security] AC 15, threat-model.md T-002). The fixture is generated into a temp
+      # dir and never committed — a committed "leak" would fail the step above on every future PR.
+      - name: Canary — gitleaks catches Atlas-credential shape and redacts it (F-017-T05)
+        run: ./scripts/verify-gitleaks-canary.sh
+
   # ---------------------------------------------------------------------------
   # Docker image build — .NET SDK container support, 7-service matrix (F-017-T06)
   #

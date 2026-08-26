@@ -1,0 +1,24 @@
+title = "agenda-buddy gitleaks config"
+
+# Extends gitleaks' default ruleset rather than replacing it — losing the built-in rules (AWS keys,
+# GitHub tokens, Stripe keys, etc.) to gain one custom rule would be a net loss of coverage.
+[extend]
+useDefault = true
+
+# F-017-T05. The default ruleset does not recognize a MongoDB/Atlas connection string with
+# embedded credentials as a secret (verified: it misses the exact shape of the credential this
+# project already leaked once — ISSUE-002). This rule closes that gap.
+#
+# `secretGroup = 2` is deliberate, not cosmetic: without it, gitleaks' `--redact` flag (which
+# gitleaks-action always passes — verified against gitleaks-action's own source) redacts whatever
+# the FIRST capture group matches. Group 1 here is the optional `+srv` scheme suffix, not the
+# password — so an unset secretGroup redacts "+srv" and leaves the real password sitting in plain
+# text in both the console "Finding:" line and the SARIF report's snippet, in every log a scan step
+# fails in. Group 2 (the password) is what must be redacted. See F-017-T05's canary verification
+# script (scripts/verify-gitleaks-canary.sh) for the empirical proof this matters.
+[[rules]]
+id = "mongodb-atlas-connection-string"
+description = "MongoDB/Atlas connection string with embedded credentials (the shape of the ISSUE-002 leaked credential)"
+regex = '''mongodb(\+srv)?:\/\/[A-Za-z0-9_\-\.]+:([^@\s\/]+)@[A-Za-z0-9_\-\.]+\.mongodb\.net[^\s'"]*'''
+secretGroup = 2
+tags = ["secret", "mongodb", "atlas"]
