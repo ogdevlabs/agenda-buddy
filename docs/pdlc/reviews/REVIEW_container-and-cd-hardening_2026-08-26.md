@@ -10,7 +10,9 @@
 
 ## Critical
 
-### C1 — ACs 6, 8, 9, 11, 13 have zero committed regression test, and this was not an approved TDD exception (Echo, cross-talked with Neo)
+### C1 — ✅ FIXED (commit `7cefae1`) — ACs 6, 8, 9, 11, 13 have zero committed regression test, and this was not an approved TDD exception (Echo, cross-talked with Neo)
+
+**Resolution:** added `SecurityScanAndDockerJobShapeTest` (5 tests: gitleaks step presence/AC6, matrix service list + no-suppressed-failures/AC8, 10-min timeout on the new job only/AC11, no docker run/health-check/registry-push/AC13) and `scripts/verify-trivy-severity-gate.sh` (4 synthetic-fixture cases for AC9's project-vs-base-image branching, wired as a CI step alongside the gitleaks canary). All 9 new assertions mutation-tested — each confirmed red against a deliberately broken version of what it guards, then reverted. `AgendaBuddy.AppHost.Tests`: 87 → 92. Backend suite: 478 → 483, 0 failing.
 
 `AgendaBuddy.AppHost.Tests` has structural tests for AC1-3 (`DockerAndComposeHygieneTest`), AC4 (`PublishContainerTest`), AC7/14/15 (`PinnedThirdPartyActionsTest` + `verify-gitleaks-canary.sh`) — but **nothing** asserts:
 - AC6: the gitleaks step exists in `security-scan`
@@ -49,7 +51,7 @@ One run of five showed 10 failures in `AgendaBuddy.AppHost.Tests` (77/87) when r
 
 ## Advisory
 
-- **A1 (Neo):** Stale comment at `dotnet.yml:382-384` — says gitleaks-action is "not yet pinned," directly above a line that already is (leftover from T04's original commit, never updated when T09 landed).
+- **A1 (Neo):** ✅ FIXED (commit `7cefae1`) — stale comment at `dotnet.yml:382-384` said gitleaks-action was "not yet pinned," directly above a line that already was (leftover from T04's original commit, never updated when T09 landed). Corrected in the same commit as the C1 fix.
 - **A2 (Neo):** Tech debt — I1 and the Gateway path-filter omission are worth a tracked bead; neither is Critical given no active external contributors (ADR-043's own rationale), but both are real gaps a future accidental paste could exploit silently.
 - **A3 (Neo, YAGNI):** `shrink:` — `DockerAndComposeHygieneTest.cs`, `PinnedThirdPartyActionsTest.cs`, and `PublishContainerTest.cs` each carry a near-identical, copy-pasted `RepoRoot()` walk-up-to-`agenda-buddy.sln` helper. One shared internal test helper replaces all three.
 - **A4 (Echo):** AC3's generalized guard only recognizes literal `/dotnet/sdk:`/`/dotnet/aspnet:`/`/dotnet/runtime:` substrings with a `:MAJOR.` tag — a digest-pinned or ARG-parameterized base image would silently skip, not fail. Already proved itself once (caught `Profession/Dockerfile`'s real, previously-undocumented mismatch), so not narrowed-to-uselessness, just not exhaustive.
