@@ -71,49 +71,36 @@ _No tasks._
 
 ## F-014 — wire-unreached-services  `shipped`
 
-<!-- Hand-written: scripts/tasks.cjs is not present in this repository. See the F-021 section's note. -->
+| ID | Title | Status | Prio | Depends on |
+|----|-------|--------|------|------------|
+| F-014-T01 | Register the four repositories and the collection names none of them had | done | — | — |
+| F-014-T02 | Non-charging payment gateway by default; Stripe only when a key is configured | done | — | F-014-T01 |
+| F-014-T03 | Server-owned appointment status, and the cancellation inversion it activates | done | — | F-014-T01 |
+| F-014-T04 | Session notes, provider-private, with existence hidden too | done | — | F-014-T01 |
+| F-014-T05 | Payment routes, with participants taken from the appointment | done | — | F-014-T02 |
+| F-014-T06 | Messages and notifications as caller-scoped route groups | done | — | F-014-T01 |
+| F-014-T07 | Reporting and deactivation, and a report that does not lie | done | — | F-014-T01, F-014-T03 |
+| F-014-T08 | Make ObjectId round-trip through JSON | done | — | F-014-T04 |
+| F-014-T09 | Verification, decisions, and the documentation this feature made false | done | — | F-014-T03, F-014-T05, F-014-T06, F-014-T07, F-014-T08 |
 
-| Task | Title | Status | Depends on |
-|---|---|---|---|
-| F-014-T01 | Register the four repositories and the collection names none of them had | done | — |
-| F-014-T02 | Non-charging payment gateway by default; Stripe only when a key is configured | done | T01 |
-| F-014-T03 | Server-owned appointment status, and the cancellation inversion it activates | done | T01 |
-| F-014-T04 | Session notes, provider-private, with existence hidden too | done | T01 |
-| F-014-T05 | Payment routes, with participants taken from the appointment | done | T02 |
-| F-014-T06 | Messages and notifications as caller-scoped route groups | done | T01 |
-| F-014-T07 | Reporting and deactivation, and a report that does not lie | done | T01, T03 |
-| F-014-T08 | Make `ObjectId` round-trip through JSON — **unplanned**, found by running the first test | done | T04 |
-| F-014-T09 | Verification, decisions, and the documentation this feature made false | done | T03, T05–T08 |
-
-**9 of 9 done.** 19 acceptance criteria, 10 of them `[security]`; threats T-201…T-208, seven mitigated and one partially accepted (T-205's unvalidatable amount).
-
-## F-015 — api-gateway-and-mobile-contract  `in progress`
+## F-015 — api-gateway-and-mobile-contract  `shipped`
 
 | ID | Title | Status | Prio | Depends on |
 |----|-------|--------|------|------------|
 | F-015-T01 | Scaffold the Gateway project — AddServiceDefaults, health/alive, no routing yet | done | — | — |
 | F-015-T02 | Spike: confirm YARP re-resolves Aspire's dynamic destination ports without a gateway restart | done | — | F-015-T01 |
 | F-015-T03 | YARP route table: explicit api/v1/{service}/** allowlist, no catch-all forward | done | — | F-015-T02 |
-| F-015-T04 | Gateway failure translation, JWT-passthrough proof (AC3/AC4, reassigned), and proof the forwarded Host header doesn't break transport security | done | — | F-015-T03, F-015-T05 |
+| F-015-T04 | Gateway failure translation, and proof the forwarded Host header doesn't break transport security | done | — | F-015-T03, F-015-T05 |
 | F-015-T05 | Wire the Gateway into AppHostWiring.cs — WithReference/WaitFor on all seven services | done | — | F-015-T01 |
 | F-015-T06 | Extract MobileApp's *ApiService route-building logic into plain, Maui-free classes | done | — | — |
 | F-015-T07 | Correct every *ApiService's route, verb, and payload; swap status updates to F-014's dedicated route | done | — | F-015-T06, F-015-T05 |
 | F-015-T08 | Remove SeedDataProvider; let the real error banner and empty-state UI take over | done | — | F-015-T07 |
 | F-015-T09 | Wire transparent refresh-on-401; never auto-retry a non-idempotent write on ambiguous timeout | done | — | F-015-T06, F-015-T05 |
 | F-015-T10 | LogoutAsync calls the server; the old refresh token is rejected afterward | done | — | F-015-T09 |
-| F-015-T11 | Finalize revenue/payment/notification copy; map the failed-service error into the banner; add the status-button loading state | done | — | F-015-T04, F-015-T08 |
+| F-015-T11 | Finalize revenue/payment/notification copy; map the gateway's failed-service error into the banner; add the status-button loading state | done | — | F-015-T04, F-015-T08 |
 | F-015-T12 | run-ios.sh discovers the gateway's address and injects MAUI_API_BASE_URL | done | — | F-015-T05 |
 | F-015-T13 | Regenerate the OpenAPI specs to include F-014's nine new routes | done | — | — |
-| F-015-T14 | Verification: all 13 ACs attested end to end against a live AppHost, and the documentation this feature made false | done | — | F-015-T07, F-015-T08, F-015-T09, F-015-T10, F-015-T12 |
-
-**14 of 14 done.** All 15 acceptance criteria closed and attested against a live AppHost. All three threats
-dispositioned. Wave 5: mobile 136→165 (T11 +29 — also built the ProviderReportPage/PaymentPage screens AC13
-needed, which didn't exist yet). **One defect found live at T14, invisible to 863 automated tests: the
-Gateway's route allowlist had no entry for `api/v1/messages/**`/`api/v1/notifications/**`** — both real
-Customer-service routes, unreachable through the one address `MobileApp` calls. **Fixed in the same gate**
-(two-line allowlist addition + 4 regression tests), not filed — see
-`docs/pdlc/design/api-gateway-and-mobile-contract/verification.md` §3.1. **Final: backend 468 + mobile 165 +
-integration 234 = 867 total, 0 failing.**
+| F-015-T14 | Verification: all 13 ACs attested end to end against a live AppHost, and the documentation this feature made false | done | — | F-015-T07, F-015-T08, F-015-T09, F-015-T10, F-015-T11, F-015-T12 |
 
 ## F-016 — secure-public-endpoints  `shipped`
 
@@ -140,34 +127,45 @@ integration 234 = 867 total, 0 failing.**
 | F-016-T19 | Final verification: full suite green, no test deleted, every AC attested | done | — | F-016-T08, F-016-T09, F-016-T10, F-016-T11, F-016-T12, F-016-T13, F-016-T14, F-016-T15, F-016-T16, F-016-T17, F-016-T18 |
 | F-016-T20 | Integration CI job: separate, blocking, duration-enforced | done | — | F-016-T19 |
 
-## F-017 — container-and-cd-hardening  `planned`
-
-_No tasks._
-
-## F-018 — api-refactor-foundations  `planned`
+## F-017 — container-and-cd-hardening  `shipped`
 
 | ID | Title | Status | Prio | Depends on |
 |----|-------|--------|------|------------|
-| F-018-T01 | Rename EventAndCommands/Persitency to Persistence | open | — | F-018-T02 |
-| F-018-T02 | Amend CONSTITUTION 1/4/9, verify ADR-014..020, fix the Identity comment | open | — | — |
-| F-018-T03 | Add .editorconfig and enforce dotnet format in CI | open | — | F-018-T01, F-018-T02 |
-| F-018-T04 | File the beads issue tracking the 10-green-run count for the section 7 gate | open | — | — |
-| F-018-T05 | Create AgendaBuddy.IntegrationTests and add InternalsVisibleTo to 7 services | open | — | F-018-T01 |
-| F-018-T06 | CryptoSessionFixture: session RSA keypair, in memory, never on disk | open | — | F-018-T05 |
-| F-018-T07 | DockerPreflight: actionable diagnostics for infrastructure failure | open | — | F-018-T05 |
-| F-018-T08 | ServiceHostFixture: one Mongo container per class, fail-closed endpoint guard | open | — | F-018-T05, F-018-T06, F-018-T07 |
-| F-018-T09 | TokenFactory: valid, expired and foreign-subject RS256 tokens | open | — | F-018-T06 |
-| F-018-T10 | KafkaClientFake: recording IKafkaClient substitute, no Kafka container | open | — | F-018-T05 |
-| F-018-T11 | Tier 1: route-contract tests for all 7 services | open | — | F-018-T08 |
-| F-018-T12 | Tier 2: persistence round-trip against real MongoDB, all 7 services | open | — | F-018-T08 |
-| F-018-T13 | Tier 3: audit-fired assertions (6 services) plus the permanent guard test | open | — | F-018-T08, F-018-T10 |
-| F-018-T14 | Auth failure paths: 401 on expired token, 403 on foreign subject | open | — | F-018-T08, F-018-T09 |
-| F-018-T15 | Verify container reaping after an abnormal exit | open | — | F-018-T08 |
-| F-018-T16 | OpenAPI generation via ISwaggerProvider, with byte-determinism proven | open | — | F-018-T05, F-018-T06 |
-| F-018-T17 | CI spec-drift check | open | — | F-018-T16 |
-| F-018-T18 | Integration CI job: separate, blocking from run 1, with duration enforcement | open | — | F-018-T11, F-018-T12, F-018-T13, F-018-T14 |
-| F-018-T19 | Confirm the 3 mobile CI jobs pass and report 379 as the headline count | open | — | — |
-| F-018-T20 | Final verification: 379 tests green, no test deleted, ACs attested | open | — | F-018-T18, F-018-T17, F-018-T15, F-018-T19, F-018-T02, F-018-T03, F-018-T04 |
+| F-017-T01 | Delete broken class-library Dockerfiles and Compose services, add generalized regression test | done | — | — |
+| F-017-T02 | Fix EventAndCommands.csproj appsettings.json publish conflict | done | — | — |
+| F-017-T03 | Add security-scan job: dependency-audit step | done | — | — |
+| F-017-T04 | Add gitleaks step to security-scan job | done | — | F-017-T03 |
+| F-017-T05 | Canary test: gitleaks catches the Atlas-credential shape, with log-redaction proof | done | — | F-017-T04 |
+| F-017-T06 | Add docker-build-and-scan job: SDK-container matrix build | done | — | F-017-T02 |
+| F-017-T07 | Add Trivy scan step to docker-build-and-scan job | done | — | F-017-T06 |
+| F-017-T08 | Add Dependabot config, verify live PR opens | done | — | — |
+| F-017-T09 | Pin new third-party Actions (gitleaks, Trivy) to commit SHAs | done | — | F-017-T04, F-017-T07 |
+
+## F-018 — api-refactor-foundations  `shipped`
+
+| ID | Title | Status | Prio | Depends on |
+|----|-------|--------|------|------------|
+| F-018-T01 | Rename EventAndCommands/Persitency to Persistence | done | — | — |
+| F-018-T02 | Amend CONSTITUTION 1/4/9, verify ADR-014..020, fix the Identity comment | done | — | — |
+| F-018-T03 | Add .editorconfig and enforce dotnet format in CI | done | — | F-018-T01, F-018-T02 |
+| F-018-T04 | File the beads issue tracking the 10-green-run count for the section 7 gate | done | — | — |
+| F-018-T05 | Create AgendaBuddy.IntegrationTests and add InternalsVisibleTo to 7 services | done | — | F-018-T01 |
+| F-018-T06 | CryptoSessionFixture: session RSA keypair, in memory, never on disk | done | — | F-018-T05 |
+| F-018-T07 | DockerPreflight: actionable diagnostics for infrastructure failure | done | — | F-018-T05 |
+| F-018-T08 | ServiceHostFixture: one Mongo container per class, fail-closed endpoint guard | done | — | F-018-T05, F-018-T06, F-018-T07 |
+| F-018-T09 | TokenFactory: valid, expired and foreign-subject RS256 tokens | done | — | F-018-T06 |
+| F-018-T10 | KafkaClientFake: recording IKafkaClient substitute, no Kafka container | done | — | F-018-T05 |
+| F-018-T11 | Tier 1: route-contract tests for all 7 services | done | — | F-018-T08 |
+| F-018-T12 | Tier 2: persistence round-trip against real MongoDB, all 7 services | done | — | F-018-T08 |
+| F-018-T13 | Tier 3: audit-fired assertions (6 services) plus the permanent guard test | done | — | F-018-T08, F-018-T10 |
+| F-018-T14 | Auth failure paths: 401 on expired token, 403 on foreign subject | done | — | F-018-T08, F-018-T09 |
+| F-018-T15 | Verify container reaping after an abnormal exit | done | — | F-018-T08 |
+| F-018-T16 | OpenAPI generation via ISwaggerProvider, with byte-determinism proven | done | — | F-018-T05, F-018-T06 |
+| F-018-T17 | CI spec-drift check | done | — | F-018-T16 |
+| F-018-T18 | Integration CI job: separate, blocking from run 1, with duration enforcement | done | — | F-018-T14 |
+| F-018-T19 | Report 379 as the headline test count and investigate the 7 skipped MobileApp tests | done | — | F-018-T10, F-018-T11, F-018-T12, F-018-T15, F-018-T16, F-018-T13 |
+| F-018-T20 | Final verification: 379 tests green, no test deleted, ACs attested | done | — | F-018-T18, F-018-T17, F-018-T15, F-018-T19, F-018-T02, F-018-T03, F-018-T04, F-018-T21 |
+| F-018-T21 | Confirm the 3 mobile CI jobs pass on a real, maintainer-pushed run | done | — | F-018-T19 |
 
 ## F-019 — api-refactor-pilot-booking  `planned`
 
@@ -177,23 +175,17 @@ _No tasks._
 
 _No tasks._
 
-## F-021 — identity-hardening  `in progress`
+## F-021 — identity-hardening  `shipped`
 
-<!-- Hand-written: scripts/tasks.cjs is not present in this repository, so `tasks.cjs index` could not
-     regenerate this section. Everything else in this file is generated output — check before trusting a
-     diff here. -->
-
-| Task | Title | Status | Depends on |
-|---|---|---|---|
-| F-021-T01 | Add the `FindOneAndUpdateAsync` primitive to `IRepository<T>`, plus a fault-injection hook in the test double | done | — |
-| F-021-T02 | Replace `RefreshAsync`'s delete-then-insert with one atomic, targeted rotation | done | T01 |
-| F-021-T03 | Per-account failure counter and a self-clearing lock | done | T01 |
-| F-021-T04 | Log credential mutations with a hash prefix, never the address | done | T02, T03 |
-| F-021-T05 | Transport security: HSTS policy in ServiceDefaults, redirect before authentication in all seven services | done | — |
-| F-021-T06 | Per-IP limiter on `login` and `register`, and the AppHost declaring which run this is | done | T05 |
-| F-021-T07 | Verification, decisions, and the documentation that was made false by this feature | done | T02–T06 |
-
-**7 of 7 done.** 16 acceptance criteria, 9 of them `[security]`, each with a linked test; threats T-101…T-105 mitigated, T-106 accepted.
+| ID | Title | Status | Prio | Depends on |
+|----|-------|--------|------|------------|
+| F-021-T01 | Add the FindOneAndUpdateAsync primitive to IRepository<T>, plus a fault-injection hook in the test double | done | — | — |
+| F-021-T02 | Replace RefreshAsync's delete-then-insert with one atomic, targeted rotation | done | — | F-021-T01 |
+| F-021-T03 | Per-account failure counter and a self-clearing lock | done | — | F-021-T01 |
+| F-021-T04 | Log credential mutations with a hash prefix, never the address | done | — | F-021-T02, F-021-T03 |
+| F-021-T05 | Transport security: HSTS policy in ServiceDefaults, redirect before authentication in all seven services | done | — | — |
+| F-021-T06 | Per-IP limiter on login and register, and the AppHost declaring which run this is | done | — | F-021-T05 |
+| F-021-T07 | Verification, decisions, and the documentation that was made false by this feature | done | — | F-021-T02, F-021-T03, F-021-T04, F-021-T05, F-021-T06 |
 
 ## F-022 — password-reset-flow  `planned`
 
@@ -209,8 +201,9 @@ _No tasks._
 
 ## F-025 — booking-correctness  `planned`
 
-_No tasks._ Inception has not started. Split out of F-014 at Discover 2026-08-23; see `docs/pdlc/tasks/F-025/_feature.md` for the three candidate designs for the overlap check.
+_No tasks._
 
 ## F-026 — provider-subscription  `planned`
 
-_No tasks._ Inception has not started. Filed 2026-08-24 while reviewing customer onboarding; no working subscribe capability exists today, for any cardinality — see `docs/pdlc/tasks/F-026/_feature.md` for the full finding.
+_No tasks._
+

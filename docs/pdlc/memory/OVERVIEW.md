@@ -6,7 +6,7 @@
      Do not edit manually — let PDLC maintain it. If you need to correct something, update and note the reason. -->
 
 **Project:** Agenda Buddy
-**Last updated:** 2026-08-26T14:00:00Z
+**Last updated:** 2026-08-26T21:00:00Z
 
 ---
 
@@ -100,6 +100,7 @@ Agenda Buddy is a scheduling and appointment management platform for independent
 | 004 | F-014 wire-unreached-services (`v0.4.0`) | 2026-08-23 | [EPISODE_wire-unreached-services_2026-08-23.md](../episodes/EPISODE_wire-unreached-services_2026-08-23.md) | [#40](https://github.com/ogdevlabs/agenda-buddy/pull/40) |
 | 005 | F-015 api-gateway-and-mobile-contract (`v0.5.0`) | 2026-08-24 | [EPISODE_api-gateway-and-mobile-contract_2026-08-24.md](../episodes/EPISODE_api-gateway-and-mobile-contract_2026-08-24.md) | [#41](https://github.com/ogdevlabs/agenda-buddy/pull/41) |
 | 006 | F-017 container-and-cd-hardening (`v0.6.0`) | 2026-08-26 | [006_container-and-cd-hardening_2026-08-26.md](../episodes/006_container-and-cd-hardening_2026-08-26.md) | [#48](https://github.com/ogdevlabs/agenda-buddy/pull/48) |
+| 007 | F-018 api-refactor-foundations (`v0.7.0`) | 2026-08-26 | [007_api-refactor-foundations_2026-08-26.md](../episodes/007_api-refactor-foundations_2026-08-26.md) | [#69](https://github.com/ogdevlabs/agenda-buddy/pull/69) |
 
 ---
 
@@ -130,8 +131,15 @@ Agenda Buddy is a scheduling and appointment management platform for independent
 
 - ⚠️ **[HIGHEST RESIDUAL RISK] The `agenda_buddy` Atlas credential is unrotated.** Removed from 17 tracked files, but **9 commits still carry it in git history and it remains valid**. **Corrected 2026-08-18:** the cluster holds **only synthetic / development data** — earlier records claiming real client names, emails and phone numbers were inferred from the schema and are wrong. It **has no backups**, so the residual risk is destruction of dev data and Atlas resource abuse, not a personal-data breach. Re-graded MEDIUM. Human-only action: `docs/issues/ISSUE-002-atlas-credential-rotation.md` (`agenda-buddy-41s`). Hard prerequisite for any cloud deployment.
 - ~~**CONSTITUTION §7's security-scan gate is still not automated.**~~ — **RESOLVED by F-017** (`v0.6.0`). `security-scan` (dependency audit + gitleaks, `if: always()` — unconditional on every PR) and `docker-build-and-scan` (7-service image build + Trivy) now run automatically; a canary test proves the secret scanner would have caught the class of leak `ISSUE-002` already experienced.
-- **No `.editorconfig`.** `dotnet format` found 69 whitespace findings at the ship gate; they were fixed, but nothing prevents the drift returning.
-- ~~**No integration-test harness.**~~ — **RESOLVED by F-016**, which absorbed eight of F-018's tasks to build `AgendaBuddy.IntegrationTests` (99 tests, Testcontainers) *before* rewriting any endpoint. ⚠️ Two things remain: `Integration — real services + MongoDB` is **not yet a required status check** on `main`, so the job can fail and a PR still merge; and §7's Integration checkbox stays unchecked pending 10 consecutive green runs.
+- ~~**No `.editorconfig`.**~~ — **RESOLVED by F-018** (`v0.7.0`). `.editorconfig` now encodes the project's actual conventions; CI enforces `dotnet format --verify-no-changes`.
+- ~~**No integration-test harness.**~~ — **RESOLVED by F-016 + F-018** (`v0.2.0`/`v0.7.0`). `AgendaBuddy.IntegrationTests` now has Tier 1/2/3 coverage (route-contract, persistence, audit) across all 7 services, 301 tests. ⚠️ Two things remain: `Integration — real services + MongoDB` is **not yet a required status check** on `main`; §7's Integration checkbox stays unchecked pending 10 consecutive green runs (tracked: `agenda-buddy-ym9`).
+
+**Added by F-018 (2026-08-26):**
+
+- **`gitleaks-action`'s default PR-scan mode skips content merged via a non-fast-forward merge's second parent.** Fixed with a second, independent full-range scan step in `security-scan` — confirmed live on a real PR. Tracked: `agenda-buddy-wow` (P1).
+- **Two audit-trail bugs found, not fixed:** `UpdateCustomerCommandHandler` audits failures under the wrong event `Type` (`agenda-buddy-id4`); `UpdateServicesFromProviderCommandHandler` writes no audit event on its provider-not-found branch (`agenda-buddy-f49`).
+- **Booking/Customer's `RequestCollection.cs` carry the same dormant `IKafkaClient` downcast Provider had**, fixed only for Provider (`agenda-buddy-5og`).
+- **AC-11 (image-pull diagnostics) and AC-14 (AppHost-already-running warning) were never built**, despite an earlier task-store note crediting them as delivered (`agenda-buddy-10g`).
 - **7 `MongoDbConfiguration` classes + 7 interfaces** are kept alive solely by 3 tests. Delete with the tests, or convert those tests to the new path.
 - **7 near-identical `ServiceCollectionMongoResolutionTest.cs`** (~150 lines each) — collapse to a shared theory when one next needs editing.
 - **`AppHostWiring` mutates Aspire-produced `EndpointAnnotation`s** — revisit on any Aspire major upgrade.

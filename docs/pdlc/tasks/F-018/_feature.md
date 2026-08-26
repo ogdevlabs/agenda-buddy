@@ -1,10 +1,10 @@
 ---
 id: F-018
 title: api-refactor-foundations
-status: planned
+status: shipped
 priority: 19
 labels: [roadmap, "priority:19"]
-claimed_by: oscargarcia@ogdevlabs.onmicrosoft.com
+claimed_by: null
 created: 2026-08-18
 updated: 2026-08-26
 ---
