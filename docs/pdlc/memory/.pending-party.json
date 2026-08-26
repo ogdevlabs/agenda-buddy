@@ -1,0 +1,12 @@
+{
+  "meetingType": "wave-kickoff",
+  "feature": "api-refactor-foundations",
+  "taskId": "—",
+  "timestamp": "2026-08-26T16:05:00Z",
+  "phase": "Construction",
+  "subPhase": "Build",
+  "lastCheckpoint": "Construction / Build / 2026-08-26T16:00:00Z",
+  "resumeCommand": "/build",
+  "progress": "mom-written",
+  "momFile": "docs/pdlc/mom/MOM_wave-2-kickoff_api-refactor-foundations_2026-08-26.md"
+}
