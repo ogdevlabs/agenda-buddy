@@ -28,4 +28,13 @@
         <ProjectReference Include="..\EventAndCommands\EventAndCommands.csproj"/>
     </ItemGroup>
 
+    <ItemGroup>
+        <!-- F-017-T02: owns its own copy now that EventAndCommands no longer copies its appsettings.json
+             into every consumer's output. ConfigurationLoader.LoadConfiguration() reads it from this
+             project's own output directory, same pattern the 7 services already use. -->
+        <None Update="appsettings.json">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+    </ItemGroup>
+
 </Project>
