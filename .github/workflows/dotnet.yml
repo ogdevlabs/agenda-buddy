@@ -10,6 +10,17 @@ permissions:
   contents: read
   pull-requests: read
 
+# Cancel a superseded run for the same branch/PR when a new commit is pushed — this pipeline had no
+# concurrency group at all (documented gap, docs/pdlc/context/08-cicd-deploy.md), so pushing twice in
+# quick succession ran two full overlapping builds. `github.head_ref` is set on pull_request events
+# (the PR's own branch) and empty on push events, so `|| github.ref` falls back to the branch ref for
+# a direct push to main — each branch/PR gets its own group, main pushes never cancel each other's
+# already-completed-by-the-time-the-next-lands runs in practice, but the fallback keeps the group key
+# valid either way.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   # ---------------------------------------------------------------------------
   # Detect which areas of the codebase changed
