@@ -11,13 +11,21 @@
 
 ## Current Phase
 
-Operation
+Idle — Ready for next /brainstorm
 
 ---
 
 ## Current Feature
 
-api-refactor-foundations (F-018)
+none
+
+_**F-018 `api-refactor-foundations` SHIPPED** as `v0.7.0` — merged `f907b23`, PR #69, episode 007. Operation
+closed 2026-08-26T21:15:00Z: merged, tagged, cloud deploy skipped (7th consecutive, 6th under ADR-035).
+Verify done by CI evidence (301 integration + 484 backend passing, 7-service Docker builds green) rather
+than a live AppHost smoke test — user-approved given the feature's minimal production surface. 950 tests
+total, 0 failing. 5 real defects found (2 fixed live, 3 filed: `agenda-buddy-id4`, `-f49`, `-5og`), plus a
+structural CI security-scan gap found and fixed at Test (`agenda-buddy-wow`) and 2 never-built ACs
+disclosed rather than papered over (`agenda-buddy-10g`). Claim released._
 
 _**Resumed and re-planned 2026-08-26.** Handoff pause consumed: fetched/rebased
 `feat/F-018-api-refactor-foundations` onto `main` (clean, no conflicts, no hotfix commits in the gap),
@@ -74,15 +82,15 @@ fake and final verification. The task store needs this reflected before Build st
      Example: F-002-T03 — Add OAuth2 login with GitHub
      Set to "none" when no task is active. -->
 
-none — BUILD LOOP DONE. All 21 F-018 tasks closed (`tasks.cjs ready` returns empty). Moving to Review.
+none
 
 ---
 
-- **Feature ID:** F-018
-- **Feature record:** `docs/pdlc/tasks/F-018/_feature.md`
-- **Claimed by:** oscargarcia@ogdevlabs.onmicrosoft.com (re-claimed on resume, 2026-08-26)
-- **Claimed at:** 2026-08-26T14:10:00Z
-- **Branch:** `feat/F-018-api-refactor-foundations` (rebased clean onto `main` @ `8bcaba0`)
+- **Feature ID:** none
+- **Feature record:** —
+- **Claimed by:** — (F-018's claim released 2026-08-26 — shipped as `v0.7.0`)
+- **Claimed at:** —
+- **Branch:** — (`feat/F-018-api-refactor-foundations` merged and can be deleted)
 
 _F-015 shipped as `v0.5.0` and its claim was released. `scripts/tasks.cjs` **does NOT exist** in this repo —
 re-confirmed at F-017 Build pre-flight (2026-08-25, `MODULE_NOT_FOUND`); an earlier F-017 Discover-time note
@@ -106,13 +114,19 @@ _None active. Run `/night-shift <F-NNN>` to start an autonomous run (requires by
 
 ## Current Sub-phase
 
-Reflect
+none
 
 ---
 
 ## Last Checkpoint
 
-Operation / Reflect / 2026-08-26T21:00:00Z — **Merged, tagged, deploy skipped.** PR #69 merged to `main` as
+Operation / Complete / 2026-08-26T21:15:00Z — **F-018 shipped as `v0.7.0`.** Episode 007 Approved; PRD,
+brainstorm, and design artifacts remain in place (not archived — no archive scripts exist in this repo,
+fallback is leaving artifacts as the historical record); `episodes/index.md`, OVERVIEW, ROADMAP, METRICS
+updated; claim released. 5 real defects found across the build loop, 2 fixed live, 3 filed. Next on the
+roadmap: F-019 `api-refactor-pilot-booking`.
+
+_Previously: Operation / Reflect / 2026-08-26T21:00:00Z — **Merged, tagged, deploy skipped.** PR #69 merged to `main` as
 `f907b23` (local `git merge --no-ff` + push — `gh pr merge` still blocked, same workaround as prior
 features), tagged **`v0.7.0`**, pushed. `dotnet format --verify-no-changes` clean on `main` post-merge.
 Backend 484/484 re-verified on merged `main`. Cloud deploy skipped again by ADR-035 — 7th consecutive, 6th
@@ -851,21 +865,12 @@ re-planning (`/continue`).
 
 ```json
 {
-  "phase_completed": "Construction / Review",
-  "next_phase": "Construction / Test",
-  "feature": "api-refactor-foundations",
-  "key_outputs": [
-    "docs/pdlc/reviews/REVIEW_api-refactor-foundations_2026-08-26.md",
-    "docs/pdlc/reviews/BLAST-RADIUS_api-refactor-foundations_2026-08-26.md",
-    "docs/pdlc/design/api-refactor-foundations/verification.md",
-    "docs/pdlc/prds/PRD_F-018_api-refactor-foundations_2026-08-18.md"
-  ],
-  "decisions_made": [
-    "Fixed N1/E1 (linked): narrowed AC-15's claim to match what EventStoreWriteGuardTest actually checks (whole-file, not per-branch), rather than building a disproportionate per-branch static-analysis guard",
-    "Accepted N2/J1 (linked, stale api-contracts.md OpenAPI-commit line) and E2 (low-value test-isolation gap) as logged warnings",
-    "0 Critical findings, Phantom full security sign-off, no security-ac-untested findings"
-  ],
-  "next_action": "Run the test suite — read skills/build/steps/04-test.md",
+  "phase_completed": null,
+  "next_phase": null,
+  "feature": null,
+  "key_outputs": [],
+  "decisions_made": [],
+  "next_action": null,
   "pending_questions": []
 }
 ```
@@ -1029,4 +1034,8 @@ re-planning (`/continue`).
 | 2026-08-26T19:10:00Z | review_complete | **Party Review approved — 0 Critical, 1 Important (fixed), 3 Advisory (accepted).** Neo/Echo/Phantom/Jarvis (solo mode, direct source verification). N1/E1 (linked): `EventStoreWriteGuardTest` proves whole-file, not per-branch, coverage — fixed by narrowing AC-15's claim. N2/J1 (linked, stale `api-contracts.md` line) and E2 accepted as logged warnings. Phantom: 0 findings, full sign-off, zero `security-ac-untested`. CHANGELOG drafted. Moving to Test | Test | api-refactor-foundations |
 | 2026-08-26T19:45:00Z | test_complete | **Test complete — all layers resolved.** Unit 484/484, integration 301/301, mobile 165 (158/7, deliberate). Security dependency audit clean. Secret scan found and fixed a structural `gitleaks-action --first-parent` blind spot on worktree-merged content, plus one false positive — both confirmed live on a second PR #69 CI run (55s, all green). Filed `agenda-buddy-wow` (P1) | Wrap-up | api-refactor-foundations |
 | 2026-08-26T19:50:00Z | construction_complete | **CONSTRUCTION COMPLETE.** Episode 007 drafted. 21/21 tasks, 950 tests, 0 failing, 0 test files deleted. PR #69 open, all-green. Ready for `/ship` | Complete | api-refactor-foundations |
+| 2026-08-26T20:42:06Z | merged_and_tagged | **Merged to `main` as `f907b23`** (local `git merge --no-ff` + push — `gh pr merge` still blocked, same workaround as every prior feature), PR #69 shows MERGED, tagged **`v0.7.0`**. `dotnet format --verify-no-changes` clean; 484/484 re-verified on merged `main` | Ship | api-refactor-foundations |
+| 2026-08-26T21:00:00Z | deploy_skipped | Cloud deploy skipped — 7th consecutive, 6th under ADR-035; F-022–F-026 remain. No live AppHost smoke test — user-approved given minimal production surface (one changed line, already exercised by 301 integration tests + 7-service CI Docker matrix) | Verify | api-refactor-foundations |
+| 2026-08-26T21:15:00Z | operation_complete | Episode 007 approved and committed. `episodes/index.md`, OVERVIEW, ROADMAP, METRICS updated. F-018 shipped, claim released | Reflect | api-refactor-foundations |
+| 2026-08-26T21:15:00Z | operation_complete | Idle | — | none |
 | 2026-08-26T17:30:00Z | wave_complete | **Wave 2a complete — 3/3 tasks.** T03 (168-file whitespace reformat + `.editorconfig` + CI format gate), T13 (Tier 3 audit tests, 6 services, convention-based permanent EventStore guard covering 21 handler files), T17 (CI spec-drift check, reused T16's generator, no new CI job needed — ran in the existing `integration` job). All 3 merged clean, 0 conflicts. 2 more real defects found, not fixed (test-only tasks): `UpdateCustomerCommandHandler` audits under the wrong event `Type` (`agenda-buddy-id4`); `UpdateServicesFromProviderCommandHandler` skips the audit write entirely on its not-found branch (`agenda-buddy-f49`). T03 and T17's CI steps proven red→green locally only — live-CI confirmation deferred to a real PR, joining F-018-T21 (Wave 1b). Final: 484 backend + 301 integration, 0 failing, 0 regressions. Wave 2b: only T19 ready | Build | api-refactor-foundations |
