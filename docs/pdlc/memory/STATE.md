@@ -5,13 +5,13 @@
      Claude reads this file at the start of every session to auto-resume from the last checkpoint.
      If this file is missing or empty, PDLC will prompt you to run /pdlc init. -->
 
-**Last updated:** 2026-08-25T19:51:32Z
+**Last updated:** 2026-08-25T23:55:00Z
 
 ---
 
 ## Current Phase
 
-Inception Complete — Ready for /build
+Construction
 
 ---
 
@@ -59,10 +59,12 @@ none
 - **Feature record:** docs/pdlc/tasks/F-017/_feature.md
 - **Claimed by:** oscargarcia@ogdevlabs.onmicrosoft.com
 - **Claimed at:** 2026-08-25T19:51:32Z
-- **Branch:** pdlc/F-017-container-and-cd-hardening (Inception bookkeeping only — per-user override of the skill's default `git push origin main`; see `/brainstorm` Step B note below. Construction will create its own `feat/F-017-...` branch at build pre-flight, per usual.)
+- **Branch:** feat/F-017-container-and-cd-hardening (created off `main` at Build pre-flight, 2026-08-25T23:55:00Z. `pdlc/F-017-container-and-cd-hardening`'s Inception bookkeeping merged to `main` first via PR #47 — see Guardrail Log.)
 
-_F-015 shipped as `v0.5.0` and its claim was released. `scripts/tasks.cjs` **does exist** in this repo (confirmed
-2026-08-25, claiming F-017) — the "does not exist" note above was stale; last verified absent at F-021 (2026-08-22)._
+_F-015 shipped as `v0.5.0` and its claim was released. `scripts/tasks.cjs` **does NOT exist** in this repo —
+re-confirmed at F-017 Build pre-flight (2026-08-25, `MODULE_NOT_FOUND`); an earlier F-017 Discover-time note
+claiming it exists was itself mistaken. Task store fallback (hand-maintained files under `docs/pdlc/tasks/`)
+is in effect, as at F-014/F-015/F-021._
 
 **While claiming F-017, also corrected task-store drift:** F-021's feature record still showed
 `status: in_progress` / claimed, though ROADMAP.md has recorded it Shipped (v0.3.0, PR #39) since
@@ -82,13 +84,23 @@ _None active. Run `/night-shift <F-NNN>` to start an autonomous run (requires by
 
 ## Current Sub-phase
 
-none
+Build
 
 ---
 
 ## Last Checkpoint
 
-Inception / Plan / 2026-08-25T23:33:05Z — **F-017 Inception complete.** 9 tasks (F-017-T01…T09), 4 waves,
+Construction / Build / 2026-08-25T23:55:00Z — **Build pre-flight passed.** Channel in-sync. Remote sync: local
+`main` was 3 commits behind `origin/main` (docs-only `CLAUDE.md` change, unrelated to F-017) — solo sync
+assessment (`docs/pdlc/mom/sync-assessment_2026-08-25.md`) found None conflict risk; user chose pull, `main`
+fast-forwarded clean. Task store: `scripts/tasks.cjs` re-confirmed absent, fallback (hand-maintained
+`docs/pdlc/tasks/F-017/`) in effect — 9 tasks (F-017-T01…T09) present. **PR #47 (Inception bookkeeping:
+PRD, 5 design docs, threat model, plan, 9 tasks) merged to `main`** first (user-confirmed) via local
+`git merge --no-ff` + push, since `gh pr merge` is blocked under this Enterprise Managed User `gh` identity —
+`04d0809`. Branch `feat/F-017-container-and-cd-hardening` created off the updated `main`. Starting the build
+loop: Wave 1 (F-017-T01, T02, T03, T08).
+
+_Previously: Inception / Plan / 2026-08-25T23:33:05Z — **F-017 Inception complete.** 9 tasks (F-017-T01…T09), 4 waves,
 plan file saved. Readiness: Fair (1 gap — `security-ac-unmaterialized` — caught and fixed in-party: PRD ACs
 14-15 back-written, materialized via `tasks.cjs ac add`). Plan approved by `ogdevlabs`. Ready for `/build`.
 
@@ -302,6 +314,7 @@ the feature branch after each wave completes.
 | 2026-08-23T17:15:00Z | standards_check_skipped | Plan Step 17.5 (`--design`, **enforcing** tier) skipped for F-015 — same unreachable-source-repos condition, re-checked and unchanged. **Tenth consecutive gate blocked**, and the seventh marked `enforcing` that has never once executed. Treated as an `/override`-equivalent per the gate's own protocol: one-line reason given, recorded as **ADR-041**. Recommendation unchanged since F-013 and now the oldest unaddressed process finding in the project — **F-017**. |
 | 2026-08-24T12:14:03Z | ship_phase_mismatch | `/ship` started for F-015 with Current Phase `Construction` (sub-phase `Review`), not `Construction Complete`. No formal Review or Test sub-phase ran this cycle and no episode draft existed at the time — same process gap recorded at F-014's ship gate. User confirmed proceeding: build is complete (14/14 tasks, 15/15 ACs, 3/3 threats dispositioned) and `verification.md` stands in for the missing episode's Test Summary. Required test gates verified directly against it: 867 tests (468 backend + 234 integration + 165 mobile), 0 failing; security scan (dependency audit + secret scan) run by hand, clean. |
 | 2026-08-25T19:51:32Z | pushed_directly_to_main | While claiming F-017, corrected F-021's stale task-store record (`status: in_progress`→`shipped`, unclaimed) and pushed that commit (`8fe2ace`) straight to `main` per the `/brainstorm` skill's literal Step B instructions — before checking the user's standing "never push directly to main" instruction. Caught immediately; user decided: leave that one commit as-is (small, correct, docs-only), but all further PDLC Inception bookkeeping for F-017 (this claim, STATE.md, the brainstorm log) goes on branch `pdlc/F-017-container-and-cd-hardening` instead of `main`, with a PR at the end of Inception rather than a direct push. |
+| 2026-08-25T23:55:00Z | pr_merge_tool_blocked | `gh pr merge 47 --merge` failed: `GraphQL: Unauthorized: As an Enterprise Managed User, you cannot access this content (mergePullRequest)` — the `gh` identity on this machine cannot merge PRs via the API on this repo (consistent with the standing preference to use plain `git`, not `gh`, here). Worked around with local `git checkout main && git merge --no-ff pdlc/F-017-container-and-cd-hardening && git push origin main` (`04d0809`), which closed PR #47 as merged. User-confirmed before merging (PR was mergeable, CI-clean, docs-only Inception bookkeeping). Same workaround applies to any future PR-merge attempt on this repo. |
 
 ---
 
