@@ -75,6 +75,20 @@ public class SecurityScanAndDockerJobShapeTest
         Assert.Contains("gitleaks/gitleaks-action@", body);
     }
 
+    // Review I1 (Party Review, 2026-08-26): security-scan must run on every PR unconditionally,
+    // not gated on the `api`/`code` path filters — the original leak this feature exists to stop
+    // recurring (ISSUE-002) lived partly under docs/pdlc/context/, exactly the path class the old
+    // gate excluded.
+    [Fact]
+    public void SecurityScanJobRunsUnconditionallyOnEveryPullRequest()
+    {
+        var body = JobBody(WorkflowContent(), SecurityScanJobName);
+        var ifLine = Regex.Match(body, @"^\s*if:\s*(.+)$", RegexOptions.Multiline);
+
+        Assert.True(ifLine.Success, "security-scan must declare an explicit `if:` condition.");
+        Assert.Equal("always()", ifLine.Groups[1].Value.Trim());
+    }
+
     // AC 8 (part 1): the matrix covers exactly the seven remaining services.
     [Fact]
     public void DockerJobMatrixCoversAllSevenRemainingServices()

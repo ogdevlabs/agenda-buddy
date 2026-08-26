@@ -328,7 +328,14 @@ jobs:
   security-scan:
     name: "Security — dependency audit"
     needs: changes
-    if: needs.changes.outputs.api == 'true' && needs.changes.outputs.code == 'true'
+    # Review I1 (Party Review, 2026-08-26): deliberately UNCONDITIONAL, not gated on any path
+    # filter. The original api+code gate silently skipped this job on a docs/scripts/Gateway/
+    # MobileApp-only PR — and the credential this feature exists to stop recurring (ISSUE-002)
+    # leaked partly into files under docs/pdlc/context/, exactly the path class that gate excluded.
+    # A secret scanner and a dependency audit are cheap enough to run on every PR unconditionally;
+    # "docs-only changes run no build jobs" (the changes job's own stated design goal) is the right
+    # policy for build-and-test, not for a security gate.
+    if: always()
     runs-on: ubuntu-24.04
 
     steps:
@@ -690,7 +697,7 @@ jobs:
             echo "| Filter | Fired | Job | Result |"
             echo "|---|---|---|---|"
             echo "| api | \`$API\` | build-and-test | \`$R_BACKEND\` |"
-            echo "| api | \`$API\` | Security — dependency audit | \`$R_SECURITY\` |"
+            echo "| (always runs) | — | Security — dependency audit | \`$R_SECURITY\` |"
             echo "| api | \`$API\` | Integration (containers) | \`$R_INTEGRATION\` |"
             echo "| docker | \`$DOCKER\` | Docker build+scan (7-service matrix) | \`$R_DOCKER\` |"
             echo "| mobile | \`$MOBILE\` | Android build | \`$R_ANDROID\` |"
