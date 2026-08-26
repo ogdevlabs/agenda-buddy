@@ -51,7 +51,7 @@ fake and final verification._
      Example: F-002-T03 — Add OAuth2 login with GitHub
      Set to "none" when no task is active. -->
 
-F-017-T01, F-017-T02, F-017-T03, F-017-T08 — Wave 1 (parallel, Sub-Agent mode, isolated worktrees)
+none
 
 ---
 
@@ -90,7 +90,27 @@ Build
 
 ## Last Checkpoint
 
-Construction / Build / 2026-08-25T23:55:00Z — **Build pre-flight passed.** Channel in-sync. Remote sync: local
+Construction / Build / 2026-08-26T02:00:00Z — **Wave 1 complete.** F-017-T01 (deleted 3 broken class-library
+Dockerfiles + Compose blocks, added `DockerAndComposeHygieneTest` — 6 tests, red-then-green; also fixed a
+second, previously-undocumented instance of the same defect found live at the wave standup:
+`Profession/Dockerfile` still had `runtime:8.0` against its `sdk:10.0` build stage), F-017-T02 (removed
+`EventAndCommands.csproj`'s `appsettings.json` copy conflict unblocking `dotnet publish -t:PublishContainer`
+for all 7 services, plus two standup-found companion fixes — `EventsAndCommands.Tests` now owns its own
+`appsettings.json` instead of relying on the transitive copy, and `Customer`/`Provider`'s
+`ErrorOnDuplicatePublishOutputFiles=false` suppression of the same root cause was removed — added
+`PublishContainerTest`, 3 tests), F-017-T03 (new `security-scan` CI job; found live that ADR-030's `NU1903`
+`NoWarn` does **not** make `dotnet list package --vulnerable` skip the accepted SSH.NET finding — the job
+filters explicitly by advisory ID instead; `ARCHITECTURE.md` corrected to match), F-017-T08 (`.github/dependabot.yml`
+added; AC12's live-PR verification explicitly deferred to post-merge) — 4 real Sub-Agent builds in parallel
+worktrees, Wave Kickoff Standup (Neo/Bolt/Pulse/Echo) surfaced both cross-cutting defects **before** any
+builder started. Merged all 4 worktree branches back with zero conflicts. **Found merging them back:** the
+new hygiene test's repo-wide Dockerfile walk didn't exclude `.claude/worktrees/` (only `bin`/`obj`), so it
+false-positived on the other 3 agents' still-on-disk worktree checkouts — fixed (exclude any hidden directory
+segment), recorded as a project memory since this will recur every wave that uses worktree isolation.
+**Backend suite: 468 → 477, 0 failing, 0 regressions.** TDD gate overridden for T03/T08 (human-confirmed,
+infra-only). Starting Wave 2 (F-017-T04, F-017-T06).
+
+_Previously: Construction / Build / 2026-08-25T23:55:00Z — **Build pre-flight passed.** Channel in-sync. Remote sync: local
 `main` was 3 commits behind `origin/main` (docs-only `CLAUDE.md` change, unrelated to F-017) — solo sync
 assessment (`docs/pdlc/mom/sync-assessment_2026-08-25.md`) found None conflict risk; user chose pull, `main`
 fast-forwarded clean. Task store: `scripts/tasks.cjs` re-confirmed absent, fallback (hand-maintained
