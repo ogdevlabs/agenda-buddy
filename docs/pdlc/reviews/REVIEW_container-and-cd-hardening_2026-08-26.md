@@ -37,9 +37,11 @@ STATE.md's Guardrail Log records an explicit human TDD-gate override for **T03/T
 
 **Resolution:** `security-scan` now declares `if: always()` — no path filter at all, runs unconditionally on every PR. New test `SecurityScanJobRunsUnconditionallyOnEveryPullRequest` locks this in. `ARCHITECTURE.md` and the `summary` job's report table updated to match.
 
-### I2 — AC10's "live test PR" verification has not happened yet (Neo)
+### I2 — ✅ RESOLVED at Ship — AC10's "live test PR" verification has not happened yet (Neo)
 
 PRD AC10 and `ARCHITECTURE.md` require the `docker` path filter to be verified live by observing a real PR trigger the job. `feat/F-017-container-and-cd-hardening` has no remote/PR yet (`git branch -a` shows no `remotes/origin/feat/F-017-...`). Unlike AC12 (Dependabot — which *cannot* fire before merge by nature, and is correctly logged as deferred), AC10 *could* have been verified pre-merge via a real PR and wasn't. Currently unverified, not deferred-by-design.
+
+**Resolution:** PR #48 opened at Ship. All 7 `Docker — <Service>` matrix jobs genuinely triggered and ran (confirmed via `gh pr checks 48`) — AC10 is now live-verified, not just anticipated. Confirmed a second time on the post-merge Dependabot consolidation PR (#67).
 
 ### I3 — ✅ FIXED (commit `ebabba7`) — `CLAUDE.md` described a CI pipeline/toolchain that no longer matched reality (Jarvis)
 

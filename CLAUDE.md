@@ -6,7 +6,7 @@ Agenda Buddy is a scheduling and appointment management platform for independent
 
 - **Language:** C# / .NET 10 (`net10.0`)
 - **Framework:** ASP.NET Core Minimal APIs (one service per domain)
-- **Orchestration:** .NET Aspire 13.4.6, **hosting-only** — `AgendaBuddy.AppHost` + `AgendaBuddy.ServiceDefaults`
+- **Orchestration:** .NET Aspire — `Aspire.AppHost.Sdk` pinned at 13.4.6, `Aspire.Hosting.*` NuGet packages at 13.5.3 (bumped by Dependabot 2026-08-26, PR #67 — the `Sdk` tag itself is a separate, still-13.4.6 pin), **hosting-only** — `AgendaBuddy.AppHost` + `AgendaBuddy.ServiceDefaults`
 - **Database:** MongoDB (MongoDB.Driver **pinned at 2.25.0** — see the Aspire caveat below)
 - **Messaging:** Kafka (Confluent) + MediatR (CQRS)
 - **Caching:** IDistributedCache (cache-aside pattern, 5-min TTL)

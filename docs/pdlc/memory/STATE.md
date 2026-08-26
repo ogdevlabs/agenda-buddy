@@ -5,19 +5,29 @@
      Claude reads this file at the start of every session to auto-resume from the last checkpoint.
      If this file is missing or empty, PDLC will prompt you to run /pdlc init. -->
 
-**Last updated:** 2026-08-25T23:55:00Z
+**Last updated:** 2026-08-26T14:00:00Z
 
 ---
 
 ## Current Phase
 
-Operation
+Idle
 
 ---
 
 ## Current Feature
 
-container-and-cd-hardening
+none
+
+_**F-017 `container-and-cd-hardening` SHIPPED** as `v0.6.0` — merged `030dfb4`, PR #48, episode 006. Operation
+closed 2026-08-26T14:00:00Z: merged and tagged, cloud deploy deferred by ADR-035 (sixth consecutive, matching
+every prior release). ROADMAP.md, OVERVIEW.md, CLAUDE.md, the REVIEW file, and episode 006 all updated to
+reflect the final outcome, including the post-merge Dependabot batch (PR #67, 16 bumps consolidated and
+merged; PR #61 excluded for a real `NU1605` conflict, still open) and the two distinct test flakes recorded
+as unresolved tech debt. **No live smoke-test verification against a running AppHost was performed for
+this release** — unlike F-014/F-015/F-016/F-021's precedent — since the user's request was scoped to
+documentation accuracy, not a fresh Verify pass; flagged as a pending item, not silently skipped. Claim
+released._
 
 _**F-015 `api-gateway-and-mobile-contract` SHIPPED** as `v0.5.0` — merged `1d61955`, PR #41, episode 005
 (Final). Operation closed 2026-08-24: smoke-tested against a live 8-process AppHost on the merged commit
@@ -55,11 +65,11 @@ none
 
 ---
 
-- **Feature ID:** F-017
-- **Feature record:** docs/pdlc/tasks/F-017/_feature.md
-- **Claimed by:** oscargarcia@ogdevlabs.onmicrosoft.com
-- **Claimed at:** 2026-08-25T19:51:32Z
-- **Branch:** feat/F-017-container-and-cd-hardening (created off `main` at Build pre-flight, 2026-08-25T23:55:00Z. `pdlc/F-017-container-and-cd-hardening`'s Inception bookkeeping merged to `main` first via PR #47 — see Guardrail Log.)
+- **Feature ID:** none
+- **Feature record:** —
+- **Claimed by:** — (F-017's claim released 2026-08-26 — shipped as `v0.6.0`)
+- **Claimed at:** —
+- **Branch:** — (`feat/F-017-container-and-cd-hardening` merged and can be deleted; `chore/dependabot-batch-2026-08-26` already deleted post-merge)
 
 _F-015 shipped as `v0.5.0` and its claim was released. `scripts/tasks.cjs` **does NOT exist** in this repo —
 re-confirmed at F-017 Build pre-flight (2026-08-25, `MODULE_NOT_FOUND`); an earlier F-017 Discover-time note
@@ -71,8 +81,7 @@ is in effect, as at F-014/F-015/F-021._
 2026-08-22. Updated to `status: shipped`, `claimed_by: null` (commit `8fe2ace`, pushed to `main` — see the
 Guardrail Log entry below for why that one went straight to `main` and future PDLC bookkeeping won't).
 
-**Next on the roadmap after F-017: F-018–F-020.** **F-025 `booking-correctness`** was split out of F-014 at
-Discover and is sequenced after F-015 (shipped).
+**Next on the roadmap: F-018–F-020** (the API refactor program — F-018 is paused mid-Inception, see `.paused-feature.json`), then F-022–F-024, F-025 `booking-correctness`, and F-026 `provider-subscription`.
 
 ---
 
@@ -84,13 +93,27 @@ _None active. Run `/night-shift <F-NNN>` to start an autonomous run (requires by
 
 ## Current Sub-phase
 
-Ship (merged — paused before Deploy, awaiting human)
+none
 
 ---
 
 ## Last Checkpoint
 
-Operation / Ship / 2026-08-26T05:30:00Z — **F-017 merged and tagged `v0.6.0`, paused before Deploy.**
+Idle / — / 2026-08-26T14:00:00Z — **F-017 fully closed out, claim released.** At the user's request:
+documentation swept for accuracy across `ROADMAP.md` (Shipped, `v0.6.0`, PR #48, episode 006), `OVERVIEW.md`
+(Added-by-F-017 section, Shipped Features row, Known Tech Debt reconciled — including correcting two
+pre-existing mis-attributions: the security-scan gate is now genuinely resolved, but `AppHostWiring.cs`'s
+cloud-ingress gap was never actually in F-017's real scope despite an older note claiming otherwise),
+`CLAUDE.md` (Aspire version split into the still-13.4.6 `Sdk` tag vs. the now-13.5.3 hosting packages),
+the REVIEW file (I2/AC10 marked resolved), and episode 006 (PR link, Deployment Record, Reflect Notes,
+and a self-correction: an inline draft had conflated two *different* test flakes — `AgendaBuddy.AppHost.Tests`
+during Construction vs. `AgendaBuddy.ServiceDefaults.Tests.TelemetryPiiTest` on the post-merge PR #59 — now
+recorded as two distinct occurrences of a shared suspected root cause, not one). `docs/pdlc/tasks/F-017/_feature.md`
+updated to `status: shipped`, claim released. **Not performed:** a live smoke-test verification against a
+running AppHost (F-014/F-015/F-016/F-021's precedent) — out of scope for this request, flagged as a pending
+item rather than silently treated as done.
+
+_Previously: Operation / Ship / 2026-08-26T05:30:00Z — **F-017 merged and tagged `v0.6.0`, paused before Deploy.**
 PR #48 opened for real (not just planned) — live GitHub Actions CI found **4 more real defects** invisible
 to every local check, proving this feature's own thesis on itself: a dead upstream `setup-trivy` tag
 reference inside the pinned `trivy-action` SHA, the gitleaks canary's fixture tripping a second,
@@ -859,3 +882,4 @@ re-planning (`/continue`).
 | 2026-08-26T05:30:00Z | merged_and_tagged | **PR #48 merged to `main` as `030dfb4`** (local `git merge --no-ff` + push), tagged **`v0.6.0`**. 4 more real defects found and fixed via PR #48's live CI (dead upstream `setup-trivy` tag, a second credential-grep false positive, an invalid uppercase Docker image reference, a `bash -e`-masked audit-script bug) — none filed, all fixed same-gate. `dotnet format --verify-no-changes` clean; 484/484 re-verified on merged `main`. Paused before Deploy — awaiting human for the deploy-or-skip decision and smoke-test sign-off | Ship | container-and-cd-hardening |
 | 2026-08-26T13:20:00Z | dependabot_batch_consolidated | **F-017's `dependabot.yml` fired for the first time and opened 17 PRs at once** (#49–#66) — its whole solution-wide first run, not the one-bump-at-a-time steady state AC12 anticipated. At the user's request: reviewed all 17, consolidated **16 into one PR (#67)** on branch `chore/dependabot-batch-2026-08-26`, off `main`. **Excluded 1** (`CommunityToolkit.Maui` 9.1.1→15.0.1, PR #61) — a real `NU1605` package-downgrade conflict (needs `Microsoft.Maui.Controls >= 10.0.90`, this project pins `>= 10.0.20`); left open separately, needs a coordinated MAUI SDK bump, not a routine merge. Also verified `gitleaks/gitleaks-action` 2.3.9→3.0.0 (a major bump of a security-pinned action, T-001) against upstream release notes before including it: pure Node 20→24 runtime migration, no behavior change. Also confirmed PR #59's single test failure (`AgendaBuddy.ServiceDefaults.Tests.TelemetryPiiTest`) was the pre-existing known `InProcessServerCollection`/TracerProvider flake, not caused by its `Aspire.Hosting.MongoDB` bump. 3 real merge conflicts hit while consolidating (all adjacent-line version bumps in the same file — `actions/checkout`+`dorny/paths-filter` in `dotnet.yml`; all three `Aspire.Hosting.*` refs in `AgendaBuddy.AppHost.csproj`; `coverlet.collector`+`JetBrains.Annotations` and `BCrypt.Net-Next`+`JetBrains.Annotations` in two test `.csproj` files) — each resolved by combining both bumps. Verified before pushing: 484/484 backend, 158/165 MobileApp.Tests (7 skipped, matches baseline), `dotnet format --verify-no-changes` clean, `actionlint` clean on both workflow files. PR #67 CI all green. One new build warning (`ASPIRE010`, Aspire.Hosting.AppHost 13.5.3) — informational, not blocking. |
 | 2026-08-26T13:45:00Z | dependabot_batch_merged | **PR #67 merged to `main` as `22b2b84`** (local `git merge --no-ff` + push, same `gh pr merge` workaround as PRs #47/#48). All 16 individual Dependabot PRs (#49–#60, #62–64, #66) auto-closed as merged once their commits became reachable from `main`. Remaining open: **#61** (excluded `CommunityToolkit.Maui` conflict) and **#68** (unrelated — a Bruno collection README + `Accept: application/json` header, added at the user's request, kept on its own branch off `main` rather than bundled into the dependency batch). 484/484 backend re-verified on merged `main`. |
+| 2026-08-26T14:00:00Z | operation_complete | **F-017 documentation finalized, claim released.** `ROADMAP.md`, `OVERVIEW.md`, `CLAUDE.md`, the REVIEW file, episode 006, and `docs/pdlc/tasks/F-017/_feature.md` all updated for accuracy at the user's request. Two pre-existing doc mis-attributions corrected (security-scan gate genuinely resolved; `AppHostWiring.cs` ingress gap was never in F-017's real scope) and one self-caught inaccuracy in a first-pass episode edit (two distinct test flakes had been conflated into one). No live AppHost smoke test performed for this release — flagged as pending, not silently skipped | Idle | none |

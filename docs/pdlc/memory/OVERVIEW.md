@@ -6,7 +6,7 @@
      Do not edit manually — let PDLC maintain it. If you need to correct something, update and note the reason. -->
 
 **Project:** Agenda Buddy
-**Last updated:** 2026-08-24T15:00:00Z
+**Last updated:** 2026-08-26T14:00:00Z
 
 ---
 
@@ -75,6 +75,16 @@ Agenda Buddy is a scheduling and appointment management platform for independent
 - A destination failure surfaces as a named, human-readable error ("Booking is unavailable right now. Try again."), not a generic error
 - Messaging and Notifications screens are reachable through the Gateway (found broken, fixed in the same gate that found it — see episode 005)
 
+**Added by F-017 (`v0.6.0`, 2026-08-26):**
+
+- Every pull request now gets an **automated dependency-vulnerability audit and secret scan** (`security-scan` CI job, runs unconditionally on every PR) — closing CONSTITUTION §7's mandatory-but-unimplemented gate, previously satisfied "by hand" at every ship since F-013
+- A **canary test empirically proves** the configured gitleaks ruleset detects an Atlas-credential-shaped secret and redacts it from CI logs, rather than just asserting the configuration exists — closing the exact detection gap that let the real Atlas credential ship undetected (`ISSUE-002`)
+- Every service-touching PR builds each of the 7 remaining services via **.NET SDK container support** (no Dockerfile) and scans the image with **Trivy**, failing only on project-introduced HIGH/CRITICAL findings
+- `Library/Dockerfile`, `Kafka/Dockerfile`, and `EventAndCommands/Dockerfile` — three broken class-library images that published `net10.0` onto a `dotnet/runtime:8.0` base and could never run — are **deleted**; a generalized structural test guards against this defect class recurring under a different filename
+- `dotnet publish -t:PublishContainer` now **succeeds for all 7 services** — previously blocked for all of them by an `EventAndCommands.csproj` publish conflict, not just the three broken Dockerfiles
+- Both new third-party GitHub Actions (`gitleaks-action`, `trivy-action`) are **pinned to full commit SHAs**, closing a supply-chain substitution risk
+- `.github/dependabot.yml` — weekly NuGet + GitHub Actions dependency-update PRs; its first run opened 17 PRs at once, 16 consolidated into one and merged (PR #67), 1 excluded for a real conflict (`CommunityToolkit.Maui`, still open as PR #61)
+
 ---
 
 ## Shipped Features
@@ -89,6 +99,7 @@ Agenda Buddy is a scheduling and appointment management platform for independent
 | 003 | F-021 identity-hardening (`v0.3.0`) | 2026-08-22 | [EPISODE_identity-hardening_2026-08-22.md](../episodes/EPISODE_identity-hardening_2026-08-22.md) | [#39](https://github.com/ogdevlabs/agenda-buddy/pull/39) |
 | 004 | F-014 wire-unreached-services (`v0.4.0`) | 2026-08-23 | [EPISODE_wire-unreached-services_2026-08-23.md](../episodes/EPISODE_wire-unreached-services_2026-08-23.md) | [#40](https://github.com/ogdevlabs/agenda-buddy/pull/40) |
 | 005 | F-015 api-gateway-and-mobile-contract (`v0.5.0`) | 2026-08-24 | [EPISODE_api-gateway-and-mobile-contract_2026-08-24.md](../episodes/EPISODE_api-gateway-and-mobile-contract_2026-08-24.md) | [#41](https://github.com/ogdevlabs/agenda-buddy/pull/41) |
+| 006 | F-017 container-and-cd-hardening (`v0.6.0`) | 2026-08-26 | [006_container-and-cd-hardening_2026-08-26.md](../episodes/006_container-and-cd-hardening_2026-08-26.md) | [#48](https://github.com/ogdevlabs/agenda-buddy/pull/48) |
 
 ---
 
@@ -102,6 +113,7 @@ Agenda Buddy is a scheduling and appointment management platform for independent
 - **Kafka**: Confluent stack (Kafka + Zookeeper + Schema Registry + Kafka UI) run via Docker Compose; per-provider topics created on-demand
 - **MongoDB**: document store for all domain data; embedded sub-documents for provider services and appointments. One `IMongoClient` singleton is shared process-wide by all services and `EventStore` *(F-013)*; connection strings resolve via `MongoConnectionResolver` (Aspire → environment → appsettings).
 - **Cache-aside pattern**: `CacheAside` extension on `IDistributedCache` with semaphore-guarded double-checked locking
+- **CI security gates** *(added F-017)*: every PR gets an unconditional dependency-vulnerability audit + gitleaks secret scan (`security-scan`); every service-touching PR also builds each service via .NET SDK container support and Trivy-scans the image (`docker-build-and-scan`). No hand-written Dockerfile is built or scanned in CI — they serve only the legacy Compose path.
 
 ---
 
@@ -117,7 +129,7 @@ Agenda Buddy is a scheduling and appointment management platform for independent
 **Added by F-013 (2026-08-18):**
 
 - ⚠️ **[HIGHEST RESIDUAL RISK] The `agenda_buddy` Atlas credential is unrotated.** Removed from 17 tracked files, but **9 commits still carry it in git history and it remains valid**. **Corrected 2026-08-18:** the cluster holds **only synthetic / development data** — earlier records claiming real client names, emails and phone numbers were inferred from the schema and are wrong. It **has no backups**, so the residual risk is destruction of dev data and Atlas resource abuse, not a personal-data breach. Re-graded MEDIUM. Human-only action: `docs/issues/ISSUE-002-atlas-credential-rotation.md` (`agenda-buddy-41s`). Hard prerequisite for any cloud deployment.
-- **CONSTITUTION §7's security-scan gate is still not automated.** Run by hand at the v0.1.0 ship (0 vulnerable packages; working tree clean) but CI has one credential grep, not a scanner, and neither `gitleaks` nor `trufflehog` is installed. Owned by **F-017**.
+- ~~**CONSTITUTION §7's security-scan gate is still not automated.**~~ — **RESOLVED by F-017** (`v0.6.0`). `security-scan` (dependency audit + gitleaks, `if: always()` — unconditional on every PR) and `docker-build-and-scan` (7-service image build + Trivy) now run automatically; a canary test proves the secret scanner would have caught the class of leak `ISSUE-002` already experienced.
 - **No `.editorconfig`.** `dotnet format` found 69 whitespace findings at the ship gate; they were fixed, but nothing prevents the drift returning.
 - ~~**No integration-test harness.**~~ — **RESOLVED by F-016**, which absorbed eight of F-018's tasks to build `AgendaBuddy.IntegrationTests` (99 tests, Testcontainers) *before* rewriting any endpoint. ⚠️ Two things remain: `Integration — real services + MongoDB` is **not yet a required status check** on `main`, so the job can fail and a PR still merge; and §7's Integration checkbox stays unchecked pending 10 consecutive green runs.
 - **7 `MongoDbConfiguration` classes + 7 interfaces** are kept alive solely by 3 tests. Delete with the tests, or convert those tests to the new path.
@@ -161,8 +173,17 @@ Agenda Buddy is a scheduling and appointment management platform for independent
 - **No formal Party Review ran for this feature either** — second consecutive occurrence after F-014.
 - **T-301 (Gateway single point of failure) accepted, not mitigated** — re-score if a real (non-Aspire) deployment materializes.
 - **A minor, unreproduced observation**: a `GET api/v1/customers` response briefly showed a zeroed `ObjectId` during the AC5 stopped-service test — not root-caused, noted rather than dropped.
-- ⚠️ **`AppHostWiring.cs`'s cloud shape gives ingress to the wrong processes, found reviewing the docs, not exercised** (cloud deploy is deferred, ADR-035). All seven domain services get `.WithExternalHttpEndpoints()`; the Gateway gets none — backwards since F-015 shipped, when the mobile client stopped calling services directly. Filed under **F-017**.
+- ⚠️ **`AppHostWiring.cs`'s cloud shape gives ingress to the wrong processes, found reviewing the docs, not exercised** (cloud deploy is deferred, ADR-035). All seven domain services get `.WithExternalHttpEndpoints()`; the Gateway gets none — backwards since F-015 shipped, when the mobile client stopped calling services directly. **Correction, 2026-08-26: F-017 shipped without touching this** — its actual PRD scope was container images and the CI security/build gates, not AppHostWiring's networking shape (confirmed: `AppHostWiring.cs:215` is unchanged). Still open, needs re-filing to a feature that actually owns it.
 - **No working provider-subscription capability exists**, found reviewing customer onboarding immediately after F-015 shipped. `CustomerEntity.SubscribedProviderCollection` is a `List<string>?` (always supported many, not one), but no command, handler, or route exists to set it, and `UpdateCustomerCommandHandler` actively discards any client-supplied value for the field. Same shape as the six capabilities F-014 fixed, missed because the original feature (F-003) predates PDLC tracking. Filed as **F-026**.
+
+**Added or exposed by F-017 (2026-08-26, recorded at the ship gate):**
+
+- **Two distinct flakes surfaced during F-017, both plausibly the same "full-solution concurrent test run" root cause, neither root-caused.** `AgendaBuddy.AppHost.Tests` flaked once during Construction's Test sub-phase (77/87, clean on every re-run). `AgendaBuddy.ServiceDefaults.Tests.TelemetryPiiTest` — the `InProcessServerCollection`/cross-test `TracerProvider` interference already known from F-015's Reflect notes — flaked once more on PR #59 (a Dependabot bump unrelated to that test project). Both always clear on isolated re-run. Worth a dedicated investigation before either becomes a source of false-red PRs.
+- **Gateway has zero CI coverage of any kind** — not in any path filter in `dotnet.yml`, so a Gateway-only change triggers no job at all. Pre-existing since F-015 shipped the Gateway; surfaced but not introduced by F-017's Party Review (finding I1's fix covers `security-scan` only, not `build-and-test`/`docker-build-and-scan`).
+- **`Customer/Dockerfile` does not exist at all**, discovered while building F-017's Dockerfile-hygiene guard. Harmless today (the image-build CI job uses SDK container support, not Dockerfiles) but inconsistent with the other 6 services, which all still have one for the legacy Compose path.
+- **Duplicate `RepoRoot()` test helper** copy-pasted across `DockerAndComposeHygieneTest.cs`, `PinnedThirdPartyActionsTest.cs`, `PublishContainerTest.cs`, and `SecurityScanAndDockerJobShapeTest.cs` in `AgendaBuddy.AppHost.Tests` — accepted as low-priority YAGNI `shrink:` polish at Review (ADR-047).
+- **`Aspire.Hosting.AppHost` 13.5.3** (picked up via the post-merge Dependabot batch, PR #67) introduces a new build warning, `ASPIRE010` (`AgendaBuddy.AppHost` not using the Aspire CLI bundle) — informational only, not yet acted on.
+- **`CommunityToolkit.Maui` is stuck at 9.1.1** — Dependabot's proposed 15.0.1 bump (PR #61, still open) fails with `NU1605`: it requires `Microsoft.Maui.Controls >= 10.0.90`, and `MobileApp.csproj` pins `>= 10.0.20`. Needs a coordinated MAUI SDK bump, not a routine dependency merge.
 
 ---
 

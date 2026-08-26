@@ -18,7 +18,7 @@ This episode closed the container and CI/CD hardening gap CONSTITUTION §7 had m
 ## Links
 
 - **PRD:** [PRD_F-017_container-and-cd-hardening_2026-08-25.md](../../prds/PRD_F-017_container-and-cd-hardening_2026-08-25.md)
-- **PR:** _not yet opened_
+- **PR:** [#48](https://github.com/ogdevlabs/agenda-buddy/pull/48)
 - **Review file:** [REVIEW_container-and-cd-hardening_2026-08-26.md](../../reviews/REVIEW_container-and-cd-hardening_2026-08-26.md)
 - **Design docs:** [ARCHITECTURE.md](../../design/container-and-cd-hardening/ARCHITECTURE.md) | [threat-model.md](../../design/container-and-cd-hardening/threat-model.md)
 
@@ -32,6 +32,9 @@ This episode closed the container and CI/CD hardening gap CONSTITUTION §7 had m
 4. Two real, previously-undocumented defects were found and fixed in the same gates that found them, not filed for later: `Profession/Dockerfile` had the identical runtime/SDK version mismatch as the three deleted class libraries (caught by the generalized structural guard the moment it ran repo-wide); and `aquasecurity/trivy-action@0.28.0` referenced a tag that doesn't exist upstream (missing the `v` prefix), which would have failed on its first real CI run.
 5. A Party Review Critical finding (missing regression tests for 5 acceptance criteria) was fixed before merge rather than deferred — added `SecurityScanAndDockerJobShapeTest` and a fixture-based Trivy severity-gate test, both mutation-tested to confirm they're non-vacuous. See `DECISIONS.md` for the full ADR-047 record of what was fixed vs. accepted as a logged warning.
 6. A third real defect surfaced during the Test sub-phase's own Layer 7 security scan (run for the first time using this feature's own tooling rather than by-hand greps): the gitleaks canary script's own fake-password literal tripped the default `generic-api-key` rule, which would have failed F-017's own future PR. Fixed via a `.gitleaksignore` fingerprint entry after confirming an inline `gitleaks:allow` comment alone doesn't survive a diff-range history scan (git history is immutable).
+7. Opening the real PR (#48) found **4 more defects invisible to every local check**, proving the feature's own thesis on itself: `trivy-action@0.28.0`'s pinned SHA has a dead upstream `setup-trivy` tag reference (fixed by upgrading to `v0.36.0`); the gitleaks canary's fixture tripped a second, older, pre-existing credential grep in `build-and-test` (F-013); `.NET SDK container support` lowercases the built image name but the Trivy step's `image-ref` didn't (not even valid OCI syntax); and `dotnet list package --vulnerable` returned nonzero in CI for a cause not reproducible locally, silently skipping the real check under GitHub Actions' `bash -e`. All 4 fixed and verified live on the PR.
+8. A `concurrency` group (cancel a superseded run when a new commit lands) was added post-merge at the user's request — a separate, pre-existing pipeline gap, not part of the original PRD scope.
+9. `.github/dependabot.yml`'s first-ever run opened **17 PRs at once** (not the one-at-a-time steady state AC12 envisioned). Reviewed all 17: one real conflict found (`CommunityToolkit.Maui` 9.1.1→15.0.1, `NU1605` — needs a coordinated MAUI SDK bump) and excluded; the other 16 consolidated into one PR (#67, 3 merge conflicts resolved by combining adjacent version bumps) and merged. AC10 and AC12 are both now **confirmed live**, not just anticipated — see below.
 
 ---
 
@@ -82,26 +85,28 @@ This episode closed the container and CI/CD hardening gap CONSTITUTION §7 had m
 
 ## Deployment Record
 
-- **Deployed to:** _not yet shipped — Construction only_
-- **CI/CD method:** GitHub Actions — `.github/workflows/dotnet.yml` (this feature's own subject)
+- **Deployed to:** no cloud environment — **cloud deploy deferred by ADR-035**, sixth consecutive release under that decision. Merged to `main` and tagged `v0.6.0`; the AppHost/Docker Compose local-dev paths are unaffected and require no separate "deployment"
+- **CI/CD method:** GitHub Actions — `.github/workflows/dotnet.yml` (this feature's own subject; also gained a `concurrency` group post-merge)
 - **Custom deploy artifact used:** no — default pipeline
-- **Deployment Review Party:** not convened — not yet at Ship
-- **Config changes introduced:** two new CI jobs (`security-scan`, `docker-build-and-scan`), `.github/dependabot.yml`, `.gitleaks.toml`, `.gitleaksignore`
-- **New tags recorded:** none yet
-- **Rollback tested:** n/a — not yet deployed
+- **Deployment Review Party:** not convened — cloud deploy out of scope per the standing ADR-035 deferral
+- **Config changes introduced:** two new CI jobs (`security-scan`, `docker-build-and-scan`), a `concurrency` group, `.github/dependabot.yml`, `.gitleaks.toml`, `.gitleaksignore`
+- **New tags recorded:** `v0.6.0`
+- **Rollback tested:** n/a — no cloud deployment to roll back; `git revert` remains the mechanism for the merge itself
 - **Overrides used:** TDD gate override for F-017-T03/T08 (infra-only, human-confirmed — see STATE.md Guardrail Log)
-- **DEPLOYMENTS.md updated:** no — pending `/ship`
+- **DEPLOYMENTS.md updated:** no — no environment change to record; this feature never touched a deployed environment
 
 ---
 
 ## Known Tradeoffs & Tech Debt Introduced
 
-- **[TD] AC10 (the `docker` path filter's live-PR trigger) is unverified pre-merge** — no PR has been opened against `feat/F-017-container-and-cd-hardening` yet. Must be confirmed live the moment a real PR opens; this is `/ship`'s responsibility.
-- **[TD] `.github/dependabot.yml`'s AC12 (a real Dependabot PR opens post-merge) is deferred by nature** — cannot fire before this feature merges to `main`.
-- **[TD] One flaky test run** — `AgendaBuddy.AppHost.Tests` showed 10 failures in 1 of 5 full-suite runs (77/87), all other runs clean at 484/484. Suspected resource contention across ~13 concurrently-run test assemblies, not a logic bug. Worth investigating before it becomes a source of false-red PRs.
-- **[TD] Gateway has zero CI coverage of any kind** — not in any path filter in `dotnet.yml` (pre-existing F-015 gap, surfaced but not introduced by this review).
+- ~~**[TD] AC10 (the `docker` path filter's live-PR trigger) is unverified pre-merge**~~ — **CONFIRMED LIVE** on PR #48 and again on PR #67: all 7 `Docker — <Service>` matrix jobs genuinely triggered and ran.
+- ~~**[TD] `.github/dependabot.yml`'s AC12 (a real Dependabot PR opens post-merge) is deferred by nature**~~ — **CONFIRMED LIVE**: Dependabot's first run opened 17 PRs at once (#49-#66) the moment F-017 merged.
+- **[TD] Two distinct flakes surfaced, both plausibly the same "full-solution concurrent test run" root cause, neither ever pinned down.** I4 (Party Review) already recorded `AgendaBuddy.AppHost.Tests` flaking 77/87 once during Construction's Test sub-phase (isolated re-runs always clean). A **second, different** flake then hit `AgendaBuddy.ServiceDefaults.Tests.TelemetryPiiTest` — the `InProcessServerCollection`/cross-test `TracerProvider` interference first documented at F-015 — on PR #59's `build-and-test` run (one of the 17 Dependabot PRs, `Aspire.Hosting.MongoDB`, which doesn't even reference `AgendaBuddy.ServiceDefaults.Tests`). Passed clean on isolated re-run. Two different test projects, two different features' worth of occurrences (F-015, F-017 Construction, this post-merge PR) — worth a dedicated investigation before either becomes a source of false-red PRs.
+- **[TD] Gateway has zero CI coverage of any kind** — not in any path filter in `dotnet.yml` (pre-existing F-015 gap, surfaced but not introduced by this review). F-017's own I1 fix only made `security-scan` unconditional; `build-and-test`/`docker-build-and-scan` still can't see Gateway-only changes.
 - **[TD] `Customer/Dockerfile` does not exist at all** — discovered while verifying the Dockerfile hygiene guard; pre-existing, out of scope (the image-build job uses SDK container support, not Dockerfiles, so this doesn't block anything).
-- **[TD] Duplicate `RepoRoot()` test helper** — copy-pasted across `DockerAndComposeHygieneTest`, `PinnedThirdPartyActionsTest`, and `PublishContainerTest` (YAGNI `shrink:` finding, accepted as low-priority polish).
+- **[TD] Duplicate `RepoRoot()` test helper** — copy-pasted across `DockerAndComposeHygieneTest`, `PinnedThirdPartyActionsTest`, `PublishContainerTest`, and (added at Review) `SecurityScanAndDockerJobShapeTest` (YAGNI `shrink:` finding, accepted as low-priority polish).
+- **[TD] `CommunityToolkit.Maui` stuck at 9.1.1** — Dependabot's proposed 15.0.1 bump (PR #61) fails `NU1605` (needs `Microsoft.Maui.Controls >= 10.0.90`, this project pins `>= 10.0.20`). Needs a coordinated MAUI SDK bump; left open, not part of F-017's own scope.
+- **[TD] New `ASPIRE010` build warning** — introduced by the post-merge `Aspire.Hosting.AppHost` 13.5.3 bump (`AgendaBuddy.AppHost` not using the Aspire CLI bundle). Informational, not yet acted on.
 
 ---
 
@@ -121,16 +126,22 @@ This episode closed the container and CI/CD hardening gap CONSTITUTION §7 had m
 ## Reflect Notes
 
 **What went well:**
-<!-- Filled at Reflect -->
+- The feature found and fixed defects live, on itself, more than any prior feature — 9 real defects across Construction, Test, and the actual PR CI run, all fixed in the same gate that found them, none filed. This is exactly what a container/CI-hardening feature is *for*, and it proved its own value while shipping.
+- The Party Review's cross-talk mechanism worked as designed: Neo's architecture finding (the `security-scan` path-filter gap) got promoted to a standalone Important security finding by Phantom, who connected it to `ISSUE-002`'s actual historical leak location — a genuinely better finding than either agent would have produced alone.
+- Mutation-testing every new structural test (deliberately breaking the thing it guards, confirming red, then reverting) caught that the Review-gate fix (`SecurityScanAndDockerJobShapeTest`) was non-vacuous, not just present.
 
 **What broke or slowed us down:**
-<!-- Filled at Reflect -->
+- **Opening the real PR found 4 defects no local check could have caught**: a dead upstream Action tag reference, a second credential-grep false positive, an invalid uppercase Docker image reference, and a `bash -e`-masked script bug. All were genuinely undiscoverable without a live GitHub Actions run — the local `dotnet test`/`actionlint`/manual-script-run loop, however thorough, has a hard ceiling for CI-environment-specific defects.
+- **A concurrency group, added mid-flight to fix a real gap, cancelled its own in-progress iOS build** when a docs-only follow-up commit landed on the same PR while CI was still running — costing a full ~15-minute rebuild. Lesson: don't push follow-up commits to a PR branch while its CI is still running, even for trivial docs changes, once a `cancel-in-progress` concurrency group is in place.
+- Dependabot's first-ever run opening **17 PRs simultaneously** (not the one-at-a-time steady state anticipated) meant "post-merge Dependabot review" was itself a multi-hour task, not a five-minute check.
 
 **What to improve next time:**
-<!-- Filled at Reflect -->
+- Consider a stale-worktree-freshness check baked into every worktree-isolated agent's prompt template rather than relying on each agent to notice — this recurred a fifth time across F-015/F-017 (see the `worktree-agents-must-check-branch-freshness` memory).
+- Two distinct test flakes (`AgendaBuddy.AppHost.Tests` during Construction; `AgendaBuddy.ServiceDefaults.Tests.TelemetryPiiTest` — a recurrence of a pattern first seen at F-015 — on a post-merge PR) both smell like the same "full-solution concurrent test run" root cause but were each just re-noted as tech debt rather than investigated. Should get a dedicated task rather than being re-noted a further time.
+- When a repo-wide first-run tool (like Dependabot) is added, expect and plan for its "big bang" first invocation rather than assuming steady-state behavior from day one.
 
-**Cycle time:** Inception (2026-08-25) to Construction complete (2026-08-26): ~1 day
-**Test pass rate:** 100% (484/484 backend, 234/234 integration; 0 skipped in either)
+**Cycle time:** Inception (2026-08-25) to `main` merge + tag `v0.6.0` (2026-08-26): ~1 day, including the post-merge Dependabot batch review and merge the same day
+**Test pass rate:** 100% (484/484 backend, 234/234 integration, 158/165 MobileApp with 7 pre-existing skips; 0 unexpected failures across all three suites)
 
 **Planning accuracy:** Readiness at plan: Fair (1 gap — `security-ac-unmaterialized` — caught and fixed in-party before Construction started). Surfaced later: 2 within-task scope widenings found at the Wave 1/2/3 standups (Profession/Dockerfile, EventsAndCommands.Tests appsettings, Customer/Provider suppression cleanup) plus 1 Critical and 4 Important findings at Review, and 1 real defect found at Test's own Layer 7 run — none were plan misses in the readiness-gap sense; all were genuinely undiscoverable before the code existed to inspect.
 
