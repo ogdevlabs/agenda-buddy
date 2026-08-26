@@ -19,6 +19,53 @@
 
 ---
 
+## v0.6.0 — 2026-08-26
+
+Closes CONSTITUTION §7's mandatory-but-unimplemented security scan and fixes the container images that
+could never run (F-017). Every pull request now gets an automated dependency audit and secret scan; every
+service-touching pull request also gets a container image build and Trivy scan. Deletes three broken
+class-library Dockerfiles that published `net10.0` onto a `dotnet/runtime:8.0` base, and fixes a publish
+conflict that was silently blocking `dotnet publish -t:PublishContainer` for all seven services, not just
+the three already known broken.
+
+### Added
+- **`security-scan` CI job** — runs unconditionally on every pull request (`if: always()`, no path filter):
+  a dependency-vulnerability audit (`dotnet list package --vulnerable`) and a gitleaks secret scan against
+  the full PR diff history.
+- **`docker-build-and-scan` CI job** — a seven-service matrix building each remaining service via .NET SDK
+  container support (`dotnet publish -t:PublishContainer`, no Dockerfile) and scanning the image with Trivy;
+  fails on HIGH/CRITICAL findings introduced by this project's own dependencies, warns on findings inherited
+  from the base image.
+- **`.gitleaks.toml`** — a custom rule detecting MongoDB/Atlas-style connection strings with embedded
+  credentials, closing the exact detection gap behind the historical Atlas credential leak (`ISSUE-002`).
+- **`.github/dependabot.yml`** — weekly NuGet and GitHub Actions dependency-update pull requests.
+- A canary test empirically proves gitleaks both detects an Atlas-credential-shaped secret and redacts it
+  from CI logs, rather than just asserting the configuration exists.
+- Both new third-party GitHub Actions (`gitleaks-action`, `trivy-action`) are pinned to full commit SHAs,
+  not mutable tags, closing a supply-chain substitution risk.
+
+### Fixed
+- `dotnet publish` (and therefore any container build) failed with `NETSDK1152` for every one of the seven
+  services, because `EventAndCommands.csproj` copied its own `appsettings.json` into every consumer's
+  publish output, colliding with each service's own file. Removed the offending metadata; also removed
+  `Customer.csproj`/`Provider.csproj`'s `ErrorOnDuplicatePublishOutputFiles=false`, a symptom-level
+  workaround for the same root cause.
+- Deleted `Library/Dockerfile`, `Kafka/Dockerfile`, and `EventAndCommands/Dockerfile` — all three published
+  a `net10.0` build onto a `dotnet/runtime:8.0` base and could never run; none of the three projects has an
+  entry point. Removed the corresponding no-op service blocks from `docker-compose.yml` and
+  `docker-compose.override.yml`.
+- `Profession/Dockerfile` had the identical runtime/SDK version mismatch, found incidentally while
+  generalizing the regression guard that catches this defect class repo-wide.
+- `aquasecurity/trivy-action`'s original tag reference (`0.28.0`) doesn't exist upstream — the real tag is
+  `v0.28.0`, with the `v` prefix. Found and corrected while pinning the action to a commit SHA.
+
+### Changed
+- Added a generalized structural test asserting no Dockerfile in the repository has a final-stage runtime
+  major version that mismatches its build stage's SDK major version, so this defect class cannot recur
+  under a different filename.
+
+---
+
 ## v0.5.0 — 2026-08-24
 
 Gives `MobileApp` a single address to call and makes every route it calls correct (F-015). Adds the
