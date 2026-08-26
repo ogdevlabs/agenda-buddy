@@ -33,6 +33,12 @@ builder.Services.AddMvcCore();
 builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.Converters.Add(new ObjectIdJsonConverter()));
 
+// F-019-T02 Validot spike: one shared, immutable, thread-safe IValidator<AppointmentEntity> for the
+// POST /appointments route only. See Booking/Validation/AppointmentEntitySpecification.cs for what it
+// enforces and why it's .Optional() rather than .Required().
+builder.Services.AddSingleton<IValidator<AppointmentEntity>>(
+    Validator.Factory.Create(AppointmentEntitySpecification.Spec));
+
 // Register Singleton instances
 builder.Services.AddSingleton<IKafkaClient, KafkaClient>();
 // Scoped, not Singleton: RequestCollection consumes the scoped IEventStore, and a
@@ -148,10 +154,16 @@ booking.MapPost("/appointments",
             IMediator mediator,
             ClaimsPrincipal user,
             ProviderService providerService, BookingService bookingService, AppointmentEntity appointmentEntity,
-            IRequestCollection requestCollection) =>
+            IRequestCollection requestCollection,
+            IValidator<AppointmentEntity> appointmentValidator) =>
         {
-            if (!MiniValidator.TryValidate(appointmentEntity, out var errors))
-                return TypedResults.ValidationProblem(errors);
+            // F-019-T02 Validot spike: this is the one route swapped from MiniValidator.TryValidate to
+            // Validot for a real vertical-slice comparison. The other two original routes below (PUT,
+            // DELETE) are deliberately untouched.
+            var validationResult = appointmentValidator.Validate(appointmentEntity);
+            if (validationResult.AnyErrors)
+                return TypedResults.ValidationProblem(
+                    validationResult.MessageMap.ToDictionary(kv => kv.Key, kv => kv.Value.ToArray()));
 
             // Either the provider or customer booking on behalf of themselves
             try { OwnershipGuard.AssertOwnerAny(user, appointmentEntity.EmailProvider, appointmentEntity.EmailCustomer); }

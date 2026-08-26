@@ -120,7 +120,25 @@ Build
 
 ## Last Checkpoint
 
-Construction / Build / 2026-08-26T22:30:00Z — **F-019-T01 done.** Wave 1 kickoff standup (Neo, Bolt) found no
+Construction / Build / 2026-08-26T22:50:00Z — **F-019-T02 done.** Design Roundtable (Neo, Bolt, Echo)
+diverged twice before converging: Round 1 had Neo favoring a zero-blast-radius harness spike against Bolt/Echo
+favoring real DI wiring; Round 2 converged on a synthesized "Vertical Slice Spike" — a real end-to-end
+MiniValidator→Validot swap on exactly `POST /appointments`/`AppointmentEntity`, plus authored-but-unwired
+specs for the 3 F-014 records, plus a mandatory per-field diff list. Built as a real Sub-Agent (`builder-t02`)
+per the user's Step 7 choice. **The sub-agent itself caught a real error in the roundtable's own guess:**
+Bolt's suggested fix for the `.Required()`-accepts-empty-string trap (`.Required().NotEmpty()`) would have
+over-tightened by rejecting `null`, when `EmailAddressAttribute.IsValid(null) == true` today (no `[Required]`
+on `AppointmentEntity`) — corrected to `.Optional().Email(EmailValidationMode.DataAnnotationsCompatible)`,
+verified against the live Validot assembly rather than trusting the secondhand roundtable description.
+TDD: red-first (compile-error red before the spec class existed) for both the wired spec (3 tests) and the
+3 unwired specs (5 tests). Full diff list written to
+`docs/pdlc/design/api-refactor-pilot-booking/validot-spike-findings.md`, explicitly flagging
+`AppointmentStatusRequest.Status` and `PaymentRequest.Amount`/`Currency` as "not ported — new behavior" so
+T05/T06/T08 don't over-tighten. Independently re-verified (file reads + a second full-suite run) before
+committing, not taken on the sub-agent's report alone. Backend suite: 489 → 497 (Booking.Tests 25→33), 0
+failing, 0 regressions. Wave 1 fully complete (T01, T02 both done) — T03 now unblocked.
+
+_Previously: Construction / Build / 2026-08-26T22:30:00Z — **F-019-T01 done.** Wave 1 kickoff standup (Neo, Bolt) found no
 collision between T01/T02, but Bolt verified a real defect in T02's task description (claimed Booking's
 request DTOs carry `[Required]`/`[EmailAddress]`; actually the 3 F-014 request records have zero annotations
 — only `AppointmentEntity`, bound directly for the 3 original routes, has partial `[EmailAddress]`-only
@@ -1080,3 +1098,5 @@ re-planning (`/continue`).
 | 2026-08-26T22:20:00Z | wave_kickoff | **Wave 1 standup (Neo, Bolt).** No collision between T01/T02. Bolt verified a real defect in T02's task description — claimed Booking's DTOs use `[Required]`/`[EmailAddress]`; the 3 F-014 request records actually carry zero annotations, only `AppointmentEntity` (bound for the 3 original routes) has partial `[EmailAddress]`-only coverage. `F-019-T02.md` corrected before dispatch | Build | api-refactor-pilot-booking |
 | 2026-08-26T22:26:00Z | design_roundtable | **Roundtable on F-019-T01 (Neo, Bolt, Echo).** Round 1 diverged — Neo wanted a live route boot, Bolt/Echo wanted a unit test. Converged in Round 2 after Bolt confirmed Booking's JSON converter registration is global (`Booking/Program.cs:33-34`), not attribute-based, removing the risk only a live route would catch. Decision: DI-config-matching unit test, promoted to permanent (Echo's push) rather than throwaway | Build | api-refactor-pilot-booking |
 | 2026-08-26T22:30:00Z | task_complete | **F-019-T01 done.** `Library.Tests/Tools/ObjectIdJsonConverterTest.cs` — 5 tests, all green on first run, zero implementation changes needed: confirms `ObjectIdJsonConverter` already fires correctly nested inside a generic wrapper. Backend 484→489 (Library.Tests 162→167), 0 failing | Build | api-refactor-pilot-booking |
+| 2026-08-26T22:42:00Z | design_roundtable | **Roundtable on F-019-T02 (Neo, Bolt, Echo), 2-round cross-talk.** Converged on a synthesized "Vertical Slice Spike" — real MiniValidator→Validot swap on exactly `POST /appointments`, plus authored-but-unwired specs for the 3 F-014 records, plus a mandatory diff list | Build | api-refactor-pilot-booking |
+| 2026-08-26T22:50:00Z | task_complete | **F-019-T02 done (real Sub-Agent build).** Sub-agent corrected a real error in the roundtable's own `.Required().NotEmpty()` guess after verifying against the live Validot assembly — `.Optional().Email(DataAnnotationsCompatible)` is the actual behavioral match. Diff list written to `validot-spike-findings.md`. Backend 489→497 (Booking.Tests 25→33), 0 failing. Wave 1 complete, T03 unblocked | Build | api-refactor-pilot-booking |
