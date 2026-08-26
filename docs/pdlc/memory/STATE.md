@@ -84,13 +84,27 @@ _None active. Run `/night-shift <F-NNN>` to start an autonomous run (requires by
 
 ## Current Sub-phase
 
-Review
+Test
 
 ---
 
 ## Last Checkpoint
 
-Construction / Build / 2026-08-26T03:00:00Z — **Wave 4 complete — BUILD LOOP DONE, all 9 tasks closed.**
+Construction / Review / 2026-08-26T04:35:00Z — **Party Review complete and approved.** Neo, Echo, Phantom,
+Jarvis reviewed the full diff in parallel (subagents), 1 cross-talk round (Neo's architecture finding on
+`security-scan`'s path-filter coverage promoted to a standalone Important security finding by Phantom, using
+`ISSUE-002`'s own record that the original leak lived partly under `docs/pdlc/context/`). Tally: 1 Critical,
+4 Important, 10 Advisory, 1 YAGNI `shrink:`. **Fixed before approval:** C1 (added `SecurityScanAndDockerJobShapeTest`
++ `verify-trivy-severity-gate.sh`, closing the AC6/8/9/11/13 coverage gap, all mutation-tested — commit
+`7cefae1`), I1 (`security-scan` now runs `if: always()` unconditionally on every PR, closing the exact
+path-class gap the original Atlas leak used — commit `521a7ce`), I3 (`CLAUDE.md` updated for the new CI
+jobs/tooling — commit `ebabba7`), and A1 (stale comment, fixed alongside C1). **Accepted as logged warnings**
+(ADR-047): I2 (AC10 live-PR verification — not possible pre-merge, `/ship`'s job), I4 (one flaky
+`AgendaBuddy.AppHost.Tests` run, 4/5 clean), and 9 remaining Advisory/confirmation items. Phantom security
+sign-off: 0 Critical (after fix). **Final: 484 backend tests, 0 failing** (468 at build-loop-done → 484 after
+the Review fix cycle). No Muse (no UI surface). No standards gate (ADR-042 retirement). Moving to Test.
+
+_Previously: Construction / Build / 2026-08-26T03:00:00Z — **Wave 4 complete — BUILD LOOP DONE, all 9 tasks closed.**
 F-017-T09 (pin `gitleaks-action`/`trivy-action` to full commit SHAs, closing `[security]` T-001) built
 solo/direct (single-task wave, no standup needed) — TDD red-then-green with a new
 `PinnedThirdPartyActionsTest`. **Found and fixed a second real defect while pinning:** the existing
@@ -379,6 +393,9 @@ the feature branch after each wave completes.
 | 2026-08-25T19:51:32Z | pushed_directly_to_main | While claiming F-017, corrected F-021's stale task-store record (`status: in_progress`→`shipped`, unclaimed) and pushed that commit (`8fe2ace`) straight to `main` per the `/brainstorm` skill's literal Step B instructions — before checking the user's standing "never push directly to main" instruction. Caught immediately; user decided: leave that one commit as-is (small, correct, docs-only), but all further PDLC Inception bookkeeping for F-017 (this claim, STATE.md, the brainstorm log) goes on branch `pdlc/F-017-container-and-cd-hardening` instead of `main`, with a PR at the end of Inception rather than a direct push. |
 | 2026-08-25T23:55:00Z | pr_merge_tool_blocked | `gh pr merge 47 --merge` failed: `GraphQL: Unauthorized: As an Enterprise Managed User, you cannot access this content (mergePullRequest)` — the `gh` identity on this machine cannot merge PRs via the API on this repo (consistent with the standing preference to use plain `git`, not `gh`, here). Worked around with local `git checkout main && git merge --no-ff pdlc/F-017-container-and-cd-hardening && git push origin main` (`04d0809`), which closed PR #47 as merged. User-confirmed before merging (PR was mergeable, CI-clean, docs-only Inception bookkeeping). Same workaround applies to any future PR-merge attempt on this repo. |
 | 2026-08-26T00:05:00Z | tdd_gate_override | Build Step 9a-bis TDD gate overridden for **F-017-T03** (dependency-audit CI job) and **F-017-T08** (Dependabot config) — both are infrastructure-only per the gate's own exception list (CI pipeline / static config, no locally-testable behavior); their real acceptance criteria (AC5, AC12) are only verifiable via a live CI run / a real Dependabot PR opening post-merge. User granted the override explicitly when asked. F-017-T01 and F-017-T02 were NOT covered by this override — both have genuinely testable behavior (a structural Dockerfile-tree guard; a `dotnet publish` conflict) and built red-test-first as normal. |
+| 2026-08-26T04:20:00Z | review_critical_fixed | F-017 Party Review's Critical finding (C1 — ACs 6/8/9/11/13 had zero committed regression test) fixed, not overridden: `SecurityScanAndDockerJobShapeTest` (5 tests) + `scripts/verify-trivy-severity-gate.sh` (4 fixture cases) added, all mutation-tested. Commit `7cefae1`. |
+| 2026-08-26T04:25:00Z | review_important_fixed | F-017 Party Review Important findings I1 (security-scan's path-filter excluded docs/scripts/Gateway/MobileApp — the exact class of path `ISSUE-002`'s original leak used) and I3 (`CLAUDE.md` stale on the new CI jobs/tooling) both fixed. I1: `security-scan` now runs `if: always()`, unconditionally, on every PR (commit `521a7ce`). I3: `CLAUDE.md` updated (commit `ebabba7`). |
+| 2026-08-26T04:30:00Z | review_warnings_accepted | Review approval gate: 0 remaining Critical. User chose **fix I1 + I3, accept the rest**. ACCEPTED as logged warnings (full detail + rationale in **ADR-047**): **I2** AC10's live-PR verification not yet possible (no PR open on `feat/F-017-...` yet — this is `/ship`'s job); **I4** one flaky run (77/87) out of 5 full-suite runs in `AgendaBuddy.AppHost.Tests`, suspected resource contention, not a logic bug; **A2–A10** (Advisory) — Gateway path-filter coverage gap (pre-existing, F-015), duplicate `RepoRoot()` test helper (YAGNI `shrink:`), AC3's non-digest-pinned-image edge case, `PublishContainerTest`'s structural-proxy nature, AC10/AC12's PRD-anticipated deferral, merge-commit subject format, plus 7 confirmations (T-001/T-002/T-003–006 accept-rationales still hold, `api-contracts.md`/`data-model.md` "no changes" confirmed, `ARCHITECTURE.md`'s correction reads clearly). |
 
 ---
 

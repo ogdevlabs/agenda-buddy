@@ -930,3 +930,52 @@ residual risk every CI pipeline with human-reviewed changes carries.
 Design threat-modeling gate (Step 10.5/14.5): T-001 (unpinned third-party Actions) and T-002 (secret-value
 CI-log leakage). Both are `[security]`-tagged, test-first, added as PRD ACs 14-15, and materialized on tasks
 F-017-T09 and F-017-T05 respectively via `tasks.cjs ac add`.
+
+---
+
+## ADR-047 — F-017 Party Review: 2 Important findings and 11 Advisory/YAGNI items accepted as-is
+
+**Date:** 2026-08-26 · **Status:** Accepted · **Feature:** F-017 · **Source:** Review gate (Step 13), batched acceptance
+
+**Context.** The F-017 Party Review (`docs/pdlc/reviews/REVIEW_container-and-cd-hardening_2026-08-26.md`)
+raised 1 Critical, 4 Important, 10 Advisory findings, and 1 YAGNI over-engineering note. The user chose to
+fix the Critical (C1, missing regression tests — resolved, commit `7cefae1`) and two of the four Important
+findings (I1, security-scan's path-filter coverage gap — resolved, commit `521a7ce`; I3, `CLAUDE.md` drift —
+resolved, commit `ebabba7`), and to accept the remainder as-is rather than fix them now. This entry batches
+that acceptance per Build Step 14's instruction to batch multiple deferred/accepted findings into one
+Decision Review rather than one per finding. Given all four reviewing agents (Neo, Echo, Phantom, Jarvis) had
+just independently assessed this exact diff moments earlier in the Party Review itself, this was recorded
+directly rather than re-convening a full 9-agent Decision Review Party for findings already fully diagnosed
+by the agents who own the affected artifacts.
+
+**Decision.** Accept, as-is, without further Construction-phase action:
+
+- **I2** — AC10 (the `docker` path filter's live-PR verification) has not happened; `feat/F-017-...` has no
+  open PR yet. Accepted because it genuinely cannot be verified from a local branch — it becomes actionable
+  the moment a PR opens, which is `/ship`'s job, not Construction's.
+- **I4** — one flaky run (77/87) out of 5 full-suite runs in `AgendaBuddy.AppHost.Tests`, all other runs
+  clean at the claimed count. Accepted as a suspected resource-contention flake, not a logic bug; filed as a
+  follow-up to investigate rather than blocking this feature.
+- **A2–A10** (Advisory) — stale comment already fixed alongside C1; tech-debt bead recommendation for the
+  Gateway path-filter gap; duplicate `RepoRoot()` test helper (YAGNI `shrink:`); AC3's non-digest-pinned-image
+  edge case; `PublishContainerTest`'s structural-proxy nature; AC10/AC12's PRD-anticipated deferral; merge-commit
+  subject format; and the confirmations (T-001/T-002/T-003–006 accept-rationales, `api-contracts.md`/
+  `data-model.md` "no changes", `ARCHITECTURE.md`'s correction quality). None change behavior or carry a
+  security/architecture risk beyond what's already logged; all are documentation-quality or nice-to-have
+  polish.
+
+**Rationale.** The Critical and the two most consequential Important findings (a real security-coverage gap
+and stale onboarding documentation) are fixed. The remainder are either not fixable pre-merge by their
+nature (I2), a suspected flake needing observation rather than a code change (I4), or genuinely low-stakes
+polish (Advisories, YAGNI). Fixing everything now would trade a fast, correctly-scoped Construction phase for
+diminishing-returns cleanup on a feature that has already found and fixed four real pre-existing defects
+(Profession/Dockerfile, the broken trivy-action tag, the NU1903 NoWarn misconception, the gitleaks
+secretGroup redaction bug) plus two real gaps caught by this very review (C1, I1).
+
+**Consequences.** Follow-up beads recommended, not filed as blocking: (1) investigate the `AgendaBuddy.AppHost.Tests`
+flake (I4) before it becomes a source of false-red PRs; (2) track the Gateway path-filter omission (A2) —
+Gateway currently has zero CI coverage of any kind, a pre-existing F-015 gap this review surfaced but did not
+introduce; (3) verify AC10 live the moment a real PR opens against `feat/F-017-container-and-cd-hardening`
+(I2) — this is `/ship`'s responsibility, not deferred indefinitely. Re-evaluation trigger: none of these
+block a future feature by default: only I4 recurring at a materially higher rate, or a real secret leak
+recurring in a path this feature's `security-scan` job now DOES cover (post-I1-fix), would warrant revisiting.

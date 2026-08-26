@@ -29,19 +29,23 @@ STATE.md's Guardrail Log records an explicit human TDD-gate override for **T03/T
 
 ## Important
 
-### I1 — `security-scan`'s path-filter coverage excludes docs/scripts/Gateway/MobileApp, reopening the exact leak vector this feature exists to close (Neo, promoted to a standalone security finding by Phantom cross-talk)
+### I1 — ✅ FIXED (commit `521a7ce`) — `security-scan`'s path-filter coverage excluded docs/scripts/Gateway/MobileApp, reopening the exact leak vector this feature exists to close (Neo, promoted to a standalone security finding by Phantom cross-talk)
 
-`security-scan`'s `if:` (`dotnet.yml:331`) gates on `needs.changes.outputs.api == 'true'` — the `api` filter covers backend service/Library/EventAndCommands/test directories only. A PR touching **only** `docs/`, `scripts/`, `Gateway/`, or `MobileApp/` runs zero dependency-audit or gitleaks scanning.
+`security-scan`'s `if:` (`dotnet.yml:331`) gated on `needs.changes.outputs.api == 'true'` — the `api` filter covers backend service/Library/EventAndCommands/test directories only. A PR touching **only** `docs/`, `scripts/`, `Gateway/`, or `MobileApp/` ran zero dependency-audit or gitleaks scanning.
 
-**Phantom's verdict, cross-talked:** promoted to its own Important finding, not just an architecture cross-reference. `docs/issues/ISSUE-002-atlas-credential-rotation.md` states the original Atlas credential leak lived not only in `appsettings*.json` but in **two files under `docs/pdlc/context/`** that a documentation backfill copied it into — the exact path class this filter excludes, not a hypothetical. Also: the pre-existing F-013 credential grep in `build-and-test` has the identical `api`-gated condition, so this hole predates F-017 — but F-017's new `security-scan` job was the opportunity to close it and inherited the same gap instead. Not Critical (no active attacker path; human PR review remains a backstop), but a proven-relevant blind spot in the control whose entire purpose is catching this exact class of leak. Gateway isn't in *any* path filter in this workflow at all (pre-existing F-015 gap, compounds this).
+**Phantom's verdict, cross-talked:** promoted to its own Important finding, not just an architecture cross-reference. `docs/issues/ISSUE-002-atlas-credential-rotation.md` states the original Atlas credential leak lived not only in `appsettings*.json` but in **two files under `docs/pdlc/context/`** that a documentation backfill copied it into — the exact path class this filter excludes, not a hypothetical. Also: the pre-existing F-013 credential grep in `build-and-test` has the identical `api`-gated condition, so this hole predates F-017 — but F-017's new `security-scan` job was the opportunity to close it and inherited the same gap instead.
+
+**Resolution:** `security-scan` now declares `if: always()` — no path filter at all, runs unconditionally on every PR. New test `SecurityScanJobRunsUnconditionallyOnEveryPullRequest` locks this in. `ARCHITECTURE.md` and the `summary` job's report table updated to match.
 
 ### I2 — AC10's "live test PR" verification has not happened yet (Neo)
 
 PRD AC10 and `ARCHITECTURE.md` require the `docker` path filter to be verified live by observing a real PR trigger the job. `feat/F-017-container-and-cd-hardening` has no remote/PR yet (`git branch -a` shows no `remotes/origin/feat/F-017-...`). Unlike AC12 (Dependabot — which *cannot* fire before merge by nature, and is correctly logged as deferred), AC10 *could* have been verified pre-merge via a real PR and wasn't. Currently unverified, not deferred-by-design.
 
-### I3 — `CLAUDE.md` describes a CI pipeline/toolchain that no longer matches reality (Jarvis)
+### I3 — ✅ FIXED (commit `ebabba7`) — `CLAUDE.md` described a CI pipeline/toolchain that no longer matched reality (Jarvis)
 
-No mention anywhere of `gitleaks`, `trivy`, `.gitleaks.toml`, or `.github/dependabot.yml`. The CI pipeline description omits both new jobs. Project Structure doesn't note `Library`/`Kafka`/`EventAndCommands` no longer have Dockerfiles. No pointer to the `EventAndCommands.csproj` publish-conflict precedent for a future class library hitting the same bug. Key Files has no entry for either new script or the two new config files. "Security controls that default OFF" doesn't cross-reference the new always-on CI gates.
+No mention anywhere of `gitleaks`, `trivy`, `.gitleaks.toml`, or `.github/dependabot.yml`. The CI pipeline description omitted both new jobs. Project Structure didn't note `Library`/`Kafka`/`EventAndCommands` no longer have Dockerfiles. No pointer to the `EventAndCommands.csproj` publish-conflict precedent for a future class library hitting the same bug. Key Files had no entry for either new script or the two new config files. "Security controls that default OFF" didn't cross-reference the new always-on CI gates.
+
+**Resolution:** all of the above added to `CLAUDE.md`, plus the stale 867/468 test counts corrected to 883/484.
 
 ### I4 — Full backend suite flaked once in 5 runs, specifically on the tests proving this feature's core bug fix (Echo)
 
