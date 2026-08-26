@@ -294,8 +294,13 @@ jobs:
       # secrets. Known redaction placeholders are filtered out instead.
       - name: Assert no committed database credential
         run: |
+          # F-017: scripts/verify-gitleaks-canary.sh's fixture-generating line matches this shape
+          # textually (mongodb+srv://user:${FAKE_PASSWORD}@host) even though ${FAKE_PASSWORD} is an
+          # unresolved shell variable reference in the source, never a real secret. Found live on
+          # PR #48 — this grep only sees text shape, not that it's a variable. Excluded alongside
+          # the other known-safe placeholders below, same reasoning as each of them.
           if git grep -nE 'mongodb(\+srv)?://[^ "/]+:[^@"]+@' -- . \
-              | grep -vE '<REDACTED-ROTATE-THIS>|<the-leaked-password>|<user>:<' ; then
+              | grep -vE '<REDACTED-ROTATE-THIS>|<the-leaked-password>|<user>:<|\$\{FAKE_PASSWORD\}' ; then
             echo "::error::Credential found in tracked files"; exit 1
           fi
 
@@ -376,7 +381,16 @@ jobs:
       - name: Dependency vulnerability audit
         run: |
           set -uo pipefail
-          output=$(dotnet list agenda-buddy.sln package --vulnerable --include-transitive --no-restore 2>&1)
+          # GitHub Actions invokes `run:` steps as `bash -e {0}` — found live on PR #48: this job
+          # failed with zero output at all, meaning `dotnet list` itself returned nonzero in CI
+          # (reproducible cause not identified; ran clean locally every time). Under -e, a failing
+          # command inside `$(...)` aborts the script immediately, before `echo "$output"` even
+          # runs — so a transient/environment-specific nonzero exit from the tool silently skipped
+          # this step's real job (the new-findings filter below) instead of running it. `|| true`
+          # neutralizes that, matching the same protection `new_findings=(... || true)` already has
+          # a few lines down — the actual pass/fail decision is our own grep-based filter, not
+          # whatever exit code `dotnet list` happens to return.
+          output=$(dotnet list agenda-buddy.sln package --vulnerable --include-transitive --no-restore 2>&1) || true
           echo "$output"
 
           # ADR-030: SSH.NET GHSA-q939-rpr3-3284 (HIGH), pulled in by Testcontainers in
@@ -463,6 +477,16 @@ jobs:
       - name: Publish container image (.NET SDK container support, no Dockerfile)
         run: dotnet publish ${{ matrix.service }}/${{ matrix.service }}.csproj -t:PublishContainer
 
+      # Found live on PR #48: .NET SDK container support lowercases the image name by default
+      # (`ContainerRepository` defaults to the lowercased assembly name) — the built image is
+      # `booking:latest`, not `Booking:latest`. GitHub Actions expressions have no built-in
+      # toLower(), so compute it once here and reference the output below, rather than a
+      # `Booking:latest`-shaped image-ref that isn't even valid OCI reference syntax (uppercase is
+      # disallowed in image names) and fails Trivy with "could not parse reference".
+      - name: Lowercase the image name
+        id: image
+        run: echo "name=$(echo '${{ matrix.service }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
+
       - name: Trivy scan
         # v0.28.0 (the originally-pinned release) was found DEAD at Ship, not by inspection: its
         # action.yaml pins a nested dependency, `aquasecurity/setup-trivy`, by a mutable tag
@@ -472,7 +496,7 @@ jobs:
         # latest, v0.36.0, which does.
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
-          image-ref: "${{ matrix.service }}:latest"
+          image-ref: "${{ steps.image.outputs.name }}:latest"
           format: json
           output: trivy-report.json
           exit-code: "0"
