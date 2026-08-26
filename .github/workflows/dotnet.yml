@@ -383,7 +383,7 @@ jobs:
       # pinned to a commit SHA: F-017-T09 pins this action (and Trivy's, added in F-017-T07) once
       # both references exist, per the threat model's T-001 mitigation.
       - name: Secret scan (gitleaks)
-        uses: gitleaks/gitleaks-action@v2
+        uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -439,7 +439,7 @@ jobs:
         run: dotnet publish ${{ matrix.service }}/${{ matrix.service }}.csproj -t:PublishContainer
 
       - name: Trivy scan
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@915b19bbe73b92a6cf82a1bc12b087c9a19a5fe2 # v0.28.0 (note: the unpinned ref was "0.28.0", missing the "v" — that tag doesn't exist upstream; resolved via the real "v0.28.0" tag)
         with:
           image-ref: "${{ matrix.service }}:latest"
           format: json
