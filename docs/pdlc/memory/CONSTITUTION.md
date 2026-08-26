@@ -16,8 +16,8 @@
 
 | Layer | Technology | Rationale |
 |-------|-----------|-----------|
-| Language | C# 12 / .NET 8 | Primary language; nullable-enabled, implicit usings |
-| Runtime / Framework | ASP.NET Core 8 Minimal APIs | Lightweight, fast, per-microservice entry point |
+| Language | C# 14 / .NET 10 (`net10.0`, implicit `LangVersion`) | Primary language; nullable-enabled, implicit usings. Upgraded from .NET 8 by F-011 (`v0.1.0`-era) |
+| Runtime / Framework | ASP.NET Core 10 Minimal APIs | Lightweight, fast, per-microservice entry point |
 | Messaging / Events | Kafka (Confluent) + MediatR 12 | Async inter-service communication; CQRS command/event dispatch |
 | Database | MongoDB (via MongoDB.Driver 2.25) | Document model suits flexible provider/customer/appointment nesting |
 | Caching | IDistributedCache (Microsoft.Extensions.Caching) | Cache-aside pattern for read performance |
@@ -73,7 +73,14 @@
 
 - HTTPS enforced (`UseHttpsRedirection`) in all microservices
 - Anti-CSRF protection enabled (`AddAntiforgery` / `UseAntiforgery`) in all services
-- Input validation via `MiniValidator` (or data annotations) at every API endpoint before processing
+- Input validation: **today** `MiniValidator.TryValidate` (or data annotations) runs at the top of every
+  API endpoint. **Target, per ADR-016 (2026-08-18):** `Validot` replaces `MiniValidator`, with validation
+  moved off the endpoint into a shared validation base class — this removes the ~duplicated
+  `MiniValidator.TryValidate` block currently repeated across all seven `Program.cs` files. **The transition
+  has not happened yet** — F-018 (this feature) approves the package and records the target; the endpoint
+  rewrite lands in F-019 (pilot, `Booking` only) and F-020 (rollout, the remaining six services). Until then,
+  this section describes both the current code (`MiniValidator`) and the destination (`Validot`) rather than
+  only one or the other.
 - Secrets must never appear in source code — use `appsettings.json` / User Secrets / environment variables
 - No authentication or authorization middleware exists yet *(inferred — please implement before public exposure)*
 - PII (email addresses) is stored in MongoDB — ensure access controls are in place
@@ -154,7 +161,11 @@ Examples:
 
 ## 9. Additional Rules
 
-- New packages require discussion before adding — keep the dependency footprint minimal
+- New packages require discussion before adding — keep the dependency footprint minimal. **Five packages
+  pre-approved per ADR-015 (2026-08-18):** `FluentResults`, `Validot`, `Mapster`, `GuardClauses`,
+  `SmallApiToolkit` (narrow slice only — `DataResponse<T>`, the validation base class, `ExceptionMiddleware`;
+  not its dispatch abstraction, per ADR-014's decision to keep MediatR as the single dispatcher). Approved
+  for **F-019/F-020**, not F-018 — no production code consumes them yet as of this feature.
 - All database migrations (schema changes) must be documented in DECISIONS.md before implementation
 - ~~The `EventAndCommands/Persitency/` typo is a known issue — do not rename until a dedicated refactor is planned (renaming breaks existing references)~~ **RETIRED 2026-08-18 by F-016-T01.** The clause's own stated condition — *"until a dedicated refactor is planned"* — was satisfied by the approved F-016 PRD, so the prohibition expired on its own terms. Its stated *reason* also turned out to be wrong: the rename did **not** break references across all consumers. Measured before the change and confirmed after: **11 `.cs` files, one reference each, and zero references in any `.json`, `.yml`, `.csproj` or `.slnf`.** The directory and namespace are now `EventAndCommands/Persistence/`, pinned by `EventsAndCommands.Tests/Persistence/PersistenceNamespaceTest.cs` so a revert fails a test rather than passing silently.
 - Kafka `BootstrapServers` must be moved to configuration before any non-local deployment
