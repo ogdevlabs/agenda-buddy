@@ -3,6 +3,8 @@
 global using System.Threading;
 global using System.Threading.Tasks;
 global using Booking.Configuration;
+global using Booking.Core.Commands;
+global using Booking.Domain.Commands;
 global using Booking.Events;
 global using Booking.Requests;
 global using EventAndCommands.Commands.Booking;

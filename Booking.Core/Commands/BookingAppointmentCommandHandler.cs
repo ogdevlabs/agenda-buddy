@@ -1,5 +1,5 @@
 #pragma warning disable CS9113 // Primary constructor parameter unused — kafkaClient reserved for future Kafka publishing
-namespace EventAndCommands.Commands.Booking;
+namespace Booking.Core.Commands;
 
 public class BookingAppointmentCommandHandler(
     IMediator mediator,
@@ -46,7 +46,7 @@ public class BookingAppointmentCommandHandler(
     /// list, and call <c>UpdateProviderAsync</c> — a whole-document <c>ReplaceOneAsync</c>. Two concurrent
     /// bookings for one provider both read, both appended, and the second replacement silently discarded the
     /// first appointment, which then existed in the `appointments` collection and not in the provider
-    /// document. `ReportingService` counts from the embedded list, so the lost booking was the one that
+    /// document. <c>ReportingService</c> counts from the embedded list, so the lost booking was the one that
     /// vanished from the dashboard. <c>AppendAppointmentAsync</c> is a single atomic <c>$push</c> with no
     /// read, so there is no window.
     /// </remarks>

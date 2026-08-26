@@ -1,5 +1,5 @@
 #pragma warning disable CS9113 // Primary constructor parameter unused — kafkaClient reserved for future Kafka publishing
-namespace EventAndCommands.Commands.Booking;
+namespace Booking.Core.Commands;
 
 public class CancelAppointmentCommandHandler(
     IMediator mediator,

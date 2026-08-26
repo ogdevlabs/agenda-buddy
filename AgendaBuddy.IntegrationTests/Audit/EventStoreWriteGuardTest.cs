@@ -19,11 +19,13 @@ namespace AgendaBuddy.IntegrationTests.Audit;
 /// framing (a reflection/convention-based check over an explicit HTTP test per handler) points at.
 /// </para>
 /// <para>
-/// <b>Convention, not a maintained list.</b> Every <c>*CommandHandler.cs</c> under
-/// <c>EventAndCommands/Commands/</c> and <c>*QueryHandler.cs</c> under <c>EventAndCommands/Queries/</c> is
-/// discovered by directory walk, so a new handler is covered automatically — no edit here is needed when
-/// F-019/F-020 (or anything else) adds one. Only <see cref="ExcludedHandlerFiles"/> is a maintained list,
-/// and it holds exactly one documented exception.
+/// <b>Convention, not a maintained list.</b> Every <c>*CommandHandler.cs</c>/<c>*QueryHandler.cs</c> under
+/// <see cref="ScanRoots"/> (<c>EventAndCommands/</c>, and — as of F-019-T03 — <c>Booking.Core/</c>, the
+/// first handler location outside <c>EventAndCommands</c>) is discovered by directory walk, so a new
+/// handler is covered automatically — no edit here is needed when F-019/F-020 (or anything else) adds one
+/// under an already-listed root. A new root (e.g. another service's own Core project) still needs adding
+/// to <see cref="ScanRoots"/> — F-019-T07 generalizes this once every service's handlers have moved. Only
+/// <see cref="ExcludedHandlerFiles"/> is a maintained list, and it holds exactly one documented exception.
 /// </para>
 /// <para>
 /// <b>The one exclusion.</b> <c>BookCalendarCommandHandler.cs</c> takes no <c>IEventStore</c> at all and its
@@ -65,13 +67,20 @@ public class EventStoreWriteGuardTest
         return current.FullName;
     }
 
+    // F-019-T03. Booking.Core is the first handler location outside EventAndCommands — its 3
+    // moved handlers (Book/Update/Cancel) would otherwise silently drop out of this guard's
+    // coverage. A minimal second scan root, not the general multi-project convention F-019-T07
+    // is scoped to build once every service's handlers have moved.
+    private static readonly string[] ScanRoots = ["EventAndCommands", "Booking.Core"];
+
     private static List<string> HandlerFiles()
     {
         var root = RepoRoot();
-        var eventAndCommands = Path.Combine(root, "EventAndCommands");
 
-        return Directory
-            .EnumerateFiles(eventAndCommands, "*.cs", SearchOption.AllDirectories)
+        return ScanRoots
+            .Select(scanRoot => Path.Combine(root, scanRoot))
+            .Where(Directory.Exists)
+            .SelectMany(scanRoot => Directory.EnumerateFiles(scanRoot, "*.cs", SearchOption.AllDirectories))
             // Excludes bin/obj and any dotfolder — a parallel worktree's build output must never leak into
             // this scan (a recurring class of defect in this repo's structural tests).
             .Where(path => Path.GetRelativePath(root, path)

@@ -1,4 +1,4 @@
-namespace EventAndCommands.Commands.Booking;
+namespace Booking.Domain.Commands;
 
 [ExcludeFromCodeCoverage]
 public class CancelAppointmentCommand : IRequest<string>

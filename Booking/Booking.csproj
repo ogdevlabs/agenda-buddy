@@ -24,6 +24,9 @@
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\Booking.Core\Booking.Core.csproj" />
+        <ProjectReference Include="..\Booking.Domain\Booking.Domain.csproj" />
+        <ProjectReference Include="..\Booking.Infrastructure\Booking.Infrastructure.csproj" />
         <ProjectReference Include="..\EventAndCommands\EventAndCommands.csproj" />
         <ProjectReference Include="..\Kafka\Kafka.csproj" />
         <ProjectReference Include="..\Library\Library.csproj" />

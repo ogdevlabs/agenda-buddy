@@ -1,4 +1,4 @@
-namespace EventsAndCommands.Tests.Commands.Booking;
+namespace Booking.Tests.Commands;
 
 [TestSubject(typeof(CancelAppointmentCommandHandler))]
 public class CancelAppointmentCommandHandlerTest

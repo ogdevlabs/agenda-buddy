@@ -1,7 +1,7 @@
-namespace EventAndCommands.Commands.Booking;
+namespace Booking.Domain.Commands;
 
 [ExcludeFromCodeCoverage]
-public class BookAppointmentCommand : IRequest<string>
+public class UpdateAppointmentCommand : IRequest<string>
 {
     public required AppointmentEntity AppointmentEntity { get; set; }
 }
