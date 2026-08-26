@@ -108,14 +108,6 @@ services:
   #     - "6031:80"
   #     - "7031:81"
 
-  events:
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings=
-      - PATH_BASE=/events
-    networks:
-      - kafka-net
-   
 # volumes:
   # provider-data:
   #   driver: local
