@@ -314,7 +314,12 @@ jobs:
     runs-on: ubuntu-24.04
 
     steps:
+      # fetch-depth: 0 (full history) so gitleaks' PR-diff scan below can actually diff against
+      # the PR's base — a shallow checkout has no base commit to diff from, and a secret
+      # introduced then removed within the same PR must still be caught.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -353,6 +358,16 @@ jobs:
           if echo "$output" | grep -q 'GHSA-q939-rpr3-3284'; then
             echo "Known accepted finding present (ADR-030, SSH.NET GHSA-q939-rpr3-3284) — not failing."
           fi
+
+      # F-017-T04. gitleaks/gitleaks-action detects the pull_request event itself and, given full
+      # history (fetch-depth: 0 above), scans the PR's base..head diff range rather than the whole
+      # repo — so a secret introduced and then removed within the same PR is still caught. Not yet
+      # pinned to a commit SHA: F-017-T09 pins this action (and Trivy's, added in F-017-T07) once
+      # both references exist, per the threat model's T-001 mitigation.
+      - name: Secret scan (gitleaks)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   # ---------------------------------------------------------------------------
   # Integration — real services over HTTP against a MongoDB Testcontainer
