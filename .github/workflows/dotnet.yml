@@ -618,6 +618,15 @@ jobs:
             exit 1
           fi
 
+      # F-018-T15 / AC-13: proves Testcontainers' resource reaper (Ryuk) actually cleans up an
+      # orphaned container after a real, abnormal SIGKILL of the test process mid-flight — by
+      # performing that exact kill and watching what happens, not by trusting documentation of how
+      # Ryuk is supposed to behave (the same "reasoned, not observed" trap that made a threat wrong
+      # in F-013). Runs in this job specifically because it is the one that already has Docker and
+      # a real MongoDB Testcontainer path to kill.
+      - name: Verify container reaping after an abnormal kill (F-018-T15)
+        run: ./scripts/verify-container-reaping.sh
+
       # Container-per-class means a leaked container is possible if a fixture throws mid-startup.
       # Reported rather than cleaned up: the runner is ephemeral, so this is a diagnostic, and a
       # non-empty list here means a fixture has a disposal bug worth knowing about.
