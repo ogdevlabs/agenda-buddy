@@ -41,7 +41,7 @@ jobs:
       code: ${{ steps.filter.outputs.code }}
     steps:
       - uses: actions/checkout@v7
-      - uses: dorny/paths-filter@v3
+      - uses: dorny/paths-filter@v4
         id: filter
         with:
           # On a pull_request these are evaluated against the whole base...HEAD diff, not the last
@@ -53,7 +53,7 @@ jobs:
           # a green check rather than an empty one.
           #
           # ── Why there are no `!` negations below ──────────────────────────────────────────────
-          # dorny/paths-filter@v3 supports only predicate-quantifier 'some' (the default) and
+          # dorny/paths-filter@v4 supports only predicate-quantifier 'some' (the default) and
           # 'every'. Under 'some' every pattern is OR-ed, so a leading-`!` pattern does NOT exclude
           # anything — it is silently a no-op. ('some-with-excludes', which would work, exists only
           # on master; it is not in the v3 tag.) 'every' is unusable here because no single file can
