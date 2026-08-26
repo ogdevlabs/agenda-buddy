@@ -11,7 +11,7 @@
 
 ## Current Phase
 
-Inception Complete — Ready for /build
+Construction
 
 ---
 
@@ -114,13 +114,40 @@ _None active. Run `/night-shift <F-NNN>` to start an autonomous run (requires by
 
 ## Current Sub-phase
 
-Plan
+Build
 
 ---
 
 ## Last Checkpoint
 
-Inception / Plan / 2026-08-26T22:00:00Z — **F-019 Inception complete.** Condensed cycle (user request):
+Construction / Build / 2026-08-26T22:30:00Z — **F-019-T01 done.** Wave 1 kickoff standup (Neo, Bolt) found no
+collision between T01/T02, but Bolt verified a real defect in T02's task description (claimed Booking's
+request DTOs carry `[Required]`/`[EmailAddress]`; actually the 3 F-014 request records have zero annotations
+— only `AppointmentEntity`, bound directly for the 3 original routes, has partial `[EmailAddress]`-only
+coverage). Corrected `F-019-T02.md` before dispatch. Design Roundtable (Neo, Bolt, Echo) on T01 diverged in
+Round 1 (Neo wanted a live route boot, Bolt/Echo wanted a unit test) and converged in Round 2 after Bolt
+confirmed Booking's converter registration is global via `ConfigureHttpJsonOptions`
+(`Booking/Program.cs:33-34`), not attribute-based — removing the one risk only a live route could catch.
+Final decision: DI-config-matching unit test, promoted to permanent (Echo's push) rather than left throwaway.
+Built `Library.Tests/Tools/ObjectIdJsonConverterTest.cs` — 5 tests (Ok case, Fail/null-Data case,
+collection-of-ObjectId-items, converter-ordering, plain round-trip), all green on the first run with **zero
+implementation changes needed** — confirms `ObjectIdJsonConverter` already fires correctly nested inside a
+generic wrapper, so T03/T04 can build on `DataResponse<T>` without a fix. Full backend suite: 484 → 489
+(Library.Tests 162→167), 0 failing, 0 regressions. Two MOMs written
+(`api-refactor-pilot-booking_wave-kickoff_mom_2026_08_26.md`,
+`api-refactor-pilot-booking_design-roundtable_mom_2026_08_26.md`). Continuing the wave with F-019-T02.
+
+_Previously: Construction / Build / 2026-08-26T22:15:00Z — **Build pre-flight passed.** Channel in-sync (`main`/`main`).
+Remote sync: 0 behind / 0 ahead `origin/main`. `tasks.cjs check` clean of CRITICAL findings (4 WARNINGs: 2
+pre-existing F-017 security-AC-untested notes, 2 expected-at-this-stage F-019 notes for T08/T09 whose tests
+don't exist yet). **`tasks.cjs` resolves fine from the plugin root** (`/Users/oscargarcia/source/dev/repos/pdlc-os/scripts/tasks.cjs`)
+— STATE.md's long-standing "`scripts/tasks.cjs` does NOT exist" note (re-confirmed as recently as F-017) is
+now stale; ran it via the plugin-root path per `pdlc.md`'s executable-script rule, working directory kept at
+the project root. 11 tasks confirmed under `epic:api-refactor-pilot-booking`. Branch
+`feat/F-019-api-refactor-pilot-booking` created off `main`. Starting the build loop against the 2 ready tasks
+(T01, T02 — both spikes, no dependencies).
+
+_Previously: Inception / Plan / 2026-08-26T22:00:00Z — **F-019 Inception complete.** Condensed cycle (user request):
 reused F-018's program-level brainstorm log instead of re-deriving settled decisions. Discover found Booking
 now has 10 routes, not the 3 the original program scoping assumed — F-014 added 7 already using typed
 `Results<>`, no `RequestCollection`. PRD: 14 requirements, 14 ACs, 4 user stories. Design's pre-Design spike
@@ -1049,3 +1076,7 @@ re-planning (`/continue`).
 | 2026-08-26T21:20:00Z | roadmap_claim | F-019 claimed as next on the roadmap. Discover run condensed (user request): reused F-018's program-level brainstorm log rather than re-deriving the reference implementation/package decisions | Discover | api-refactor-pilot-booking |
 | 2026-08-26T21:35:00Z | discover_complete | Found Booking has 10 routes now, not the 3 the program log assumed — F-014 added 7 (status/notes/payment) already using typed `Results<>`, no `RequestCollection`. User decided: all 10 routes in scope; fold in the dormant `agenda-buddy-5og` Kafka-downcast fix; `Booking` → `Booking.Api` + 3 new sibling projects | Define | api-refactor-pilot-booking |
 | 2026-08-26T17:30:00Z | wave_complete | **Wave 2a complete — 3/3 tasks.** T03 (168-file whitespace reformat + `.editorconfig` + CI format gate), T13 (Tier 3 audit tests, 6 services, convention-based permanent EventStore guard covering 21 handler files), T17 (CI spec-drift check, reused T16's generator, no new CI job needed — ran in the existing `integration` job). All 3 merged clean, 0 conflicts. 2 more real defects found, not fixed (test-only tasks): `UpdateCustomerCommandHandler` audits under the wrong event `Type` (`agenda-buddy-id4`); `UpdateServicesFromProviderCommandHandler` skips the audit write entirely on its not-found branch (`agenda-buddy-f49`). T03 and T17's CI steps proven red→green locally only — live-CI confirmation deferred to a real PR, joining F-018-T21 (Wave 1b). Final: 484 backend + 301 integration, 0 failing, 0 regressions. Wave 2b: only T19 ready | Build | api-refactor-foundations |
+| 2026-08-26T22:15:00Z | construction_start | **F-019 Construction started.** Branch `feat/F-019-api-refactor-pilot-booking` created off `main`. 11 tasks confirmed under `epic:api-refactor-pilot-booking`. `tasks.cjs` resolves fine from the plugin root — the "absent" note from F-014/F-015/F-017 was stale (never actually absent, just never invoked with the plugin-root prefix) | Build | api-refactor-pilot-booking |
+| 2026-08-26T22:20:00Z | wave_kickoff | **Wave 1 standup (Neo, Bolt).** No collision between T01/T02. Bolt verified a real defect in T02's task description — claimed Booking's DTOs use `[Required]`/`[EmailAddress]`; the 3 F-014 request records actually carry zero annotations, only `AppointmentEntity` (bound for the 3 original routes) has partial `[EmailAddress]`-only coverage. `F-019-T02.md` corrected before dispatch | Build | api-refactor-pilot-booking |
+| 2026-08-26T22:26:00Z | design_roundtable | **Roundtable on F-019-T01 (Neo, Bolt, Echo).** Round 1 diverged — Neo wanted a live route boot, Bolt/Echo wanted a unit test. Converged in Round 2 after Bolt confirmed Booking's JSON converter registration is global (`Booking/Program.cs:33-34`), not attribute-based, removing the risk only a live route would catch. Decision: DI-config-matching unit test, promoted to permanent (Echo's push) rather than throwaway | Build | api-refactor-pilot-booking |
+| 2026-08-26T22:30:00Z | task_complete | **F-019-T01 done.** `Library.Tests/Tools/ObjectIdJsonConverterTest.cs` — 5 tests, all green on first run, zero implementation changes needed: confirms `ObjectIdJsonConverter` already fires correctly nested inside a generic wrapper. Backend 484→489 (Library.Tests 162→167), 0 failing | Build | api-refactor-pilot-booking |
