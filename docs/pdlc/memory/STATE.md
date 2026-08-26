@@ -5,19 +5,32 @@
      Claude reads this file at the start of every session to auto-resume from the last checkpoint.
      If this file is missing or empty, PDLC will prompt you to run /pdlc init. -->
 
-**Last updated:** 2026-08-26T14:00:00Z
+**Last updated:** 2026-08-26T14:10:00Z
 
 ---
 
 ## Current Phase
 
-Idle
+Inception Complete — Ready for /build
 
 ---
 
 ## Current Feature
 
-none
+api-refactor-foundations (F-018)
+
+_**Resumed 2026-08-26.** Handoff pause consumed: fetched/rebased `feat/F-018-api-refactor-foundations` onto
+`main` (clean, no conflicts, no hotfix commits in the gap), re-claimed the roadmap feature under
+`oscargarcia@ogdevlabs.onmicrosoft.com` via `tasks.cjs claim F-018` (commit on the feature branch, per the
+standing "never push bookkeeping straight to `main`" instruction — not on `main` as the resume skill's literal
+step says). No active task was saved at pause, so none was reclaimed. **Before Build can start, the task
+store itself needs the amendment the pause note flagged**: `tasks.cjs list --feature F-018` still shows all
+20 original tasks `open`, including the eight F-016 already delivered (T01 `Persistence` rename, T05
+`AgendaBuddy.IntegrationTests` + `InternalsVisibleTo`, T06 `CryptoSessionFixture`, T07 `DockerPreflight`, T08
+`ServiceHostFixture`, T09 `TokenFactory`, T14 401/403 tests, T18 integration CI job). Marking those
+absorbed/done and re-wiring the dependency graph around them (T03 depended on T01; T05/T06/T07/T08/T09/T16
+all chain off the absorbed tasks) is Plan-phase work, not yet done. Two pre-existing open decisions from the
+pause are still owed: the T02/T04 TDD-override question, and T19's Step 9e CI-confirmation split._
 
 _**F-017 `container-and-cd-hardening` SHIPPED** as `v0.6.0` — merged `030dfb4`, PR #48, episode 006. Operation
 closed 2026-08-26T14:00:00Z: merged and tagged, cloud deploy deferred by ADR-035 (sixth consecutive, matching
@@ -46,12 +59,12 @@ for the fourth consecutive release, second under the ADR-035 deferral. ⚠️ Tw
 Review sub-phase ran this cycle, and no episode draft existed before Ship — both drafted/backfilled at the
 Ship gate instead._
 
-_`api-refactor-foundations` (F-018) is **paused** — see `docs/pdlc/memory/.paused-feature.json`. Inception is
-complete and merged; Construction was aborted at the wave-1 standup before any code. ⚠️ **Its plan is now
-stale in a second way:** F-016 delivered the harness *and* the `Persistence` rename, so what remains is
-OpenAPI/spec drift (partly done — `docs/api/openapi/` and `scripts/generate-openapi.sh` now exist),
+_`api-refactor-foundations` (F-018) **resumed 2026-08-26** — `.paused-feature.json` consumed and deleted.
+Inception is complete and merged; Construction was aborted at the wave-1 standup before any code. ⚠️ **Its
+plan is stale in a second way:** F-016 delivered the harness *and* the `Persistence` rename, so what remains
+is OpenAPI/spec drift (partly done — `docs/api/openapi/` and `scripts/generate-openapi.sh` now exist),
 `.editorconfig`, constitution amendments, the 10-green-run counter, mobile CI, the Tier 1–3 sweep, the Kafka
-fake and final verification._
+fake and final verification. The task store needs this reflected before Build starts — see Current Feature above._
 
 ---
 
@@ -61,15 +74,16 @@ fake and final verification._
      Example: F-002-T03 — Add OAuth2 login with GitHub
      Set to "none" when no task is active. -->
 
-none
+none — no task was active at pause; the task store needs its Plan-phase amendment (drop/absorb the 8
+F-016-delivered tasks, fix the dependency graph) before any task is claimed
 
 ---
 
-- **Feature ID:** none
-- **Feature record:** —
-- **Claimed by:** — (F-017's claim released 2026-08-26 — shipped as `v0.6.0`)
-- **Claimed at:** —
-- **Branch:** — (`feat/F-017-container-and-cd-hardening` merged and can be deleted; `chore/dependabot-batch-2026-08-26` already deleted post-merge)
+- **Feature ID:** F-018
+- **Feature record:** `docs/pdlc/tasks/F-018/_feature.md`
+- **Claimed by:** oscargarcia@ogdevlabs.onmicrosoft.com (re-claimed on resume, 2026-08-26)
+- **Claimed at:** 2026-08-26T14:10:00Z
+- **Branch:** `feat/F-018-api-refactor-foundations` (rebased clean onto `main` @ `8bcaba0`)
 
 _F-015 shipped as `v0.5.0` and its claim was released. `scripts/tasks.cjs` **does NOT exist** in this repo —
 re-confirmed at F-017 Build pre-flight (2026-08-25, `MODULE_NOT_FOUND`); an earlier F-017 Discover-time note
@@ -93,13 +107,31 @@ _None active. Run `/night-shift <F-NNN>` to start an autonomous run (requires by
 
 ## Current Sub-phase
 
-none
+Plan
 
 ---
 
 ## Last Checkpoint
 
-Idle / — / 2026-08-26T14:00:00Z — **F-017 fully closed out, claim released.** At the user's request:
+Inception Complete / Plan / 2026-08-26T14:10:00Z — **F-018 `api-refactor-foundations` resumed** from
+`.paused-feature.json` (handoff pause, `pausedAt` 2026-08-18T17:37:14Z). Pulled `main` (already up to date),
+fetched and checked out `feat/F-018-api-refactor-foundations` (already local), rebased cleanly onto `main` —
+78 commits landed since the pause (F-016, F-021, F-014, F-015, F-017 all shipped end-to-end, plus a 16-PR
+Dependabot batch), none touching this branch's files, no hotfix commits in the range so no impact assessment
+was needed. Re-claimed F-018 via `tasks.cjs claim F-018`; committed the claim + `ROADMAP.md` update to the
+**feature branch**, not `main` — the resume skill's literal Step 3 says push to `main`, but this project's
+standing instruction (`no-direct-push-to-main`) revokes that allowance for PDLC bookkeeping, confirmed by
+precedent at F-017's Inception. (Caught one self-correction mid-resume: initially cherry-picked the claim
+commit onto local `main` before remembering this; reset local `main` back to `origin/main` — never pushed —
+and kept the commit only on the feature branch.) No active task was saved at pause, so none was reclaimed;
+`tasks.cjs ready --json` shows only 3 unblocked tasks (T02, T04, T19) because the dependency graph still
+routes through the 8 tasks F-016 absorbed. Deleted `.paused-feature.json`. **Not yet done, and blocking
+Build:** amend the F-018 task store to mark T01/T05/T06/T07/T08/T09/T14/T18 absorbed (done via F-016) and
+re-point their dependents (T03, T11–T17) at what F-016 actually built, per the pause note's
+`scopeChangeCONFIRMED`. Two open decisions from the pause are still unanswered: the T02/T04 TDD-override ask,
+and T19's Step 9e CI-confirmation split.
+
+_Previously: Idle / — / 2026-08-26T14:00:00Z — **F-017 fully closed out, claim released.** At the user's request:
 documentation swept for accuracy across `ROADMAP.md` (Shipped, `v0.6.0`, PR #48, episode 006), `OVERVIEW.md`
 (Added-by-F-017 section, Shipped Features row, Known Tech Debt reconciled — including correcting two
 pre-existing mis-attributions: the security-scan gate is now genuinely resolved, but `AppHostWiring.cs`'s
@@ -883,3 +915,4 @@ re-planning (`/continue`).
 | 2026-08-26T13:20:00Z | dependabot_batch_consolidated | **F-017's `dependabot.yml` fired for the first time and opened 17 PRs at once** (#49–#66) — its whole solution-wide first run, not the one-bump-at-a-time steady state AC12 anticipated. At the user's request: reviewed all 17, consolidated **16 into one PR (#67)** on branch `chore/dependabot-batch-2026-08-26`, off `main`. **Excluded 1** (`CommunityToolkit.Maui` 9.1.1→15.0.1, PR #61) — a real `NU1605` package-downgrade conflict (needs `Microsoft.Maui.Controls >= 10.0.90`, this project pins `>= 10.0.20`); left open separately, needs a coordinated MAUI SDK bump, not a routine merge. Also verified `gitleaks/gitleaks-action` 2.3.9→3.0.0 (a major bump of a security-pinned action, T-001) against upstream release notes before including it: pure Node 20→24 runtime migration, no behavior change. Also confirmed PR #59's single test failure (`AgendaBuddy.ServiceDefaults.Tests.TelemetryPiiTest`) was the pre-existing known `InProcessServerCollection`/TracerProvider flake, not caused by its `Aspire.Hosting.MongoDB` bump. 3 real merge conflicts hit while consolidating (all adjacent-line version bumps in the same file — `actions/checkout`+`dorny/paths-filter` in `dotnet.yml`; all three `Aspire.Hosting.*` refs in `AgendaBuddy.AppHost.csproj`; `coverlet.collector`+`JetBrains.Annotations` and `BCrypt.Net-Next`+`JetBrains.Annotations` in two test `.csproj` files) — each resolved by combining both bumps. Verified before pushing: 484/484 backend, 158/165 MobileApp.Tests (7 skipped, matches baseline), `dotnet format --verify-no-changes` clean, `actionlint` clean on both workflow files. PR #67 CI all green. One new build warning (`ASPIRE010`, Aspire.Hosting.AppHost 13.5.3) — informational, not blocking. |
 | 2026-08-26T13:45:00Z | dependabot_batch_merged | **PR #67 merged to `main` as `22b2b84`** (local `git merge --no-ff` + push, same `gh pr merge` workaround as PRs #47/#48). All 16 individual Dependabot PRs (#49–#60, #62–64, #66) auto-closed as merged once their commits became reachable from `main`. Remaining open: **#61** (excluded `CommunityToolkit.Maui` conflict) and **#68** (unrelated — a Bruno collection README + `Accept: application/json` header, added at the user's request, kept on its own branch off `main` rather than bundled into the dependency batch). 484/484 backend re-verified on merged `main`. |
 | 2026-08-26T14:00:00Z | operation_complete | **F-017 documentation finalized, claim released.** `ROADMAP.md`, `OVERVIEW.md`, `CLAUDE.md`, the REVIEW file, episode 006, and `docs/pdlc/tasks/F-017/_feature.md` all updated for accuracy at the user's request. Two pre-existing doc mis-attributions corrected (security-scan gate genuinely resolved; `AppHostWiring.cs` ingress gap was never in F-017's real scope) and one self-caught inaccuracy in a first-pass episode edit (two distinct test flakes had been conflated into one). No live AppHost smoke test performed for this release — flagged as pending, not silently skipped | Idle | none |
+| 2026-08-26T14:10:00Z | feature_resumed | Resumed from handoff pause. Branch rebased clean onto `main` (78 commits incorporated, F-016/F-021/F-014/F-015/F-017 all shipped in the gap, none touching F-018's files). Re-claimed by `oscargarcia@ogdevlabs.onmicrosoft.com`, committed to the feature branch (not `main`, per the standing no-direct-push instruction). `.paused-feature.json` deleted. Task store amendment (absorb 8 F-016-delivered tasks, fix dependency graph) still owed before Build | Plan | api-refactor-foundations |
