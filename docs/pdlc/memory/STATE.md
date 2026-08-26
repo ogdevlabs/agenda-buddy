@@ -11,7 +11,7 @@
 
 ## Current Phase
 
-Construction Complete — Ready for /ship
+Operation
 
 ---
 
@@ -84,7 +84,7 @@ _None active. Run `/night-shift <F-NNN>` to start an autonomous run (requires by
 
 ## Current Sub-phase
 
-none
+Ship
 
 ---
 
