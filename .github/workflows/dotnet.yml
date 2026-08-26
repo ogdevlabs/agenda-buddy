@@ -379,9 +379,9 @@ jobs:
 
       # F-017-T04. gitleaks/gitleaks-action detects the pull_request event itself and, given full
       # history (fetch-depth: 0 above), scans the PR's base..head diff range rather than the whole
-      # repo — so a secret introduced and then removed within the same PR is still caught. Not yet
-      # pinned to a commit SHA: F-017-T09 pins this action (and Trivy's, added in F-017-T07) once
-      # both references exist, per the threat model's T-001 mitigation.
+      # repo — so a secret introduced and then removed within the same PR is still caught. Pinned to
+      # a commit SHA by F-017-T09, per the threat model's T-001 mitigation (PinnedThirdPartyActionsTest
+      # asserts this for both this action and Trivy's, below).
       - name: Secret scan (gitleaks)
         uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2
         env:
@@ -395,6 +395,13 @@ jobs:
       # dir and never committed — a committed "leak" would fail the step above on every future PR.
       - name: Canary — gitleaks catches Atlas-credential shape and redacts it (F-017-T05)
         run: ./scripts/verify-gitleaks-canary.sh
+
+      # Review C1 (Party Review, 2026-08-26). Proves trivy-severity-gate.sh's project-vs-base-image
+      # branching logic against synthetic fixtures — runs once here rather than per matrix entry in
+      # docker-build-and-scan below, since it verifies the gate's generic logic, not any one
+      # service's real scan.
+      - name: Canary — trivy-severity-gate.sh distinguishes project findings from base-image findings
+        run: ./scripts/verify-trivy-severity-gate.sh
 
   # ---------------------------------------------------------------------------
   # Docker image build — .NET SDK container support, 7-service matrix (F-017-T06)
