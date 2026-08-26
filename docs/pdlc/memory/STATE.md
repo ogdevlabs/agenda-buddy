@@ -74,7 +74,8 @@ fake and final verification. The task store needs this reflected before Build st
      Example: F-002-T03 — Add OAuth2 login with GitHub
      Set to "none" when no task is active. -->
 
-Wave 1a (7 parallel Sub-Agent builds, worktree-isolated) — F-018-T02, T04, T10, T11, T12, T15, T16
+Wave 1a (5 parallel Sub-Agent builds, worktree-isolated) — F-018-T10, T11, T12, T15, T16.
+T02 and T04 (docs/tracker-only, TDD-overridden) built directly, done.
 
 ---
 
