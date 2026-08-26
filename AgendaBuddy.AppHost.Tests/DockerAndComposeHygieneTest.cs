@@ -68,8 +68,9 @@ public class DockerAndComposeHygieneTest
         var root = RepoRoot();
         var dockerfiles = Directory
             .EnumerateFiles(root, "Dockerfile", SearchOption.AllDirectories)
-            .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}")
-                        && !path.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}"))
+            .Where(path => Path.GetRelativePath(root, path)
+                .Split(Path.DirectorySeparatorChar)
+                .All(segment => segment is not ("bin" or "obj") && !segment.StartsWith('.')))
             .ToList();
 
         // The repo must actually have Dockerfiles for this guard to mean anything.
