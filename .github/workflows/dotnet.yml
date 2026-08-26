@@ -305,7 +305,7 @@ jobs:
           fi
 
       - name: Publish test results
-        uses: dorny/test-reporter@v1
+        uses: dorny/test-reporter@v3
         if: always()
         with:
           name: .NET Tests
@@ -626,7 +626,7 @@ jobs:
         run: docker ps -a --filter "ancestor=mongo:7.0" --format '{{.ID}} {{.Status}}' || true
 
       - name: Publish integration test results
-        uses: dorny/test-reporter@v1
+        uses: dorny/test-reporter@v3
         if: always()
         with:
           name: Integration Tests
