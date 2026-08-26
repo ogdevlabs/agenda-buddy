@@ -4,9 +4,9 @@ title: api-refactor-foundations
 status: planned
 priority: 19
 labels: [roadmap, "priority:19"]
-claimed_by: null
+claimed_by: oscargarcia@ogdevlabs.onmicrosoft.com
 created: 2026-08-18
-updated: 2026-08-18
+updated: 2026-08-26
 ---
 **Stage 1 of 3 in the API refactor program (F-018 → F-019 → F-020).** Build the safety net and clear the mechanical blockers *before* any endpoint is rewritten, because until an integration-test harness exists the only net under a 7-service endpoint rewrite is unit tests — the exact gap episode 001 concluded let two real defects survive review.
 
