@@ -11,7 +11,7 @@
 
 ## Current Phase
 
-Inception
+Inception Complete — Ready for /build
 
 ---
 
@@ -114,13 +114,21 @@ _None active. Run `/night-shift <F-NNN>` to start an autonomous run (requires by
 
 ## Current Sub-phase
 
-Define
+Plan
 
 ---
 
 ## Last Checkpoint
 
-Operation / Complete / 2026-08-26T21:15:00Z — **F-018 shipped as `v0.7.0`.** Episode 007 Approved; PRD,
+Inception / Plan / 2026-08-26T22:00:00Z — **F-019 Inception complete.** Condensed cycle (user request):
+reused F-018's program-level brainstorm log instead of re-deriving settled decisions. Discover found Booking
+now has 10 routes, not the 3 the original program scoping assumed — F-014 added 7 already using typed
+`Results<>`, no `RequestCollection`. PRD: 14 requirements, 14 ACs, 4 user stories. Design's pre-Design spike
+found `SmallApiToolkit` doesn't ship `DataResponse<T>` at all — dropped entirely (ADR-049, 5→4 packages).
+Threat model: Lite, 2 mitigate-now (Validot-strictness regression, error-detail leakage). Plan: 11 tasks, 7
+waves. Ready for `/build`.
+
+_Previously: Operation / Complete / 2026-08-26T21:15:00Z — **F-018 shipped as `v0.7.0`.** Episode 007 Approved; PRD,
 brainstorm, and design artifacts remain in place (not archived — no archive scripts exist in this repo,
 fallback is leaving artifacts as the historical record); `episodes/index.md`, OVERVIEW, ROADMAP, METRICS
 updated; claim released. 5 real defects found across the build loop, 2 fixed live, 3 filed. Next on the
