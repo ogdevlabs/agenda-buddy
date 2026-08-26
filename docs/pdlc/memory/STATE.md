@@ -19,18 +19,18 @@ Inception Complete — Ready for /build
 
 api-refactor-foundations (F-018)
 
-_**Resumed 2026-08-26.** Handoff pause consumed: fetched/rebased `feat/F-018-api-refactor-foundations` onto
-`main` (clean, no conflicts, no hotfix commits in the gap), re-claimed the roadmap feature under
-`oscargarcia@ogdevlabs.onmicrosoft.com` via `tasks.cjs claim F-018` (commit on the feature branch, per the
-standing "never push bookkeeping straight to `main`" instruction — not on `main` as the resume skill's literal
-step says). No active task was saved at pause, so none was reclaimed. **Before Build can start, the task
-store itself needs the amendment the pause note flagged**: `tasks.cjs list --feature F-018` still shows all
-20 original tasks `open`, including the eight F-016 already delivered (T01 `Persistence` rename, T05
+_**Resumed and re-planned 2026-08-26.** Handoff pause consumed: fetched/rebased
+`feat/F-018-api-refactor-foundations` onto `main` (clean, no conflicts, no hotfix commits in the gap),
+re-claimed the roadmap feature under `oscargarcia@ogdevlabs.onmicrosoft.com` via `tasks.cjs claim F-018`
+(commit on the feature branch, per the standing "never push bookkeeping straight to `main`" instruction — not
+on `main` as the resume skill's literal step says). No active task was saved at pause, so none was reclaimed.
+**Task-store amendment complete:** the 8 tasks F-016 already delivered (T01 `Persistence` rename, T05
 `AgendaBuddy.IntegrationTests` + `InternalsVisibleTo`, T06 `CryptoSessionFixture`, T07 `DockerPreflight`, T08
-`ServiceHostFixture`, T09 `TokenFactory`, T14 401/403 tests, T18 integration CI job). Marking those
-absorbed/done and re-wiring the dependency graph around them (T03 depended on T01; T05/T06/T07/T08/T09/T16
-all chain off the absorbed tasks) is Plan-phase work, not yet done. Two pre-existing open decisions from the
-pause are still owed: the T02/T04 TDD-override question, and T19's Step 9e CI-confirmation split._
+`ServiceHostFixture`, T09 `TokenFactory`, T14 401/403 tests, T18 integration CI job) are now marked `done`
+with an absorption note in each file, their security ACs linked to the real tests F-016 built, and 4 stale
+dependency edges removed. `tasks.cjs ready` now surfaces exactly 8 unblocked tasks: T02, T04, T10, T11, T12,
+T15, T16, T19. Two open decisions from the pause are still owed before claiming one: the T02/T04
+TDD-override question, and T19's Step 9e CI-confirmation split — see Last Checkpoint._
 
 _**F-017 `container-and-cd-hardening` SHIPPED** as `v0.6.0` — merged `030dfb4`, PR #48, episode 006. Operation
 closed 2026-08-26T14:00:00Z: merged and tagged, cloud deploy deferred by ADR-035 (sixth consecutive, matching
@@ -113,7 +113,27 @@ Plan
 
 ## Last Checkpoint
 
-Inception Complete / Plan / 2026-08-26T14:10:00Z — **F-018 `api-refactor-foundations` resumed** from
+Inception Complete / Plan / 2026-08-26T14:20:00Z — **F-018's task-store plan amendment done.** All 8 tasks
+F-016 absorbed (T01, T05, T06, T07, T08, T09, T14, T18) marked `done` via `tasks.cjs done`, each with a
+one-line "Absorbed" note in its file pointing at the F-016 task that actually delivered it (T01→F-016-T01,
+T05→F-016-T02, T06→F-016-T03, T07→F-016-T04, T08→F-016-T06, T09→F-016-T05, T14→F-016-T07, T18→F-016-T20).
+T06 and T08 each had a security-tagged AC blocking `done` with no linked test (`ac link-test` requires one) —
+linked them to the real equivalent tests F-016 built (`KeyMaterialHygieneTest.NoTrackedFile_ContainsPemKeyMaterial`
+for T06/AC1; `MongoEndpointGuardTest.T002_RejectsAnEndpointThatIsNotTheFixturesOwnContainer` for T08/AC1 and
+`MongoFailClosedTest.T002_AbortsDuringFixtureConstruction_AndCreatesNoDatabase` for T08/AC2) rather than
+force-overriding. **Dependency graph self-resolved** once the 8 were marked done — `tasks.cjs ready` treats a
+`done` dependency as satisfied, so no manual edge rewiring was needed for most of the remaining 12 tasks.
+Two stale edges did surface as warnings and were removed with `tasks.cjs dep remove`: T01→T02 (the rename
+depended on T02's constitution amendment in the original wave-1 ordering, because §9 still forbade the rename
+until amended — moot now that F-016 already did the rename and retired §9's prohibition in the same change)
+and T18→{T11,T12,T13} (the CI job depended on the Tier 1–3 test-writing tasks in the original plan, but
+F-016-T20 built the job against its own tests, independent of F-018's still-open Tier tasks). `tasks.cjs check`
+is now clean of F-018 warnings. `tasks.cjs ready` surfaces exactly the 8 unblocked tasks expected: T02, T04,
+T10, T11, T12, T15, T16, T19 (T03 still gated on T02, T13 on T10, T17 on T16, T20 on the rest — correct).
+**Still owed before claiming a task:** the two open decisions from the pause (T02/T04 TDD-override ask,
+T19's Step 9e CI-confirmation split) — next action is to raise those with the user, not to silently pick.
+
+_Previously: Inception Complete / Plan / 2026-08-26T14:10:00Z — **F-018 `api-refactor-foundations` resumed** from
 `.paused-feature.json` (handoff pause, `pausedAt` 2026-08-18T17:37:14Z). Pulled `main` (already up to date),
 fetched and checked out `feat/F-018-api-refactor-foundations` (already local), rebased cleanly onto `main` —
 78 commits landed since the pause (F-016, F-021, F-014, F-015, F-017 all shipped end-to-end, plus a 16-PR
@@ -916,3 +936,4 @@ re-planning (`/continue`).
 | 2026-08-26T13:45:00Z | dependabot_batch_merged | **PR #67 merged to `main` as `22b2b84`** (local `git merge --no-ff` + push, same `gh pr merge` workaround as PRs #47/#48). All 16 individual Dependabot PRs (#49–#60, #62–64, #66) auto-closed as merged once their commits became reachable from `main`. Remaining open: **#61** (excluded `CommunityToolkit.Maui` conflict) and **#68** (unrelated — a Bruno collection README + `Accept: application/json` header, added at the user's request, kept on its own branch off `main` rather than bundled into the dependency batch). 484/484 backend re-verified on merged `main`. |
 | 2026-08-26T14:00:00Z | operation_complete | **F-017 documentation finalized, claim released.** `ROADMAP.md`, `OVERVIEW.md`, `CLAUDE.md`, the REVIEW file, episode 006, and `docs/pdlc/tasks/F-017/_feature.md` all updated for accuracy at the user's request. Two pre-existing doc mis-attributions corrected (security-scan gate genuinely resolved; `AppHostWiring.cs` ingress gap was never in F-017's real scope) and one self-caught inaccuracy in a first-pass episode edit (two distinct test flakes had been conflated into one). No live AppHost smoke test performed for this release — flagged as pending, not silently skipped | Idle | none |
 | 2026-08-26T14:10:00Z | feature_resumed | Resumed from handoff pause. Branch rebased clean onto `main` (78 commits incorporated, F-016/F-021/F-014/F-015/F-017 all shipped in the gap, none touching F-018's files). Re-claimed by `oscargarcia@ogdevlabs.onmicrosoft.com`, committed to the feature branch (not `main`, per the standing no-direct-push instruction). `.paused-feature.json` deleted. Task store amendment (absorb 8 F-016-delivered tasks, fix dependency graph) still owed before Build | Plan | api-refactor-foundations |
+| 2026-08-26T14:20:00Z | plan_amended | 8 F-016-absorbed tasks (T01/T05/T06/T07/T08/T09/T14/T18) marked done with absorption notes; T06/T08's security ACs linked to F-016's real tests instead of force-overridden; 4 stale dependency edges removed (T01→T02, T18→T11/T12/T13). `tasks.cjs check` clean of F-018 warnings; `ready` surfaces T02/T04/T10/T11/T12/T15/T16/T19. Two open decisions from the pause (T02/T04 TDD override, T19's CI-confirmation split) still owed before claiming a task | Plan | api-refactor-foundations |
