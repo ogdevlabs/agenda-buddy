@@ -11,7 +11,7 @@
 
 ## Current Phase
 
-Inception Complete — Ready for /build
+Construction
 
 ---
 
@@ -107,13 +107,20 @@ _None active. Run `/night-shift <F-NNN>` to start an autonomous run (requires by
 
 ## Current Sub-phase
 
-Plan
+Build
 
 ---
 
 ## Last Checkpoint
 
-Inception Complete / Plan / 2026-08-26T14:20:00Z — **F-018's task-store plan amendment done.** All 8 tasks
+Construction / Build / 2026-08-26T14:30:00Z — **Build pre-flight passed.** Channel in-sync (`main`/`main`).
+Remote sync: 0 behind `origin/main`. `tasks.cjs check` clean of new findings (2 pre-existing F-017 warnings
+unrelated to F-018). 21 tasks confirmed under `epic:api-refactor-foundations`. Branch
+`feat/F-018-api-refactor-foundations` already checked out (created at the original 2026-08-18 Inception,
+rebased clean onto `main` during resume). Starting the build loop against the 8 ready tasks: T02, T04, T10,
+T11, T12, T15, T16, T19.
+
+_Previously: Inception Complete / Plan / 2026-08-26T14:20:00Z — **F-018's task-store plan amendment done.** All 8 tasks
 F-016 absorbed (T01, T05, T06, T07, T08, T09, T14, T18) marked `done` via `tasks.cjs done`, each with a
 one-line "Absorbed" note in its file pointing at the F-016 task that actually delivered it (T01→F-016-T01,
 T05→F-016-T02, T06→F-016-T03, T07→F-016-T04, T08→F-016-T06, T09→F-016-T05, T14→F-016-T07, T18→F-016-T20).
@@ -940,3 +947,4 @@ re-planning (`/continue`).
 | 2026-08-26T14:10:00Z | feature_resumed | Resumed from handoff pause. Branch rebased clean onto `main` (78 commits incorporated, F-016/F-021/F-014/F-015/F-017 all shipped in the gap, none touching F-018's files). Re-claimed by `oscargarcia@ogdevlabs.onmicrosoft.com`, committed to the feature branch (not `main`, per the standing no-direct-push instruction). `.paused-feature.json` deleted. Task store amendment (absorb 8 F-016-delivered tasks, fix dependency graph) still owed before Build | Plan | api-refactor-foundations |
 | 2026-08-26T14:20:00Z | plan_amended | 8 F-016-absorbed tasks (T01/T05/T06/T07/T08/T09/T14/T18) marked done with absorption notes; T06/T08's security ACs linked to F-016's real tests instead of force-overridden; 4 stale dependency edges removed (T01→T02, T18→T11/T12/T13). `tasks.cjs check` clean of F-018 warnings; `ready` surfaces T02/T04/T10/T11/T12/T15/T16/T19. Two open decisions from the pause (T02/T04 TDD override, T19's CI-confirmation split) still owed before claiming a task | Plan | api-refactor-foundations |
 | 2026-08-26T14:25:00Z | open_decisions_resolved | Both pause-era open decisions answered by the user: TDD gate overridden for T02/T04 (docs/external-tracker-only, same exception class as F-017-T03/T08); T19 split into T19 (docs) + F-018-T21 (CI confirmation, depends on T19, gated on a maintainer-pushed throwaway branch, not agent-closable). F-018-T20 now depends on both T19 and T21. Ready to claim a task | Plan | api-refactor-foundations |
+| 2026-08-26T14:30:00Z | construction_start | Build pre-flight passed: channel in-sync, remote sync 0 behind, task store clean (21 tasks, 2 pre-existing unrelated F-017 warnings only). Branch `feat/F-018-api-refactor-foundations` already checked out. Starting the build loop against 8 ready tasks: T02, T04, T10, T11, T12, T15, T16, T19 | Build | api-refactor-foundations |
