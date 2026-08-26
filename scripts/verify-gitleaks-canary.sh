@@ -25,7 +25,7 @@ WORKDIR="$(mktemp -d)"
 trap 'rm -rf "$WORKDIR"' EXIT
 
 FIXTURE_FILE="$WORKDIR/atlas-credential-canary.txt"
-FAKE_PASSWORD="Xk7pQm2vTz9wLc4RnBs8"
+FAKE_PASSWORD="Xk7pQm2vTz9wLc4RnBs8" # gitleaks:allow — synthetic fixture value, not a real secret; this literal's own entropy trips the default generic-api-key rule
 echo "mongodb+srv://agenda_buddy:${FAKE_PASSWORD}@agenda-buddy-cluster.a1b2c.mongodb.net/agenda_buddy?retryWrites=true&w=majority" > "$FIXTURE_FILE"
 
 SARIF_PATH="$WORKDIR/results.sarif"
