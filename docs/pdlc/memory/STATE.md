@@ -84,13 +84,24 @@ _None active. Run `/night-shift <F-NNN>` to start an autonomous run (requires by
 
 ## Current Sub-phase
 
-Test
+Wrap-up
 
 ---
 
 ## Last Checkpoint
 
-Construction / Review / 2026-08-26T04:35:00Z — **Party Review complete and approved.** Neo, Echo, Phantom,
+Construction / Test / 2026-08-26T04:50:00Z — **All test layers resolved.** Layer 1 (unit, required): 484/484
+backend, 0 failing. Layer 2 (integration, run for regression safety though not required by this PRD): 234/234
+against a real MongoDB Testcontainer, 0 regressions from F-017's `.csproj` changes. Layers 3–6: skipped, no
+command exists, not required (standing condition). **Layer 7 (security scan, always required) ran using this
+feature's own new tooling for the first time ever on this project — and found a real, previously-unknown
+defect the same way it's meant to:** the canary script's own fake-password literal tripped gitleaks' default
+rule on entropy, which would have failed F-017's own future PR on the exact gitleaks step this feature adds.
+Fixed live with a `.gitleaksignore` fingerprint entry (an inline `gitleaks:allow` comment alone didn't work —
+git history is immutable, so the pre-fix commit's patch still matches any scan of the full `main..feat/F-017-...`
+range). Dependency audit: clean except the pre-existing ADR-030-accepted SSH.NET finding. Moving to Wrap-up.
+
+_Previously: Construction / Review / 2026-08-26T04:35:00Z — **Party Review complete and approved.** Neo, Echo, Phantom,
 Jarvis reviewed the full diff in parallel (subagents), 1 cross-talk round (Neo's architecture finding on
 `security-scan`'s path-filter coverage promoted to a standalone Important security finding by Phantom, using
 `ISSUE-002`'s own record that the original leak lived partly under `docs/pdlc/context/`). Tally: 1 Critical,
@@ -396,6 +407,8 @@ the feature branch after each wave completes.
 | 2026-08-26T04:20:00Z | review_critical_fixed | F-017 Party Review's Critical finding (C1 — ACs 6/8/9/11/13 had zero committed regression test) fixed, not overridden: `SecurityScanAndDockerJobShapeTest` (5 tests) + `scripts/verify-trivy-severity-gate.sh` (4 fixture cases) added, all mutation-tested. Commit `7cefae1`. |
 | 2026-08-26T04:25:00Z | review_important_fixed | F-017 Party Review Important findings I1 (security-scan's path-filter excluded docs/scripts/Gateway/MobileApp — the exact class of path `ISSUE-002`'s original leak used) and I3 (`CLAUDE.md` stale on the new CI jobs/tooling) both fixed. I1: `security-scan` now runs `if: always()`, unconditionally, on every PR (commit `521a7ce`). I3: `CLAUDE.md` updated (commit `ebabba7`). |
 | 2026-08-26T04:30:00Z | review_warnings_accepted | Review approval gate: 0 remaining Critical. User chose **fix I1 + I3, accept the rest**. ACCEPTED as logged warnings (full detail + rationale in **ADR-047**): **I2** AC10's live-PR verification not yet possible (no PR open on `feat/F-017-...` yet — this is `/ship`'s job); **I4** one flaky run (77/87) out of 5 full-suite runs in `AgendaBuddy.AppHost.Tests`, suspected resource contention, not a logic bug; **A2–A10** (Advisory) — Gateway path-filter coverage gap (pre-existing, F-015), duplicate `RepoRoot()` test helper (YAGNI `shrink:`), AC3's non-digest-pinned-image edge case, `PublishContainerTest`'s structural-proxy nature, AC10/AC12's PRD-anticipated deferral, merge-commit subject format, plus 7 confirmations (T-001/T-002/T-003–006 accept-rationales still hold, `api-contracts.md`/`data-model.md` "no changes" confirmed, `ARCHITECTURE.md`'s correction reads clearly). |
+| 2026-08-26T04:45:00Z | test_layers_skipped | Test Step 15 layers 3–6 (E2E, performance/load, accessibility, visual regression) skipped for F-017 — no command exists in this project and none is a required §7 gate, same condition as every prior feature. Layer 1 (unit, required): 484/484 backend. Layer 2 (integration, not required by §7, but run anyway against a real MongoDB Testcontainer per this project's own convention): 234/234, 0 regressions from F-017's `Customer.csproj`/`Provider.csproj`/`EventAndCommands.csproj` changes. |
+| 2026-08-26T04:50:00Z | required_gate_flagged_accepted | Test Step 15 **Layer 7 (security scan — always required)** RAN using F-017's own new tooling, not by-hand greps for the first time ever on this project. **7a dependency audit** (`dotnet list agenda-buddy.sln package --vulnerable --include-transitive`): exactly one finding, the pre-existing ADR-030-accepted SSH.NET HIGH in `AgendaBuddy.IntegrationTests` — nothing new. **7b secret scan** (`gitleaks detect --log-opts="main..feat/F-017-..."`, the same diff-range mode `gitleaks-action` uses): found **1 real leak**, not a false alarm from inspection — the canary script's own `FAKE_PASSWORD` literal in `scripts/verify-gitleaks-canary.sh:28` tripped gitleaks' default `generic-api-key` rule on entropy alone. This would have failed F-017's own PR the moment it opened, on the exact gitleaks step this feature adds. **Found and fixed live, same gate**: an inline `gitleaks:allow` comment alone did NOT resolve it (git history is immutable — the original commit `cb29244`'s patch still matches on any scan of the `main..feat/F-017-...` range); a `.gitleaksignore` fingerprint entry (`cb29244...:scripts/verify-gitleaks-canary.sh:generic-api-key:28`) does, verified live, using gitleaks' own default ignore-path discovery so no CI config change was needed. Both the comment and the ignore file were kept — the comment documents intent, the ignore file is what actually works. |
 
 ---
 
