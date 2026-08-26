@@ -429,6 +429,25 @@ jobs:
       - name: Publish container image (.NET SDK container support, no Dockerfile)
         run: dotnet publish ${{ matrix.service }}/${{ matrix.service }}.csproj -t:PublishContainer
 
+      - name: Trivy scan
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: "${{ matrix.service }}:latest"
+          format: json
+          output: trivy-report.json
+          exit-code: "0"
+
+      # F-017-T07: Trivy's own report distinguishes findings by `.Results[].Target`. This
+      # project's own published dependencies always land under `app/<Service>.deps.json` — a
+      # target that only exists in the built image, never in the bare base image
+      # (mcr.microsoft.com/dotnet/aspnet:10.0) it's built from. Every other target (the OS-package
+      # layer, and the shared-framework deps.json files under usr/share/dotnet/) is inherited from
+      # the base image and this project cannot fix a CVE in it directly — so it warns, not fails.
+      # Verified live during Construction against both a synthetic fixture set and a real scan of
+      # booking:latest (scripts/trivy-severity-gate.sh's own header has the full rationale).
+      - name: Severity gate (fail on project-introduced, warn on base-image-inherited)
+        run: ./scripts/trivy-severity-gate.sh trivy-report.json
+
   # ---------------------------------------------------------------------------
   # Integration — real services over HTTP against a MongoDB Testcontainer
   #
