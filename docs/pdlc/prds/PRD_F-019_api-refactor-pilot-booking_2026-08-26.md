@@ -182,7 +182,11 @@ not attempted.
 
 ## Design Docs
 
-_To be linked after Design._
+- [ARCHITECTURE.md](../design/api-refactor-pilot-booking/ARCHITECTURE.md)
+- [data-model.md](../design/api-refactor-pilot-booking/data-model.md) (no changes)
+- [api-contracts.md](../design/api-refactor-pilot-booking/api-contracts.md)
+- [threat-model.md](../design/api-refactor-pilot-booking/threat-model.md) (Lite triage, 3 threats, 2 mitigate-now)
+- [ux-review.md](../design/api-refactor-pilot-booking/ux-review.md) (Skip, no UI surface)
 
 ## Related Episodes
 
