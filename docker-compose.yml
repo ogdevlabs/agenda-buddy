@@ -55,26 +55,6 @@ services:
   #     context: .
   #     dockerfile: Services/Dockerfile
 
-  events:
-    hostname: events
-    container_name: events
-    image: ${DOCKER_REGISTRY-}eventandcommands:latest
-    build:
-      context: .
-      dockerfile: EventAndCommands/Dockerfile
-  
-  kafka-library:
-      image: ${DOCKER_REGISTRY-}kafka:latest
-      build:
-        context: .
-        dockerfile: Kafka/Dockerfile
-
-  common-library:
-      image: ${DOCKER_REGISTRY-}library:latest
-      build:
-        context: .
-        dockerfile: Library/Dockerfile
-
   identity:
     hostname: identity
     container_name: identity

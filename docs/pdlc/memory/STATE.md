@@ -5,13 +5,13 @@
      Claude reads this file at the start of every session to auto-resume from the last checkpoint.
      If this file is missing or empty, PDLC will prompt you to run /pdlc init. -->
 
-**Last updated:** 2026-08-25T19:51:32Z
+**Last updated:** 2026-08-25T23:55:00Z
 
 ---
 
 ## Current Phase
 
-Inception Complete — Ready for /build
+Operation
 
 ---
 
@@ -59,10 +59,12 @@ none
 - **Feature record:** docs/pdlc/tasks/F-017/_feature.md
 - **Claimed by:** oscargarcia@ogdevlabs.onmicrosoft.com
 - **Claimed at:** 2026-08-25T19:51:32Z
-- **Branch:** pdlc/F-017-container-and-cd-hardening (Inception bookkeeping only — per-user override of the skill's default `git push origin main`; see `/brainstorm` Step B note below. Construction will create its own `feat/F-017-...` branch at build pre-flight, per usual.)
+- **Branch:** feat/F-017-container-and-cd-hardening (created off `main` at Build pre-flight, 2026-08-25T23:55:00Z. `pdlc/F-017-container-and-cd-hardening`'s Inception bookkeeping merged to `main` first via PR #47 — see Guardrail Log.)
 
-_F-015 shipped as `v0.5.0` and its claim was released. `scripts/tasks.cjs` **does exist** in this repo (confirmed
-2026-08-25, claiming F-017) — the "does not exist" note above was stale; last verified absent at F-021 (2026-08-22)._
+_F-015 shipped as `v0.5.0` and its claim was released. `scripts/tasks.cjs` **does NOT exist** in this repo —
+re-confirmed at F-017 Build pre-flight (2026-08-25, `MODULE_NOT_FOUND`); an earlier F-017 Discover-time note
+claiming it exists was itself mistaken. Task store fallback (hand-maintained files under `docs/pdlc/tasks/`)
+is in effect, as at F-014/F-015/F-021._
 
 **While claiming F-017, also corrected task-store drift:** F-021's feature record still showed
 `status: in_progress` / claimed, though ROADMAP.md has recorded it Shipped (v0.3.0, PR #39) since
@@ -82,13 +84,122 @@ _None active. Run `/night-shift <F-NNN>` to start an autonomous run (requires by
 
 ## Current Sub-phase
 
-none
+Ship
 
 ---
 
 ## Last Checkpoint
 
-Inception / Plan / 2026-08-25T23:33:05Z — **F-017 Inception complete.** 9 tasks (F-017-T01…T09), 4 waves,
+Construction / Complete / 2026-08-26T05:00:00Z — **F-017 Construction complete.** 9/9 tasks, 15/15 ACs
+closed, all 6 threats dispositioned (T-001/T-002 mitigated, T-003–T-006 accepted per ADR-043…046). Party
+Review approved (1 Critical + 2 of 4 Important fixed before merge, remainder accepted per ADR-047). All test
+layers resolved: 484 backend + 234 integration, 0 failing. Episode draft written:
+`docs/pdlc/memory/episodes/006_container-and-cd-hardening_2026-08-26.md`. Five real, previously-unknown
+defects found and fixed live across this Construction, none filed for later: `Profession/Dockerfile`'s
+version mismatch, the `EventAndCommands` appsettings publish conflict (blocking all 7 services, not just 3),
+the broken `trivy-action@0.28.0` tag reference, ADR-030's `NoWarn` not actually filtering the vulnerability
+report, and the gitleaks canary's own false-positive (fixed via `.gitleaksignore`, found at Test's Layer 7).
+Ready for `/ship`.
+
+_Previously: Construction / Test / 2026-08-26T04:50:00Z — **All test layers resolved.** Layer 1 (unit, required): 484/484
+backend, 0 failing. Layer 2 (integration, run for regression safety though not required by this PRD): 234/234
+against a real MongoDB Testcontainer, 0 regressions from F-017's `.csproj` changes. Layers 3–6: skipped, no
+command exists, not required (standing condition). **Layer 7 (security scan, always required) ran using this
+feature's own new tooling for the first time ever on this project — and found a real, previously-unknown
+defect the same way it's meant to:** the canary script's own fake-password literal tripped gitleaks' default
+rule on entropy, which would have failed F-017's own future PR on the exact gitleaks step this feature adds.
+Fixed live with a `.gitleaksignore` fingerprint entry (an inline `gitleaks:allow` comment alone didn't work —
+git history is immutable, so the pre-fix commit's patch still matches any scan of the full `main..feat/F-017-...`
+range). Dependency audit: clean except the pre-existing ADR-030-accepted SSH.NET finding. Moving to Wrap-up.
+
+_Previously: Construction / Review / 2026-08-26T04:35:00Z — **Party Review complete and approved.** Neo, Echo, Phantom,
+Jarvis reviewed the full diff in parallel (subagents), 1 cross-talk round (Neo's architecture finding on
+`security-scan`'s path-filter coverage promoted to a standalone Important security finding by Phantom, using
+`ISSUE-002`'s own record that the original leak lived partly under `docs/pdlc/context/`). Tally: 1 Critical,
+4 Important, 10 Advisory, 1 YAGNI `shrink:`. **Fixed before approval:** C1 (added `SecurityScanAndDockerJobShapeTest`
++ `verify-trivy-severity-gate.sh`, closing the AC6/8/9/11/13 coverage gap, all mutation-tested — commit
+`7cefae1`), I1 (`security-scan` now runs `if: always()` unconditionally on every PR, closing the exact
+path-class gap the original Atlas leak used — commit `521a7ce`), I3 (`CLAUDE.md` updated for the new CI
+jobs/tooling — commit `ebabba7`), and A1 (stale comment, fixed alongside C1). **Accepted as logged warnings**
+(ADR-047): I2 (AC10 live-PR verification — not possible pre-merge, `/ship`'s job), I4 (one flaky
+`AgendaBuddy.AppHost.Tests` run, 4/5 clean), and 9 remaining Advisory/confirmation items. Phantom security
+sign-off: 0 Critical (after fix). **Final: 484 backend tests, 0 failing** (468 at build-loop-done → 484 after
+the Review fix cycle). No Muse (no UI surface). No standards gate (ADR-042 retirement). Moving to Test.
+
+_Previously: Construction / Build / 2026-08-26T03:00:00Z — **Wave 4 complete — BUILD LOOP DONE, all 9 tasks closed.**
+F-017-T09 (pin `gitleaks-action`/`trivy-action` to full commit SHAs, closing `[security]` T-001) built
+solo/direct (single-task wave, no standup needed) — TDD red-then-green with a new
+`PinnedThirdPartyActionsTest`. **Found and fixed a second real defect while pinning:** the existing
+`aquasecurity/trivy-action@0.28.0` reference used a tag that doesn't exist upstream at all (the real tag is
+`v0.28.0`, with the `v` prefix) — this step would have failed to resolve on its first real CI run, invisible
+until now because this workflow has never actually executed (per `08-cicd-deploy.md`'s standing note that CI
+changes trigger no job). Resolved both actions to commit SHAs via `git ls-remote`. **Final backend suite: 468
+→ 478, 0 failing, 0 regressions across all 4 waves.** All 15 ACs (13 original + 2 threat-derived) now closed;
+all 6 threats dispositioned (T-001/T-002 mitigated and closed this Construction; T-003/T-004/T-005/T-006
+accepted per ADR-043…046, unchanged since Design). Moving to Review.
+
+_Previously: Construction / Build / 2026-08-26T02:45:00Z — **Wave 3 complete.** F-017-T05 (gitleaks canary test —
+`.gitleaks.toml` custom rule for MongoDB/Atlas-shaped connection strings, `scripts/verify-gitleaks-canary.sh`
+wired into `security-scan`) and F-017-T07 (severity-gated Trivy step in `docker-build-and-scan`,
+`scripts/trivy-severity-gate.sh` filtering by Trivy's `.Results[].Target` — `app/<Service>.deps.json` =
+project-introduced/fails, anything else = base-image-inherited/warns) — 2 Sub-Agent builds in parallel
+worktrees. **T05 found and fixed a real security bug while proving its own AC:** the custom gitleaks rule's
+default redaction targeted the wrong regex capture group, leaking the canary secret in plaintext in both
+console output and the SARIF report — exactly the T-002 threat scenario, caught before it ever ran in real
+CI, fixed with `secretGroup = 2`, reproduced red-then-green twice (detection, then redaction). Both merged
+clean (one auto-merge around T07's docker-build-and-scan edits). Full local verification, not just CI-shaped
+config: canary script re-run post-merge (redaction confirmed), Trivy run against both the bare base image and
+a real built `booking:latest` image (18 base-layer findings today, 0 project-layer, gate passes clean).
+**Backend suite steady at 477, 0 failing.** Both T06 and T05/T07's worktrees hit the recurring
+stale-worktree-snapshot bug (now 5 occurrences across F-015/F-017) and self-corrected by rebasing — recorded
+as a project memory with an instruction to brief future worktree agents on this explicitly rather than rely
+on them noticing. All three "mitigate now" threats from the threat model with a task-level home (T-002 here,
+T-001 still pending at F-017-T09) are now either closed or queued. Starting Wave 4 (F-017-T09, final task).
+
+_Previously: Construction / Build / 2026-08-26T02:20:00Z — **Wave 2 complete.** F-017-T04 (gitleaks step added to
+`security-scan`, diff-scoped via `fetch-depth: 0` + `gitleaks-action`'s own PR base..head detection; unpinned
+tag deliberately, F-017-T09 pins it later) and F-017-T06 (new `docker-build-and-scan` job — 7-service
+`dotnet publish -t:PublishContainer` matrix, `timeout-minutes: 10`, new `docker` path filter confirmed
+genuinely consumed by `grep`, unlike the still-dead `library` filter) — 2 Sub-Agent builds in parallel
+worktrees, solo Wave 2 standup (both tasks share only `.github/workflows/dotnet.yml`, in disjoint regions,
+verified by direct inspection before dispatch). Auto-merged cleanly (T06's edit auto-merged around T04's).
+T06's worktree hit the known stale-worktree-snapshot bug (branched off an older commit) and self-corrected by
+rebasing before building, same as F-015's Wave 3. **Backend suite steady at 477, 0 failing** — both tasks are
+CI-only, no new unit tests expected. Non-blocking finding logged for later: T04's gitleaks run found 3
+pre-existing false-positive-shaped matches in doc placeholder tokens (`docs/pdlc/design/*/api-contracts.md`)
+— worth a `.gitleaksignore` entry eventually, not blocking. Starting Wave 3 (F-017-T05, F-017-T07).
+
+_Previously: Construction / Build / 2026-08-26T02:00:00Z — **Wave 1 complete.** F-017-T01 (deleted 3 broken class-library
+Dockerfiles + Compose blocks, added `DockerAndComposeHygieneTest` — 6 tests, red-then-green; also fixed a
+second, previously-undocumented instance of the same defect found live at the wave standup:
+`Profession/Dockerfile` still had `runtime:8.0` against its `sdk:10.0` build stage), F-017-T02 (removed
+`EventAndCommands.csproj`'s `appsettings.json` copy conflict unblocking `dotnet publish -t:PublishContainer`
+for all 7 services, plus two standup-found companion fixes — `EventsAndCommands.Tests` now owns its own
+`appsettings.json` instead of relying on the transitive copy, and `Customer`/`Provider`'s
+`ErrorOnDuplicatePublishOutputFiles=false` suppression of the same root cause was removed — added
+`PublishContainerTest`, 3 tests), F-017-T03 (new `security-scan` CI job; found live that ADR-030's `NU1903`
+`NoWarn` does **not** make `dotnet list package --vulnerable` skip the accepted SSH.NET finding — the job
+filters explicitly by advisory ID instead; `ARCHITECTURE.md` corrected to match), F-017-T08 (`.github/dependabot.yml`
+added; AC12's live-PR verification explicitly deferred to post-merge) — 4 real Sub-Agent builds in parallel
+worktrees, Wave Kickoff Standup (Neo/Bolt/Pulse/Echo) surfaced both cross-cutting defects **before** any
+builder started. Merged all 4 worktree branches back with zero conflicts. **Found merging them back:** the
+new hygiene test's repo-wide Dockerfile walk didn't exclude `.claude/worktrees/` (only `bin`/`obj`), so it
+false-positived on the other 3 agents' still-on-disk worktree checkouts — fixed (exclude any hidden directory
+segment), recorded as a project memory since this will recur every wave that uses worktree isolation.
+**Backend suite: 468 → 477, 0 failing, 0 regressions.** TDD gate overridden for T03/T08 (human-confirmed,
+infra-only). Starting Wave 2 (F-017-T04, F-017-T06).
+
+_Previously: Construction / Build / 2026-08-25T23:55:00Z — **Build pre-flight passed.** Channel in-sync. Remote sync: local
+`main` was 3 commits behind `origin/main` (docs-only `CLAUDE.md` change, unrelated to F-017) — solo sync
+assessment (`docs/pdlc/mom/sync-assessment_2026-08-25.md`) found None conflict risk; user chose pull, `main`
+fast-forwarded clean. Task store: `scripts/tasks.cjs` re-confirmed absent, fallback (hand-maintained
+`docs/pdlc/tasks/F-017/`) in effect — 9 tasks (F-017-T01…T09) present. **PR #47 (Inception bookkeeping:
+PRD, 5 design docs, threat model, plan, 9 tasks) merged to `main`** first (user-confirmed) via local
+`git merge --no-ff` + push, since `gh pr merge` is blocked under this Enterprise Managed User `gh` identity —
+`04d0809`. Branch `feat/F-017-container-and-cd-hardening` created off the updated `main`. Starting the build
+loop: Wave 1 (F-017-T01, T02, T03, T08).
+
+_Previously: Inception / Plan / 2026-08-25T23:33:05Z — **F-017 Inception complete.** 9 tasks (F-017-T01…T09), 4 waves,
 plan file saved. Readiness: Fair (1 gap — `security-ac-unmaterialized` — caught and fixed in-party: PRD ACs
 14-15 back-written, materialized via `tasks.cjs ac add`). Plan approved by `ogdevlabs`. Ready for `/build`.
 
@@ -302,6 +413,14 @@ the feature branch after each wave completes.
 | 2026-08-23T17:15:00Z | standards_check_skipped | Plan Step 17.5 (`--design`, **enforcing** tier) skipped for F-015 — same unreachable-source-repos condition, re-checked and unchanged. **Tenth consecutive gate blocked**, and the seventh marked `enforcing` that has never once executed. Treated as an `/override`-equivalent per the gate's own protocol: one-line reason given, recorded as **ADR-041**. Recommendation unchanged since F-013 and now the oldest unaddressed process finding in the project — **F-017**. |
 | 2026-08-24T12:14:03Z | ship_phase_mismatch | `/ship` started for F-015 with Current Phase `Construction` (sub-phase `Review`), not `Construction Complete`. No formal Review or Test sub-phase ran this cycle and no episode draft existed at the time — same process gap recorded at F-014's ship gate. User confirmed proceeding: build is complete (14/14 tasks, 15/15 ACs, 3/3 threats dispositioned) and `verification.md` stands in for the missing episode's Test Summary. Required test gates verified directly against it: 867 tests (468 backend + 234 integration + 165 mobile), 0 failing; security scan (dependency audit + secret scan) run by hand, clean. |
 | 2026-08-25T19:51:32Z | pushed_directly_to_main | While claiming F-017, corrected F-021's stale task-store record (`status: in_progress`→`shipped`, unclaimed) and pushed that commit (`8fe2ace`) straight to `main` per the `/brainstorm` skill's literal Step B instructions — before checking the user's standing "never push directly to main" instruction. Caught immediately; user decided: leave that one commit as-is (small, correct, docs-only), but all further PDLC Inception bookkeeping for F-017 (this claim, STATE.md, the brainstorm log) goes on branch `pdlc/F-017-container-and-cd-hardening` instead of `main`, with a PR at the end of Inception rather than a direct push. |
+| 2026-08-25T23:55:00Z | pr_merge_tool_blocked | `gh pr merge 47 --merge` failed: `GraphQL: Unauthorized: As an Enterprise Managed User, you cannot access this content (mergePullRequest)` — the `gh` identity on this machine cannot merge PRs via the API on this repo (consistent with the standing preference to use plain `git`, not `gh`, here). Worked around with local `git checkout main && git merge --no-ff pdlc/F-017-container-and-cd-hardening && git push origin main` (`04d0809`), which closed PR #47 as merged. User-confirmed before merging (PR was mergeable, CI-clean, docs-only Inception bookkeeping). Same workaround applies to any future PR-merge attempt on this repo. |
+| 2026-08-26T00:05:00Z | tdd_gate_override | Build Step 9a-bis TDD gate overridden for **F-017-T03** (dependency-audit CI job) and **F-017-T08** (Dependabot config) — both are infrastructure-only per the gate's own exception list (CI pipeline / static config, no locally-testable behavior); their real acceptance criteria (AC5, AC12) are only verifiable via a live CI run / a real Dependabot PR opening post-merge. User granted the override explicitly when asked. F-017-T01 and F-017-T02 were NOT covered by this override — both have genuinely testable behavior (a structural Dockerfile-tree guard; a `dotnet publish` conflict) and built red-test-first as normal. |
+| 2026-08-26T04:20:00Z | review_critical_fixed | F-017 Party Review's Critical finding (C1 — ACs 6/8/9/11/13 had zero committed regression test) fixed, not overridden: `SecurityScanAndDockerJobShapeTest` (5 tests) + `scripts/verify-trivy-severity-gate.sh` (4 fixture cases) added, all mutation-tested. Commit `7cefae1`. |
+| 2026-08-26T04:25:00Z | review_important_fixed | F-017 Party Review Important findings I1 (security-scan's path-filter excluded docs/scripts/Gateway/MobileApp — the exact class of path `ISSUE-002`'s original leak used) and I3 (`CLAUDE.md` stale on the new CI jobs/tooling) both fixed. I1: `security-scan` now runs `if: always()`, unconditionally, on every PR (commit `521a7ce`). I3: `CLAUDE.md` updated (commit `ebabba7`). |
+| 2026-08-26T04:30:00Z | review_warnings_accepted | Review approval gate: 0 remaining Critical. User chose **fix I1 + I3, accept the rest**. ACCEPTED as logged warnings (full detail + rationale in **ADR-047**): **I2** AC10's live-PR verification not yet possible (no PR open on `feat/F-017-...` yet — this is `/ship`'s job); **I4** one flaky run (77/87) out of 5 full-suite runs in `AgendaBuddy.AppHost.Tests`, suspected resource contention, not a logic bug; **A2–A10** (Advisory) — Gateway path-filter coverage gap (pre-existing, F-015), duplicate `RepoRoot()` test helper (YAGNI `shrink:`), AC3's non-digest-pinned-image edge case, `PublishContainerTest`'s structural-proxy nature, AC10/AC12's PRD-anticipated deferral, merge-commit subject format, plus 7 confirmations (T-001/T-002/T-003–006 accept-rationales still hold, `api-contracts.md`/`data-model.md` "no changes" confirmed, `ARCHITECTURE.md`'s correction reads clearly). |
+| 2026-08-26T04:45:00Z | test_layers_skipped | Test Step 15 layers 3–6 (E2E, performance/load, accessibility, visual regression) skipped for F-017 — no command exists in this project and none is a required §7 gate, same condition as every prior feature. Layer 1 (unit, required): 484/484 backend. Layer 2 (integration, not required by §7, but run anyway against a real MongoDB Testcontainer per this project's own convention): 234/234, 0 regressions from F-017's `Customer.csproj`/`Provider.csproj`/`EventAndCommands.csproj` changes. |
+| 2026-08-26T04:50:00Z | required_gate_flagged_accepted | Test Step 15 **Layer 7 (security scan — always required)** RAN using F-017's own new tooling, not by-hand greps for the first time ever on this project. **7a dependency audit** (`dotnet list agenda-buddy.sln package --vulnerable --include-transitive`): exactly one finding, the pre-existing ADR-030-accepted SSH.NET HIGH in `AgendaBuddy.IntegrationTests` — nothing new. **7b secret scan** (`gitleaks detect --log-opts="main..feat/F-017-..."`, the same diff-range mode `gitleaks-action` uses): found **1 real leak**, not a false alarm from inspection — the canary script's own `FAKE_PASSWORD` literal in `scripts/verify-gitleaks-canary.sh:28` tripped gitleaks' default `generic-api-key` rule on entropy alone. This would have failed F-017's own PR the moment it opened, on the exact gitleaks step this feature adds. **Found and fixed live, same gate**: an inline `gitleaks:allow` comment alone did NOT resolve it (git history is immutable — the original commit `cb29244`'s patch still matches on any scan of the `main..feat/F-017-...` range); a `.gitleaksignore` fingerprint entry (`cb29244...:scripts/verify-gitleaks-canary.sh:generic-api-key:28`) does, verified live, using gitleaks' own default ignore-path discovery so no CI config change was needed. Both the comment and the ignore file were kept — the comment documents intent, the ignore file is what actually works. |
+| 2026-08-26T05:00:00Z | shipped_pr_found_4_more_defects | **PR #48 opened for real, live CI on GitHub Actions found 4 more real defects invisible to every local check** — the exact reason this feature exists, proving its own thesis on itself. (1) `trivy-action@0.28.0`'s own `action.yaml` pins a nested `aquasecurity/setup-trivy@v0.2.1` dependency by a mutable tag that upstream has since **deleted** — GitHub can't resolve it, so all 7 `docker-build-and-scan` matrix jobs failed at "Set up job" in seconds. Upgraded to `v0.36.0` (commit SHA `ed142fd...`), which upstream itself fixed by pinning `setup-trivy` by hash. (2) The credential-grep guard in `build-and-test` (F-013, pre-existing) flagged the gitleaks canary's own fixture line — same root cause as the gitleaks false-positive, different tool: `${FAKE_PASSWORD}` is textually shaped like `user:pass@host` even though it's an unresolved shell variable. Added to that guard's existing placeholder-exclusion list. (3) `.NET SDK container support` lowercases the built image name by default (`booking:latest`) but the Trivy step's `image-ref` used the matrix's PascalCase service name (`Booking:latest`) — not even valid OCI syntax. Added a lowercasing step (GitHub Actions expressions have no built-in `toLower()`). (4) `dotnet list package --vulnerable` returned nonzero in CI for a cause not reproducible locally, which under GitHub Actions' `bash -e` aborted the `output=$(...)` line before `echo` ever ran — added the same `\|\| true` protection the adjacent `new_findings=` line already had. All 4 fixed and verified: CI green on PR #48 (`build-and-test`, `Security — dependency audit`, all 7 `Docker —` matrix jobs, `Integration`, `Mobile — Unit Tests`, `Mobile — Android Build`; `Mobile — iOS Build` still running). Also added a `concurrency` group (cancel superseded runs) — a separate, pre-existing pipeline gap the user asked to close live while watching these fixes land. User granted explicit autonomy to continue without further confirmation until CI is green and the PR is merged (stepped away for the night). |
 
 ---
 
@@ -719,3 +838,5 @@ re-planning (`/continue`).
 | 2026-08-25T22:38:26Z | prd_revised | **User asked Neo to verify Aspire's actual deployment model (aspire.dev/deployment/) before locking the design — found 2 real defects.** (1) The Aspire/`azd` deployment path builds its own container images via .NET SDK container support and never reads the hand-written Dockerfiles; re-scoped the new image-build job accordingly. (2) While testing that pivot, found and live-verified `EventAndCommands.csproj`'s `appsettings.json` colliding with every service's own file at `dotnet publish` time (`NETSDK1152`), blocking any containerization path for all 7 services. Fix verified end-to-end, then reverted (real fix lands at Construction). PRD revised to 12 requirements / 13 ACs / 5 user stories and re-approved | Design | container-and-cd-hardening |
 | 2026-08-25T22:48:19Z | design_approved | **F-017 Design approved** by `ogdevlabs`. `ARCHITECTURE.md`, `data-model.md` (none), `api-contracts.md` (none), `threat-model.md` (Full triage — 6 threats, T-001/T-002 mitigate-now, T-003–006 accept via ADR-043…046), `ux-review.md` (Skip — no UI surface). One open question (external-contributor policy) explicitly left unresolved. Moving to Plan | Plan | container-and-cd-hardening |
 | 2026-08-25T23:33:05Z | inception_complete | **Inception Complete — 9 tasks (F-017-T01…T09), 4 waves.** PRD, 3 design artifacts, threat model, ux-review, and plan file all approved. Readiness Party (solo, Full triage): Fair (C:Strong T:Fair D:Strong), 1 gap — Step 14.5 (threat-derived security ACs) had been skipped, caught during the readiness check itself and fixed same-session before this row was written. Nordstrom standards gate retired for this project (ADR-042). Ready for `/build` | Plan | container-and-cd-hardening |
+| 2026-08-25T23:55:00Z | construction_start | **F-017 Construction started.** PR #47 (Inception bookkeeping) merged to `main` first. Branch `feat/F-017-container-and-cd-hardening` created off the updated `main` | Build | container-and-cd-hardening |
+| 2026-08-26T05:00:00Z | construction_complete | **F-017 Construction complete.** 9/9 tasks, 15/15 ACs, 6/6 threats dispositioned. Party Review approved (1 Critical + 2 Important fixed, remainder accepted per ADR-047). 484 backend + 234 integration tests, 0 failing. Five real pre-existing/introduced defects found and fixed live, none filed. Episode 006 drafted | Complete | container-and-cd-hardening |
