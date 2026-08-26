@@ -226,6 +226,13 @@ jobs:
       - name: Build
         run: dotnet build agenda-buddy-backend.slnf --no-restore --configuration Release /p:MobileWorkloads=false
 
+      # F-018-T03: the root .editorconfig (added this task) is the only thing stopping whitespace
+      # drift from recurring — v0.1.0 fixed 69 such findings with nothing to keep them fixed, and
+      # F-019/F-020 rewrite every endpoint file next, where drift would hide real changes in review.
+      # `--no-restore` reuses the Restore step above; this only reports, it never rewrites files.
+      - name: Format check (dotnet format --verify-no-changes)
+        run: dotnet format agenda-buddy-backend.slnf --verify-no-changes --no-restore
+
       - name: Test
         run: >
           dotnet test agenda-buddy-backend.slnf
