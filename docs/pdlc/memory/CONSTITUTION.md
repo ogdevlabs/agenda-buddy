@@ -31,8 +31,8 @@
 
 ### Linting & Formatting
 
-- Linter: <!-- not yet configured — add .editorconfig or StyleCop -->
-- Formatter: <!-- not yet configured -->
+- Linter: `.editorconfig` at the repo root (F-018-T03) — encodes the conventions this table already documents plus indentation/brace-style/namespace rules, `dotnet_naming_rule.*` at `suggestion` severity
+- Formatter: `dotnet format agenda-buddy-backend.slnf` — enforced in CI via `dotnet format --verify-no-changes` in the `build-and-test` job
 - Pre-commit hook: none
 
 ### Naming Conventions
