@@ -74,8 +74,7 @@ fake and final verification. The task store needs this reflected before Build st
      Example: F-002-T03 — Add OAuth2 login with GitHub
      Set to "none" when no task is active. -->
 
-none — no task was active at pause; the task store needs its Plan-phase amendment (drop/absorb the 8
-F-016-delivered tasks, fix the dependency graph) before any task is claimed
+Wave 1a (7 parallel Sub-Agent builds, worktree-isolated) — F-018-T02, T04, T10, T11, T12, T15, T16
 
 ---
 
