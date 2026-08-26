@@ -287,6 +287,74 @@ jobs:
           if-no-files-found: warn
 
   # ---------------------------------------------------------------------------
+  # Security — dependency-vulnerability audit (CONSTITUTION §7, F-017-T03)
+  #
+  # Runs independently of, and in parallel with, build-and-test — no shared steps, no added
+  # latency to that job.
+  #
+  # ⚠️ Scans agenda-buddy.sln (the FULL solution), not agenda-buddy-backend.slnf. The slnf
+  # excludes AgendaBuddy.IntegrationTests (ADR-031), which is the only project referencing the
+  # one currently-accepted vulnerable package (SSH.NET, via Testcontainers) — scanning the slnf
+  # would report zero findings and give this gate nothing to actually catch. Verified live during
+  # Construction: `dotnet list agenda-buddy-backend.slnf package --vulnerable` reports 0 vulnerable
+  # packages solution-wide, while `dotnet list agenda-buddy.sln package --vulnerable` reports the
+  # one accepted SSH.NET HIGH.
+  #
+  # ⚠️ `dotnet list package --vulnerable` does NOT respect a project's `<NoWarn>NU1903</NoWarn>`.
+  # ARCHITECTURE.md's F-017 design assumed the ADR-030 suppression would filter this command's
+  # report automatically because it is "an MSBuild-level suppression, not a CI-script filter" —
+  # verified WRONG live during Construction: the finding still appears in the report with the
+  # NoWarn in place (NoWarn only suppresses the *build-time warning*, not this reporting command).
+  # So the accepted finding is filtered explicitly below, by its exact advisory ID — not by package
+  # name, so a *different*, future SSH.NET vulnerability still fails the gate.
+  security-scan:
+    name: "Security — dependency audit"
+    needs: changes
+    if: needs.changes.outputs.api == 'true' && needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-24.04
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Restore dependencies (full solution)
+        run: dotnet restore agenda-buddy.sln /p:MobileWorkloads=false
+
+      - name: Dependency vulnerability audit
+        run: |
+          set -uo pipefail
+          output=$(dotnet list agenda-buddy.sln package --vulnerable --include-transitive --no-restore 2>&1)
+          echo "$output"
+
+          # ADR-030: SSH.NET GHSA-q939-rpr3-3284 (HIGH), pulled in by Testcontainers in
+          # AgendaBuddy.IntegrationTests, is an accepted risk — unreachable because this project
+          # never uses Docker-over-SSH, proven by ContainerRuntimeGuardTest. Filtered by exact
+          # advisory ID, not by package name, so a future SSH.NET finding still fails this gate.
+          new_findings=$(echo "$output" | grep -E '^\s*>' | grep -E '\s(High|Critical)\s' | grep -v 'GHSA-q939-rpr3-3284' || true)
+
+          if [ -n "$new_findings" ]; then
+            echo "::error::New HIGH/CRITICAL vulnerable package finding(s), not covered by an accepted-risk ADR:"
+            echo "$new_findings"
+            exit 1
+          fi
+
+          if echo "$output" | grep -q 'GHSA-q939-rpr3-3284'; then
+            echo "Known accepted finding present (ADR-030, SSH.NET GHSA-q939-rpr3-3284) — not failing."
+          fi
+
+  # ---------------------------------------------------------------------------
   # Integration — real services over HTTP against a MongoDB Testcontainer
   #
   # F-016-T20. SEPARATE from build-and-test on purpose, three reasons:
@@ -485,7 +553,7 @@ jobs:
   # always runs, prints which filters fired, and fails if any job that *did* run failed. Point
   # branch protection at this one.
   summary:
-    needs: [changes, build-and-test, integration, build-android, build-ios, build-mobile-tests]
+    needs: [changes, build-and-test, security-scan, integration, build-android, build-ios, build-mobile-tests]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -496,6 +564,7 @@ jobs:
           MOBILE_TESTS: ${{ needs.changes.outputs.mobile-tests }}
           CODE: ${{ needs.changes.outputs.code }}
           R_BACKEND: ${{ needs.build-and-test.result }}
+          R_SECURITY: ${{ needs.security-scan.result }}
           R_INTEGRATION: ${{ needs.integration.result }}
           R_ANDROID: ${{ needs.build-android.result }}
           R_IOS: ${{ needs.build-ios.result }}
@@ -509,6 +578,7 @@ jobs:
             echo "| Filter | Fired | Job | Result |"
             echo "|---|---|---|---|"
             echo "| api | \`$API\` | build-and-test | \`$R_BACKEND\` |"
+            echo "| api | \`$API\` | Security — dependency audit | \`$R_SECURITY\` |"
             echo "| api | \`$API\` | Integration (containers) | \`$R_INTEGRATION\` |"
             echo "| mobile | \`$MOBILE\` | Android build | \`$R_ANDROID\` |"
             echo "| mobile | \`$MOBILE\` | iOS build | \`$R_IOS\` |"
@@ -536,7 +606,7 @@ jobs:
           fi
 
           failed=""
-          for pair in "build-and-test:$R_BACKEND" "android:$R_ANDROID" "ios:$R_IOS" "mobile-tests:$R_MOBILE_TESTS"; do
+          for pair in "build-and-test:$R_BACKEND" "security-scan:$R_SECURITY" "android:$R_ANDROID" "ios:$R_IOS" "mobile-tests:$R_MOBILE_TESTS"; do
             name=${pair%%:*}; result=${pair#*:}
             case "$result" in
               failure|cancelled) failed="$failed $name($result)" ;;
