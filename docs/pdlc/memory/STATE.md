@@ -106,13 +106,20 @@ _None active. Run `/night-shift <F-NNN>` to start an autonomous run (requires by
 
 ## Current Sub-phase
 
-Ship
+Reflect
 
 ---
 
 ## Last Checkpoint
 
-Construction / Complete / 2026-08-26T19:50:00Z — **Construction complete.** 21/21 tasks, 31 ACs attested,
+Operation / Reflect / 2026-08-26T21:00:00Z — **Merged, tagged, deploy skipped.** PR #69 merged to `main` as
+`f907b23` (local `git merge --no-ff` + push — `gh pr merge` still blocked, same workaround as prior
+features), tagged **`v0.7.0`**, pushed. `dotnet format --verify-no-changes` clean on `main` post-merge.
+Backend 484/484 re-verified on merged `main`. Cloud deploy skipped again by ADR-035 — 7th consecutive, 6th
+under the deferral. No live AppHost smoke test — user-approved given minimal production surface, already
+exercised by 301 integration tests + CI's 7-service Docker build matrix. Moving to Reflect.
+
+_Previously: Construction / Complete / 2026-08-26T19:50:00Z — **Construction complete.** 21/21 tasks, 31 ACs attested,
 Review approved, all test layers resolved. Episode draft:
 `docs/pdlc/memory/episodes/007_api-refactor-foundations_2026-08-26.md`. 950 tests, 0 failing. PR #69 open,
 all CI checks green (twice, across two pushes). Ready for `/ship`.
