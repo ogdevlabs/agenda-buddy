@@ -11,7 +11,7 @@
 
 ## Current Phase
 
-Construction
+Construction Complete — Ready for /ship
 
 ---
 
@@ -84,13 +84,24 @@ _None active. Run `/night-shift <F-NNN>` to start an autonomous run (requires by
 
 ## Current Sub-phase
 
-Wrap-up
+none
 
 ---
 
 ## Last Checkpoint
 
-Construction / Test / 2026-08-26T04:50:00Z — **All test layers resolved.** Layer 1 (unit, required): 484/484
+Construction / Complete / 2026-08-26T05:00:00Z — **F-017 Construction complete.** 9/9 tasks, 15/15 ACs
+closed, all 6 threats dispositioned (T-001/T-002 mitigated, T-003–T-006 accepted per ADR-043…046). Party
+Review approved (1 Critical + 2 of 4 Important fixed before merge, remainder accepted per ADR-047). All test
+layers resolved: 484 backend + 234 integration, 0 failing. Episode draft written:
+`docs/pdlc/memory/episodes/006_container-and-cd-hardening_2026-08-26.md`. Five real, previously-unknown
+defects found and fixed live across this Construction, none filed for later: `Profession/Dockerfile`'s
+version mismatch, the `EventAndCommands` appsettings publish conflict (blocking all 7 services, not just 3),
+the broken `trivy-action@0.28.0` tag reference, ADR-030's `NoWarn` not actually filtering the vulnerability
+report, and the gitleaks canary's own false-positive (fixed via `.gitleaksignore`, found at Test's Layer 7).
+Ready for `/ship`.
+
+_Previously: Construction / Test / 2026-08-26T04:50:00Z — **All test layers resolved.** Layer 1 (unit, required): 484/484
 backend, 0 failing. Layer 2 (integration, run for regression safety though not required by this PRD): 234/234
 against a real MongoDB Testcontainer, 0 regressions from F-017's `.csproj` changes. Layers 3–6: skipped, no
 command exists, not required (standing condition). **Layer 7 (security scan, always required) ran using this
@@ -826,3 +837,5 @@ re-planning (`/continue`).
 | 2026-08-25T22:38:26Z | prd_revised | **User asked Neo to verify Aspire's actual deployment model (aspire.dev/deployment/) before locking the design — found 2 real defects.** (1) The Aspire/`azd` deployment path builds its own container images via .NET SDK container support and never reads the hand-written Dockerfiles; re-scoped the new image-build job accordingly. (2) While testing that pivot, found and live-verified `EventAndCommands.csproj`'s `appsettings.json` colliding with every service's own file at `dotnet publish` time (`NETSDK1152`), blocking any containerization path for all 7 services. Fix verified end-to-end, then reverted (real fix lands at Construction). PRD revised to 12 requirements / 13 ACs / 5 user stories and re-approved | Design | container-and-cd-hardening |
 | 2026-08-25T22:48:19Z | design_approved | **F-017 Design approved** by `ogdevlabs`. `ARCHITECTURE.md`, `data-model.md` (none), `api-contracts.md` (none), `threat-model.md` (Full triage — 6 threats, T-001/T-002 mitigate-now, T-003–006 accept via ADR-043…046), `ux-review.md` (Skip — no UI surface). One open question (external-contributor policy) explicitly left unresolved. Moving to Plan | Plan | container-and-cd-hardening |
 | 2026-08-25T23:33:05Z | inception_complete | **Inception Complete — 9 tasks (F-017-T01…T09), 4 waves.** PRD, 3 design artifacts, threat model, ux-review, and plan file all approved. Readiness Party (solo, Full triage): Fair (C:Strong T:Fair D:Strong), 1 gap — Step 14.5 (threat-derived security ACs) had been skipped, caught during the readiness check itself and fixed same-session before this row was written. Nordstrom standards gate retired for this project (ADR-042). Ready for `/build` | Plan | container-and-cd-hardening |
+| 2026-08-25T23:55:00Z | construction_start | **F-017 Construction started.** PR #47 (Inception bookkeeping) merged to `main` first. Branch `feat/F-017-container-and-cd-hardening` created off the updated `main` | Build | container-and-cd-hardening |
+| 2026-08-26T05:00:00Z | construction_complete | **F-017 Construction complete.** 9/9 tasks, 15/15 ACs, 6/6 threats dispositioned. Party Review approved (1 Critical + 2 Important fixed, remainder accepted per ADR-047). 484 backend + 234 integration tests, 0 failing. Five real pre-existing/introduced defects found and fixed live, none filed. Episode 006 drafted | Complete | container-and-cd-hardening |
