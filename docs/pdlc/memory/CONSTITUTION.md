@@ -161,11 +161,14 @@ Examples:
 
 ## 9. Additional Rules
 
-- New packages require discussion before adding — keep the dependency footprint minimal. **Five packages
-  pre-approved per ADR-015 (2026-08-18):** `FluentResults`, `Validot`, `Mapster`, `GuardClauses`,
-  `SmallApiToolkit` (narrow slice only — `DataResponse<T>`, the validation base class, `ExceptionMiddleware`;
-  not its dispatch abstraction, per ADR-014's decision to keep MediatR as the single dispatcher). Approved
-  for **F-019/F-020**, not F-018 — no production code consumes them yet as of this feature.
+- New packages require discussion before adding — keep the dependency footprint minimal. **Four packages
+  pre-approved per ADR-015 (2026-08-18) as amended by ADR-049 (2026-08-26):** `FluentResults`, `Validot`,
+  `Mapster`, `GuardClauses`. **`SmallApiToolkit` was approved by ADR-015 and then dropped by ADR-049** — a
+  pre-Design spike found its `DataResponse<T>`/validation-base-class "narrow slice" doesn't exist in the
+  package (those were the reference repo's own types); its dispatch abstraction was already rejected by
+  ADR-014 (MediatR is the sole dispatcher) and its `ExceptionMiddleware` would duplicate F-016's
+  `AgendaBuddyExceptionHandler`. `DataResponse<T>` is authored in-repo instead. Approved for **F-019/F-020**,
+  not F-018 — no production code consumes them yet as of this feature.
 - All database migrations (schema changes) must be documented in DECISIONS.md before implementation
 - ~~The `EventAndCommands/Persitency/` typo is a known issue — do not rename until a dedicated refactor is planned (renaming breaks existing references)~~ **RETIRED 2026-08-18 by F-016-T01.** The clause's own stated condition — *"until a dedicated refactor is planned"* — was satisfied by the approved F-016 PRD, so the prohibition expired on its own terms. Its stated *reason* also turned out to be wrong: the rename did **not** break references across all consumers. Measured before the change and confirmed after: **11 `.cs` files, one reference each, and zero references in any `.json`, `.yml`, `.csproj` or `.slnf`.** The directory and namespace are now `EventAndCommands/Persistence/`, pinned by `EventsAndCommands.Tests/Persistence/PersistenceNamespaceTest.cs` so a revert fails a test rather than passing silently.
 - Kafka `BootstrapServers` must be moved to configuration before any non-local deployment

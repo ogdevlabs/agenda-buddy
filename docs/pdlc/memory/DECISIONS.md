@@ -1016,3 +1016,45 @@ because the condition is already met today; carrying a satisfied blocking condit
 confusion for whoever reads T16 next, and CONSTITUTION's own purpose (single source of truth for how the
 project is built now) argues for closing satisfied deferrals promptly, the same reasoning ADR-016 already
 applies to the retired `Persitency` rename prohibition.
+
+---
+
+## ADR-049 — Drop `SmallApiToolkit`; four packages, not five (F-019) *(design decision, amends ADR-015)*
+
+**Date:** 2026-08-26 · **Status:** Accepted · **Amends:** ADR-015, CONSTITUTION §9
+
+**Context.** ADR-015 approved five packages from the Gramli/AuthApi reference — `FluentResults`, `Validot`,
+`Mapster`, `GuardClauses`, `SmallApiToolkit` — taking, per its own recorded caveat, a "narrow slice"
+(`DataResponse<T>`, a validation base class, `ExceptionMiddleware`) rather than the package's dispatch
+abstraction. A pre-Design spike for F-019 (2026-08-26) restored `SmallApiToolkit` 10.0.0 against this
+project's exact `net10.0` TFM and inspected its actual exported types by reflection. **The narrow slice does
+not exist in the package.** `SmallApiToolkit` ships `Middleware.ExceptionMiddleware`, `Middleware.LoggingMiddleware`,
+`Core.RequestHandlers.IHttpRequestHandler<TResponse,TRequest>`, and a `HandlerExtensions.SendAsync` dispatch
+helper — no `DataResponse<T>`, no `HttpDataResponse<T>`, no `ValidationHttpRequestHandler`. Those were the
+*reference repo's own types*, defined in its `Auth.Domain`/`Auth.Core` projects using `SmallApiToolkit`'s
+`IHttpRequestHandler` as their base — not shipped by the NuGet package ADR-015 approved.
+
+**Decision.** Drop `SmallApiToolkit` from the approved package set. `DataResponse<T>` is authored in-repo
+(`Booking.Domain`, F-019) rather than taken as a dependency for a type that isn't there. §9 is amended:
+four packages approved (`FluentResults`, `Validot`, `Mapster`, `GuardClauses`), not five.
+
+**Why not keep it anyway.** Tracing what F-019 actually needed from the package to zero, independently of
+this finding: `IHttpRequestHandler` was already rejected by ADR-014 (MediatR is the sole dispatcher — a
+second dispatch abstraction was the exact mistake ADR-014 exists to avoid). `ExceptionMiddleware` would
+duplicate `Library.ServerAuth/AgendaBuddyExceptionHandler.cs` (F-016), which already centrally maps
+`ForbiddenException` → 403 for every service — the same mistake one layer up. `LoggingMiddleware` was never
+in scope. With every reason for the dependency gone before the type-shape finding even landed, keeping it
+for a type that isn't there anyway compounds a non-decision into a real one.
+
+**Consequences.** CONSTITUTION §9 updated to four packages. ADR-015's "narrow slice" language is superseded
+by this entry, not rewritten — ADR-015 itself is left as the historical record of what was approved and why,
+per this project's convention of never rewriting a prior ADR in place. `Booking.Domain`'s `DataResponse<T>`
+is now this project's own type, free to evolve without an upstream dependency, and free of the maintenance
+risk ADR-015's caveat had already flagged as a concern ("if it proves unmaintained, the slice we use is
+small enough to vendor" — vendored from day one instead, for a different reason than anticipated).
+
+**Alternatives rejected.** Keeping the dependency for optionality or literal fidelity to the reference repo's
+package list — rejected because a dependency with zero actual call sites is closer to accidental supply-chain
+surface than to insurance; if a real future need for `IHttpRequestHandler`-shaped dispatch or `ExceptionMiddleware`-shaped
+centralization ever arises, adding the package back then is cheap and the decision would be made against a
+real requirement instead of a residual one.

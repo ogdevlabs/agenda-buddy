@@ -57,12 +57,21 @@ to all 7 services and shouldn't be touched twice).
    `if (x is null) throw` patterns. 🧪 test-first
 9. The real ASP.NET Core `CancellationToken` is threaded from each route through to its handler and any
    downstream `await` — zero `new CancellationToken()` instances. 🧪 test-first
-10. `SmallApiToolkit`'s `DataResponse<T>` becomes the response envelope for all 10 routes. 🧪 test-first
-11. **`SmallApiToolkit`'s `ExceptionMiddleware` is explicitly NOT adopted.** `Library.ServerAuth/AgendaBuddyExceptionHandler.cs`
-    (F-016) already centrally maps `ForbiddenException` → 403 for every service. Adding a second,
-    competing exception-handling mechanism would repeat ADR-014's exact mistake (two dispatchers) one layer
-    up (two exception handlers). Booking's new handlers rely on the existing central handler; local
-    `catch (ForbiddenException)` blocks may be kept for defense-in-depth per F-016's own design, unchanged.
+10. **`DataResponse<T>` becomes the response envelope for all 10 routes — authored in-repo, not from a
+    package.** A pre-Design spike (2026-08-26) found `SmallApiToolkit` v10.0.0 does not ship `DataResponse<T>`
+    at all (confirmed by reflection over the restored assembly: only `ExceptionMiddleware`, `LoggingMiddleware`,
+    `IHttpRequestHandler<T,T>`, and a handful of extension classes). It was the *reference repo's own type*,
+    not a package type. `SmallApiToolkit` is dropped from this feature's dependencies entirely (see
+    Requirement 11) — `DataResponse<T>` is a small record type living in `Booking.Domain`. 🧪 test-first
+11. **`SmallApiToolkit` is not adopted at all.** Its `IHttpRequestHandler<T,T>` is already rejected (ADR-014,
+    MediatR is the sole dispatcher). Its `ExceptionMiddleware` would duplicate `Library.ServerAuth/AgendaBuddyExceptionHandler.cs`
+    (F-016), which already centrally maps `ForbiddenException` → 403 for every service — repeating ADR-014's
+    exact mistake (two competing dispatchers) one layer up (two competing exception handlers). Its
+    `DataResponse<T>` doesn't exist in the package (Requirement 10). With all three reasons for depending on
+    it gone, the dependency itself is dropped — amends ADR-015 from five packages to four
+    (FluentResults, Validot, Mapster, GuardClauses). Booking's new handlers rely on the existing central
+    exception handler; local `catch (ForbiddenException)` blocks may be kept for defense-in-depth per F-016's
+    own design, unchanged.
 12. The EventStore audit trail is unchanged in substance — `AgendaBuddy.IntegrationTests/Audit/BookingAuditTest.cs`
     passes without modification to its assertions (only mechanical changes, if any, to how the request is
     issued). 🧪 test-first
@@ -153,11 +162,10 @@ are structural regression guards, matching F-018's own precedent (`PinnedThirdPa
 
 ## Known Risks
 
-- ⚠️ **`SmallApiToolkit`'s actual `DataResponse<T>` API shape is unverified against this codebase.** The
-  program-level brainstorm read Gramli/AuthApi's README but never built against the package directly. A
-  spike (boot one route with `DataResponse<T>`, confirm it serializes as expected and doesn't fight
-  `System.Text.Json`'s existing `ObjectIdJsonConverter`) should run before Design commits to using it
-  everywhere.
+- ~~**`SmallApiToolkit`'s actual `DataResponse<T>` API shape is unverified against this codebase.**~~ —
+  **RESOLVED by spike, 2026-08-26.** It doesn't exist in the package at all — see Requirements 10/11.
+  `DataResponse<T>` will be authored in-repo; still needs Design to confirm it serializes as expected
+  alongside `System.Text.Json`'s existing `ObjectIdJsonConverter`.
 - **`EventStoreWriteGuardTest`'s file-scan guard will silently stop covering Booking's handlers** the moment
   they move to `Booking.Core`, unless its `HandlerFileNames` enumeration is updated in the same change. This
   is exactly the kind of drift the guard's own Party Review finding (N1/E1, F-018) already flagged as a
