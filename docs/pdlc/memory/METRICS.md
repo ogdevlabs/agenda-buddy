@@ -18,6 +18,7 @@
 | 003 | identity-hardening | Feature | 1 | 100 | 0 | 0 | 0 | 0 | 7 | 2026-08-22 |
 | 004 | wire-unreached-services | Feature | 1 | 100 | 0 | 0 | 0 | 0 | 9 | 2026-08-23 |
 | 005 | api-gateway-and-mobile-contract | Feature | 2 | 100 | 0 | 0 | 0 | 0 | 14 | 2026-08-24 |
+| 007 | api-refactor-foundations | Feature | 0 | 100 | 1 | 0 | 0 | 0 | 21 | 2026-08-26 |
 
 *Notes on episode 005:* **Cycle days = 2** — roadmap claim 2026-08-23T14:00Z, merged and tagged 2026-08-24,
 the first multi-day cycle since 003. Proportionate to this feature's size: **14 tasks / 5 waves**, the
