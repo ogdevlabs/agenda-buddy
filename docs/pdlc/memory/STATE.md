@@ -106,13 +106,22 @@ _None active. Run `/night-shift <F-NNN>` to start an autonomous run (requires by
 
 ## Current Sub-phase
 
-Test (running)
+Wrap-up
 
 ---
 
 ## Last Checkpoint
 
-Construction / Test / 2026-08-26T19:15:00Z — **Review approved.** Party Review (Neo/Echo/Phantom/Jarvis, solo
+Construction / Wrap-up / 2026-08-26T19:45:00Z — **All test layers resolved.** Layer 1 (unit): 484/484.
+Layer 2 (integration, not required by §7 but run per convention): 301/301. Layers 3–6: no command exists,
+skipped, same as every prior feature. Layer 7 (security, always required): dependency audit clean (only the
+pre-existing ADR-030 SSH.NET finding); secret scan found and fixed a real gap — `gitleaks-action`'s
+`--first-parent` PR-scan mode never diffs a worktree merge's second parent, silently skipping most of this
+session's actual commits. Fixed with a second full-range gitleaks step, **confirmed green on a live PR run**
+(#69, run 33010056028, `Security — dependency audit` job, 55s). Filed `agenda-buddy-wow` (P1). Moving to
+Wrap-up.
+
+_Previously: Construction / Test / 2026-08-26T19:15:00Z — **Review approved.** Party Review (Neo/Echo/Phantom/Jarvis, solo
 mode) found 0 Critical, 1 Important (N1/E1, linked), 3 Advisory (2 linked pairs). User chose "fix N1/E1,
 accept the rest": narrowed AC-15's claim in `F-018-T13.md`/`verification.md` to match what
 `EventStoreWriteGuardTest` actually checks; logged the 3 Advisory items as accepted warnings in the Guardrail
