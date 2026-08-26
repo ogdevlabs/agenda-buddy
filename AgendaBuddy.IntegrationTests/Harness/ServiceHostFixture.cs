@@ -140,7 +140,8 @@ public class ServiceHostFixture<TEntryPoint>(CryptoSessionFixture crypto) : IAsy
         });
 
         var host = new ServiceHost(
-            factory, factory.CreateClient(), databaseName, ContainerConnectionString, factory.Server);
+            factory, factory.CreateClient(), databaseName, ContainerConnectionString, factory.Server,
+            factory.Services);
         _started.Add(host);
         return host;
     }
@@ -202,13 +203,15 @@ public sealed class ServiceHost : IDisposable
     private readonly IDisposable _factory;
 
     internal ServiceHost(
-        IDisposable factory, HttpClient client, string databaseName, string connectionString, TestServer server)
+        IDisposable factory, HttpClient client, string databaseName, string connectionString, TestServer server,
+        IServiceProvider services)
     {
         _factory = factory;
         Client = client;
         DatabaseName = databaseName;
         Database = new MongoClient(connectionString).GetDatabase(databaseName);
         Server = server;
+        Services = services;
     }
 
     /// <summary>A client whose requests traverse the service's full middleware pipeline.</summary>
@@ -230,6 +233,13 @@ public sealed class ServiceHost : IDisposable
     /// <see cref="ServiceHost"/>'s class remarks on what "real HTTP" means here).
     /// </remarks>
     public TestServer Server { get; }
+
+    /// <summary>
+    /// The hosted service's own DI container — lets a test resolve the exact <c>IConfiguration</c> the
+    /// service itself built, e.g. to read a collection name through
+    /// <see cref="MongoConnectionResolver"/> instead of hardcoding the literal (F-018-T12).
+    /// </summary>
+    public IServiceProvider Services { get; }
 
     /// <summary>This test's database, for arranging fixtures and asserting on what was written.</summary>
     public IMongoDatabase Database { get; }
