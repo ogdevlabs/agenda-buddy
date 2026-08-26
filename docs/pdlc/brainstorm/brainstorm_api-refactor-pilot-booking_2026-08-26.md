@@ -1,11 +1,11 @@
 ---
 feature: api-refactor-pilot-booking
 date: 2026-08-26
-status: discover-complete
-last-updated: 2026-08-26T21:35:00Z
+status: define-complete
+last-updated: 2026-08-26T21:40:00Z
 approved-by: oscargarcia@ogdevlabs.onmicrosoft.com
 approved-date: 2026-08-26
-prd:
+prd: docs/pdlc/prds/PRD_F-019_api-refactor-pilot-booking_2026-08-26.md
 ---
 
 # Brainstorm Log: API Refactor Pilot — Booking (F-019)
