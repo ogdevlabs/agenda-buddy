@@ -90,7 +90,20 @@ Build
 
 ## Last Checkpoint
 
-Construction / Build / 2026-08-26T02:00:00Z — **Wave 1 complete.** F-017-T01 (deleted 3 broken class-library
+Construction / Build / 2026-08-26T02:20:00Z — **Wave 2 complete.** F-017-T04 (gitleaks step added to
+`security-scan`, diff-scoped via `fetch-depth: 0` + `gitleaks-action`'s own PR base..head detection; unpinned
+tag deliberately, F-017-T09 pins it later) and F-017-T06 (new `docker-build-and-scan` job — 7-service
+`dotnet publish -t:PublishContainer` matrix, `timeout-minutes: 10`, new `docker` path filter confirmed
+genuinely consumed by `grep`, unlike the still-dead `library` filter) — 2 Sub-Agent builds in parallel
+worktrees, solo Wave 2 standup (both tasks share only `.github/workflows/dotnet.yml`, in disjoint regions,
+verified by direct inspection before dispatch). Auto-merged cleanly (T06's edit auto-merged around T04's).
+T06's worktree hit the known stale-worktree-snapshot bug (branched off an older commit) and self-corrected by
+rebasing before building, same as F-015's Wave 3. **Backend suite steady at 477, 0 failing** — both tasks are
+CI-only, no new unit tests expected. Non-blocking finding logged for later: T04's gitleaks run found 3
+pre-existing false-positive-shaped matches in doc placeholder tokens (`docs/pdlc/design/*/api-contracts.md`)
+— worth a `.gitleaksignore` entry eventually, not blocking. Starting Wave 3 (F-017-T05, F-017-T07).
+
+_Previously: Construction / Build / 2026-08-26T02:00:00Z — **Wave 1 complete.** F-017-T01 (deleted 3 broken class-library
 Dockerfiles + Compose blocks, added `DockerAndComposeHygieneTest` — 6 tests, red-then-green; also fixed a
 second, previously-undocumented instance of the same defect found live at the wave standup:
 `Profession/Dockerfile` still had `runtime:8.0` against its `sdk:10.0` build stage), F-017-T02 (removed
