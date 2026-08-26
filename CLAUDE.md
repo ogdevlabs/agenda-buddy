@@ -11,19 +11,22 @@ Agenda Buddy is a scheduling and appointment management platform for independent
 - **Messaging:** Kafka (Confluent) + MediatR (CQRS)
 - **Caching:** IDistributedCache (cache-aside pattern, 5-min TTL)
 - **Observability:** OpenTelemetry traces/metrics/logs via ServiceDefaults, exported to the Aspire dashboard
-- **Testing:** xUnit — **867 tests total**, in **three separate suites** that no single command runs: **468** across 12 backend test projects (`agenda-buddy-backend.slnf`; the slnf also carries `Gateway` itself, a 13th, non-test project), **234** in `AgendaBuddy.IntegrationTests` (real services — now including the Gateway — over HTTP against a MongoDB Testcontainer — needs a container runtime), and **165** in `MobileApp.Tests` (158 passing, 7 skipped)
+- **Testing:** xUnit — **883 tests total**, in **three separate suites** that no single command runs: **484** across 12 backend test projects (`agenda-buddy-backend.slnf`; the slnf also carries `Gateway` itself, a 13th, non-test project), **234** in `AgendaBuddy.IntegrationTests` (real services — now including the Gateway — over HTTP against a MongoDB Testcontainer — needs a container runtime), and **165** in `MobileApp.Tests` (158 passing, 7 skipped)
 - **Infrastructure:** Aspire AppHost (primary local) · Docker + Docker Compose (legacy fallback) · GitHub Actions CI
+- **Security scanning (F-017):** every PR runs `dotnet list package --vulnerable` (dependency audit) and `gitleaks` (secret scan, full PR diff history) unconditionally — see `.gitleaks.toml` and the `security-scan` CI job. Every PR touching a service/`.csproj`/Compose file also builds and Trivy-scans a container image for each of the 7 remaining services via `docker-build-and-scan` — no Dockerfile involved, see the caveat below
 
 > **Aspire caveat:** do **not** add `Aspire.MongoDB.Driver`. It requires MongoDB.Driver ≥ 3.9.0 against the pinned 2.25.0 and fails restore with `NU1605`. The project registers `AddSingleton<IMongoClient>` with a custom `MongoHealthCheck` instead (ADR-013). There is no Aspire workload to install.
+
+> **Container caveat (F-017):** `docker-build-and-scan` builds each service's container image with **.NET SDK container support** (`dotnet publish -t:PublishContainer`) — it never reads the 7 hand-written per-service Dockerfiles. Those Dockerfiles serve only the already-broken legacy `docker compose up` path (1 of 7 services wired in) and are not built, scanned, or otherwise exercised by CI. `Library/Dockerfile`, `Kafka/Dockerfile`, and `EventAndCommands/Dockerfile` **no longer exist** — all three were class libraries with no entry point, publishing a `net10.0` build onto a `dotnet/runtime:8.0` base that could never run. A generalized structural test (`AgendaBuddy.AppHost.Tests/DockerAndComposeHygieneTest.cs`) fails on any Dockerfile with a runtime/SDK major-version mismatch, repo-wide, so this can't recur under a different filename.
 
 ## Project Structure
 
 - `AgendaBuddy.AppHost/` — Aspire composition root: declares MongoDB + Kafka containers and all 7 service projects
 - `AgendaBuddy.ServiceDefaults/` — shared cross-cutting setup referenced by every service (OpenTelemetry, health/liveness, service discovery, HTTP resilience, `PiiRedactingProcessor`)
-- `Library/` — shared domain entities, `IRepository<T>` / `MongoDbRepository<T>`, all domain services, tools (CacheAside, EnumHelper, SupportTools), `MongoConnectionResolver`, `MongoHealthCheck`, profession seed data
+- `Library/` — shared domain entities, `IRepository<T>` / `MongoDbRepository<T>`, all domain services, tools (CacheAside, EnumHelper, SupportTools), `MongoConnectionResolver`, `MongoHealthCheck`, profession seed data. **No Dockerfile** (F-017, same reason as `EventAndCommands`)
 - `Library.ServerAuth/` — server-side auth primitives (JWT validation, ownership guards)
-- `EventAndCommands/` — CQRS kernel: all commands, queries, handlers, events, and EventStore persistence
-- `Kafka/` — `KafkaClient` for topic creation (Confluent.Kafka); broker address is configuration-driven
+- `EventAndCommands/` — CQRS kernel: all commands, queries, handlers, events, and EventStore persistence. **No Dockerfile** (F-017 — was a class library with no entry point, and its own `appsettings.json` used to collide with every consuming service's at publish time; see the Key Files entry below)
+- `Kafka/` — `KafkaClient` for topic creation (Confluent.Kafka); broker address is configuration-driven. **No Dockerfile** (F-017, same reason as `EventAndCommands`)
 - `Booking/`, `Calendar/`, `Customer/`, `Provider/`, `Services/`, `Profession/`, `Identity/` — seven independent ASP.NET Minimal API microservices
 - `Gateway/` — the eighth process (F-015). A thin YARP reverse proxy in front of the seven services — `MobileApp`'s **only** configured base address. No business logic, no auth validation (JWT passthrough only), no path rewriting. Builds its route/cluster table programmatically from the same Aspire service-discovery config keys (`services__<name>__http__0`) every service already reads (`Gateway/AspireServiceDiscoveryProxyConfigProvider.cs`) — an explicit `api/v1/{service}/**` allowlist, never a catch-all forward (ADR/threat T-302). Attaches the failed destination's cluster name (`failedService`) to a `ProblemDetails` body on a 5xx/timeout/unreachable destination (`Gateway/Program.cs`)
 - `MobileApp/` — .NET MAUI client, and (as of F-015) a client that actually reaches the backend, through the Gateway. **Deliberately excluded from `agenda-buddy-backend.slnf`** — it is covered by three dedicated CI jobs instead (`build-android`, `build-ios` on a macOS runner, and `build-mobile-tests`). Its 165 tests (158 passing, 7 skipped) run under `/p:MobileWorkloads=false`
@@ -36,7 +39,7 @@ Agenda Buddy is a scheduling and appointment management platform for independent
 - **Dev server (primary):** `dotnet run --project AgendaBuddy.AppHost` — starts MongoDB, Kafka, all 7 services, and (as of F-015) the Gateway — 8 processes total
 - **Dev server (legacy):** `docker compose -f docker-compose.yml -f docker-compose.override.yml up -d`
 - **Build:** `dotnet build --no-restore`
-- **Test (backend, 468 tests):** `dotnet test agenda-buddy-backend.slnf --collect:"XPlat Code Coverage"` — use the solution filter, not the full solution
+- **Test (backend, 484 tests):** `dotnet test agenda-buddy-backend.slnf --collect:"XPlat Code Coverage"` — use the solution filter, not the full solution
 - **Test (integration, 234 tests):** `dotnet test AgendaBuddy.IntegrationTests/AgendaBuddy.IntegrationTests.csproj` — ⚠️ a **separate command**. `AgendaBuddy.IntegrationTests` is deliberately excluded from the slnf (ADR-031) so the unit gate stays Docker-free, which means the backend command above **does not run it**. Needs a container runtime; `export PATH="$HOME/.rd/bin:$PATH"` first under Rancher Desktop. It has a `ProjectReference` to `MobileApp.csproj` (F-015, for `MobileClientRouteResolutionTest`) — always restore/build with `/p:MobileWorkloads=false`, or it pulls in MobileApp's default android/ios TargetFrameworks and fails with `NETSDK1147` on a machine with no MAUI workloads
 - **Test (mobile, 165 tests):** `dotnet test MobileApp.Tests/MobileApp.Tests.csproj /p:MobileWorkloads=false` (158 passing, 7 skipped)
 - **Format:** `dotnet format agenda-buddy-backend.slnf` — there is no `.editorconfig`, so this applies built-in defaults
@@ -87,7 +90,8 @@ See [docs/pdlc/archive/design/aspire-wiring/ARCHITECTURE.md](docs/pdlc/archive/d
 - `Library/Tools/ObjectIdJsonConverter.cs` — **register this in any service that returns an entity.** Without it `System.Text.Json` emits `"id": {"timestamp":…,"machine":…}`, which cannot be read back into an `ObjectId` at all. Registered in Booking, Customer and Provider by F-014; Calendar, Services and Profession still emit the broken shape (filed)
 - `Library/Services/PaymentGatewayFactory.cs` — payments are **non-charging** unless `Payments:Stripe:ApiKey` is configured. A `Succeeded` payment with a `local_` intent id moved no money (ADR-038)
 - `Library/Entities/AppointmentEntity.cs` — `TransitionTo` is the **only** way to change an appointment's status (ADR-037). The `PUT` route ignores the status field; restoring that assignment reopens threat T-203
-- `EventAndCommands/ConfigurationLoader.cs` — MongoDB config bootstrap for EventAndCommands
+- `EventAndCommands/ConfigurationLoader.cs` — MongoDB config bootstrap for EventAndCommands. Reads `appsettings.json` from its own executing assembly's directory — i.e. whichever service's output it ends up copied into. **`EventAndCommands.csproj` used to also copy its own `appsettings.json` into every consuming service's publish output** (`CopyToOutputDirectory: Always`), colliding with each service's own file and failing `dotnet publish -t:PublishContainer` with `NETSDK1152` for all 7 services (F-017). Fixed by removing that metadata; if another shared class library ever adds a `CopyToOutputDirectory`-copied `appsettings.json`, expect the same failure — `AgendaBuddy.AppHost.Tests/PublishContainerTest.cs` guards against a regression of this specific case
+- `EventAndCommands/EventAndCommands.csproj` — see above; no longer copies its own `appsettings.json` into consumers' output
 - `EventAndCommands/Persistence/EventStore.cs` — audit event persistence. Takes an injected `IMongoClient`; it no longer builds one per request scope. *(The long-standing `Persitency` misspelling was corrected in F-016; CONSTITUTION §9's prohibition against renaming it is retired.)*
 - `Booking/Program.cs` — representative Minimal API entry point showing the full wiring pattern
 - `Gateway/Program.cs` — the reverse-proxy pipeline: `AddServiceDefaults()`, transport security before auth (no auth middleware here — passthrough), YARP registration, the `MapFallback` handler that shapes an unmatched path into `gateway-no-route`, and the response transform that shapes a destination failure into `gateway-destination-unreachable` + `failedService`
@@ -106,8 +110,12 @@ See [docs/pdlc/archive/design/aspire-wiring/ARCHITECTURE.md](docs/pdlc/archive/d
 - `bruno/agenda-buddy/` — Bruno collection covering all 7 services, with the F-016 authorization expectations encoded in the request names (e.g. *"Create profession — MUST be 404 or 405"*). Two environments: `Local (Aspire AppHost)` and `Local (standalone)`
 - `scripts/run-ios.sh` — one-command local run: AppHost + port discovery + iOS simulator + `MobileApp`
 - `azure.yaml` + `.github/workflows/deploy.yml` — cloud deploy path. **Written, unit-tested, never executed**
-- `docker-compose.yml` — legacy Kafka + Zookeeper + Schema Registry + service definitions
-- `.github/workflows/dotnet.yml` — CI pipeline: restore → build → test → coverage upload, plus AppHost build and startup guards
+- `docker-compose.yml` + `docker-compose.override.yml` — legacy Kafka + Zookeeper + Schema Registry + service definitions. The `events`/`kafka-library`/`common-library` blocks (no-op containers for class libraries with no `ENTRYPOINT`) were removed (F-017)
+- `.github/workflows/dotnet.yml` — CI pipeline: restore → build → test → coverage upload, plus AppHost build and startup guards. As of F-017, also: **`security-scan`** (dependency audit + `gitleaks` secret scan, `if: always()` — runs on every PR unconditionally, no path filter) and **`docker-build-and-scan`** (7-service matrix, `dotnet publish -t:PublishContainer` + Trivy scan, `timeout-minutes: 10`, gated on a `docker` path filter — verified consumed, unlike the still-dead `library` filter output)
+- `.gitleaks.toml` — custom rule detecting MongoDB/Atlas-style connection strings with embedded credentials (closes the exact detection gap behind `ISSUE-002`), extending gitleaks' default ruleset
+- `scripts/verify-gitleaks-canary.sh` + `scripts/verify-trivy-severity-gate.sh` — CI-wired self-tests proving the two security-scan-adjacent tools actually work: the former proves gitleaks detects an Atlas-credential-shaped fixture and redacts it from logs/SARIF; the latter fixture-tests `trivy-severity-gate.sh`'s project-vs-base-image branching logic. Both runnable standalone
+- `scripts/trivy-severity-gate.sh` — the actual severity gate for `docker-build-and-scan`'s Trivy step: fails on HIGH/CRITICAL under an `app/*.deps.json` Trivy report target (this project's own dependencies), warns (does not fail) on anything else (base-image-inherited)
+- `.github/dependabot.yml` — weekly NuGet + GitHub Actions dependency-update PRs (F-017)
 
 ### Security controls that default OFF
 
@@ -117,6 +125,11 @@ so the environment name cannot distinguish a laptop from a deployment (ADR-033).
 `Security__Local=true` locally and turns both **on** in the cloud graph; each service warns at startup,
 naming the key, when a control is off outside a local run. Full surface in
 `docs/pdlc/context/06-configuration.md`.
+
+**Unlike the above, CONSTITUTION §7's security scan (dependency audit + secret scan) is no longer a manual,
+by-hand gate satisfied at ship time.** As of F-017 it's automated and always-on in CI (`security-scan`,
+`if: always()`) — see the Key Files entries for `.github/workflows/dotnet.yml`, `.gitleaks.toml`, and
+`scripts/`.
 
 **PDLC memory:** `docs/pdlc/memory/` — CONSTITUTION.md, INTENT.md, OVERVIEW.md, DECISIONS.md, ROADMAP.md, STATE.md
 
