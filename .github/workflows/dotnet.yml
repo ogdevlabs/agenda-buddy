@@ -453,7 +453,13 @@ jobs:
         run: dotnet publish ${{ matrix.service }}/${{ matrix.service }}.csproj -t:PublishContainer
 
       - name: Trivy scan
-        uses: aquasecurity/trivy-action@915b19bbe73b92a6cf82a1bc12b087c9a19a5fe2 # v0.28.0 (note: the unpinned ref was "0.28.0", missing the "v" — that tag doesn't exist upstream; resolved via the real "v0.28.0" tag)
+        # v0.28.0 (the originally-pinned release) was found DEAD at Ship, not by inspection: its
+        # action.yaml pins a nested dependency, `aquasecurity/setup-trivy`, by a mutable tag
+        # (@v0.2.1) that upstream has since deleted — GitHub can no longer resolve it, so every job
+        # using this exact SHA fails at "Set up job" before checkout even runs. Confirmed live on
+        # PR #48. v0.32.0+ fixed this upstream (pins setup-trivy by hash, not tag) — upgraded to the
+        # latest, v0.36.0, which does.
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: "${{ matrix.service }}:latest"
           format: json
