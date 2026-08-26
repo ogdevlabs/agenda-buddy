@@ -90,7 +90,25 @@ Build
 
 ## Last Checkpoint
 
-Construction / Build / 2026-08-26T02:20:00Z — **Wave 2 complete.** F-017-T04 (gitleaks step added to
+Construction / Build / 2026-08-26T02:45:00Z — **Wave 3 complete.** F-017-T05 (gitleaks canary test —
+`.gitleaks.toml` custom rule for MongoDB/Atlas-shaped connection strings, `scripts/verify-gitleaks-canary.sh`
+wired into `security-scan`) and F-017-T07 (severity-gated Trivy step in `docker-build-and-scan`,
+`scripts/trivy-severity-gate.sh` filtering by Trivy's `.Results[].Target` — `app/<Service>.deps.json` =
+project-introduced/fails, anything else = base-image-inherited/warns) — 2 Sub-Agent builds in parallel
+worktrees. **T05 found and fixed a real security bug while proving its own AC:** the custom gitleaks rule's
+default redaction targeted the wrong regex capture group, leaking the canary secret in plaintext in both
+console output and the SARIF report — exactly the T-002 threat scenario, caught before it ever ran in real
+CI, fixed with `secretGroup = 2`, reproduced red-then-green twice (detection, then redaction). Both merged
+clean (one auto-merge around T07's docker-build-and-scan edits). Full local verification, not just CI-shaped
+config: canary script re-run post-merge (redaction confirmed), Trivy run against both the bare base image and
+a real built `booking:latest` image (18 base-layer findings today, 0 project-layer, gate passes clean).
+**Backend suite steady at 477, 0 failing.** Both T06 and T05/T07's worktrees hit the recurring
+stale-worktree-snapshot bug (now 5 occurrences across F-015/F-017) and self-corrected by rebasing — recorded
+as a project memory with an instruction to brief future worktree agents on this explicitly rather than rely
+on them noticing. All three "mitigate now" threats from the threat model with a task-level home (T-002 here,
+T-001 still pending at F-017-T09) are now either closed or queued. Starting Wave 4 (F-017-T09, final task).
+
+_Previously: Construction / Build / 2026-08-26T02:20:00Z — **Wave 2 complete.** F-017-T04 (gitleaks step added to
 `security-scan`, diff-scoped via `fetch-depth: 0` + `gitleaks-action`'s own PR base..head detection; unpinned
 tag deliberately, F-017-T09 pins it later) and F-017-T06 (new `docker-build-and-scan` job — 7-service
 `dotnet publish -t:PublishContainer` matrix, `timeout-minutes: 10`, new `docker` path filter confirmed
