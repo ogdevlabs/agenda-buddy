@@ -1,0 +1,12 @@
+{
+  "meetingType": "party-review",
+  "feature": "api-refactor-foundations",
+  "taskId": "—",
+  "timestamp": "2026-08-26T19:05:00Z",
+  "phase": "Construction",
+  "subPhase": "Review",
+  "lastCheckpoint": "Construction / Review / 2026-08-26T19:00:00Z",
+  "resumeCommand": "/build",
+  "progress": "mom-written",
+  "momFile": "docs/pdlc/mom/MOM_party-review_api-refactor-foundations_2026-08-26.md"
+}

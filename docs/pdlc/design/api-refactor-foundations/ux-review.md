@@ -54,3 +54,12 @@ Because this triage is Skip:
 ## Re-triage trigger
 
 If F-018's scope ever grows a human-facing surface — for example a dashboard for integration-test results, or a CLI with its own output contract beyond failure diagnostics — re-run this triage and upgrade to Lite or Full. Scope growth is the trigger, not the passage of time.
+
+---
+
+## Variant Convergence (Build Step 12.5)
+
+**Skipped, 2026-08-26.** Same reason as Step 10.7: the trigger gate requires this file's triage to be Lite
+or Full to have a design-time scorecard to delta against. It's Skip, so there is no scorecard, no regression
+signal to check, and Muse did not join the Party Review (`REVIEW_api-refactor-foundations_2026-08-26.md`).
+No variants generated.
