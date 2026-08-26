@@ -84,13 +84,25 @@ _None active. Run `/night-shift <F-NNN>` to start an autonomous run (requires by
 
 ## Current Sub-phase
 
-Build
+Review
 
 ---
 
 ## Last Checkpoint
 
-Construction / Build / 2026-08-26T02:45:00Z — **Wave 3 complete.** F-017-T05 (gitleaks canary test —
+Construction / Build / 2026-08-26T03:00:00Z — **Wave 4 complete — BUILD LOOP DONE, all 9 tasks closed.**
+F-017-T09 (pin `gitleaks-action`/`trivy-action` to full commit SHAs, closing `[security]` T-001) built
+solo/direct (single-task wave, no standup needed) — TDD red-then-green with a new
+`PinnedThirdPartyActionsTest`. **Found and fixed a second real defect while pinning:** the existing
+`aquasecurity/trivy-action@0.28.0` reference used a tag that doesn't exist upstream at all (the real tag is
+`v0.28.0`, with the `v` prefix) — this step would have failed to resolve on its first real CI run, invisible
+until now because this workflow has never actually executed (per `08-cicd-deploy.md`'s standing note that CI
+changes trigger no job). Resolved both actions to commit SHAs via `git ls-remote`. **Final backend suite: 468
+→ 478, 0 failing, 0 regressions across all 4 waves.** All 15 ACs (13 original + 2 threat-derived) now closed;
+all 6 threats dispositioned (T-001/T-002 mitigated and closed this Construction; T-003/T-004/T-005/T-006
+accepted per ADR-043…046, unchanged since Design). Moving to Review.
+
+_Previously: Construction / Build / 2026-08-26T02:45:00Z — **Wave 3 complete.** F-017-T05 (gitleaks canary test —
 `.gitleaks.toml` custom rule for MongoDB/Atlas-shaped connection strings, `scripts/verify-gitleaks-canary.sh`
 wired into `security-scan`) and F-017-T07 (severity-gated Trivy step in `docker-build-and-scan`,
 `scripts/trivy-severity-gate.sh` filtering by Trivy's `.Results[].Target` — `app/<Service>.deps.json` =
