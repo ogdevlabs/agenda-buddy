@@ -24,17 +24,17 @@
     <!-- The seven API services. MobileApp is absent by construction (AC-1.5) and CI asserts it
          stays absent — a MAUI head has no place in a server orchestration graph. -->
     <ItemGroup>
-        <ProjectReference Include="..\Booking.Api\Booking.Api.csproj" />
-        <ProjectReference Include="..\Calendar\Calendar.csproj" />
-        <ProjectReference Include="..\Customer\Customer.csproj" />
-        <ProjectReference Include="..\Identity\Identity.csproj" />
-        <ProjectReference Include="..\Profession\Profession.csproj" />
-        <ProjectReference Include="..\Provider\Provider.csproj" />
-        <ProjectReference Include="..\Services\Services.csproj" />
+        <ProjectReference Include="..\AgendaBuddy.Booking.Api\AgendaBuddy.Booking.Api.csproj" />
+        <ProjectReference Include="..\AgendaBuddy.Calendar.Api\AgendaBuddy.Calendar.Api.csproj" />
+        <ProjectReference Include="..\AgendaBuddy.Customer.Api\AgendaBuddy.Customer.Api.csproj" />
+        <ProjectReference Include="..\AgendaBuddy.Identity\AgendaBuddy.Identity.csproj" />
+        <ProjectReference Include="..\AgendaBuddy.Profession.Api\AgendaBuddy.Profession.Api.csproj" />
+        <ProjectReference Include="..\AgendaBuddy.Provider.Api\AgendaBuddy.Provider.Api.csproj" />
+        <ProjectReference Include="..\AgendaBuddy.Services.Api\AgendaBuddy.Services.Api.csproj" />
         <!-- F-015-T05: the eighth process. Referenced here (not just added to agenda-buddy.sln) so
-             the Aspire AppHost SDK generates Projects.Gateway, the same source-generated metadata
-             type every other AddProject<TProject> call below relies on. -->
-        <ProjectReference Include="..\Gateway\Gateway.csproj" />
+             the Aspire AppHost SDK generates Projects.AgendaBuddy_Gateway, the same source-generated
+             metadata type every other AddProject<TProject> call below relies on. -->
+        <ProjectReference Include="..\AgendaBuddy.Gateway\AgendaBuddy.Gateway.csproj" />
     </ItemGroup>
 
     <ItemGroup>

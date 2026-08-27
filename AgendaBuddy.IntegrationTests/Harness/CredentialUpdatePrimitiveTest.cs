@@ -1,5 +1,5 @@
-using Library.Entities;
-using Library.Repositories;
+using AgendaBuddy.Library.Entities;
+using AgendaBuddy.Library.Repositories;
 using MongoDB.Bson;
 using MongoDB.Driver;
 

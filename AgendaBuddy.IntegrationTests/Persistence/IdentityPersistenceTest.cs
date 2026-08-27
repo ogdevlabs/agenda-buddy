@@ -4,8 +4,8 @@ using System.Net.Http.Json;
 using System.Security.Cryptography;
 using System.Text.Json;
 using AgendaBuddy.IntegrationTests.Harness;
-using Identity.Services;
-using Library.Entities;
+using AgendaBuddy.Identity.Services;
+using AgendaBuddy.Library.Entities;
 using MongoDB.Bson;
 using MongoDB.Driver;
 
@@ -33,7 +33,7 @@ namespace AgendaBuddy.IntegrationTests.Persistence;
 /// </para>
 /// <para>
 /// <b>Why register/login/refresh/logout are called directly, unlike device-token.</b> None of the four
-/// require authentication (<c>Identity/Program.cs:147,167,184,197</c> — no <c>RequireAuthorization()</c>);
+/// require authentication (<c>AgendaBuddy.Identity/Program.cs:147,167,184,197</c> — no <c>RequireAuthorization()</c>);
 /// device-token does, and <see cref="TokenFactory"/> — signed with the session's own key — is what proves
 /// that route without needing <c>JWT_PRIVATE_KEY</c> at all.
 /// </para>
@@ -170,7 +170,7 @@ public class IdentityPersistenceTest(ServiceHostFixture<IdentityAnchor> host, Cr
         var response = await service.Client.SendAsync(request);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        // "device_tokens" is hardcoded in production (Identity/Extensions/ServiceCollectionExtension.cs) —
+        // "device_tokens" is hardcoded in production (AgendaBuddy.Identity/Extensions/ServiceCollectionExtension.cs) —
         // the ONE collection name in the whole system that is not config-driven (05-data-model.md) — so
         // matching that literal here reflects the real source of truth rather than working around it.
         var stored = await service.Database.GetCollection<DeviceTokenEntity>("device_tokens")

@@ -14,11 +14,14 @@ tests {
   test("200 — 401 means you have not run 0-Auth/2 Login", function () {
     expect(res.getStatus()).to.equal(200);
   });
-  test("paginated envelope, not a bare array", function () {
-    expect(res.getBody()).to.have.all.keys("items", "totalCount", "page", "pageSize");
+  test("wrapped in the DataResponse<T> envelope (F-020-T11)", function () {
+    expect(res.getBody()).to.have.all.keys("data", "errors");
+  });
+  test("data is the paginated envelope, not a bare array", function () {
+    expect(res.getBody().data).to.have.all.keys("items", "totalCount", "page", "pageSize");
   });
   test("pageSize is CLAMPED to 100, never rejected", function () {
-    expect(res.getBody().pageSize).to.be.at.most(100);
+    expect(res.getBody().data.pageSize).to.be.at.most(100);
   });
   test("no embedded appointments or subscribed customers for a non-owner", function () {
     const body = JSON.stringify(res.getBody());
@@ -27,15 +30,17 @@ tests {
   });
 }
 docs {
-  **Changed by F-016 in three ways at once.**
+  **Changed by F-016 in three ways at once, then wrapped again by F-020-T11.**
 
   1. **Requires auth.** It previously returned every provider's full record to anonymous callers.
-  2. **Returns `{items, totalCount, page, pageSize}`**, not a bare array. `204` for empty is retired —
-     an empty page is `200` with `items: []`.
+  2. **Returns `{data: {items, totalCount, page, pageSize}, errors: []}`**, not a bare array. `204` for
+     empty is retired — an empty page is `200` with `data.items: []`. F-020-T11 added the outer
+     `DataResponse<T>` envelope (`data`/`errors`), following ADR-049's Booking precedent.
   3. **`items` are `ProviderSummary`**, never full entities: no `appointmentEntities`, no
      `subscribedCustomerCollection`, no `kafkaTopic`, no `_id`. The list is homogeneous even for the
      owning provider — use `2 Get provider by email` to see your own full record.
 
-  `pageSize` is **clamped, not rejected**: try `pageSize=100000` and you get `200` with `pageSize: 100`.
-  The response always echoes the *effective* value. The cap is a security control (ADR-023).
+  `pageSize` is **clamped, not rejected**: try `pageSize=100000` and you get `200` with
+  `data.pageSize: 100`. The response always echoes the *effective* value. The cap is a security
+  control (ADR-023).
 }

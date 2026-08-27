@@ -22,7 +22,7 @@ namespace AgendaBuddy.IntegrationTests.Harness;
 /// </para>
 /// <para>
 /// ⚠️ <b>Note the naming inconsistency this exposed.</b> Booking's namespace is
-/// <c>Booking.Configuration</c> (singular) while the other five domain services use
+/// <c>AgendaBuddy.Booking.Configuration</c> (singular) while the other five domain services use
 /// <c>*.Configurations</c> (plural). Pre-existing; not corrected here because renaming a namespace in
 /// six services is not this task's scope and would bury the harness change. Recorded so the asymmetry
 /// below reads as a fact about the codebase rather than a typo in this file.
@@ -36,25 +36,25 @@ namespace AgendaBuddy.IntegrationTests.Harness;
 internal static class EntryPoints
 {
     /// <summary>Booking service entry-point assembly.</summary>
-    public static Assembly Booking => typeof(global::Booking.Configuration.MongoDbConfiguration).Assembly;
+    public static Assembly Booking => typeof(global::AgendaBuddy.Booking.Configuration.MongoDbConfiguration).Assembly;
 
     /// <summary>Calendar service entry-point assembly.</summary>
-    public static Assembly Calendar => typeof(global::Calendar.Configurations.MongoDbConfiguration).Assembly;
+    public static Assembly Calendar => typeof(global::AgendaBuddy.Calendar.Configurations.MongoDbConfiguration).Assembly;
 
     /// <summary>Customer service entry-point assembly.</summary>
-    public static Assembly Customer => typeof(global::Customer.Configurations.MongoDbConfiguration).Assembly;
+    public static Assembly Customer => typeof(global::AgendaBuddy.Customer.Configurations.MongoDbConfiguration).Assembly;
 
     /// <summary>Provider service entry-point assembly.</summary>
-    public static Assembly Provider => typeof(global::Provider.Configurations.MongoDbConfiguration).Assembly;
+    public static Assembly Provider => typeof(global::AgendaBuddy.Provider.Configurations.MongoDbConfiguration).Assembly;
 
     /// <summary>Services (provider service-catalogue) entry-point assembly.</summary>
-    public static Assembly Services => typeof(global::Services.Configurations.MongoDbConfiguration).Assembly;
+    public static Assembly Services => typeof(global::AgendaBuddy.Services.Configurations.MongoDbConfiguration).Assembly;
 
     /// <summary>Profession service entry-point assembly.</summary>
-    public static Assembly Profession => typeof(global::Profession.Configurations.MongoDbConfiguration).Assembly;
+    public static Assembly Profession => typeof(global::AgendaBuddy.Profession.Configurations.MongoDbConfiguration).Assembly;
 
     /// <summary>Identity service entry-point assembly.</summary>
-    public static Assembly Identity => typeof(global::Identity.Configurations.MongoDbConfiguration).Assembly;
+    public static Assembly Identity => typeof(global::AgendaBuddy.Identity.Configurations.MongoDbConfiguration).Assembly;
 
     /// <summary>All seven, paired with a display name for test output.</summary>
     public static IReadOnlyList<(string Name, Assembly Assembly)> All =>

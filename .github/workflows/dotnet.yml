@@ -34,7 +34,7 @@ jobs:
       library: ${{ steps.filter.outputs.library }}
       # F-017-T06: narrower than `api` on purpose — the image-build matrix is expensive (7 parallel
       # publishes), so it triggers only on the 7 service directories and docker-compose*.yml, not on
-      # every backend-adjacent change `api` also covers (Library, EventAndCommands, test projects).
+      # every backend-adjacent change `api` also covers (AgendaBuddy.Library, AgendaBuddy.EventAndCommands, test projects).
       docker: ${{ steps.filter.outputs.docker }}
       # AND-ed into every build job so a markdown-only change never builds. See the long note on
       # the filters below for why this is a separate filter rather than a `!**/*.md` negation.
@@ -45,7 +45,7 @@ jobs:
         id: filter
         with:
           # On a pull_request these are evaluated against the whole base...HEAD diff, not the last
-          # commit — so one file in Library/** fires every filter that mentions it for the life of
+          # commit — so one file in AgendaBuddy.Library/** fires every filter that mentions it for the life of
           # the branch. That is why the lists below are deliberate about which jobs a shared change
           # is worth paying for.
           #
@@ -57,20 +57,20 @@ jobs:
           # 'every'. Under 'some' every pattern is OR-ed, so a leading-`!` pattern does NOT exclude
           # anything — it is silently a no-op. ('some-with-excludes', which would work, exists only
           # on master; it is not in the v3 tag.) 'every' is unusable here because no single file can
-          # match all of `Library/**`, `Booking/**`, … at once.
+          # match all of `AgendaBuddy.Library/**`, `AgendaBuddy.Booking.Api/**`, … at once.
           #
           # Two real bugs came from that misunderstanding, both fixed below:
-          #   1. Markdown inside a code directory built the whole backend. `Kafka/readme.md` matches
-          #      `Kafka/**`, so editing it ran the full build + test. `docs/**` and root-level `*.md`
+          #   1. Markdown inside a code directory built the whole backend. `AgendaBuddy.Kafka/readme.md`
+          #      matches `AgendaBuddy.Kafka/**`, so editing it ran the full build + test. `docs/**` and root-level `*.md`
           #      were always fine; markdown nested under a service was not.
-          #   2. `- '!MobileApp.Tests/**'` never excluded anything. `*.Tests/**` matches
-          #      `MobileApp.Tests/**`, so a mobile-test-only change ran the backend job.
+          #   2. `- '!AgendaBuddy.MobileApp.Tests/**'` never excluded anything. `*.Tests/**` matches
+          #      `AgendaBuddy.MobileApp.Tests/**`, so a mobile-test-only change ran the backend job.
           #
           # Fixes, both of which work under OR semantics:
           #   • A separate `code` filter lists code-ish file types positively. Build jobs require
           #     BOTH their area filter AND `code`, so a markdown-only change can never build.
           #   • `*.Tests/**` is replaced with the 12 backend test projects named explicitly, so
-          #     MobileApp.Tests is excluded by not being listed rather than by a no-op negation.
+          #     AgendaBuddy.MobileApp.Tests is excluded by not being listed rather than by a no-op negation.
           filters: |
             # True when at least one genuinely code-relevant file changed. AND-ed into every build
             # job's condition. Excludes markdown by simply not listing it.
@@ -96,7 +96,7 @@ jobs:
               - '**/.dockerignore'
               - '**/*.sh'
               - '**/*.editorconfig'
-              # MobileApp platform + resource files: these are compiled into the Android/iOS heads,
+              # AgendaBuddy.MobileApp platform + resource files: these are compiled into the Android/iOS heads,
               # so a change to a manifest, Info.plist, privacy manifest or app icon is a real build
               # input, not documentation.
               - '**/*.xml'
@@ -104,38 +104,53 @@ jobs:
               - '**/*.xcprivacy'
               - '**/*.svg'
             library:
-              - 'Library/**'
-              - 'Library.ServerAuth/**'
-              - 'EventAndCommands/**'
+              - 'AgendaBuddy.Library/**'
+              - 'AgendaBuddy.Library.ServerAuth/**'
+              - 'AgendaBuddy.EventAndCommands/**'
               - 'Directory.Build.props'
             api:
-              - 'Library/**'
-              # Library.ServerAuth was absent from every filter, so a change to JWT validation —
+              - 'AgendaBuddy.Library/**'
+              # AgendaBuddy.Library.ServerAuth was absent from every filter, so a change to JWT validation —
               # the code that decides whether a request is authenticated — ran zero jobs.
-              - 'Library.ServerAuth/**'
-              - 'EventAndCommands/**'
-              - 'Booking.Api/**'
-              - 'Calendar/**'
-              - 'Customer/**'
-              - 'Provider/**'
-              - 'Services/**'
-              - 'Profession/**'
-              - 'Identity/**'
-              - 'Kafka/**'
+              - 'AgendaBuddy.Library.ServerAuth/**'
+              - 'AgendaBuddy.EventAndCommands/**'
+              - 'AgendaBuddy.Booking.Api/**'
+              - 'AgendaBuddy.Calendar.Api/**'
+              - 'AgendaBuddy.Calendar.Core/**'
+              - 'AgendaBuddy.Calendar.Domain/**'
+              - 'AgendaBuddy.Calendar.Infrastructure/**'
+              - 'AgendaBuddy.Customer.Api/**'
+              - 'AgendaBuddy.Customer.Core/**'
+              - 'AgendaBuddy.Customer.Domain/**'
+              - 'AgendaBuddy.Customer.Infrastructure/**'
+              - 'AgendaBuddy.Provider.Api/**'
+              - 'AgendaBuddy.Provider.Core/**'
+              - 'AgendaBuddy.Provider.Domain/**'
+              - 'AgendaBuddy.Provider.Infrastructure/**'
+              - 'AgendaBuddy.Services.Api/**'
+              - 'AgendaBuddy.Services.Core/**'
+              - 'AgendaBuddy.Services.Domain/**'
+              - 'AgendaBuddy.Services.Infrastructure/**'
+              - 'AgendaBuddy.Profession.Api/**'
+              - 'AgendaBuddy.Profession.Core/**'
+              - 'AgendaBuddy.Profession.Domain/**'
+              - 'AgendaBuddy.Profession.Infrastructure/**'
+              - 'AgendaBuddy.Identity/**'
+              - 'AgendaBuddy.Kafka/**'
               - 'AgendaBuddy.AppHost/**'
               - 'AgendaBuddy.ServiceDefaults/**'
-              # The 12 backend test projects, named explicitly. MobileApp.Tests is absent on
+              # The 12 backend test projects, named explicitly. AgendaBuddy.MobileApp.Tests is absent on
               # purpose — it is covered by the mobile-tests job and must not gate the backend.
-              - 'Booking.Tests/**'
-              - 'Calendar.Tests/**'
-              - 'Customer.Tests/**'
-              - 'Provider.Tests/**'
-              - 'Services.Tests/**'
-              - 'Profession.Tests/**'
-              - 'Identity.Tests/**'
-              - 'Library.Tests/**'
-              - 'Kafka.Tests/**'
-              - 'EventsAndCommands.Tests/**'
+              - 'AgendaBuddy.Booking.Tests/**'
+              - 'AgendaBuddy.Calendar.Tests/**'
+              - 'AgendaBuddy.Customer.Tests/**'
+              - 'AgendaBuddy.Provider.Tests/**'
+              - 'AgendaBuddy.Services.Tests/**'
+              - 'AgendaBuddy.Profession.Tests/**'
+              - 'AgendaBuddy.Identity.Tests/**'
+              - 'AgendaBuddy.Library.Tests/**'
+              - 'AgendaBuddy.Kafka.Tests/**'
+              - 'AgendaBuddy.EventsAndCommands.Tests/**'
               - 'AgendaBuddy.AppHost.Tests/**'
               - 'AgendaBuddy.ServiceDefaults.Tests/**'
               # AgendaBuddy.IntegrationTests is the 13th test project and is deliberately OUTSIDE
@@ -158,33 +173,33 @@ jobs:
               # these jobs, so a deployment-pipeline edit no longer rebuilds the entire backend.
               - '.github/workflows/dotnet.yml'
             # F-017-T06: the docker-build-and-scan matrix's own trigger — deliberately NARROWER than
-            # `api` above. `api` also fires on Library/EventAndCommands/Kafka/test-project changes,
+            # `api` above. `api` also fires on AgendaBuddy.Library/AgendaBuddy.EventAndCommands/AgendaBuddy.Kafka/test-project changes,
             # which would run 7 parallel container publishes for a change that touches no service's
             # own container output. Scoped to exactly PRD Requirement 9's list: the 7 service dirs
             # (their .csproj files are inside these globs already), and docker-compose*.yml.
             docker:
-              - 'Booking.Api/**'
-              - 'Calendar/**'
-              - 'Customer/**'
-              - 'Provider/**'
-              - 'Services/**'
-              - 'Profession/**'
-              - 'Identity/**'
+              - 'AgendaBuddy.Booking.Api/**'
+              - 'AgendaBuddy.Calendar.Api/**'
+              - 'AgendaBuddy.Customer.Api/**'
+              - 'AgendaBuddy.Provider.Api/**'
+              - 'AgendaBuddy.Services.Api/**'
+              - 'AgendaBuddy.Profession.Api/**'
+              - 'AgendaBuddy.Identity/**'
               - 'docker-compose*.yml'
             # Android and iOS each install a MAUI workload and take minutes (iOS runs on a macOS
-            # runner, billed at 10x Linux). Reserved for changes to the app itself — a shared Library
-            # change is covered by mobile-tests below, which compiles MobileApp against it under the
+            # runner, billed at 10x Linux). Reserved for changes to the app itself — a shared AgendaBuddy.Library
+            # change is covered by mobile-tests below, which compiles AgendaBuddy.MobileApp against it under the
             # fallback TFM and would catch a break (that is exactly how agenda-buddy-prr's CS0103
-            # surfaced). If a Library change ever breaks only the platform heads, add 'Library/**'
+            # surfaced). If an AgendaBuddy.Library change ever breaks only the platform heads, add 'AgendaBuddy.Library/**'
             # back here and accept the minutes.
             mobile:
-              - 'MobileApp/**'
+              - 'AgendaBuddy.MobileApp/**'
               - 'Directory.Build.props'
               - '.github/workflows/dotnet.yml'
             mobile-tests:
-              - 'MobileApp/**'
-              - 'MobileApp.Tests/**'
-              - 'Library/**'
+              - 'AgendaBuddy.MobileApp/**'
+              - 'AgendaBuddy.MobileApp.Tests/**'
+              - 'AgendaBuddy.Library/**'
               - 'Directory.Build.props'
               - '.github/workflows/dotnet.yml'
 
@@ -212,14 +227,14 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nuget-
 
-      # agenda-buddy-backend.slnf is the solution minus MobileApp and MobileApp.Tests. Those are
+      # agenda-buddy-backend.slnf is the solution minus AgendaBuddy.MobileApp and AgendaBuddy.MobileApp.Tests. Those are
       # covered by the three dedicated mobile jobs below (build-android, build-ios, build-mobile-tests),
       # which install the MAUI workloads this job does not need. Keeping mobile out of the backend job
       # means a mobile-only break cannot fail the backend build for an unrelated reason.
       #
-      # Updated 2026-08-18: this comment previously said MobileApp "does not compile under
+      # Updated 2026-08-18: this comment previously said AgendaBuddy.MobileApp "does not compile under
       # /p:MobileWorkloads=false (agenda-buddy-prr)". That defect is fixed and the bead is closed —
-      # MobileApp.Tests passes 67 (7 skipped). The exclusion is by design, not a workaround.
+      # AgendaBuddy.MobileApp.Tests passes 67 (7 skipped). The exclusion is by design, not a workaround.
       - name: Restore dependencies
         run: dotnet restore agenda-buddy-backend.slnf /p:MobileWorkloads=false
 
@@ -249,10 +264,10 @@ jobs:
       - name: Build AppHost
         run: dotnet build AgendaBuddy.AppHost/AgendaBuddy.AppHost.csproj --configuration Release /p:MobileWorkloads=false
 
-      - name: Assert AppHost does not reference MobileApp        # AC-1.5
+      - name: Assert AppHost does not reference AgendaBuddy.MobileApp        # AC-1.5
         run: |
-          if dotnet list AgendaBuddy.AppHost/AgendaBuddy.AppHost.csproj reference | grep -q MobileApp; then
-            echo "::error::AppHost must not reference MobileApp"; exit 1
+          if dotnet list AgendaBuddy.AppHost/AgendaBuddy.AppHost.csproj reference | grep -q AgendaBuddy.MobileApp; then
+            echo "::error::AppHost must not reference AgendaBuddy.MobileApp"; exit 1
           fi
 
       # Guards the captive-dependency class of bug (F-013-T13). DI validation runs only in
@@ -274,7 +289,7 @@ jobs:
           JWT_PUBLIC_KEY=$(cat "$RUNNER_TEMP/jwt.pub")
           export JWT_PRIVATE_KEY JWT_PUBLIC_KEY
 
-          for svc in Booking.Api Calendar Customer Provider Services Profession Identity; do
+          for svc in AgendaBuddy.Booking.Api AgendaBuddy.Calendar.Api AgendaBuddy.Customer.Api AgendaBuddy.Provider.Api AgendaBuddy.Services.Api AgendaBuddy.Profession.Api AgendaBuddy.Identity; do
             log=$(mktemp)
             ASPNETCORE_ENVIRONMENT=Development \
             ConnectionStrings__mongodb='mongodb://localhost:27017' \
@@ -352,8 +367,8 @@ jobs:
     name: "Security — dependency audit"
     needs: changes
     # Review I1 (Party Review, 2026-08-26): deliberately UNCONDITIONAL, not gated on any path
-    # filter. The original api+code gate silently skipped this job on a docs/scripts/Gateway/
-    # MobileApp-only PR — and the credential this feature exists to stop recurring (ISSUE-002)
+    # filter. The original api+code gate silently skipped this job on a docs/scripts/AgendaBuddy.Gateway/
+    # AgendaBuddy.MobileApp-only PR — and the credential this feature exists to stop recurring (ISSUE-002)
     # leaked partly into files under docs/pdlc/context/, exactly the path class that gate excluded.
     # A secret scanner and a dependency audit are cheap enough to run on every PR unconditionally;
     # "docs-only changes run no build jobs" (the changes job's own stated design goal) is the right
@@ -478,7 +493,7 @@ jobs:
   # container support — it never reads the 7 hand-written Dockerfiles. No Dockerfile is referenced
   # anywhere in this job on purpose (see ARCHITECTURE.md "What exists today and why it's the wrong
   # artifact to secure"). Depends on F-017-T02 landing first — `dotnet publish -t:PublishContainer`
-  # failed with NETSDK1152 for every service until that fix removed EventAndCommands.csproj's
+  # failed with NETSDK1152 for every service until that fix removed AgendaBuddy.EventAndCommands.csproj's
   # colliding appsettings.json copy. No registry push, no `docker run`, no health check — build and
   # scan (Trivy lands in F-017-T07) only.
   docker-build-and-scan:
@@ -491,7 +506,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        service: [Booking.Api, Calendar, Customer, Provider, Services, Profession, Identity]
+        service: [AgendaBuddy.Booking.Api, AgendaBuddy.Calendar.Api, AgendaBuddy.Customer.Api, AgendaBuddy.Provider.Api, AgendaBuddy.Services.Api, AgendaBuddy.Profession.Api, AgendaBuddy.Identity]
 
     steps:
       - uses: actions/checkout@v7
@@ -520,7 +535,7 @@ jobs:
       # disallowed in image names) and fails Trivy with "could not parse reference".
       #
       # F-019-T04: verified live against a real `dotnet publish -t:PublishContainer` for
-      # Booking.Api — the SDK's default derivation replaces `.` with `-`, not just lowercasing, so
+      # AgendaBuddy.Booking.Api — the SDK's default derivation replaces `.` with `-`, not just lowercasing, so
       # the built image is `booking-api:latest`, not `booking.api:latest`. The `tr` alone (dots
       # survive lowercasing unchanged) would have computed the wrong ref and failed Trivy the same
       # way the original uppercase bug did.
@@ -609,9 +624,9 @@ jobs:
       - name: Pre-pull the MongoDB image
         run: docker pull mongo:7.0
 
-      # /p:MobileWorkloads=false, same fix as the backend job: this project references MobileApp.csproj
-      # (F-015-T07, so MobileClientRouteResolutionTest can call MobileApp.Routing.*RouteBuilder). Without
-      # the flag, MobileApp.csproj's default TargetFrameworks include net10.0-android/net10.0-ios, and
+      # /p:MobileWorkloads=false, same fix as the backend job: this project references AgendaBuddy.MobileApp.csproj
+      # (F-015-T07, so MobileClientRouteResolutionTest can call AgendaBuddy.MobileApp.Routing.*RouteBuilder). Without
+      # the flag, AgendaBuddy.MobileApp.csproj's default TargetFrameworks include net10.0-android/net10.0-ios, and
       # restore fails on this runner with NETSDK1147 (maui-android/maui-ios workloads not installed).
       - name: Restore dependencies
         run: dotnet restore AgendaBuddy.IntegrationTests/AgendaBuddy.IntegrationTests.csproj /p:MobileWorkloads=false
@@ -684,7 +699,7 @@ jobs:
           reporter: dotnet-trx
 
   # ---------------------------------------------------------------------------
-  # Mobile — Android build (runs when MobileApp or shared library changes)
+  # Mobile — Android build (runs when AgendaBuddy.MobileApp or shared library changes)
   # ---------------------------------------------------------------------------
   build-android:
     name: "Mobile — Android Build"
@@ -704,10 +719,10 @@ jobs:
         run: dotnet workload install maui-android
 
       - name: Build Android (Release)
-        run: dotnet build MobileApp/MobileApp.csproj /p:MobilePlatform=android -c Release
+        run: dotnet build AgendaBuddy.MobileApp/AgendaBuddy.MobileApp.csproj /p:MobilePlatform=android -c Release
 
   # ---------------------------------------------------------------------------
-  # Mobile — iOS build (runs when MobileApp or shared library changes)
+  # Mobile — iOS build (runs when AgendaBuddy.MobileApp or shared library changes)
   # ---------------------------------------------------------------------------
   build-ios:
     name: "Mobile — iOS Build"
@@ -727,7 +742,7 @@ jobs:
         run: dotnet workload install maui-ios
 
       - name: Build iOS (Release)
-        run: dotnet build MobileApp/MobileApp.csproj /p:MobilePlatform=ios -c Release
+        run: dotnet build AgendaBuddy.MobileApp/AgendaBuddy.MobileApp.csproj /p:MobilePlatform=ios -c Release
 
   # ---------------------------------------------------------------------------
   # Mobile — ViewModel / Service unit tests
@@ -746,9 +761,9 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
-      - name: Test MobileApp (no mobile workloads)
+      - name: Test AgendaBuddy.MobileApp (no mobile workloads)
         run: >
-          dotnet test MobileApp.Tests/MobileApp.Tests.csproj
+          dotnet test AgendaBuddy.MobileApp.Tests/AgendaBuddy.MobileApp.Tests.csproj
           /p:MobileWorkloads=false
           --filter "Category!=Acceptance"
           --collect:"XPlat Code Coverage"
@@ -808,7 +823,7 @@ jobs:
               echo
               echo "> ⚠️ **Build jobs were skipped because no code-relevant file changed**, even though"
               echo "> an area filter matched. This is expected for documentation inside a code directory"
-              echo "> (for example \`Kafka/readme.md\`)."
+              echo "> (for example \`AgendaBuddy.Kafka/readme.md\`)."
               echo ">"
               echo "> If this change *did* touch build-relevant files, the \`code\` filter is missing an"
               echo "> extension — add it in the \`changes\` job and re-run."

@@ -44,8 +44,8 @@ public class CryptoSessionFixtureTest
     [Fact]
     public void Fixture_NeverMaterialisesPrivateKeyPem()
     {
-        // A deliberate divergence from the Identity.Tests precedent, which returns BOTH PEMs
-        // (Identity.Tests/Helpers/RsaKeyHelper.cs:18-21). Nothing in this harness needs a private
+        // A deliberate divergence from the AgendaBuddy.Identity.Tests precedent, which returns BOTH PEMs
+        // (AgendaBuddy.Identity.Tests/Helpers/RsaKeyHelper.cs:18-21). Nothing in this harness needs a private
         // PEM *string*: signing takes the live RSA instance. A string is the thing that gets logged,
         // written to a scratch file, or pasted into a fixture — so it is never created. AC-3.
         var privateSurface = typeof(CryptoSessionFixture)
@@ -62,7 +62,7 @@ public class CryptoSessionFixtureTest
     {
         // The reason this collection exists. Library.ServerAuth/AuthenticationExtensions.cs:12 reads
         // JWT_PUBLIC_KEY from the PROCESS environment at startup, so test classes that start a
-        // service race on a single global. Identity.Tests/Auth/TestCollectionDefinition.cs already
+        // service race on a single global. AgendaBuddy.Identity.Tests/Auth/TestCollectionDefinition.cs already
         // solves this — but an xUnit collection definition only applies within its own assembly, so
         // that one cannot be reused here and the harness needs its own.
         var definition = typeof(HarnessCollection).GetCustomAttribute<CollectionDefinitionAttribute>();

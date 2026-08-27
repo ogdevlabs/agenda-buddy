@@ -5,7 +5,7 @@ namespace AgendaBuddy.AppHost.Tests;
 
 /// <summary>
 /// AC-4: <c>dotnet publish -t:PublishContainer</c> must succeed for each of the seven services with
-/// no NETSDK1152 file-conflict error. The conflict is entirely mechanical — <c>EventAndCommands</c>'s
+/// no NETSDK1152 file-conflict error. The conflict is entirely mechanical — <c>AgendaBuddy.EventAndCommands</c>'s
 /// own <c>appsettings.json</c> was marked <c>CopyToOutputDirectory: Always</c>, which every consumer's
 /// publish output inherits via the <c>ProjectReference</c>, colliding with that consumer's own file at
 /// the same relative path — so a structural assertion on the MSBuild metadata is a faster and equally
@@ -44,15 +44,15 @@ public class PublishContainerTest
                                update.Contains("appsettings", StringComparison.OrdinalIgnoreCase))
             .Any(element => element.Element(element.Name.Namespace + "CopyToOutputDirectory") is not null);
 
-    // AC-4 root cause: EventAndCommands is a class library referenced by all seven services' publish
+    // AC-4 root cause: AgendaBuddy.EventAndCommands is a class library referenced by all seven services' publish
     // output. If IT also copies its own appsettings.json to its own output, that copy travels with it
     // into every consumer's publish folder and collides with the consumer's own file (NETSDK1152).
     [Fact]
     public void EventAndCommandsDoesNotCopyItsOwnAppSettingsToOutput()
     {
         Assert.False(
-            CopiesItsOwnAppSettingsToOutput(LoadCsproj("EventAndCommands/EventAndCommands.csproj")),
-            "EventAndCommands.csproj must not copy its own appsettings.json to its output directory — " +
+            CopiesItsOwnAppSettingsToOutput(LoadCsproj("AgendaBuddy.EventAndCommands/AgendaBuddy.EventAndCommands.csproj")),
+            "AgendaBuddy.EventAndCommands.csproj must not copy its own appsettings.json to its output directory — " +
             "every one of the 7 services that reference it inherits the copy via ProjectReference, " +
             "colliding with that service's own appsettings.json at dotnet publish time (NETSDK1152).");
     }
@@ -60,8 +60,8 @@ public class PublishContainerTest
     // Customer/Provider suppressed the symptom rather than the cause. Once the root fix lands, both
     // must publish clean without the suppression — restoring it would silently mask a regression here.
     [Theory]
-    [InlineData("Customer/Customer.csproj")]
-    [InlineData("Provider/Provider.csproj")]
+    [InlineData("AgendaBuddy.Customer.Api/AgendaBuddy.Customer.Api.csproj")]
+    [InlineData("AgendaBuddy.Provider.Api/AgendaBuddy.Provider.Api.csproj")]
     public void NoLongerSuppressesDuplicatePublishOutputFiles(string relativeCsprojPath)
     {
         var csproj = LoadCsproj(relativeCsprojPath);
@@ -74,7 +74,7 @@ public class PublishContainerTest
         Assert.False(
             suppressed,
             $"{relativeCsprojPath} still sets ErrorOnDuplicatePublishOutputFiles=false — that suppresses " +
-            "the same NETSDK1152 collision EventAndCommands' fix is meant to resolve at the root; once " +
+            "the same NETSDK1152 collision AgendaBuddy.EventAndCommands' fix is meant to resolve at the root; once " +
             "the root fix lands this project must publish clean without the suppression.");
     }
 }

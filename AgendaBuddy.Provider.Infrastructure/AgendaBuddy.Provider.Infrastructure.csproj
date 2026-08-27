@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <!--
+        Deliberately empty (ARCHITECTURE.md, ADR-049, following AgendaBuddy.Booking.Infrastructure's/
+        AgendaBuddy.Services.Infrastructure's precedent): Library.Repositories.MongoDbRepository<T>
+        already exists and is reused, not duplicated. This project exists for the 4-project layering
+        shape; it gets real content only if a genuine Provider-specific repository need arises (YAGNI:
+        do not pad for symmetry).
+    -->
+
+    <ItemGroup>
+        <ProjectReference Include="..\AgendaBuddy.Library\AgendaBuddy.Library.csproj" />
+    </ItemGroup>
+
+</Project>

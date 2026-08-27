@@ -2,7 +2,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using AgendaBuddy.IntegrationTests.Harness;
-using Library.Entities;
+using AgendaBuddy.Library.Entities;
 
 namespace AgendaBuddy.IntegrationTests.Contract;
 
@@ -55,8 +55,8 @@ public class BookingErrorLeakageTest(ServiceHostFixture<BookingAnchor> host, Cry
         Assert.DoesNotContain("Exception", body, StringComparison.Ordinal);
         Assert.DoesNotContain("StackTrace", body, StringComparison.Ordinal);
         Assert.DoesNotContain(" at ", body, StringComparison.Ordinal);
-        Assert.DoesNotContain("Booking.Core", body, StringComparison.Ordinal);
-        Assert.DoesNotContain("Booking.Api", body, StringComparison.Ordinal);
+        Assert.DoesNotContain("AgendaBuddy.Booking.Core", body, StringComparison.Ordinal);
+        Assert.DoesNotContain("AgendaBuddy.Booking.Api", body, StringComparison.Ordinal);
         Assert.DoesNotContain("System.", body, StringComparison.Ordinal);
     }
 

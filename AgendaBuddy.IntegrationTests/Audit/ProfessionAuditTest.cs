@@ -1,7 +1,7 @@
 using System.Net;
 using AgendaBuddy.IntegrationTests.Harness;
 using AgendaBuddy.IntegrationTests.Persistence;
-using EventAndCommands.Persistence;
+using AgendaBuddy.EventAndCommands.Persistence;
 using MongoDB.Driver;
 
 namespace AgendaBuddy.IntegrationTests.Audit;

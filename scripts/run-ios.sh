@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# run-ios.sh — one command: bring up the whole backend, then launch MobileApp on an iOS simulator.
+# run-ios.sh — one command: bring up the whole backend, then launch AgendaBuddy.MobileApp on an iOS simulator.
 #
 #   ./scripts/run-ios.sh                        # newest available iPhone simulator
 #   ./scripts/run-ios.sh --device "iPhone 17"   # a named simulator
@@ -17,13 +17,13 @@
 #    address half of this: this script discovers the Gateway's dynamically-assigned port the same way
 #    it already discovers the seven services' (see WHY PORTS ARE DISCOVERED, below), and injects it
 #    into the simulator process as the MAUI_API_BASE_URL environment variable, which
-#    MobileApp/Infrastructure/ApiBaseUrlResolver.cs (read from MauiProgram.cs) now prefers over the
-#    `ApiBaseUrl` configuration key (still never populated — nothing loads MobileApp/appsettings.json)
+#    AgendaBuddy.MobileApp/Infrastructure/ApiBaseUrlResolver.cs (read from MauiProgram.cs) now prefers over the
+#    `ApiBaseUrl` configuration key (still never populated — nothing loads AgendaBuddy.MobileApp/appsettings.json)
 #    and the hardcoded `http://localhost:6036/` fallback, which addresses nothing under the AppHost
 #    (F-013 removed the fixed 603x ports, AC-1.4). What F-015-T12 does NOT fix: every mobile path
 #    still needs the `api/v1/` prefix the backend actually serves (F-015-T07, Planned). Until that
 #    lands, calls through the now-correctly-addressed gateway still 404, and the ViewModels still fall
-#    back to MobileApp/Services/SeedDataProvider.cs. See docs/pdlc/context/01-api-surface.md and
+#    back to AgendaBuddy.MobileApp/Services/SeedDataProvider.cs. See docs/pdlc/context/01-api-surface.md and
 #    docs/pdlc/context/16-mobile-client.md.
 #
 # 2. TWO XCODE STEPS NEED sudo, so they are checked and explained, never performed:
@@ -53,8 +53,8 @@ export PATH="$HOME/.rd/bin:$PATH"
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 APPHOST_LOG="${TMPDIR:-/tmp}/agenda-buddy-apphost.log"
-SERVICES=(Identity Booking.Api Customer Provider Calendar Services Profession)
-GATEWAY="Gateway"         # the eighth AppHost resource (F-015-T05) — project dir matches AppHostWiring.cs's Projects.Gateway
+SERVICES=(AgendaBuddy.Identity AgendaBuddy.Booking.Api Customer Provider Calendar Services Profession)
+GATEWAY="AgendaBuddy.Gateway"         # the eighth AppHost resource (F-015-T05) — project dir matches AppHostWiring.cs's Projects.AgendaBuddy_Gateway
 READY_TIMEOUT=300          # a cold run builds seven services first
 XCODE_APP="/Applications/Xcode.app"
 
@@ -310,7 +310,7 @@ if [ "$run_app" = "1" ]; then
   open -a Simulator --args -CurrentDeviceUDID "$udid" || true
 
   # iossimulator-arm64 on Apple Silicon, -x64 on Intel. -p:MobilePlatform=ios (rather than
-  # -f net10.0-ios) is what MobileApp.csproj documents: it narrows TargetFrameworks to the iOS TFM
+  # -f net10.0-ios) is what AgendaBuddy.MobileApp.csproj documents: it narrows TargetFrameworks to the iOS TFM
   # without cascading a TargetFramework override onto the Library project reference.
   case "$(uname -m)" in
     arm64) rid="iossimulator-arm64" ;;
@@ -330,8 +330,8 @@ if [ "$run_app" = "1" ]; then
   say "injecting MAUI_API_BASE_URL=$gateway_url into the simulator launch (via SIMCTL_CHILD_MAUI_API_BASE_URL)"
   export SIMCTL_CHILD_MAUI_API_BASE_URL="$gateway_url"
 
-  say "building and launching MobileApp on the simulator ($rid) — a cold build takes a few minutes"
-  dotnet build "$REPO_ROOT/MobileApp/MobileApp.csproj" \
+  say "building and launching AgendaBuddy.MobileApp on the simulator ($rid) — a cold build takes a few minutes"
+  dotnet build "$REPO_ROOT/AgendaBuddy.MobileApp/AgendaBuddy.MobileApp.csproj" \
     -p:MobilePlatform=ios \
     -p:RuntimeIdentifier="$rid" \
     -t:Run \
@@ -340,12 +340,12 @@ if [ "$run_app" = "1" ]; then
   cat <<EOF
 
 ==> NOTE — the app now points at the gateway ($gateway_url), but most routes still 404.
-    F-015-T12 fixed the base address: MobileApp/Infrastructure/ApiBaseUrlResolver.cs reads
+    F-015-T12 fixed the base address: AgendaBuddy.MobileApp/Infrastructure/ApiBaseUrlResolver.cs reads
     MAUI_API_BASE_URL (set above) ahead of the ApiBaseUrl config key and the hardcoded
     http://localhost:6036/ fallback (which addressed nothing under the AppHost — ports are dynamic
     by design, AC-1.4). Still outstanding: every mobile path is missing the api/v1/ prefix the
     backend actually serves (F-015-T07, Planned). Until that lands, the ViewModels still fall back
-    to MobileApp/Services/SeedDataProvider.cs for most calls.
+    to AgendaBuddy.MobileApp/Services/SeedDataProvider.cs for most calls.
     Details: docs/pdlc/context/01-api-surface.md, docs/pdlc/context/16-mobile-client.md
 EOF
 fi

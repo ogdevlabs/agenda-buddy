@@ -1,13 +1,22 @@
 ---
 id: F-020
 title: api-refactor-rollout
-status: in_progress
+status: shipped
 priority: 21
 labels: [roadmap, "priority:21"]
 depends_on: [F-019]
-claimed_by: oscargarcia@ogdevlabs.onmicrosoft.com
+claimed_by: null
 created: 2026-08-18
 updated: 2026-08-27
+shipped: 2026-08-27
+episode: EPISODE_api-refactor-rollout_2026-08-27.md
+version: v0.9.0
+---
+**SHIPPED 2026-08-27 as `v0.9.0`.** 13 tasks, 23 ACs. Scope doubled mid-Design at explicit user direction
+(bundled the solution-wide `AgendaBuddy.` project/namespace rename into this feature). 47 projects, all
+prefixed. 1022 tests (547+310+165), 0 failing. See `EPISODE_api-refactor-rollout_2026-08-27.md` for the full
+record. The API refactor program (F-018→F-019→F-020) is now complete.
+
 ---
 **Stage 3 of 3 in the API refactor program (F-018 → F-019 → F-020).** Roll the shape proven on `Booking` in F-019 across **five** of the remaining six services: `Calendar`, `Customer`, `Provider`, `Services`, `Profession`.
 

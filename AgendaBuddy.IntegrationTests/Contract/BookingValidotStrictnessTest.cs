@@ -2,7 +2,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using AgendaBuddy.IntegrationTests.Harness;
-using Library.Entities;
+using AgendaBuddy.Library.Entities;
 
 namespace AgendaBuddy.IntegrationTests.Contract;
 
@@ -12,7 +12,7 @@ namespace AgendaBuddy.IntegrationTests.Contract;
 /// <c>MiniValidator</c> → Validot, F-019-T02/T04) — every request that 400d under
 /// <c>MiniValidator</c> for it must still 400 under Validot. Drives the exact same malformed/missing
 /// cases through the real HTTP pipeline, not just the isolated validator
-/// (<c>Booking.Tests/Validation/AppointmentEntitySpecificationTest.cs</c> already pins that; this test
+/// (<c>AgendaBuddy.Booking.Tests/Validation/AppointmentEntitySpecificationTest.cs</c> already pins that; this test
 /// proves the pipeline actually wires it the same way).
 /// </summary>
 /// <remarks>

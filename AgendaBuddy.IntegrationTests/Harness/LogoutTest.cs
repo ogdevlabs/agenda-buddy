@@ -1,8 +1,8 @@
 using System.Net;
 using System.Net.Http.Json;
-using Identity.Services;
-using Library.Entities;
-using MobileApp.Routing;
+using AgendaBuddy.Identity.Services;
+using AgendaBuddy.Library.Entities;
+using AgendaBuddy.MobileApp.Routing;
 using MongoDB.Bson;
 using MongoDB.Driver;
 
@@ -11,7 +11,7 @@ namespace AgendaBuddy.IntegrationTests.Harness;
 /// <summary>
 /// F-015-T10 AC11 (PRD requirement 10): calling logout invokes the server-side logout endpoint, and the
 /// previously-valid refresh token is rejected on a subsequent refresh attempt — proved end-to-end
-/// against a real, running Identity service. Uses <see cref="MobileApp.Routing.AuthRouteBuilder"/>'s own
+/// against a real, running Identity service. Uses <see cref="AgendaBuddy.MobileApp.Routing.AuthRouteBuilder"/>'s own
 /// <c>Logout()</c>/<c>Refresh()</c> route specs, the same way <see cref="MobileClientRouteResolutionTest"/>
 /// exercises other <c>*RouteBuilder</c> classes, so this proves the client's actual route/verb/body — not
 /// a hand-typed path string that could drift from it.
@@ -27,7 +27,7 @@ namespace AgendaBuddy.IntegrationTests.Harness;
 /// </para>
 /// <para>
 /// <b>The "still valid" baseline cannot itself be a <c>/refresh</c> call.</b>
-/// <c>IdentityService.RefreshAsync</c> (<c>Identity/Services/IdentityService.cs:253-258</c>) rotates the
+/// <c>IdentityService.RefreshAsync</c> (<c>AgendaBuddy.Identity/Services/IdentityService.cs:253-258</c>) rotates the
 /// stored hash to a brand-new one on every <i>matched</i> attempt — before it ever checks for a signing
 /// key — so spending one to "prove the token is still live" would consume it and invalidate the very
 /// thing the rest of the test is about. <see cref="Refresh_WithAValidUnexpiredToken_MatchesTheCredential"/>
@@ -134,7 +134,7 @@ public class LogoutTest(ServiceHostFixture<IdentityAnchor> host)
     [Fact]
     public async Task Logout_WithATokenNoCredentialHolds_IsStillNoContent()
     {
-        // Identity/Program.cs:196's logout route is deliberately idempotent, per
+        // AgendaBuddy.Identity/Program.cs:196's logout route is deliberately idempotent, per
         // IdentityService.LogoutAsync's own doc comment — logging out twice, or logging out a token
         // nobody holds, must not leak whether an account exists.
         using var service = host.StartService();

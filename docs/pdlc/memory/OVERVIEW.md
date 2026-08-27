@@ -6,7 +6,7 @@
      Do not edit manually — let PDLC maintain it. If you need to correct something, update and note the reason. -->
 
 **Project:** Agenda Buddy
-**Last updated:** 2026-08-27T02:22:00Z
+**Last updated:** 2026-08-27T10:00:00Z
 
 ---
 
@@ -101,6 +101,21 @@ Agenda Buddy is a scheduling and appointment management platform for independent
   `AppointmentStatus` even though the database write already correctly ignored it — is **fixed**;
   confirmed live under real traffic, not just in the integration suite.
 
+**Added by F-020 (`v0.9.0`, 2026-08-27):**
+
+- **Booking's Clean Architecture split rolled out to Calendar, Customer, Provider, Services, Profession** —
+  all 6 now dispatch through real `mediator.Send`, return `FluentResults.Result<T>`, and map to their own
+  `DataResponse<T>` envelope. `Identity` stays on its original shape (never adopted CQRS).
+- **Every project in the solution — all 47 — now carries the `AgendaBuddy.` prefix**, folder through C#
+  namespace, matching the convention `AgendaBuddy.AppHost`/`ServiceDefaults`/`IntegrationTests` set at F-013.
+  Includes a retroactive rename of Booking's own just-shipped 5 projects plus `Library`, `EventAndCommands`,
+  `Kafka`, `Gateway`, `Identity`, and `MobileApp`.
+- **Threat T-204 fixed**: Customer's `AddCustomerCommandHandler` retyped from the concrete `KafkaClient`
+  class to `IKafkaClient` — the last `agenda-buddy-5og`-shaped copy of a bug F-018/F-019 fixed everywhere
+  else, confirmed fixed live under real Kafka topic-creation traffic.
+- `AgendaBuddy.EventAndCommands` now holds zero command/query handler implementations — every service's
+  handlers live in its own `*.Core` project.
+
 ---
 
 ## Shipped Features
@@ -118,6 +133,7 @@ Agenda Buddy is a scheduling and appointment management platform for independent
 | 006 | F-017 container-and-cd-hardening (`v0.6.0`) | 2026-08-26 | [006_container-and-cd-hardening_2026-08-26.md](../episodes/006_container-and-cd-hardening_2026-08-26.md) | [#48](https://github.com/ogdevlabs/agenda-buddy/pull/48) |
 | 007 | F-018 api-refactor-foundations (`v0.7.0`) | 2026-08-26 | [007_api-refactor-foundations_2026-08-26.md](../episodes/007_api-refactor-foundations_2026-08-26.md) | [#69](https://github.com/ogdevlabs/agenda-buddy/pull/69) |
 | 008 | F-019 api-refactor-pilot-booking (`v0.8.0`) | 2026-08-27 | [EPISODE_api-refactor-pilot-booking_2026-08-27.md](../episodes/EPISODE_api-refactor-pilot-booking_2026-08-27.md) | none — merged directly (`fb91cb1`); `gh pr create` blocked, see episode's Links section |
+| 009 | F-020 api-refactor-rollout (`v0.9.0`) | 2026-08-27 | [EPISODE_api-refactor-rollout_2026-08-27.md](../episodes/EPISODE_api-refactor-rollout_2026-08-27.md) | none — merged directly; `gh pr create` blocked, see episode's Links section |
 
 ---
 
@@ -144,9 +160,9 @@ Agenda Buddy is a scheduling and appointment management platform for independent
 - ~~[Added 2026-07-30] `EventAndCommands/Persitency/` is a typo (should be `Persistence`)~~ — **RESOLVED by F-016** (T01, absorbed from F-018's plan). CONSTITUTION §9's prohibition against renaming it is retired.
 - ~~[Added 2026-07-30] `KafkaClient` hardcodes `BootstrapServers = "localhost:9092"`~~ — **RESOLVED by F-013**: now configuration-driven
 - ~~[Added 2026-07-30] No authentication or authorization layer~~ — see the F-016 caveat below; auth exists but is not uniformly enforced
-- [Added 2026-07-30] `topicName` computed but never used in `Booking/Program.cs` and other services — dead code cleanup needed
+- [Added 2026-07-30] `topicName` computed but never used in `AgendaBuddy.Booking.Api/Program.cs` and other services — dead code cleanup needed
 - [Added 2026-07-30] `provider` and `services-api` containers are commented out in `docker-compose.yml` — wire them in or remove the commented blocks
-- [Added 2026-07-30] Customer and Profession command handlers have no test coverage in `EventsAndCommands.Tests` — coverage gap
+- ~~[Added 2026-07-30] Customer and Profession command handlers have no test coverage in `EventsAndCommands.Tests`~~ — **RESOLVED by F-020**. Both services' handlers now live in their own `*.Core` project with real Moq-based unit tests; the old `EventsAndCommands.Tests` stub files for them are deleted.
 
 **Added by F-013 (2026-08-18):**
 

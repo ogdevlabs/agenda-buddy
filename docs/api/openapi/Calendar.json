@@ -1,7 +1,7 @@
 {
   "openapi": "3.0.4",
   "info": {
-    "title": "Calendar",
+    "title": "AgendaBuddy.Calendar.Api",
     "version": "1.0"
   },
   "paths": {
@@ -27,11 +27,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "type": "string",
-                    "format": "date-time"
-                  }
+                  "$ref": "#/components/schemas/DateTimeListDataResponse"
                 }
               }
             }
@@ -64,10 +60,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/AppointmentEntity"
-                  }
+                  "$ref": "#/components/schemas/AppointmentEntityListDataResponse"
                 }
               }
             }
@@ -126,6 +119,30 @@
         },
         "additionalProperties": false
       },
+      "AppointmentEntityListDataResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AppointmentEntity"
+            },
+            "nullable": true
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "success": {
+            "type": "boolean",
+            "readOnly": true
+          }
+        },
+        "additionalProperties": false
+      },
       "AppointmentStatus": {
         "enum": [
           0,
@@ -136,6 +153,31 @@
         ],
         "type": "integer",
         "format": "int32"
+      },
+      "DateTimeListDataResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "nullable": true
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "success": {
+            "type": "boolean",
+            "readOnly": true
+          }
+        },
+        "additionalProperties": false
       },
       "ObjectId": {
         "type": "object",

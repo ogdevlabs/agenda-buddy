@@ -1,7 +1,7 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using Library.Entities;
+using AgendaBuddy.Library.Entities;
 using MongoDB.Driver;
 
 namespace AgendaBuddy.IntegrationTests.Harness;
@@ -14,7 +14,7 @@ namespace AgendaBuddy.IntegrationTests.Harness;
 /// <para>
 /// <b>Deleted rather than role-gated, and requirement 13 is superseded (ADR-025).</b> There is no role to
 /// check for: Identity's allow-list is exactly <c>{Provider, Customer}</c>
-/// (<c>Identity/Program.cs:121</c>) — there is no administrative tier. The only implementable check,
+/// (<c>AgendaBuddy.Identity/Program.cs:121</c>) — there is no administrative tier. The only implementable check,
 /// <c>AssertRole(user, "Provider")</c>, would still let any self-registered provider write to global
 /// reference data read by every user; with open, unthrottled registration that raises the bar from "any
 /// account" to "any account that picked Provider at signup".

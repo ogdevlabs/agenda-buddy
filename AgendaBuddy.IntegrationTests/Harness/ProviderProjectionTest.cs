@@ -1,6 +1,6 @@
 using System.Net;
 using System.Net.Http.Headers;
-using Library.Entities;
+using AgendaBuddy.Library.Entities;
 using MongoDB.Bson;
 
 namespace AgendaBuddy.IntegrationTests.Harness;

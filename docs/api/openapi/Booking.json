@@ -1,7 +1,7 @@
 {
   "openapi": "3.0.4",
   "info": {
-    "title": "Booking.Api",
+    "title": "AgendaBuddy.Booking.Api",
     "version": "1.0"
   },
   "paths": {

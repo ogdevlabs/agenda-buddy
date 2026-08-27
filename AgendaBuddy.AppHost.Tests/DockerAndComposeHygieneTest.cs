@@ -9,7 +9,7 @@ namespace AgendaBuddy.AppHost.Tests;
 /// </summary>
 public class DockerAndComposeHygieneTest
 {
-    private static readonly string[] DeletedProjects = ["Library", "Kafka", "EventAndCommands"];
+    private static readonly string[] DeletedProjects = ["AgendaBuddy.Library", "AgendaBuddy.Kafka", "AgendaBuddy.EventAndCommands"];
     private static readonly string[] DeletedComposeServices = ["events", "kafka-library", "common-library"];
 
     private static string RepoRoot()

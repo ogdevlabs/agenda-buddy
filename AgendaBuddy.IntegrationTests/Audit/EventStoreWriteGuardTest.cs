@@ -20,11 +20,11 @@ namespace AgendaBuddy.IntegrationTests.Audit;
 /// </para>
 /// <para>
 /// <b>Convention, not a maintained list.</b> Every <c>*CommandHandler.cs</c>/<c>*QueryHandler.cs</c> under
-/// <see cref="ScanRoots"/> (<c>EventAndCommands/</c>, and — as of F-019-T03 — <c>Booking.Core/</c>, the
-/// first handler location outside <c>EventAndCommands</c>) is discovered by directory walk
+/// <see cref="ScanRoots"/> (<c>AgendaBuddy.EventAndCommands/</c>, and — as of F-019-T03 — <c>AgendaBuddy.Booking.Core/</c>, the
+/// first handler location outside <c>AgendaBuddy.EventAndCommands</c>) is discovered by directory walk
 /// (<c>SearchOption.AllDirectories</c>), so a new handler is covered automatically — no edit here is
 /// needed when a task adds one under an already-listed root. **F-019-T07 confirmed this directly**: all
-/// 10 of Booking.Core's handlers (T03's 3 moved originals, T04's rename, T05's 6 freshly-authored F-014
+/// 10 of AgendaBuddy.Booking.Core's handlers (T03's 3 moved originals, T04's rename, T05's 6 freshly-authored F-014
 /// handlers, none from T06 — it only rewires routes, adds no handler files) are found with zero further
 /// edits here, because the recursive walk needs no per-handler awareness. A genuinely new root (e.g.
 /// F-020 moving another service's handlers into its own Core project) still needs adding to
@@ -32,11 +32,14 @@ namespace AgendaBuddy.IntegrationTests.Audit;
 /// <see cref="ExcludedHandlerFiles"/> is a maintained list, and it holds exactly one documented exception.
 /// </para>
 /// <para>
-/// <b>The one exclusion.</b> <c>BookCalendarCommandHandler.cs</c> takes no <c>IEventStore</c> at all and its
-/// <c>Handle</c> unconditionally throws <c>NotImplementedException</c> — there is no result, success or
-/// failure, for CONSTITUTION §3 to apply to. This mirrors the task's own Identity carve-out: inapplicable,
-/// not merely unaudited. It has no HTTP route either (<c>15-cqrs-and-messaging.md</c>'s command inventory),
-/// so nothing can ever reach it to find out.
+/// <b>The one exclusion, retired by F-020-T08.</b> <c>BookCalendarCommandHandler.cs</c> took no
+/// <c>IEventStore</c> at all and its <c>Handle</c> unconditionally threw <c>NotImplementedException</c> —
+/// there was no result, success or failure, for CONSTITUTION §3 to apply to, and it had no HTTP route
+/// either (<c>15-cqrs-and-messaging.md</c>'s command inventory), so nothing could ever reach it to find
+/// out. F-020-T08 deleted the file outright rather than moving dead code into
+/// <c>AgendaBuddy.Calendar.Core</c> alongside Calendar's two real, moved query handlers — see that task's
+/// own report for the disclosure. <see cref="ExcludedHandlerFiles"/> is now empty; kept as a named,
+/// documented list rather than removed, so a future genuine exclusion has an obvious place to go.
 /// </para>
 /// <para>
 /// <b>Mutation-tested once, by hand, as AC-15 requires.</b> Recorded in this task's final report rather than
@@ -48,10 +51,10 @@ namespace AgendaBuddy.IntegrationTests.Audit;
 public class EventStoreWriteGuardTest
 {
     /// <summary>
-    /// The one handler with no <see cref="EventAndCommands.Persistence.IEventStore"/> to write through —
-    /// see this class's remarks.
+    /// Deliberately empty as of F-020-T08 — see this class's remarks on <c>BookCalendarCommandHandler.cs</c>,
+    /// the one former entry, which was deleted rather than moved.
     /// </summary>
-    private static readonly string[] ExcludedHandlerFiles = ["BookCalendarCommandHandler.cs"];
+    private static readonly string[] ExcludedHandlerFiles = [];
 
     private static string RepoRoot()
     {
@@ -71,13 +74,45 @@ public class EventStoreWriteGuardTest
         return current.FullName;
     }
 
-    // F-019-T03. Booking.Core is the first handler location outside EventAndCommands — its 3
+    // F-019-T03. AgendaBuddy.Booking.Core is the first handler location outside AgendaBuddy.EventAndCommands — its 3
     // moved handlers (Book/Update/Cancel) would otherwise silently drop out of this guard's
     // coverage. F-019-T07 confirmed this single root already covers every handler T04/T05 added
-    // afterward (10 total in Booking.Core as of F-019) with no further edits -- the recursive
-    // directory walk needs no per-handler awareness. A new root is only needed if another
-    // service's handlers move to their own Core project (F-020, out of scope here).
-    private static readonly string[] ScanRoots = ["EventAndCommands", "Booking.Core"];
+    // afterward (10 total in AgendaBuddy.Booking.Core as of F-019) with no further edits -- the recursive
+    // directory walk needs no per-handler awareness.
+    //
+    // F-020-T08: AgendaBuddy.Calendar.Core is the second such root, added for the same reason -- its 2 moved
+    // query handlers (CheckCalendarAvailability/CheckCalendarAppointments) would otherwise silently drop
+    // out of coverage. A new root is only needed when another service's handlers move to their own Core
+    // project.
+    //
+    // F-020-T09: AgendaBuddy.Profession.Core is the third such root -- its 2 moved query handlers
+    // (GetProfessions/GetProfessionByName) would otherwise silently drop out of coverage.
+    // AddProfessionCommandHandler was NOT moved here: it was dead code (no route reached it, and its
+    // constructor took a `ProfessionEntity` with no matching DI registration, so it could never have been
+    // resolved even if a route existed) and was deleted outright, the same disposition F-020-T08 gave
+    // BookCalendarCommandHandler.
+    // F-020-T10: AgendaBuddy.Services.Core is the fourth such root -- its 3 moved handlers
+    // (GetServicesFromProvider/AddServicesToProvider/UpdateServicesFromProvider) would otherwise
+    // silently drop out of coverage. Unlike Calendar's/Profession's own migrations, no handler was
+    // found dead here: Services had exactly 3 routes and 3 handlers, a 1:1 mapping confirmed at Build
+    // (ARCHITECTURE.md §9's "4-handlers-for-2-routes" note was a stale miscount, not a real defect --
+    // see this task's own report).
+    // F-020-T11: AgendaBuddy.Provider.Core is the fifth such root -- its 5 moved handlers
+    // (AddProvider/UpdateProvider/DeactivateProvider/GetProviderByEmail/GetProviders) would otherwise
+    // silently drop out of coverage. Like Services, no handler was found dead: Provider had 6 routes
+    // against 5 CQRS handlers, a clean mapping once the sixth route (GetProviderReport) is accounted
+    // for as calling IReportingService directly, never MediatR -- confirmed by grep, not assumed.
+    // DeactivateProviderCommandHandler went through mediator.Send here for the first time ever (it was
+    // previously `new`-ed by hand in Provider/Program.cs, deleted); its "provider not found" branch
+    // remains unreachable via the real route, same as before the move -- see this class's own remarks.
+    // F-020-T12: AgendaBuddy.Customer.Core is the sixth such root -- its 4 moved handlers
+    // (AddCustomer/UpdateCustomer/GetCustomers/GetCustomerByEmail) would otherwise silently drop out of
+    // coverage. No handler was found dead: Customer had 10 routes against 4 CQRS handlers, a clean
+    // mapping once the other 6 (messages/notifications) are accounted for as calling
+    // IMessageService/INotificationService directly, never MediatR -- confirmed by grep, matching
+    // Provider's own GetProviderReport precedent, not assumed.
+    private static readonly string[] ScanRoots =
+        ["AgendaBuddy.EventAndCommands", "AgendaBuddy.Booking.Core", "AgendaBuddy.Calendar.Core", "AgendaBuddy.Profession.Core", "AgendaBuddy.Services.Core", "AgendaBuddy.Provider.Core", "AgendaBuddy.Customer.Core"];
 
     private static List<string> HandlerFiles()
     {
@@ -104,8 +139,8 @@ public class EventStoreWriteGuardTest
     {
         // Guards the guard: if this glob ever matches nothing (a directory rename, a naming convention
         // change), every assertion below would vacuously pass and CONSTITUTION §3 would have no test at
-        // all watching it. Twenty-one as of this task: twelve command handlers (thirteen minus the
-        // BookCalendar exclusion) plus nine query handlers.
+        // all watching it. Twenty as of F-020-T08: BookCalendarCommandHandler.cs (previously excluded,
+        // never counted here) was deleted rather than moved, so the count is unchanged by Calendar's move.
         Assert.True(HandlerFiles().Count >= 20, $"expected at least 20 handler files, found {HandlerFiles().Count}");
     }
 

@@ -1,8 +1,8 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using Library.Entities;
-using Library.Services;
+using AgendaBuddy.Library.Entities;
+using AgendaBuddy.Library.Services;
 using MongoDB.Bson;
 using MongoDB.Driver;
 

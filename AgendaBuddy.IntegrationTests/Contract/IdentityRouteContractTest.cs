@@ -10,7 +10,7 @@ namespace AgendaBuddy.IntegrationTests.Contract;
 /// </summary>
 /// <remarks>
 /// <para>
-/// Route chosen: <c>POST /api/v1/auth/register</c> (`Identity/Program.cs`) — the one route in this
+/// Route chosen: <c>POST /api/v1/auth/register</c> (`AgendaBuddy.Identity/Program.cs`) — the one route in this
 /// inventory that is anonymous by design and, for a valid unique account, is not an auth-refusal.
 /// </para>
 /// <para>

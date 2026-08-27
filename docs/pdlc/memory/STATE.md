@@ -11,7 +11,7 @@
 
 ## Current Phase
 
-Inception Complete — Ready for /build
+Construction
 
 ---
 
@@ -133,13 +133,46 @@ _None active. Run `/night-shift <F-NNN>` to start an autonomous run (requires by
 
 ## Current Sub-phase
 
-none
+Build
 
 ---
 
 ## Last Checkpoint
 
-Inception / Plan / 2026-08-27T07:50:00Z — **INCEPTION COMPLETE. 13 tasks created under
+Construction / Build / 2026-08-27T08:40:00Z — **T04 done, verified, committed (`8e53b88`).** Gateway →
+AgendaBuddy.Gateway, 13 files. Confirmed the Aspire-generated `Projects.Gateway` type became
+`Projects.AgendaBuddy_Gateway` automatically (dot-to-underscore) via a clean obj/bin rebuild. Found and
+fixed a real regression the rename itself introduced: `TransportSecurityOrderTest`'s `StartsWith
+("AgendaBuddy.")` exclusion filter (meant to skip non-service AgendaBuddy.* projects like AppHost/
+ServiceDefaults/Library/Kafka, none of which have a Program.cs) started matching `AgendaBuddy.Gateway`
+too, silently dropping it from the "every service Program.cs accounted for" scan. Narrowed to an exact
+AppHost-only exclusion. Backend suite 516/516, build clean, format clean. Wave 1 (Library/Kafka/Gateway)
+complete. Starting Wave 2: T03 (EventAndCommands, depends on T01+T02, both done) next.
+
+_Previously: Construction / Build / 2026-08-27T08:25:00Z — **T02 done, verified, committed (`7008570`).** Kafka/
+Kafka.Tests → AgendaBuddy.Kafka.*, 22 files. Agent's report itself flagged a real gap in T01 (stale
+`Library/**` CI path filters in `dotnet.yml` — 6 glob entries + 7 prose comments — plus
+`DockerAndComposeHygieneTest.cs`'s hardcoded `DeletedProjects` array checking a path that no longer
+exists), self-disclosed as "T01's gap, not mine to fix." Verified and fixed retroactively in the same
+commit rather than left for whichever later task happened to touch that file. Backend suite 516/516,
+build clean, format clean. **Sequencing renames one at a time** (not parallel — `agenda-buddy.sln` is a
+shared-file race risk without worktree isolation). T04 (Gateway) running next, solo.
+
+_Previously: Construction / Build / 2026-08-27T08:10:00Z — **T01 done, verified, committed (`9ad0eb8`).** Library/
+Library.ServerAuth/Library.Tests → AgendaBuddy.Library.*, 209 files touched, 89 tracked renames. Agent
+caught 3 real edge cases a naive regex would've missed (a type-alias `global using`, a fully-qualified
+inline reference with no `using` line, stale doc-comment references) — independently re-verified before
+committing: `dotnet build agenda-buddy.sln` clean, backend suite 516/516 matching the pre-rename baseline
+exactly, format clean, zero remaining unprefixed `Library.` references anywhere. **Running T02 (Kafka
+rename) now, solo — not in parallel with T04 (Gateway) as originally planned, since both would edit
+`agenda-buddy.sln` concurrently on the same (non-worktree-isolated) working tree, a real corruption risk.
+Sequencing renames one at a time, verifying and committing each before starting the next.**
+
+_Previously: Construction / Build / 2026-08-27T07:55:00Z — Branch `feat/F-020-api-refactor-rollout` created off `main`,
+pushed. Starting T01 (Library rename) via a forked agent, since the mechanical grep/sed/build-verify loop
+across a solution-wide rename would otherwise consume enormous main-context budget for no retained value.
+
+_Previously: Inception / Plan / 2026-08-27T07:50:00Z — **INCEPTION COMPLETE. 13 tasks created under
 `docs/pdlc/tasks/F-020/`** (T01–T13), in 5 waves: **Wave 1** (no deps, parallel-safe) — T01 Library rename,
 T02 Kafka rename, T04 Gateway rename. **Wave 2** — T03 EventAndCommands rename (needs T01+T02), T05
 Identity rename (needs T01), T06 MobileApp rename (needs T01, flagged highest-risk). **Wave 3** — T07
@@ -1144,9 +1177,9 @@ re-planning (`/continue`).
 
 ```json
 {
-  "triggered_at": "2026-08-27T10:19:40.770Z",
+  "triggered_at": "2026-08-27T10:20:35.476Z",
   "session_id": "6fa2c9f8-60c4-489a-82d1-f3cab5161e95",
-  "tool_count": 2130,
+  "tool_count": 2133,
   "estimated_usage": "86%",
   "active_task": null,
   "sub_phase": null,

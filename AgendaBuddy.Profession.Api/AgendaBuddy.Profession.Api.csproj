@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <UserSecretsId>dotnet-Profession-FB9A8FBA-510D-481A-BAD1-6E7C0DAC5E1C</UserSecretsId>
+        <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <Content Include="..\.dockerignore">
+        <Link>.dockerignore</Link>
+      </Content>
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="MediatR" Version="12.3.0" />
+      <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.0" />
+      <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.0" />
+      <PackageReference Include="MongoDB.Driver" Version="2.25.0" />
+      <PackageReference Include="Swashbuckle.AspNetCore" Version="10.2.3" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\AgendaBuddy.Profession.Core\AgendaBuddy.Profession.Core.csproj" />
+      <ProjectReference Include="..\AgendaBuddy.Profession.Domain\AgendaBuddy.Profession.Domain.csproj" />
+      <ProjectReference Include="..\AgendaBuddy.Profession.Infrastructure\AgendaBuddy.Profession.Infrastructure.csproj" />
+      <ProjectReference Include="..\AgendaBuddy.EventAndCommands\AgendaBuddy.EventAndCommands.csproj" />
+      <ProjectReference Include="..\AgendaBuddy.Library\AgendaBuddy.Library.csproj" />
+      <ProjectReference Include="..\AgendaBuddy.Library.ServerAuth\AgendaBuddy.Library.ServerAuth.csproj" />
+      <ProjectReference Include="..\AgendaBuddy.ServiceDefaults\AgendaBuddy.ServiceDefaults.csproj" />
+    </ItemGroup>
+    <ItemGroup>
+        <!-- F-016 AC-2: the integration harness asserts on internal helpers. -->
+        <InternalsVisibleTo Include="AgendaBuddy.IntegrationTests" />
+    </ItemGroup>
+
+</Project>

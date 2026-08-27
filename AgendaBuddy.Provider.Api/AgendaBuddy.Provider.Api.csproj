@@ -1,0 +1,42 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="MediatR" Version="12.3.0" />
+        <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.0" />
+        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.0" />
+        <PackageReference Include="MiniValidation" Version="0.9.1" />
+        <PackageReference Include="MongoDB.Bson" Version="2.25.0" />
+        <PackageReference Include="MongoDB.Driver" Version="2.25.0" />
+        <PackageReference Include="Swashbuckle.AspNetCore" Version="10.2.3" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Content Include="..\.dockerignore">
+            <Link>.dockerignore</Link>
+        </Content>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\AgendaBuddy.Provider.Core\AgendaBuddy.Provider.Core.csproj" />
+        <ProjectReference Include="..\AgendaBuddy.Provider.Domain\AgendaBuddy.Provider.Domain.csproj" />
+        <ProjectReference Include="..\AgendaBuddy.Provider.Infrastructure\AgendaBuddy.Provider.Infrastructure.csproj" />
+        <ProjectReference Include="..\AgendaBuddy.EventAndCommands\AgendaBuddy.EventAndCommands.csproj" />
+        <ProjectReference Include="..\AgendaBuddy.Kafka\AgendaBuddy.Kafka.csproj" />
+        <ProjectReference Include="..\AgendaBuddy.Library\AgendaBuddy.Library.csproj" />
+        <ProjectReference Include="..\AgendaBuddy.Library.ServerAuth\AgendaBuddy.Library.ServerAuth.csproj" />
+        <ProjectReference Include="..\AgendaBuddy.ServiceDefaults\AgendaBuddy.ServiceDefaults.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <!-- F-016 AC-2: the integration harness asserts on internal helpers. -->
+        <InternalsVisibleTo Include="AgendaBuddy.IntegrationTests" />
+    </ItemGroup>
+
+</Project>

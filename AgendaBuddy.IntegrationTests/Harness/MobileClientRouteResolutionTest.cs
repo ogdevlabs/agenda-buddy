@@ -1,15 +1,15 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using Booking.Requests;
-using Library.Entities;
-using MobileApp.Routing;
+using AgendaBuddy.Booking.Requests;
+using AgendaBuddy.Library.Entities;
+using AgendaBuddy.MobileApp.Routing;
 using MongoDB.Bson;
 
 namespace AgendaBuddy.IntegrationTests.Harness;
 
 /// <summary>
-/// F-015-T07 AC2: every corrected <c>MobileApp.Routing.*RouteBuilder</c> method is exercised here by
+/// F-015-T07 AC2: every corrected <c>AgendaBuddy.MobileApp.Routing.*RouteBuilder</c> method is exercised here by
 /// building a real <see cref="HttpRequestMessage"/> from its <see cref="RouteSpec"/> output and firing it
 /// at the real backend service that owns the route — not a hand-written path string duplicated in this
 /// project's own tests. Proves "2xx or a correctly-typed error, not a 404 caused by a wrong path, verb, or

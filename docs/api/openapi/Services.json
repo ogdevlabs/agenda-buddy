@@ -1,7 +1,7 @@
 {
   "openapi": "3.0.4",
   "info": {
-    "title": "Services",
+    "title": "AgendaBuddy.Services.Api",
     "version": "1.0"
   },
   "paths": {
@@ -27,10 +27,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ServiceEntity"
-                  }
+                  "$ref": "#/components/schemas/ServiceEntityListDataResponse"
                 }
               }
             }
@@ -87,7 +84,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ProviderEntity"
+                  "$ref": "#/components/schemas/ProviderEntityDataResponse"
                 }
               }
             }
@@ -141,7 +138,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ProviderEntity"
+                  "$ref": "#/components/schemas/ProviderEntityDataResponse"
                 }
               }
             }
@@ -343,6 +340,26 @@
         },
         "additionalProperties": false
       },
+      "ProviderEntityDataResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/ProviderEntity"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "success": {
+            "type": "boolean",
+            "readOnly": true
+          }
+        },
+        "additionalProperties": false
+      },
       "ServiceEntity": {
         "required": [
           "description",
@@ -371,6 +388,30 @@
           },
           "isActive": {
             "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ServiceEntityListDataResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ServiceEntity"
+            },
+            "nullable": true
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "success": {
+            "type": "boolean",
+            "readOnly": true
           }
         },
         "additionalProperties": false

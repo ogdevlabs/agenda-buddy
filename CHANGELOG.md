@@ -4,6 +4,31 @@ All notable changes to this project are documented in this file, in [Keep a Chan
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-08-27
+
+### Changed
+
+- **Rolled Booking's Clean Architecture pattern out to 5 more services** — Calendar, Customer, Provider, Services, Profession all now split into `<Service>.Api`/`Core`/`Domain`/`Infrastructure`, each with its own `mediator.Send` dispatch, `FluentResults.Result<T>`, and in-repo `DataResponse<T>` envelope. `RequestCollection`/`IRequestCollection` deleted for all 5. `Identity` is deliberately excluded — it never adopted the CQRS/`RequestCollection` shape the others share, so migrating it would introduce the pattern fresh, not replicate a proven one.
+- **Every project in the solution — all 47 — now carries the `AgendaBuddy.` prefix**: folder, `.csproj`, solution reference, and internal C# namespace, matching the convention `AgendaBuddy.AppHost`/`ServiceDefaults`/`IntegrationTests` set at F-013. This includes a retroactive rename of Booking's own 5 projects (shipped last release) plus `Library`, `EventAndCommands`, `Kafka`, `Gateway`, `Identity`, and `MobileApp` — all pure renames with no behavior change.
+- `AgendaBuddy.EventAndCommands` now holds zero command/query handler implementations — every service's handlers live in its own `*.Core` project.
+- `DataResponse<T>` stays per-service, not extracted to a shared package, even with 6 total near-identical copies now — no cross-service code needs the same type, only the same shape.
+
+### Fixed
+
+- **Threat T-204**: `Customer`'s `AddCustomerCommandHandler` was still typed against the concrete `KafkaClient` class rather than `IKafkaClient` — the one `agenda-buddy-5og`-shaped copy of this bug F-018/F-019 never touched. Retyped; a real `InvalidOperationException` under live MediatR dispatch would have resulted otherwise.
+- 2 genuinely dead command handlers deleted rather than migrated forward: `BookCalendarCommand` (Calendar) and `AddProfessionCommand` (Profession) — both unreachable, `NotImplementedException`-bodied, with no route or possible DI resolution path.
+- A real cross-service namespace bug, unrelated to any rename: `ProblemDetailsServiceEndpointFilter.cs` lived under `namespace Customer.Extensions;` inside the *Profession* project, compiling only because of a compensating `global using` — fixed to the correct namespace.
+- `AgendaBuddy.MobileApp`'s `CustomerApiService.ParsePagedCustomers` read `items` at the response root; wrapping `GET /customers` in `DataResponse<T>` moved it to `data.items` — fixed the parser and its test fixtures.
+- A subtle Aspire bug found live: a service's `appsettings.json`/`appsettings.Development.json` `Kestrel:Endpoints` blocks got swapped during project scaffolding, silently zeroing Aspire's endpoint auto-detection for that resource (no compile error — an empty collection where one was expected). Restored from git history.
+- `scripts/generate-openapi.sh`'s `project_dir()` mapping and `scripts/run-ios.sh`'s service arrays, each missing an entry for one or more renamed projects — found and fixed across several of this release's own commits.
+
+### Known issues
+
+- `agenda-buddy-02e` (Booking's Update/Cancel routes still on `MiniValidator`) and `agenda-buddy-cy2` (Booking's null-`EmailProvider` 500) — both pre-existing, Booking-scoped, unchanged by this release.
+- Customer's `UpdateCustomerCommandHandler` still audits its not-found branch under the wrong event `Type` (a copy-paste defect, already ruled out of scope at F-018-T13) — preserved, not fixed, pinned by a test.
+- Services' Add/Update handlers still skip an audit write on 2 specific branches — pre-existing, pinned by tests, not fixed.
+- Mapster remains approved (ADR-049) with zero call sites across all 6 migrated services.
+
 ## [0.8.0] - 2026-08-27
 
 ### Changed
@@ -26,5 +51,6 @@ All notable changes to this project are documented in this file, in [Keep a Chan
 - A `null` `EmailProvider` on `POST /appointments` passes both Validot and the ownership guard, then throws downstream during provider lookup, surfacing as an unhandled 500 rather than a 400 — `agenda-buddy-cy2`.
 - Mapster is approved (ADR-049) for this line of work but has zero call sites yet.
 
-[Unreleased]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.8.0...HEAD
+[Unreleased]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.9.0...HEAD
+[0.9.0]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.7.0...v0.8.0

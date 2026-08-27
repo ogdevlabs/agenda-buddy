@@ -38,20 +38,20 @@
   <ItemGroup>
     <!-- All seven services. The harness resolves each service's entry-point assembly through a
          distinct PUBLIC type rather than `Program` — see EntryPoints.cs for why. -->
-    <ProjectReference Include="..\Booking.Api\Booking.Api.csproj" />
-    <ProjectReference Include="..\Calendar\Calendar.csproj" />
-    <ProjectReference Include="..\Customer\Customer.csproj" />
-    <ProjectReference Include="..\Provider\Provider.csproj" />
-    <ProjectReference Include="..\Services\Services.csproj" />
-    <ProjectReference Include="..\Profession\Profession.csproj" />
-    <ProjectReference Include="..\Identity\Identity.csproj" />
+    <ProjectReference Include="..\AgendaBuddy.Booking.Api\AgendaBuddy.Booking.Api.csproj" />
+    <ProjectReference Include="..\AgendaBuddy.Calendar.Api\AgendaBuddy.Calendar.Api.csproj" />
+    <ProjectReference Include="..\AgendaBuddy.Customer.Api\AgendaBuddy.Customer.Api.csproj" />
+    <ProjectReference Include="..\AgendaBuddy.Provider.Api\AgendaBuddy.Provider.Api.csproj" />
+    <ProjectReference Include="..\AgendaBuddy.Services.Api\AgendaBuddy.Services.Api.csproj" />
+    <ProjectReference Include="..\AgendaBuddy.Profession.Api\AgendaBuddy.Profession.Api.csproj" />
+    <ProjectReference Include="..\AgendaBuddy.Identity\AgendaBuddy.Identity.csproj" />
     <!-- F-015-T01: the eighth process. No MongoDB dependency, so it needs no Testcontainer — see
          Harness/GatewayHostTest.cs. -->
-    <ProjectReference Include="..\Gateway\Gateway.csproj" />
-    <!-- F-015-T07 AC2: proves the corrected MobileApp.Routing.*RouteBuilder output actually resolves
+    <ProjectReference Include="..\AgendaBuddy.Gateway\AgendaBuddy.Gateway.csproj" />
+    <!-- F-015-T07 AC2: proves the corrected AgendaBuddy.MobileApp.Routing.*RouteBuilder output actually resolves
          against a live backend, not just that a hand-written path string in this project's own tests
-         does. Resolves against the net10.0 fallback TFM (UseMaui=false), same as MobileApp.Tests. -->
-    <ProjectReference Include="..\MobileApp\MobileApp.csproj" />
+         does. Resolves against the net10.0 fallback TFM (UseMaui=false), same as AgendaBuddy.MobileApp.Tests. -->
+    <ProjectReference Include="..\AgendaBuddy.MobileApp\AgendaBuddy.MobileApp.csproj" />
   </ItemGroup>
 
 </Project>

@@ -3,7 +3,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using AgendaBuddy.IntegrationTests.Harness;
-using Library.Entities;
+using AgendaBuddy.Library.Entities;
 using MongoDB.Bson;
 
 namespace AgendaBuddy.IntegrationTests.Persistence;
@@ -76,8 +76,11 @@ public class CalendarPersistenceTest(ServiceHostFixture<CalendarAnchor> host, Cr
         // register ObjectIdJsonConverter (unlike Booking/Customer/Provider, per ObjectIdJsonConverter's
         // own remarks), so its "id" field is the unusable {timestamp,machine,...} shape client-side
         // deserialisation cannot parse. None of the fields this test cares about are "id".
+        //
+        // F-020-T08: the response is now wrapped in DataResponse<T> (ADR-049, following Booking's
+        // precedent) -- the array moved from the response root to a "data" property.
         using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-        var stored = Assert.Single(body.RootElement.EnumerateArray());
+        var stored = Assert.Single(body.RootElement.GetProperty("data").EnumerateArray());
 
         Assert.Equal("calendar-persistence-appt-1", stored.GetProperty("identifier").GetString());
         Assert.Equal(Owner, stored.GetProperty("emailProvider").GetString());
@@ -109,8 +112,9 @@ public class CalendarPersistenceTest(ServiceHostFixture<CalendarAnchor> host, Cr
         var response = await service.Client.SendAsync(Read($"api/v1/calendar/availability/{Owner}"));
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var slots = await response.Content.ReadFromJsonAsync<List<DateTime>>();
-        Assert.NotNull(slots);
+        // F-020-T08: wrapped in DataResponse<T> -- see the remarks above the appointments assertion.
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var slots = body.RootElement.GetProperty("data").EnumerateArray().ToList();
         Assert.NotEmpty(slots);
     }
 }
