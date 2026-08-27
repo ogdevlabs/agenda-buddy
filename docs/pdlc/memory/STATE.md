@@ -139,7 +139,17 @@ Build
 
 ## Last Checkpoint
 
-Construction / Build / 2026-08-27T07:55:00Z — Branch `feat/F-020-api-refactor-rollout` created off `main`,
+Construction / Build / 2026-08-27T08:10:00Z — **T01 done, verified, committed (`9ad0eb8`).** Library/
+Library.ServerAuth/Library.Tests → AgendaBuddy.Library.*, 209 files touched, 89 tracked renames. Agent
+caught 3 real edge cases a naive regex would've missed (a type-alias `global using`, a fully-qualified
+inline reference with no `using` line, stale doc-comment references) — independently re-verified before
+committing: `dotnet build agenda-buddy.sln` clean, backend suite 516/516 matching the pre-rename baseline
+exactly, format clean, zero remaining unprefixed `Library.` references anywhere. **Running T02 (Kafka
+rename) now, solo — not in parallel with T04 (Gateway) as originally planned, since both would edit
+`agenda-buddy.sln` concurrently on the same (non-worktree-isolated) working tree, a real corruption risk.
+Sequencing renames one at a time, verifying and committing each before starting the next.**
+
+_Previously: Construction / Build / 2026-08-27T07:55:00Z — Branch `feat/F-020-api-refactor-rollout` created off `main`,
 pushed. Starting T01 (Library rename) via a forked agent, since the mechanical grep/sed/build-verify loop
 across a solution-wide rename would otherwise consume enormous main-context budget for no retained value.
 
