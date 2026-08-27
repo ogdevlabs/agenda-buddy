@@ -1,7 +1,9 @@
 // Global using directives
 
+global using System.Collections.Generic;
 global using System.Text.Json;
 global using Booking.Domain.Commands;
+global using Booking.Domain.Queries;
 global using EventAndCommands.Events.Booking;
 global using EventAndCommands.Persistence;
 global using FluentResults;

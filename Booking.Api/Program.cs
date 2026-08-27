@@ -277,8 +277,17 @@ booking.MapPost("/appointments/{identifier}/status",
 
             try
             {
-                var result = await new ChangeAppointmentStatusCommandHandler(providerService, bookingService, eventStore)
-                    .Handle(new ChangeAppointmentStatusCommand { Identifier = identifier, TargetStatus = target },
+                // F-019-T05: the fresh Booking.Core/Booking.Domain equivalents now exist alongside this
+                // still-hand-constructed original -- fully qualified here to disambiguate until T06
+                // rewires this route onto mediator.Send and the EventAndCommands original is deleted (T10).
+                var result = await new EventAndCommands.Commands.Booking.ChangeAppointmentStatusCommandHandler(
+                        providerService, bookingService, eventStore)
+                    .Handle(
+                        new EventAndCommands.Commands.Booking.ChangeAppointmentStatusCommand
+                        {
+                            Identifier = identifier,
+                            TargetStatus = target
+                        },
                         CancellationToken.None);
 
                 if (result is null) return TypedResults.NotFound();
