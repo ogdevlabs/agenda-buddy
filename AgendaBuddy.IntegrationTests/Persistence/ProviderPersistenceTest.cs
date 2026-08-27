@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text.Json;
 using AgendaBuddy.IntegrationTests.Harness;
 using AgendaBuddy.Library.Entities;
 using MongoDB.Bson;
@@ -72,20 +73,27 @@ public class ProviderPersistenceTest(ServiceHostFixture<ProviderAnchor> host, Cr
         var getResponse = await service.Client.SendAsync(getRequest);
         Assert.Equal(HttpStatusCode.OK, getResponse.StatusCode);
 
-        var read = await getResponse.Content.ReadFromJsonAsync<ProviderEntity>(HarnessJson.Options);
+        // F-020-T11: the response is now wrapped in DataResponse<T> (ADR-049, following Booking's/
+        // Calendar's/Profession's/Services' precedent) -- the object moved from the response root to a
+        // "data" property. Parsed field-by-field rather than re-deserialised into ProviderEntity at
+        // "data": ObjectIdJsonConverter IS registered for Provider, so a typed deserialise would also
+        // work, but every sibling migration's persistence test parses field-by-field, and matching that
+        // shape keeps this test's own diff minimal and consistent with the others.
+        using var body = JsonDocument.Parse(await getResponse.Content.ReadAsStringAsync());
+        var read = body.RootElement.GetProperty("data");
 
-        Assert.NotNull(read);
-        Assert.Equal("After", read.FirstName);
-        Assert.Equal("Update", read.LastName);
-        Assert.Equal(Email, read.Email);
-        Assert.Equal("provider-round-trip-topic", read.KafkaTopic);
-        Assert.Equal([SubscribedCustomer], read.SubscribedCustomerCollection);
-        Assert.True(read.IsActive);
+        Assert.Equal("After", read.GetProperty("firstName").GetString());
+        Assert.Equal("Update", read.GetProperty("lastName").GetString());
+        Assert.Equal(Email, read.GetProperty("email").GetString());
+        Assert.Equal("provider-round-trip-topic", read.GetProperty("kafkaTopic").GetString());
+        Assert.Equal([SubscribedCustomer], read.GetProperty("subscribedCustomerCollection").EnumerateArray().Select(e => e.GetString()));
+        Assert.True(read.GetProperty("isActive").GetBoolean());
 
-        Assert.Single(read.ServiceEntities);
-        Assert.Equal("60-min session", read.ServiceEntities[0].Name);
-        Assert.Equal("a real service", read.ServiceEntities[0].Description);
-        Assert.Equal(65m, read.ServiceEntities[0].Fee);
+        var serviceEntities = read.GetProperty("serviceEntities");
+        var storedService = Assert.Single(serviceEntities.EnumerateArray());
+        Assert.Equal("60-min session", storedService.GetProperty("name").GetString());
+        Assert.Equal("a real service", storedService.GetProperty("description").GetString());
+        Assert.Equal(65m, storedService.GetProperty("fee").GetDecimal());
 
         // Confirms the read went to the SAME collection the service itself is configured to use, not a
         // literal "providers" that happened to match by coincidence.

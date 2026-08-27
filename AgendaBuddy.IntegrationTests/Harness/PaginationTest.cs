@@ -69,7 +69,12 @@ public class PaginationTest : IClassFixture<ServiceHostFixture<ProviderAnchor>>
         return JsonDocument.Parse(await response.Content.ReadAsStringAsync());
     }
 
-    private static int ItemCount(JsonDocument page) => page.RootElement.GetProperty("items").GetArrayLength();
+    // F-020-T11: the response is now wrapped in DataResponse<T> (ADR-049, following Booking's/
+    // Calendar's/Profession's/Services' precedent) -- the paginated envelope moved from the response
+    // root to a "data" property. All accesses below go through Data(), not page.RootElement directly.
+    private static JsonElement Data(JsonDocument page) => page.RootElement.GetProperty("data");
+
+    private static int ItemCount(JsonDocument page) => Data(page).GetProperty("items").GetArrayLength();
 
     [Fact]
     public async Task AC15_TheEnvelopeHasExactlyTheDocumentedShape()
@@ -79,12 +84,12 @@ public class PaginationTest : IClassFixture<ServiceHostFixture<ProviderAnchor>>
 
         Assert.Equal(
             EnvelopeProperties,
-            page.RootElement.EnumerateObject().Select(p => p.Name).OrderBy(n => n, StringComparer.Ordinal));
+            Data(page).EnumerateObject().Select(p => p.Name).OrderBy(n => n, StringComparer.Ordinal));
 
         // Defaults from ADR-023.
-        Assert.Equal(1, page.RootElement.GetProperty("page").GetInt32());
-        Assert.Equal(25, page.RootElement.GetProperty("pageSize").GetInt32());
-        Assert.Equal(SeededProviders, page.RootElement.GetProperty("totalCount").GetInt64());
+        Assert.Equal(1, Data(page).GetProperty("page").GetInt32());
+        Assert.Equal(25, Data(page).GetProperty("pageSize").GetInt32());
+        Assert.Equal(SeededProviders, Data(page).GetProperty("totalCount").GetInt64());
         Assert.Equal(25, ItemCount(page));
     }
 
@@ -95,7 +100,7 @@ public class PaginationTest : IClassFixture<ServiceHostFixture<ProviderAnchor>>
         using var page = await Read(service, "?page=1&pageSize=10");
 
         Assert.Equal(10, ItemCount(page));
-        Assert.Equal(SeededProviders, page.RootElement.GetProperty("totalCount").GetInt64());
+        Assert.Equal(SeededProviders, Data(page).GetProperty("totalCount").GetInt64());
     }
 
     [Fact]
@@ -106,9 +111,9 @@ public class PaginationTest : IClassFixture<ServiceHostFixture<ProviderAnchor>>
         using var first = await Read(service, "?page=1&pageSize=10");
         using var second = await Read(service, "?page=2&pageSize=10");
 
-        var firstEmails = first.RootElement.GetProperty("items").EnumerateArray()
+        var firstEmails = Data(first).GetProperty("items").EnumerateArray()
             .Select(p => p.GetProperty("email").GetString()).ToList();
-        var secondEmails = second.RootElement.GetProperty("items").EnumerateArray()
+        var secondEmails = Data(second).GetProperty("items").EnumerateArray()
             .Select(p => p.GetProperty("email").GetString()).ToList();
 
         Assert.Equal(10, secondEmails.Count);
@@ -123,9 +128,9 @@ public class PaginationTest : IClassFixture<ServiceHostFixture<ProviderAnchor>>
         using var service = await StartWithProviders();
         using var page = await Read(service, "?pageSize=100000");
 
-        Assert.Equal(100, page.RootElement.GetProperty("pageSize").GetInt32());
+        Assert.Equal(100, Data(page).GetProperty("pageSize").GetInt32());
         Assert.Equal(SeededProviders, ItemCount(page));  // fewer than the cap exist
-        Assert.Equal(SeededProviders, page.RootElement.GetProperty("totalCount").GetInt64());
+        Assert.Equal(SeededProviders, Data(page).GetProperty("totalCount").GetInt64());
     }
 
     [Theory]
@@ -140,8 +145,8 @@ public class PaginationTest : IClassFixture<ServiceHostFixture<ProviderAnchor>>
         using var service = await StartWithProviders();
         using var page = await Read(service, query);
 
-        Assert.True(page.RootElement.GetProperty("page").GetInt32() >= 1);
-        Assert.True(page.RootElement.GetProperty("pageSize").GetInt32() >= 1);
+        Assert.True(Data(page).GetProperty("page").GetInt32() >= 1);
+        Assert.True(Data(page).GetProperty("pageSize").GetInt32() >= 1);
     }
 
     [Fact]
@@ -152,6 +157,6 @@ public class PaginationTest : IClassFixture<ServiceHostFixture<ProviderAnchor>>
         using var page = await Read(service, "?page=500&pageSize=25");
 
         Assert.Equal(0, ItemCount(page));
-        Assert.Equal(SeededProviders, page.RootElement.GetProperty("totalCount").GetInt64());
+        Assert.Equal(SeededProviders, Data(page).GetProperty("totalCount").GetInt64());
     }
 }

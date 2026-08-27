@@ -97,8 +97,16 @@ public class EventStoreWriteGuardTest
     // found dead here: Services had exactly 3 routes and 3 handlers, a 1:1 mapping confirmed at Build
     // (ARCHITECTURE.md §9's "4-handlers-for-2-routes" note was a stale miscount, not a real defect --
     // see this task's own report).
+    // F-020-T11: AgendaBuddy.Provider.Core is the fifth such root -- its 5 moved handlers
+    // (AddProvider/UpdateProvider/DeactivateProvider/GetProviderByEmail/GetProviders) would otherwise
+    // silently drop out of coverage. Like Services, no handler was found dead: Provider had 6 routes
+    // against 5 CQRS handlers, a clean mapping once the sixth route (GetProviderReport) is accounted
+    // for as calling IReportingService directly, never MediatR -- confirmed by grep, not assumed.
+    // DeactivateProviderCommandHandler went through mediator.Send here for the first time ever (it was
+    // previously `new`-ed by hand in Provider/Program.cs, deleted); its "provider not found" branch
+    // remains unreachable via the real route, same as before the move -- see this class's own remarks.
     private static readonly string[] ScanRoots =
-        ["AgendaBuddy.EventAndCommands", "AgendaBuddy.Booking.Core", "AgendaBuddy.Calendar.Core", "AgendaBuddy.Profession.Core", "AgendaBuddy.Services.Core"];
+        ["AgendaBuddy.EventAndCommands", "AgendaBuddy.Booking.Core", "AgendaBuddy.Calendar.Core", "AgendaBuddy.Profession.Core", "AgendaBuddy.Services.Core", "AgendaBuddy.Provider.Core"];
 
     private static List<string> HandlerFiles()
     {

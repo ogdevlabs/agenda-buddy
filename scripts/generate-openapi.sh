@@ -89,6 +89,10 @@ export ASPNETCORE_ENVIRONMENT=Development
 project_dir() {
   case "$1" in
     Booking) echo "AgendaBuddy.Booking.Api" ;;
+    Provider) echo "AgendaBuddy.Provider.Api" ;;
+    Calendar) echo "AgendaBuddy.Calendar.Api" ;;
+    Profession) echo "AgendaBuddy.Profession.Api" ;;
+    Services) echo "AgendaBuddy.Services.Api" ;;
     *) echo "$1" ;;
   esac
 }

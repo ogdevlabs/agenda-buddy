@@ -45,7 +45,7 @@ namespace Common.Tests.Security;
 public class TransportSecurityOrderTest
 {
     private static readonly string[] AllServices =
-        ["AgendaBuddy.Gateway", "AgendaBuddy.Identity", "AgendaBuddy.Booking.Api", "AgendaBuddy.Calendar.Api", "Customer", "AgendaBuddy.Profession.Api", "Provider", "AgendaBuddy.Services.Api"];
+        ["AgendaBuddy.Gateway", "AgendaBuddy.Identity", "AgendaBuddy.Booking.Api", "AgendaBuddy.Calendar.Api", "Customer", "AgendaBuddy.Profession.Api", "AgendaBuddy.Provider.Api", "AgendaBuddy.Services.Api"];
 
     private const string TransportSecurityCall = "UseAgendaBuddyTransportSecurity(";
     private const string AuthenticationCall = "app.UseAuthentication()";
@@ -89,7 +89,7 @@ public class TransportSecurityOrderTest
     [InlineData("AgendaBuddy.Calendar.Api")]
     [InlineData("Customer")]
     [InlineData("AgendaBuddy.Profession.Api")]
-    [InlineData("Provider")]
+    [InlineData("AgendaBuddy.Provider.Api")]
     [InlineData("AgendaBuddy.Services.Api")]
     public void TransportSecurity_IsRegisteredBeforeAuthentication(string service)
     {
@@ -125,7 +125,7 @@ public class TransportSecurityOrderTest
     [InlineData("AgendaBuddy.Calendar.Api")]
     [InlineData("Customer")]
     [InlineData("AgendaBuddy.Profession.Api")]
-    [InlineData("Provider")]
+    [InlineData("AgendaBuddy.Provider.Api")]
     [InlineData("AgendaBuddy.Services.Api")]
     public void NoService_CallsUseHttpsRedirectionDirectly(string service)
     {

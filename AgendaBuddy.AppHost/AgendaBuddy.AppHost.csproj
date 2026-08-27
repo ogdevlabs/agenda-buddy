@@ -29,7 +29,7 @@
         <ProjectReference Include="..\Customer\Customer.csproj" />
         <ProjectReference Include="..\AgendaBuddy.Identity\AgendaBuddy.Identity.csproj" />
         <ProjectReference Include="..\AgendaBuddy.Profession.Api\AgendaBuddy.Profession.Api.csproj" />
-        <ProjectReference Include="..\Provider\Provider.csproj" />
+        <ProjectReference Include="..\AgendaBuddy.Provider.Api\AgendaBuddy.Provider.Api.csproj" />
         <ProjectReference Include="..\AgendaBuddy.Services.Api\AgendaBuddy.Services.Api.csproj" />
         <!-- F-015-T05: the eighth process. Referenced here (not just added to agenda-buddy.sln) so
              the Aspire AppHost SDK generates Projects.AgendaBuddy_Gateway, the same source-generated

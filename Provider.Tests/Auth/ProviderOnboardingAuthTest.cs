@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Provier.Tests.Auth;
+namespace Provider.Tests.Auth;
 
 public class ProviderOnboardingAuthTest
 {

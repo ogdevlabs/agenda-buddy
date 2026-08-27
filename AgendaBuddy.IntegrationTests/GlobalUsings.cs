@@ -7,7 +7,7 @@ global using Xunit;
 // Harness/EntryPoints.cs for the full rationale. Added per service as its test classes arrive.
 global using ProfessionAnchor = AgendaBuddy.Profession.Configurations.MongoDbConfiguration;
 global using CustomerAnchor = Customer.Configurations.MongoDbConfiguration;
-global using ProviderAnchor = Provider.Configurations.MongoDbConfiguration;
+global using ProviderAnchor = AgendaBuddy.Provider.Configurations.MongoDbConfiguration;
 global using CalendarAnchor = AgendaBuddy.Calendar.Configurations.MongoDbConfiguration;
 global using ServicesAnchor = AgendaBuddy.Services.Configurations.MongoDbConfiguration;
 global using BookingAnchor = AgendaBuddy.Booking.Configuration.MongoDbConfiguration;   // NOTE: Configuration, SINGULAR — Booking is the odd one out

@@ -61,7 +61,7 @@ public class PublishContainerTest
     // must publish clean without the suppression — restoring it would silently mask a regression here.
     [Theory]
     [InlineData("Customer/Customer.csproj")]
-    [InlineData("Provider/Provider.csproj")]
+    [InlineData("AgendaBuddy.Provider.Api/AgendaBuddy.Provider.Api.csproj")]
     public void NoLongerSuppressesDuplicatePublishOutputFiles(string relativeCsprojPath)
     {
         var csproj = LoadCsproj(relativeCsprojPath);

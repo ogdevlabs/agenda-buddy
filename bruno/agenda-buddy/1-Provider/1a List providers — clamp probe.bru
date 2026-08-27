@@ -13,7 +13,8 @@ params:query {
 tests {
   test("clamped to 100 and echoed, NOT a 400", function () {
     expect(res.getStatus()).to.equal(200);
-    expect(res.getBody().pageSize).to.equal(100);
+    // F-020-T11: wrapped in DataResponse<T> -- the pageSize moved under "data".
+    expect(res.getBody().data.pageSize).to.equal(100);
   });
 }
 docs {

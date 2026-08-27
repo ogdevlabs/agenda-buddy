@@ -120,7 +120,10 @@ jobs:
               - 'AgendaBuddy.Calendar.Domain/**'
               - 'AgendaBuddy.Calendar.Infrastructure/**'
               - 'Customer/**'
-              - 'Provider/**'
+              - 'AgendaBuddy.Provider.Api/**'
+              - 'AgendaBuddy.Provider.Core/**'
+              - 'AgendaBuddy.Provider.Domain/**'
+              - 'AgendaBuddy.Provider.Infrastructure/**'
               - 'AgendaBuddy.Services.Api/**'
               - 'AgendaBuddy.Services.Core/**'
               - 'AgendaBuddy.Services.Domain/**'
@@ -175,7 +178,7 @@ jobs:
               - 'AgendaBuddy.Booking.Api/**'
               - 'AgendaBuddy.Calendar.Api/**'
               - 'Customer/**'
-              - 'Provider/**'
+              - 'AgendaBuddy.Provider.Api/**'
               - 'AgendaBuddy.Services.Api/**'
               - 'AgendaBuddy.Profession.Api/**'
               - 'AgendaBuddy.Identity/**'
@@ -283,7 +286,7 @@ jobs:
           JWT_PUBLIC_KEY=$(cat "$RUNNER_TEMP/jwt.pub")
           export JWT_PRIVATE_KEY JWT_PUBLIC_KEY
 
-          for svc in AgendaBuddy.Booking.Api AgendaBuddy.Calendar.Api Customer Provider AgendaBuddy.Services.Api AgendaBuddy.Profession.Api AgendaBuddy.Identity; do
+          for svc in AgendaBuddy.Booking.Api AgendaBuddy.Calendar.Api Customer AgendaBuddy.Provider.Api AgendaBuddy.Services.Api AgendaBuddy.Profession.Api AgendaBuddy.Identity; do
             log=$(mktemp)
             ASPNETCORE_ENVIRONMENT=Development \
             ConnectionStrings__mongodb='mongodb://localhost:27017' \
@@ -500,7 +503,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        service: [AgendaBuddy.Booking.Api, AgendaBuddy.Calendar.Api, Customer, Provider, AgendaBuddy.Services.Api, AgendaBuddy.Profession.Api, AgendaBuddy.Identity]
+        service: [AgendaBuddy.Booking.Api, AgendaBuddy.Calendar.Api, Customer, AgendaBuddy.Provider.Api, AgendaBuddy.Services.Api, AgendaBuddy.Profession.Api, AgendaBuddy.Identity]
 
     steps:
       - uses: actions/checkout@v7
