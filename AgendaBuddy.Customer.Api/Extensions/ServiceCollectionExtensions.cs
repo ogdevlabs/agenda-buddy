@@ -56,6 +56,11 @@ public static class ServiceCollectionExtensions
         // and the interface in the same scope gets the same object, not two.
         serviceCollection.AddScoped<ICustomerService>(sp => sp.GetRequiredService<CustomerService>());
 
+        // SubscribeToProviderCommandHandler/UnsubscribeFromProviderCommandHandler are typed against
+        // IProviderService for the reciprocal SubscribedCustomerCollection write -- same
+        // forward-to-the-already-scoped-concrete-instance shape as ICustomerService above.
+        serviceCollection.AddScoped<IProviderService>(sp => sp.GetRequiredService<ProviderService>());
+
         serviceCollection.AddScoped<IMessageService, MessageService>();
         serviceCollection.AddScoped<INotificationService, NotificationService>();
 

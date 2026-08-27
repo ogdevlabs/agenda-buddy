@@ -1,12 +1,12 @@
-# Episode 012: Token Revocation
+# Episode 013: Token Revocation
 
-**Episode ID:** 012
+**Episode ID:** 013
 **Feature name:** Token Revocation — logging out now stops an access token from working, instead of leaving it valid for up to an hour
 **Feature slug:** token-revocation
 **Feature ID:** F-023
 **Date built:** 2026-08-27, on `feat/F-023-token-revocation`
 **Phase delivered in:** Construction
-**Date shipped:** 2026-08-27 — merged via the mandated PR path (ADR-050)
+**Date shipped:** 2026-08-27 — merged via the mandated PR path (ADR-050), PR #79, tagged **`v0.13.0`**
 **Status:** Final
 
 ---
@@ -18,7 +18,7 @@ existed. `LogoutAsync` cleared the stored refresh token, but the access token it
 up to its full 60-minute lifetime after logout — a leaked or post-logout token had the widest possible
 blast radius, since all seven services accept any token the shared issuer minted.
 
-**Denylist store (ADR-053).** A new MongoDB collection, `revoked_tokens`, keyed by `jti`, with a TTL
+**Denylist store (ADR-054).** A new MongoDB collection, `revoked_tokens`, keyed by `jti`, with a TTL
 index on `expires_at` so a revoked entry never outlives the token it revokes. `ITokenRevocationStore`
 is defined in `AgendaBuddy.Library.ServerAuth` (interface only); `MongoTokenRevocationStore` implements
 it in `AgendaBuddy.Library`, which gained a `ProjectReference` to `Library.ServerAuth` to see the
@@ -36,7 +36,7 @@ it and sends it alongside the refresh token — through the no-auth HTTP client,
 call never triggers `JwtDelegatingHandler`'s own 401-refresh-and-retry (which would rotate the refresh
 token this request is trying to invalidate out from under it).
 
-**No `aud` claim, `ValidateAudience` stays `false` — evaluated and rejected (ADR-053).** All seven
+**No `aud` claim, `ValidateAudience` stays `false` — evaluated and rejected (ADR-054).** All seven
 services trust one issuer uniformly today; a shared audience would duplicate the existing
 `ValidateIssuer` check with no narrowing, and per-service audiences would remove this project's actual
 design (one token, every service accepts it) rather than harden it.
@@ -66,4 +66,4 @@ Suites: backend 563/563 (560 baseline + 3 new), integration 316/316 (314 baselin
 |---|---|
 | PRD | [`PRD_F-023_token-revocation_2026-08-27.md`](../prds/PRD_F-023_token-revocation_2026-08-27.md) |
 | Feature record | [`docs/pdlc/tasks/F-023/`](../tasks/F-023/) |
-| Decisions | ADR-053 |
+| Decisions | ADR-054 |

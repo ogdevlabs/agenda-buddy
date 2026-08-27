@@ -32,19 +32,19 @@ and anyone whose access token leaks (a shorter usable window narrows the exposur
 - **R5.** The per-request check cost is one indexed lookup, not a scan or a cross-service network call
   beyond the database round-trip every request already makes.
 - **R6.** A caller cannot revoke an arbitrary token by supplying a forged one — at worst, a garbage
-  submission is silently ignored (see ADR-053's discussion of why this is safe without re-verifying the
+  submission is silently ignored (see ADR-054's discussion of why this is safe without re-verifying the
   signature).
 
 ## Non-goals
 
 - **A real `aud` claim / `ValidateAudience = true`.** Evaluated and rejected for this feature — see
-  ADR-053. All seven services trust the same single issuer today; a shared `aud` value would duplicate
+  ADR-054. All seven services trust the same single issuer today; a shared `aud` value would duplicate
   `ValidateIssuer` without narrowing anything, and per-service audiences would break the existing
   one-token-many-services design, which is a separate, larger, unvalidated change.
   `ValidateAudience` stays `false`.
 - **A distributed cache (Redis, etc.) as the denylist store.** No such infrastructure exists in this
   project's Aspire AppHost today (MongoDB + Kafka only). Introducing one for a single-purpose denylist
-  is a bigger infrastructure decision than this feature's scope — see ADR-053.
+  is a bigger infrastructure decision than this feature's scope — see ADR-054.
 - **Mobile UI changes.** The mobile client already attaches its stored access token to every
   authenticated call and reacts to `401` by refreshing; revocation surfaces as an ordinary `401` it
   already knows how to handle. No `AgendaBuddy.MobileApp` change is required.
