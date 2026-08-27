@@ -33,3 +33,4 @@ global using MongoDB.Driver;
 global using Validot;
 global using AgendaBuddy.EventAndCommands;
 global using AgendaBuddy.EventAndCommands.Persistence;
+global using Carter;

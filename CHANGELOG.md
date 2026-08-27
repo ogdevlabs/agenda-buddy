@@ -4,6 +4,25 @@ All notable changes to this project are documented in this file, in [Keep a Chan
 
 ## [Unreleased]
 
+## [0.14.0] - 2026-08-27
+
+### Changed
+
+- **F-027 carter-route-modules**: every service's inline `Program.cs` route registrations reorganized
+  into [Carter](https://github.com/CarterCommunity/Carter) `ICarterModule` classes — `BookingModule`,
+  `CalendarModule`, `CustomerModule`/`MessageModule`/`NotificationModule`, `ProviderModule`,
+  `ServicesModule`, `ProfessionModule`, `AuthModule`/`DeviceTokenModule`. Behavior-preserving: no route
+  path, verb, auth requirement, or response shape changed — proven by the unchanged route-contract and
+  OpenAPI-drift test suites. Carter's own `Validate<T>` FluentValidation integration was evaluated and
+  not adopted; Validot (ADR-049) remains the sole validation DSL (ADR-055).
+
+### Fixed
+
+- Carter's default assembly-scanning module discovery picked up `ICarterModule` implementations across
+  service boundaries inside `AgendaBuddy.IntegrationTests`' shared test process (it references all 7 API
+  projects). Fixed by registering each service's modules explicitly via `AddCarter(configurator: ...)`
+  rather than relying on scanning.
+
 ## [0.13.0] - 2026-08-27
 
 ### Added
@@ -107,7 +126,8 @@ All notable changes to this project are documented in this file, in [Keep a Chan
 - A `null` `EmailProvider` on `POST /appointments` passes both Validot and the ownership guard, then throws downstream during provider lookup, surfacing as an unhandled 500 rather than a 400 — `agenda-buddy-cy2`.
 - Mapster is approved (ADR-049) for this line of work but has zero call sites yet.
 
-[Unreleased]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.13.0...HEAD
+[Unreleased]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.14.0...HEAD
+[0.14.0]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.13.0...v0.14.0
 [0.13.0]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.12.0...v0.13.0
 [0.12.0]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.10.0...v0.11.0

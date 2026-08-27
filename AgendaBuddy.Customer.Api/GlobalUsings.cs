@@ -34,3 +34,4 @@ global using MongoDB.Bson;
 global using MongoDB.Driver;
 global using AgendaBuddy.EventAndCommands;
 global using AgendaBuddy.EventAndCommands.Persistence;
+global using Carter;
