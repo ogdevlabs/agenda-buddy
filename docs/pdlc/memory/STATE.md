@@ -5,19 +5,29 @@
      Claude reads this file at the start of every session to auto-resume from the last checkpoint.
      If this file is missing or empty, PDLC will prompt you to run /pdlc init. -->
 
-**Last updated:** 2026-08-27T07:50:00Z
+**Last updated:** 2026-08-27T10:40:00Z
 
 ---
 
 ## Current Phase
 
-Construction
+Idle
 
 ---
 
 ## Current Feature
 
-api-refactor-rollout (F-020)
+none
+
+_**F-020 `api-refactor-rollout` SHIPPED** as `v0.9.0` — merged directly to `main` (`7cd4673`; no PR possible,
+`gh` READ-only), episode 009. Operation closed 2026-08-27T10:40:00Z: merged, tagged, cloud deploy skipped
+(9th consecutive, 8th under ADR-035). Verify done by both a live CI run on the merge push (1 transient
+Docker-daemon 502 in an unrelated container-runtime guard test, re-verified locally as passing, not a
+regression) and a full live AppHost smoke test (Booking/Calendar pinned contracts, real Provider/Customer
+round trips confirming `DataResponse<T>` and threat T-204's Kafka fix). 1022 tests total, 0 failing. 11 real
+defects found and fixed across the 13-task build loop. Claim released. The API refactor program
+(F-018→F-019→F-020) is complete; F-027 (Carter route modules) filed as the next candidate, deliberately
+deferred, not bundled in._
 
 _**Claimed 2026-08-27.** User: "now do F-20" — continuing under this session's standing full-autonomy grant
 (2026-08-26T23:12:00Z), which the user's terse go-ahead is read as extending to this feature: proceed through
@@ -133,13 +143,35 @@ _None active. Run `/night-shift <F-NNN>` to start an autonomous run (requires by
 
 ## Current Sub-phase
 
-Build
+none
 
 ---
 
 ## Last Checkpoint
 
-Construction / Build / 2026-08-27T08:40:00Z — **T04 done, verified, committed (`8e53b88`).** Gateway →
+Operation / Complete / 2026-08-27T10:40:00Z — **F-020 SHIPPED as `v0.9.0`.** All 13 tasks (T05-T13 completed
+without incremental STATE.md checkpoints — user directed "full speed"/"full autonomous", so intermediate
+task status was tracked via git commits and `docs/pdlc/tasks/F-020/*.md` instead): T05 Identity rename, T06
+MobileApp rename (found+fixed a MAUI XAML `x:Class` namespace mismatch), T07 Booking retroactive rename
+(found+fixed a stale `EventStoreWriteGuardTest` ScanRoot and regenerated its OpenAPI spec; also fixed 2
+gaps T04/T05 left in `run-ios.sh`/Identity's OpenAPI title), T08-T12 the 5 CQRS migrations (Calendar,
+Profession, Services, Provider, Customer in that risk order) each independently verified (build + full
+suites + grep sweep) before committing, T13 final verification (found the 5 `<Service>.Tests` projects
+were left unrenamed by every migration task — fixed directly). Merged to `main` (`7cd4673`, local
+`git merge --no-ff` — `gh pr create` still blocked, `READ`-only identity) and tagged `v0.9.0`. Live AppHost
+smoke test: Gateway health, Booking/Calendar pinned 401 contracts, real create-provider/create-customer
+round trips confirming `DataResponse<T>` and threat T-204's Kafka fix under real traffic. **CI on the merge
+push showed one failure**: `ContainerRuntimeGuardTest.MongoContainer_StartsAgainstLocalDocker_WithoutLoadingSshNet`
+failed with `Docker.DotNet.DockerApiException: 502 Bad Gateway` (309/310 passed) — a GitHub Actions
+runner-level Docker-daemon transient, not a code regression. That CI run got cancelled (not completed) when
+a follow-up docs-only push superseded it via the concurrency group; `gh run rerun` is blocked (same
+`READ`-only identity). **Re-verified the exact failing test locally against real Docker: 1/1 passing.**
+Treated as sufficiently explained (transient infra, not a regression) rather than chased further — disclosed,
+not silently ignored. Episode 009 finalized, OVERVIEW/ROADMAP/DEPLOYMENTS/CHANGELOG/episodes-index all
+updated, `F-020/_feature.md` marked shipped, claim released. The API refactor program (F-018→F-019→F-020) is
+complete. F-027 (`carter-route-modules`) filed as a future candidate, deliberately deferred, not bundled in.
+
+_Previously: Construction / Build / 2026-08-27T08:40:00Z — **T04 done, verified, committed (`8e53b88`).** Gateway →
 AgendaBuddy.Gateway, 13 files. Confirmed the Aspire-generated `Projects.Gateway` type became
 `Projects.AgendaBuddy_Gateway` automatically (dot-to-underscore) via a clean obj/bin rebuild. Found and
 fixed a real regression the rename itself introduced: `TransportSecurityOrderTest`'s `StartsWith
@@ -992,6 +1024,10 @@ the feature branch after each wave completes.
 | 2026-08-27T05:22:00Z | merged_and_tagged | **Merged to `main` as `fb91cb1`** (local `git merge --no-ff` + push). CI on the resulting `main` push went fully green: all 15 jobs, 0 new findings — unlike F-017's PR CI run, which found 4 real defects, this run found none. Tagged **`v0.8.0`** and pushed. Rebuilt/re-tested on merged `main` before tagging: 516/516 backend, 0 failing. |
 | 2026-08-27T05:35:00Z | smoke_test_self_decided | Ran a full live AppHost smoke test rather than relying on CI/integration-test evidence alone (the F-018 one-line-change precedent did not apply — this feature rewrote Booking's entire dispatch mechanism and response envelope). Register → login → create-provider → book-appointment → update-appointment through the Gateway, on real Mongo/Kafka infrastructure. Confirmed live: `DataResponse<T>` envelope on a real 201; `agenda-buddy-2hd`'s fix holds under real traffic (forged `appointmentStatus: 2` in the request, actual `0` in the response). AppHost stopped cleanly. Full record: `DEPLOYMENTS.md`'s Local Deployment History + Change Log rows, 2026-08-27. |
 | 2026-08-27T06:35:00Z | scope_corrected | **F-020's scope corrected from 6 services to 5, self-decided under the standing full-autonomy grant.** A real current-state survey (delegated to a fork agent) found Identity never adopted the CQRS/`RequestCollection`/EventStore pattern the other 5 services (Calendar, Customer, Provider, Services, Profession) share with Booking's pre-F-019 shape — it dispatches via direct `IdentityService` calls with zero MediatR/CQRS, and F-021 deliberately gave it its own exception taxonomy (`AuthValidationException` etc.), not `AgendaBuddyExceptionHandler`. The 2026-08-18 feature record's "six remaining `RequestCollection` classes" claim was written before F-019 existed and does not hold — checked directly against the code (`find . -iname "*RequestCollection*"` finds exactly 5 services' worth, not 6). Migrating Identity to this shape would be introducing the pattern fresh, not replicating a proven one — a materially different, riskier change with its own threat-modeling needs, correctly out of scope for a "roll out the proven shape" feature. Identity's own CQRS migration, if ever wanted, is a future feature, not filed here (this is a scope narrowing, not a new commitment). Full record: `docs/pdlc/brainstorm/brainstorm_api-refactor-rollout_2026-08-27.md`'s Adversarial Review section. |
+| 2026-08-27T07:25:00Z | scope_expanded | User direction mid-Design (verbatim: "Add also, to prefix every single project with AgendaBuddy.<Service>... so there is consistency"): bundled a solution-wide `AgendaBuddy.` rename into F-020. Two clarifying questions asked and answered before revising the PRD (rename scope: full solution-wide, not just F-020's 5 services; namespace scope: full consistency including every `using`/`namespace` line, not just folder/csproj names) — genuinely the user's call, not resolvable from the code, given the blast-radius difference between the options. Both answers taken verbatim. |
+| 2026-08-27T10:15:00Z | carter_evaluated_deferred | User asked to evaluate the Carter library (`CarterCommunity/Carter`) for organizing Minimal API routes out of `Program.cs`, and to decide whether it fits F-020 or a separate feature. Researched via `gh api` (README, repo metadata — active, 2.4k★). Decided (self-made, logged, not asked further): **separate future feature, filed as F-027 `carter-route-modules`** — Carter is orthogonal to CQRS/dispatch (pure route-registration organization), has no shared-foundation ordering dependency on this feature's work, and F-020 was already mid-Construction (6/13 tasks done) with the remaining 5 service builds already planned around inline route registration — retrofitting now would mean redoing in-flight work or a disjointed partial adoption. Logged to `ROADMAP.md`. |
+| 2026-08-27T09:30:00Z | rename_gap_self_found | **At final verification (T13), found all 5 `<Service>.Tests` projects (Calendar/Customer/Provider/Services/Profession) were left unrenamed by every one of T08–T12** — unlike `AgendaBuddy.Booking.Tests` (T07). Traced to ambiguous wording in this session's own task prompts ("stays as one project, not renamed to `.Api.Tests`" was read as "don't rename at all"). Fixed directly (not delegated) — same proven mechanical pattern, faster to apply directly than spin up 5 more agents. Verified: 47/47 `agenda-buddy.sln` project entries now prefixed, 547/547 backend, 310/310 integration, format clean. |
+| 2026-08-27T10:38:00Z | ci_flake_investigated | CI on the merge-to-`main` push showed 1 failure: `ContainerRuntimeGuardTest.MongoContainer_StartsAgainstLocalDocker_WithoutLoadingSshNet` — `Docker.DotNet.DockerApiException: 502 Bad Gateway` (309/310 passed on that run). That run was then cancelled (not completed) when a follow-up docs-only commit superseded it via the repo's own concurrency group. `gh run rerun` is blocked (same `READ`-only `gh` identity as every prior ship this session). **Re-ran the exact failing test locally against real Docker: 1/1 passing** — this is a GitHub Actions runner-level Docker-daemon transient (a 502 connecting to the daemon itself, not a test assertion), not a code regression from this feature. Disclosed and reasoned through rather than either ignored or chased with an unavailable rerun tool. |
 
 ---
 
@@ -1177,10 +1213,10 @@ re-planning (`/continue`).
 
 ```json
 {
-  "triggered_at": "2026-08-27T10:21:04.655Z",
+  "triggered_at": "2026-08-27T10:40:51.792Z",
   "session_id": "6fa2c9f8-60c4-489a-82d1-f3cab5161e95",
-  "tool_count": 2137,
-  "estimated_usage": "86%",
+  "tool_count": 2172,
+  "estimated_usage": "88%",
   "active_task": null,
   "sub_phase": null,
   "step": null,
@@ -1406,3 +1442,9 @@ re-planning (`/continue`).
 | 2026-08-27T07:05:00Z | design_approved | Design docs approved — Lite threat model (T-201-T-204), Skip UX, DataResponse<T> stays per-service | Plan | api-refactor-rollout |
 | 2026-08-27T07:25:00Z | scope_expanded | User direction mid-Design: prefix every project with AgendaBuddy. — full solution-wide, namespaces included (2 clarifying questions asked and answered). PRD/ARCHITECTURE.md revised, re-approved | Plan | api-refactor-rollout |
 | 2026-08-27T07:50:00Z | inception_complete | Inception Complete — 13 tasks, 5 waves, ready for /build | Plan | api-refactor-rollout |
+| 2026-08-27T09:30:00Z | construction_complete | **CONSTRUCTION COMPLETE.** All 13 tasks done (T01-T07 renames, T08-T12 CQRS migrations, T13 final verification — including the self-found Tests-project rename gap). 47 projects, all AgendaBuddy.-prefixed. 1022 tests (547+310+165), 0 failing. 11 real defects found and fixed across the build loop | Complete | api-refactor-rollout |
+| 2026-08-27T10:22:00Z | merged_and_tagged | Merged to main as 7cd4673 (local git merge --no-ff, gh pr create blocked). Tagged v0.9.0 and pushed | Ship | api-refactor-rollout |
+| 2026-08-27T10:38:00Z | ci_flake_investigated | 1 CI failure (Docker 502 Bad Gateway, transient) investigated and confirmed not a regression via local re-run. See Guardrail Log | Verify | api-refactor-rollout |
+| 2026-08-27T10:40:00Z | deploy_skipped | Cloud deploy skipped — 9th consecutive, 8th under ADR-035; F-022-F-026 remain. Full live AppHost smoke test run instead | Verify | api-refactor-rollout |
+| 2026-08-27T10:40:00Z | operation_complete | Episode 009 finalized and committed. episodes/index.md, OVERVIEW, ROADMAP, DEPLOYMENTS, CHANGELOG updated. F-020 shipped, claim released. The API refactor program (F-018-F-019-F-020) is complete | Reflect | api-refactor-rollout |
+| 2026-08-27T10:40:00Z | operation_complete | Idle | — | none |
