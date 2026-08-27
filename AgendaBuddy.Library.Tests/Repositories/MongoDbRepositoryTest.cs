@@ -31,7 +31,7 @@ public class MongoDbRepositoryTest
     // So the split, agreed at the wave-3 standup (finding E-1) and recorded so F-016-T19's
     // attestation does not overclaim:
     //   * the CONTRACT is pinned here, because F-015 is written against it and T15 consumes it;
-    //   * the SEMANTICS are pinned by InMemoryCredentialRepositoryPagingTest in Identity.Tests;
+    //   * the SEMANTICS are pinned by InMemoryCredentialRepositoryPagingTest in AgendaBuddy.Identity.Tests;
     //   * Mongo's own Skip/Limit/CountDocumentsAsync behaviour gets its first real exercise through
     //     F-016-T15's paginated endpoint tests on the integration harness.
     //
@@ -87,7 +87,7 @@ public class MongoDbRepositoryTest
     // ── F-021-T01 · the partial-update primitive (ADR-032) ───────────────────────────────────────
     //
     // Same three-way split as GetPagedAsync above: contract here, semantics against the in-memory
-    // implementer in Identity.Tests/Helpers/InMemoryCredentialRepositoryUpdateTest.cs, and MongoDB's
+    // implementer in AgendaBuddy.Identity.Tests/Helpers/InMemoryCredentialRepositoryUpdateTest.cs, and MongoDB's
     // own behaviour — including that it never upserts — in the integration harness's
     // CredentialUpdatePrimitiveTest. Stated so F-021's verification does not claim the Mongo half is
     // covered by a unit test.

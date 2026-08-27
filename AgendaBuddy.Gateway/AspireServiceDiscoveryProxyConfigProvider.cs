@@ -57,7 +57,7 @@ public sealed class AspireServiceDiscoveryProxyConfigProvider : IProxyConfigProv
     /// actually registers. Identity is the only service with two entries: its own
     /// <c>api/v1/auth/**</c> group, plus the one route in the whole solution mapped outside the
     /// <c>api/v1/</c> convention — <c>POST /device-token</c>, registered on the app root
-    /// (<c>Identity/Program.cs:154</c>), not under the <c>auth</c> group.
+    /// (<c>AgendaBuddy.Identity/Program.cs:154</c>), not under the <c>auth</c> group.
     /// </remarks>
     private static readonly (string ServiceName, string RouteId, string PathPattern)[] _routeSpecs =
     [

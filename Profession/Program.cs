@@ -127,7 +127,7 @@ var professions = app.MapGroup("api/v1/professions")
 
 // F-016-T17 / ADR-025 / threat T-007: POST /api/v1/professions was DELETED, not role-gated.
 // PRD requirement 13 asked for a role check; there is no role to check for. Identity's allow-list is
-// exactly {Provider, Customer} (Identity/Program.cs:121) with no administrative tier, so the only
+// exactly {Provider, Customer} (AgendaBuddy.Identity/Program.cs:121) with no administrative tier, so the only
 // implementable check would still let any self-registered provider write global reference data read by
 // every user. Professions are SEEDED from Library/Data/ProfessionSeedData.cs and no shipped flow creates
 // one, so nothing is lost. Verified live before removal: both a Provider AND a Customer token received

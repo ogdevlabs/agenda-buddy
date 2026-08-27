@@ -61,7 +61,7 @@ services:
     image: ${DOCKER_REGISTRY-}identity:latest
     build:
       context: .
-      dockerfile: Identity/Dockerfile
+      dockerfile: AgendaBuddy.Identity/Dockerfile
 
   mongo:
     hostname: mongo

@@ -7,7 +7,7 @@ namespace AgendaBuddy.IntegrationTests.Harness;
 /// </summary>
 /// <remarks>
 /// <para>
-/// F-016 AC-3 / PRD requirement 3. <c>Identity.Tests/Helpers/RsaKeyHelper.cs</c> is the existing
+/// F-016 AC-3 / PRD requirement 3. <c>AgendaBuddy.Identity.Tests/Helpers/RsaKeyHelper.cs</c> is the existing
 /// precedent and this follows it, with one deliberate difference: <b>no private-key PEM string is
 /// ever produced.</b> Signing takes the live <see cref="RSA"/> instance instead
 /// (<see cref="SigningKey"/>), so the private half never exists in a form that can be logged,
@@ -64,7 +64,7 @@ public sealed class CryptoSessionFixture : IDisposable
 /// pointing nowhere near the cause.
 /// </para>
 /// <para>
-/// <b>Why this is a new definition rather than a reuse.</b> <c>Identity.Tests</c> already solves
+/// <b>Why this is a new definition rather than a reuse.</b> <c>AgendaBuddy.Identity.Tests</c> already solves
 /// exactly this problem with <c>Auth/TestCollectionDefinition.cs</c>, and this follows that pattern —
 /// but an xUnit collection definition applies only within its own assembly, so the attribute over
 /// there has no effect here. The pattern transfers; the type cannot.

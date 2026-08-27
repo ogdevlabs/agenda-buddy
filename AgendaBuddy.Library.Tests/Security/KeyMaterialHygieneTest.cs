@@ -50,7 +50,7 @@ public class KeyMaterialHygieneTest
     /// <remarks>
     /// The payload requirement is what makes the check usable. Two tracked files build PEM
     /// delimiters as interpolated format strings around a runtime-generated key
-    /// (<c>Identity.Tests/Helpers/RsaKeyHelper.cs</c> and
+    /// (<c>AgendaBuddy.Identity.Tests/Helpers/RsaKeyHelper.cs</c> and
     /// <c>Library.Tests/Extensions/AuthenticationExtensionsTest.cs</c>'s
     /// <c>GenerateTestRsaPublicKeyPem</c>). Those hold no key material and must not be flagged:
     /// the interpolation braces are outside the base64 character class, so they cannot satisfy it.

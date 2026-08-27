@@ -52,9 +52,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Profession", "Profession\Pr
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Profession.Tests", "Profession.Tests\Profession.Tests.csproj", "{C329E6EA-10EF-4645-88DB-1DA3DB57DA05}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Identity", "Identity\Identity.csproj", "{F2700C60-718D-49CE-B155-1549D50E4E45}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AgendaBuddy.Identity", "AgendaBuddy.Identity\AgendaBuddy.Identity.csproj", "{F2700C60-718D-49CE-B155-1549D50E4E45}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Identity.Tests", "Identity.Tests\Identity.Tests.csproj", "{74A2FE21-4FE7-4FE3-8D4A-B5D059C0206D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AgendaBuddy.Identity.Tests", "AgendaBuddy.Identity.Tests\AgendaBuddy.Identity.Tests.csproj", "{74A2FE21-4FE7-4FE3-8D4A-B5D059C0206D}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Mobile", "Mobile", "{A1B2C3D4-E5F6-4A7B-8C9D-E0F1A2B3C4D5}"
 EndProject

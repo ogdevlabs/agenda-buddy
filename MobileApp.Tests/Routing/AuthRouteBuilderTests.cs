@@ -28,7 +28,7 @@ public class AuthRouteBuilderTests
     }
 
     // F-015-T10 / AC11: AuthService.LogoutAsync calls this in addition to clearing local storage,
-    // matching Identity/Program.cs:196's `POST api/v1/auth/logout`.
+    // matching AgendaBuddy.Identity/Program.cs:196's `POST api/v1/auth/logout`.
     [Fact]
     public void Logout_BuildsPost()
     {

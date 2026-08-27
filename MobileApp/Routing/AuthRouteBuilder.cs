@@ -22,7 +22,7 @@ public static class AuthRouteBuilder
     /// <summary>
     /// Added by F-015-T10 (AC11): <see cref="Services.AuthService.LogoutAsync"/> calls this,
     /// carrying the stored refresh token, so Identity invalidates it server-side
-    /// (<c>Identity/Program.cs:196</c>) instead of leaving it valid for its full 24-hour lifetime.
+    /// (<c>AgendaBuddy.Identity/Program.cs:196</c>) instead of leaving it valid for its full 24-hour lifetime.
     /// </summary>
     public static RouteSpec Logout() => new(HttpMethod.Post, "api/v1/auth/logout");
 }

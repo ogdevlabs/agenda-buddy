@@ -13,7 +13,7 @@ namespace Common.Tests.Security;
 /// <para>
 /// All seven services used to call <c>UseHttpsRedirection</c> <i>after</i> <c>UseAuthentication</c> — so
 /// the bearer token was parsed and validated out of a plaintext request, and only then was the client
-/// told to come back over TLS. Identity, which receives passwords, additionally wrapped its redirect in
+/// told to come back over TLS. AgendaBuddy.Identity, which receives passwords, additionally wrapped its redirect in
 /// <c>if (!IsDevelopment())</c>, a condition that means nothing here because the AppHost runs every
 /// service as <b>Production</b>.
 /// </para>
@@ -45,7 +45,7 @@ namespace Common.Tests.Security;
 public class TransportSecurityOrderTest
 {
     private static readonly string[] AllServices =
-        ["AgendaBuddy.Gateway", "Booking.Api", "Calendar", "Customer", "Identity", "Profession", "Provider", "Services"];
+        ["AgendaBuddy.Gateway", "AgendaBuddy.Identity", "Booking.Api", "Calendar", "Customer", "Profession", "Provider", "Services"];
 
     private const string TransportSecurityCall = "UseAgendaBuddyTransportSecurity(";
     private const string AuthenticationCall = "app.UseAuthentication()";
@@ -84,10 +84,10 @@ public class TransportSecurityOrderTest
     }
 
     [Theory]
+    [InlineData("AgendaBuddy.Identity")]
     [InlineData("Booking.Api")]
     [InlineData("Calendar")]
     [InlineData("Customer")]
-    [InlineData("Identity")]
     [InlineData("Profession")]
     [InlineData("Provider")]
     [InlineData("Services")]
@@ -120,10 +120,10 @@ public class TransportSecurityOrderTest
     }
 
     [Theory]
+    [InlineData("AgendaBuddy.Identity")]
     [InlineData("Booking.Api")]
     [InlineData("Calendar")]
     [InlineData("Customer")]
-    [InlineData("Identity")]
     [InlineData("Profession")]
     [InlineData("Provider")]
     [InlineData("Services")]
