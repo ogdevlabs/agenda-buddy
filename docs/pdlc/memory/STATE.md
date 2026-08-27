@@ -114,13 +114,32 @@ _None active. Run `/night-shift <F-NNN>` to start an autonomous run (requires by
 
 ## Current Sub-phase
 
-Build
+Review
 
 ---
 
 ## Last Checkpoint
 
-Construction / Build / 2026-08-27T03:00:00Z — **F-019-T09 done.** New `Contract/BookingErrorLeakageTest.cs`
+Construction / Build / 2026-08-27T03:30:00Z — **BUILD LOOP DONE — 11/11 tasks closed.** `verification.md`
+written, all 14 PRD ACs attested with evidence (grep output for structural ACs, real test runs for
+behavioral ones) — 12 clean ✅, 2 with disclosed deviations (AC1's `MongoDbConfiguration.cs` annotation,
+AC6's partial-met for Update/Cancel never migrating to Validot), AC8 verified live for all 8 body-bearing
+routes (added the 3 missing live `.data`-shape assertions this task found were only status-code-checked
+before — Update-appointment, Update-status, GetPayment). **One more real, pre-existing defect found closing
+that evidence gap**: `PUT /appointments/`'s response body echoes the client's own forged `AppointmentStatus`
+even though the database correctly ignores it (T-203's actual guarantee holds; only the response is
+misleading) — filed `agenda-buddy-2hd`, not fixed inline, same disclosed-not-papered-over pattern as
+`agenda-buddy-cy2`/`agenda-buddy-02e`. `api-contracts.md` corrected in 3 places to match what was actually
+built (Requirement 7's DTO never introduced, Cancel/DeleteNote's 204 exception, Requirement 6's partial
+migration) — design docs corrected by implementation, this project's standing convention. `git diff main
+--name-only` confirms the entire feature's blast radius stays inside Booking's own files plus the expected
+infra/CI/docs touches — nothing in another service. One transient `AgendaBuddy.ServiceDefaults.Tests` flake
+reproduced the known, pre-existing cross-test `TracerProvider` flakiness (22/22 clean in isolation and on
+retry) — not a regression. **Final: 512 backend + 310 integration + 165 mobile = 987 tests, 0 failing.**
+`dotnet format` clean. 4 real, disclosed, out-of-scope defects filed across the whole build loop
+(`agenda-buddy-5og`'s Kafka fix landed inline at T04; `cy2`, `02e`, `2hd` filed not fixed). Moving to Review.
+
+_Previously: Construction / Build / 2026-08-27T03:00:00Z — **F-019-T09 done.** New `Contract/BookingErrorLeakageTest.cs`
 reuses `agenda-buddy-cy2`'s exact real fault (null `EmailProvider`, passes Validot + OwnershipGuard, throws
 downstream) as genuine fault injection rather than a mocked exception, per episode 001's "reasoned, not
 observed" discipline. **Real, verified finding folded into the test's own design:** by code review, none of
@@ -1245,9 +1264,10 @@ re-planning (`/continue`).
 | 2026-08-26T23:20:00Z | design_roundtable | **Roundtable on F-019-T03 (Neo, Bolt, Echo), 2-round cross-talk.** Converged on "move + rename now" plus a same-task fix to `EventStoreWriteGuardTest`'s scan roots rather than deferring to T07 | Build | api-refactor-pilot-booking |
 | 2026-08-26T23:35:00Z | task_complete | **F-019-T03 done.** Scaffolded Booking.Domain/Core/Infrastructure; moved+renamed the 3 original commands/handlers; caught and fixed a roundtable context gap (3 stub tests in `EventsAndCommands.Tests` referencing the moved types, moved to `Booking.Tests/Commands/`); `EventStoreWriteGuardTest` regression verified red (18<20) then fixed green with a second scan root. 13/13 Booking-scoped integration tests pass unmodified. Backend 497→500, 0 failing. T04 unblocked | Build | api-refactor-pilot-booking |
 | 2026-08-27T00:20:00Z | task_complete | **F-019-T04 done (solo, full autonomy).** Renamed Booking→Booking.Api project-wide (folder/csproj/sln/AppHost's Projects.Booking_Api); rewired the 3 original routes to real mediator.Send + DataResponse<T>; deleted RequestCollection/IRequestCollection and the now-dead EventsHelper+its test. Real findings: handlers' per-request ctor params blocked real DI dispatch (fixed by moving them onto the command); AddMediatR wasn't scanning Booking.Core's assembly (silent runtime gap); KafkaClient? should have been IKafkaClient? all along (the actual fix for agenda-buddy-5og); .NET SDK container naming replaces `.` with `-`, not just lowercasing (verified live, fixed CI's image-name step before it broke). Integration suite caught 1 real regression (BookingPersistenceTest's response parsing) and 1 real drift (OpenAPI title) — both fixed. 301/301 integration, 494 backend, 0 failing. T05 unblocked | Build | api-refactor-pilot-booking |
+| 2026-08-27T01:10:00Z | task_complete | **F-019-T05 done.** Authored fresh commands/queries/handlers for all 7 F-014 routes in Booking.Domain/Booking.Core. Real CONSTITUTION §3 finding via EventStoreWriteGuardTest: Notes/Payment operations were never audited (pre-existing gap, invisible while inline in Program.cs) — fixed with eventStore.SaveAsync/QueryAudit calls matching the established convention. Notes/Payment got real Moq-based TDD (real interfaces, unlike T04). Backend 494→512, integration 13/13, guard test 19→29. T06 unblocked | Build | api-refactor-pilot-booking |
 | 2026-08-27T02:00:00Z | task_complete | **F-019-T06 done.** Rewired all 7 F-014 routes onto mediator.Send; only success branches wrapped in DataResponse<T>, failure branches byte-identical. AC2/AC7 now fully clean feature-wide. Caught own process gap: prior "integration tests pass" checks used a narrow `~Booking` filter that never matched SessionNotesTest/PaymentsAndStatusTest/MobileClientRouteResolutionTest — full-suite run surfaced 1 real regression (3 files parsing create-response identifiers from the JSON root, now under .data) and 1 expected OpenAPI drift, both fixed. Full suite run to completion for the first time this feature: 308/308. Backend 512, 0 failing. T07/T08/T09 unblocked | Build | api-refactor-pilot-booking |
 | 2026-08-27T02:10:00Z | task_complete | **F-019-T07 done.** Confirmed the T03 ScanRoots fix already covers all 10 of Booking.Core's handlers with zero further edits. Doc comments updated. Guard test 29/29 green | Build | api-refactor-pilot-booking |
 | 2026-08-27T02:25:00Z | task_complete | **F-019-T10 done.** Deleted the superseded ChangeAppointmentStatusCommand/Handler from EventAndCommands (confirmed unreferenced by any real test). BookingRouteContractTest/BookingPersistenceTest/BookingAuditTest pass with zero new assertion changes. 512 backend, 307 integration (expected -1 from the guard test's dropped duplicate), 0 failing | Build | api-refactor-pilot-booking |
 | 2026-08-27T02:45:00Z | task_complete | **F-019-T08 done.** New BookingValidotStrictnessTest (2 real HTTP tests) — malformed/empty email still 400 under Validot. Scope corrected: only AppointmentEntity actually migrated to Validot, not all 10 DTOs as the task assumed. A 3rd planned test found a real, pre-existing, out-of-scope 500 defect (null EmailProvider) — filed agenda-buddy-cy2, not fixed inline. Integration 309/309 | Build | api-refactor-pilot-booking |
 | 2026-08-27T03:00:00Z | task_complete | **F-019-T09 done.** New BookingErrorLeakageTest reuses agenda-buddy-cy2's exact real fault as genuine fault injection. Confirmed by code review that no Result.Fail site ever wraps exception content, and the fault never reaches DataResponse<T> at all (propagates past AgendaBuddyExceptionHandler, no Production fallback, per ADR-022) — test asserts the wire body itself, proving the real security property regardless of path. Integration 310/310. All of T03-T10 done; only T11 (final verification) remains before Review | Build | api-refactor-pilot-booking |
-| 2026-08-27T01:10:00Z | task_complete | **F-019-T05 done.** Authored fresh commands/queries/handlers for all 7 F-014 routes in Booking.Domain/Booking.Core. Real CONSTITUTION §3 finding via EventStoreWriteGuardTest: Notes/Payment operations were never audited (pre-existing gap, invisible while inline in Program.cs) — fixed with eventStore.SaveAsync/QueryAudit calls matching the established convention. Notes/Payment got real Moq-based TDD (real interfaces, unlike T04). Backend 494→512, integration 13/13, guard test 19→29. T06 unblocked | Build | api-refactor-pilot-booking |
+| 2026-08-27T03:30:00Z | build_complete | **BUILD LOOP DONE — 11/11 tasks, all 14 PRD ACs attested (12 clean, 2 disclosed deviations).** verification.md written; api-contracts.md corrected in 3 places to match what was built. AC8 fully closed live for all 8 body-bearing routes — closing that gap found one more real, pre-existing defect (PUT /appointments/ echoes the client's forged status in the response body even though the DB correctly ignores it) — filed agenda-buddy-2hd. Blast radius confirmed via git diff: nothing outside Booking's own files + expected infra/CI/docs. Final: 512 backend + 310 integration + 165 mobile = 987, 0 failing. Moving to Review | Review | api-refactor-pilot-booking |
