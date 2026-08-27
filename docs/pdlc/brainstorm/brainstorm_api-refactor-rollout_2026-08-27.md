@@ -39,6 +39,26 @@ All 6 services already have a Tier-1 route-contract test (F-018) and a committed
 
 **Secondary finding carried into Plan:** Provider's existing `RequestCollectionTest.cs` is a dead stub (empty test methods) — F-019's own Party Review found the same shape of problem (GuardClause-only placeholder tests hiding untested branches) and fixed it. F-020's tasks should replace stubs with real tests from the start, not just delete-and-move.
 
+## Mid-Design scope addition (user direction, 2026-08-27, after the PRD's first approval pass)
+
+User: "Add also, to prefix every single project with AgendaBuddy.<Service> as is done for some of the
+projects so there is consistency." Asked two clarifying questions before revising the PRD, since the literal
+instruction was ambiguous in blast radius and this is genuinely the user's call, not a default I could
+resolve from the code:
+
+1. **Rename scope** — just F-020's 5 new services / +Booking retroactively / full solution-wide. **User
+   chose: full solution-wide** (all 30 projects, including `Library`, `EventAndCommands`, `Kafka`,
+   `Gateway`, `MobileApp`, `Identity`, and Booking's own 5 already-shipped projects).
+2. **Namespace scope** — project/folder names only, or full consistency including every C# `namespace`/
+   `using` reference (confirmed `AgendaBuddy.ServiceDefaults`'s own internal namespace already matches its
+   project name, by inspection, before asking). **User chose: full consistency, namespaces too.**
+
+Both answers incorporated verbatim into the PRD (Requirements 17–23, new ACs 14–19, User Stories 05/06,
+Out of Scope/Known Risks additions) and `ARCHITECTURE.md` (new §0 explaining the two bundled workstreams,
+new §10 with the full 20-project rename inventory and sequencing). This roughly doubles the feature's real
+scope — disclosed as such in the PRD's Approval notes, not absorbed silently into "F-020" as if it were
+always this size.
+
 ## External Context
 _None ingested._
 

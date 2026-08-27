@@ -1,5 +1,10 @@
 # API Contracts — API Refactor Rollout (F-020)
 
+**Note on the solution-wide rename (added mid-Design, ARCHITECTURE.md §10):** renaming projects/namespaces
+has no wire-contract effect whatsoever — a route's path, verb, and payload are defined by attribute/route
+builder strings, not by the C# namespace or assembly name they're compiled into. Every statement below
+about "no contract changes" holds unchanged for all 30 projects, rename included.
+
 ## 1. Change summary
 
 **No route, verb, or request-body shape changes**, for any of the 5 in-scope services (Calendar, Customer,

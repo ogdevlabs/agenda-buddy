@@ -139,7 +139,21 @@ Plan
 
 ## Last Checkpoint
 
-Inception / Design / 2026-08-27T07:05:00Z — Design docs written and self-approved:
+Inception / Design / 2026-08-27T07:25:00Z — **Scope roughly doubled mid-Design, by explicit user
+direction, not self-decided.** User: "Add also, to prefix every single project with AgendaBuddy.<Service>
+... so there is consistency." Asked 2 clarifying questions (genuinely the user's call, not resolvable from
+code): (1) rename scope — user chose **full solution-wide** (all 30 projects) over "just F-020's 5 new
+services" or "+Booking retroactively"; (2) namespace scope — user chose **full consistency, namespaces
+too** over "folder/csproj names only," after confirming live that `AgendaBuddy.ServiceDefaults`'s own
+internal namespace already matches its project name. PRD revised: Requirements 17–23, ACs 14–19, User
+Stories 05/06, new Out of Scope/Known Risks items. `ARCHITECTURE.md` gained §0 (two bundled workstreams)
+and §10 (full 20-project rename inventory + sequencing — `Library` first and alone, since everything
+depends on it compiling; `MobileApp` flagged highest-risk given its own build tooling and its exclusion
+from `agenda-buddy-backend.slnf`). `threat-model.md` gained T-205 (rename-breaks-CI-silently, accept/
+tracked). `api-contracts.md` notes the rename has zero wire-contract effect. Design re-approved. Moving to
+Plan — this is now a materially larger task breakdown than the original 5-service-only PRD implied.
+
+_Previously: Inception / Design / 2026-08-27T07:05:00Z — Design docs written and self-approved:
 `docs/pdlc/design/api-refactor-rollout/{ARCHITECTURE,data-model,api-contracts,threat-model,ux-review}.md`.
 Threat model triage: **Lite** (same outcome as Booking's), 4 threats (T-201/T-202 mirror Booking's
 T-101/T-102 generalized to 5 services; T-203 is the same `EventStoreWriteGuardTest` coverage-maintenance

@@ -9,23 +9,47 @@
 
 ## Overview
 
-This feature rolls the Clean Architecture pattern proven on Booking (F-019, shipped `v0.8.0`) across five of
-the remaining six services — Calendar, Customer, Provider, Services, Profession. It is Stage 3 of 3 in the
-API refactor program (ADR-014: F-018 built the verification harness, F-019 proved the shape on one service,
-F-020 replicates it). Ending the "two styles in one codebase" state directly serves INTENT.md's maintainer
-experience: after this feature, every service but Identity dispatches through the same real `mediator.Send`
-mechanism, honoring CONSTITUTION §3 for the first time program-wide.
+This feature does two things together, on the user's explicit direction (added mid-Design, 2026-08-27):
+
+1. Rolls the Clean Architecture pattern proven on Booking (F-019, shipped `v0.8.0`) across five of the
+   remaining six services — Calendar, Customer, Provider, Services, Profession. Stage 3 of 3 in the API
+   refactor program (ADR-014).
+2. **Prefixes every project in the solution with `AgendaBuddy.`, matching the pattern `AgendaBuddy.AppHost`/
+   `AgendaBuddy.ServiceDefaults`/`AgendaBuddy.IntegrationTests` already set — folder, `.csproj` file, solution
+   reference, AND the internal C# namespace/`using` statements, for full consistency.** This is a
+   solution-wide rename touching all 30 projects (25 need the prefix added; 5 already have it), not just the
+   5 services (1)'s Clean Architecture split covers — bundled into F-020 because the 5 in-scope services'
+   folders are already being restructured here, so renaming them once (not twice) is the efficient
+   sequencing, while the other 20 projects (Library, EventAndCommands, Kafka, Gateway, MobileApp, Identity,
+   and Booking's own 5 already-shipped projects) get a pure rename-only pass in the same feature.
+
+Ending the "two styles in one codebase" state (1) directly serves INTENT.md's maintainer experience: after
+this feature, every service but Identity dispatches through the same real `mediator.Send` mechanism,
+honoring CONSTITUTION §3 for the first time program-wide. The naming consistency pass (2) is independently
+motivated — a maintainer or agent scanning the solution today cannot tell from a project name alone whether
+it belongs to this product (`Booking`, `Calendar`) or is a generic third-party-shaped name, except for the
+5 projects that already got it right.
 
 ## Problem Statement
 
-Five services — Calendar, Customer, Provider, Services, Profession — are still in Booking's pre-F-019 shape:
-a `RequestCollection`/`IRequestCollection` class hand-constructs each command handler (`new
-XCommandHandler(...).Handle(...)`), bypassing MediatR entirely despite `AddMediatR` being registered in every
-one of them. None of their `EventAndCommands`-hosted handlers have a dedicated unit test — Provider's own
-`RequestCollectionTest.cs` is a literal empty stub (`public void METHOD() {}`), so five services' worth of
-command/query handlers have zero real coverage of their success/failure branching today. Booking now proves
-the alternative shape works end-to-end, including a live production-traffic smoke test — this feature closes
-the gap for the other five before it calcifies into "the two ways we do things here."
+**Two distinct, bundled problems:**
+
+1. Five services — Calendar, Customer, Provider, Services, Profession — are still in Booking's pre-F-019
+   shape: a `RequestCollection`/`IRequestCollection` class hand-constructs each command handler (`new
+   XCommandHandler(...).Handle(...)`), bypassing MediatR entirely despite `AddMediatR` being registered in
+   every one of them. None of their `EventAndCommands`-hosted handlers have a dedicated unit test —
+   Provider's own `RequestCollectionTest.cs` is a literal empty stub (`public void METHOD() {}`), so five
+   services' worth of command/query handlers have zero real coverage of their success/failure branching
+   today. Booking now proves the alternative shape works end-to-end, including a live production-traffic
+   smoke test — this feature closes the gap for the other five before it calcifies into "the two ways we do
+   things here."
+2. Only 5 of this solution's 30 projects (`AgendaBuddy.AppHost`, `AgendaBuddy.AppHost.Tests`,
+   `AgendaBuddy.IntegrationTests`, `AgendaBuddy.ServiceDefaults`, `AgendaBuddy.ServiceDefaults.Tests`) carry
+   the product-identifying `AgendaBuddy.` prefix. The other 25 — every domain service (`Booking.*`,
+   `Calendar`, `Customer`, `Identity`, `Profession`, `Provider`, `Services`), `Library`/`Library.ServerAuth`,
+   `EventAndCommands`, `Kafka`, `Gateway`, and `MobileApp` (plus their `.Tests` siblings) — do not. There is
+   no technical reason for the split; it is an accident of build-up order (the Aspire-hosting projects
+   adopted the convention at F-013; nothing retrofitted it to the rest).
 
 ## Target User
 
@@ -84,12 +108,50 @@ envelope shape instead of two.
 14. Each service's existing Tier-1 route-contract test (`AgendaBuddy.IntegrationTests/Contract/
     <Service>RouteContractTest.cs`, from F-018) MUST pass with zero status-code assertion changes — route
     paths, verbs, and status codes do not change, only the response envelope and dispatch mechanism.
-15. All backend + integration + mobile tests MUST pass with zero regressions in any service this feature
-    does not touch (Booking, Identity, Gateway, AppHost, MobileApp).
+15. All backend + integration + mobile tests MUST pass with zero *behavioral* regressions anywhere —
+    **superseded in scope by Requirement 20 below**: Booking, Identity, Gateway, AppHost, and MobileApp are
+    no longer untouched once the rename requirements land, but their rename is a pure name change with no
+    behavioral change bundled in, so this requirement's intent (no functional regression) still holds for
+    all of them.
 16. No test file owned by any of the five services may be deleted except as an unavoidable, disclosed
     consequence of deleting the code it tests (same AC14 carve-out F-019 established) — Provider's stub test
     file is deleted and replaced, which satisfies this by writing real coverage in its place, not by
     leaving a gap.
+
+**Naming consistency (added mid-Design at explicit user direction, 2026-08-27):**
+
+17. Every one of this solution's 30 projects MUST end up prefixed `AgendaBuddy.` — folder name, `.csproj`
+    file name, the project's entry in `agenda-buddy.sln`, and every other project's `ProjectReference` to
+    it (including `agenda-buddy-backend.slnf`). The 5 already-prefixed projects (`AgendaBuddy.AppHost`,
+    `AgendaBuddy.AppHost.Tests`, `AgendaBuddy.IntegrationTests`, `AgendaBuddy.ServiceDefaults`,
+    `AgendaBuddy.ServiceDefaults.Tests`) are unchanged.
+18. Every renamed project's internal C# namespace MUST also gain the `AgendaBuddy.` prefix — every
+    `namespace X;` declaration and every `using X`/`global using X` reference across the entire codebase
+    updates to `AgendaBuddy.X`, matching `AgendaBuddy.ServiceDefaults`'s own already-shipped pattern (its
+    internal namespace is literally `AgendaBuddy.ServiceDefaults`, confirmed by inspection, not assumed).
+19. The 5 services this feature already splits into Clean Architecture projects (Calendar, Customer,
+    Provider, Services, Profession) MUST be created with the `AgendaBuddy.` prefix from birth (e.g.
+    `AgendaBuddy.Calendar.Api`, not `Calendar.Api` renamed later) — one rename, not two, for those 5.
+20. The remaining 20 non-prefixed projects — `Booking.Api`/`Core`/`Domain`/`Infrastructure`/`Tests`
+    (already-shipped, F-019), `Library`, `Library.ServerAuth`, `Library.Tests`, `EventAndCommands`,
+    `EventsAndCommands.Tests`, `Kafka`, `Kafka.Tests`, `Gateway`, `Identity`, `Identity.Tests`, `MobileApp`,
+    `MobileApp.Tests` — MUST also be renamed, as a pure rename (no other behavioral change bundled in). This
+    explicitly includes `Identity` and `MobileApp`, even though neither gets the Clean Architecture split
+    (Identity is excluded per Discover 2026-08-27; MobileApp is a different client entirely) — the rename
+    requirement is independent of the CQRS-split requirement.
+21. The existing `Event`/`Events` naming inconsistency between `EventAndCommands` and
+    `EventsAndCommands.Tests` is NOT corrected by this requirement — it becomes
+    `AgendaBuddy.EventAndCommands`/`AgendaBuddy.EventsAndCommands.Tests`, prefix added, inconsistency
+    preserved. Fixing unrelated pre-existing naming bugs is out of scope for a rename feature (see Out of
+    Scope) — disclosed, not silently "fixed" as a drive-by.
+22. Every CI reference to a renamed project (Docker build matrix job names, path filters in
+    `.github/workflows/dotnet.yml`, `scripts/generate-openapi.sh`'s and `scripts/run-ios.sh`'s service
+    arrays, `AgendaBuddy.AppHost`'s project references and the Aspire-generated `Projects.<Name>` types it
+    consumes, every `GlobalUsings.cs` anchor alias in `AgendaBuddy.IntegrationTests`) MUST be updated to the
+    new names — same cascade-checking discipline F-019-T04 applied to the single `Booking`→`Booking.Api`
+    rename, now for 20 renames instead of 1.
+23. `docs/api/openapi/*.json` file names and their internal `title` fields MUST be regenerated to reflect
+    each renamed project, via the existing byte-deterministic mechanism (F-018-T16) — not hand-edited.
 
 ## Assumptions
 
@@ -100,15 +162,24 @@ envelope shape instead of two.
   their interfaces (`IProviderService`, etc.) are correct and complete enough for the handlers that need
   them — any genuine interface gap (like Booking's `AppendAppointmentAsync`) is disclosed per-service, not
   treated as a blocker requiring a `Library` change.
-- Identity is out of scope (Discover 2026-08-27) — it has no `RequestCollection`/CQRS shape to replace, and
-  migrating it is a different, larger, unvalidated feature with its own threat-model needs given F-021's
-  deliberate exception-taxonomy decisions.
+- Identity is out of scope **for the Clean Architecture split** (Discover 2026-08-27) — it has no
+  `RequestCollection`/CQRS shape to replace, and migrating it is a different, larger, unvalidated feature
+  with its own threat-model needs given F-021's deliberate exception-taxonomy decisions. It IS in scope for
+  the rename (Requirement 20) — the two are independent axes.
 - `docs/api/openapi/*.json` for all five services stays semantically unchanged (route/verb/payload contract
-  is unchanged) but will regenerate byte-for-byte differently if any internal type name changes — same
-  drift-then-regenerate pattern F-019 hit twice.
+  is unchanged) but will regenerate byte-for-byte differently once any internal type/project name changes —
+  same drift-then-regenerate pattern F-019 hit twice, now expected for all 30 projects, not just 5.
 - The five services can be migrated independently — there is no cross-service dependency between, say,
   Calendar's and Customer's migration order, so Construction can wave them in any order that minimizes risk
   (smallest/simplest first, informed by the Discover survey's route counts).
+- **The 20 pure-rename projects can also be migrated independently of each other and of the 5 CQRS-split
+  services** — a rename-only project's `dotnet build` either succeeds or fails immediately and
+  deterministically; there is no partial/ambiguous state to reason about the way a behavioral change has.
+  This makes the rename batch safely parallelizable in principle, though Construction may still choose to
+  sequence it for review-load reasons.
+- `git mv` (or the equivalent folder rename + `git add`) preserves file history for renamed files; a
+  namespace-only text change inside a file that also gets its containing folder renamed is still one
+  logical change and should be one commit per project, not two.
 
 ---
 
@@ -139,13 +210,30 @@ envelope shape instead of two.
 10. Every handler retyped to an interface (per Requirement 6) resolves cleanly through DI — verified by a
     full (no `--filter`) integration-suite run, not a green build alone, per F-019's own Party Review
     lesson (a retyping fix there broke DI silently until the full suite caught it). 🧪 test-first
-11. All backend + integration + mobile tests pass; `git diff main --name-only` confirms the entire feature's
-    blast radius stays inside the five services' own directories plus expected shared infra/CI/docs touches
-    — nothing in Booking, Identity, Gateway, or MobileApp. 🧪 test-first
+11. All backend + integration + mobile tests pass; `git diff main --name-only` confirms every changed file
+    is either inside one of the 5 CQRS-migrated services' directories, a pure-rename touch on one of the
+    other 20 projects (Requirement 20), or an expected shared infra/CI/docs touch — no *behavioral* change
+    lands in Booking, Identity, Gateway, AppHost, or MobileApp beyond the rename itself. 🧪 test-first
 12. `dotnet format agenda-buddy-backend.slnf --verify-no-changes` is clean.
 13. No provider/customer-facing route path, verb, or request-body shape changed for any of the five
     services — verified against each service's committed OpenAPI spec (semantic diff, not byte diff).
     🧪 test-first
+14. `grep -oP 'Project\("\{[^}]+\}"\) = "([^"]+)", "([^"]+\.csproj)"' agenda-buddy.sln` shows exactly 30
+    project entries, and every one of them starts with `AgendaBuddy.`. 🧪 test-first
+15. For every renamed project, `grep -rn "^namespace " <project-dir>` and `grep -rln "^using <OldName>"
+    --include=*.cs .` (repeated per old name) show zero remaining unprefixed occurrences anywhere in the
+    solution — not just inside the renamed project's own folder. 🧪 test-first
+16. `dotnet build agenda-buddy.sln` succeeds with 0 errors after every rename — a full-solution build, not
+    just `agenda-buddy-backend.slnf`, since `MobileApp`/`AgendaBuddy.IntegrationTests` are excluded from the
+    slnf but still reference renamed projects. 🧪 test-first
+17. `AgendaBuddy.AppHost`'s app model still resolves and assigns every renamed service correctly — verified
+    by a live AppHost run reaching `/health`=`Healthy` on all 8 processes, same live-verification bar prior
+    rename-cascade features (F-015, F-019-T04) set. 🧪 test-first
+18. Every `docs/api/openapi/*.json` file name and internal `title` matches its project's new name, confirmed
+    by the existing `OpenApiSpecDriftTest` passing with zero manual edits to the generator. 🧪 test-first
+19. `.github/workflows/dotnet.yml`'s Docker build matrix, path filters, and `scripts/generate-openapi.sh`/
+    `scripts/run-ios.sh`'s service arrays reference only the new, renamed project names — zero remaining
+    old-name references anywhere under `.github/` or `scripts/`. 🧪 test-first
 
 ## User Stories
 
@@ -178,6 +266,25 @@ When each service's migration completes
 Then those files no longer exist, each service has the 4-project Clean Architecture split, and no
 `new CancellationToken()` remains anywhere in the new projects
 
+**F-020-US-05: Every project in the solution carries the `AgendaBuddy.` prefix, consistently**
+*Acceptance criteria: 14, 15, 16*
+Given 25 of this solution's 30 projects lack the `AgendaBuddy.` prefix that `AgendaBuddy.AppHost`/
+`AgendaBuddy.ServiceDefaults`/`AgendaBuddy.IntegrationTests` already carry
+When this feature renames every project's folder, `.csproj`, solution reference, C# namespace, and every
+`using` reference to it
+Then all 30 projects are prefixed, the full solution builds with 0 errors, and no unprefixed reference to
+any old project name remains anywhere in source, scripts, or CI config
+
+**F-020-US-06: The rename doesn't break the live app model or generated artifacts**
+*Acceptance criteria: 17, 18, 19*
+Given `AgendaBuddy.AppHost` resolves every service by its current project name today, and
+`docs/api/openapi/*.json` is generated from each service's current name
+When every service project is renamed
+Then a live AppHost run still reaches `/health`=`Healthy` on all 8 processes, the OpenAPI specs regenerate
+under their new names with zero drift, and CI's Docker/path-filter/script references all resolve to the new
+names — the exact cascade class F-019-T04 already found and fixed once for a single rename, now checked for
+20
+
 ---
 
 ## Testing Approach: Test-Driven Development (TDD)
@@ -209,18 +316,26 @@ The build loop enforces this at a mandatory **TDD gate** (build Step 9a-bis): im
   (hand-constructed call → `mediator.Send`) is not expected to be measurably slower, but this is asserted
   by the existing route-contract tests' pass/fail, not a dedicated benchmark (matches this project's
   existing NFR posture — no performance test command exists).
+- **The rename must never be verified against `agenda-buddy-backend.slnf` alone** — it excludes
+  `MobileApp`/`AgendaBuddy.IntegrationTests` by design (ADR-031), so a rename that only builds under the
+  slnf could hide a break in either. `dotnet build agenda-buddy.sln` (the full solution) is the actual gate
+  for every rename task (AC 16).
+- **Each rename should build cleanly in isolation before the next one starts** — sequencing 20 renames as
+  one giant batch risks a single unbuildable state with 20 simultaneous causes, impossible to bisect.
+  Construction should commit (or at least fully verify) per project, not per batch.
 
 ---
 
 ## Out of Scope
 
-- **Identity.** Never adopted the `RequestCollection`/CQRS/EventStore shape; migrating it is introducing the
-  pattern fresh, not replicating a proven one, and needs its own threat-model pass given F-021's deliberate
-  exception-taxonomy decisions. Not filed as a future feature here — this is a scope narrowing, not a new
-  commitment.
-- **Mapster-based request/response DTOs**, for all five services. Booking's own Requirement 7 was never
-  built (zero call sites, disclosed at F-019's Ship). Repeating it five more times without ever having
-  validated what those DTOs should look like is scope creep this PRD explicitly declines.
+- **Identity's Clean Architecture split** (the CQRS-shape migration, not the rename — Identity IS renamed
+  per Requirement 20). Identity never adopted the `RequestCollection`/CQRS/EventStore shape; migrating its
+  *architecture* is introducing the pattern fresh, not replicating a proven one, and needs its own
+  threat-model pass given F-021's deliberate exception-taxonomy decisions. Not filed as a future feature
+  here — this is a scope narrowing, not a new commitment.
+- **Mapster-based request/response DTOs**, for all five CQRS-migrated services. Booking's own Requirement 7
+  was never built (zero call sites, disclosed at F-019's Ship). Repeating it five more times without ever
+  having validated what those DTOs should look like is scope creep this PRD explicitly declines.
 - **A shared cross-service abstraction package** (e.g. a common `DataResponse<T>` or handler base). F-019
   validated the in-repo-per-project shape (ADR-049); extracting a shared package is a future decision, not
   this feature's — and only worth revisiting if five more repetitions of the same type make the duplication
@@ -231,6 +346,14 @@ The build loop enforces this at a mandatory **TDD gate** (build Step 9a-bis): im
   Build, not a blanket mandate.
 - **Any change to `Library`'s domain services or their interfaces** — a genuine interface gap (if found) is
   disclosed and worked around (staying on the concrete class), not closed by adding the missing method.
+- **Fixing the pre-existing `EventAndCommands`/`EventsAndCommands.Tests` naming inconsistency** (Requirement
+  21) — the rename adds the prefix and preserves the inconsistency; unifying "Event" vs. "Events" is a
+  separate, unrelated naming decision this feature does not bundle in.
+- **Any behavioral change to `Library`, `EventAndCommands`, `Kafka`, `Gateway`, `Identity`, or `MobileApp`**
+  beyond the rename itself — these 6 projects (plus Booking's already-shipped 5) get a pure rename-only
+  pass; none of their logic, tests, or public surface changes.
+- **Renaming the git repository, NuGet package IDs (none are published), or any external-facing identifier**
+  — this is an internal solution/namespace consistency pass, not a product- or repo-identity change.
 
 ---
 
@@ -251,6 +374,20 @@ The build loop enforces this at a mandatory **TDD gate** (build Step 9a-bis): im
   discovered at F-019's Ship). This feature's own Ship will merge directly to `main` again, relying on the
   post-merge CI run rather than a pre-merge PR check — accepted, not re-litigated, unless the `gh` auth
   setup is fixed before this feature ships.
+- **20 project renames is a much larger blast radius than F-019-T04's single `Booking`→`Booking.Api`
+  rename, which itself cascaded further than anticipated** (CI matrix, path filters, scripts, the .NET SDK's
+  own container-name derivation). Every one of those cascade points now needs re-checking per renamed
+  project, not just once. Mitigated by treating the rename as its own reviewable batch of tasks (Plan),
+  each verified by a full-solution build, not assumed safe by analogy to the one prior rename.
+- **`MobileApp`'s rename is the highest-risk single item in the rename batch** — it has its own build
+  tooling (Android/iOS TFMs, `MAUI_API_BASE_URL`, `scripts/run-ios.sh`), documented gotchas (CLAUDE.md's
+  `xcode-select`/Android SDK platform notes), and is excluded from `agenda-buddy-backend.slnf` but not from
+  `agenda-buddy.sln` — a rename that only builds cleanly under the slnf's exclusion would hide a real break
+  until someone runs a full-solution build or the mobile CI jobs. AC 16 exists specifically to catch this.
+- **A namespace-wide rename touching `Library.Entities`/`Library.Services`** (referenced via `using`/global
+  usings pervasively across all 7+ services) risks a much larger single-commit diff than any prior feature
+  in this project's history if done as one change — Plan should size `Library`'s own rename as an early,
+  isolated task specifically because everything else depends on it compiling first.
 
 ---
 
@@ -284,10 +421,14 @@ not a Nordstrom engagement. Step 6.5 was not run._
 
 ## Approval
 
-**Approved by:** ogdevlabs (self-approved under this session's standing full-autonomy grant — "stop asking
-too many decisions, full autonomy, stop only after ship complete," extended to F-020 by the user's explicit
-"now do F-20")
+**Approved by:** ogdevlabs
 **Date approved:** 2026-08-27
-**Notes:** No open questions raised at Discover that changed this PRD's content beyond the Identity scope
-correction, which is already reflected in the Requirements/Out of Scope sections above, not left as a
-pending revision.
+**Notes:** Approved in two passes. First pass covered the 5-service Clean Architecture rollout
+(self-approved under this session's standing full-autonomy grant, extended to F-020 by the user's explicit
+"now do F-20"). Second pass added Requirements 17–23 and the corresponding ACs/User Stories/risks, at the
+user's explicit direction mid-Design: prefix every project in the solution with `AgendaBuddy.` — folder,
+`.csproj`, solution reference, AND internal C# namespace, matching `AgendaBuddy.ServiceDefaults`'s own
+pattern. The user was asked (and answered) two direct clarifying questions on scope before this revision:
+(1) rename scope — chose "full solution-wide rename" over "just the 5 new services" or "+ Booking
+retroactively"; (2) namespace scope — chose "full consistency: namespaces too" over "project/folder names
+only." Both answers are incorporated verbatim into the requirements above, not interpreted or narrowed.

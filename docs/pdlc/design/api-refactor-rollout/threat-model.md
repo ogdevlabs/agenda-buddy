@@ -66,6 +66,19 @@ under a different symptom.
 via MediatR) applied to Customer — not a separate task, but explicitly named here so it isn't silently
 skipped the way Customer's copy already was once.
 
+### T-205 — Solution-wide rename breaks CI/build silently for a project no local check exercises (accept, tracked)
+
+**Scenario:** F-019-T04's single `Booking`→`Booking.Api` rename already cascaded further than anticipated
+(CI Docker matrix, path filters, `scripts/generate-openapi.sh`/`run-ios.sh`, the .NET SDK's own
+container-name derivation). This feature renames 20 more projects. `MobileApp`'s rename in particular is
+excluded from `agenda-buddy-backend.slnf`, so a check against that filter alone would not catch a break
+there. Not a security vulnerability — a build/CI-availability risk.
+
+**Mitigation:** `dotnet build agenda-buddy.sln` (the full solution, not the slnf) after every rename, per
+project, before moving to the next (PRD NFRs). `AgendaBuddy.AppHost`'s own live resolution (PRD AC 17) and
+the mobile CI jobs specifically exercise the two riskiest cascade points (Aspire's project references,
+`MobileApp`'s build tooling) that a backend-only build would miss.
+
 ## Threats not applicable
 
 - **Injection** — no new query construction; every `Library.Services.*`/`MongoDbRepository<T>` call site is
