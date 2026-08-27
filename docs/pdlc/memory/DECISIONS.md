@@ -1278,3 +1278,34 @@ disproportionate to one feature's needs, with no other consumer in this project 
 second cross-service caching need arises. Turning `ValidateAudience` on with a single shared value
 across all seven — rejected as pure overhead with no security benefit over the existing `ValidateIssuer`
 check, for the reason above.
+
+---
+
+## ADR-055 — Carter for route organization only; its `Validate<T>` FluentValidation integration is not adopted (F-027)
+
+**Date:** 2026-08-27 · **Status:** Accepted
+
+**Context.** F-027 reorganizes every service's inline `Program.cs` route registrations into
+[Carter](https://github.com/CarterCommunity/Carter) `ICarterModule` classes, per the ROADMAP filing raised
+mid-F-020 and deliberately deferred until all 7 services shared the same inline-route shape. Carter ships
+its own optional `Validate<T>` FluentValidation-based request-validation helper alongside its routing
+module system. This project already has a validation strategy in flight: Validot's declarative
+`Specification<T>` DSL (ADR-049), currently covering 3 of Booking's 10 routes, with the rest still on
+`MiniValidator` pending their own migration (tracked separately, `agenda-buddy-02e`).
+
+**Decision.** Adopt Carter for route registration/organization only. Do not adopt `Validate<T>` or
+introduce FluentValidation as a dependency. Validot remains the sole target validation DSL this project
+is migrating toward.
+
+**Why.** F-027's scope is reorganizing where route-mapping code lives, not changing how requests are
+validated. Introducing a second validation library in the same pass that also happens to touch every
+route would fragment validation strategy across three libraries (`MiniValidator`, Validot, FluentValidation)
+instead of the two already in a deliberate, tracked transition. Nothing about Carter's routing module
+system requires or benefits from its validation helper — they are independent parts of the package.
+
+**Consequences.** No new dependency beyond `Carter` itself (10.0.0, net10.0-compatible). The existing
+Validot/MiniValidator migration (`agenda-buddy-02e`) is unaffected and unblocked by this feature.
+
+**Alternatives rejected.** Adopting `Validate<T>` for the routes this feature touches anyway — rejected
+because it would mean three concurrent validation approaches in the same codebase with no plan to
+converge on one, worse than the current two-library transition state.

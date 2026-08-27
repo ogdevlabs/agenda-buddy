@@ -36,3 +36,4 @@ global using MongoDB.Driver;
 global using ProviderService = AgendaBuddy.Library.Services.ProviderService;
 global using AgendaBuddy.EventAndCommands;
 global using AgendaBuddy.EventAndCommands.Persistence;
+global using Carter;

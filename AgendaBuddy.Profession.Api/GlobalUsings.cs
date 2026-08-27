@@ -30,3 +30,4 @@ global using AgendaBuddy.Profession.Configurations;
 global using AgendaBuddy.Profession.Extensions;
 global using AgendaBuddy.EventAndCommands;
 global using AgendaBuddy.EventAndCommands.Persistence;
+global using Carter;

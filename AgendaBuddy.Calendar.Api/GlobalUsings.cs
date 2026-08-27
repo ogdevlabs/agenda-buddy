@@ -24,3 +24,4 @@ global using Microsoft.Net.Http.Headers;
 global using MongoDB.Driver;
 global using AgendaBuddy.EventAndCommands;
 global using AgendaBuddy.EventAndCommands.Persistence;
+global using Carter;
