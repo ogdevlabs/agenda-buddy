@@ -35,13 +35,23 @@ public class CustomerApiService : ICustomerApiService
     /// TotalSessions, Availability) has no backend equivalent and stays at its default — a data-shape gap
     /// out of this task's scope (route/verb/payload correctness only).
     /// </summary>
+    /// <remarks>
+    /// F-020-T12: the paged envelope itself moved one level deeper, under a "data" property
+    /// (<c>{data: {items, totalCount, page, pageSize}, errors: []}</c>) — Customer's Clean Architecture
+    /// migration wraps every CQRS route's response in <c>DataResponse&lt;T&gt;</c> (ADR-049). Found live
+    /// here rather than assumed: none of the four prior F-020 migrations (Calendar/Profession/Services/
+    /// Provider) had a MobileApp client that parsed the wrapped route's body directly, so this is the
+    /// first migration where the envelope change was actually reachable from the mobile client.
+    /// </remarks>
     internal static List<CustomerSummary> ParsePagedCustomers(string json)
     {
         var result = new List<CustomerSummary>();
 
         using var doc = JsonDocument.Parse(json);
         if (doc.RootElement.ValueKind != JsonValueKind.Object
-            || !doc.RootElement.TryGetProperty("items", out var items)
+            || !doc.RootElement.TryGetProperty("data", out var data)
+            || data.ValueKind != JsonValueKind.Object
+            || !data.TryGetProperty("items", out var items)
             || items.ValueKind != JsonValueKind.Array)
             return result;
 

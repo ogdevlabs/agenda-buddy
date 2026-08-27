@@ -105,8 +105,14 @@ public class EventStoreWriteGuardTest
     // DeactivateProviderCommandHandler went through mediator.Send here for the first time ever (it was
     // previously `new`-ed by hand in Provider/Program.cs, deleted); its "provider not found" branch
     // remains unreachable via the real route, same as before the move -- see this class's own remarks.
+    // F-020-T12: AgendaBuddy.Customer.Core is the sixth such root -- its 4 moved handlers
+    // (AddCustomer/UpdateCustomer/GetCustomers/GetCustomerByEmail) would otherwise silently drop out of
+    // coverage. No handler was found dead: Customer had 10 routes against 4 CQRS handlers, a clean
+    // mapping once the other 6 (messages/notifications) are accounted for as calling
+    // IMessageService/INotificationService directly, never MediatR -- confirmed by grep, matching
+    // Provider's own GetProviderReport precedent, not assumed.
     private static readonly string[] ScanRoots =
-        ["AgendaBuddy.EventAndCommands", "AgendaBuddy.Booking.Core", "AgendaBuddy.Calendar.Core", "AgendaBuddy.Profession.Core", "AgendaBuddy.Services.Core", "AgendaBuddy.Provider.Core"];
+        ["AgendaBuddy.EventAndCommands", "AgendaBuddy.Booking.Core", "AgendaBuddy.Calendar.Core", "AgendaBuddy.Profession.Core", "AgendaBuddy.Services.Core", "AgendaBuddy.Provider.Core", "AgendaBuddy.Customer.Core"];
 
     private static List<string> HandlerFiles()
     {

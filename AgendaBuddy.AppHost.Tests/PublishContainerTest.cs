@@ -60,7 +60,7 @@ public class PublishContainerTest
     // Customer/Provider suppressed the symptom rather than the cause. Once the root fix lands, both
     // must publish clean without the suppression — restoring it would silently mask a regression here.
     [Theory]
-    [InlineData("Customer/Customer.csproj")]
+    [InlineData("AgendaBuddy.Customer.Api/AgendaBuddy.Customer.Api.csproj")]
     [InlineData("AgendaBuddy.Provider.Api/AgendaBuddy.Provider.Api.csproj")]
     public void NoLongerSuppressesDuplicatePublishOutputFiles(string relativeCsprojPath)
     {

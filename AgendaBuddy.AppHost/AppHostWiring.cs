@@ -112,7 +112,7 @@ internal static class AppHostWiring
         // to (threat T-101, ARCHITECTURE.md D-4).
         var identity = AddApi<Projects.AgendaBuddy_Identity>("identity", identityDb, needsPrivateKey: true, spendsBcrypt: true);
         var booking = AddApi<Projects.AgendaBuddy_Booking_Api>("booking", agendaDb, needsKafka: true);
-        var customer = AddApi<Projects.Customer>("customer", agendaDb, needsKafka: true);
+        var customer = AddApi<Projects.AgendaBuddy_Customer_Api>("customer", agendaDb, needsKafka: true);
         var provider = AddApi<Projects.AgendaBuddy_Provider_Api>("provider", agendaDb, needsKafka: true);
         var calendar = AddApi<Projects.AgendaBuddy_Calendar_Api>("calendar", agendaDb);
         var services = AddApi<Projects.AgendaBuddy_Services_Api>("services", agendaDb);

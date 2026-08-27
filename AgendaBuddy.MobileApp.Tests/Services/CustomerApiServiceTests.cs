@@ -26,18 +26,24 @@ public class CustomerApiServiceTests
     // F-015-T07: Customer's real list route returns F-016/ADR-023's paginated envelope
     // ({items, totalCount, page, pageSize}) of full CustomerEntity objects, not a bare array of
     // CustomerSummary — the previous fixture (a bare array) does not match the real backend shape.
+    //
+    // F-020-T12: the paged envelope moved one level deeper, under "data" -- Customer's Clean
+    // Architecture migration wraps every CQRS route's response in DataResponse<T> (ADR-049).
     [Fact]
     public async Task GetCustomers_Returns200_DeserializesPagedEnvelope()
     {
         const string json = """
             {
-                "items": [
-                    {"id":"1","email":"alice@example.com","firstName":"Alice","lastName":"Smith"},
-                    {"id":"2","email":"bob@example.com","firstName":"Bob","lastName":"Jones"}
-                ],
-                "totalCount": 2,
-                "page": 1,
-                "pageSize": 25
+                "data": {
+                    "items": [
+                        {"id":"1","email":"alice@example.com","firstName":"Alice","lastName":"Smith"},
+                        {"id":"2","email":"bob@example.com","firstName":"Bob","lastName":"Jones"}
+                    ],
+                    "totalCount": 2,
+                    "page": 1,
+                    "pageSize": 25
+                },
+                "errors": []
             }
             """;
 
@@ -68,7 +74,7 @@ public class CustomerApiServiceTests
     [Fact]
     public async Task GetCustomers_EmptyPage_ReturnsEmptyList()
     {
-        const string json = """{"items": [], "totalCount": 0, "page": 1, "pageSize": 25}""";
+        const string json = """{"data": {"items": [], "totalCount": 0, "page": 1, "pageSize": 25}, "errors": []}""";
 
         var factory = CreateFactory(HttpStatusCode.OK, json);
         var sut = new CustomerApiService(factory);

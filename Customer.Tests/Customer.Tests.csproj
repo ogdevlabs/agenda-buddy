@@ -19,7 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Customer\Customer.csproj" />
+    <ProjectReference Include="..\AgendaBuddy.Customer.Api\AgendaBuddy.Customer.Api.csproj" />
   </ItemGroup>
   
 </Project>

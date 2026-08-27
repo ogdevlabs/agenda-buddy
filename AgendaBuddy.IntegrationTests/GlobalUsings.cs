@@ -6,7 +6,7 @@ global using Xunit;
 // one service assembly — never `Program`, which is internal and ambiguous across all seven. See
 // Harness/EntryPoints.cs for the full rationale. Added per service as its test classes arrive.
 global using ProfessionAnchor = AgendaBuddy.Profession.Configurations.MongoDbConfiguration;
-global using CustomerAnchor = Customer.Configurations.MongoDbConfiguration;
+global using CustomerAnchor = AgendaBuddy.Customer.Configurations.MongoDbConfiguration;
 global using ProviderAnchor = AgendaBuddy.Provider.Configurations.MongoDbConfiguration;
 global using CalendarAnchor = AgendaBuddy.Calendar.Configurations.MongoDbConfiguration;
 global using ServicesAnchor = AgendaBuddy.Services.Configurations.MongoDbConfiguration;

@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text.Json;
 using AgendaBuddy.IntegrationTests.Harness;
 using AgendaBuddy.Library.Entities;
 using MongoDB.Bson;
@@ -65,17 +66,21 @@ public class CustomerPersistenceTest(ServiceHostFixture<CustomerAnchor> host, Cr
         var getResponse = await service.Client.SendAsync(getRequest);
         Assert.Equal(HttpStatusCode.OK, getResponse.StatusCode);
 
-        var read = await getResponse.Content.ReadFromJsonAsync<CustomerEntity>(HarnessJson.Options);
+        // F-020-T12: the response is now wrapped in DataResponse<T> (ADR-049, following Booking's/
+        // Calendar's/Profession's/Services'/Provider's precedent) -- the object moved from the response
+        // root to a "data" property. Parsed field-by-field rather than re-deserialised into
+        // CustomerEntity at "data", matching every sibling migration's persistence test.
+        using var body = JsonDocument.Parse(await getResponse.Content.ReadAsStringAsync());
+        var read = body.RootElement.GetProperty("data");
 
-        Assert.NotNull(read);
-        Assert.Equal("After", read.FirstName);
-        Assert.Equal("Update", read.LastName);
-        Assert.Equal(Email, read.Email);
+        Assert.Equal("After", read.GetProperty("firstName").GetString());
+        Assert.Equal("Update", read.GetProperty("lastName").GetString());
+        Assert.Equal(Email, read.GetProperty("email").GetString());
 
         // Preserved by UpdateCustomerCommandHandler from the pre-existing document, not from the PUT body —
         // proving the whole-document replace round-trips fields the client never sent, not only the ones it did.
-        Assert.Equal("seeded-customer-topic", read.KafkaTopic);
-        Assert.Equal(["seeded-provider@example.com"], read.SubscribedProviderCollection);
-        Assert.Equal(["seeded-appointment-1"], read.AppointmentCollection);
+        Assert.Equal("seeded-customer-topic", read.GetProperty("kafkaTopic").GetString());
+        Assert.Equal(["seeded-provider@example.com"], read.GetProperty("subscribedProviderCollection").EnumerateArray().Select(e => e.GetString()));
+        Assert.Equal(["seeded-appointment-1"], read.GetProperty("appointmentCollection").EnumerateArray().Select(e => e.GetString()));
     }
 }

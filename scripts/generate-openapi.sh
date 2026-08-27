@@ -93,6 +93,8 @@ project_dir() {
     Calendar) echo "AgendaBuddy.Calendar.Api" ;;
     Profession) echo "AgendaBuddy.Profession.Api" ;;
     Services) echo "AgendaBuddy.Services.Api" ;;
+    Customer) echo "AgendaBuddy.Customer.Api" ;;
+    Identity) echo "AgendaBuddy.Identity" ;;
     *) echo "$1" ;;
   esac
 }
