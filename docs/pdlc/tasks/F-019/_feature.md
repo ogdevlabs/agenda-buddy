@@ -1,13 +1,23 @@
 ---
 id: F-019
 title: api-refactor-pilot-booking
-status: planned
+status: shipped
 priority: 20
 labels: [roadmap, "priority:20"]
 depends_on: [F-018, F-016]
-claimed_by: oscargarcia@ogdevlabs.onmicrosoft.com
+claimed_by: null
 created: 2026-08-18
-updated: 2026-08-26
+updated: 2026-08-27
+shipped: 2026-08-27
+episode: EPISODE_api-refactor-pilot-booking_2026-08-27.md
+version: v0.8.0
+---
+**SHIPPED 2026-08-27 as `v0.8.0`** — merged directly to `main` (`fb91cb1`; `gh pr create` is blocked under
+this identity, only `READ` access). 11 tasks, 14 ACs (12 clean, 2 disclosed partial-met). Note: shipped with
+**4** packages (FluentResults, Validot, GuardClauses, Mapster), not the 5 originally planned below —
+`SmallApiToolkit` was dropped pre-Design (ADR-049, no response-envelope type this project needs); an in-repo
+`DataResponse<T>` replaced it. See `EPISODE_api-refactor-pilot-booking_2026-08-27.md` for the full record.
+
 ---
 **Stage 2 of 3 in the API refactor program (F-018 → F-019 → F-020).** Apply the full target pattern to **one** service — `Booking` — end to end, proving the shape before it is replicated six more times. CLAUDE.md already describes `Booking/Program.cs` as "the representative Minimal API entry point showing the full wiring pattern", and Booking exercises every concern the pattern must handle: three write endpoints, ownership guards, Kafka, and the EventStore audit trail.
 

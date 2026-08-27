@@ -6,7 +6,7 @@
      Do not edit manually — let PDLC maintain it. If you need to correct something, update and note the reason. -->
 
 **Project:** Agenda Buddy
-**Last updated:** 2026-08-26T21:00:00Z
+**Last updated:** 2026-08-27T02:22:00Z
 
 ---
 
@@ -85,6 +85,22 @@ Agenda Buddy is a scheduling and appointment management platform for independent
 - Both new third-party GitHub Actions (`gitleaks-action`, `trivy-action`) are **pinned to full commit SHAs**, closing a supply-chain substitution risk
 - `.github/dependabot.yml` — weekly NuGet + GitHub Actions dependency-update PRs; its first run opened 17 PRs at once, 16 consolidated into one and merged (PR #67), 1 excluded for a real conflict (`CommunityToolkit.Maui`, still open as PR #61)
 
+**Added by F-019 (`v0.8.0`, 2026-08-27):**
+
+- **Booking is now the pilot for a 4-project Clean Architecture split** — `Booking.Api` (thin, endpoints/DI
+  only), `Booking.Core` (MediatR handlers), `Booking.Domain` (commands/queries/DTOs), `Booking.Infrastructure`
+  (empty — YAGNI). F-020 will replicate this shape across the other 6 services.
+- Every Booking command/query handler now dispatches through a **real `mediator.Send`**, not a
+  hand-constructed call — `RequestCollection`, the workaround that existed only because handlers took
+  per-request values as constructor parameters, is deleted.
+- Handlers return **`FluentResults.Result`/`Result<T>`** instead of a string-sniffed `"exception"`-prefixed
+  convention, mapped to a new **`DataResponse<T>`** envelope (`data`/`errors`/`success`) at the wire boundary.
+- Validation migration from `MiniValidator` to **Validot**'s declarative `Specification<T>` DSL started: 3
+  of Booking's 10 routes (Book, and the 2 note-content routes).
+- A real, pre-existing bug — `PUT /appointments/`'s response echoed the client's forged
+  `AppointmentStatus` even though the database write already correctly ignored it — is **fixed**;
+  confirmed live under real traffic, not just in the integration suite.
+
 ---
 
 ## Shipped Features
@@ -101,6 +117,7 @@ Agenda Buddy is a scheduling and appointment management platform for independent
 | 005 | F-015 api-gateway-and-mobile-contract (`v0.5.0`) | 2026-08-24 | [EPISODE_api-gateway-and-mobile-contract_2026-08-24.md](../episodes/EPISODE_api-gateway-and-mobile-contract_2026-08-24.md) | [#41](https://github.com/ogdevlabs/agenda-buddy/pull/41) |
 | 006 | F-017 container-and-cd-hardening (`v0.6.0`) | 2026-08-26 | [006_container-and-cd-hardening_2026-08-26.md](../episodes/006_container-and-cd-hardening_2026-08-26.md) | [#48](https://github.com/ogdevlabs/agenda-buddy/pull/48) |
 | 007 | F-018 api-refactor-foundations (`v0.7.0`) | 2026-08-26 | [007_api-refactor-foundations_2026-08-26.md](../episodes/007_api-refactor-foundations_2026-08-26.md) | [#69](https://github.com/ogdevlabs/agenda-buddy/pull/69) |
+| 008 | F-019 api-refactor-pilot-booking (`v0.8.0`) | 2026-08-27 | [EPISODE_api-refactor-pilot-booking_2026-08-27.md](../episodes/EPISODE_api-refactor-pilot-booking_2026-08-27.md) | none — merged directly (`fb91cb1`); `gh pr create` blocked, see episode's Links section |
 
 ---
 
@@ -108,6 +125,10 @@ Agenda Buddy is a scheduling and appointment management platform for independent
 
 - **.NET Aspire orchestration** *(added F-013)*: `AgendaBuddy.AppHost` is the composition root for local development — it declares MongoDB and Kafka as container resources and all seven services plus the Gateway as projects, assigning ports dynamically. `AgendaBuddy.ServiceDefaults` is referenced by every service (and the Gateway) and supplies OpenTelemetry, health/liveness endpoints, service discovery, HTTP resilience, and the `PiiRedactingProcessor`. Docker Compose remains as a legacy fallback.
 - **Seven ASP.NET Minimal API microservices**: Booking, Calendar, Customer, Provider, Services, Profession — plus **Identity** — each with its own test project. *(The "six" count predates Identity.)*
+- **Booking is a 4-project Clean Architecture pilot** *(added F-019)*: `Booking.Api` (thin — endpoints/DI
+  only), `Booking.Core` (MediatR command/query handlers), `Booking.Domain` (commands/queries/DTOs, the
+  `DataResponse<T>` envelope), `Booking.Infrastructure` (empty — YAGNI). The other 6 services keep the
+  original one-project-per-service shape until F-020 replicates this split across them.
 - **`Gateway`, an eighth process** *(added F-015)*: a thin YARP reverse proxy in front of all seven services — `MobileApp`'s only configured base address. Explicit `api/v1/{service}/**` route allowlist, built from live Aspire service-discovery config, never a catch-all. No business logic, no auth validation — JWT passthrough only.
 - **Shared Library project**: all domain entities (`AppointmentEntity`, `ProviderEntity`, `CustomerEntity`, `ServiceEntity`, `ProfessionEntity`), the generic `IRepository<T>` / `MongoDbRepository<T>`, domain services, and tools (CacheAside, EnumHelper) live here and are consumed by all services
 - **CQRS via MediatR**: the shared `EventAndCommands` project holds all commands, queries, and their handlers; each handler calls Library services and persists an audit event to EventStore
@@ -193,6 +214,14 @@ Agenda Buddy is a scheduling and appointment management platform for independent
 - **`Aspire.Hosting.AppHost` 13.5.3** (picked up via the post-merge Dependabot batch, PR #67) introduces a new build warning, `ASPIRE010` (`AgendaBuddy.AppHost` not using the Aspire CLI bundle) — informational only, not yet acted on.
 - **`CommunityToolkit.Maui` is stuck at 9.1.1** — Dependabot's proposed 15.0.1 bump (PR #61, still open) fails with `NU1605`: it requires `Microsoft.Maui.Controls >= 10.0.90`, and `MobileApp.csproj` pins `>= 10.0.20`. Needs a coordinated MAUI SDK bump, not a routine dependency merge.
 
+**Added or exposed by F-019 (2026-08-27, recorded at the ship gate):**
+
+- **2 of Booking's 10 routes (Update, Cancel) still validate via `MiniValidator`, not Validot** — Requirement 6 reached 3/10, not 10/10. Never assigned to any F-019 task. Tracked: `agenda-buddy-02e`.
+- **`POST /appointments` with a null `EmailProvider` 500s instead of 400/404** — pre-existing, unchanged by this refactor; confirmed the wire response still leaks no exception detail regardless. Tracked: `agenda-buddy-cy2`.
+- **Mapster (ADR-049-approved) has zero call sites in this feature** — Requirement 7 (response DTOs keeping `AppointmentEntity` out of route signatures) was never assigned to any task. Not a defect; F-020 should not assume a usage pattern exists to copy.
+- **`gh` cannot create OR merge PRs on this repo** (a step further than F-017/F-018's precedent, where creation worked and only merge was blocked) — the authenticated identity has only `READ` access, distinct from the `git`-configured commit identity. No pre-merge PR-triggered CI run is currently possible; every ship from here merges straight to `main` and relies on the resulting push-triggered CI run instead. Worth fixing the `gh` auth setup before the next feature that wants pre-merge CI confidence.
+- ~~**Episodes 006/007 written to the wrong location**~~ — disclosed, not retroactively fixed (both are shipped, permanent records). Episode 008 restores the project's own convention (`docs/pdlc/episodes/`). See `episodes/index.md`'s note.
+
 ---
 
 ## Decision Log Summary
@@ -210,5 +239,6 @@ Agenda Buddy is a scheduling and appointment management platform for independent
 10. **Auth hardened: partial updates, configuration-gated controls, warn-don't-fail** (ADR-032…034, F-021) — `IRepository<T>.FindOneAndUpdateAsync` is the one partial-update primitive and never upserts; HSTS and rate limiting are gated on configuration rather than `IsProduction()` because every service runs as Production under the local AppHost; each control warns loudly, naming the key, when off outside a local run. Cloud deployment itself is deferred until every pending feature ships and legacy tech debt is discharged (ADR-035).
 11. **Six unreachable capabilities land on three existing services, by data ownership, not an eighth service** (ADR-036, F-014) — a service is a deployment unit, not a URL prefix. Appointment status becomes server-owned via the entity's own transition methods (ADR-037); payments are non-charging unless a Stripe key is configured, assigned once at construction (ADR-038); the provider report states a revenue figure is unavailable rather than publish one it cannot compute correctly (ADR-039).
 12. **A Gateway *is* an eighth service, for the mobile client only** (F-015) — unlike ADR-036's decision for domain capabilities, `MobileApp` needs one address across seven dynamically-ported services, which no existing service can provide without becoming something else. The Gateway's single-instance posture is accepted as a local-dev-scoped risk (ADR-040, T-301). The Nordstrom standards-readiness gate is **retired outright** for this project (ADR-042) — ten consecutive unreachable-source skips resolved into an explicit exemption: this is a personal project, not a Nordstrom engagement.
+13. **Booking's Clean Architecture pilot: 4 projects, in-repo `DataResponse<T>`, 4 packages not 5** (ADR-049, F-019) — `Booking.Api`/`Core`/`Domain`/`Infrastructure`, chosen over a 3- or 5-project split. A planned `SmallApiToolkit` dependency was dropped pre-Design (it doesn't ship a response-envelope type this project needs); `DataResponse<T>` is authored in-repo instead. FluentResults, Validot, GuardClauses, and Mapster are the 4 approved packages — Mapster shipped with zero call sites this feature, disclosed rather than assumed used.
 
 See `docs/pdlc/memory/DECISIONS.md` for full ADR entries.
