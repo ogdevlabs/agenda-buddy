@@ -133,13 +133,25 @@ _None active. Run `/night-shift <F-NNN>` to start an autonomous run (requires by
 
 ## Current Sub-phase
 
-Design
+Plan
 
 ---
 
 ## Last Checkpoint
 
-Inception / Define / 2026-08-27T06:45:00Z — PRD drafted and self-approved under the standing full-autonomy
+Inception / Design / 2026-08-27T07:05:00Z — Design docs written and self-approved:
+`docs/pdlc/design/api-refactor-rollout/{ARCHITECTURE,data-model,api-contracts,threat-model,ux-review}.md`.
+Threat model triage: **Lite** (same outcome as Booking's), 4 threats (T-201/T-202 mirror Booking's
+T-101/T-102 generalized to 5 services; T-203 is the same `EventStoreWriteGuardTest` coverage-maintenance
+item; **T-204 is new** — Customer's dormant `IKafkaClient` downcast, the one `agenda-buddy-5og` copy never
+fixed, now fixed as a byproduct of this feature's own Requirement 4). UX review: **Skip** (no UI surface,
+same as F-019's). Real design decision made rather than deferred again: `DataResponse<T>` stays per-service,
+not extracted to a shared project, even with 6 total consumers now — no code needs the *same* type across
+service boundaries, only the same shape (ARCHITECTURE.md §3). Also decided: migration order is
+lowest-risk-first (Calendar/Profession → Services → Provider → Customer last), not hardest-first, since
+Booking already absorbed the program's biggest single risk. Moving to Plan.
+
+_Previously: Inception / Define / 2026-08-27T06:45:00Z — PRD drafted and self-approved under the standing full-autonomy
 grant: `docs/pdlc/prds/PRD_F-020_api-refactor-rollout_2026-08-27.md`. 16 requirements, 13 ACs, 4 user
 stories. Scope: 5 services (Calendar, Customer, Provider, Services, Profession), Identity excluded. Learned
 from F-019's actual outcome rather than repeating its unvalidated requirements: Mapster/response-DTOs and
