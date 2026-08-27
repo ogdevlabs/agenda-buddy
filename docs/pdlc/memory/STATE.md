@@ -139,7 +139,16 @@ Build
 
 ## Last Checkpoint
 
-Construction / Build / 2026-08-27T08:10:00Z — **T01 done, verified, committed (`9ad0eb8`).** Library/
+Construction / Build / 2026-08-27T08:25:00Z — **T02 done, verified, committed (`7008570`).** Kafka/
+Kafka.Tests → AgendaBuddy.Kafka.*, 22 files. Agent's report itself flagged a real gap in T01 (stale
+`Library/**` CI path filters in `dotnet.yml` — 6 glob entries + 7 prose comments — plus
+`DockerAndComposeHygieneTest.cs`'s hardcoded `DeletedProjects` array checking a path that no longer
+exists), self-disclosed as "T01's gap, not mine to fix." Verified and fixed retroactively in the same
+commit rather than left for whichever later task happened to touch that file. Backend suite 516/516,
+build clean, format clean. **Sequencing renames one at a time** (not parallel — `agenda-buddy.sln` is a
+shared-file race risk without worktree isolation). T04 (Gateway) running next, solo.
+
+_Previously: Construction / Build / 2026-08-27T08:10:00Z — **T01 done, verified, committed (`9ad0eb8`).** Library/
 Library.ServerAuth/Library.Tests → AgendaBuddy.Library.*, 209 files touched, 89 tracked renames. Agent
 caught 3 real edge cases a naive regex would've missed (a type-alias `global using`, a fully-qualified
 inline reference with no `using` line, stale doc-comment references) — independently re-verified before
