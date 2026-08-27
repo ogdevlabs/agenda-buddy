@@ -1098,3 +1098,36 @@ rejected because it was never actually forced; the REST API path was available t
 untried. Switching the git identity used by `gh` itself (e.g. `gh auth login` as `ogdevlabs`) — not pursued
 here since the REST-API-with-git-credential path already satisfies the requirement without changing any
 tool's stored auth state.
+
+---
+
+## ADR-051 — F-025 booking-correctness: accepted race for the overlap check, not an atomic conditional write or slot-key index (F-025) *(design decision)*
+
+**Date:** 2026-08-27 · **Status:** Accepted
+
+**Context.** `BookingService.BookAppointmentAsync` had zero domain-invariant checks — no `Start < End`,
+no future-dating, no overlap check against a provider's existing appointments. The feature record named
+three candidate designs for the overlap check specifically, none obviously right without measurement:
+(1) an atomic conditional write, (2) a unique index on a derived slot key, (3) an explicitly accepted
+and documented race.
+
+**Decision.** Ship option 3. The check is a plain `FindAllAsync` query (`BookingService
+.FindOverlappingAppointmentsAsync`) run before `InsertAsync`, with the race window between them left
+open and documented rather than closed. Option 1 was rejected because `IRepository<T>
+.FindOneAndUpdateAsync` (ADR-032) expresses a single-document conditional update, not "insert only if no
+other document matches a range predicate" — closing that gap needs an aggregation-pipeline update or a
+transaction, unverified against the pinned MongoDB.Driver 2.25.0, and materially bigger than this fix.
+Option 2 was rejected because appointments have arbitrary `Start`/`End`, not slot-aligned times — a slot
+key would either force a granularity decision unrelated to the actual invariant or fail to catch
+partial-slot overlaps.
+
+**Consequences.** Two concurrent booking requests for the *same provider* in an overlapping window can
+both pass the check and both insert — a real, accepted gap, not a hidden one; recorded in
+`docs/pdlc/design/booking-correctness/ARCHITECTURE.md` §3 and in the PRD's Readiness Assessment. This
+does not reopen the *already-fixed* race in `SearchAndUpdateProviderAppointments`/`AppendAppointmentAsync`
+(ADR D-9) — that one guards the provider's embedded appointment list with an atomic `$push`; this
+decision is about the separate, narrower pre-insert overlap check.
+
+**Alternatives rejected.** See Context — both alternatives were evaluated and rejected for the reasons
+above, not merely deprioritized. Revisit if usage data ever shows this specific race firing in
+production; nothing here should be read as "this is fine forever regardless of load."

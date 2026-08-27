@@ -24,6 +24,28 @@ public class BookingService(IRepository<AppointmentEntity> appointmentRepository
     }
 
     /// <summary>
+    /// Appointments for <paramref name="emailProvider"/> whose stored range overlaps
+    /// [<paramref name="start"/>, <paramref name="end"/>).
+    /// </summary>
+    /// <remarks>
+    /// Read-then-insert, not an atomic conditional write: a documented, accepted race window
+    /// between this check and the caller's <see cref="BookAppointmentAsync"/> (ADR-051). Acceptable here
+    /// because a provider's calendar has one writer at a time in practice, not because the race is
+    /// impossible.
+    /// </remarks>
+    public async Task<IEnumerable<AppointmentEntity>> FindOverlappingAppointmentsAsync(
+        string emailProvider, DateTime start, DateTime end)
+    {
+        var filter = new BsonDocument
+        {
+            { "email_provider", emailProvider },
+            { "start", new BsonDocument("$lt", end) },
+            { "end", new BsonDocument("$gt", start) }
+        };
+        return await appointmentRepository.FindAllAsync(filter);
+    }
+
+    /// <summary>
     /// Writes a new status onto the appointment document, and nothing else.
     /// </summary>
     /// <returns>The updated appointment, or <c>null</c> when no appointment has that identifier.</returns>

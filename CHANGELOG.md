@@ -4,6 +4,16 @@ All notable changes to this project are documented in this file, in [Keep a Chan
 
 ## [Unreleased]
 
+### Fixed
+
+- **F-025 booking-correctness**: `POST /api/v1/booking/appointments` accepted appointments booked
+  backwards (`End` before `Start`), in the past, and overlapping another appointment already booked
+  for the same provider — zero domain-invariant checks existed before this. Now enforced: `Start < End`
+  at the Validot boundary, future-dating and the overlap check in `BookingAppointmentCommandHandler`.
+  An appointment immediately adjacent to an existing one is not treated as an overlap. The overlap
+  check is a documented, accepted read-then-insert race (ADR-051), not an atomic conditional write —
+  see `docs/pdlc/design/booking-correctness/ARCHITECTURE.md`.
+
 ## [0.9.0] - 2026-08-27
 
 ### Changed
