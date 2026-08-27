@@ -1,4 +1,4 @@
-namespace Kafka.Tests;
+namespace AgendaBuddy.Kafka.Tests;
 
 [TestSubject(typeof(KafkaClient))]
 public class KafkaClientTest

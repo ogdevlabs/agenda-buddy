@@ -18,7 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Kafka\Kafka.csproj" />
+    <ProjectReference Include="..\AgendaBuddy.Kafka\AgendaBuddy.Kafka.csproj" />
   </ItemGroup>
   
 </Project>

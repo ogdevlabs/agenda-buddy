@@ -2,8 +2,8 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using AgendaBuddy.IntegrationTests.Harness;
-using Kafka;
-using Kafka.Support;
+using AgendaBuddy.Kafka;
+using AgendaBuddy.Kafka.Support;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace AgendaBuddy.IntegrationTests.Support;

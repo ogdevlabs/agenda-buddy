@@ -1,4 +1,4 @@
-using Kafka;
+using AgendaBuddy.Kafka;
 
 namespace AgendaBuddy.IntegrationTests.Support;
 

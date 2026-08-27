@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using Microsoft.Extensions.Configuration;
 
-namespace Kafka.Tests;
+namespace AgendaBuddy.Kafka.Tests;
 
 /// <summary>
 /// AC-5.5 — the broker address must come from configuration. A new file rather than an addition

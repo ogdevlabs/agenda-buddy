@@ -2,7 +2,7 @@ using Confluent.Kafka;
 using Confluent.Kafka.Admin;
 using Microsoft.Extensions.Configuration;
 
-namespace Kafka;
+namespace AgendaBuddy.Kafka;
 
 /// <summary>
 /// Creates the per-provider Kafka topics.
@@ -19,7 +19,7 @@ public class KafkaClient(IConfiguration? configuration = null) : IKafkaClient
 
     /// <summary>
     /// Broker address, resolved once at construction. <c>internal</c> so the address can be
-    /// asserted without a live broker; see <c>InternalsVisibleTo</c> in Kafka.csproj.
+    /// asserted without a live broker; see <c>InternalsVisibleTo</c> in AgendaBuddy.Kafka.csproj.
     /// </summary>
     internal string BootstrapServers { get; } = Resolve(configuration);
 

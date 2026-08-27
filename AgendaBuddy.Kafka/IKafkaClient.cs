@@ -1,4 +1,4 @@
-namespace Kafka;
+namespace AgendaBuddy.Kafka;
 
 public interface IKafkaClient
 {

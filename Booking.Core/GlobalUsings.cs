@@ -8,7 +8,7 @@ global using EventAndCommands.Events.Booking;
 global using EventAndCommands.Persistence;
 global using FluentResults;
 global using GuardClauses;
-global using Kafka;
+global using AgendaBuddy.Kafka;
 global using AgendaBuddy.Library.Entities;
 global using AgendaBuddy.Library.Services;
 global using AgendaBuddy.Library.Tools;

@@ -34,7 +34,7 @@ jobs:
       library: ${{ steps.filter.outputs.library }}
       # F-017-T06: narrower than `api` on purpose — the image-build matrix is expensive (7 parallel
       # publishes), so it triggers only on the 7 service directories and docker-compose*.yml, not on
-      # every backend-adjacent change `api` also covers (Library, EventAndCommands, test projects).
+      # every backend-adjacent change `api` also covers (AgendaBuddy.Library, EventAndCommands, test projects).
       docker: ${{ steps.filter.outputs.docker }}
       # AND-ed into every build job so a markdown-only change never builds. See the long note on
       # the filters below for why this is a separate filter rather than a `!**/*.md` negation.
@@ -45,7 +45,7 @@ jobs:
         id: filter
         with:
           # On a pull_request these are evaluated against the whole base...HEAD diff, not the last
-          # commit — so one file in Library/** fires every filter that mentions it for the life of
+          # commit — so one file in AgendaBuddy.Library/** fires every filter that mentions it for the life of
           # the branch. That is why the lists below are deliberate about which jobs a shared change
           # is worth paying for.
           #
@@ -57,11 +57,11 @@ jobs:
           # 'every'. Under 'some' every pattern is OR-ed, so a leading-`!` pattern does NOT exclude
           # anything — it is silently a no-op. ('some-with-excludes', which would work, exists only
           # on master; it is not in the v3 tag.) 'every' is unusable here because no single file can
-          # match all of `Library/**`, `Booking/**`, … at once.
+          # match all of `AgendaBuddy.Library/**`, `Booking.Api/**`, … at once.
           #
           # Two real bugs came from that misunderstanding, both fixed below:
-          #   1. Markdown inside a code directory built the whole backend. `Kafka/readme.md` matches
-          #      `Kafka/**`, so editing it ran the full build + test. `docs/**` and root-level `*.md`
+          #   1. Markdown inside a code directory built the whole backend. `AgendaBuddy.Kafka/readme.md`
+          #      matches `AgendaBuddy.Kafka/**`, so editing it ran the full build + test. `docs/**` and root-level `*.md`
           #      were always fine; markdown nested under a service was not.
           #   2. `- '!MobileApp.Tests/**'` never excluded anything. `*.Tests/**` matches
           #      `MobileApp.Tests/**`, so a mobile-test-only change ran the backend job.
@@ -104,15 +104,15 @@ jobs:
               - '**/*.xcprivacy'
               - '**/*.svg'
             library:
-              - 'Library/**'
-              - 'Library.ServerAuth/**'
+              - 'AgendaBuddy.Library/**'
+              - 'AgendaBuddy.Library.ServerAuth/**'
               - 'EventAndCommands/**'
               - 'Directory.Build.props'
             api:
-              - 'Library/**'
-              # Library.ServerAuth was absent from every filter, so a change to JWT validation —
+              - 'AgendaBuddy.Library/**'
+              # AgendaBuddy.Library.ServerAuth was absent from every filter, so a change to JWT validation —
               # the code that decides whether a request is authenticated — ran zero jobs.
-              - 'Library.ServerAuth/**'
+              - 'AgendaBuddy.Library.ServerAuth/**'
               - 'EventAndCommands/**'
               - 'Booking.Api/**'
               - 'Calendar/**'
@@ -121,7 +121,7 @@ jobs:
               - 'Services/**'
               - 'Profession/**'
               - 'Identity/**'
-              - 'Kafka/**'
+              - 'AgendaBuddy.Kafka/**'
               - 'AgendaBuddy.AppHost/**'
               - 'AgendaBuddy.ServiceDefaults/**'
               # The 12 backend test projects, named explicitly. MobileApp.Tests is absent on
@@ -133,8 +133,8 @@ jobs:
               - 'Services.Tests/**'
               - 'Profession.Tests/**'
               - 'Identity.Tests/**'
-              - 'Library.Tests/**'
-              - 'Kafka.Tests/**'
+              - 'AgendaBuddy.Library.Tests/**'
+              - 'AgendaBuddy.Kafka.Tests/**'
               - 'EventsAndCommands.Tests/**'
               - 'AgendaBuddy.AppHost.Tests/**'
               - 'AgendaBuddy.ServiceDefaults.Tests/**'
@@ -158,7 +158,7 @@ jobs:
               # these jobs, so a deployment-pipeline edit no longer rebuilds the entire backend.
               - '.github/workflows/dotnet.yml'
             # F-017-T06: the docker-build-and-scan matrix's own trigger — deliberately NARROWER than
-            # `api` above. `api` also fires on Library/EventAndCommands/Kafka/test-project changes,
+            # `api` above. `api` also fires on AgendaBuddy.Library/EventAndCommands/AgendaBuddy.Kafka/test-project changes,
             # which would run 7 parallel container publishes for a change that touches no service's
             # own container output. Scoped to exactly PRD Requirement 9's list: the 7 service dirs
             # (their .csproj files are inside these globs already), and docker-compose*.yml.
@@ -172,10 +172,10 @@ jobs:
               - 'Identity/**'
               - 'docker-compose*.yml'
             # Android and iOS each install a MAUI workload and take minutes (iOS runs on a macOS
-            # runner, billed at 10x Linux). Reserved for changes to the app itself — a shared Library
+            # runner, billed at 10x Linux). Reserved for changes to the app itself — a shared AgendaBuddy.Library
             # change is covered by mobile-tests below, which compiles MobileApp against it under the
             # fallback TFM and would catch a break (that is exactly how agenda-buddy-prr's CS0103
-            # surfaced). If a Library change ever breaks only the platform heads, add 'Library/**'
+            # surfaced). If an AgendaBuddy.Library change ever breaks only the platform heads, add 'AgendaBuddy.Library/**'
             # back here and accept the minutes.
             mobile:
               - 'MobileApp/**'
@@ -184,7 +184,7 @@ jobs:
             mobile-tests:
               - 'MobileApp/**'
               - 'MobileApp.Tests/**'
-              - 'Library/**'
+              - 'AgendaBuddy.Library/**'
               - 'Directory.Build.props'
               - '.github/workflows/dotnet.yml'
 
@@ -808,7 +808,7 @@ jobs:
               echo
               echo "> ⚠️ **Build jobs were skipped because no code-relevant file changed**, even though"
               echo "> an area filter matched. This is expected for documentation inside a code directory"
-              echo "> (for example \`Kafka/readme.md\`)."
+              echo "> (for example \`AgendaBuddy.Kafka/readme.md\`)."
               echo ">"
               echo "> If this change *did* touch build-relevant files, the \`code\` filter is missing an"
               echo "> extension — add it in the \`changes\` job and re-run."

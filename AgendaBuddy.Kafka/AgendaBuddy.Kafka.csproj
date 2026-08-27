@@ -23,8 +23,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <!-- Lets Kafka.Tests assert the resolved broker address without a live broker (AC-5.5). -->
-        <InternalsVisibleTo Include="Kafka.Tests" />
+        <!-- Lets AgendaBuddy.Kafka.Tests assert the resolved broker address without a live broker (AC-5.5). -->
+        <InternalsVisibleTo Include="AgendaBuddy.Kafka.Tests" />
     </ItemGroup>
 
     <ItemGroup>

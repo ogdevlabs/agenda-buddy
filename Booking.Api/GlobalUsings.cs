@@ -15,7 +15,7 @@ global using Booking.Extensions;
 global using Booking.Requests;
 global using Booking.Domain.Queries;
 global using Booking.Validation;
-global using Kafka;
+global using AgendaBuddy.Kafka;
 global using AgendaBuddy.Library.Entities;
 global using AgendaBuddy.Library.Extensions;
 global using AgendaBuddy.Library.Tools;

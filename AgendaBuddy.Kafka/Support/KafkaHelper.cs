@@ -1,6 +1,6 @@
 using Confluent.Kafka;
 
-namespace Kafka.Support;
+namespace AgendaBuddy.Kafka.Support;
 
 public class KafkaHelper
 {

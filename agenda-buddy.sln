@@ -18,7 +18,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Customers", "Customers", "{
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Customer", "Customer\Customer.csproj", "{D3E2A87E-4EFE-4CCD-A7A9-1BF285ADCBB9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kafka", "Kafka\Kafka.csproj", "{036AA7C5-EE15-4DDD-87B1-E8AB3E7B21BE}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AgendaBuddy.Kafka", "AgendaBuddy.Kafka\AgendaBuddy.Kafka.csproj", "{036AA7C5-EE15-4DDD-87B1-E8AB3E7B21BE}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Services", "Services", "{6371886F-BEAC-4C9D-987E-4EE47A435746}"
 EndProject
@@ -38,7 +38,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Calendar.Tests", "Calendar.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AgendaBuddy.Library.Tests", "AgendaBuddy.Library.Tests\AgendaBuddy.Library.Tests.csproj", "{502A1F4F-D287-47A0-97B0-753B43EE3E3D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kafka.Tests", "Kafka.Tests\Kafka.Tests.csproj", "{19A05E65-4F23-45E1-9DFF-00378397E905}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AgendaBuddy.Kafka.Tests", "AgendaBuddy.Kafka.Tests\AgendaBuddy.Kafka.Tests.csproj", "{19A05E65-4F23-45E1-9DFF-00378397E905}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Provider.Tests", "Provider.Tests\Provider.Tests.csproj", "{F0854A4F-82E5-4356-A224-38B01AE5B409}"
 EndProject
