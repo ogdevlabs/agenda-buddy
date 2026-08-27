@@ -64,8 +64,11 @@ public class ServicesPersistenceTest(ServiceHostFixture<ServicesAnchor> host, Cr
         // ObjectIdJsonConverter (per ObjectIdJsonConverter's own remarks), so its "id" field is the
         // unusable {timestamp,machine,...} shape client-side deserialisation cannot parse. None of the
         // fields this test cares about are "id".
+        //
+        // F-020-T10: the response is now wrapped in DataResponse<T> (ADR-049, following Booking's
+        // precedent) -- the array moved from the response root to a "data" property.
         using var body = JsonDocument.Parse(await getResponse.Content.ReadAsStringAsync());
-        var stored = Assert.Single(body.RootElement.EnumerateArray());
+        var stored = Assert.Single(body.RootElement.GetProperty("data").EnumerateArray());
 
         Assert.Equal("Deep tissue massage", stored.GetProperty("name").GetString());
         Assert.Equal("90 minutes", stored.GetProperty("description").GetString());

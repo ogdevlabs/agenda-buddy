@@ -91,8 +91,14 @@ public class EventStoreWriteGuardTest
     // constructor took a `ProfessionEntity` with no matching DI registration, so it could never have been
     // resolved even if a route existed) and was deleted outright, the same disposition F-020-T08 gave
     // BookCalendarCommandHandler.
+    // F-020-T10: AgendaBuddy.Services.Core is the fourth such root -- its 3 moved handlers
+    // (GetServicesFromProvider/AddServicesToProvider/UpdateServicesFromProvider) would otherwise
+    // silently drop out of coverage. Unlike Calendar's/Profession's own migrations, no handler was
+    // found dead here: Services had exactly 3 routes and 3 handlers, a 1:1 mapping confirmed at Build
+    // (ARCHITECTURE.md §9's "4-handlers-for-2-routes" note was a stale miscount, not a real defect --
+    // see this task's own report).
     private static readonly string[] ScanRoots =
-        ["AgendaBuddy.EventAndCommands", "AgendaBuddy.Booking.Core", "AgendaBuddy.Calendar.Core", "AgendaBuddy.Profession.Core"];
+        ["AgendaBuddy.EventAndCommands", "AgendaBuddy.Booking.Core", "AgendaBuddy.Calendar.Core", "AgendaBuddy.Profession.Core", "AgendaBuddy.Services.Core"];
 
     private static List<string> HandlerFiles()
     {

@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="FluentResults" Version="4.0.0" />
+        <PackageReference Include="GuardClauses" Version="2.1.0" />
+        <PackageReference Include="MediatR" Version="12.3.0" />
+        <PackageReference Include="MongoDB.Bson" Version="2.25.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\AgendaBuddy.Services.Domain\AgendaBuddy.Services.Domain.csproj" />
+        <ProjectReference Include="..\AgendaBuddy.EventAndCommands\AgendaBuddy.EventAndCommands.csproj" />
+        <ProjectReference Include="..\AgendaBuddy.Library\AgendaBuddy.Library.csproj" />
+    </ItemGroup>
+
+</Project>

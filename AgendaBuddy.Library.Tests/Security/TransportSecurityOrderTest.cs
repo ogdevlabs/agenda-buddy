@@ -45,7 +45,7 @@ namespace Common.Tests.Security;
 public class TransportSecurityOrderTest
 {
     private static readonly string[] AllServices =
-        ["AgendaBuddy.Gateway", "AgendaBuddy.Identity", "AgendaBuddy.Booking.Api", "AgendaBuddy.Calendar.Api", "Customer", "AgendaBuddy.Profession.Api", "Provider", "Services"];
+        ["AgendaBuddy.Gateway", "AgendaBuddy.Identity", "AgendaBuddy.Booking.Api", "AgendaBuddy.Calendar.Api", "Customer", "AgendaBuddy.Profession.Api", "Provider", "AgendaBuddy.Services.Api"];
 
     private const string TransportSecurityCall = "UseAgendaBuddyTransportSecurity(";
     private const string AuthenticationCall = "app.UseAuthentication()";
@@ -90,7 +90,7 @@ public class TransportSecurityOrderTest
     [InlineData("Customer")]
     [InlineData("AgendaBuddy.Profession.Api")]
     [InlineData("Provider")]
-    [InlineData("Services")]
+    [InlineData("AgendaBuddy.Services.Api")]
     public void TransportSecurity_IsRegisteredBeforeAuthentication(string service)
     {
         var source = ProgramSource(service);
@@ -126,7 +126,7 @@ public class TransportSecurityOrderTest
     [InlineData("Customer")]
     [InlineData("AgendaBuddy.Profession.Api")]
     [InlineData("Provider")]
-    [InlineData("Services")]
+    [InlineData("AgendaBuddy.Services.Api")]
     public void NoService_CallsUseHttpsRedirectionDirectly(string service)
     {
         // One implementation, seven call sites. A service that adds its own redirect back gets a second,

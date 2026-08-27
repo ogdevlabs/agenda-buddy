@@ -42,7 +42,7 @@
     <ProjectReference Include="..\AgendaBuddy.Calendar.Api\AgendaBuddy.Calendar.Api.csproj" />
     <ProjectReference Include="..\Customer\Customer.csproj" />
     <ProjectReference Include="..\Provider\Provider.csproj" />
-    <ProjectReference Include="..\Services\Services.csproj" />
+    <ProjectReference Include="..\AgendaBuddy.Services.Api\AgendaBuddy.Services.Api.csproj" />
     <ProjectReference Include="..\AgendaBuddy.Profession.Api\AgendaBuddy.Profession.Api.csproj" />
     <ProjectReference Include="..\AgendaBuddy.Identity\AgendaBuddy.Identity.csproj" />
     <!-- F-015-T01: the eighth process. No MongoDB dependency, so it needs no Testcontainer — see

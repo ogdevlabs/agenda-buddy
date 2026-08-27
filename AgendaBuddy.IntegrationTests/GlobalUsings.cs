@@ -9,7 +9,7 @@ global using ProfessionAnchor = AgendaBuddy.Profession.Configurations.MongoDbCon
 global using CustomerAnchor = Customer.Configurations.MongoDbConfiguration;
 global using ProviderAnchor = Provider.Configurations.MongoDbConfiguration;
 global using CalendarAnchor = AgendaBuddy.Calendar.Configurations.MongoDbConfiguration;
-global using ServicesAnchor = Services.Configurations.MongoDbConfiguration;
+global using ServicesAnchor = AgendaBuddy.Services.Configurations.MongoDbConfiguration;
 global using BookingAnchor = AgendaBuddy.Booking.Configuration.MongoDbConfiguration;   // NOTE: Configuration, SINGULAR — Booking is the odd one out
 global using AgendaBuddy.Booking.Domain.Responses;
 global using IdentityAnchor = AgendaBuddy.Identity.Configurations.MongoDbConfiguration;  // F-021: the auth routes

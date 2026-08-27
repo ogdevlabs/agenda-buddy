@@ -1,13 +1,7 @@
 #nullable enable
-using System.Collections.Generic;
 using System.Linq;
-using Services.Extensions;
-using AgendaBuddy.Library.Entities;
-using AgendaBuddy.Library.Repositories;
-using Microsoft.Extensions.Configuration;
+using AgendaBuddy.Services.Extensions;
 using Microsoft.Extensions.DependencyInjection;
-using MongoDB.Driver;
-using Xunit;
 
 namespace Services.Tests.Extensions;
 

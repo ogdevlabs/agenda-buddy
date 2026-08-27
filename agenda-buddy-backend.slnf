@@ -35,8 +35,11 @@
       "AgendaBuddy.Profession.Infrastructure\\AgendaBuddy.Profession.Infrastructure.csproj",
       "Provider.Tests\\Provider.Tests.csproj",
       "Provider\\Provider.csproj",
-      "Services.Tests\\Services.Tests.csproj",
-      "Services\\Services.csproj"
+      "AgendaBuddy.Services.Api\\AgendaBuddy.Services.Api.csproj",
+      "AgendaBuddy.Services.Core\\AgendaBuddy.Services.Core.csproj",
+      "AgendaBuddy.Services.Domain\\AgendaBuddy.Services.Domain.csproj",
+      "AgendaBuddy.Services.Infrastructure\\AgendaBuddy.Services.Infrastructure.csproj",
+      "Services.Tests\\Services.Tests.csproj"
     ]
   }
 }
