@@ -37,9 +37,9 @@ public static class ServiceCollectionExtension
                 serviceProvider.GetRequiredService<IMongoClient>().GetDatabase(databaseName),
                 customersCollection));
 
-        // F-014: notes and payments. Both entities were written by F-008 and F-010 and have NEVER been
-        // persisted, because nothing registered a repository for them — MongoDB creates each collection on
-        // first write, so there is no migration and no provisioning step.
+        // Notes and payments were never persisted before this, because nothing registered a repository
+        // for them — MongoDB creates each collection on first write, so there is no migration and no
+        // provisioning step.
         var notesCollection = MongoConnectionResolver.ResolveSetting(configuration, "NotesCollection", "notes");
         var paymentsCollection = MongoConnectionResolver.ResolveSetting(configuration, "PaymentsCollection", "payments");
 
@@ -71,7 +71,7 @@ public static class ServiceCollectionExtension
         serviceCollection.AddScoped<INoteService, NoteService>();
         serviceCollection.AddScoped<IPaymentService, PaymentService>();
 
-        // F-014 requirement 17 / threat T-206: NON-CHARGING unless a Stripe key is configured, and the key is
+        // NON-CHARGING unless a Stripe key is configured, and the key is
         // never in appsettings.json — it is an Aspire secret parameter, as the JWT keys are. Singleton because
         // StripePaymentGateway assigns the process-global StripeConfiguration.ApiKey once at construction.
         serviceCollection.AddSingleton<IPaymentGateway>(_ => PaymentGatewayFactory.Create(configuration));

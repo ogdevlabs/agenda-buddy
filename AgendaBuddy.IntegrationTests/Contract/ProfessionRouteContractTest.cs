@@ -3,9 +3,9 @@ using System.Net;
 namespace AgendaBuddy.IntegrationTests.Contract;
 
 /// <summary>
-/// F-018-T11 AC-5, Profession: one real HTTP request through the real pipeline, asserting the status
+/// Profession: one real HTTP request through the real pipeline, asserting the status
 /// code only. See <see cref="BookingRouteContractTest"/> for why status-only is the deliberate design
-/// (ADR-017, F-019's <c>DataResponse&lt;T&gt;</c>).
+/// (ADR-017, see <c>DataResponse&lt;T&gt;</c>).
 /// </summary>
 /// <remarks>
 /// Route chosen: <c>GET /api/v1/professions</c> (`Profession/Program.cs`) — deliberately anonymous by

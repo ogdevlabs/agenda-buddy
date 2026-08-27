@@ -6,7 +6,7 @@ using System.Text.Json;
 namespace AgendaBuddy.IntegrationTests.Harness;
 
 /// <summary>
-/// F-016 AC-14: the routes that still catch <c>ForbiddenException</c> locally return <b>exactly one</b>
+/// The routes that still catch <c>ForbiddenException</c> locally return <b>exactly one</b>
 /// 403, with their body unchanged.
 /// </summary>
 /// <remarks>
@@ -93,7 +93,7 @@ public class LocalCatchUnaffectedTest : IClassFixture<ServiceHostFixture<Provide
         Assert.Equal(403, problem.RootElement.GetProperty("status").GetInt32());
         Assert.Equal("Forbidden", problem.RootElement.GetProperty("title").GetString());
 
-        // The T-004 guarantee holds on this path too, and here it is inherited rather than implemented.
+        // This path inherits the same no-leak guarantee rather than implementing it separately.
         Assert.DoesNotContain("ForbiddenException", body, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("You do not have permission", body, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("   at ", body, StringComparison.Ordinal);
@@ -111,13 +111,13 @@ public class LocalCatchUnaffectedTest : IClassFixture<ServiceHostFixture<Provide
 /// 403 contracts. Measured: <c>app.UseStatusCodePages()</c> — already registered in every domain service —
 /// turns a bodyless 403 into ProblemDetails, so both paths <b>already</b> return the same shape. The
 /// outcome is better than the design predicted: one uniform 403 contract, no divergence to document, and
-/// nothing for F-015 to special-case.
+/// nothing to special-case at the gateway.
 /// </para>
 /// <para>
 /// <c>requestId</c> comes from each service's <c>CustomizeProblemDetails</c> extension
 /// (<c>Activity.Current?.Id</c>); <c>traceId</c> is added by the ProblemDetails defaults. Both are the same
 /// value. Neither is exported to any sink (<c>10-error-handling.md:138</c>), so neither is lookupable yet —
-/// unchanged by F-016, and noted so nobody treats it as a support tool.
+/// noted so nobody treats it as a support tool.
 /// </para>
 /// </remarks>
 internal static class ForbiddenContract

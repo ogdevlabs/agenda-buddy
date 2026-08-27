@@ -3,7 +3,7 @@ using System.Reflection;
 namespace AgendaBuddy.EventsAndCommands.Tests.Persistence;
 
 /// <summary>
-/// Pins F-016 AC-1: the audit-persistence types live in <c>AgendaBuddy.EventAndCommands.Persistence</c>,
+/// Pins AC-1: the audit-persistence types live in <c>AgendaBuddy.EventAndCommands.Persistence</c>,
 /// not the long-standing misspelling that preceded it (see <c>Misspelling</c> below — spelled out
 /// only in that constant, so a tree-wide search for the typo finds exactly one deliberate hit).
 /// </summary>

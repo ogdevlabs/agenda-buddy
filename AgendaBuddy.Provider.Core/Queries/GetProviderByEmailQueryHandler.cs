@@ -1,8 +1,7 @@
 namespace AgendaBuddy.Provider.Core.Queries;
 
-// F-020-T11: moved from AgendaBuddy.EventAndCommands.Queries.Provider. Constructor takes only
-// DI-resolvable services -- the pre-refactor handler took `email` as a per-instance constructor
-// parameter; it now comes from the query.
+// Constructor takes only DI-resolvable services; email comes from the query, not a per-instance
+// constructor parameter.
 public class GetProviderByEmailQueryHandler(
     IMediator mediator,
     IProviderService providerService,

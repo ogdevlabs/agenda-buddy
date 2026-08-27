@@ -1,7 +1,7 @@
 namespace AgendaBuddy.IntegrationTests.Harness;
 
 /// <summary>
-/// F-021 AC-13 and AC-15 / threat T-103: a real service emits <c>Strict-Transport-Security</c> over TLS
+/// A real service emits <c>Strict-Transport-Security</c> over TLS
 /// when the flag is on, and never over plain HTTP.
 /// </summary>
 /// <remarks>
@@ -9,7 +9,7 @@ namespace AgendaBuddy.IntegrationTests.Harness;
 /// The same behaviour is covered by a unit test in <c>AgendaBuddy.ServiceDefaults.Tests</c> against a
 /// hand-built pipeline. This is the version that answers AC-15, because the question it settles is not
 /// "does <c>UseHsts</c> work" — it is "does a service <b>this project ships</b> call it, in a position
-/// where it runs". Those are different claims, and F-016 exists because the second one was assumed.
+/// where it runs". Those are different claims, and the second one was once wrongly assumed.
 /// </para>
 /// <para>
 /// <b>Profession</b> is the target: its list route is anonymous by design (reference data, not PII), so

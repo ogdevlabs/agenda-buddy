@@ -19,7 +19,7 @@ builder.Services.AddHealthChecks()
 builder.Services.AddMongoDbRepository(builder.Configuration);
 
 // Add MediatR
-// F-019-T04: handlers moved to AgendaBuddy.Booking.Core, a separate assembly from AgendaBuddy.Booking.Api -- MediatR's
+// Handlers live in AgendaBuddy.Booking.Core, a separate assembly from AgendaBuddy.Booking.Api -- MediatR's
 // RegisterServicesFromAssembly only scans the one assembly it's given, so both must be registered or
 // mediator.Send(command) throws "no handler registered" at runtime, not at compile time.
 builder.Services.AddMediatR(cfg =>
@@ -29,15 +29,15 @@ builder.Services.AddEventStore();
 // Add services required to support using MVC's model binders
 builder.Services.AddMvcCore();
 
-// F-014: ObjectId has no JSON representation of its own, so System.Text.Json serialises the struct's public
+// ObjectId has no JSON representation of its own, so System.Text.Json serialises the struct's public
 // properties and emits `"id": { "timestamp": …, "machine": … }` — a shape that cannot be read back into an
-// ObjectId at all. Three of F-014's route families need the id from a create response in order to work
+// ObjectId at all. Several route families need the id from a create response in order to work
 // (PUT /notes/{id}, POST /messages/{id}/read, POST /notifications/{id}/read), so this is load-bearing rather
 // than cosmetic. Pre-existing for every other route that returns an entity; see ObjectIdJsonConverter.
 builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.Converters.Add(new ObjectIdJsonConverter()));
 
-// F-019-T02 Validot spike: one shared, immutable, thread-safe IValidator<AppointmentEntity> for the
+// One shared, immutable, thread-safe IValidator<AppointmentEntity> for the
 // POST /appointments route only. See Booking/Validation/AppointmentEntitySpecification.cs for what it
 // enforces and why it's .Optional() rather than .Required().
 builder.Services.AddSingleton<IValidator<AppointmentEntity>>(
@@ -52,7 +52,7 @@ builder.Services.AddSingleton<IValidator<NoteRequest>>(
 builder.Services.AddSingleton<IKafkaClient, KafkaClient>();
 
 // Enable & configure JSON Problem Details error responses
-// ADR-022 / F-016-T08: ForbiddenException -> 403 centrally, so an endpoint that omits a local
+// ADR-022: ForbiddenException -> 403 centrally, so an endpoint that omits a local
 // try/catch returns 403 rather than a bare 500. Registered unconditionally, unlike the
 // Development-only UseExceptionHandler lambda below.
 builder.Services.AddExceptionHandler<AgendaBuddyExceptionHandler>();
@@ -128,14 +128,14 @@ if (app.Environment.IsDevelopment())
 // ForbiddenException and the central 403 would fail in Development only. See AgendaBuddyExceptionHandler.
 app.UseExceptionHandler();
 
-// F-021 PRD requirement 13: HSTS (under its flag) and the HTTPS redirect run BEFORE authentication.
-// Registered after UseAuthentication, as it was until F-021, the redirect parsed and validated the
-// bearer token out of a plaintext request and only then told the client to come back over TLS.
+// HSTS (under its flag) and the HTTPS redirect run BEFORE authentication. Registered after
+// UseAuthentication instead, the redirect would parse and validate the bearer token out of a
+// plaintext request and only then tell the client to come back over TLS.
 app.UseAgendaBuddyTransportSecurity();
 
-// F-014 PRD risk R4: the residual risk of a non-charging default is that it becomes permanent — a deployment
-// forgets the key and records payments that never happened while every artifact says F-010 is delivered. Same
-// shape as threat T-103, same mitigation as ADR-033: say so loudly, do not refuse to start. A missing payment
+// The residual risk of a non-charging default is that it becomes permanent — a deployment
+// forgets the key and records payments that never happened while every artifact says it is delivered.
+// Mitigation per ADR-033: say so loudly, do not refuse to start. A missing payment
 // key must not take appointment booking offline.
 if (PaymentGatewayFactory.RecordingModeWarning(
         app.Configuration, SecurityFlags.IsLocalRun(app.Configuration, app.Environment)) is { } paymentWarning)
@@ -161,7 +161,7 @@ booking.MapPost("/appointments",
             IValidator<AppointmentEntity> appointmentValidator,
             CancellationToken cancellationToken) =>
         {
-            // F-019-T02 Validot spike: this is the one route swapped from MiniValidator.TryValidate to
+            // This is the one route swapped from MiniValidator.TryValidate to
             // Validot for a real vertical-slice comparison. The other two original routes below (PUT,
             // DELETE) are deliberately untouched.
             var validationResult = appointmentValidator.Validate(appointmentEntity);
@@ -236,15 +236,15 @@ booking.MapDelete("/appointments/",
     .WithName("CancelAppointment")
     .RequireAuthorization();
 
-// ── F-014: appointment status, session notes, payments ───────────────────────────────────────────────
+// ── Appointment status, session notes, payments ───────────────────────────────────────────────
 //
 const string ProviderRole = "Provider";
 //
-// Three route families that did not exist. Every one is authenticated, ownership-guarded, and role-checked
-// where a role distinction exists — F-016 is the reason that is stated rather than assumed: five routes in
-// this solution returned PII to anonymous callers, and the fix was a guard on every route.
+// Every route here is authenticated, ownership-guarded, and role-checked
+// where a role distinction exists — five routes in this solution once returned PII to anonymous
+// callers, and the fix was a guard on every route.
 
-// F-014 requirement 14 / threat T-203. Status is SERVER-OWNED: the PUT above ignores the field, and this is
+// Status is SERVER-OWNED: the PUT above ignores the field, and this is
 // the only way to change it. The transition runs through AppointmentEntity.TransitionTo, so Book() and
 // Complete() — dead code until now — hold the rules.
 booking.MapPost("/appointments/{identifier}/status",
@@ -303,12 +303,12 @@ booking.MapPost("/appointments/{identifier}/status",
 
 // ── Session notes — the most sensitive data in the product ───────────────────────────────────────────
 //
-// Threat T-201: the owning provider is taken from the CALLER'S TOKEN and never from the request. NoteService
+// The owning provider is taken from the CALLER'S TOKEN and never from the request. NoteService
 // asks for a providerEmail, and a route that passed a client-supplied one through would hand any
 // authenticated caller every provider's notes for any appointment identifier they can guess — identifiers a
-// customer already receives in their own appointment responses. That is F-016's defect exactly.
+// customer already receives in their own appointment responses.
 //
-// Threat T-202: KeyNotFoundException and UnauthorizedAccessException BOTH map to 403, so a caller cannot
+// KeyNotFoundException and UnauthorizedAccessException BOTH map to 403, so a caller cannot
 // tell "someone else's note" from "no such note". For a therapist, the existence of a note is itself
 // disclosure.
 booking.MapGet("/appointments/{identifier}/notes",
@@ -394,7 +394,7 @@ booking.MapPut("/notes/{id}",
                     cancellationToken);
                 return TypedResults.Ok(DataResponse<NoteEntity>.Ok(result.Value));
             }
-            // Threat T-202: both causes answer the same way, deliberately.
+            // Both causes answer the same way, deliberately.
             catch (ForbiddenException) { return TypedResults.Forbid(); }
             catch (UnauthorizedAccessException) { return TypedResults.Forbid(); }
             catch (KeyNotFoundException) { return TypedResults.Forbid(); }
@@ -416,7 +416,7 @@ booking.MapDelete("/notes/{id}",
                 await mediator.Send(
                     new DeleteAppointmentNoteCommand { Id = id, ProviderEmail = providerEmail }, cancellationToken);
                 // A 204 cannot carry a body by HTTP semantics -- same disclosed exception to
-                // Requirement 10's blanket claim as AgendaBuddy.Booking.Api's Cancel route (F-019-T04).
+                // Requirement 10's blanket claim as AgendaBuddy.Booking.Api's Cancel route.
                 return TypedResults.NoContent();
             }
             catch (ForbiddenException) { return TypedResults.Forbid(); }
@@ -428,13 +428,12 @@ booking.MapDelete("/notes/{id}",
 
 // ── Payments ────────────────────────────────────────────────────────────────────────────────────────
 //
-// Threat T-205: both participant emails come from the STORED APPOINTMENT, never from the body, so a caller
+// Both participant emails come from the STORED APPOINTMENT, never from the body, so a caller
 // cannot record a payment against someone else. A second charge for the same appointment answers 409.
 //
 // ⚠️ RESIDUAL, ACCEPTED: `amount` is client-supplied and there is nothing to validate it against, because an
 // appointment does not record which service it was booked for. With the default non-charging gateway a wrong
-// amount corrupts a record; with a real Stripe key it would be a real underpayment. Anyone configuring
-// Payments:Stripe:ApiKey must read threat T-205 first.
+// amount corrupts a record; with a real Stripe key it would be a real underpayment.
 booking.MapPost("/appointments/{identifier}/payment",
         async Task<Results<Created<DataResponse<PaymentEntity>>, ForbidHttpResult, NotFound, Conflict<string>, BadRequest<string>>> (
             string identifier, ClaimsPrincipal user, PaymentRequest request,
@@ -467,7 +466,7 @@ booking.MapPost("/appointments/{identifier}/payment",
             }
             catch (InvalidOperationException ex)
             {
-                // Threat T-205's Conflict case. 409 rather than 400: the request is well-formed, it
+                // 409 rather than 400: the request is well-formed, it
                 // conflicts with the current state (already paid).
                 return TypedResults.Conflict(ex.Message);
             }

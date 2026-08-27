@@ -1,8 +1,7 @@
 namespace AgendaBuddy.Provider.Core.Commands;
 
-// F-020-T11: moved from AgendaBuddy.EventAndCommands.Commands.Provider. Constructor takes only
-// DI-resolvable services -- the pre-refactor handler took `email` as a per-instance constructor
-// parameter (Requests/RequestCollection.cs, deleted); it now comes from the command.
+// Constructor takes only DI-resolvable services; email comes from the command, not a per-instance
+// constructor parameter.
 public class UpdateProviderCommandHandler(
     IMediator mediator,
     IProviderService providerService,

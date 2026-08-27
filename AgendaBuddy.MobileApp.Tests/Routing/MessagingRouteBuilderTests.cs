@@ -6,8 +6,8 @@ namespace AgendaBuddy.MobileApp.Tests.Routing;
 
 public class MessagingRouteBuilderTests
 {
-    // F-015-T07: corrected to the real backend route — hosted by Customer under a top-level
-    // /api/v1/messages group (F-014, ADR D-2), not nested under /api/v1/customers.
+    // The real backend route is hosted by Customer under a top-level /api/v1/messages group
+    // (ADR D-2), not nested under /api/v1/customers.
     [Fact]
     public void Inbox_BuildsGet()
     {
@@ -46,7 +46,7 @@ public class MessagingRouteBuilderTests
         Assert.Equal("""{"recipientEmail":"alice@example.com","body":"Hi there!"}""", json);
     }
 
-    // F-015-T07: POST, not PATCH — the real route is messages.MapPost("/{id}/read", …).
+    // POST, not PATCH — the real route is messages.MapPost("/{id}/read", …).
     [Fact]
     public void MarkRead_BuildsPostById()
     {

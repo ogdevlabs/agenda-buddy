@@ -13,7 +13,7 @@ internal sealed class UnsafeMongoEndpointException(string message) : Exception(m
 /// </summary>
 /// <remarks>
 /// <para>
-/// F-016 AC-5 and AC-20 (`[security]`, threat <b>T-002</b>, CRITICAL). This repository is
+/// This repository is
 /// <b>public</b>, a valid Atlas credential remains recoverable from its git history
 /// (<c>ISSUE-002</c>, unrotated), and that cluster has <b>no backups</b>. A suite that resolved a
 /// non-container connection string would run destructive setup against live data. Under no

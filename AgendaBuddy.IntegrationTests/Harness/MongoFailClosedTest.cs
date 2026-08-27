@@ -3,7 +3,7 @@ using MongoDB.Driver;
 namespace AgendaBuddy.IntegrationTests.Harness;
 
 /// <summary>
-/// F-016 AC-20 (`[security]`, threat <b>T-002</b>, CRITICAL) at the fixture level: a conflicting
+/// At the fixture level: a conflicting
 /// connection string in the environment aborts the suite before any test body runs, and no database or
 /// collection is created.
 /// </summary>

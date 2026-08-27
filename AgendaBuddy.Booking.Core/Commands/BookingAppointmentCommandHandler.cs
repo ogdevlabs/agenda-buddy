@@ -1,6 +1,6 @@
 namespace AgendaBuddy.Booking.Core.Commands;
 
-// F-019-T04. Constructor takes only DI-resolvable services -- the per-request AppointmentEntity that
+// Constructor takes only DI-resolvable services -- the per-request AppointmentEntity that
 // used to be a constructor parameter (so RequestCollection.cs could hand-construct this handler) now
 // comes from the command itself, which is what makes a real mediator.Send(command, ct) dispatch
 // possible: MediatR resolves this handler from the container, which has no way to supply a per-request
@@ -11,8 +11,7 @@ namespace AgendaBuddy.Booking.Core.Commands;
 // Update/Cancel's handlers, Party Review): this one calls AppendAppointmentAsync, which isn't on
 // IProviderService, and adding it would be a Library change out of this feature's scope. The
 // constructor's own unused KafkaClient/IKafkaClient parameter -- "reserved for future Kafka
-// publishing" -- was removed here too (Party Review, Neo's YAGNI finding): nothing consumed it, and
-// leaving it in would have had F-020 copy the same dead parameter into six more handlers.
+// publishing" -- was removed here too (Party Review, Neo's YAGNI finding): nothing consumed it.
 public class BookingAppointmentCommandHandler(
     IMediator mediator,
     ProviderService providerService,
@@ -54,7 +53,7 @@ public class BookingAppointmentCommandHandler(
     }
 
     /// <remarks>
-    /// F-014 requirement 20 / ADR D-9. This used to read the provider, append to its embedded appointment
+    /// ADR D-9. This used to read the provider, append to its embedded appointment
     /// list, and call <c>UpdateProviderAsync</c> — a whole-document <c>ReplaceOneAsync</c>. Two concurrent
     /// bookings for one provider both read, both appended, and the second replacement silently discarded the
     /// first appointment, which then existed in the `appointments` collection and not in the provider

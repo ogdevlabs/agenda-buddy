@@ -6,13 +6,12 @@ using MongoDB.Driver;
 namespace AgendaBuddy.IntegrationTests.Harness;
 
 /// <summary>
-/// <c>MongoDbRepository&lt;T&gt;.FindOneAndUpdateAsync</c> against a real MongoDB — the semantics F-021's
-/// whole design rests on, verified by the engine rather than by the in-memory double that encodes my
-/// beliefs about it.
+/// <c>MongoDbRepository&lt;T&gt;.FindOneAndUpdateAsync</c> against a real MongoDB — verified by the
+/// engine rather than by the in-memory double that encodes my beliefs about it.
 /// </summary>
 /// <remarks>
 /// <para>
-/// F-016 recorded as debt that <c>MongoDbRepository&lt;T&gt;.GetPagedAsync</c> had <b>no</b> test of its
+/// <c>MongoDbRepository&lt;T&gt;.GetPagedAsync</c> had <b>no</b> test of its
 /// Mongo semantics, because the class takes an <c>IMongoDatabase</c> and the driver's fluent chain ends in
 /// an extension method Moq cannot intercept. The same is true of this primitive, and the same answer
 /// applies: run it against the container.
@@ -85,8 +84,8 @@ public class CredentialUpdatePrimitiveTest(ServiceHostFixture<ProfessionAnchor> 
     public async Task IncrementingAnAbsentField_CreatesItAtOne()
     {
         // data-model.md §7's migration claim: existing credential documents have no failed_attempts, and
-        // $inc on a missing field creates it at the increment value. That is what makes F-021 need no
-        // migration script, so it is asserted rather than cited.
+        // $inc on a missing field creates it at the increment value. That is what makes a
+        // migration script unnecessary, so it is asserted rather than cited.
         using var service = host.StartService();
         var (repository, _) = await SeedAsync(service);
 

@@ -7,7 +7,7 @@ using Microsoft.Extensions.Configuration;
 namespace AgendaBuddy.IntegrationTests.Harness;
 
 /// <summary>
-/// F-015-T04 / PRD AC5: when a matched route's destination is unreachable, times out, or itself answers
+/// When a matched route's destination is unreachable, times out, or itself answers
 /// with a 5xx, the gateway rewrites that into the shaped <c>gateway-destination-unreachable</c>
 /// ProblemDetails body (<c>api-contracts.md</c> §1) — naming the failed cluster by id — instead of a bare
 /// 502/504 or the destination's own untranslated body.

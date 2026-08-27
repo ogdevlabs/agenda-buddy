@@ -22,10 +22,10 @@ builder.Services.AddMongoDbRepository(builder.Configuration);
 builder.Services.AddDistributedMemoryCache();
 
 // Add MediatR
-// F-020-T12: handlers moved to AgendaBuddy.Customer.Core, a separate assembly from
-// AgendaBuddy.Customer.Api -- MediatR's RegisterServicesFromAssembly only scans the one assembly it's
-// given, so both must be registered or mediator.Send(command/query) throws "no handler registered" at
-// runtime, not at compile time.
+// Handlers live in AgendaBuddy.Customer.Core, a separate assembly from AgendaBuddy.Customer.Api --
+// MediatR's RegisterServicesFromAssembly only scans the one assembly it's given, so both must be
+// registered or mediator.Send(command/query) throws "no handler registered" at runtime, not at
+// compile time.
 builder.Services.AddMediatR(cfg =>
     cfg.RegisterServicesFromAssemblies(typeof(Program).Assembly, typeof(GetCustomersQueryHandler).Assembly));
 builder.Services.AddEventStore();
@@ -33,9 +33,9 @@ builder.Services.AddEventStore();
 // Add services required to support using MVC's model binders
 builder.Services.AddMvcCore();
 
-// F-014: ObjectId has no JSON representation of its own, so System.Text.Json serialises the struct's public
+// ObjectId has no JSON representation of its own, so System.Text.Json serialises the struct's public
 // properties and emits `"id": { "timestamp": …, "machine": … }` — a shape that cannot be read back into an
-// ObjectId at all. Three of F-014's route families need the id from a create response in order to work
+// ObjectId at all. Several route families need the id from a create response in order to work
 // (PUT /notes/{id}, POST /messages/{id}/read, POST /notifications/{id}/read), so this is load-bearing rather
 // than cosmetic. Pre-existing for every other route that returns an entity; see ObjectIdJsonConverter.
 builder.Services.ConfigureHttpJsonOptions(options =>
@@ -45,7 +45,7 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 builder.Services.AddSingleton<IKafkaClient, KafkaClient>();
 
 // Enable & configure JSON Problem Details error responses
-// ADR-022 / F-016-T08: ForbiddenException -> 403 centrally, so an endpoint that omits a local
+// ADR-022: ForbiddenException -> 403 centrally, so an endpoint that omits a local
 // try/catch returns 403 rather than a bare 500. Registered unconditionally, unlike the
 // Development-only UseExceptionHandler lambda below.
 builder.Services.AddExceptionHandler<AgendaBuddyExceptionHandler>();
@@ -118,9 +118,9 @@ if (app.Environment.IsDevelopment())
 // ForbiddenException and the central 403 would fail in Development only. See AgendaBuddyExceptionHandler.
 app.UseExceptionHandler();
 
-// F-021 PRD requirement 13: HSTS (under its flag) and the HTTPS redirect run BEFORE authentication.
-// Registered after UseAuthentication, as it was until F-021, the redirect parsed and validated the
-// bearer token out of a plaintext request and only then told the client to come back over TLS.
+// HSTS (under its flag) and the HTTPS redirect run BEFORE authentication. Registered after
+// UseAuthentication, the redirect would parse and validate the bearer token out of a plaintext
+// request and only then tell the client to come back over TLS.
 app.UseAgendaBuddyTransportSecurity();
 
 app.UseAntiforgery();
@@ -142,10 +142,8 @@ customers.MapPost("/", async Task<Results<ValidationProblem, Created<DataRespons
     if (!MiniValidator.TryValidate(customerEntity, out var errors))
         return TypedResults.ValidationProblem(errors);
 
-    // F-020-T12: dispatched through the real mediator.Send with the real request CancellationToken --
-    // the pre-refactor path (Requests/RequestCollection.cs, deleted) manually `new`-ed the command
-    // handler and called .Handle() directly. The duplicate-email check and Kafka topic creation both
-    // moved into AddCustomerCommandHandler, so this route is endpoint/DI wiring only.
+    // The duplicate-email check and Kafka topic creation both live in AddCustomerCommandHandler, so
+    // this route is endpoint/DI wiring only.
     var result = await mediator.Send(new AddCustomerCommand { CustomerEntity = customerEntity }, cancellationToken);
 
     if (result.IsSuccess)
@@ -168,13 +166,11 @@ customers.MapPut("/{email}",
         if (!MiniValidator.TryValidate(customerEntity, out var errors))
             return TypedResults.ValidationProblem(errors);
 
-        // Deliberately NOT wrapped in try/catch — F-016 AC-13. This is the route that demonstrates the
-        // central mapping: AgendaBuddyExceptionHandler turns ForbiddenException into 403 whether or not
-        // an endpoint remembered to catch it. Before F-016 this line without a catch produced a 500 (and
-        // in Production, a bare empty-bodied one). Removing the catch here rather than shipping a
-        // test-only endpoint also demonstrates AC-14's no-double-handling in the same stroke.
-        // ForbidHttpResult stays in the union above on purpose: this route still returns 403, so removing
-        // it would drop 403 from the generated OpenAPI while the behaviour was unchanged.
+        // Deliberately NOT wrapped in try/catch. This is the route that demonstrates the central
+        // mapping: AgendaBuddyExceptionHandler turns ForbiddenException into 403 whether or not an
+        // endpoint remembered to catch it. ForbidHttpResult stays in the union above on purpose: this
+        // route still returns 403, so removing it would drop 403 from the generated OpenAPI while the
+        // behaviour was unchanged.
         OwnershipGuard.AssertOwner(user, email);
 
         var result = await mediator.Send(new UpdateCustomerCommand { Email = email, CustomerEntity = customerEntity }, cancellationToken);
@@ -195,16 +191,16 @@ customers.MapGet("",
         CancellationToken cancellationToken,
         int? page = null, int? pageSize = null) =>
     {
-        // F-016 AC-22 / threat T-003 / ADR-026: the Provider role, not merely a token. Authenticating this
-        // route alone was nearly worthless -- POST /api/v1/auth/register is anonymous, unverified and
-        // unrate-limited, so an attacker self-registers as a Customer and pages the whole customer table
-        // exactly as before. Pagination bounds the response, not the extraction.
+        // ADR-026: the Provider role, not merely a token. Authenticating this route alone was nearly
+        // worthless -- POST /api/v1/auth/register is anonymous, unverified and unrate-limited, so an
+        // attacker self-registers as a Customer and pages the whole customer table exactly as before.
+        // Pagination bounds the response, not the extraction.
         //
-        // No local try/catch: T08's AgendaBuddyExceptionHandler maps ForbiddenException to 403 centrally.
+        // No local try/catch: AgendaBuddyExceptionHandler maps ForbiddenException to 403 centrally.
         // Guard runs BEFORE the cache read, so a refused caller never reaches cached data.
         OwnershipGuard.AssertRole(user, "Provider");
 
-        // F-016 AC-15 / ADR-023. See Provider/Program.cs for why clamping rather than rejecting.
+        // ADR-023. See Provider/Program.cs for why clamping rather than rejecting.
         var pageRequest = PageRequest.Clamp(page, pageSize);
 
         // ⚠️ The cache key carries the page, or page 2 would serve page 1's entry. Cheap to get wrong and
@@ -222,7 +218,7 @@ customers.MapGet("",
             ? TypedResults.Ok(DataResponse<PagedResponse<CustomerEntity>>.Ok(customerCollection))
             : TypedResults.Ok(DataResponse<PagedResponse<CustomerEntity>>.Ok(PagedResponse<CustomerEntity>.From([], 0, pageRequest)));
     })
-    // F-016 AC-8 / requirement 9: PII-bearing read, so no longer anonymous. Breaking change with zero reachable consumers (01-api-surface.md:158).
+    // PII-bearing read, so no longer anonymous. Breaking change with zero reachable consumers (01-api-surface.md:158).
     .WithName("GetAllCustomers")
     .RequireAuthorization();
 
@@ -245,11 +241,11 @@ customers.MapGet("/{email}", async Task<Results<Ok<DataResponse<CustomerEntity>>
 
     return TypedResults.NotFound();
 })
-    // F-016 AC-8 / requirement 9: PII-bearing read, so no longer anonymous. Breaking change with zero reachable consumers (01-api-surface.md:158).
+    // PII-bearing read, so no longer anonymous. Breaking change with zero reachable consumers (01-api-surface.md:158).
     .WithName("GetCustomerByEmail")
     .RequireAuthorization();
 
-// ── F-014: messages and notifications ────────────────────────────────────────────────────────────────
+// ── messages and notifications ────────────────────────────────────────────────────────────────
 //
 // TWO NEW TOP-LEVEL ROUTE GROUPS in this process, not children of /api/v1/customers — and that is the point
 // (ADR D-2). A message is addressed to a PERSON: a provider has an inbox for exactly the same reason a
@@ -258,18 +254,16 @@ customers.MapGet("/{email}", async Task<Results<Ok<DataResponse<CustomerEntity>>
 // `/device-token`), so this is a precedent rather than a novelty. The Customer service hosts them because it
 // already owns the provider↔customer relationship these messages travel along.
 //
-// F-020-T12: none of these five routes are wrapped in DataResponse<T>. They never went through
-// MediatR/Result<T> before this task and still don't -- they call IMessageService/INotificationService
+// None of these five routes are wrapped in DataResponse<T>. They call IMessageService/INotificationService
 // directly, matching AgendaBuddy.Provider.Domain.Responses.DataResponse's own GetProviderReport precedent
-// (a route deliberately left outside its service's envelope for the same reason). Wrapping them would be a
-// real behaviour change this task's recipe does not ask for.
+// (a route deliberately left outside its service's envelope for the same reason).
 
 var messages = app.MapGroup("/api/v1/messages")
     .WithTags("MessageAPI")
     .WithOpenApi()
     .AddEndpointFilter<ProblemDetailsServiceEndpointFilter>();
 
-// Threat T-204: the recipient is the caller's `sub` claim and there is NO parameter. A recipient parameter
+// The recipient is the caller's `sub` claim and there is NO parameter. A recipient parameter
 // would be a thing to tamper with — `MessageService.GetInboxAsync` takes one, and passing a client-supplied
 // value through would hand any authenticated caller anyone else's inbox.
 messages.MapGet("/", async Task<Results<Ok<IEnumerable<MessageEntity>>, ForbidHttpResult>> (
@@ -283,7 +277,7 @@ messages.MapGet("/", async Task<Results<Ok<IEnumerable<MessageEntity>>, ForbidHt
     .WithName("GetInbox")
     .RequireAuthorization();
 
-// Threat T-204: ONE counterpart in the URL. `MessageService` derives thread_id by sorting both addresses, so
+// ONE counterpart in the URL. `MessageService` derives thread_id by sorting both addresses, so
 // with the caller always supplying one side, a thread between two other people has no representation in this
 // URL space at all — it is unrequestable rather than merely refused.
 messages.MapGet("/thread/{counterpartEmail}",
@@ -347,14 +341,13 @@ var notifications = app.MapGroup("/api/v1/notifications")
     .WithOpenApi()
     .AddEndpointFilter<ProblemDetailsServiceEndpointFilter>();
 
-// ⚠️ THERE IS DELIBERATELY NO ROUTE THAT CREATES A NOTIFICATION (threat T-208). Notifications are produced by
+// ⚠️ THERE IS DELIBERATELY NO ROUTE THAT CREATES A NOTIFICATION. Notifications are produced by
 // domain events, not by users: a create route would let any authenticated caller write a convincing "Your
 // appointment was cancelled" into somebody else's list. `NotificationService.SendAsync` stays reachable
 // in-process to whatever writes one.
 //
 // The consequence, stated so an empty list is not read as a bug: NOTHING WRITES A NOTIFICATION YET. No domain
-// event calls SendAsync, so this route returns [] until something does. F-014 requirement 19 — storage
-// without delivery, and for now without production either.
+// event calls SendAsync, so this route returns [] until something does.
 notifications.MapGet("/", async Task<Results<Ok<IEnumerable<NotificationEntity>>, ForbidHttpResult>> (
         ClaimsPrincipal user, INotificationService service) =>
     {

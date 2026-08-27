@@ -1,8 +1,8 @@
 namespace AgendaBuddy.Booking.Tests.Commands;
 
-// F-019 Party Review (Echo's Critical finding). IBookingService/IProviderService already cover
-// everything this handler calls -- retyped from the concrete classes, so this is now real
-// Moq-based business-logic coverage, not just a GuardClause-null check.
+// IBookingService/IProviderService already cover everything this handler calls -- retyped from
+// the concrete classes, so this is now real Moq-based business-logic coverage, not just a
+// GuardClause-null check.
 public class UpdateAppointmentCommandHandlerTest
 {
     private static AppointmentEntity MakeAppointment(string identifier = "abc123") => new()

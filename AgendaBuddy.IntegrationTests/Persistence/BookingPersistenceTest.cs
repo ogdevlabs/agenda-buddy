@@ -10,7 +10,7 @@ using MongoDB.Driver;
 namespace AgendaBuddy.IntegrationTests.Persistence;
 
 /// <summary>
-/// F-018-T12 / AC-6. <c>POST /api/v1/booking/appointments</c> writes a real <see cref="AppointmentEntity"/>
+/// <c>POST /api/v1/booking/appointments</c> writes a real <see cref="AppointmentEntity"/>
 /// through the entire pipeline, and reading it back from the SAME <c>appointments</c> collection the
 /// service itself resolves (<see cref="ConfiguredCollection"/>) proves every <c>[BsonElement]</c> on the
 /// entity round-trips — not just the ones the response DTO happens to echo.
@@ -68,8 +68,8 @@ public class BookingPersistenceTest(ServiceHostFixture<BookingAnchor> host, Cryp
         var response = await service.Client.SendAsync(request);
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
 
-        // F-019-T04: the response is now wrapped in DataResponse<T> (ADR-049) -- the identifier moved
-        // from the root to .data, but the persisted-state assertions below are unchanged (AC11).
+        // The response is wrapped in DataResponse<T> (ADR-049) -- the identifier is under
+        // .data, not the response root.
         using var created = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
         var identifier = created.RootElement.GetProperty("data").GetProperty("identifier").GetString();
 

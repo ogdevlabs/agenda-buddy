@@ -136,7 +136,7 @@ public partial class AppointmentDetailViewModel : ObservableObject
             var updated = await _bookingApiService.UpdateStatusAsync(AppointmentId, status);
             if (updated is null)
             {
-                // T-003: API returned non-success (e.g., 400 for invalid status).
+                // API returned non-success (e.g., 400 for invalid status).
                 ErrorMessage = "Status update failed";
             }
             else

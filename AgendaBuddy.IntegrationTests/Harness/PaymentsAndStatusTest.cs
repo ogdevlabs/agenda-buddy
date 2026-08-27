@@ -9,7 +9,7 @@ using MongoDB.Driver;
 namespace AgendaBuddy.IntegrationTests.Harness;
 
 /// <summary>
-/// F-014 AC-6, AC-8, AC-13 … AC-17 / threats T-203 and T-205: appointment status is the server's, and a
+/// Appointment status is the server's, and a
 /// payment is recorded against the appointment's real participants without charging anyone.
 /// </summary>
 [Collection(HarnessCollection.Name)]
@@ -97,7 +97,7 @@ public class PaymentsAndStatusTest(ServiceHostFixture<BookingAnchor> host, Crypt
     [Fact]
     public async Task AC13_T203_ThePutIgnoresAClientAssertedStatus()
     {
-        // THE forgery this feature closes. Before F-014, UpdateAppointmentCommandHandler:51 copied whatever
+        // The forgery this guards against: UpdateAppointmentCommandHandler used to copy whatever
         // status arrived in the body, so a customer could mark a brand-new appointment Completed — a claim
         // that work was delivered — and the guards on AppointmentEntity never ran.
         using var service = await StartWithAnAppointmentAsync();
@@ -121,7 +121,7 @@ public class PaymentsAndStatusTest(ServiceHostFixture<BookingAnchor> host, Crypt
         Assert.True(response.IsSuccessStatusCode,
             $"the update itself should succeed, got {response.StatusCode}: {await response.Content.ReadAsStringAsync()}");
 
-        // F-019-T11 (AC8) / Party Review (agenda-buddy-2hd, fixed): live confirmation the response
+        // Live confirmation the response
         // body reflects the actual persisted entity, not the client's forged submission -- the
         // handler used to echo request.AppointmentEntity verbatim, so this assertion would have
         // failed (reporting "Completed") before the fix.
@@ -277,13 +277,13 @@ public class PaymentsAndStatusTest(ServiceHostFixture<BookingAnchor> host, Crypt
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
 
-        // F-019-T06: DataResponse<T> envelope -- the payment moved from the root to .data.
+        // DataResponse<T> envelope -- the payment is under .data, not the response root.
         var payment = (await response.Content.ReadFromJsonAsync<DataResponse<PaymentEntity>>(HarnessJson.Options))!.Data;
         Assert.Equal(PaymentStatus.Succeeded, payment!.Status);
 
         // The proof that nothing was charged, and it is in the STORED DATA rather than only in a log: Stripe
         // ids begin `pi_`, so `local_` is permanently identifiable as a payment that moved no money. A UI that
-        // renders this as "Paid" is lying to a provider about their income (threat T-205).
+        // renders this as "Paid" is lying to a provider about their income.
         Assert.StartsWith(RecordingPaymentGateway.LocalIntentPrefix, payment.StripePaymentIntentId);
 
         // Both participants come from the STORED APPOINTMENT, never the request body.
@@ -375,7 +375,7 @@ public class PaymentsAndStatusTest(ServiceHostFixture<BookingAnchor> host, Crypt
     [InlineData(-50)]
     public async Task ANonPositiveAmountIsRejected(decimal amount)
     {
-        // ⚠️ This is the ONLY validation the amount gets, and it is not enough — see threat T-205(c). An
+        // ⚠️ This is the ONLY validation the amount gets, and it is not enough. An
         // appointment does not record which service it was booked for, so there is no price to check against
         // and a customer can pay 0.01 for a 50 session. Accepted, documented, and it matters a great deal to
         // whoever first configures a real Stripe key.

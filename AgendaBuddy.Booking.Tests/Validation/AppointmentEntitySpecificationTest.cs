@@ -6,7 +6,7 @@ using Xunit;
 
 namespace AgendaBuddy.Booking.Tests.Validation;
 
-// F-019-T02 spike. Constructs the IValidator<AppointmentEntity> exactly as Program.cs registers it
+// Constructs the IValidator<AppointmentEntity> exactly as Program.cs registers it
 // (Validator.Factory.Create(AppointmentEntitySpecification.Spec)) and asserts it enforces the same
 // rule MiniValidator.TryValidate enforces today at POST /appointments: only [EmailAddress] on
 // EmailProvider/EmailCustomer (Library/Entities/AppointmentEntity.cs:26-32). There is no [Required]

@@ -11,7 +11,7 @@ using MongoDB.Driver;
 namespace AgendaBuddy.IntegrationTests.Audit;
 
 /// <summary>
-/// F-018-T13 / AC-7. <c>AddServicesToProviderCommandHandler</c> writes an audit event on both its
+/// AC-7. <c>AddServicesToProviderCommandHandler</c> writes an audit event on both its
 /// success and failure branches (<c>AddServicesToProviderCommandHandler.cs</c>) — unlike its sibling
 /// <c>UpdateServicesFromProviderCommandHandler</c>, whose provider-not-found branch returns <c>null!</c>
 /// with no audit write at all (a real, pre-existing gap, out of this task's scope to fix). Using the

@@ -7,7 +7,7 @@ using AgendaBuddy.Library.Entities;
 namespace AgendaBuddy.IntegrationTests.Contract;
 
 /// <summary>
-/// F-019-T09 / threat T-102 (mitigate now). Real fault injection, not a mocked exception (episode 001's
+/// Real fault injection, not a mocked exception (episode 001's
 /// "reasoned, not observed" discipline): forces a genuine unhandled exception on Booking's request path
 /// and inspects the actual wire response body.
 /// </summary>
@@ -46,10 +46,10 @@ public class BookingErrorLeakageTest(ServiceHostFixture<BookingAnchor> host, Cry
         var response = await service.Client.SendAsync(request);
         var body = await response.Content.ReadAsStringAsync();
 
-        // Not asserting a specific status code: AgendaBuddyExceptionHandler (F-016) only maps
+        // Not asserting a specific status code: AgendaBuddyExceptionHandler only maps
         // ForbiddenException centrally, so this exception type propagates past it, and Production has
         // no Development-only fallback handler registered -- api-contracts.md §3.3 already documents
-        // this class of exception as "surfaces as 500" by design (ADR-022). What matters for T-102 is
+        // this class of exception as "surfaces as 500" by design (ADR-022). What matters here is
         // the BODY, not the code: whichever shape the wire response takes, it must carry none of the
         // exception's own detail.
         Assert.DoesNotContain("Exception", body, StringComparison.Ordinal);
@@ -62,7 +62,7 @@ public class BookingErrorLeakageTest(ServiceHostFixture<BookingAnchor> host, Cry
 
     /// <summary>
     /// Party Review (Echo): the sibling above only exercises the unhandled-exception path (500,
-    /// AgendaBuddyExceptionHandler). It never proves the OTHER half of T-102 -- a genuine, handled
+    /// AgendaBuddyExceptionHandler). It never proves the other half -- a genuine, handled
     /// <c>Result.Fail</c> from inside a command handler actually reaches the wire as
     /// <c>DataResponse&lt;T&gt;.Fail</c>, not swallowed or reshaped. This forces
     /// <c>BookAppointmentCommandHandler.Handle</c>'s real failure branch (a well-formed, valid-looking

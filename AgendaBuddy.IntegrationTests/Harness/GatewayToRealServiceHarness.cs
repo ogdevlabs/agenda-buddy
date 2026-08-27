@@ -7,7 +7,7 @@ using Yarp.ReverseProxy.Forwarder;
 namespace AgendaBuddy.IntegrationTests.Harness;
 
 /// <summary>
-/// Shared plumbing for F-015-T04's AC3/AC4 (JWT passthrough) and T-303 (transport-security parity)
+/// Shared plumbing for JWT passthrough and transport-security parity
 /// tests: both need the gateway routing a real request to a real backend service, and both need that
 /// backend reachable without a real TCP socket.
 /// </summary>
@@ -21,7 +21,7 @@ namespace AgendaBuddy.IntegrationTests.Harness;
 /// <see cref="BridgingForwarderHttpClientFactory"/> replaces YARP's <c>IForwarderHttpClientFactory</c> so
 /// that, for the one cluster under test, "dialing the destination" means invoking the backend's own
 /// <see cref="TestServer"/> handler in-process — the request still crosses YARP's real routing,
-/// transform, and (F-015-T04's) failure-translation code, it just does so over the same in-memory
+/// transform, and failure-translation code, it just does so over the same in-memory
 /// transport every other harness test already relies on.
 /// </para>
 /// <para>
@@ -53,7 +53,7 @@ internal static class GatewayToRealServiceHarness
     /// backends calls <c>UseForwardedHeaders()</c>, the inbound (client-to-gateway) scheme has no bearing
     /// on what the backend sees for itself; only the destination address's own scheme does. <c>"http"</c>
     /// unless a test needs to prove HSTS/redirect parity over what YARP would forward as an
-    /// <c>https</c> destination (T-303).
+    /// <c>https</c> destination.
     /// </param>
     public static WebApplicationFactory<GatewayAnchor> CreateFactory(
         string clusterId, TestServer backend, string destinationScheme = "http") =>

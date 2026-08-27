@@ -6,7 +6,7 @@ namespace AgendaBuddy.IntegrationTests.Support;
 /// Records every topic-creation call instead of talking to a real Kafka broker.
 /// </summary>
 /// <remarks>
-/// F-018-T10 / ADR-017: Kafka is not containerised in this suite — it only ever creates topics, nothing
+/// ADR-017: Kafka is not containerised in this suite — it only ever creates topics, nothing
 /// is produced or consumed, so a real broker would be the slowest container in the suite for proving
 /// almost nothing. <see cref="IKafkaClient"/> is registered as a DI singleton in every service that uses
 /// it, so it swaps cleanly via <c>WebApplicationFactory.ConfigureTestServices</c>. This fake still returns

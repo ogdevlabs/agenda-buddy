@@ -8,7 +8,7 @@ using MongoDB.Driver;
 namespace AgendaBuddy.IntegrationTests.Harness;
 
 /// <summary>
-/// F-014 AC-2, AC-3, AC-8, AC-11 / threats T-204 and T-208: messages and notifications are scoped to the
+/// Messages and notifications are scoped to the
 /// caller, and there is no way to write a notification into somebody else's list.
 /// </summary>
 /// <remarks>
@@ -104,7 +104,7 @@ public class MessagingAndNotificationsTest(ServiceHostFixture<CustomerAnchor> ho
         // first draft of this assertion had the order backwards and the implementation was right.
         Assert.Equal($"{Caller}::{Counterpart}", message.ThreadId);
 
-        // ⚠️ First time MessageEntity has ever been persisted: written by F-007, never stored, because nothing
+        // ⚠️ First time MessageEntity has ever been persisted: it was defined but never stored, because nothing
         // registered a repository for it. The read-back is the only proof its BSON mapping works.
         var recipientInbox = await service.Client.SendAsync(Authorised(HttpMethod.Get, "api/v1/messages", Counterpart));
         var inbox = await recipientInbox.Content.ReadFromJsonAsync<List<MessageEntity>>(HarnessJson.Options);
@@ -209,7 +209,7 @@ public class MessagingAndNotificationsTest(ServiceHostFixture<CustomerAnchor> ho
         using var service = host.StartService("Production");
         await SeedOtherPeoplesDataAsync(service);
 
-        // Planted directly, because there is deliberately no route that creates one (threat T-208).
+        // Planted directly, because there is deliberately no route that creates one.
         await service.Database.GetCollection<NotificationEntity>("notifications").InsertOneAsync(
             new NotificationEntity
             {

@@ -1,12 +1,9 @@
 namespace AgendaBuddy.Customer.Core.Queries;
 
-// F-020-T12: moved from AgendaBuddy.EventAndCommands.Queries.Customers. Takes a PageRequest from the
-// query rather than a per-instance constructor parameter -- the pre-refactor handler
-// (Requests/RequestCollection.cs, deleted) constructed this by hand, once per call, passing `page` into
-// the constructor.
+// Takes a PageRequest from the query rather than a per-instance constructor parameter.
 //
-// Always returns Result.Ok, even for an empty page: preserved from Customer/Program.cs's pre-existing
-// behaviour, which never treated an empty customer list as anything other than a 200. The audit record
+// Always returns Result.Ok, even for an empty page: an empty customer list is a valid 200, not a
+// failure. The audit record
 // still distinguishes empty from non-empty (Failure vs Success) -- an AUDIT distinction only, not a
 // control-flow one, exactly as it was before this move.
 public class GetCustomersQueryHandler(

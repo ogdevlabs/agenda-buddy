@@ -1,9 +1,7 @@
 namespace AgendaBuddy.MobileApp.Routing;
 
 /// <summary>
-/// Route-building logic extracted from <see cref="Services.NotificationApiService"/> (F-015-T06), corrected
-/// to the real backend contract (F-015-T07, api-contracts.md §2). Hosted by the Customer service under a
-/// top-level <c>/api/v1/notifications</c> group (F-014, ADR D-2).
+/// Hosted by the Customer service under a top-level <c>/api/v1/notifications</c> group (ADR D-2).
 /// </summary>
 public static class NotificationRouteBuilder
 {

@@ -8,14 +8,14 @@ namespace AgendaBuddy.Identity.Configurations;
 /// Unlike the rate limiter and HSTS, lockout has <b>no</b> enable flag. It needs none: with the default
 /// threshold an account locks only after 10 consecutive wrong passwords, and it unlocks itself 15
 /// minutes later, so there is nothing a local run needs switched off. Adding a flag would have created a
-/// third way for a security control to be silently absent (threat T-103) in exchange for nothing.
+/// third way for a security control to be silently absent in exchange for nothing.
 /// </para>
 /// <para>
 /// The defaults come from a measurement, not a convention. BCrypt verify at work factor 12 costs
 /// <b>262 ms</b> on this hardware (<c>ARCHITECTURE.md</c> §2), i.e. ≈3.8 attempts/sec/core — so
 /// password <i>guessing</i> was never the pressing threat and the threshold does not need to be tight.
 /// It needs to be loose enough that a provider who mistypes their own password a few times is not
-/// locked out of their own business, because F-022 (password reset) does not exist yet.
+/// locked out of their own business, because password reset does not exist yet.
 /// </para>
 /// </remarks>
 public sealed class LockoutOptions
@@ -43,9 +43,9 @@ public sealed class LockoutOptions
 /// would therefore throttle every local run (design decision D-6).
 /// </para>
 /// <para>
-/// The cost of that choice is threat T-103: a deployment that never sets the flag ships without the
-/// control while every document records the feature as delivered — the same shape as F-016's original
-/// defect, where <c>AssertRole</c> was present in the codebase and never called. Mitigated by warning
+/// The cost of that choice: a deployment that never sets the flag ships without the
+/// control while every document records the feature as delivered — the same shape as a past
+/// defect where <c>AssertRole</c> was present in the codebase and never called. Mitigated by warning
 /// loudly at startup outside a local run, and by the integration harness switching the flag on so the
 /// 429 is asserted against a running service rather than inferred from a policy object.
 /// </para>

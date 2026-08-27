@@ -4,14 +4,13 @@ using Yarp.ReverseProxy.Configuration;
 namespace AgendaBuddy.Gateway;
 
 /// <summary>
-/// F-015-T02 spiked this against a single ("booking") destination; F-015-T03 expands it to the full
-/// seven-service allowlist. Builds YARP's route/cluster table by reading the same Aspire
+/// Builds YARP's route/cluster table by reading the same Aspire
 /// service-discovery configuration keys (<c>services:&lt;name&gt;:http:0</c> /
 /// <c>services:&lt;name&gt;:https:0</c>, i.e. the <c>services__&lt;name&gt;__http__0</c> environment
 /// variables <see cref="AgendaBuddy.ServiceDefaults.Extensions.AddServiceDefaults{TBuilder}"/> already
 /// resolves via <c>AddServiceDiscovery()</c> for every service's own outbound <see cref="HttpClient"/>)
 /// — never a static <c>appsettings.json</c> cluster file (ARCHITECTURE.md §2/§5), and never a
-/// catch-all forward (T-302, threat-model.md): <see cref="_routeSpecs"/> is the whole allowlist, and
+/// catch-all forward (threat-model.md): <see cref="_routeSpecs"/> is the whole allowlist, and
 /// nothing outside it becomes a <see cref="RouteConfig"/>.
 /// </summary>
 /// <remarks>
@@ -29,8 +28,8 @@ namespace AgendaBuddy.Gateway;
 /// <c>WithReference</c>-injected address with its own stable local proxy port, one level below
 /// <see cref="IConfiguration"/>, and re-points that proxy internally on a restart. The polling logic
 /// here is kept anyway (it costs nothing, and is the correct defense if that behavior ever changes),
-/// but §6 is explicit that T03 should not budget engineering time toward a more aggressive
-/// invalidation strategy — the 2-second poll is already more than sufficient headroom.
+/// but §6 is explicit that budgeting engineering time toward a more aggressive
+/// invalidation strategy is not worthwhile — the 2-second poll is already more than sufficient headroom.
 /// </para>
 /// </remarks>
 public sealed class AspireServiceDiscoveryProxyConfigProvider : IProxyConfigProvider, IDisposable
@@ -46,7 +45,7 @@ public sealed class AspireServiceDiscoveryProxyConfigProvider : IProxyConfigProv
 
     /// <summary>
     /// One entry per route this gateway serves — the explicit <c>api/v1/{service}/**</c> allowlist
-    /// T-302 (threat-model.md) requires. <b>Never a catch-all forward:</b> a path outside every
+    /// threat-model.md requires. <b>Never a catch-all forward:</b> a path outside every
     /// pattern here gets no <see cref="RouteConfig"/> at all, so YARP cannot match it — Program.cs's
     /// <c>MapFallback</c> is what turns that "no match" into the shaped <c>gateway-no-route</c> 404.
     /// </summary>
@@ -69,7 +68,7 @@ public sealed class AspireServiceDiscoveryProxyConfigProvider : IProxyConfigProv
         ("profession", "profession", "/api/v1/professions/{**catch-all}"),
         ("identity", "identity-auth", "/api/v1/auth/{**catch-all}"),
         ("identity", "identity-device-token", "/device-token"),
-        // Found live at F-015-T14's closing verification: messages/notifications are two new
+        // messages/notifications are two new
         // TOP-LEVEL route groups on Customer (ADR-036), not children of /api/v1/customers/**, so
         // the "customer" entry above never matched them. MobileApp's Messaging/Notifications
         // screens were unreachable through the gateway despite every other check passing.

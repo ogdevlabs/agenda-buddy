@@ -1,10 +1,8 @@
 namespace AgendaBuddy.MobileApp.Routing;
 
 /// <summary>
-/// Route-building logic extracted from <see cref="Services.CalendarApiService"/> (F-015-T06), corrected to
-/// the real backend contract (F-015-T07, api-contracts.md §2). Both Calendar routes are keyed by the
-/// caller's own email (ownership-guarded server-side since F-016), so both builders take it explicitly
-/// rather than relying on a hidden ambient session.
+/// Both Calendar routes are keyed by the caller's own email (ownership-guarded server-side),
+/// so both builders take it explicitly rather than relying on a hidden ambient session.
 /// </summary>
 public static class CalendarRouteBuilder
 {

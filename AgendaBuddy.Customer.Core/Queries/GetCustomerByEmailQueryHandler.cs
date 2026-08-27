@@ -1,8 +1,7 @@
 namespace AgendaBuddy.Customer.Core.Queries;
 
-// F-020-T12: moved from AgendaBuddy.EventAndCommands.Queries.Customers. Constructor takes only
-// DI-resolvable services -- the pre-refactor handler took `email` as a per-instance constructor
-// parameter; it now comes from the query.
+// Constructor takes only DI-resolvable services -- the per-request email comes from the query,
+// not a per-instance constructor parameter.
 public class GetCustomerByEmailQueryHandler(
     IMediator mediator,
     ICustomerService customerService,

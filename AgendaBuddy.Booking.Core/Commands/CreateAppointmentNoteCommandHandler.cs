@@ -1,7 +1,7 @@
 namespace AgendaBuddy.Booking.Core.Commands;
 
-// F-019-T05 / CONSTITUTION §3. See GetAppointmentNotesQueryHandler's remarks on the audit gap this
-// refactor exposed.
+// CONSTITUTION §3. See GetAppointmentNotesQueryHandler's remarks on the audit gap this
+// handler shape exposed.
 public class CreateAppointmentNoteCommandHandler(INoteService notes, IEventStore eventStore)
     : IRequestHandler<CreateAppointmentNoteCommand, Result<NoteEntity>>
 {

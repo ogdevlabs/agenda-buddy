@@ -7,8 +7,7 @@ using AgendaBuddy.MobileApp.Services;
 namespace AgendaBuddy.MobileApp.ViewModels;
 
 /// <summary>
-/// F-014's payment routes (api-contracts.md §2), never rendered anywhere in the client before
-/// F-015-T11 — F-015-T07 only wired the API calls (<see cref="IBookingApiService.GetPaymentAsync"/>).
+/// Payment routes (api-contracts.md §2), wired via <see cref="IBookingApiService.GetPaymentAsync"/>.
 /// The one requirement this ViewModel exists to satisfy is PRD Requirement 12 / AC13: a
 /// <c>local_</c>-prefixed intent id never moved real money (ADR-038) and the copy must never claim it
 /// was "Paid".

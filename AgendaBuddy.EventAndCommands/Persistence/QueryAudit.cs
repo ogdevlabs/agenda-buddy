@@ -8,9 +8,6 @@ namespace AgendaBuddy.EventAndCommands.Persistence;
 /// </summary>
 /// <remarks>
 /// <para>
-/// F-016-T18, requirement 16, AC-17, and the payload half of AC-24 (threat <b>T-005</b>).
-/// </para>
-/// <para>
 /// <b>What this replaced.</b> Each of the 9 query handlers built its <see cref="Event"/> inline and set
 /// <c>Data = JsonSerializer.Serialize(&lt;the whole result&gt;)</c> — 18 call sites in all.
 /// <c>GetProvidersQueryHandler</c> serialised every provider, with its embedded appointment book and every

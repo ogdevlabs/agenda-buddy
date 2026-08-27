@@ -3,16 +3,16 @@ using System.Net;
 namespace AgendaBuddy.IntegrationTests.Contract;
 
 /// <summary>
-/// F-018-T11 AC-5, Booking: one real HTTP request through the real pipeline, asserting the status code
+/// AC-5, Booking: one real HTTP request through the real pipeline, asserting the status code
 /// only.
 /// </summary>
 /// <remarks>
 /// <para>
-/// <b>Deliberately status-only (ADR-017).</b> F-019 introduces <c>DataResponse&lt;T&gt;</c>, which
+/// <b>Deliberately status-only (ADR-017).</b> <c>DataResponse&lt;T&gt;</c>
 /// changes every response envelope by design. A test asserting the envelope here would have to be
-/// rewritten by F-019 regardless of whether F-019 broke anything, which makes it useless as a
-/// regression signal for that feature. Asserting only the status code lets this test keep meaning: if
-/// it goes red after F-019, the status code itself changed, which is the one thing F-019 is not
+/// rewritten whenever that envelope changes regardless of whether the change broke anything, which makes it useless as a
+/// regression signal for that work. Asserting only the status code lets this test keep meaning: if
+/// it goes red after an envelope change, the status code itself changed, which is the one thing such a change is not
 /// supposed to touch.
 /// </para>
 /// <para>

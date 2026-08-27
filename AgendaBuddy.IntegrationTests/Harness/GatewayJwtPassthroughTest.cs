@@ -9,8 +9,8 @@ using MongoDB.Driver;
 namespace AgendaBuddy.IntegrationTests.Harness;
 
 /// <summary>
-/// F-015-T04 AC3/AC4: a request's JWT crosses the gateway unmodified. Booking's own auth/ownership
-/// pipeline (F-016, F-014) is the judge — this class asserts that going through the gateway produces
+/// A request's JWT crosses the gateway unmodified. Booking's own auth/ownership
+/// pipeline is the judge — this class asserts that going through the gateway produces
 /// exactly the outcomes <c>PaymentsAndStatusTest</c> already proves for a direct call, using the SAME
 /// route, the SAME database, and the SAME <see cref="TokenFactory"/>.
 /// </summary>
@@ -19,7 +19,7 @@ namespace AgendaBuddy.IntegrationTests.Harness;
 /// <b>Why this doubles as a real proof, not a restatement of the design.</b> The gateway client and the
 /// direct client (<c>bookingHost.Client</c>) both ultimately hit the same <see cref="Booking"/>
 /// <c>TestServer</c> and the same MongoDB database — the gateway is a real extra HTTP hop through YARP's
-/// routing, its header transforms (F-015-T03), and its failure-translation transform (F-015-T04 Part 1),
+/// routing, its header transforms, and its failure-translation transform,
 /// not a stand-in. If YARP dropped, re-signed, or corrupted the <c>Authorization</c> header, or if
 /// forwarding somehow bypassed Booking's pipeline, the assertions below would fail exactly the way a
 /// tampered-token test fails directly against Booking — they do not, which is AC3 and AC4 proved rather
@@ -112,7 +112,7 @@ public class GatewayJwtPassthroughTest(ServiceHostFixture<BookingAnchor> host, C
     [Fact]
     public async Task AC3_AValidJwtForTheWrongRole_IsForbidden_ExactlyAsADirectCallWould()
     {
-        // A Customer completing their own appointment is F-014/F-016's provider-only rule (T-203). If the
+        // A Customer completing their own appointment breaks the provider-only rule. If the
         // gateway altered the token's role claim in transit, this would come back 200 instead of 403 —
         // the JWT's role reaching Booking unmodified is exactly what this pins.
         var (backend, gatewayFactory, gateway) = await StartAsync();

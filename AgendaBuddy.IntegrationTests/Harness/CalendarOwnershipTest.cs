@@ -6,7 +6,7 @@ using MongoDB.Bson;
 namespace AgendaBuddy.IntegrationTests.Harness;
 
 /// <summary>
-/// F-016 AC-10 and AC-25 (`[security]`, threat <b>T-006</b>): both Calendar routes are ownership-guarded,
+/// Both Calendar routes are ownership-guarded,
 /// and the guard runs <b>before</b> the cache read.
 /// </summary>
 /// <remarks>
@@ -24,7 +24,7 @@ namespace AgendaBuddy.IntegrationTests.Harness;
 /// the <em>caller</em>. Today that is safe by accident: with no guard, every authenticated caller is
 /// entitled to every entry. Adding the guard keeps it safe <b>only because the guard runs first</b>. Anyone
 /// who later reorders these lines, extracts a helper, or caches the <em>response</em> instead of the
-/// <em>data</em> creates a cross-tenant leak — and F-019/F-020 will rewrite these exact files. Hence
+/// <em>data</em> creates a cross-tenant leak. Hence
 /// <see cref="T006_AWarmCacheIsNotServedToADifferentPrincipal"/>, which fails if the ordering is ever
 /// inverted.
 /// </para>
@@ -32,7 +32,7 @@ namespace AgendaBuddy.IntegrationTests.Harness;
 /// ⚠️ <b>The assertion is "not 200-with-data", not "exactly 403"</b>, and that is deliberate.
 /// <c>CacheAside</c> has no test at all and returns <c>default!</c> on a 500 ms lock timeout, which surfaces
 /// as a spurious 404 (<c>11-testing.md:90</c>). A strict 403 assertion would flake under cache-lock
-/// contention and send someone chasing a phantom authorization bug. What matters for T-006 is that the
+/// contention and send someone chasing a phantom authorization bug. What matters is that the
 /// second caller does not receive the first caller's data.
 /// </para>
 /// </remarks>
@@ -135,7 +135,7 @@ public class CalendarOwnershipTest : IClassFixture<ServiceHostFixture<CalendarAn
         var body = await intrudersRead.Content.ReadAsStringAsync();
 
         // "NOT 200-with-data" rather than "exactly 403": see the remarks on this class. A 404 from a
-        // CacheAside lock timeout is an acceptable outcome for T-006; a 200 carrying the owner's client
+        // CacheAside lock timeout is an acceptable outcome; a 200 carrying the owner's client
         // email is not.
         Assert.NotEqual(HttpStatusCode.OK, intrudersRead.StatusCode);
         Assert.DoesNotContain(CustomerInTheBook, body, StringComparison.OrdinalIgnoreCase);

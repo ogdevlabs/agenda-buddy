@@ -7,7 +7,7 @@ namespace AgendaBuddy.Library.Dtos;
 /// <param name="PageSize">The <b>effective</b> page size, already clamped to <see cref="MaxPageSize"/>.</param>
 /// <remarks>
 /// <para>
-/// F-016-T15 / AC-15 / ADR-023. Pure, so the rule is tested once rather than duplicated inline in two
+/// AC-15 / ADR-023. Pure, so the rule is tested once rather than duplicated inline in two
 /// endpoints — and so the cap cannot drift between them.
 /// </para>
 /// <para>
@@ -24,7 +24,7 @@ namespace AgendaBuddy.Library.Dtos;
 /// </remarks>
 public readonly record struct PageRequest(int Page, int PageSize)
 {
-    /// <summary>Largest page size any caller can obtain. Published to F-015 via `api-contracts.md` §4.</summary>
+    /// <summary>Largest page size any caller can obtain. Published via `api-contracts.md` §4.</summary>
     public const int MaxPageSize = 100;
 
     /// <summary>Page size used when none is supplied, or when one below 1 is.</summary>

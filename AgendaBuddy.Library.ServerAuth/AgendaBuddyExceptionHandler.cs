@@ -9,8 +9,7 @@ namespace AgendaBuddy.Library.Tools;
 /// </summary>
 /// <remarks>
 /// <para>
-/// F-016 AC-13, AC-14 and AC-23 (`[security]`, threat <b>T-004</b>). Implements ADR-022 /
-/// <c>ARCHITECTURE.md</c> AD-1.
+/// Implements ADR-022 / <c>ARCHITECTURE.md</c> AD-1.
 /// </para>
 /// <para>
 /// <b>Why a new mechanism rather than editing the existing handler.</b> PRD requirement 14 asked for the
@@ -46,7 +45,7 @@ namespace AgendaBuddy.Library.Tools;
 /// <b>Not registered in Identity</b>, which uses an incompatible ad-hoc <c>{ error, message }</c> envelope
 /// and is the only service without <c>ProblemDetailsServiceEndpointFilter</c>
 /// (<c>10-error-handling.md:146,208</c>). Two error schemes in one service would be worse than the
-/// inconsistency. F-021 touches Identity next.
+/// inconsistency.
 /// </para>
 /// </remarks>
 /// <param name="problemDetailsService">
@@ -70,7 +69,7 @@ public sealed class AgendaBuddyExceptionHandler(IProblemDetailsService problemDe
 
         httpContext.Response.StatusCode = StatusCodes.Status403Forbidden;
 
-        // T-004: status, title and requestId only. Nothing derived from the exception is passed in —
+        // status, title and requestId only. Nothing derived from the exception is passed in —
         // no Detail, no Exception, no metadata. The omission IS the control; there is nothing to
         // sanitise later.
         return await problemDetailsService.TryWriteAsync(new ProblemDetailsContext

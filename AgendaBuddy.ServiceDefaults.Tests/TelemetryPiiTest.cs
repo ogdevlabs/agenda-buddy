@@ -10,8 +10,7 @@ using Xunit;
 namespace AgendaBuddy.ServiceDefaults.Tests;
 
 /// <summary>
-/// Threat T-004 — customer and provider email addresses must not leave the process inside exported
-/// spans.
+/// Customer and provider email addresses must not leave the process inside exported spans.
 /// </summary>
 /// <remarks>
 /// This was originally recorded as "reasoned, not observed" and deferred to a manual AppHost run.
@@ -108,8 +107,8 @@ public class TelemetryPiiTest
         // gives: the tracer listens process-wide, so spans from other test classes' in-process servers
         // land in this exporter too. Taking the first non-empty url.path was a latent order dependency —
         // it passed only while this was the sole class in the assembly that started a server and issued a
-        // request. F-021 added a second (TransportSecurityTest), and this test began failing on some runs
-        // and passing on others while asserting a path belonging to /probe.
+        // request. A second one (TransportSecurityTest) made this test fail on some runs and pass on
+        // others while asserting a path belonging to /probe.
         var path = exported
             .Where(activity => (activity.GetTagItem("http.route") as string) == RouteTemplate)
             .Select(activity => activity.GetTagItem("url.path") as string)

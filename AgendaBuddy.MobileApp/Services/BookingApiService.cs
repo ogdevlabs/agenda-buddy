@@ -16,7 +16,7 @@ public class BookingApiService : IBookingApiService
     private static readonly JsonSerializerOptions JsonOptions =
         new() { PropertyNameCaseInsensitive = true };
 
-    // Booking registers AgendaBuddy.Library.Tools.ObjectIdJsonConverter server-side (F-014), so NoteEntity/PaymentEntity
+    // Booking registers AgendaBuddy.Library.Tools.ObjectIdJsonConverter server-side, so NoteEntity/PaymentEntity
     // ids always arrive as plain hex strings here — safe to bind straight into ObjectId, unlike Calendar's
     // AppointmentEntity (see CalendarApiService.ParseAppointments).
     private static readonly JsonSerializerOptions EntityJsonOptions = new()
@@ -67,7 +67,7 @@ public class BookingApiService : IBookingApiService
         CustomerNotes = detail.CustomerNotes
     };
 
-    // ── Status transition (F-014's dedicated route; F-015-T07 AC7) ───────────────────────────────────
+    // ── Status transition ─────────────────────────────────────────────────────────────────────────────
 
     public async Task<AppointmentDetail?> UpdateStatusAsync(string id, AppointmentStatus status, CancellationToken ct = default)
     {
@@ -97,7 +97,7 @@ public class BookingApiService : IBookingApiService
         return await GetAppointmentAsync(id, ct);
     }
 
-    // ── F-014 session notes (new to the client — F-015-T07) ──────────────────────────────────────────
+    // ── Session notes ─────────────────────────────────────────────────────────────────────────────────
 
     public async Task<List<NoteEntity>> GetNotesAsync(string identifier, CancellationToken ct = default)
     {
@@ -140,7 +140,7 @@ public class BookingApiService : IBookingApiService
         return JsonSerializer.Deserialize<NoteEntity>(json, EntityJsonOptions);
     }
 
-    // ── Payments (new to the client — F-015-T07) ─────────────────────────────────────────────────────
+    // ── Payments ───────────────────────────────────────────────────────────────────────────────────────
 
     public async Task<PaymentEntity?> GetPaymentAsync(string identifier, CancellationToken ct = default)
     {

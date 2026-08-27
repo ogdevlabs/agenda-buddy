@@ -14,7 +14,7 @@ namespace AgendaBuddy.Identity.Extensions;
 /// <b>measured</b> at 262 ms on this hardware, so an attacker gets ≈3.8 attempts/sec/core and is no
 /// closer to a password than they were yesterday. The threat the measurement exposed is the mirror image
 /// — every unauthenticated <c>login</c> or <c>register</c> request <i>buys</i> 262 ms of server CPU, so
-/// roughly <b>4 requests/sec pins one core</b> and ~31/sec saturates the machine (threat T-101). Identity
+/// roughly <b>4 requests/sec pins one core</b> and ~31/sec saturates the machine. Identity
 /// issues the tokens all six other services validate, so that is a full auth outage from one host on a
 /// domestic connection.
 /// </para>
@@ -29,7 +29,7 @@ namespace AgendaBuddy.Identity.Extensions;
 /// key from <c>HttpContext</c> <i>before</i> model binding, and the account identifier is in the JSON
 /// body — buffering the body in middleware to partition on it is strictly worse than counting where the
 /// account is already loaded. The two halves also cover disjoint attacks: Identity verifies an unknown
-/// email against a dummy hash to keep enumeration constant-time (threat T-005), so an attacker using
+/// email against a dummy hash to keep enumeration constant-time, so an attacker using
 /// random addresses generates <b>no per-account state at all</b> and only the limiter sees them.
 /// </para>
 /// </remarks>
@@ -43,14 +43,14 @@ public static class RateLimitingExtensions
     /// everyone together and limiting nobody, and a CPU-exhaustion control that fails open is not a
     /// control. It shows up in the integration harness, where <c>TestServer</c> leaves
     /// <c>RemoteIpAddress</c> null — which is also the shape of a real deployment behind a proxy that
-    /// does not forward the address, and the reason F-017 will need <c>UseForwardedHeaders</c>.
+    /// does not forward the address, and the reason it will eventually need <c>UseForwardedHeaders</c>.
     /// </remarks>
     public const string UnattributedPartition = "unattributed";
 
     /// <summary>
     /// Registers the limiter and the <c>auth</c> policy. Call only when the flag is on: with the flag
     /// off neither this nor <c>UseRateLimiter</c> runs, so the pipeline is byte-for-byte what it was
-    /// before F-021 (the "trivially revertible in an incident" requirement).
+    /// before this limiter existed (the "trivially revertible in an incident" requirement).
     /// </summary>
     public static IServiceCollection AddAuthRateLimiter(
         this IServiceCollection services, RateLimitingOptions options)

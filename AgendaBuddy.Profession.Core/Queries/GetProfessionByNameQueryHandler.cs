@@ -1,11 +1,9 @@
 namespace AgendaBuddy.Profession.Core.Queries;
 
-// F-020-T09: moved from AgendaBuddy.EventAndCommands.Queries.Professions. Constructor takes only
-// DI-resolvable services; the per-request name comes from the query, not a constructor parameter --
-// the previous shape took `string name` as a constructor argument, which meant the handler could
-// never be dispatched through a real mediator.Send (the pre-refactor path, Requests/RequestCollection.cs,
-// deleted, hand-constructed it once per call instead). Typed against IProfessionService, not the
-// concrete class -- it already covers everything this handler calls.
+// Constructor takes only DI-resolvable services; the per-request name comes from the query, not a
+// constructor parameter -- a `string name` constructor argument would mean the handler could never be
+// dispatched through a real mediator.Send. Typed against IProfessionService, not the concrete class --
+// it already covers everything this handler calls.
 public class GetProfessionByNameQueryHandler(
     IMediator mediator,
     IProfessionService professionService,

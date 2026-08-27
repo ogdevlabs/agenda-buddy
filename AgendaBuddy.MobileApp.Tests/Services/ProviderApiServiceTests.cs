@@ -30,7 +30,6 @@ public class ProviderApiServiceTests
         return session.Object;
     }
 
-    // F-015-T07: new — F-014's provider report route, never called by the client before this task.
     [Fact]
     public async Task GetReport_Returns200_DeserializesReport()
     {
@@ -79,7 +78,6 @@ public class ProviderApiServiceTests
         Assert.Equal("provider", ex.FailedService);
     }
 
-    // F-015-T07: new — F-014's provider deactivation route, never called by the client before this task.
     [Fact]
     public async Task Deactivate_Returns202_ReturnsTrue()
     {

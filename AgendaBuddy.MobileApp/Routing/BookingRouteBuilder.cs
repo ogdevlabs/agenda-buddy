@@ -3,14 +3,14 @@ using AgendaBuddy.Library.Entities;
 namespace AgendaBuddy.MobileApp.Routing;
 
 /// <summary>
-/// Route-building logic extracted from <see cref="Services.BookingApiService"/> (F-015-T06), corrected to
-/// the real backend contract (F-015-T07, api-contracts.md §2).
+/// Route-building logic extracted from <see cref="Services.BookingApiService"/>, corrected to
+/// the real backend contract (api-contracts.md §2).
 /// </summary>
 /// <remarks>
 /// <b>Known deviation from api-contracts.md §2:</b> the design doc lists
 /// <c>GET api/v1/booking/appointments?from=&amp;to=</c> and <c>GET api/v1/booking/appointments/{identifier}</c>
 /// as Booking routes. <c>Booking/Program.cs</c> has no such routes — Booking exposes only
-/// POST/PUT/DELETE on <c>/appointments</c>, plus the F-014 status/notes/payment families. There is no
+/// POST/PUT/DELETE on <c>/appointments</c>, plus the status/notes/payment families. There is no
 /// GET anywhere on Booking, and there never has been (see <c>01-api-surface.md</c>, "What is missing").
 /// Reads live on Calendar instead (<see cref="CalendarRouteBuilder.Appointments"/>) — <see
 /// cref="Services.BookingApiService"/> now composes with <see cref="Services.ICalendarApiService"/> for its
@@ -20,8 +20,8 @@ namespace AgendaBuddy.MobileApp.Routing;
 public static class BookingRouteBuilder
 {
     /// <summary>
-    /// F-014's dedicated status-transition route (PRD requirement 6 / AC7). Replaces the legacy
-    /// <c>PUT booking/{id}</c> call, which F-014 ignores entirely.
+    /// The dedicated status-transition route. Replaces the legacy
+    /// <c>PUT booking/{id}</c> call, which is now ignored entirely.
     /// </summary>
     public static RouteSpec UpdateAppointmentStatus(string identifier) =>
         new(HttpMethod.Post, $"api/v1/booking/appointments/{identifier}/status");
@@ -30,7 +30,7 @@ public static class BookingRouteBuilder
     public static object BuildUpdateStatusPayload(AppointmentStatus status) =>
         new { status = status.ToString() };
 
-    // ── F-014 session notes — new to the client (api-contracts.md §2) ────────────────────────────────
+    // ── Session notes (api-contracts.md §2) ──────────────────────────────────────────────────────────
 
     public static RouteSpec GetNotes(string identifier) =>
         new(HttpMethod.Get, $"api/v1/booking/appointments/{identifier}/notes");
@@ -49,7 +49,7 @@ public static class BookingRouteBuilder
     public static RouteSpec UpdateNote(string noteId) =>
         new(HttpMethod.Put, $"api/v1/booking/notes/{noteId}");
 
-    // ── F-014 payments — new to the client (api-contracts.md §2) ─────────────────────────────────────
+    // ── Payments (api-contracts.md §2) ───────────────────────────────────────────────────────────────
 
     public static RouteSpec GetPayment(string identifier) =>
         new(HttpMethod.Get, $"api/v1/booking/appointments/{identifier}/payment");

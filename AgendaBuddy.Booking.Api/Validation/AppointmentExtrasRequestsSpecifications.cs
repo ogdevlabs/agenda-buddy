@@ -1,7 +1,7 @@
 namespace AgendaBuddy.Booking.Validation;
 
 /// <summary>
-/// F-019-T02 spike, wired at Party Review. <c>NoteRequest</c> has ZERO <c>MiniValidator</c>
+/// <c>NoteRequest</c> has ZERO <c>MiniValidator</c>
 /// annotations today (<c>Booking/Requests/AppointmentExtrasRequests.cs</c>) -- the inline
 /// <c>string.IsNullOrWhiteSpace(request?.Content)</c> check in <c>Program.cs</c>'s two note-content
 /// routes is what actually enforces this. <see cref="NoteSpec"/> replaces that inline check.
@@ -10,8 +10,7 @@ namespace AgendaBuddy.Booking.Validation;
 /// <b>Party Review found the originally-authored spec was wrong.</b> The T02 spike used
 /// <c>.Required().NotEmpty()</c>, verified directly against the live Validot assembly to accept
 /// <c>null</c>/<c>""</c> only -- a whitespace-only string ("   ") passes <c>.NotEmpty()</c>, which
-/// would have silently let through exactly the input <c>IsNullOrWhiteSpace</c> rejects today (the
-/// same class of strictness regression threat T-101 exists to catch). Fixed to
+/// would have silently let through exactly the input <c>IsNullOrWhiteSpace</c> rejects today. Fixed to
 /// <c>.Required().NotWhiteSpace()</c>, confirmed byte-for-byte equivalent to
 /// <c>!string.IsNullOrWhiteSpace(x)</c> against null/""/"   "/"x"/" x " before wiring it in.
 /// </remarks>

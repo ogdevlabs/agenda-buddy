@@ -4,12 +4,12 @@ using AgendaBuddy.EventAndCommands.Persistence;
 namespace AgendaBuddy.EventsAndCommands.Tests.Persistence;
 
 /// <summary>
-/// Pins <see cref="AuditActor"/> — F-016-T18, the attribution half of AC-24 (threat <b>T-005</b>).
+/// Pins <see cref="AuditActor"/>, the attribution half of AC-24.
 /// </summary>
 /// <remarks>
 /// <para>
 /// <c>15-cqrs-and-messaging.md:215</c>: <i>"No actor, no correlation, no request id. The audit trail cannot
-/// answer 'who did this'."</i> Until F-016 these endpoints had no authenticated caller to record, so the
+/// answer 'who did this'."</i> These endpoints previously had no authenticated caller to record, so the
 /// field had nothing to hold. Now they do — and reducing the payload without adding attribution would
 /// leave the trail <b>less</b> useful for incident response than the PII dump was, which is the argument
 /// ADR-027 rests on.
@@ -46,15 +46,15 @@ public class AuditActorTest
     [Fact]
     public void From_AnAnonymousPrincipal_ReturnsNull()
     {
-        // Every route that reaches a query handler is anonymous until F-016-T12 authenticates the five
-        // PII GETs, so this is the live case today, not an edge case.
+        // Every route that reaches a query handler is anonymous until the five PII GETs gain
+        // authentication, so this is the live case today, not an edge case.
         Assert.Null(AuditActor.From(new ClaimsPrincipal(new ClaimsIdentity())));
     }
 
     [Fact]
     public void From_APrincipalWithARoleButNoSubject_ReturnsNull()
     {
-        // The threat T-001 token shape. Authenticated, but with nothing to attribute to -- so it must not
+        // This token shape is authenticated, but with nothing to attribute to -- so it must not
         // be attributed to the empty string or to the role.
         var principal = PrincipalWith(new Claim(ClaimTypes.Role, "Provider"));
 

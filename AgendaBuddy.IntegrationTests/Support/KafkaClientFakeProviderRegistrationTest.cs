@@ -9,7 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace AgendaBuddy.IntegrationTests.Support;
 
 /// <summary>
-/// F-018-T10 / AC1: <see cref="KafkaClientFake"/> substitutes for the real <see cref="IKafkaClient"/> on
+/// <see cref="KafkaClientFake"/> substitutes for the real <see cref="IKafkaClient"/> on
 /// the provider-registration path, and records the topic-creation call it would otherwise send to a
 /// real broker.
 /// </summary>

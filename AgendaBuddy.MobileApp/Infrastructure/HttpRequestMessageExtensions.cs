@@ -3,7 +3,7 @@ namespace AgendaBuddy.MobileApp.Infrastructure;
 /// <summary>
 /// An <see cref="HttpRequestMessage"/> can only be sent once — the framework disposes its content
 /// stream after the first send. <see cref="JwtDelegatingHandler"/> needs a second attempt at the
-/// same logical request after a transparent token refresh (AC9 of F-015-T09), so it clones the
+/// same logical request after a transparent token refresh, so it clones the
 /// request up front, before the first send consumes it.
 /// </summary>
 public static class HttpRequestMessageExtensions

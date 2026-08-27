@@ -11,13 +11,13 @@ using MongoDB.Driver;
 namespace AgendaBuddy.IntegrationTests.Audit;
 
 /// <summary>
-/// F-018-T13 / AC-7. <c>BookingAppointmentCommandHandler</c> writes a <c>BookAppointmentCommand</c> audit
+/// AC-7. <c>BookingAppointmentCommandHandler</c> writes a <c>BookAppointmentCommand</c> audit
 /// event on both its success and failure branches (<c>BookingAppointmentCommandHandler.cs:20-40</c>).
 /// CONSTITUTION §3 mandates this for every command result; before this task, nothing asserted it.
 /// </summary>
 /// <remarks>
 /// Reads the <c>events</c> collection directly with <c>MongoDB.Driver</c>, never through
-/// <see cref="IEventStore"/> — F-019/F-020 are expected to refactor that abstraction, and an assertion
+/// <see cref="IEventStore"/> — that abstraction is expected to be refactored, and an assertion
 /// routed through it could keep passing while the persisted document itself is wrong.
 /// </remarks>
 [Collection(HarnessCollection.Name)]

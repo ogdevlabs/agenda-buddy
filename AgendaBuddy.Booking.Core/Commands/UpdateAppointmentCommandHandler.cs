@@ -1,6 +1,6 @@
 namespace AgendaBuddy.Booking.Core.Commands;
 
-// F-019-T04/Party Review. Constructor takes only DI-resolvable services; the per-request
+// Constructor takes only DI-resolvable services; the per-request
 // AppointmentEntity comes from the command, and the handler returns Result<AppointmentEntity>
 // instead of a string-sniffed convention. Typed against IBookingService/IProviderService, not the
 // concrete classes -- both interfaces already cover everything this handler calls (no
@@ -60,7 +60,7 @@ public class UpdateAppointmentCommandHandler(
         var appointment = provider.AppointmentEntities.FirstOrDefault(ap => ap.Identifier == identifier);
         if (appointment == null) return null;
 
-        // F-014 requirement 13 / threat T-203: appointment status is SERVER-OWNED, so the client's value is
+        // Appointment status is SERVER-OWNED, so the client's value is
         // ignored here and the stored status is preserved. This line used to be
         //     appointment.AppointmentStatus = appointmentEntity.AppointmentStatus;
         // which copied whatever the caller put in the request body, bypassing AppointmentEntity.Book() and

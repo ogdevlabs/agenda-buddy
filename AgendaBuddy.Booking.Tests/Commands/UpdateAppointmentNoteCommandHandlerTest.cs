@@ -23,7 +23,7 @@ public class UpdateAppointmentNoteCommandHandlerTest
         Assert.Equal(updated, result.Value);
     }
 
-    // Threat T-202: propagated, not caught here -- AgendaBuddy.Booking.Api maps both to 403 indistinguishably.
+    // Propagated, not caught here -- AgendaBuddy.Booking.Api maps both to 403 indistinguishably.
     [Fact]
     public async Task Handle_NoteBelongsToAnotherProvider_PropagatesUnauthorizedAccessException()
     {

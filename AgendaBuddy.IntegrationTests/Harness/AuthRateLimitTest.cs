@@ -7,22 +7,22 @@ using MongoDB.Driver;
 namespace AgendaBuddy.IntegrationTests.Harness;
 
 /// <summary>
-/// F-021 AC-6, AC-14 and AC-15 / threat T-101: the per-IP limiter answers <c>429</c> with
+/// The per-IP limiter answers <c>429</c> with
 /// <c>Retry-After</c> against a <b>running Identity service</b>, and is absent when its flag is off.
 /// </summary>
 /// <remarks>
 /// <para>
 /// <b>Why this cannot be a unit test.</b> A unit test on a policy object passes while the middleware is
 /// unregistered, or registered in the wrong place, or attached to no endpoint. That is not a hypothetical
-/// failure mode — it is exactly F-016's original defect, where <c>AssertRole</c> existed in the codebase
-/// and was never called by anything. The PRD therefore makes the integration suite required for this
+/// failure mode — <c>AssertRole</c> has existed in the codebase and gone uncalled by anything before.
+/// The PRD therefore makes the integration suite required for this
 /// criterion even though CONSTITUTION §7 does not require it in general.
 /// </para>
 /// <para>
 /// <b>Credentials are seeded straight into MongoDB</b> rather than through <c>POST /register</c>, because
 /// registering mints a token pair and that needs <c>JWT_PRIVATE_KEY</c> — a private key
-/// <see cref="CryptoSessionFixture"/> deliberately never materialises as a string (F-016 AC-3, in a
-/// public repository). Wrong-password logins reach every part of the path this test is about without
+/// <see cref="CryptoSessionFixture"/> deliberately never materialises as a string in a
+/// public repository. Wrong-password logins reach every part of the path this test is about without
 /// signing anything.
 /// </para>
 /// <para>
@@ -94,7 +94,7 @@ public class AuthRateLimitTest(ServiceHostFixture<IdentityAnchor> host)
     [Fact]
     public async Task T102_AThrottledRequest_CostsNoBcryptAndTakesNoWrite()
     {
-        // Threat T-102: the failed-attempt counter is an unauthenticated write path on a collection with
+        // The failed-attempt counter is an unauthenticated write path on a collection with
         // no backups, so the limiter has to be evaluated BEFORE it (PRD requirement 11). The counter is
         // the observable proof: it advances once per verified-and-rejected attempt, and a throttled
         // request must not move it at all.
@@ -198,8 +198,8 @@ public class AuthRateLimitTest(ServiceHostFixture<IdentityAnchor> host)
         Assert.Equal(HttpStatusCode.Unauthorized, lockedOut.StatusCode);
         Assert.NotNull((await StoredAsync(service)).LockUntil);
 
-        // ⚠️ The 401 body is NOT empty: UseStatusCodePages turns a bodyless 401 into ProblemDetails, the
-        // same surprise F-016 hit with its central 403. So indistinguishability has to be asserted as
+        // ⚠️ The 401 body is NOT empty: UseStatusCodePages turns a bodyless 401 into ProblemDetails —
+        // a bodyless 403 hits the same surprise. So indistinguishability has to be asserted as
         // "identical", not as "absent" — which is the stronger claim anyway.
         Assert.Equal(
             await ComparableBodyAsync(wrongPassword),

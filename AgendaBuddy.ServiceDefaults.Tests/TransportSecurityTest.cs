@@ -8,7 +8,7 @@ using Xunit;
 namespace AgendaBuddy.ServiceDefaults.Tests;
 
 /// <summary>
-/// F-021 AC-13 and AC-14 at the middleware level: HSTS is emitted over TLS when the flag is on, never
+/// AC-13 and AC-14 at the middleware level: HSTS is emitted over TLS when the flag is on, never
 /// over plain HTTP, and never at all when the flag is off.
 /// </summary>
 /// <remarks>
@@ -94,7 +94,7 @@ public class TransportSecurityTest
     public async Task WhenDisabled_NoHstsHeaderIsSentEvenOverTls()
     {
         // AC-14: the AppHost's default configuration leaves both controls off, so a developer's stack
-        // behaves exactly as it did before F-021.
+        // behaves exactly as it did without these controls.
         await using var app = await StartServiceAsync(hstsEnabled: false);
 
         var response = await GetAsync(app, "https");
@@ -116,7 +116,7 @@ public class TransportSecurityTest
         Assert.Equal("ok", await response.Content.ReadAsStringAsync());
     }
 
-    // ── SecurityFlags: the startup audit (threat T-103, design decision D-7) ─────────────────────
+    // ── SecurityFlags: the startup audit (design decision D-7) ─────────────────────
 
     private static IConfiguration ConfigurationWith(params (string Key, string Value)[] entries) =>
         new ConfigurationBuilder()
@@ -138,7 +138,7 @@ public class TransportSecurityTest
     {
         // The threat is not an attack, it is a latent absence: a deployment that never sets the keys
         // ships with no throttling and no HSTS while the PRD, the episode and the roadmap all record the
-        // feature as delivered. Same shape as F-016's original defect, where AssertRole was present in
+        // feature as delivered. Same shape as a prior defect, where AssertRole was present in
         // the codebase and never called.
         var warnings = SecurityFlags.DisabledControls(
             ConfigurationWith(), new StubEnvironment("Production"), includeRateLimiting: true);

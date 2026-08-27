@@ -12,5 +12,5 @@ global using CalendarAnchor = AgendaBuddy.Calendar.Configurations.MongoDbConfigu
 global using ServicesAnchor = AgendaBuddy.Services.Configurations.MongoDbConfiguration;
 global using BookingAnchor = AgendaBuddy.Booking.Configuration.MongoDbConfiguration;   // NOTE: Configuration, SINGULAR — Booking is the odd one out
 global using AgendaBuddy.Booking.Domain.Responses;
-global using IdentityAnchor = AgendaBuddy.Identity.Configurations.MongoDbConfiguration;  // F-021: the auth routes
-global using GatewayAnchor = AgendaBuddy.Gateway.GatewayAnchor;  // F-015-T01: no MongoDB config type to reuse, so this is a dedicated marker — see AgendaBuddy.Gateway/GatewayAnchor.cs
+global using IdentityAnchor = AgendaBuddy.Identity.Configurations.MongoDbConfiguration;
+global using GatewayAnchor = AgendaBuddy.Gateway.GatewayAnchor;  // no MongoDB config type to reuse, so this is a dedicated marker — see AgendaBuddy.Gateway/GatewayAnchor.cs

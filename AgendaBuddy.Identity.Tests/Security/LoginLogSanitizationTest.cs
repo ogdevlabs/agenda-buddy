@@ -12,21 +12,21 @@ using Xunit;
 namespace AgendaBuddy.Identity.Tests.Security;
 
 /// <summary>
-/// Threat T-001 (F-001) and threat T-105 (F-021), which pull in opposite directions and are both
+/// Two threats pull in opposite directions and are both
 /// satisfied here: credential mutations <b>are</b> logged, and no log line carries a password, a token,
 /// or an email address.
 /// </summary>
 /// <remarks>
 /// <para>
-/// ⚠️ <b>This file replaces a test that asserted the opposite.</b> Until F-021,
+/// ⚠️ <b>This file replaces a test that asserted the opposite.</b> Previously,
 /// <c>IdentityService_ConstructorParameters_ContainNoILogger</c> asserted by reflection that
 /// <c>IdentityService</c> had <b>no</b> logger at all — a structural proxy for "no credential material
-/// in logs", from a time when nothing in Identity logged anything. F-021 PRD requirement 17 requires
-/// credential mutations to be logged (the account-destroying refresh was silent <i>and</i> untraceable,
+/// in logs", from a time when nothing in Identity logged anything. Credential mutations must now be
+/// logged (the account-destroying refresh was silent <i>and</i> untraceable,
 /// which is what made it survivable), so the proxy had to go. It is replaced by the stronger assertion
 /// the proxy was standing in for: the logger exists, and its output is inspected for every sensitive
-/// value. Recorded as F-021's one deliberate deviation from "delete no pre-existing test", the same
-/// class of decision as F-016's ADR-025 deletion.
+/// value. This is a deliberate deviation from "delete no pre-existing test", the same
+/// class of decision as the ADR-025 deletion.
 /// </para>
 /// <para>
 /// <b>The three sanitization tests below were vacuous before this change.</b> They iterated
@@ -36,8 +36,8 @@ namespace AgendaBuddy.Identity.Tests.Security;
 /// <para>
 /// PII is redacted by <b>hashing, not truncation</b> (design decision D-8):
 /// <c>PiiRedactingProcessor</c> protects spans, not logs, so nothing downstream would catch an address
-/// written here — and F-013's telemetry rollout is this project's own precedent for exactly that
-/// (threat T-004, real customer emails exported in <c>url.path</c>).
+/// written here — and this project's own telemetry rollout is precedent for exactly that
+/// (real customer emails exported in <c>url.path</c>).
 /// </para>
 /// </remarks>
 [Collection("Sequential")]
@@ -124,9 +124,9 @@ public class LoginLogSanitizationTest : IDisposable
     [Fact]
     public async Task T105_EveryCredentialMutation_IsLoggedWithItsOperationAndOutcome()
     {
-        // F-021 AC-16, first half. The refresh defect destroyed accounts with no audit event and no log
+        // AC-16, first half. The refresh defect destroyed accounts with no audit event and no log
         // line, so an account lost that way left no trace of ever having existed. Identity does not use
-        // the EventStore and F-021 does not change that (putting credential-shaped documents into the
+        // the EventStore (putting credential-shaped documents into the
         // collection every other service writes to is its own problem), so logs are the record.
         var registered = await _svc.RegisterAsync(TestEmail, TestPassword, TestRole);
         var rotated = await _svc.RefreshAsync(registered!.RefreshToken);
@@ -156,7 +156,7 @@ public class LoginLogSanitizationTest : IDisposable
     [Fact]
     public async Task T105_NoLogLine_ContainsAnEmailAddress()
     {
-        // F-021 AC-16, second half, and the reason D-8 chose a hash prefix over anything truncated:
+        // AC-16, second half, and the reason D-8 chose a hash prefix over anything truncated:
         // "aud…@example.com" is still an identifier for a cluster of this size.
         var registered = await _svc.RegisterAsync(TestEmail, TestPassword, TestRole);
         await _svc.RefreshAsync(registered!.RefreshToken);

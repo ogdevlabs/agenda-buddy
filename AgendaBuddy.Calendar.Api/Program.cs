@@ -24,7 +24,7 @@ builder.Services.AddDistributedMemoryCache();
 builder.Services.AddMongoDbRepository(builder.Configuration);
 
 // Add MediatR
-// F-020-T08: handlers moved to AgendaBuddy.Calendar.Core, a separate assembly from AgendaBuddy.Calendar.Api --
+// Handlers live in AgendaBuddy.Calendar.Core, a separate assembly from AgendaBuddy.Calendar.Api --
 // MediatR's RegisterServicesFromAssembly only scans the one assembly it's given, so both must be registered
 // or mediator.Send(query) throws "no handler registered" at runtime, not at compile time.
 builder.Services.AddMediatR(cfg =>
@@ -34,7 +34,7 @@ builder.Services.AddEventStore();
 builder.Services.AddMvcCore();
 
 // Enable & configure JSON Problem Details error responses
-// ADR-022 / F-016-T08: ForbiddenException -> 403 centrally, so an endpoint that omits a local
+// ADR-022: ForbiddenException -> 403 centrally, so an endpoint that omits a local
 // try/catch returns 403 rather than a bare 500. Registered unconditionally, unlike the
 // Development-only UseExceptionHandler lambda below.
 builder.Services.AddExceptionHandler<AgendaBuddyExceptionHandler>();
@@ -109,9 +109,9 @@ if (app.Environment.IsDevelopment())
 // ForbiddenException and the central 403 would fail in Development only. See AgendaBuddyExceptionHandler.
 app.UseExceptionHandler();
 
-// F-021 PRD requirement 13: HSTS (under its flag) and the HTTPS redirect run BEFORE authentication.
-// Registered after UseAuthentication, as it was until F-021, the redirect parsed and validated the
-// bearer token out of a plaintext request and only then told the client to come back over TLS.
+// HSTS (under its flag) and the HTTPS redirect run BEFORE authentication. Registered after
+// UseAuthentication, the redirect would parse and validate the bearer token out of a plaintext
+// request and only then tell the client to come back over TLS.
 app.UseAgendaBuddyTransportSecurity();
 
 app.UseAntiforgery();
@@ -132,12 +132,9 @@ calendar.MapGet("/availability/{email}",
         IDistributedCache cache,
         CancellationToken cancellationToken) =>
     {
-        // F-016 AC-10 / requirement 11 / threat T-006. A valid token proves the caller is SOMEBODY, not
-        // that {email} is theirs. Without this line any registered user could read any provider's full
-        // appointment list, including every customer email in it. Every sibling service already guarded
-        // (Provider:213, Customer:171, Services:153,:177); Calendar was the one family that forgot, and
-        // nothing could catch it because there was no integration test in the solution
-        // (11-testing.md:148).
+        // A valid token proves the caller is SOMEBODY, not that {email} is theirs. Without this line
+        // any registered user could read any provider's full appointment list, including every
+        // customer email in it.
         //
         // ⚠️ DESIGN INVARIANT, NOT AN IMPLEMENTATION DETAIL: this MUST stay ABOVE the cache read. The
         // cache key is derived from {email} -- the request SUBJECT -- never the CALLER, so a cached value
@@ -145,16 +142,14 @@ calendar.MapGet("/availability/{email}",
         // Reordering these lines, extracting a helper, or caching the RESPONSE instead of the DATA creates
         // a cross-tenant leak. Pinned by CalendarOwnershipTest.T006_AWarmCacheIsNotServedToADifferentPrincipal.
         //
-        // No local try/catch: T08's AgendaBuddyExceptionHandler maps ForbiddenException to 403 centrally.
+        // No local try/catch: AgendaBuddyExceptionHandler maps ForbiddenException to 403 centrally.
         OwnershipGuard.AssertOwner(user, email);
 
         var key = $"availability-{email}";
 
-        // F-020-T08: dispatched through the real mediator.Send with the real request CancellationToken --
-        // the pre-refactor path (RequestCollection.cs, deleted) manually `new`-ed the query handler and
-        // called .Handle() directly, with `new CancellationToken()` rather than this one. A Fail result is
-        // mapped to null so CacheAside's "never cache a null" rule (CacheAside.cs) keeps a missing provider
-        // from poisoning the cache.
+        // Dispatched through the real mediator.Send with the real request CancellationToken. A Fail
+        // result is mapped to null so CacheAside's "never cache a null" rule (CacheAside.cs) keeps a
+        // missing provider from poisoning the cache.
         var slots = await cache.GetOrCreateAsync(key, async token =>
         {
             var result = await mediator.Send(new CheckCalendarAvailabilityQuery { Email = email }, token);
@@ -179,12 +174,9 @@ calendar.MapGet("/appointments/{email}",
         IDistributedCache cache,
         CancellationToken cancellationToken) =>
     {
-        // F-016 AC-10 / requirement 11 / threat T-006. A valid token proves the caller is SOMEBODY, not
-        // that {email} is theirs. Without this line any registered user could read any provider's full
-        // appointment list, including every customer email in it. Every sibling service already guarded
-        // (Provider:213, Customer:171, Services:153,:177); Calendar was the one family that forgot, and
-        // nothing could catch it because there was no integration test in the solution
-        // (11-testing.md:148).
+        // A valid token proves the caller is SOMEBODY, not that {email} is theirs. Without this line
+        // any registered user could read any provider's full appointment list, including every
+        // customer email in it.
         //
         // ⚠️ DESIGN INVARIANT, NOT AN IMPLEMENTATION DETAIL: this MUST stay ABOVE the cache read. The
         // cache key is derived from {email} -- the request SUBJECT -- never the CALLER, so a cached value
@@ -192,7 +184,7 @@ calendar.MapGet("/appointments/{email}",
         // Reordering these lines, extracting a helper, or caching the RESPONSE instead of the DATA creates
         // a cross-tenant leak. Pinned by CalendarOwnershipTest.T006_AWarmCacheIsNotServedToADifferentPrincipal.
         //
-        // No local try/catch: T08's AgendaBuddyExceptionHandler maps ForbiddenException to 403 centrally.
+        // No local try/catch: AgendaBuddyExceptionHandler maps ForbiddenException to 403 centrally.
         OwnershipGuard.AssertOwner(user, email);
 
         var key = $"appointments-{email}";

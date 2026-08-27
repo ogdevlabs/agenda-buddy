@@ -23,12 +23,12 @@ public class CustomerApiServiceTests
         return factory.Object;
     }
 
-    // F-015-T07: Customer's real list route returns F-016/ADR-023's paginated envelope
+    // Customer's real list route returns a paginated envelope (ADR-023)
     // ({items, totalCount, page, pageSize}) of full CustomerEntity objects, not a bare array of
     // CustomerSummary — the previous fixture (a bare array) does not match the real backend shape.
     //
-    // F-020-T12: the paged envelope moved one level deeper, under "data" -- Customer's Clean
-    // Architecture migration wraps every CQRS route's response in DataResponse<T> (ADR-049).
+    // The paged envelope is nested one level deeper, under "data" — Customer's Clean
+    // Architecture wraps every CQRS route's response in DataResponse<T> (ADR-049).
     [Fact]
     public async Task GetCustomers_Returns200_DeserializesPagedEnvelope()
     {

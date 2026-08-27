@@ -24,10 +24,10 @@ builder.Services.AddMongoDbRepository(builder.Configuration);
 builder.Services.AddDistributedMemoryCache();
 
 // Add MediatR
-// F-020-T10: handlers moved to AgendaBuddy.Services.Core, a separate assembly from
-// AgendaBuddy.Services.Api -- MediatR's RegisterServicesFromAssembly only scans the one assembly it's
-// given, so both must be registered or mediator.Send(command/query) throws "no handler registered" at
-// runtime, not at compile time.
+// Handlers live in AgendaBuddy.Services.Core, a separate assembly from AgendaBuddy.Services.Api --
+// MediatR's RegisterServicesFromAssembly only scans the one assembly it's given, so both must be
+// registered or mediator.Send(command/query) throws "no handler registered" at runtime, not at compile
+// time.
 builder.Services.AddMediatR(cfg =>
     cfg.RegisterServicesFromAssemblies(typeof(Program).Assembly, typeof(GetServicesFromProviderQueryHandler).Assembly));
 builder.Services.AddEventStore();
@@ -35,7 +35,7 @@ builder.Services.AddEventStore();
 builder.Services.AddMvcCore();
 
 // Enable & configure JSON Problem Details error responses
-// ADR-022 / F-016-T08: ForbiddenException -> 403 centrally, so an endpoint that omits a local
+// ADR-022: ForbiddenException -> 403 centrally, so an endpoint that omits a local
 // try/catch returns 403 rather than a bare 500. Registered unconditionally, unlike the
 // Development-only UseExceptionHandler lambda below.
 builder.Services.AddExceptionHandler<AgendaBuddyExceptionHandler>();
@@ -111,9 +111,9 @@ if (app.Environment.IsDevelopment())
 // ForbiddenException and the central 403 would fail in Development only. See AgendaBuddyExceptionHandler.
 app.UseExceptionHandler();
 
-// F-021 PRD requirement 13: HSTS (under its flag) and the HTTPS redirect run BEFORE authentication.
-// Registered after UseAuthentication, as it was until F-021, the redirect parsed and validated the
-// bearer token out of a plaintext request and only then told the client to come back over TLS.
+// HSTS (under its flag) and the HTTPS redirect must run BEFORE authentication. Registered after
+// UseAuthentication, the redirect would parse and validate the bearer token out of a plaintext
+// request and only then tell the client to come back over TLS.
 app.UseAgendaBuddyTransportSecurity();
 
 app.UseAntiforgery();
@@ -135,12 +135,10 @@ services.MapGet("/{email}",
     {
         var key = $"services-{email}";
 
-        // F-020-T10: dispatched through the real mediator.Send with the real request
-        // CancellationToken -- the pre-refactor path (Requests/RequestCollection.cs, deleted) manually
-        // `new`-ed the query handler and called .Handle() directly, with `new CancellationToken()`
-        // rather than this one. A missing provider is a successful empty read (see the handler's own
-        // remarks), so this Fail-to-null mapping and the NotFound branch below are unreachable in
-        // practice -- preserved anyway, matching every other migrated service's shape.
+        // Dispatched through mediator.Send with the request's CancellationToken. A missing provider is
+        // a successful empty read (see the handler's own remarks), so this Fail-to-null mapping and the
+        // NotFound branch below are unreachable in practice -- preserved anyway, matching every other
+        // migrated service's shape.
         var serviceEntities = await cache.GetOrCreateAsync(key, async token =>
         {
             var result = await mediator.Send(new GetServicesFromProviderQuery { Email = email }, token);
@@ -152,9 +150,8 @@ services.MapGet("/{email}",
 
         return TypedResults.NotFound();
     })
-    // F-016 AC-8 / requirement 9: PII-bearing read, so no longer anonymous. This is the fifth of the
-    // five routes — it was omitted from the program Discover summary and added at Define.
-    // Breaking change with zero reachable consumers (01-api-surface.md:158).
+    // PII-bearing read, so no longer anonymous. Breaking change with zero reachable consumers
+    // (01-api-surface.md:158).
     .WithName("GetServicesFromProvider")
     .RequireAuthorization();
 

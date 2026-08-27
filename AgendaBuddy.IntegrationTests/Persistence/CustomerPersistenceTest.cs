@@ -10,7 +10,7 @@ using MongoDB.Driver;
 namespace AgendaBuddy.IntegrationTests.Persistence;
 
 /// <summary>
-/// F-018-T12 / AC-6. <c>PUT /api/v1/customers/{email}</c> followed by <c>GET /api/v1/customers/{email}</c>
+/// <c>PUT /api/v1/customers/{email}</c> followed by <c>GET /api/v1/customers/{email}</c>
 /// proves <see cref="CustomerEntity"/>'s <c>[BsonElement]</c> mapping round-trips through a real write and
 /// a real read.
 /// </summary>
@@ -66,10 +66,9 @@ public class CustomerPersistenceTest(ServiceHostFixture<CustomerAnchor> host, Cr
         var getResponse = await service.Client.SendAsync(getRequest);
         Assert.Equal(HttpStatusCode.OK, getResponse.StatusCode);
 
-        // F-020-T12: the response is now wrapped in DataResponse<T> (ADR-049, following Booking's/
-        // Calendar's/Profession's/Services'/Provider's precedent) -- the object moved from the response
-        // root to a "data" property. Parsed field-by-field rather than re-deserialised into
-        // CustomerEntity at "data", matching every sibling migration's persistence test.
+        // The response is wrapped in DataResponse<T> (ADR-049) -- the object is under a "data"
+        // property, not the response root. Parsed field-by-field rather than re-deserialised into
+        // CustomerEntity at "data", matching the other persistence tests.
         using var body = JsonDocument.Parse(await getResponse.Content.ReadAsStringAsync());
         var read = body.RootElement.GetProperty("data");
 

@@ -22,9 +22,9 @@ namespace AgendaBuddy.IntegrationTests.Harness;
 /// <para>
 /// Measured on the maintainer's machine 2026-08-18 (Rancher Desktop, 2 CPUs / 4.1 GB, k8s running):
 /// <b>cold start 62 s</b> (dominated by the 1.13 GB <c>mongo:7.0</c> pull), <b>warm start 3 s</b>.
-/// The warm figure is better than the 4.45 s the F-018 spike measured, so ADR-017's
+/// The warm figure is better than the 4.45 s previously measured, so ADR-017's
 /// container-per-class decision holds with margin. The cold figure is a CI consideration for the
-/// integration job (F-016-T20) — image caching is worth roughly a minute per cold runner.
+/// integration job — image caching is worth roughly a minute per cold runner.
 /// </para>
 /// </remarks>
 public class ContainerRuntimeGuardTest
@@ -32,7 +32,7 @@ public class ContainerRuntimeGuardTest
     [Fact]
     public async Task MongoContainer_StartsAgainstLocalDocker_WithoutLoadingSshNet()
     {
-        // F-016-T04 / AC-7. Without this line, a stopped container runtime makes THIS test the
+        // Without this line, a stopped container runtime makes THIS test the
         // unexplained stall the preflight exists to prevent — it was the first container start in the
         // harness and had no guard in front of it.
         DockerPreflight.EnsureAvailable();

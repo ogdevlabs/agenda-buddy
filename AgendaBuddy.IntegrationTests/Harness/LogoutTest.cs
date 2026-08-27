@@ -9,7 +9,7 @@ using MongoDB.Driver;
 namespace AgendaBuddy.IntegrationTests.Harness;
 
 /// <summary>
-/// F-015-T10 AC11 (PRD requirement 10): calling logout invokes the server-side logout endpoint, and the
+/// Calling logout invokes the server-side logout endpoint, and the
 /// previously-valid refresh token is rejected on a subsequent refresh attempt — proved end-to-end
 /// against a real, running Identity service. Uses <see cref="AgendaBuddy.MobileApp.Routing.AuthRouteBuilder"/>'s own
 /// <c>Logout()</c>/<c>Refresh()</c> route specs, the same way <see cref="MobileClientRouteResolutionTest"/>
@@ -21,7 +21,7 @@ namespace AgendaBuddy.IntegrationTests.Harness;
 /// <b>Why the credential is seeded directly, not through <c>POST /register</c> or <c>/login</c>.</b> Same
 /// reason as <see cref="AuthRateLimitTest"/>: minting a real access token needs <c>JWT_PRIVATE_KEY</c>, an
 /// environment variable <see cref="CryptoSessionFixture"/> deliberately never sets in this public
-/// repository (F-016 AC-3). Seeding the credential's refresh-token hash directly with the same
+/// repository. Seeding the credential's refresh-token hash directly with the same
 /// <see cref="IdentityService.HashToken"/> Identity itself uses reaches every part of the logout/refresh
 /// path this task cares about without a real signature ever existing.
 /// </para>

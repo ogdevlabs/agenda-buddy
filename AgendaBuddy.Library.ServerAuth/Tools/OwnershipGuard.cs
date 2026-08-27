@@ -14,8 +14,7 @@ public static class OwnershipGuard
     /// </param>
     /// <remarks>
     /// <para>
-    /// ⚠️ <b>Both sides are null-guarded before comparing, and that is the entire point (F-016-T09,
-    /// threat T-001, PRD AC-21).</b> This method previously called
+    /// ⚠️ <b>Both sides are null-guarded before comparing, and that is the entire point.</b> This method previously called
     /// <c>string.Equals(sub, entityEmail, OrdinalIgnoreCase)</c> with no null check. Since
     /// <c>string.Equals(null, null)</c> is <c>true</c>, a caller carrying <b>no <c>sub</c> claim</b>,
     /// checked against an entity with <b>no email</b>, was granted <b>ownership</b> — the guard's
@@ -45,10 +44,10 @@ public static class OwnershipGuard
     /// <see cref="AssertOwner"/>, as a predicate.
     /// </summary>
     /// <remarks>
-    /// Added by F-016-T11 for the provider response projection, where "not the owner" selects a narrower
+    /// For the provider response projection, where "not the owner" selects a narrower
     /// response shape rather than refusing the request. Branching on a caught
     /// <see cref="ForbiddenException"/> would have been exception-driven control flow on a read path — and
-    /// it would have put the null-claim rule in two places, which is precisely how the T-001 asymmetry
+    /// it would have put the null-claim rule in two places, which is precisely how an asymmetry
     /// between <see cref="AssertOwner"/> and <see cref="AssertOwnerAny"/> arose. Both now share this one
     /// implementation.
     /// </remarks>

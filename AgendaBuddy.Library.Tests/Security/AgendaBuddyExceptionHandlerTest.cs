@@ -10,7 +10,7 @@ using Xunit;
 namespace Common.Tests.Security;
 
 /// <summary>
-/// Unit-level pins for <see cref="AgendaBuddyExceptionHandler"/> — F-016-T08, ADR-022 / ARCHITECTURE AD-1.
+/// Unit-level pins for <see cref="AgendaBuddyExceptionHandler"/> — ADR-022 / ARCHITECTURE AD-1.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -21,7 +21,7 @@ namespace Common.Tests.Security;
 /// <see cref="IProblemDetailsService"/>.
 /// </para>
 /// <para>
-/// The second is threat <b>T-004</b>'s whole safety margin. Today an unhandled
+/// The second is the whole safety margin. Today an unhandled
 /// <c>ForbiddenException</c> in <c>Production</c> produces a <em>bare, empty-bodied</em> 500 —
 /// accidentally the most conservative response possible. T08 starts emitting a body where none
 /// existed, so "no exception type, no message, no stack frame" is not belt-and-braces.

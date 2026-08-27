@@ -177,7 +177,7 @@ public class AppHostWiringTest
         }
     }
 
-    // Threat T-003: the signing keys must never be committed. Declaring them secret keeps them in
+    // The signing keys must never be committed. Declaring them secret keeps them in
     // user secrets and masked in the dashboard.
     [Theory]
     [InlineData("jwt-public-key")]
@@ -259,7 +259,7 @@ public class AppHostWiringTest
         }
     }
 
-    // ── F-021: the two configuration-gated security controls ─────────────────────────────────────
+    // ── The two configuration-gated security controls ─────────────────────────────────────
     //
     // These live here rather than in a service's own tests because the composition root is what decides
     // them. Gating on IsProduction() would have been wrong in a way no service-level test could show:
@@ -301,7 +301,7 @@ public class AppHostWiringTest
         Assert.DoesNotContain("Security__RateLimiting__Enabled", environment.Keys);
     }
 
-    // Threat T-103 / PRD requirement 16: the cloud graph turns both controls on, so shipping without
+    // The cloud graph turns both controls on, so shipping without
     // them requires editing this file rather than merely forgetting a key somewhere else. This is the
     // one test that distinguishes "the feature was written" from "the feature is switched on".
     [Theory]
@@ -456,7 +456,7 @@ public class AppHostWiringTest
     }
 
     // The signing keys are secret parameters in both shapes — locally they come from user secrets,
-    // on publish azd prompts and keeps them in Key Vault (threat T-003).
+    // on publish azd prompts and keeps them in Key Vault.
     [Theory]
     [InlineData("jwt-public-key")]
     [InlineData("jwt-private-key")]
@@ -468,10 +468,9 @@ public class AppHostWiringTest
         Assert.True(parameter.Secret, $"{parameterName} must be declared secret when publishing.");
     }
 
-    // ── F-015-T05: the eighth resource — the gateway ──────────────────────────────────────────────
+    // ── The eighth resource — the gateway ──────────────────────────────────────────────
     //
-    // No PRD acceptance criterion of its own (reassigned to F-015-T04 — see F-015-T05.md). This is
-    // pure AppHost composition: the gateway resource exists and is wired to every one of the seven
+    // This is pure AppHost composition: the gateway resource exists and is wired to every one of the seven
     // services it could route to, mirroring how the file already wires dependents to mongodb/kafka.
 
     [Fact]
@@ -483,7 +482,7 @@ public class AppHostWiringTest
     }
 
     // WithReference injects services__<name>__http__0 for each destination — the discovery keys
-    // F-015-T02/T03's routing config reads to resolve where to forward a request.
+    // the routing config reads to resolve where to forward a request.
     [Theory]
     [InlineData("booking")]
     [InlineData("calendar")]

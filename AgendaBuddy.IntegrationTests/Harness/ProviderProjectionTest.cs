@@ -6,9 +6,8 @@ using MongoDB.Bson;
 namespace AgendaBuddy.IntegrationTests.Harness;
 
 /// <summary>
-/// F-016 AC-9 / requirement 10: provider reads are projected to <c>ProviderSummary</c> for anyone who is
-/// not the owning provider. Also carries the route-level half of AC-21 (threat <b>T-001</b>) deferred from
-/// F-016-T09.
+/// Provider reads are projected to <c>ProviderSummary</c> for anyone who is
+/// not the owning provider. Also carries the route-level half of the null-claim ownership case.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -18,10 +17,9 @@ namespace AgendaBuddy.IntegrationTests.Harness;
 /// book and client roster. Requirement 10 holds regardless of the authentication decision.
 /// </para>
 /// <para>
-/// ⚠️ <b>The T-001 case is why T09 had to precede this task.</b> The projection selects owner-vs-non-owner
+/// ⚠️ The projection selects owner-vs-non-owner
 /// with <c>OwnershipGuard.AssertOwner</c>, whose null-claim fall-through used to land on the <em>owner</em>
-/// branch — so a token with no <c>sub</c> would have received the unprojected entity. Building this before
-/// T09 would have shipped the bypass.
+/// branch — so a token with no <c>sub</c> would have received the unprojected entity.
 /// </para>
 /// </remarks>
 [Collection(HarnessCollection.Name)]
@@ -98,7 +96,7 @@ public class ProviderProjectionTest : IClassFixture<ServiceHostFixture<ProviderA
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        // The public profile is still there — this is a projection, not a refusal. F-003's discovery flow
+        // The public profile is still there — this is a projection, not a refusal. The discovery flow
         // depends on a customer being able to browse providers.
         Assert.Contains("Nakamura", body, StringComparison.Ordinal);
         Assert.Contains("60-min PT session", body, StringComparison.Ordinal);

@@ -4,7 +4,7 @@ using System.Net.Http.Headers;
 namespace AgendaBuddy.IntegrationTests.Harness;
 
 /// <summary>
-/// F-016 AC-8 / requirement 9: the five PII-bearing GET routes require authorization.
+/// The five PII-bearing GET routes require authorization.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -20,7 +20,7 @@ namespace AgendaBuddy.IntegrationTests.Harness;
 /// <b>Safe as a breaking change</b>, because these routes have zero reachable consumers: the mobile
 /// client's paths all omit <c>api/v1/</c> and its single <c>ApiBaseUrl</c> cannot address seven processes
 /// (<c>01-api-surface.md:158</c>). Confirmed at the PRD gate that authenticating provider discovery matches
-/// product intent — ROADMAP F-003, status Shipped, defines its own flow as "a customer <b>signs up</b>,
+/// product intent — the ROADMAP defines the flow as "a customer <b>signs up</b>,
 /// discovers providers, and subscribes to one", which makes discovery post-signup by the product's own
 /// definition.
 /// </para>

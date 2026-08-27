@@ -40,13 +40,11 @@ public static class ServiceCollectionExtension
         serviceCollection.AddScoped<CalendarService>();
         serviceCollection.AddScoped<CustomerService>();
 
-        // F-020-T08: CheckCalendarAvailabilityQueryHandler/CheckCalendarAppointmentsQueryHandler are typed
-        // against IProviderService, not the concrete class -- it already covers everything they call.
+        // CheckCalendarAvailabilityQueryHandler/CheckCalendarAppointmentsQueryHandler are typed against
+        // IProviderService, not the concrete class -- it already covers everything they call.
         // Forwarding to the already-scoped concrete instance, not a second AddScoped<IProviderService,
         // ProviderService>, so a request that resolves both the concrete class and the interface in the
-        // same scope gets the same object, not two (same pattern as Booking's own ServiceCollectionExtension,
-        // and the exact DI-registration gap Booking's Party Review caught -- this one was found by
-        // OpenApiSpecGeneratorTest/CalendarRouteContractTest going 500 rather than by review).
+        // same scope gets the same object, not two.
         serviceCollection.AddScoped<IProviderService>(sp => sp.GetRequiredService<ProviderService>());
 
         return serviceCollection;

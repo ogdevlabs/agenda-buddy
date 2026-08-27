@@ -7,9 +7,9 @@ using AgendaBuddy.Library.Entities;
 namespace AgendaBuddy.IntegrationTests.Contract;
 
 /// <summary>
-/// F-019-T08 / threat T-101 (mitigate now). The only Booking DTO that actually migrated validation
-/// libraries in this feature is <see cref="AppointmentEntity"/> (<c>POST /appointments</c>,
-/// <c>MiniValidator</c> → Validot, F-019-T02/T04) — every request that 400d under
+/// The only Booking DTO that actually migrated validation
+/// libraries is <see cref="AppointmentEntity"/> (<c>POST /appointments</c>,
+/// <c>MiniValidator</c> → Validot) — every request that 400d under
 /// <c>MiniValidator</c> for it must still 400 under Validot. Drives the exact same malformed/missing
 /// cases through the real HTTP pipeline, not just the isolated validator
 /// (<c>AgendaBuddy.Booking.Tests/Validation/AppointmentEntitySpecificationTest.cs</c> already pins that; this test
@@ -17,11 +17,11 @@ namespace AgendaBuddy.IntegrationTests.Contract;
 /// </summary>
 /// <remarks>
 /// <b>Why not "every one of Booking's 10 routes' request DTOs" literally.</b> The other 9 DTOs did not
-/// migrate to Validot in this feature — Update/Cancel (<c>AppointmentEntity</c> via
-/// <c>MiniValidator</c>) and all 7 F-014 routes (inline checks, e.g. <c>string.IsNullOrWhiteSpace</c>)
-/// are byte-for-byte unchanged (F-019-T04/T06 explicitly preserved their failure branches). "Regression
+/// migrate to Validot — Update/Cancel (<c>AppointmentEntity</c> via
+/// <c>MiniValidator</c>) and the other 7 routes (inline checks, e.g. <c>string.IsNullOrWhiteSpace</c>)
+/// are byte-for-byte unchanged (their failure branches were explicitly preserved). "Regression
 /// test the migration" for a DTO that never migrated is vacuous — disclosed here, not silently skipped,
-/// and left for a future task (F-020 or a dedicated follow-up) if Update/Cancel/F-014 DTOs ever move to
+/// and left for a future task if Update/Cancel/the other DTOs ever move to
 /// Validot too.
 /// </remarks>
 [Collection(HarnessCollection.Name)]
@@ -40,7 +40,7 @@ public class BookingValidotStrictnessTest(ServiceHostFixture<BookingAnchor> host
         return request;
     }
 
-    // Validation runs before the ownership/provider lookup in the route (F-019-T02's spike, verified
+    // Validation runs before the ownership/provider lookup in the route (verified
     // again here live), so no seeded provider is needed for any of these 400 cases to reach Validot.
 
     [Fact]

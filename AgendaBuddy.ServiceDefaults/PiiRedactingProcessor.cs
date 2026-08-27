@@ -5,7 +5,7 @@ using OpenTelemetry;
 namespace AgendaBuddy.ServiceDefaults;
 
 /// <summary>
-/// Strips email addresses out of span tags before they are exported (threat T-004).
+/// Strips email addresses out of span tags before they are exported.
 /// </summary>
 /// <remarks>
 /// The threat model assumed ASP.NET Core instrumentation records route templates rather than raw

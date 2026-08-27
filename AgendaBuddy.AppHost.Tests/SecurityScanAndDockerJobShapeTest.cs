@@ -4,7 +4,7 @@ using Xunit;
 namespace AgendaBuddy.AppHost.Tests;
 
 /// <summary>
-/// Structural, workflow-YAML-content tests for the shape of the F-017 CI jobs that the review gate
+/// Structural, workflow-YAML-content tests for the shape of the CI jobs that the review gate
 /// found had no regression coverage: gitleaks step presence (AC6), the docker-build-and-scan matrix
 /// and its "any entry fails → job fails" guarantee (AC8), the new job's timeout and the five
 /// pre-existing jobs' un-timed-ness (AC11), and the absence of any runtime/registry step (AC13).

@@ -9,14 +9,14 @@ using MongoDB.Bson;
 namespace AgendaBuddy.IntegrationTests.Harness;
 
 /// <summary>
-/// F-015-T07 AC2: every corrected <c>AgendaBuddy.MobileApp.Routing.*RouteBuilder</c> method is exercised here by
+/// Every corrected <c>AgendaBuddy.MobileApp.Routing.*RouteBuilder</c> method is exercised here by
 /// building a real <see cref="HttpRequestMessage"/> from its <see cref="RouteSpec"/> output and firing it
 /// at the real backend service that owns the route — not a hand-written path string duplicated in this
 /// project's own tests. Proves "2xx or a correctly-typed error, not a 404 caused by a wrong path, verb, or
 /// prefix" (the acceptance criterion's own wording) for the routes this task corrected or added.
 /// </summary>
 /// <remarks>
-/// Authorization-boundary behaviour (who may call what) is already exhaustively covered by F-014's own
+/// Authorization-boundary behaviour (who may call what) is already exhaustively covered by the existing
 /// suite (<see cref="PaymentsAndStatusTest"/>, <see cref="SessionNotesTest"/>,
 /// <see cref="ReportAndDeactivationTest"/>, <see cref="MessagingAndNotificationsTest"/>,
 /// <see cref="CalendarOwnershipTest"/>, <see cref="CustomerListRoleTest"/>) — the classes below do not
@@ -73,7 +73,7 @@ public class MobileBookingRouteResolutionTest(ServiceHostFixture<BookingAnchor> 
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        // F-019-T11 (AC8): live confirmation of the DataResponse<T> envelope, not just the status code.
+        // Live confirmation of the DataResponse<T> envelope, not just the status code.
         var wrapper = await response.Content.ReadFromJsonAsync<DataResponse<AppointmentStatusResponse>>(HarnessJson.Options);
         Assert.Equal(nameof(AppointmentStatus.Booked), wrapper!.Data!.Status);
     }
@@ -111,7 +111,7 @@ public class MobileBookingRouteResolutionTest(ServiceHostFixture<BookingAnchor> 
             BookingRouteBuilder.CreateNote(Appointment),
             _tokens.CreateToken(Provider, TokenFactory.ProviderRole),
             BookingRouteBuilder.BuildNotePayload("first draft")));
-        // F-019-T06: DataResponse<T> envelope -- the identifier moved from the root to .data.
+        // DataResponse<T> envelope -- the identifier moved from the root to .data.
         var note = (await created.Content.ReadFromJsonAsync<DataResponse<NoteEntity>>(HarnessJson.Options))!.Data;
 
         var route = BookingRouteBuilder.UpdateNote(note!.Id.ToString());
@@ -150,7 +150,7 @@ public class MobileBookingRouteResolutionTest(ServiceHostFixture<BookingAnchor> 
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        // F-019-T11 (AC8): live confirmation of the DataResponse<T> envelope, not just the status code.
+        // Live confirmation of the DataResponse<T> envelope, not just the status code.
         var wrapper = await response.Content.ReadFromJsonAsync<DataResponse<PaymentEntity>>(HarnessJson.Options);
         Assert.Equal(50m, wrapper!.Data!.Amount);
     }
@@ -180,7 +180,7 @@ public class MobileCalendarRouteResolutionTest(ServiceHostFixture<CalendarAnchor
         return service;
     }
 
-    // F-015-T07 deviation: this is also the real read path BookingApiService.GetTodayAppointmentsAsync /
+    // This is also the real read path BookingApiService.GetTodayAppointmentsAsync /
     // GetAppointmentAsync compose with — Booking itself has no GET route (see BookingRouteBuilder).
     [Fact]
     public async Task Appointments_Resolves()

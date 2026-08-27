@@ -47,7 +47,7 @@ internal static class AppHostWiring
 
         // Signing keys as secret parameters: Aspire prompts once, stores them in user secrets, and
         // masks them in the dashboard. This is what lets AC-1.1 hold in a shell with no exported
-        // environment variables, without committing an .env file (threat T-003). On publish, azd
+        // environment variables, without committing an .env file. On publish, azd
         // prompts for the same parameters and keeps them in Key Vault.
         var jwtPublicKey = builder.AddParameter("jwt-public-key", secret: true);
         var jwtPrivateKey = builder.AddParameter("jwt-private-key", secret: true);
@@ -72,7 +72,7 @@ internal static class AppHostWiring
             // run. From the second run on, the container's credentials no longer match the ones in
             // the volume, the mongodb health check never reaches Healthy, and every service gated
             // by WaitFor(mongo) sits in Waiting forever with nothing logged (ISSUE-001). A declared
-            // secret parameter is stable across runs and stays masked in the dashboard (T-003).
+            // secret parameter is stable across runs and stays masked in the dashboard.
             var mongoPassword = builder.AddParameter("mongodb-password", secret: true);
 
             var mongo = builder.AddMongoDB("mongodb", password: mongoPassword)
@@ -109,7 +109,7 @@ internal static class AppHostWiring
 
         // spendsBcrypt: Identity's login and register are the only routes in the system that hash a
         // password — 262 ms of CPU each, measured — so it is the only service the per-IP limiter applies
-        // to (threat T-101, ARCHITECTURE.md D-4).
+        // to (ARCHITECTURE.md D-4).
         var identity = AddApi<Projects.AgendaBuddy_Identity>("identity", identityDb, needsPrivateKey: true, spendsBcrypt: true);
         var booking = AddApi<Projects.AgendaBuddy_Booking_Api>("booking", agendaDb, needsKafka: true);
         var customer = AddApi<Projects.AgendaBuddy_Customer_Api>("customer", agendaDb, needsKafka: true);
@@ -118,17 +118,16 @@ internal static class AppHostWiring
         var services = AddApi<Projects.AgendaBuddy_Services_Api>("services", agendaDb);
         var profession = AddApi<Projects.AgendaBuddy_Profession_Api>("profession", agendaDb);
 
-        // F-015-T05: the eighth resource. launchProfileName: null for the same reason as the seven
+        // The eighth resource. launchProfileName: null for the same reason as the seven
         // services (AC-1.4) — Gateway has no appsettings.json/launchSettings.json of its own yet, but
         // the AppHost must still assign its port rather than adopt one.
         //
         // WithReference injects services__<name>__http__0 for each destination — the service-discovery
-        // keys F-015-T03's routing config reads to resolve where to forward a request (confirmed stable
-        // across a destination's restart by F-015-T02's spike — Aspire's DCP orchestrator fronts every
-        // WithReference-injected address with its own stable local proxy port, so it never goes stale).
-        // WaitFor on all seven means the gateway only reports healthy once every destination it could
-        // route to is also healthy, mirroring how every service above waits on mongodb/kafka before it
-        // is considered up.
+        // keys the routing config reads to resolve where to forward a request (Aspire's DCP orchestrator
+        // fronts every WithReference-injected address with its own stable local proxy port, so it never
+        // goes stale across a destination's restart). WaitFor on all seven means the gateway only reports
+        // healthy once every destination it could route to is also healthy, mirroring how every service
+        // above waits on mongodb/kafka before it is considered up.
         var gateway = builder.AddProject<Projects.AgendaBuddy_Gateway>("gateway", launchProfileName: null);
 
         foreach (var service in new[] { booking, calendar, customer, provider, services, profession, identity })
@@ -162,7 +161,7 @@ internal static class AppHostWiring
                 .WithEnvironment("ConnectionStrings__mongodb", database)
                 .WithEnvironment("JWT_PUBLIC_KEY", jwtPublicKey);
 
-            // F-021's two configuration-gated controls. Gating them on configuration rather than on
+            // Two configuration-gated controls. Gating them on configuration rather than on
             // IsProduction() is not a preference: services run as PRODUCTION under this AppHost, because
             // AddProject is called with launchProfileName: null while launchSettings.json sets
             // DOTNET_ENVIRONMENT=Development for the AppHost process alone. An environment-gated HSTS
@@ -179,7 +178,7 @@ internal static class AppHostWiring
             }
             else
             {
-                // Threat T-103: the cloud graph turns them ON here, so shipping without them takes an
+                // The cloud graph turns them ON here, so shipping without them takes an
                 // edit to this file rather than an omission somewhere else. HSTS everywhere; the limiter
                 // only where BCrypt is spent.
                 service.WithEnvironment("Security__Hsts__Enabled", "true");

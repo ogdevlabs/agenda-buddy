@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 namespace AgendaBuddy.IntegrationTests.Harness;
 
 /// <summary>
-/// F-015-T01: proves the eighth process — Gateway — starts, reports healthy, and exports telemetry the
+/// Proves the eighth process — Gateway — starts, reports healthy, and exports telemetry the
 /// same way the other seven services do.
 /// </summary>
 /// <remarks>
@@ -21,9 +21,9 @@ namespace AgendaBuddy.IntegrationTests.Harness;
 /// skips the parts of the harness that presuppose a dependency Gateway does not have.
 /// </para>
 /// <para>
-/// No YARP, no routing — F-015-T03 adds <c>app.MapReverseProxy()</c>. This is the scaffold's own
-/// verification, not an AC-driven test: F-015-T01 has no PRD acceptance criterion of its own (infra
-/// tasks legitimately have none, per the Plan's Readiness Assessment).
+/// No YARP, no routing yet — that comes with <c>app.MapReverseProxy()</c>. This is the scaffold's own
+/// verification, not an AC-driven test: infra tasks legitimately have no PRD acceptance criterion of
+/// their own (per the Plan's Readiness Assessment).
 /// </para>
 /// </remarks>
 public class GatewayHostTest : IDisposable

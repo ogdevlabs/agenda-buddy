@@ -11,7 +11,7 @@ namespace AgendaBuddy.Library.Diagnostics;
 /// </summary>
 /// <remarks>
 /// Results are cached for <see cref="CacheWindow"/>. <c>/health</c> is anonymous, so without a
-/// throttle any caller could drive one database round-trip per request (threat T-002). The
+/// throttle any caller could drive one database round-trip per request. The
 /// double-checked semaphore mirrors the existing <c>CacheAside</c> pattern in this codebase.
 /// Register as a singleton — a per-request instance caches nothing.
 /// </remarks>

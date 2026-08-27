@@ -5,7 +5,7 @@ namespace AgendaBuddy.Library.Entities;
 /// </summary>
 /// <remarks>
 /// <para>
-/// ⚠️ <b><c>EstimatedRevenue</c> was removed by F-014</b> (requirement 18, ADR D-7). The figure was
+/// ⚠️ <b><c>EstimatedRevenue</c> was removed</b> (ADR D-7). The figure was
 /// <c>completed.Count × sum(all active service fees)</c> — completed appointments multiplied by the *whole
 /// catalogue total* — which is not revenue under any definition. A provider offering three services at 50, 80
 /// and 100 with two completed appointments was reported as having earned 460.
@@ -18,8 +18,8 @@ namespace AgendaBuddy.Library.Entities;
 /// <para>
 /// So the report says so. <see cref="RevenueAvailable"/> is a <c>bool</c> rather than a nullable number
 /// precisely so a client cannot render <c>null</c> as <c>0</c> — a dashboard reading £0 looks like a business
-/// fact, and this one would have been a bug. Publishing a number this system knows to be wrong is the same
-/// defect class F-014 exists to end: something marked delivered that does not do what its name says.
+/// fact, and this one would have been a bug. Publishing a number this system knows to be wrong is the exact
+/// defect this class exists to avoid: something marked delivered that does not do what its name says.
 /// </para>
 /// </remarks>
 public class ProviderReport

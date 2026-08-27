@@ -44,7 +44,7 @@ public partial class DashboardViewModel : ObservableObject
 
     public bool IsEmpty => !IsLoading && Appointments.Count == 0 && !HasError;
 
-    // F-014's provider report route (never surfaced in the client before F-015-T11) is provider-only.
+    // The provider report route is provider-only.
     public bool IsProvider => _session.IsProvider;
 
     public event EventHandler? AppointmentsLoaded;
@@ -89,7 +89,7 @@ public partial class DashboardViewModel : ObservableObject
         catch (Exception)
         {
             // Real failure (network, timeout, malformed response, ambiguous write, etc.) — surface it
-            // through the error banner rather than masking it with fabricated data (F-015-T08, AC8).
+            // through the error banner rather than masking it with fabricated data.
             ErrorMessage = "Could not load appointments. Check your connection and try again.";
         }
         finally

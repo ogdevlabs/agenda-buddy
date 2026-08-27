@@ -31,9 +31,8 @@ public static class ServiceCollectionExtensions
                 serviceProvider.GetRequiredService<IMongoClient>().GetDatabase(databaseName),
                 customersCollection));
 
-        // F-014: messages and notifications. Both entities were written by F-006 and F-007 and have NEVER
-        // been persisted, because nothing registered a repository for them. MongoDB creates each collection
-        // on first write, so there is no migration.
+        // Messages and notifications entities have NEVER been persisted, because nothing registered a
+        // repository for them. MongoDB creates each collection on first write, so there is no migration.
         var messagesCollection = MongoConnectionResolver.ResolveSetting(configuration, "MessagesCollection", "messages");
         var notificationsCollection = MongoConnectionResolver.ResolveSetting(configuration, "NotificationsCollection", "notifications");
 
@@ -50,12 +49,11 @@ public static class ServiceCollectionExtensions
         serviceCollection.AddScoped<ProviderService>();
         serviceCollection.AddScoped<CustomerService>();
 
-        // F-020-T12: AddCustomerCommandHandler/UpdateCustomerCommandHandler/GetCustomersQueryHandler/
+        // AddCustomerCommandHandler/UpdateCustomerCommandHandler/GetCustomersQueryHandler/
         // GetCustomerByEmailQueryHandler are typed against ICustomerService, not the concrete class --
         // forwarding to the already-scoped concrete instance, not a second
         // AddScoped<ICustomerService, CustomerService>, so a request that resolves both the concrete class
-        // and the interface in the same scope gets the same object, not two (the DI-forwarding gap every
-        // prior F-020 migration's Party Review caught -- done proactively here).
+        // and the interface in the same scope gets the same object, not two.
         serviceCollection.AddScoped<ICustomerService>(sp => sp.GetRequiredService<CustomerService>());
 
         serviceCollection.AddScoped<IMessageService, MessageService>();

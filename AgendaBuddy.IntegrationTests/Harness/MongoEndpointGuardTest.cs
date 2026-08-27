@@ -1,7 +1,7 @@
 namespace AgendaBuddy.IntegrationTests.Harness;
 
 /// <summary>
-/// Pins the fail-closed guard — F-016 AC-5 and AC-20 (`[security]`, threat <b>T-002</b>, CRITICAL).
+/// Pins the fail-closed guard.
 /// </summary>
 /// <remarks>
 /// <para>

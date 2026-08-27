@@ -10,7 +10,7 @@ using MongoDB.Driver;
 namespace AgendaBuddy.IntegrationTests.Harness;
 
 /// <summary>
-/// F-014 AC-4, AC-5, AC-8 … AC-10, AC-18 / threat T-207: a provider reads their own report and deactivates
+/// A provider reads their own report and deactivates
 /// themselves, and nobody else can do either.
 /// </summary>
 [Collection(HarnessCollection.Name)]
@@ -97,7 +97,7 @@ public class ReportAndDeactivationTest(ServiceHostFixture<ProviderAnchor> host, 
 
         Assert.Equal(4, report!.TotalBookings);
 
-        // ⚠️ These two numbers were STRUCTURALLY ZERO before F-014: nothing in production ever set a status
+        // ⚠️ These two numbers were STRUCTURALLY ZERO before this fix: nothing in production ever set a status
         // other than Requested, because Book()/Complete() were never called and the update path copied whatever
         // the client sent. Wiring reporting without fixing that would have shipped a dashboard permanently
         // reporting no completed work — which is worse than an unreachable endpoint, because it looks like a
@@ -173,7 +173,7 @@ public class ReportAndDeactivationTest(ServiceHostFixture<ProviderAnchor> host, 
         // write rather than merely moving it (requirement 20).
         Assert.Equal(4, stored.AppointmentEntities.Count);
 
-        // The command handler had never been dispatched by anything before F-014, so this is the first time its
+        // The command handler had never been dispatched by anything before this route existed, so this is the first time its
         // audit event has ever been written. Read back from the events collection, which no unit test can do.
         var events = await service.Database.GetCollection<Event>("events")
             .Find(Builders<Event>.Filter.Eq(e => e.Type, "DeactivateProviderCommand")).ToListAsync();

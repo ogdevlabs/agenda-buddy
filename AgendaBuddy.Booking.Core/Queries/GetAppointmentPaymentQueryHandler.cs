@@ -1,7 +1,7 @@
 namespace AgendaBuddy.Booking.Core.Queries;
 
-// F-019-T05 / CONSTITUTION §3. See GetAppointmentNotesQueryHandler's remarks on the audit gap this
-// refactor exposed.
+// CONSTITUTION §3. See GetAppointmentNotesQueryHandler's remarks on the audit gap this
+// handler shape exposed.
 public class GetAppointmentPaymentQueryHandler(IPaymentService payments, IEventStore eventStore)
     : IRequestHandler<GetAppointmentPaymentQuery, Result<PaymentEntity>>
 {

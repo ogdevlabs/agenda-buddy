@@ -9,7 +9,7 @@ using Xunit;
 namespace AgendaBuddy.Library.Tests.Services;
 
 /// <summary>
-/// F-014 AC-19 / requirement 20: the writes this feature adds are targeted updates, not whole-document
+/// AC-19: the writes this feature adds are targeted updates, not whole-document
 /// replacements.
 /// </summary>
 /// <remarks>
@@ -22,8 +22,8 @@ namespace AgendaBuddy.Library.Tests.Services;
 /// </para>
 /// <para>
 /// These tests assert the <b>shape</b> of each write rather than its effect, because the effect is identical
-/// under no concurrency and the shape is the whole point. F-021 established the same discipline for its
-/// counter (AC-11), and the primitive they all use arrived with it (ADR-032).
+/// under no concurrency and the shape is the whole point. The same discipline applies to the login-attempt
+/// counter (AC-11), and the primitive they all use is backed by ADR-032.
 /// </para>
 /// </remarks>
 public class TargetedWriteShapeTest

@@ -11,7 +11,7 @@ using MongoDB.Driver;
 namespace AgendaBuddy.IntegrationTests.Audit;
 
 /// <summary>
-/// F-018-T13 / AC-7. <c>UpdateProviderCommandHandler</c> (success) and <c>AddProviderCommandHandler</c>
+/// AC-7. <c>UpdateProviderCommandHandler</c> (success) and <c>AddProviderCommandHandler</c>
 /// (failure) both write an audit event through <see cref="IEventStore"/>.
 /// </summary>
 /// <remarks>

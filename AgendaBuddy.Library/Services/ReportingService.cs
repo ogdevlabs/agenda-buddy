@@ -16,13 +16,11 @@ public class ReportingService(IRepository<ProviderEntity> providerRepository) : 
     /// </summary>
     /// <remarks>
     /// <para>
-    /// ⚠️ <b>Every number here was structurally zero until F-014.</b> The counts come from
-    /// <see cref="AppointmentStatus"/>, and nothing in production ever set anything other than
-    /// <c>Requested</c>: <c>Book()</c> and <c>Complete()</c> were never called, and the update path copied
-    /// whatever status a client happened to send. Wiring this service without fixing that would have shipped a
-    /// dashboard reporting 0 completed appointments and 0 revenue forever — worse than leaving it unwired,
-    /// because an unreachable endpoint is obviously broken while a dashboard reading zero looks like a fact.
-    /// F-014 made status server-owned (threat T-203), which is what makes these counts mean anything.
+    /// ⚠️ <b>These counts depend on status being server-owned.</b> The counts come from
+    /// <see cref="AppointmentStatus"/>; if <c>Book()</c> and <c>Complete()</c> are never called and the
+    /// update path lets a client set status directly, nothing but <c>Requested</c> is ever set, and this
+    /// dashboard would report 0 completed appointments and 0 revenue forever — worse than an unreachable
+    /// endpoint, because a dashboard reading zero looks like a fact rather than a bug.
     /// </para>
     /// <para>
     /// <b>Revenue is deliberately not computed.</b> See <see cref="ProviderReport"/> for the full reasoning:
@@ -31,7 +29,7 @@ public class ReportingService(IRepository<ProviderEntity> providerRepository) : 
     /// </para>
     /// <para>
     /// Counts read the <b>embedded</b> appointment list on the provider document, not the `appointments`
-    /// collection. That is why F-014's status change writes both copies: updating only the collection would
+    /// collection — the status-change write updates both copies, since updating only the collection would
     /// leave this report showing the old status indefinitely.
     /// </para>
     /// </remarks>
@@ -66,8 +64,7 @@ public class ReportingService(IRepository<ProviderEntity> providerRepository) : 
 
             // Whatever is left once the three live states are accounted for. Cancellation currently
             // hard-deletes rather than setting AppointmentStatus.Cancelled, so in practice this is 0 — it is
-            // computed rather than hardcoded so it starts working if F-024 ever makes cancellation a soft
-            // delete.
+            // computed rather than hardcoded so it starts working if cancellation ever becomes a soft delete.
             CancelledAppointments = appointments.Count - completed - booked - requested,
 
             UniqueCustomers = customerEmails.Count,

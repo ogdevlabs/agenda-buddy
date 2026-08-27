@@ -9,10 +9,9 @@ using MongoDB.Bson;
 namespace AgendaBuddy.IntegrationTests.Persistence;
 
 /// <summary>
-/// F-018-T12 / AC-6. Calendar is read-only (two GETs, <c>Calendar/Program.cs:113,141</c>), so tier 2 is
-/// satisfied by SEEDING a <see cref="ProviderEntity"/> directly into the collection the service itself
-/// resolves (<see cref="ConfiguredCollection"/>) and then reading it back through both real routes —
-/// exactly the shape the task prescribes.
+/// Calendar is read-only (two GETs, <c>Calendar/Program.cs:113,141</c>), so this test
+/// SEEDS a <see cref="ProviderEntity"/> directly into the collection the service itself
+/// resolves (<see cref="ConfiguredCollection"/>) and then reads it back through both real routes.
 /// </summary>
 /// <remarks>
 /// <c>CheckCalendarAppointmentsQueryHandler</c> returns <c>providerEntity.AppointmentEntities</c> —
@@ -77,8 +76,8 @@ public class CalendarPersistenceTest(ServiceHostFixture<CalendarAnchor> host, Cr
         // own remarks), so its "id" field is the unusable {timestamp,machine,...} shape client-side
         // deserialisation cannot parse. None of the fields this test cares about are "id".
         //
-        // F-020-T08: the response is now wrapped in DataResponse<T> (ADR-049, following Booking's
-        // precedent) -- the array moved from the response root to a "data" property.
+        // The response is wrapped in DataResponse<T> (ADR-049) -- the array is under a
+        // "data" property, not the response root.
         using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
         var stored = Assert.Single(body.RootElement.GetProperty("data").EnumerateArray());
 
@@ -112,7 +111,7 @@ public class CalendarPersistenceTest(ServiceHostFixture<CalendarAnchor> host, Cr
         var response = await service.Client.SendAsync(Read($"api/v1/calendar/availability/{Owner}"));
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        // F-020-T08: wrapped in DataResponse<T> -- see the remarks above the appointments assertion.
+        // Wrapped in DataResponse<T> -- see the remarks above the appointments assertion.
         using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
         var slots = body.RootElement.GetProperty("data").EnumerateArray().ToList();
         Assert.NotEmpty(slots);

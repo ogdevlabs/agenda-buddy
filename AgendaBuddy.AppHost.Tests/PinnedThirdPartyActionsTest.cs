@@ -4,7 +4,7 @@ using Xunit;
 namespace AgendaBuddy.AppHost.Tests;
 
 /// <summary>
-/// [security] (T-001, docs/pdlc/design/container-and-cd-hardening/threat-model.md) — unpinned
+/// [security] (see docs/pdlc/design/container-and-cd-hardening/threat-model.md) — unpinned
 /// third-party GitHub Actions allow a supply-chain substitution attack if a mutable tag/branch is
 /// later re-pointed to malicious code. Structural, file-content-based; no live CI run needed.
 /// </summary>

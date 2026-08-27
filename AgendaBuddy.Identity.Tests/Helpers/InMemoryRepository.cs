@@ -30,7 +30,7 @@ public class InMemoryCredentialRepository : IRepository<CredentialEntity>
         if (idx < 0) return Task.FromResult(false);
         _store[idx] = entity;
         // Counted, not forbidden: this is a whole-document replacement (MongoDbRepository issues
-        // ReplaceOneAsync), and F-021 AC-11 asserts that no credential write takes this path.
+        // ReplaceOneAsync), and AC-11 asserts that no credential write takes this path.
         WholeDocumentReplacements++;
         return Task.FromResult(true);
     }
@@ -66,7 +66,7 @@ public class InMemoryCredentialRepository : IRepository<CredentialEntity>
         Task.FromResult<IEnumerable<CredentialEntity>>(_store.Where(e =>
             MatchesFilter(e, filter)).ToList());
 
-    // ADR-023's repository half (F-016-T10). Negatives are normalised to zero to match
+    // ADR-023's repository half. Negatives are normalised to zero to match
     // MongoDbRepository, where Skip(-1) throws rather than being the no-op LINQ makes it.
     public Task<(IEnumerable<CredentialEntity> Items, long TotalCount)> GetPagedAsync(int skip, int take) =>
         Task.FromResult<(IEnumerable<CredentialEntity>, long)>((
@@ -79,7 +79,7 @@ public class InMemoryCredentialRepository : IRepository<CredentialEntity>
     /// </summary>
     /// <remarks>
     /// <para>
-    /// F-021 PRD requirement 4 / AC-2. Before this existed, "a fault between the read and the write of a
+    /// AC-2. Before this existed, "a fault between the read and the write of a
     /// rotation" was <b>unexpressible</b> as a test (<c>11-testing.md:65</c>) — which is precisely how a
     /// delete-then-insert survived in <c>RefreshAsync</c> with 20 passing tests around it. The hook fires
     /// after the filter has matched and before any mutation, which is the window the old code left open.
@@ -94,19 +94,19 @@ public class InMemoryCredentialRepository : IRepository<CredentialEntity>
 
     /// <summary>
     /// Every update document this repository has applied, in order — so a test can assert on the
-    /// <i>shape</i> of a write and not merely its effect (F-021 AC-11).
+    /// <i>shape</i> of a write and not merely its effect (AC-11).
     /// </summary>
     public List<BsonDocument> AppliedUpdates { get; } = [];
 
     /// <summary>
-    /// How many times a whole document was replaced. F-021's writes must never replace a credential
+    /// How many times a whole document was replaced. Credential writes must never replace a
     /// document, so the assertion is that this stays at zero.
     /// </summary>
     public int WholeDocumentReplacements { get; private set; }
 
     /// <inheritdoc />
     /// <remarks>
-    /// A deliberately narrow evaluator: it supports exactly the operators F-021 uses and
+    /// A deliberately narrow evaluator: it supports exactly the operators this repository's callers use and
     /// <b>throws on anything else</b>. A test double that silently ignored an unsupported operator
     /// would report green for a filter MongoDB would have evaluated differently, which is worse than
     /// having no double at all.
@@ -214,13 +214,13 @@ public class InMemoryCredentialRepository : IRepository<CredentialEntity>
             throw new NotSupportedException($"$inc on unmapped field '{field}'.");
 
         // $inc on a missing field creates it at the increment value — the C# default of 0 gives the
-        // same answer, which is why F-021 needs no migration (data-model.md §7).
+        // same answer, which is why no migration is needed (data-model.md §7).
         entity.FailedAttempts += by;
     }
 
     /// <summary>
     /// Filter evaluation that refuses what it does not understand, unlike
-    /// <see cref="MatchesFilter"/> which predates F-021 and ignores unknown fields.
+    /// <see cref="MatchesFilter"/>, which ignores unknown fields.
     /// </summary>
     private static bool MatchesStrictFilter(CredentialEntity e, BsonDocument filter)
     {

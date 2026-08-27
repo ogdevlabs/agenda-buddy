@@ -6,7 +6,7 @@ using System.Text.Json;
 namespace AgendaBuddy.IntegrationTests.Harness;
 
 /// <summary>
-/// F-016 AC-14, for the five local <c>ForbiddenException</c> catch sites <c>LocalCatchUnaffectedTest</c> does
+/// For the five local <c>ForbiddenException</c> catch sites <c>LocalCatchUnaffectedTest</c> does
 /// not reach — closes review finding <b>I-3</b>.
 /// </summary>
 /// <remarks>
@@ -114,7 +114,7 @@ public class RemainingLocalCatchSitesTest :
 
         Assert.Equal(403, problem.RootElement.GetProperty("status").GetInt32());
 
-        // The T-004 guarantee holds on these paths too — inherited, not implemented.
+        // The exception-message-suppression guarantee holds on these paths too — inherited, not implemented.
         Assert.DoesNotContain("ForbiddenException", body, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("   at ", body, StringComparison.Ordinal);
     }

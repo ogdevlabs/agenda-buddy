@@ -5,21 +5,20 @@ using MongoDB.Bson;
 namespace AgendaBuddy.IntegrationTests.Harness;
 
 /// <summary>
-/// F-016 AC-4: a real service, a real route, a real HTTP request, a real MongoDB Testcontainer.
+/// A real service, a real route, a real HTTP request, a real MongoDB Testcontainer.
 /// </summary>
 /// <remarks>
 /// <para>
 /// This is the first test in the solution to execute a route table. `11-testing.md:148` records the
 /// gap it closes: <i>"Program.cs is not coverable… there is no integration test in the solution. Every
 /// endpoint's auth attribute, validation call, ownership guard, and status-code mapping is unverified
-/// end-to-end."</i> That gap is why the Calendar IDOR could exist unnoticed, and why F-016 carries the
-/// harness rather than assuming one.
+/// end-to-end."</i> That gap is why the Calendar IDOR could exist unnoticed, and why the
+/// harness exists rather than being assumed.
 /// </para>
 /// <para>
 /// <b>Profession, and anonymously, on purpose.</b> AC-18 requires the two profession read routes to
-/// stay anonymous, so this proves AC-4 with no <c>Authorization</c> header at all. That keeps this task
-/// independent of <c>F-016-T05</c>'s tokens — reaching for an authenticated route instead would give
-/// T06 a hidden dependency on T05 and collapse wave 4 to sequential (wave-4 standup, finding B-1).
+/// stay anonymous, so this proves the route with no <c>Authorization</c> header at all — reaching for
+/// an authenticated route instead would introduce a needless dependency on token creation.
 /// </para>
 /// </remarks>
 [Collection(HarnessCollection.Name)]

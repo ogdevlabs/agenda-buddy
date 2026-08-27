@@ -1,6 +1,6 @@
 namespace AgendaBuddy.Booking.Core.Commands;
 
-// Same T-202 propagation as UpdateAppointmentNoteCommandHandler, and the same F-019-T05 /
+// Same exception-to-403 propagation as UpdateAppointmentNoteCommandHandler, and the same
 // CONSTITUTION §3 audit-gap fix.
 public class DeleteAppointmentNoteCommandHandler(INoteService notes, IEventStore eventStore)
     : IRequestHandler<DeleteAppointmentNoteCommand, Result>

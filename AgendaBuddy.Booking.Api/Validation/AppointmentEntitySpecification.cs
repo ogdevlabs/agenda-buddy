@@ -1,7 +1,7 @@
 namespace AgendaBuddy.Booking.Validation;
 
 /// <summary>
-/// F-019-T02 Validot spike. Mirrors exactly what <c>MiniValidator.TryValidate</c> enforces today for
+/// Mirrors exactly what <c>MiniValidator.TryValidate</c> enforces today for
 /// <see cref="AppointmentEntity"/> at <c>POST /appointments</c>: only <c>[EmailAddress]</c> on
 /// <see cref="AppointmentEntity.EmailProvider"/> and <see cref="AppointmentEntity.EmailCustomer"/>
 /// (<c>Library/Entities/AppointmentEntity.cs:26-32</c>). There is no <c>[Required]</c> on the class

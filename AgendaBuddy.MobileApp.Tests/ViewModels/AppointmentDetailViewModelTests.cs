@@ -127,7 +127,7 @@ public class AppointmentDetailViewModelTests
     }
 
     // ---------------------------------------------------------------------------
-    // T-003: API returns 400 → service returns null → ErrorMessage set, no crash
+    // API returns 400 → service returns null → ErrorMessage set, no crash
     // ---------------------------------------------------------------------------
 
     [Fact]

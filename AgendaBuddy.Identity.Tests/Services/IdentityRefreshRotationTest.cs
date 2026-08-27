@@ -10,7 +10,7 @@ using Xunit;
 namespace AgendaBuddy.Identity.Tests.Services;
 
 /// <summary>
-/// F-021 AC-1 … AC-4: rotating a refresh token must never be able to destroy the account.
+/// AC-1 … AC-4: rotating a refresh token must never be able to destroy the account.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -119,7 +119,7 @@ public class IdentityRefreshRotationTest : IDisposable
     [Fact]
     public async Task T104_Rotation_OnALockedAccount_IsRefused()
     {
-        // Threat T-104 / AC-4: locking stops new passwords being tried, but an attacker already
+        // AC-4: locking stops new passwords being tried, but an attacker already
         // holding a refresh token would keep minting access tokens for the 24 hours it lives unless
         // the lock is part of the rotation filter.
         var registered = await _svc.RegisterAsync(Email, Password, "Provider");

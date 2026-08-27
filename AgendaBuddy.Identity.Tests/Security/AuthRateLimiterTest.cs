@@ -15,7 +15,7 @@ namespace AgendaBuddy.Identity.Tests.Security;
 /// <remarks>
 /// <b>These are not the test that matters.</b> A unit test on a policy object passes happily while the
 /// middleware is unregistered or the policy is attached to no endpoint — which is exactly the shape of
-/// F-016's original defect, where <c>AssertRole</c> existed in the codebase and was never called. AC-6
+/// a past defect where <c>AssertRole</c> existed in the codebase and was never called. AC-6
 /// is therefore asserted against a <b>running service</b> in
 /// <c>AgendaBuddy.IntegrationTests/Harness/AuthRateLimitTest.cs</c>. What is worth pinning here is the
 /// rejection contract (429 rather than the framework's default 503) and the partition-key fallback, both
@@ -63,7 +63,7 @@ public class AuthRateLimiterTest
     public void RequestsWithNoAddress_ShareOneBucketRatherThanBypassingTheLimit()
     {
         // TestServer leaves RemoteIpAddress null, and so does a real deployment behind a proxy that does
-        // not forward the client address — which F-017 will have to fix with UseForwardedHeaders. Until
+        // not forward the client address — which needs UseForwardedHeaders to fix. Until
         // then, one shared bucket is the only honest option: a CPU-exhaustion control that fails open
         // when it cannot attribute a request is not a control.
         Assert.Equal(

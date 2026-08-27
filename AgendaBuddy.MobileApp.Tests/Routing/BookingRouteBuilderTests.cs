@@ -7,7 +7,7 @@ namespace AgendaBuddy.MobileApp.Tests.Routing;
 
 public class BookingRouteBuilderTests
 {
-    // F-015-T07 AC7: the legacy PUT booking/{id} call is replaced by F-014's dedicated status route.
+    // The legacy PUT booking/{id} call is replaced by a dedicated status route.
     [Fact]
     public void UpdateAppointmentStatus_BuildsPostToStatusRoute()
     {
@@ -28,7 +28,6 @@ public class BookingRouteBuilderTests
         Assert.Equal("""{"status":"Completed"}""", json);
     }
 
-    // F-015-T07: new — F-014's session notes routes, never called by the client before this task.
     [Fact]
     public void GetNotes_BuildsGetByIdentifier()
     {
@@ -67,7 +66,6 @@ public class BookingRouteBuilderTests
         Assert.Equal("api/v1/booking/notes/64f0c2f1a1b2c3d4e5f6a7b8", route.Path);
     }
 
-    // F-015-T07: new — F-014's payment routes, never called by the client before this task.
     [Fact]
     public void GetPayment_BuildsGetByIdentifier()
     {

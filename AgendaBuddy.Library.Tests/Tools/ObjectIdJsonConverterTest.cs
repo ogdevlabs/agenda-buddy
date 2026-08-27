@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Common.Tests.Tools;
 
-// F-019-T01. Booking/Program.cs:33-34 is the entire production JSON configuration for Booking —
+// Booking/Program.cs:33-34 is the entire production JSON configuration for Booking —
 // `ConfigureHttpJsonOptions(options => options.SerializerOptions.Converters.Add(new ObjectIdJsonConverter()))`
 // and nothing else. These tests build JsonSerializerOptions the same way, so there is no other converter,
 // naming policy, or setting production applies that this test could silently diverge from. If Booking's

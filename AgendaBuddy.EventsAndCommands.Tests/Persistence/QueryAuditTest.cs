@@ -4,8 +4,7 @@ using AgendaBuddy.EventAndCommands.Persistence;
 namespace AgendaBuddy.EventsAndCommands.Tests.Persistence;
 
 /// <summary>
-/// Pins <see cref="QueryAudit"/> — F-016-T18, requirement 16, AC-17, and the payload half of AC-24
-/// (threat <b>T-005</b>).
+/// Pins <see cref="QueryAudit"/> — requirement 16, AC-17, and the payload half of AC-24.
 /// </summary>
 /// <remarks>
 /// <para>

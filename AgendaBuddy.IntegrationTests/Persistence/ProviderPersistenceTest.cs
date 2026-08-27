@@ -10,7 +10,7 @@ using MongoDB.Driver;
 namespace AgendaBuddy.IntegrationTests.Persistence;
 
 /// <summary>
-/// F-018-T12 / AC-6. <c>PUT /api/v1/providers/{email}</c> followed by <c>GET /api/v1/providers/{email}</c>
+/// <c>PUT /api/v1/providers/{email}</c> followed by <c>GET /api/v1/providers/{email}</c>
 /// (as the owner, so the full — not the projected — shape comes back) proves <see cref="ProviderEntity"/>'s
 /// <c>[BsonElement]</c> mapping round-trips, including its embedded <see cref="ServiceEntity"/> list.
 /// </summary>
@@ -73,12 +73,11 @@ public class ProviderPersistenceTest(ServiceHostFixture<ProviderAnchor> host, Cr
         var getResponse = await service.Client.SendAsync(getRequest);
         Assert.Equal(HttpStatusCode.OK, getResponse.StatusCode);
 
-        // F-020-T11: the response is now wrapped in DataResponse<T> (ADR-049, following Booking's/
-        // Calendar's/Profession's/Services' precedent) -- the object moved from the response root to a
-        // "data" property. Parsed field-by-field rather than re-deserialised into ProviderEntity at
-        // "data": ObjectIdJsonConverter IS registered for Provider, so a typed deserialise would also
-        // work, but every sibling migration's persistence test parses field-by-field, and matching that
-        // shape keeps this test's own diff minimal and consistent with the others.
+        // The response is wrapped in DataResponse<T> (ADR-049) -- the object is under a
+        // "data" property, not the response root. Parsed field-by-field rather than re-deserialised into
+        // ProviderEntity at "data": ObjectIdJsonConverter IS registered for Provider, so a typed
+        // deserialise would also work, but matching the other persistence tests' shape keeps this
+        // test consistent with the others.
         using var body = JsonDocument.Parse(await getResponse.Content.ReadAsStringAsync());
         var read = body.RootElement.GetProperty("data");
 

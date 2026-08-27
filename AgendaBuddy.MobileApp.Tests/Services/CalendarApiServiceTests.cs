@@ -76,7 +76,7 @@ public class CalendarApiServiceTests
     }
 
     // ---------------------------------------------------------------------------
-    // GetAppointmentsAsync — F-015-T07: new. Also the real read path BookingApiService composes with.
+    // GetAppointmentsAsync — the real read path BookingApiService composes with this.
     // ---------------------------------------------------------------------------
 
     [Fact]

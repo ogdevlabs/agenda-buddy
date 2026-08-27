@@ -93,7 +93,7 @@ public class OwnershipGuardTest
             OwnershipGuard.AssertRole(principal, "Provider"));
     }
 
-    // ── F-016-T09 · threat T-001 (HIGH) · PRD AC-21 ──────────────────────────────────────────────
+    // ── PRD AC-21 (HIGH) ──────────────────────────────────────────────
     //
     // AssertOwner compared with string.Equals(sub, entityEmail, OrdinalIgnoreCase) and guarded NEITHER
     // side against null. string.Equals(null, null) is TRUE, so a caller with no `sub` claim, checked
@@ -107,10 +107,10 @@ public class OwnershipGuardTest
     // above does NOT cover: it passes a non-null "victim@example.com", so string.Equals(null, "victim")
     // is false and it throws for the wrong reason. It would have kept passing throughout.
     //
-    // Why this had to be fixed in F-016 rather than deferred to F-021 (ADR-028): T11's response
+    // Why this had to be fixed before the response projection could ship (ADR-028): the
     // projection selects owner-vs-non-owner with this exact primitive, and the null fall-through lands
     // on the OWNER branch -- returning the unprojected ProviderEntity with its full appointment book and
-    // subscribed-customer list. Building T11 first would have shipped the bypass.
+    // subscribed-customer list. Building the projection first would have shipped the bypass.
 
     [Fact]
     public void T001_AssertOwner_WhenNeitherSubNorEntityEmailIsKnown_Throws()

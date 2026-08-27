@@ -1,10 +1,8 @@
 namespace AgendaBuddy.Provider.Core.Commands;
 
-// F-020-T11: moved from AgendaBuddy.EventAndCommands.Commands.Provider, following Booking's/Calendar's/
-// Profession's/Services' precedent. The duplicate-name check and the Kafka topic creation both used to
-// live in Provider/Program.cs (deleted) -- moved here so AgendaBuddy.Provider.Api stays endpoint/DI
-// wiring only, per the architecture doc. IKafkaClient stays interface-typed, not the concrete
-// KafkaClient class (agenda-buddy-5og, F-018) -- confirmed unchanged by this move.
+// The duplicate-name check and the Kafka topic creation live here, not in AgendaBuddy.Provider.Api, so
+// the Api project stays endpoint/DI wiring only, per the architecture doc. IKafkaClient stays
+// interface-typed, not the concrete KafkaClient class.
 public class AddProviderCommandHandler(
     IMediator mediator,
     IKafkaClient kafkaClient,

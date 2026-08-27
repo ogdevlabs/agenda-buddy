@@ -8,7 +8,7 @@ using MongoDB.Driver;
 namespace AgendaBuddy.IntegrationTests.Harness;
 
 /// <summary>
-/// F-014 AC-1, AC-9, AC-10, AC-12 / threats T-201 and T-202: session notes are provider-private, and the
+/// Session notes are provider-private, and the
 /// existence of a note is not disclosed either.
 /// </summary>
 /// <remarks>
@@ -18,7 +18,7 @@ namespace AgendaBuddy.IntegrationTests.Harness;
 /// ownership of the appointment, and not-found made indistinguishable from not-yours.
 /// </para>
 /// <para>
-/// <b>Threat T-201 is F-016's defect, one layer along.</b> <c>NoteService.GetByAppointmentAsync</c> takes a
+/// <c>NoteService.GetByAppointmentAsync</c> takes a
 /// <c>providerEmail</c> parameter, so the obvious route passes a client-supplied value through — which would
 /// hand any authenticated caller every provider's notes for any appointment identifier they can guess, and
 /// customers already receive those identifiers in their own appointment responses. The provider email comes
@@ -79,8 +79,8 @@ public class SessionNotesTest(ServiceHostFixture<BookingAnchor> host, CryptoSess
     [InlineData("DELETE", "api/v1/booking/notes/000000000000000000000000")]
     public async Task AC8_EveryNotesRoute_RefusesAnAnonymousCaller(string method, string path)
     {
-        // Not a sample: all four notes routes. A forgotten RequireAuthorization() is invisible in review, and
-        // F-016 exists because five routes in this solution served PII to anonymous callers.
+        // Not a sample: all four notes routes. A forgotten RequireAuthorization() is invisible in review, which
+        // is exactly how five routes in this solution once served PII to anonymous callers.
         using var service = await StartWithTwoProvidersAppointmentsAsync();
 
         var response = await service.Client.SendAsync(new HttpRequestMessage(new HttpMethod(method), path)
@@ -106,8 +106,8 @@ public class SessionNotesTest(ServiceHostFixture<BookingAnchor> host, CryptoSess
             HttpMethod.Get, $"api/v1/booking/appointments/{OwnedAppointment}/notes",
             Owner, TokenFactory.ProviderRole));
 
-        // F-019-T06: the response is now wrapped in DataResponse<T> (ADR-049) -- the notes moved from
-        // the root to .data, but the assertions below are unchanged.
+        // The response is wrapped in DataResponse<T> (ADR-049) -- the notes are under
+        // .data, not the response root.
         var notesWrapper = await read.Content.ReadFromJsonAsync<DataResponse<List<NoteEntity>>>(HarnessJson.Options);
         var note = Assert.Single(notesWrapper!.Data!);
         Assert.Equal("Third session. Shoulder mobility improving.", note.Content);
@@ -116,8 +116,8 @@ public class SessionNotesTest(ServiceHostFixture<BookingAnchor> host, CryptoSess
         Assert.Equal(Owner, note.ProviderEmail);
         Assert.Equal(OwnedAppointment, note.AppointmentIdentifier);
 
-        // ⚠️ This is also the first time NoteEntity has ever been serialised to MongoDB: it was written by
-        // F-008 and never persisted, because nothing registered a repository for it. The read-back is the
+        // ⚠️ This is also the first time NoteEntity has ever been serialised to MongoDB: it was written and
+        // never persisted, because nothing registered a repository for it. The read-back is the
         // proof its BSON mapping works, which no unit test could give.
         Assert.NotEqual(ObjectId.Empty, note.Id);
     }
@@ -154,7 +154,7 @@ public class SessionNotesTest(ServiceHostFixture<BookingAnchor> host, CryptoSess
     public async Task AC10_ACustomerCannotTouchNotesAtAll()
     {
         // The customer the notes are ABOUT, on their own appointment. Notes are the provider's clinical record,
-        // not a shared document — and this is the only route family in F-014 where the subject of the data is
+        // not a shared document — and this is the only route family where the subject of the data is
         // deliberately not a reader.
         using var service = await StartWithTwoProvidersAppointmentsAsync();
 
@@ -216,7 +216,7 @@ public class SessionNotesTest(ServiceHostFixture<BookingAnchor> host, CryptoSess
         var created = await service.Client.SendAsync(Authorised(
             HttpMethod.Post, $"api/v1/booking/appointments/{OwnedAppointment}/notes",
             Owner, TokenFactory.ProviderRole, new { content = "first draft" }));
-        // F-019-T06: DataResponse<T> envelope -- same note as AC1's read-back above.
+        // DataResponse<T> envelope -- same note as AC1's read-back above.
         var note = (await created.Content.ReadFromJsonAsync<DataResponse<NoteEntity>>(HarnessJson.Options))!.Data;
 
         var edited = await service.Client.SendAsync(Authorised(

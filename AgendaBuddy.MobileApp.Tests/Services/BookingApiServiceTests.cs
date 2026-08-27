@@ -42,7 +42,7 @@ public class BookingApiServiceTests
     // ---------------------------------------------------------------------------
     // GetTodayAppointmentsAsync tests
     //
-    // F-015-T07: Booking has no GET route for appointments (see the deviation note on
+    // Booking has no GET route for appointments (see the deviation note on
     // AgendaBuddy.MobileApp.Routing.BookingRouteBuilder) — reads compose with ICalendarApiService instead.
     // ---------------------------------------------------------------------------
 
@@ -112,8 +112,8 @@ public class BookingApiServiceTests
     }
 
     // ---------------------------------------------------------------------------
-    // UpdateStatusAsync tests — F-015-T07 AC7: POST api/v1/booking/appointments/{id}/status,
-    // replacing the legacy PUT booking/{id} call F-014 now ignores entirely.
+    // UpdateStatusAsync tests — POST api/v1/booking/appointments/{id}/status,
+    // replacing the legacy PUT booking/{id} call, which is now ignored entirely.
     // ---------------------------------------------------------------------------
 
     [Fact]
@@ -136,7 +136,6 @@ public class BookingApiServiceTests
     [Fact]
     public async Task UpdateStatus_Returns400_ReturnsNull()
     {
-        // T-003: invalid status → API returns 400 → service returns null.
         var httpFactory = CreateFactory(HttpStatusCode.BadRequest);
         var sut = new BookingApiService(httpFactory, new Mock<ICalendarApiService>().Object);
 
@@ -146,7 +145,7 @@ public class BookingApiServiceTests
     }
 
     // ---------------------------------------------------------------------------
-    // F-014 session notes — new to the client (F-015-T07)
+    // Session notes
     // ---------------------------------------------------------------------------
 
     [Fact]
@@ -205,7 +204,7 @@ public class BookingApiServiceTests
     }
 
     // ---------------------------------------------------------------------------
-    // Payments — new to the client (F-015-T07)
+    // Payments
     // ---------------------------------------------------------------------------
 
     [Fact]

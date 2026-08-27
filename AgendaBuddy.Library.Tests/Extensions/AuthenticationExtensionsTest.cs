@@ -14,8 +14,8 @@ public class AuthenticationExtensionsTest
 {
     // A hardcoded public-key PEM constant used to live here. It was dead code — declared, never
     // referenced, and a malformed key besides — and it was the only committed PEM payload in this
-    // PUBLIC repository. Removed by F-016-T03 so AC-3 can be enforced literally rather than with a
-    // carve-out. Tests below generate their keys at runtime via GenerateTestRsaPublicKeyPem().
+    // PUBLIC repository. Removed so the "no PEM key material committed" rule holds literally rather
+    // than with a carve-out. Tests below generate their keys at runtime via GenerateTestRsaPublicKeyPem().
     [Fact]
     public void AddAgendaBuddyAuthentication_WhenJwtPublicKeyEnvVarAbsent_ThrowsApplicationException()
     {
