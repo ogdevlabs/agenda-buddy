@@ -15,8 +15,8 @@
       "AgendaBuddy.Calendar.Core\\AgendaBuddy.Calendar.Core.csproj",
       "AgendaBuddy.Calendar.Domain\\AgendaBuddy.Calendar.Domain.csproj",
       "AgendaBuddy.Calendar.Infrastructure\\AgendaBuddy.Calendar.Infrastructure.csproj",
-      "Calendar.Tests\\Calendar.Tests.csproj",
-      "Customer.Tests\\Customer.Tests.csproj",
+      "AgendaBuddy.Calendar.Tests\\AgendaBuddy.Calendar.Tests.csproj",
+      "AgendaBuddy.Customer.Tests\\AgendaBuddy.Customer.Tests.csproj",
       "AgendaBuddy.Customer.Api\\AgendaBuddy.Customer.Api.csproj",
       "AgendaBuddy.Customer.Core\\AgendaBuddy.Customer.Core.csproj",
       "AgendaBuddy.Customer.Domain\\AgendaBuddy.Customer.Domain.csproj",
@@ -31,12 +31,12 @@
       "AgendaBuddy.Library.ServerAuth\\AgendaBuddy.Library.ServerAuth.csproj",
       "AgendaBuddy.Library.Tests\\AgendaBuddy.Library.Tests.csproj",
       "AgendaBuddy.Library\\AgendaBuddy.Library.csproj",
-      "Profession.Tests\\Profession.Tests.csproj",
+      "AgendaBuddy.Profession.Tests\\AgendaBuddy.Profession.Tests.csproj",
       "AgendaBuddy.Profession.Api\\AgendaBuddy.Profession.Api.csproj",
       "AgendaBuddy.Profession.Core\\AgendaBuddy.Profession.Core.csproj",
       "AgendaBuddy.Profession.Domain\\AgendaBuddy.Profession.Domain.csproj",
       "AgendaBuddy.Profession.Infrastructure\\AgendaBuddy.Profession.Infrastructure.csproj",
-      "Provider.Tests\\Provider.Tests.csproj",
+      "AgendaBuddy.Provider.Tests\\AgendaBuddy.Provider.Tests.csproj",
       "AgendaBuddy.Provider.Api\\AgendaBuddy.Provider.Api.csproj",
       "AgendaBuddy.Provider.Core\\AgendaBuddy.Provider.Core.csproj",
       "AgendaBuddy.Provider.Domain\\AgendaBuddy.Provider.Domain.csproj",
@@ -45,7 +45,7 @@
       "AgendaBuddy.Services.Core\\AgendaBuddy.Services.Core.csproj",
       "AgendaBuddy.Services.Domain\\AgendaBuddy.Services.Domain.csproj",
       "AgendaBuddy.Services.Infrastructure\\AgendaBuddy.Services.Infrastructure.csproj",
-      "Services.Tests\\Services.Tests.csproj"
+      "AgendaBuddy.Services.Tests\\AgendaBuddy.Services.Tests.csproj"
     ]
   }
 }

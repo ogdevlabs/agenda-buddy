@@ -142,11 +142,11 @@ jobs:
               # The 12 backend test projects, named explicitly. AgendaBuddy.MobileApp.Tests is absent on
               # purpose — it is covered by the mobile-tests job and must not gate the backend.
               - 'AgendaBuddy.Booking.Tests/**'
-              - 'Calendar.Tests/**'
-              - 'Customer.Tests/**'
-              - 'Provider.Tests/**'
-              - 'Services.Tests/**'
-              - 'Profession.Tests/**'
+              - 'AgendaBuddy.Calendar.Tests/**'
+              - 'AgendaBuddy.Customer.Tests/**'
+              - 'AgendaBuddy.Provider.Tests/**'
+              - 'AgendaBuddy.Services.Tests/**'
+              - 'AgendaBuddy.Profession.Tests/**'
               - 'AgendaBuddy.Identity.Tests/**'
               - 'AgendaBuddy.Library.Tests/**'
               - 'AgendaBuddy.Kafka.Tests/**'
