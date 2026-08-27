@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Primitives;
 using Yarp.ReverseProxy.Configuration;
 
-namespace Gateway;
+namespace AgendaBuddy.Gateway;
 
 /// <summary>
 /// F-015-T02 spiked this against a single ("booking") destination; F-015-T03 expands it to the full

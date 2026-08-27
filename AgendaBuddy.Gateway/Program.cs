@@ -1,5 +1,5 @@
 using System.Diagnostics;
-using Gateway;
+using AgendaBuddy.Gateway;
 using Yarp.ReverseProxy.Configuration;
 using Yarp.ReverseProxy.Transforms;
 

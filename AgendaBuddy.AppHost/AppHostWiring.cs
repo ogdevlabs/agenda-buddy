@@ -129,7 +129,7 @@ internal static class AppHostWiring
         // WaitFor on all seven means the gateway only reports healthy once every destination it could
         // route to is also healthy, mirroring how every service above waits on mongodb/kafka before it
         // is considered up.
-        var gateway = builder.AddProject<Projects.Gateway>("gateway", launchProfileName: null);
+        var gateway = builder.AddProject<Projects.AgendaBuddy_Gateway>("gateway", launchProfileName: null);
 
         foreach (var service in new[] { booking, calendar, customer, provider, services, profession, identity })
         {

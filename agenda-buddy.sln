@@ -74,7 +74,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AgendaBuddy.AppHost.Tests",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AgendaBuddy.IntegrationTests", "AgendaBuddy.IntegrationTests\AgendaBuddy.IntegrationTests.csproj", "{15DC2D65-8751-4674-A37C-E5E6698B6ED5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Gateway", "Gateway\Gateway.csproj", "{29F5790A-270D-496D-8DFE-88662D87BAA2}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AgendaBuddy.Gateway", "AgendaBuddy.Gateway\AgendaBuddy.Gateway.csproj", "{29F5790A-270D-496D-8DFE-88662D87BAA2}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Booking.Domain", "Booking.Domain\Booking.Domain.csproj", "{A37EF29A-6A72-4A57-8247-BF6772583DB9}"
 EndProject

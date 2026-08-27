@@ -352,7 +352,7 @@ jobs:
     name: "Security — dependency audit"
     needs: changes
     # Review I1 (Party Review, 2026-08-26): deliberately UNCONDITIONAL, not gated on any path
-    # filter. The original api+code gate silently skipped this job on a docs/scripts/Gateway/
+    # filter. The original api+code gate silently skipped this job on a docs/scripts/AgendaBuddy.Gateway/
     # MobileApp-only PR — and the credential this feature exists to stop recurring (ISSUE-002)
     # leaked partly into files under docs/pdlc/context/, exactly the path class that gate excluded.
     # A secret scanner and a dependency audit are cheap enough to run on every PR unconditionally;

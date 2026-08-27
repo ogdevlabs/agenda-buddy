@@ -1,4 +1,4 @@
-namespace Gateway;
+namespace AgendaBuddy.Gateway;
 
 /// <summary>
 /// Anchor type for <c>WebApplicationFactory&lt;TEntryPoint&gt;</c> in the integration harness.

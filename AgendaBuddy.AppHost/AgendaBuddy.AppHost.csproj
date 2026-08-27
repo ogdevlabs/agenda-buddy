@@ -32,9 +32,9 @@
         <ProjectReference Include="..\Provider\Provider.csproj" />
         <ProjectReference Include="..\Services\Services.csproj" />
         <!-- F-015-T05: the eighth process. Referenced here (not just added to agenda-buddy.sln) so
-             the Aspire AppHost SDK generates Projects.Gateway, the same source-generated metadata
-             type every other AddProject<TProject> call below relies on. -->
-        <ProjectReference Include="..\Gateway\Gateway.csproj" />
+             the Aspire AppHost SDK generates Projects.AgendaBuddy_Gateway, the same source-generated
+             metadata type every other AddProject<TProject> call below relies on. -->
+        <ProjectReference Include="..\AgendaBuddy.Gateway\AgendaBuddy.Gateway.csproj" />
     </ItemGroup>
 
     <ItemGroup>

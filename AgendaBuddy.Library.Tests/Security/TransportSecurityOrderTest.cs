@@ -33,10 +33,10 @@ namespace Common.Tests.Security;
 /// the most likely evasion by banning direct <c>UseHttpsRedirection</c> calls outright.
 /// </para>
 /// <para>
-/// <b>F-015-T01: Gateway is an eighth process, added to <see cref="AllServices"/> below, but it is not
-/// in the seven-item <c>[Theory]</c> data below.</b> It has no authentication middleware of its own
-/// (ARCHITECTURE.md §2's "Auth passthrough" decision — it forwards the <c>Authorization</c> header
-/// unvalidated once F-015-T03 adds YARP), so
+/// <b>F-015-T01: Gateway (renamed <c>AgendaBuddy.Gateway</c> by F-020-T04) is an eighth process, added
+/// to <see cref="AllServices"/> below, but it is not in the seven-item <c>[Theory]</c> data below.</b>
+/// It has no authentication middleware of its own (ARCHITECTURE.md §2's "Auth passthrough" decision —
+/// it forwards the <c>Authorization</c> header unvalidated once F-015-T03 adds YARP), so
 /// <c>TransportSecurity_IsRegisteredBeforeAuthentication</c>'s assertion relative to
 /// <c>app.UseAuthentication()</c> does not apply to it. <see cref="GatewayCallsTransportSecurity"/> below
 /// covers the part that does apply: the call must still be present.
@@ -45,7 +45,7 @@ namespace Common.Tests.Security;
 public class TransportSecurityOrderTest
 {
     private static readonly string[] AllServices =
-        ["Booking.Api", "Calendar", "Customer", "Gateway", "Identity", "Profession", "Provider", "Services"];
+        ["AgendaBuddy.Gateway", "Booking.Api", "Calendar", "Customer", "Identity", "Profession", "Provider", "Services"];
 
     private const string TransportSecurityCall = "UseAgendaBuddyTransportSecurity(";
     private const string AuthenticationCall = "app.UseAuthentication()";
@@ -61,7 +61,7 @@ public class TransportSecurityOrderTest
             .Select(Path.GetFileName)
             .Where(name => name is not null
                            && File.Exists(Path.Combine(RepositoryRoot(), name, "Program.cs"))
-                           && !name.StartsWith("AgendaBuddy.", StringComparison.Ordinal))
+                           && !string.Equals(name, "AgendaBuddy.AppHost", StringComparison.Ordinal))
             .OrderBy(name => name, StringComparer.Ordinal)
             .ToArray();
 
@@ -73,12 +73,12 @@ public class TransportSecurityOrderTest
     {
         // Gateway has no `app.UseAuthentication()` to be ordered against (no auth middleware of its own
         // — ARCHITECTURE.md §2), so it gets its own assertion rather than joining the theory below.
-        var source = ProgramSource("Gateway");
+        var source = ProgramSource("AgendaBuddy.Gateway");
 
         Assert.True(
             source.Contains(TransportSecurityCall, StringComparison.Ordinal),
-            $"Gateway/Program.cs does not call {TransportSecurityCall} at all, so it registers no HSTS "
-            + "and no HTTPS redirect (F-021 AC-12 / F-015-T01).");
+            $"AgendaBuddy.Gateway/Program.cs does not call {TransportSecurityCall} at all, so it registers "
+            + "no HSTS and no HTTPS redirect (F-021 AC-12 / F-015-T01).");
 
         Assert.DoesNotContain(RedirectionCall, source, StringComparison.Ordinal);
     }
