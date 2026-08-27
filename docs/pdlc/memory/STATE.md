@@ -139,7 +139,17 @@ Build
 
 ## Last Checkpoint
 
-Construction / Build / 2026-08-27T08:25:00Z — **T02 done, verified, committed (`7008570`).** Kafka/
+Construction / Build / 2026-08-27T08:40:00Z — **T04 done, verified, committed (`8e53b88`).** Gateway →
+AgendaBuddy.Gateway, 13 files. Confirmed the Aspire-generated `Projects.Gateway` type became
+`Projects.AgendaBuddy_Gateway` automatically (dot-to-underscore) via a clean obj/bin rebuild. Found and
+fixed a real regression the rename itself introduced: `TransportSecurityOrderTest`'s `StartsWith
+("AgendaBuddy.")` exclusion filter (meant to skip non-service AgendaBuddy.* projects like AppHost/
+ServiceDefaults/Library/Kafka, none of which have a Program.cs) started matching `AgendaBuddy.Gateway`
+too, silently dropping it from the "every service Program.cs accounted for" scan. Narrowed to an exact
+AppHost-only exclusion. Backend suite 516/516, build clean, format clean. Wave 1 (Library/Kafka/Gateway)
+complete. Starting Wave 2: T03 (EventAndCommands, depends on T01+T02, both done) next.
+
+_Previously: Construction / Build / 2026-08-27T08:25:00Z — **T02 done, verified, committed (`7008570`).** Kafka/
 Kafka.Tests → AgendaBuddy.Kafka.*, 22 files. Agent's report itself flagged a real gap in T01 (stale
 `Library/**` CI path filters in `dotnet.yml` — 6 glob entries + 7 prose comments — plus
 `DockerAndComposeHygieneTest.cs`'s hardcoded `DeletedProjects` array checking a path that no longer
