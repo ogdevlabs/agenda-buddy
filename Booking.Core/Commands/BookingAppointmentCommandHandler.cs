@@ -1,4 +1,3 @@
-#pragma warning disable CS9113 // Primary constructor parameter unused — kafkaClient reserved for future Kafka publishing
 namespace Booking.Core.Commands;
 
 // F-019-T04. Constructor takes only DI-resolvable services -- the per-request AppointmentEntity that
@@ -7,9 +6,15 @@ namespace Booking.Core.Commands;
 // possible: MediatR resolves this handler from the container, which has no way to supply a per-request
 // value through the constructor. Returns FluentResults.Result<AppointmentEntity> instead of a
 // string-sniffed "exception"-prefixed convention (PRD Requirement 5).
+//
+// Stays on the concrete ProviderService/BookingService, not IProviderService/IBookingService (unlike
+// Update/Cancel's handlers, Party Review): this one calls AppendAppointmentAsync, which isn't on
+// IProviderService, and adding it would be a Library change out of this feature's scope. The
+// constructor's own unused KafkaClient/IKafkaClient parameter -- "reserved for future Kafka
+// publishing" -- was removed here too (Party Review, Neo's YAGNI finding): nothing consumed it, and
+// leaving it in would have had F-020 copy the same dead parameter into six more handlers.
 public class BookingAppointmentCommandHandler(
     IMediator mediator,
-    IKafkaClient? kafkaClient,
     ProviderService providerService,
     BookingService bookingService,
     IEventStore eventStore)

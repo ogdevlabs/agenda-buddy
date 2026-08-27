@@ -121,12 +121,13 @@ public class PaymentsAndStatusTest(ServiceHostFixture<BookingAnchor> host, Crypt
         Assert.True(response.IsSuccessStatusCode,
             $"the update itself should succeed, got {response.StatusCode}: {await response.Content.ReadAsStringAsync()}");
 
-        // F-019-T11 (AC8): live confirmation of the DataResponse<T> envelope's presence/shape. Not
-        // AppointmentStatus specifically -- that field echoes the client's own submitted (forged) value
-        // here, a real but pre-existing (unchanged by F-019) defect filed as agenda-buddy-2hd, out of
-        // scope for this envelope check.
+        // F-019-T11 (AC8) / Party Review (agenda-buddy-2hd, fixed): live confirmation the response
+        // body reflects the actual persisted entity, not the client's forged submission -- the
+        // handler used to echo request.AppointmentEntity verbatim, so this assertion would have
+        // failed (reporting "Completed") before the fix.
         var wrapper = await response.Content.ReadFromJsonAsync<DataResponse<AppointmentEntity>>(HarnessJson.Options);
         Assert.Equal(Appointment, wrapper!.Data!.Identifier);
+        Assert.Equal(AppointmentStatus.Requested, wrapper.Data.AppointmentStatus);
 
         var stored = await StoredAsync(service);
         Assert.Equal(AppointmentStatus.Requested, stored.AppointmentStatus);

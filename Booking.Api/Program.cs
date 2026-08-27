@@ -43,6 +43,11 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 builder.Services.AddSingleton<IValidator<AppointmentEntity>>(
     Validator.Factory.Create(AppointmentEntitySpecification.Spec));
 
+// Party Review: NoteSpec was authored at T02 but never wired until now. StatusSpec/PaymentSpec were
+// deliberate no-ops and were deleted rather than registered (see the specs file's own remarks).
+builder.Services.AddSingleton<IValidator<NoteRequest>>(
+    Validator.Factory.Create(AppointmentExtrasRequestsSpecifications.NoteSpec));
+
 // Register Singleton instances
 builder.Services.AddSingleton<IKafkaClient, KafkaClient>();
 
@@ -335,9 +340,12 @@ booking.MapGet("/appointments/{identifier}/notes",
 booking.MapPost("/appointments/{identifier}/notes",
         async Task<Results<Created<DataResponse<NoteEntity>>, ForbidHttpResult, BadRequest<string>>> (
             string identifier, ClaimsPrincipal user, NoteRequest request,
-            BookingService bookingService, IMediator mediator, CancellationToken cancellationToken) =>
+            BookingService bookingService, IMediator mediator, IValidator<NoteRequest> noteValidator,
+            CancellationToken cancellationToken) =>
         {
-            if (string.IsNullOrWhiteSpace(request?.Content))
+            // Party Review: replaces the inline IsNullOrWhiteSpace check with NoteSpec, wired here
+            // for the first time (authored, unwired, since T02). Same failure branch shape (BadRequest<string>).
+            if (noteValidator.Validate(request).AnyErrors)
                 return TypedResults.BadRequest("content is required.");
 
             var providerEmail = user.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -369,9 +377,9 @@ booking.MapPost("/appointments/{identifier}/notes",
 booking.MapPut("/notes/{id}",
         async Task<Results<Ok<DataResponse<NoteEntity>>, ForbidHttpResult, BadRequest<string>>> (
             string id, ClaimsPrincipal user, NoteRequest request,
-            IMediator mediator, CancellationToken cancellationToken) =>
+            IMediator mediator, IValidator<NoteRequest> noteValidator, CancellationToken cancellationToken) =>
         {
-            if (string.IsNullOrWhiteSpace(request?.Content))
+            if (noteValidator.Validate(request).AnyErrors)
                 return TypedResults.BadRequest("content is required.");
 
             var providerEmail = user.FindFirstValue(ClaimTypes.NameIdentifier);

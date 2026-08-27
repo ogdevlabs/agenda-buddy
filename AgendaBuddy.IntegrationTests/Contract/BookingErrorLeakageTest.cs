@@ -1,6 +1,8 @@
+using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using AgendaBuddy.IntegrationTests.Harness;
+using Library.Entities;
 
 namespace AgendaBuddy.IntegrationTests.Contract;
 
@@ -56,5 +58,43 @@ public class BookingErrorLeakageTest(ServiceHostFixture<BookingAnchor> host, Cry
         Assert.DoesNotContain("Booking.Core", body, StringComparison.Ordinal);
         Assert.DoesNotContain("Booking.Api", body, StringComparison.Ordinal);
         Assert.DoesNotContain("System.", body, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// Party Review (Echo): the sibling above only exercises the unhandled-exception path (500,
+    /// AgendaBuddyExceptionHandler). It never proves the OTHER half of T-102 -- a genuine, handled
+    /// <c>Result.Fail</c> from inside a command handler actually reaches the wire as
+    /// <c>DataResponse&lt;T&gt;.Fail</c>, not swallowed or reshaped. This forces
+    /// <c>BookAppointmentCommandHandler.Handle</c>'s real failure branch (a well-formed, valid-looking
+    /// provider email that matches no provider document) rather than mocking <c>Result.Fail</c>.
+    /// </summary>
+    [Fact]
+    public async Task BookingANonExistentProvider_ReturnsBadRequest_WithTheHandlersFailureMessageInErrors()
+    {
+        using var service = host.StartService("Production");
+
+        var request = new HttpRequestMessage(HttpMethod.Post, "api/v1/booking/appointments")
+        {
+            Content = JsonContent.Create(new
+            {
+                EmailProvider = "no-such-provider@example.com",
+                EmailCustomer = "leakage-customer-2@example.com",
+                Start = DateTime.UtcNow.AddHours(1),
+                End = DateTime.UtcNow.AddHours(2),
+                DayOff = false
+            }),
+            Headers =
+            {
+                Authorization = new AuthenticationHeaderValue(
+                    "Bearer", _tokens.CreateToken("leakage-customer-2@example.com", TokenFactory.CustomerRole))
+            }
+        };
+
+        var response = await service.Client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var wrapper = await response.Content.ReadFromJsonAsync<DataResponse<AppointmentEntity>>(HarnessJson.Options);
+        Assert.False(wrapper!.Success);
+        Assert.Contains(wrapper.Errors, e => e.Contains("No provider found for no-such-provider@example.com"));
     }
 }

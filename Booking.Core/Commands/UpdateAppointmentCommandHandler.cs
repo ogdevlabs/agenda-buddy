@@ -1,14 +1,15 @@
-#pragma warning disable CS9113 // Primary constructor parameter unused — kafkaClient reserved for future Kafka publishing
 namespace Booking.Core.Commands;
 
-// F-019-T04. See BookingAppointmentCommandHandler's remarks: constructor takes only DI-resolvable
-// services; the per-request AppointmentEntity comes from the command, and the handler returns
-// Result<AppointmentEntity> instead of a string-sniffed convention.
+// F-019-T04/Party Review. Constructor takes only DI-resolvable services; the per-request
+// AppointmentEntity comes from the command, and the handler returns Result<AppointmentEntity>
+// instead of a string-sniffed convention. Typed against IBookingService/IProviderService, not the
+// concrete classes -- both interfaces already cover everything this handler calls (no
+// AppendAppointmentAsync/ChangeStatusAsync needed here, unlike Book/ChangeStatus), so this handler
+// is fully Moq-mockable with zero Library changes (Party Review, Echo's finding).
 public class UpdateAppointmentCommandHandler(
     IMediator mediator,
-    IKafkaClient? kafkaClient,
-    ProviderService providerService,
-    BookingService bookingService,
+    IProviderService providerService,
+    IBookingService bookingService,
     IEventStore eventStore) : IRequestHandler<UpdateAppointmentCommand, Result<AppointmentEntity>>
 {
     public async Task<Result<AppointmentEntity>> Handle(UpdateAppointmentCommand request, CancellationToken cancellationToken)
@@ -18,7 +19,8 @@ public class UpdateAppointmentCommandHandler(
         var appointmentEntity = request.AppointmentEntity;
         await mediator.Publish(new UpdateAppointmentEvent { AppointmentEntity = appointmentEntity },
             cancellationToken);
-        if (await SearchAndUpdateAppointment(appointmentEntity))
+        var updated = await SearchAndUpdateAppointment(appointmentEntity);
+        if (updated is not null)
         {
             var successEvent = new Event
             {
@@ -26,10 +28,14 @@ public class UpdateAppointmentCommandHandler(
                 TimeStamp = DateTime.UtcNow,
                 Status = "Success",
                 Type = "UpdateAppointmentCommand",
-                Data = JsonSerializer.Serialize(appointmentEntity)
+                Data = JsonSerializer.Serialize(updated)
             };
             await eventStore.SaveAsync(successEvent);
-            return Result.Ok(appointmentEntity);
+            // Party Review (agenda-buddy-2hd): returns the actual persisted entity, not
+            // request.AppointmentEntity -- the client-submitted object still carries whatever
+            // AppointmentStatus the caller sent, even though the write below never persists it.
+            // Echoing that object back would tell the caller their forged status was accepted.
+            return Result.Ok(updated);
         }
 
         var failEvent = new Event
@@ -45,14 +51,14 @@ public class UpdateAppointmentCommandHandler(
             $"Error when trying to update appointment identifier: {appointmentEntity.Identifier}");
     }
 
-    private async Task<bool> SearchAndUpdateAppointment(AppointmentEntity appointmentEntity)
+    private async Task<AppointmentEntity?> SearchAndUpdateAppointment(AppointmentEntity appointmentEntity)
     {
         var identifier = appointmentEntity.Identifier;
         var filter = SupportTools<ProviderEntity>.FilterByEmail(appointmentEntity.EmailProvider);
         var provider = await providerService.FindProvidersAsync(filter);
-        if (provider == null) return false;
+        if (provider == null) return null;
         var appointment = provider.AppointmentEntities.FirstOrDefault(ap => ap.Identifier == identifier);
-        if (appointment == null) return false;
+        if (appointment == null) return null;
 
         // F-014 requirement 13 / threat T-203: appointment status is SERVER-OWNED, so the client's value is
         // ignored here and the stored status is preserved. This line used to be
@@ -65,13 +71,8 @@ public class UpdateAppointmentCommandHandler(
         // it is a rendering of the status, so accepting it from the caller would let the two disagree.
         appointment.Start = appointmentEntity.Start;
         appointment.End = appointmentEntity.End;
-        var updateAppointment = await UpdateAppointment(identifier, appointment);
-        if (!updateAppointment) return false;
-        return await providerService.UpdateProviderAsync(provider.Id.ToString(), provider);
-    }
-
-    private async Task<bool> UpdateAppointment(string identifier, AppointmentEntity appointment)
-    {
-        return await bookingService.UpdateAppointmentAsync(identifier, appointment);
+        var updateAppointment = await bookingService.UpdateAppointmentAsync(identifier, appointment);
+        if (!updateAppointment) return null;
+        return await providerService.UpdateProviderAsync(provider.Id.ToString(), provider) ? appointment : null;
     }
 }

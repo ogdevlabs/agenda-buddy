@@ -57,6 +57,15 @@ public static class ServiceCollectionExtension
         serviceCollection.AddScoped<BookingService>();
         serviceCollection.AddScoped<CustomerService>();
 
+        // Party Review: Update/CancelAppointmentCommandHandler take IProviderService/IBookingService
+        // (Echo's finding -- both interfaces already cover everything those two handlers call, unlike
+        // Book's, which still needs AppendAppointmentAsync). Forwarding to the already-scoped concrete
+        // instance, not a second AddScoped<IProviderService, ProviderService>, so a request that resolves
+        // both the concrete class (route handlers) and the interface (command handlers) in the same scope
+        // gets the same object, not two.
+        serviceCollection.AddScoped<IProviderService>(sp => sp.GetRequiredService<ProviderService>());
+        serviceCollection.AddScoped<IBookingService>(sp => sp.GetRequiredService<BookingService>());
+
         // Interface-typed, unlike the four above: nothing in Booking needs the concrete classes, and both
         // services take only their repository plus (for payments) the gateway.
         serviceCollection.AddScoped<INoteService, NoteService>();

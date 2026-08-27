@@ -18,6 +18,7 @@ global using Library.Repositories;
 global using Library.Services;
 global using MediatR;
 global using Microsoft.Extensions.Configuration;
+global using MongoDB.Bson;
 global using MongoDB.Driver;
 global using Moq;
 global using Xunit;

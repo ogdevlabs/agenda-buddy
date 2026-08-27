@@ -1,32 +1,35 @@
 namespace Booking.Validation;
 
 /// <summary>
-/// F-019-T02 Validot spike. Specs for the three F-014 request records
-/// (<c>Booking/Requests/AppointmentExtrasRequests.cs</c>), which have ZERO MiniValidator
-/// annotations today. <b>Not wired into any route by this task</b> -- they exist only to prove the
-/// authoring pattern compiles and runs; wiring is T05/T06's job.
+/// F-019-T02 spike, wired at Party Review. <c>NoteRequest</c> has ZERO <c>MiniValidator</c>
+/// annotations today (<c>Booking/Requests/AppointmentExtrasRequests.cs</c>) -- the inline
+/// <c>string.IsNullOrWhiteSpace(request?.Content)</c> check in <c>Program.cs</c>'s two note-content
+/// routes is what actually enforces this. <see cref="NoteSpec"/> replaces that inline check.
 /// </summary>
 /// <remarks>
-/// See <c>docs/pdlc/design/api-refactor-pilot-booking/validot-spike-findings.md</c> for the full
-/// diff list. In short:
-/// <list type="bullet">
-/// <item><see cref="StatusSpec"/> deliberately enforces nothing on <c>Status</c> -- there is no
-/// enum-membership check today (it's validated downstream, not by MiniValidator), and adding one
-/// here would be new behavior, not a port.</item>
-/// <item><see cref="NoteSpec"/> rejects empty <c>Content</c>. This IS new behavior -- MiniValidator
-/// enforces nothing on <c>NoteRequest</c> today -- included to demonstrate a real rule chain rather
-/// than an empty spec.</item>
-/// <item><see cref="PaymentSpec"/> deliberately enforces nothing on <c>Amount</c> (no positivity
-/// check exists today) or <c>Currency</c> (nullable; no <c>.Required()</c> per the roundtable's
-/// explicit instruction).</item>
-/// </list>
+/// <b>Party Review found the originally-authored spec was wrong.</b> The T02 spike used
+/// <c>.Required().NotEmpty()</c>, verified directly against the live Validot assembly to accept
+/// <c>null</c>/<c>""</c> only -- a whitespace-only string ("   ") passes <c>.NotEmpty()</c>, which
+/// would have silently let through exactly the input <c>IsNullOrWhiteSpace</c> rejects today (the
+/// same class of strictness regression threat T-101 exists to catch). Fixed to
+/// <c>.Required().NotWhiteSpace()</c>, confirmed byte-for-byte equivalent to
+/// <c>!string.IsNullOrWhiteSpace(x)</c> against null/""/"   "/"x"/" x " before wiring it in.
+/// </remarks>
+/// <remarks>
+/// <b>What this file used to also contain.</b> <c>StatusSpec</c> (for
+/// <c>AppointmentStatusRequest</c>) and <c>PaymentSpec</c> (for <c>PaymentRequest</c>) were authored
+/// at T02 as deliberate no-ops -- <c>AppointmentStatusRequest.Status</c> has no enum-membership check
+/// today (validated downstream via <c>Enum.TryParse</c>/<c>IsDefined</c> in <c>Program.cs</c>, not by
+/// MiniValidator), and <c>PaymentRequest.Amount</c>/<c>Currency</c> have no positivity/format check
+/// today either. Party Review (Neo) found both were dead code -- authored, unit-tested, but never
+/// wired into DI or a route -- and flagged wiring a no-op as pure ceremony with nothing to show for
+/// it. Deleted rather than wired; the status/amount inline checks in <c>Program.cs</c> remain the
+/// real (and correct, matching today's behavior) validation for those two DTOs. See
+/// <c>agenda-buddy-02e</c> for the tracked gap this leaves (only 2 of 10 routes now validate via
+/// Validot, not the full Requirement 6 migration).
 /// </remarks>
 public static class AppointmentExtrasRequestsSpecifications
 {
-    public static readonly Specification<AppointmentStatusRequest> StatusSpec = s => s;
-
     public static readonly Specification<NoteRequest> NoteSpec = s => s
-        .Member(m => m.Content, m => m.Required().NotEmpty());
-
-    public static readonly Specification<PaymentRequest> PaymentSpec = s => s;
+        .Member(m => m.Content, m => m.Required().NotWhiteSpace());
 }

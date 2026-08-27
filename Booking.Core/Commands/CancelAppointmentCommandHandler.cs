@@ -1,18 +1,17 @@
-#pragma warning disable CS9113 // Primary constructor parameter unused — kafkaClient reserved for future Kafka publishing
 namespace Booking.Core.Commands;
 
-// F-019-T04. See BookingAppointmentCommandHandler's remarks: constructor takes only DI-resolvable
-// services; the per-request identifier comes from the command, and the handler returns
-// Result<AppointmentEntity> instead of a string-sniffed convention. Booking.Api's route discards the
-// success Value and answers 204 No Content unchanged (AC10) -- a JSON body cannot ride a 204 by HTTP
-// semantics, so Requirement 10's blanket "every route returns DataResponse<T>" is a disclosed,
-// deliberate exception here rather than silently unmet; see validot-spike-findings.md's sibling note
-// style and T11's final verification.
+// F-019-T04/Party Review. Constructor takes only DI-resolvable services; the per-request identifier
+// comes from the command, and the handler returns Result<AppointmentEntity> instead of a
+// string-sniffed convention. Typed against IBookingService/IProviderService (both interfaces already
+// cover this handler's calls -- no AppendAppointmentAsync/ChangeStatusAsync needed here), so it's
+// fully Moq-mockable with zero Library changes. Booking.Api's route discards the success Value and
+// answers 204 No Content unchanged (AC10) -- a JSON body cannot ride a 204 by HTTP semantics, so
+// Requirement 10's blanket "every route returns DataResponse<T>" is a disclosed, deliberate exception
+// here rather than silently unmet; see verification.md.
 public class CancelAppointmentCommandHandler(
     IMediator mediator,
-    IKafkaClient? kafkaClient,
-    ProviderService providerService,
-    BookingService bookingService,
+    IProviderService providerService,
+    IBookingService bookingService,
     IEventStore eventStore) : IRequestHandler<CancelAppointmentCommand, Result<AppointmentEntity>>
 {
     public async Task<Result<AppointmentEntity>> Handle(CancelAppointmentCommand request, CancellationToken cancellationToken)

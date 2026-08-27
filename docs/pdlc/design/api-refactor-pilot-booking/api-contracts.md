@@ -86,8 +86,14 @@ Same treatment as 3.3/3.4.
   204 No Content on success, unchanged — a 204 cannot carry a JSON body by HTTP semantics, so there is
   nothing to wrap. Requirement 10's own PRD language ("becomes the response envelope for all 10 routes") is
   read as "every route whose success response has a body," not literally all 10.
-- **Also corrected at F-019-T11:** Requirement 6 (Validot replacing `MiniValidator` everywhere) only
-  actually happened for `POST /appointments` (Book) in this feature. `PUT`/`DELETE /appointments/`
-  (Update/Cancel) still call `MiniValidator.TryValidate` unchanged — no F-019 task was ever assigned this
-  conversion for them (T04's own requirement list excluded 6). Filed as a known gap for a follow-up task,
-  not silently treated as done.
+- **Corrected at F-019-T11, updated again at Party Review (2026-08-27):** Requirement 6 (Validot replacing
+  `MiniValidator` everywhere) reached 3 of Booking's 10 routes, not 1. `POST /appointments` (Book) migrated
+  at T04; `POST /appointments/{id}/notes` and `PUT /notes/{id}` migrated during Party Review remediation
+  (their originally-authored `NoteSpec` had a whitespace-rejection bug, fixed before wiring — see
+  `verification.md` §3.11). `PUT`/`DELETE /appointments/` (Update/Cancel) still call
+  `MiniValidator.TryValidate` unchanged — no F-019 task was ever assigned this conversion for them (T04's
+  own requirement list excluded 6) — tracked as `agenda-buddy-02e`. The remaining 5 routes
+  (`POST .../status`, `POST .../payment`, and the 3 bodyless routes) use either inline non-Validot checks
+  or have no request body to validate; their `StatusSpec`/`PaymentSpec` Validot specs were authored at T02
+  but never wired to anything and were deleted as dead code at Party Review, not silently left as
+  unreachable ceremony. Filed as a known gap for a follow-up task, not silently treated as done.

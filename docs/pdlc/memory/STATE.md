@@ -5,7 +5,7 @@
      Claude reads this file at the start of every session to auto-resume from the last checkpoint.
      If this file is missing or empty, PDLC will prompt you to run /pdlc init. -->
 
-**Last updated:** 2026-08-26T14:10:00Z
+**Last updated:** 2026-08-27T04:30:00Z
 
 ---
 
@@ -114,13 +114,40 @@ _None active. Run `/night-shift <F-NNN>` to start an autonomous run (requires by
 
 ## Current Sub-phase
 
-Review
+Test
 
 ---
 
 ## Last Checkpoint
 
-Construction / Build / 2026-08-27T03:30:00Z — **BUILD LOOP DONE — 11/11 tasks closed.** `verification.md`
+Construction / Review / 2026-08-27T04:30:00Z — **PARTY REVIEW DONE, SELF-APPROVED — moving to Test.**
+4-agent Party Review (Neo/Echo/Phantom/Jarvis) ran; converged 3-way (Neo/Phantom/Echo) on `agenda-buddy-2hd`
+(Update's response echoing the client's forged `AppointmentStatus`) plus Echo's own Critical (Update/Cancel
+handlers untestable — depended on concrete `ProviderService`/`BookingService`, only GuardClause-null unit
+coverage existed). **Both fixed together**, in the same 2 files: retyped both handlers to
+`IProviderService`/`IBookingService` (both interfaces already cover everything either calls — unlike
+`Book`'s, left on the concrete classes, disclosed), `SearchAndUpdateAppointment` now returns the persisted
+entity instead of echoing the request's, added 8 new Moq-based tests. **The retyping fix itself introduced a
+real regression, caught by a full (no-filter) integration run, not assumed clean from a green build:**
+`Booking.Api`'s DI container only registered the concrete classes, not the interfaces — 6 `ServiceProvider`
+validation failures at startup until both interfaces were forwarded to the already-scoped concrete instance
+in `ServiceCollectionExtension.cs`. Also fixed in this gate: Echo's Important finding (added a dedicated
+test forcing `Result.Fail`→`DataResponse<T>.Fail`'s handled path, not just the unhandled-500 path
+`BookingErrorLeakageTest` already covered); Neo's YAGNI (`IKafkaClient? kafkaClient` unused param removed
+from all 3 moved handlers) and dead-code findings (`StatusSpec`/`PaymentSpec` deleted, never wired to
+anything); Phantom's Medium finding (`NoteSpec`'s `.Required().NotEmpty()` would have accepted
+whitespace-only content — a real T-101 strictness regression, caught live against Validot 2.6.0 before
+wiring, fixed to `.NotWhiteSpace()`, then wired into the 2 note-content routes, replacing their inline
+checks — Requirement 6 improves from 1/10 to 3/10 routes); Jarvis's 4 `CLAUDE.md` staleness findings and the
+missing `CHANGELOG.md` (created). `agenda-buddy-2hd` closed; `agenda-buddy-02e`'s description corrected to
+the accurate current per-route breakdown. `verification.md` gained §3.11 narrating all of the above;
+`api-contracts.md`'s Requirement 6 disclosure corrected. Unified review written to
+`docs/pdlc/reviews/REVIEW_api-refactor-pilot-booking_2026-08-27.md` — self-approved under the standing
+full-autonomy grant, 0 remaining Critical/Blocker. **Final: 516 backend + 310 integration + 165 mobile =
+991 tests, 0 failing.** `dotnet format --verify-no-changes` clean (one round of drift from the 2 new/edited
+test files, auto-fixed and re-verified). Moving to Test.
+
+_Previously: Construction / Build / 2026-08-27T03:30:00Z — **BUILD LOOP DONE — 11/11 tasks closed.** `verification.md`
 written, all 14 PRD ACs attested with evidence (grep output for structural ACs, real test runs for
 behavioral ones) — 12 clean ✅, 2 with disclosed deviations (AC1's `MongoDbConfiguration.cs` annotation,
 AC6's partial-met for Update/Cancel never migrating to Validot), AC8 verified live for all 8 body-bearing
@@ -824,6 +851,10 @@ the feature branch after each wave completes.
 | 2026-08-26T14:25:00Z | task_split | **F-018-T19 split into T19 (docs: headline count + skipped-test investigation) and F-018-T21 (CI confirmation: push a throwaway branch, watch the 3 mobile CI jobs go green)** — user-confirmed on resume. The CI-confirmation half is gated on a maintainer action the dependency graph can't express on a single task; T21 depends on T19 and is explicitly not agent-closable by inspection. F-018-T20 (final verification) now depends on both T19 and T21, replacing its prior single dependency on T19. |
 | 2026-08-26T19:10:00Z | review_important_fixed | F-018 Party Review's Important finding (N1/Neo, E1/Echo — linked, same root cause): `EventStoreWriteGuardTest` (AC-15's permanent guard) checks whole-file presence of `eventStore.SaveAsync(`, not per-branch coverage — already proven insufficient by this session's own `agenda-buddy-f49` finding, which the guard did not catch. Fixed by narrowing AC-15's claim in `F-018-T13.md` (and `verification.md`) to match what was actually built, per Neo's own recommendation; building a per-branch static-analysis alternative was judged disproportionate under YAGNI. |
 | 2026-08-26T19:10:00Z | review_warnings_accepted | F-018 Party Review: 0 Critical, N1/E1 fixed (see above). Accepted as logged warnings: **N2/J1** (linked) — `docs/pdlc/design/api-refactor-foundations/api-contracts.md` still says "no committed OpenAPI specification," stale since this session's ADR-048; deferred to Ship's doc-freshness pass. **E2** — no test isolates *why* `OpenApiSpecGenerator`'s Profession-specific unreachable-Mongo workaround is needed (the 7-service theory test covers it without naming which service would break); low value under YAGNI, not built. Phantom: 0 findings, full sign-off. **Deviation from Step 14's letter:** these two Advisory items were logged here rather than routed through a full Decision Review Party (`skills/decide/SKILL.md`) — judged disproportionate ceremony for two non-controversial, already-fully-scoped advisories with no cross-cutting impact; the user's own "accept the rest" was a one-line call, not a decision needing multi-agent impact assessment. |
+| 2026-08-27T04:10:00Z | review_critical_fixed | F-019 Party Review's Critical finding (Echo — `Update`/`CancelAppointmentCommandHandler`'s real success/failure branches had zero unit coverage, only GuardClause-null checks) fixed: retyped both handlers to `IProviderService`/`IBookingService` (both interfaces already cover everything either calls), added 8 new Moq-based tests. Neo and Phantom independently converged on the same root cause from architecture/response-integrity angles — all three findings pointed at `agenda-buddy-2hd` (Update's response echoing the client's forged `AppointmentStatus`), fixed in the same edit: `SearchAndUpdateAppointment` now returns the persisted entity, not the request's. `agenda-buddy-2hd` closed. See `verification.md` §3.11 and `REVIEW_api-refactor-pilot-booking_2026-08-27.md`. |
+| 2026-08-27T04:15:00Z | review_regression_caught_and_fixed | The Critical-finding fix above (retyping to `IProviderService`/`IBookingService`) introduced a real regression: `Booking.Api`'s DI container only ever registered the concrete `ProviderService`/`BookingService`, not the interfaces. `dotnet build` stayed green (DI resolution is runtime-only); the full integration suite (no filter, per the standing T06 lesson) failed with 6 `ServiceProvider` validation errors at startup. Fixed by forwarding both interfaces to the already-scoped concrete instance in `ServiceCollectionExtension.cs`. Re-ran to 310/310 green before continuing — not assumed clean from the individual fix looking correct. |
+| 2026-08-27T04:20:00Z | review_important_fixed | F-019 Party Review's Important findings, all fixed in the same gate: Echo's gap (`BookingErrorLeakageTest` covered only the unhandled-500 path, not T-102's other named path, the handled `Result.Fail`→`DataResponse<T>.Fail` mapping — added a dedicated test forcing the real handler branch); Neo's YAGNI finding (unused `IKafkaClient? kafkaClient` param + its suppression pragma removed from all 3 moved handlers); Neo's dead-code finding (`StatusSpec`/`PaymentSpec` — authored, tested, never wired — deleted along with their 2 tests); Phantom's Medium finding (`NoteSpec`'s `.Required().NotEmpty()` would have accepted whitespace-only content, a real strictness regression against the inline check it replaces — fixed to `.NotWhiteSpace()`, verified live against Validot 2.6.0 before wiring); Jarvis's 4 findings on `CLAUDE.md` staleness (Project Structure/Architecture, `Booking/Program.cs`'s dead path, zero FluentResults/GuardClauses/Validot mention, stale 484/301/950 test counts) and the missing `CHANGELOG.md`, all fixed/created. |
+| 2026-08-27T04:25:00Z | review_warnings_accepted | F-019 Party Review approval gate, self-approved under the standing full-autonomy grant (2026-08-26T23:12:00Z): **0 remaining Critical/Blocker.** Every MAJOR/HIGH/CRITICAL finding from all 4 reviewers was fixed in this gate (see the 3 entries above), not deferred. Accepted as logged, already-disclosed deferrals, unchanged by this review: **`agenda-buddy-cy2`** (null `EmailProvider` 500s, pre-existing, out of scope) and **`agenda-buddy-02e`** (Update/Cancel still on `MiniValidator`, Requirement 6 now 3/10 routes not 1/10 after this review's `NoteSpec` fix — description updated, bead stays open, never assigned to any F-019 task). Full record: `docs/pdlc/reviews/REVIEW_api-refactor-pilot-booking_2026-08-27.md`. Suites re-verified after all fixes: 516 backend / 310 integration / 165 mobile = 991, 0 failing, `dotnet format --verify-no-changes` clean. |
 
 ---
 
@@ -1271,3 +1302,6 @@ re-planning (`/continue`).
 | 2026-08-27T02:45:00Z | task_complete | **F-019-T08 done.** New BookingValidotStrictnessTest (2 real HTTP tests) — malformed/empty email still 400 under Validot. Scope corrected: only AppointmentEntity actually migrated to Validot, not all 10 DTOs as the task assumed. A 3rd planned test found a real, pre-existing, out-of-scope 500 defect (null EmailProvider) — filed agenda-buddy-cy2, not fixed inline. Integration 309/309 | Build | api-refactor-pilot-booking |
 | 2026-08-27T03:00:00Z | task_complete | **F-019-T09 done.** New BookingErrorLeakageTest reuses agenda-buddy-cy2's exact real fault as genuine fault injection. Confirmed by code review that no Result.Fail site ever wraps exception content, and the fault never reaches DataResponse<T> at all (propagates past AgendaBuddyExceptionHandler, no Production fallback, per ADR-022) — test asserts the wire body itself, proving the real security property regardless of path. Integration 310/310. All of T03-T10 done; only T11 (final verification) remains before Review | Build | api-refactor-pilot-booking |
 | 2026-08-27T03:30:00Z | build_complete | **BUILD LOOP DONE — 11/11 tasks, all 14 PRD ACs attested (12 clean, 2 disclosed deviations).** verification.md written; api-contracts.md corrected in 3 places to match what was built. AC8 fully closed live for all 8 body-bearing routes — closing that gap found one more real, pre-existing defect (PUT /appointments/ echoes the client's forged status in the response body even though the DB correctly ignores it) — filed agenda-buddy-2hd. Blast radius confirmed via git diff: nothing outside Booking's own files + expected infra/CI/docs. Final: 512 backend + 310 integration + 165 mobile = 987, 0 failing. Moving to Review | Review | api-refactor-pilot-booking |
+| 2026-08-27T03:45:00Z | blast_radius_complete | BLAST-RADIUS_api-refactor-pilot-booking_2026-08-27.md written — zero at-risk callers found; RequestCollection/IRequestCollection deletion confirmed zero cross-service impact, Booking→Booking.Api rename's consumers all found and updated | Review | api-refactor-pilot-booking |
+| 2026-08-27T04:00:00Z | party_review_complete | **Party Review (Neo/Echo/Phantom/Jarvis) run.** 1 Critical (Echo), 3-way convergence on agenda-buddy-2hd from Neo/Phantom/Echo, plus Important findings from all 4 — all fixed in this gate, none deferred. See Guardrail Log entries 04:10-04:25Z and REVIEW_api-refactor-pilot-booking_2026-08-27.md for the full record | Review | api-refactor-pilot-booking |
+| 2026-08-27T04:30:00Z | review_approved | **Party Review self-approved under the full-autonomy grant — 0 remaining Critical/Blocker.** agenda-buddy-2hd closed; agenda-buddy-02e description corrected (3/10 routes now, not 1/10); CLAUDE.md + CHANGELOG.md (new) updated per Jarvis; verification.md/api-contracts.md updated to match. Suites re-verified clean after all fixes: 516 backend + 310 integration + 165 mobile = 991, 0 failing, format clean. Moving to Test | Test | api-refactor-pilot-booking |
