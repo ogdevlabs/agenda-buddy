@@ -114,7 +114,7 @@ jobs:
               # the code that decides whether a request is authenticated — ran zero jobs.
               - 'Library.ServerAuth/**'
               - 'EventAndCommands/**'
-              - 'Booking/**'
+              - 'Booking.Api/**'
               - 'Calendar/**'
               - 'Customer/**'
               - 'Provider/**'
@@ -163,7 +163,7 @@ jobs:
             # own container output. Scoped to exactly PRD Requirement 9's list: the 7 service dirs
             # (their .csproj files are inside these globs already), and docker-compose*.yml.
             docker:
-              - 'Booking/**'
+              - 'Booking.Api/**'
               - 'Calendar/**'
               - 'Customer/**'
               - 'Provider/**'
@@ -274,7 +274,7 @@ jobs:
           JWT_PUBLIC_KEY=$(cat "$RUNNER_TEMP/jwt.pub")
           export JWT_PRIVATE_KEY JWT_PUBLIC_KEY
 
-          for svc in Booking Calendar Customer Provider Services Profession Identity; do
+          for svc in Booking.Api Calendar Customer Provider Services Profession Identity; do
             log=$(mktemp)
             ASPNETCORE_ENVIRONMENT=Development \
             ConnectionStrings__mongodb='mongodb://localhost:27017' \
@@ -491,7 +491,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        service: [Booking, Calendar, Customer, Provider, Services, Profession, Identity]
+        service: [Booking.Api, Calendar, Customer, Provider, Services, Profession, Identity]
 
     steps:
       - uses: actions/checkout@v7
@@ -518,9 +518,15 @@ jobs:
       # toLower(), so compute it once here and reference the output below, rather than a
       # `Booking:latest`-shaped image-ref that isn't even valid OCI reference syntax (uppercase is
       # disallowed in image names) and fails Trivy with "could not parse reference".
+      #
+      # F-019-T04: verified live against a real `dotnet publish -t:PublishContainer` for
+      # Booking.Api — the SDK's default derivation replaces `.` with `-`, not just lowercasing, so
+      # the built image is `booking-api:latest`, not `booking.api:latest`. The `tr` alone (dots
+      # survive lowercasing unchanged) would have computed the wrong ref and failed Trivy the same
+      # way the original uppercase bug did.
       - name: Lowercase the image name
         id: image
-        run: echo "name=$(echo '${{ matrix.service }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
+        run: echo "name=$(echo '${{ matrix.service }}' | tr '[:upper:]' '[:lower:]' | tr '.' '-')" >> "$GITHUB_OUTPUT"
 
       - name: Trivy scan
         # v0.28.0 (the originally-pinned release) was found DEAD at Ship, not by inspection: its

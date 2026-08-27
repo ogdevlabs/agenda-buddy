@@ -1,0 +1,34 @@
+global using AgendaBuddy.ServiceDefaults;
+global using Library.Configuration;
+global using Library.Diagnostics;
+// Global using directives
+
+global using System.Diagnostics;
+global using System.Diagnostics.CodeAnalysis;
+global using System.Net;
+global using System.Security.Claims;
+global using Booking.Configuration;
+global using Booking.Core.Commands;
+global using Booking.Domain.Commands;
+global using Booking.Domain.Responses;
+global using Booking.Extensions;
+global using Booking.Requests;
+global using Booking.Domain.Queries;
+global using Booking.Validation;
+global using Kafka;
+global using Library.Entities;
+global using Library.Extensions;
+global using Library.Tools;
+global using Library.Repositories;
+global using Library.Services;
+global using MediatR;
+global using Microsoft.AspNetCore.Diagnostics;
+global using Microsoft.AspNetCore.Http.HttpResults;
+global using Microsoft.AspNetCore.Mvc;
+global using Microsoft.AspNetCore.WebUtilities;
+global using Microsoft.Net.Http.Headers;
+global using MiniValidation;
+global using MongoDB.Driver;
+global using Validot;
+global using EventAndCommands;
+global using EventAndCommands.Persistence;

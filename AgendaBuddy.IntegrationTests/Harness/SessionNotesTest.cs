@@ -106,8 +106,10 @@ public class SessionNotesTest(ServiceHostFixture<BookingAnchor> host, CryptoSess
             HttpMethod.Get, $"api/v1/booking/appointments/{OwnedAppointment}/notes",
             Owner, TokenFactory.ProviderRole));
 
-        var notes = await read.Content.ReadFromJsonAsync<List<NoteEntity>>(HarnessJson.Options);
-        var note = Assert.Single(notes!);
+        // F-019-T06: the response is now wrapped in DataResponse<T> (ADR-049) -- the notes moved from
+        // the root to .data, but the assertions below are unchanged.
+        var notesWrapper = await read.Content.ReadFromJsonAsync<DataResponse<List<NoteEntity>>>(HarnessJson.Options);
+        var note = Assert.Single(notesWrapper!.Data!);
         Assert.Equal("Third session. Shoulder mobility improving.", note.Content);
 
         // The provider email came from the TOKEN, not the request — the body carried neither field.
@@ -214,13 +216,15 @@ public class SessionNotesTest(ServiceHostFixture<BookingAnchor> host, CryptoSess
         var created = await service.Client.SendAsync(Authorised(
             HttpMethod.Post, $"api/v1/booking/appointments/{OwnedAppointment}/notes",
             Owner, TokenFactory.ProviderRole, new { content = "first draft" }));
-        var note = await created.Content.ReadFromJsonAsync<NoteEntity>(HarnessJson.Options);
+        // F-019-T06: DataResponse<T> envelope -- same note as AC1's read-back above.
+        var note = (await created.Content.ReadFromJsonAsync<DataResponse<NoteEntity>>(HarnessJson.Options))!.Data;
 
         var edited = await service.Client.SendAsync(Authorised(
             HttpMethod.Put, $"api/v1/booking/notes/{note!.Id}",
             Owner, TokenFactory.ProviderRole, new { content = "corrected" }));
         Assert.Equal(HttpStatusCode.OK, edited.StatusCode);
-        Assert.Equal("corrected", (await edited.Content.ReadFromJsonAsync<NoteEntity>(HarnessJson.Options))!.Content);
+        Assert.Equal("corrected",
+            (await edited.Content.ReadFromJsonAsync<DataResponse<NoteEntity>>(HarnessJson.Options))!.Data!.Content);
 
         var deleted = await service.Client.SendAsync(Authorised(
             HttpMethod.Delete, $"api/v1/booking/notes/{note.Id}", Owner, TokenFactory.ProviderRole));

@@ -53,7 +53,7 @@ export PATH="$HOME/.rd/bin:$PATH"
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 APPHOST_LOG="${TMPDIR:-/tmp}/agenda-buddy-apphost.log"
-SERVICES=(Identity Booking Customer Provider Calendar Services Profession)
+SERVICES=(Identity Booking.Api Customer Provider Calendar Services Profession)
 GATEWAY="Gateway"         # the eighth AppHost resource (F-015-T05) — project dir matches AppHostWiring.cs's Projects.Gateway
 READY_TIMEOUT=300          # a cold run builds seven services first
 XCODE_APP="/Applications/Xcode.app"

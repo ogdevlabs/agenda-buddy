@@ -1,7 +1,7 @@
 {
   "openapi": "3.0.4",
   "info": {
-    "title": "Booking",
+    "title": "Booking.Api",
     "version": "1.0"
   },
   "paths": {
@@ -23,14 +23,21 @@
         },
         "responses": {
           "400": {
-            "description": "Bad Request"
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppointmentEntityDataResponse"
+                }
+              }
+            }
           },
           "201": {
             "description": "Created",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AppointmentEntity"
+                  "$ref": "#/components/schemas/AppointmentEntityDataResponse"
                 }
               }
             }
@@ -54,14 +61,21 @@
         },
         "responses": {
           "400": {
-            "description": "Bad Request"
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppointmentEntityDataResponse"
+                }
+              }
+            }
           },
           "202": {
             "description": "Accepted",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AppointmentEntity"
+                  "$ref": "#/components/schemas/AppointmentEntityDataResponse"
                 }
               }
             }
@@ -85,7 +99,14 @@
         },
         "responses": {
           "400": {
-            "description": "Bad Request"
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppointmentEntityDataResponse"
+                }
+              }
+            }
           },
           "204": {
             "description": "No Content"
@@ -125,7 +146,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AppointmentStatusResponse"
+                  "$ref": "#/components/schemas/AppointmentStatusResponseDataResponse"
                 }
               }
             }
@@ -178,10 +199,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/NoteEntity"
-                  }
+                  "$ref": "#/components/schemas/NoteEntityIEnumerableDataResponse"
                 }
               }
             }
@@ -219,7 +237,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/NoteEntity"
+                  "$ref": "#/components/schemas/NoteEntityDataResponse"
                 }
               }
             }
@@ -269,7 +287,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/NoteEntity"
+                  "$ref": "#/components/schemas/NoteEntityDataResponse"
                 }
               }
             }
@@ -340,7 +358,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PaymentEntity"
+                  "$ref": "#/components/schemas/PaymentEntityDataResponse"
                 }
               }
             }
@@ -391,7 +409,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PaymentEntity"
+                  "$ref": "#/components/schemas/PaymentEntityDataResponse"
                 }
               }
             }
@@ -450,6 +468,26 @@
         },
         "additionalProperties": false
       },
+      "AppointmentEntityDataResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/AppointmentEntity"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "success": {
+            "type": "boolean",
+            "readOnly": true
+          }
+        },
+        "additionalProperties": false
+      },
       "AppointmentStatus": {
         "enum": [
           0,
@@ -485,6 +523,26 @@
         },
         "additionalProperties": false
       },
+      "AppointmentStatusResponseDataResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/AppointmentStatusResponse"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "success": {
+            "type": "boolean",
+            "readOnly": true
+          }
+        },
+        "additionalProperties": false
+      },
       "NoteEntity": {
         "required": [
           "appointmentIdentifier",
@@ -516,6 +574,50 @@
           "updatedAt": {
             "type": "string",
             "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "NoteEntityDataResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/NoteEntity"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "success": {
+            "type": "boolean",
+            "readOnly": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "NoteEntityIEnumerableDataResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NoteEntity"
+            },
+            "nullable": true
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "success": {
+            "type": "boolean",
+            "readOnly": true
           }
         },
         "additionalProperties": false
@@ -607,6 +709,26 @@
           "createdAt": {
             "type": "string",
             "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "PaymentEntityDataResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/PaymentEntity"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "success": {
+            "type": "boolean",
+            "readOnly": true
           }
         },
         "additionalProperties": false

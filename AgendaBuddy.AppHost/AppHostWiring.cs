@@ -111,7 +111,7 @@ internal static class AppHostWiring
         // password — 262 ms of CPU each, measured — so it is the only service the per-IP limiter applies
         // to (threat T-101, ARCHITECTURE.md D-4).
         var identity = AddApi<Projects.Identity>("identity", identityDb, needsPrivateKey: true, spendsBcrypt: true);
-        var booking = AddApi<Projects.Booking>("booking", agendaDb, needsKafka: true);
+        var booking = AddApi<Projects.Booking_Api>("booking", agendaDb, needsKafka: true);
         var customer = AddApi<Projects.Customer>("customer", agendaDb, needsKafka: true);
         var provider = AddApi<Projects.Provider>("provider", agendaDb, needsKafka: true);
         var calendar = AddApi<Projects.Calendar>("calendar", agendaDb);

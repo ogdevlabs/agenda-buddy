@@ -42,13 +42,19 @@ the shared handler, a cross-cutting change affecting all 7 services — F-020's 
 ### 3.1 `POST /api/v1/booking/appointments` (Book)
 
 - **Before:** 201 with the raw success/failure string from the handler.
-- **After:** 201 with `DataResponse<AppointmentResponse>` (a new DTO — identifier, provider/customer email,
-  start/end, status).
+- **After (corrected at F-019-T11, built at T04):** 201 with `DataResponse<AppointmentEntity>`, not a new
+  `AppointmentResponse` DTO as originally planned here. Requirement 7 (Mapster-based request/response DTOs,
+  keeping `AppointmentEntity` out of route signatures) was never assigned to any F-019 task — T04's own
+  requirement list was 2/3/4/5/9/10, deliberately excluding 7 — so the entity keeps flowing through
+  unchanged, exactly as it did before this feature. Disclosed as a known gap, not fixed here: a future task
+  (F-020, or a dedicated follow-up) owns introducing `AppointmentResponse` if Requirement 7 is ever picked up.
 - Status codes unchanged: 201 success, existing failure codes per `BookingRouteContractTest.cs`.
 
 ### 3.2 `PUT /api/v1/booking/appointments/` (Update), `DELETE /api/v1/booking/appointments/` (Cancel)
 
-Same shape change as 3.1 — `DataResponse<AppointmentResponse>` on success.
+Same shape change as 3.1 — `DataResponse<AppointmentEntity>` on success. Cancel's success path is a further,
+separate exception: a 204 No Content cannot carry a JSON body at all, so it stays exactly `NoContent()` with
+no envelope — disclosed in Requirement 10's own attestation (§4 below), not silently unmet.
 
 ### 3.3 `POST /api/v1/booking/appointments/{id}/status`
 
@@ -69,8 +75,25 @@ Same treatment as 3.3/3.4.
 ## 4. What does not change
 
 - Authentication/authorization: unchanged. `OwnershipGuard.AssertOwnerAny`/`AssertOwner` calls stay exactly
-  where they are today, in the endpoint delegate (or move verbatim into the `Booking.Core` handler, per
-  Design — either way, no authorization *logic* changes).
+  where they are today, in the endpoint delegate (built at F-019-T04/T06 — authorization stayed in
+  `Booking.Api`, not the `Booking.Core` handler, for every route; no authorization *logic* changed either
+  way).
 - The 5 status-transition/notes/payment routes' typed-`Results<>` failure branches (`ForbidHttpResult`,
   `NotFound`, `Conflict<string>`, `BadRequest<string>`) — unchanged shapes, unchanged trigger conditions.
 - `AppointmentEntity`'s persisted shape — see `data-model.md`.
+- **Corrected at F-019-T11, built at T04/T06 — two disclosed exceptions to "every success response gets
+  `DataResponse<T>`":** Cancel (`DELETE /appointments/`) and Delete Note (`DELETE /notes/{id}`) both answer
+  204 No Content on success, unchanged — a 204 cannot carry a JSON body by HTTP semantics, so there is
+  nothing to wrap. Requirement 10's own PRD language ("becomes the response envelope for all 10 routes") is
+  read as "every route whose success response has a body," not literally all 10.
+- **Corrected at F-019-T11, updated again at Party Review (2026-08-27):** Requirement 6 (Validot replacing
+  `MiniValidator` everywhere) reached 3 of Booking's 10 routes, not 1. `POST /appointments` (Book) migrated
+  at T04; `POST /appointments/{id}/notes` and `PUT /notes/{id}` migrated during Party Review remediation
+  (their originally-authored `NoteSpec` had a whitespace-rejection bug, fixed before wiring — see
+  `verification.md` §3.11). `PUT`/`DELETE /appointments/` (Update/Cancel) still call
+  `MiniValidator.TryValidate` unchanged — no F-019 task was ever assigned this conversion for them (T04's
+  own requirement list excluded 6) — tracked as `agenda-buddy-02e`. The remaining 5 routes
+  (`POST .../status`, `POST .../payment`, and the 3 bodyless routes) use either inline non-Validot checks
+  or have no request body to validate; their `StatusSpec`/`PaymentSpec` Validot specs were authored at T02
+  but never wired to anything and were deleted as dead code at Party Review, not silently left as
+  unreachable ceremony. Filed as a known gap for a follow-up task, not silently treated as done.

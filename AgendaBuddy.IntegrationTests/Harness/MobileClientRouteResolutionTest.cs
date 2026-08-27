@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using Booking.Requests;
 using Library.Entities;
 using MobileApp.Routing;
 using MongoDB.Bson;
@@ -71,6 +72,10 @@ public class MobileBookingRouteResolutionTest(ServiceHostFixture<BookingAnchor> 
             route, _tokens.CreateToken(Customer, TokenFactory.CustomerRole), payload));
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        // F-019-T11 (AC8): live confirmation of the DataResponse<T> envelope, not just the status code.
+        var wrapper = await response.Content.ReadFromJsonAsync<DataResponse<AppointmentStatusResponse>>(HarnessJson.Options);
+        Assert.Equal(nameof(AppointmentStatus.Booked), wrapper!.Data!.Status);
     }
 
     [Fact]
@@ -106,7 +111,8 @@ public class MobileBookingRouteResolutionTest(ServiceHostFixture<BookingAnchor> 
             BookingRouteBuilder.CreateNote(Appointment),
             _tokens.CreateToken(Provider, TokenFactory.ProviderRole),
             BookingRouteBuilder.BuildNotePayload("first draft")));
-        var note = await created.Content.ReadFromJsonAsync<NoteEntity>(HarnessJson.Options);
+        // F-019-T06: DataResponse<T> envelope -- the identifier moved from the root to .data.
+        var note = (await created.Content.ReadFromJsonAsync<DataResponse<NoteEntity>>(HarnessJson.Options))!.Data;
 
         var route = BookingRouteBuilder.UpdateNote(note!.Id.ToString());
         var response = await service.Client.SendAsync(MobileRouteRequests.Build(
@@ -143,6 +149,10 @@ public class MobileBookingRouteResolutionTest(ServiceHostFixture<BookingAnchor> 
             route, _tokens.CreateToken(Provider, TokenFactory.ProviderRole)));
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        // F-019-T11 (AC8): live confirmation of the DataResponse<T> envelope, not just the status code.
+        var wrapper = await response.Content.ReadFromJsonAsync<DataResponse<PaymentEntity>>(HarnessJson.Options);
+        Assert.Equal(50m, wrapper!.Data!.Amount);
     }
 }
 

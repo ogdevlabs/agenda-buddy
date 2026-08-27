@@ -68,8 +68,10 @@ public class BookingPersistenceTest(ServiceHostFixture<BookingAnchor> host, Cryp
         var response = await service.Client.SendAsync(request);
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
 
+        // F-019-T04: the response is now wrapped in DataResponse<T> (ADR-049) -- the identifier moved
+        // from the root to .data, but the persisted-state assertions below are unchanged (AC11).
         using var created = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-        var identifier = created.RootElement.GetProperty("identifier").GetString();
+        var identifier = created.RootElement.GetProperty("data").GetProperty("identifier").GetString();
 
         var stored = await ConfiguredCollection.Of<AppointmentEntity>(service, "AppointmentsCollection", "appointments")
             .Find(Builders<AppointmentEntity>.Filter.Eq(a => a.Identifier, identifier))

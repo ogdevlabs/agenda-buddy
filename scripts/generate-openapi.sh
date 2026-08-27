@@ -83,12 +83,22 @@ echo "    mongo on 127.0.0.1:${mongo_port}"
 export MongoDbSettings__DatabaseName="openapi_scratch"
 export ASPNETCORE_ENVIRONMENT=Development
 
+# F-019-T04: Booking's project folder became Booking.Api, but its OpenAPI output filename and the
+# OpenApiSpecCatalog.cs key it must match stay "Booking" (a display name, not a path) -- so this maps
+# the service name to its actual project folder wherever the two now differ.
+project_dir() {
+  case "$1" in
+    Booking) echo "Booking.Api" ;;
+    *) echo "$1" ;;
+  esac
+}
+
 # The Http port a service binds standalone, from its own appsettings.json.
 port_of() {
   python3 -c "
 import json,sys
 try:
-    d = json.load(open('$REPO_ROOT/$1/appsettings.json'))
+    d = json.load(open('$REPO_ROOT/$(project_dir "$1")/appsettings.json'))
     print(d['Kestrel']['Endpoints']['Http']['Url'].rsplit(':', 1)[1])
 except Exception:
     print('')"
@@ -98,7 +108,8 @@ generated=()
 failed=()
 
 for service in "${SERVICES[@]}"; do
-  proj="$REPO_ROOT/$service/$service.csproj"
+  dir="$(project_dir "$service")"
+  proj="$REPO_ROOT/$dir/$dir.csproj"
   [ -f "$proj" ] || { echo "!! no such service: $service (skipping)"; failed+=("$service"); continue; }
 
   # Each service pins its own Kestrel endpoints in appsettings.json, and IConfiguration WINS over
@@ -106,7 +117,7 @@ for service in "${SERVICES[@]}"; do
   # the service's own documented port rather than a scratch one. Deterministic, and it is the same port
   # the Bruno collection targets.
   port="$(port_of "$service")"
-  [ -n "$port" ] || { echo "    ✗ no Kestrel Http port in $service/appsettings.json"; failed+=("$service"); continue; }
+  [ -n "$port" ] || { echo "    ✗ no Kestrel Http port in $dir/appsettings.json"; failed+=("$service"); continue; }
 
   echo "==> $service (port $port)"
   # --no-launch-profile: launchSettings.json would otherwise override ASPNETCORE_ENVIRONMENT.

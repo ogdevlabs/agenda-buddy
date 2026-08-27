@@ -121,6 +121,14 @@ public class PaymentsAndStatusTest(ServiceHostFixture<BookingAnchor> host, Crypt
         Assert.True(response.IsSuccessStatusCode,
             $"the update itself should succeed, got {response.StatusCode}: {await response.Content.ReadAsStringAsync()}");
 
+        // F-019-T11 (AC8) / Party Review (agenda-buddy-2hd, fixed): live confirmation the response
+        // body reflects the actual persisted entity, not the client's forged submission -- the
+        // handler used to echo request.AppointmentEntity verbatim, so this assertion would have
+        // failed (reporting "Completed") before the fix.
+        var wrapper = await response.Content.ReadFromJsonAsync<DataResponse<AppointmentEntity>>(HarnessJson.Options);
+        Assert.Equal(Appointment, wrapper!.Data!.Identifier);
+        Assert.Equal(AppointmentStatus.Requested, wrapper.Data.AppointmentStatus);
+
         var stored = await StoredAsync(service);
         Assert.Equal(AppointmentStatus.Requested, stored.AppointmentStatus);
 
@@ -269,7 +277,8 @@ public class PaymentsAndStatusTest(ServiceHostFixture<BookingAnchor> host, Crypt
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
 
-        var payment = await response.Content.ReadFromJsonAsync<PaymentEntity>(HarnessJson.Options);
+        // F-019-T06: DataResponse<T> envelope -- the payment moved from the root to .data.
+        var payment = (await response.Content.ReadFromJsonAsync<DataResponse<PaymentEntity>>(HarnessJson.Options))!.Data;
         Assert.Equal(PaymentStatus.Succeeded, payment!.Status);
 
         // The proof that nothing was charged, and it is in the STORED DATA rather than only in a log: Stripe
@@ -301,7 +310,7 @@ public class PaymentsAndStatusTest(ServiceHostFixture<BookingAnchor> host, Crypt
                 customerEmail = Stranger
             }));
 
-        var payment = await response.Content.ReadFromJsonAsync<PaymentEntity>(HarnessJson.Options);
+        var payment = (await response.Content.ReadFromJsonAsync<DataResponse<PaymentEntity>>(HarnessJson.Options))!.Data;
 
         Assert.Equal(Provider, payment!.ProviderEmail);
         Assert.Equal(Customer, payment.CustomerEmail);
