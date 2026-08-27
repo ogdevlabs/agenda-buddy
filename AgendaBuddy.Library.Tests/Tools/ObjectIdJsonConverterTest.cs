@@ -15,7 +15,7 @@ namespace Common.Tests.Tools;
 // comment's claim goes stale.
 //
 // Design Roundtable (2026-08-26, docs/pdlc/mom/api-refactor-pilot-booking_design-roundtable_mom_2026_08_26.md):
-// promoted from a throwaway spike to a permanent contract test. Booking.Domain's real DataResponse<T>
+// promoted from a throwaway spike to a permanent contract test. AgendaBuddy.Booking.Domain's real DataResponse<T>
 // (ADR-049) doesn't exist yet at this point in the build (T03 creates it) — TestWrapper<T> below mirrors
 // its exact shape so this test doesn't need to wait on or duplicate across that project boundary.
 public class ObjectIdJsonConverterTest

@@ -32,7 +32,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Calendar", "Calendar\Calend
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Booking", "Booking", "{9090A722-7F2B-4948-A723-010A35E42DA3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Booking.Tests", "Booking.Tests\Booking.Tests.csproj", "{B5521DBD-1FFF-42F0-B9F8-CE5F7FBFD862}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AgendaBuddy.Booking.Tests", "AgendaBuddy.Booking.Tests\AgendaBuddy.Booking.Tests.csproj", "{B5521DBD-1FFF-42F0-B9F8-CE5F7FBFD862}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Calendar.Tests", "Calendar.Tests\Calendar.Tests.csproj", "{0AD6008A-0FB4-42D5-8C00-9202AD1882C0}"
 EndProject
@@ -76,13 +76,13 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AgendaBuddy.IntegrationTest
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AgendaBuddy.Gateway", "AgendaBuddy.Gateway\AgendaBuddy.Gateway.csproj", "{29F5790A-270D-496D-8DFE-88662D87BAA2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Booking.Domain", "Booking.Domain\Booking.Domain.csproj", "{A37EF29A-6A72-4A57-8247-BF6772583DB9}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AgendaBuddy.Booking.Domain", "AgendaBuddy.Booking.Domain\AgendaBuddy.Booking.Domain.csproj", "{A37EF29A-6A72-4A57-8247-BF6772583DB9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Booking.Core", "Booking.Core\Booking.Core.csproj", "{FCDF4E57-07ED-4FC0-9829-E0786F251A71}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AgendaBuddy.Booking.Core", "AgendaBuddy.Booking.Core\AgendaBuddy.Booking.Core.csproj", "{FCDF4E57-07ED-4FC0-9829-E0786F251A71}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Booking.Infrastructure", "Booking.Infrastructure\Booking.Infrastructure.csproj", "{EB01D24F-B5B5-44A0-A3D8-C865F34FCB7D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AgendaBuddy.Booking.Infrastructure", "AgendaBuddy.Booking.Infrastructure\AgendaBuddy.Booking.Infrastructure.csproj", "{EB01D24F-B5B5-44A0-A3D8-C865F34FCB7D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Booking.Api", "Booking.Api\Booking.Api.csproj", "{19500F5F-2DA3-4716-BE5E-C352D4879AD7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AgendaBuddy.Booking.Api", "AgendaBuddy.Booking.Api\AgendaBuddy.Booking.Api.csproj", "{19500F5F-2DA3-4716-BE5E-C352D4879AD7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

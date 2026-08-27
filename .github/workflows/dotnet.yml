@@ -57,7 +57,7 @@ jobs:
           # 'every'. Under 'some' every pattern is OR-ed, so a leading-`!` pattern does NOT exclude
           # anything — it is silently a no-op. ('some-with-excludes', which would work, exists only
           # on master; it is not in the v3 tag.) 'every' is unusable here because no single file can
-          # match all of `AgendaBuddy.Library/**`, `Booking.Api/**`, … at once.
+          # match all of `AgendaBuddy.Library/**`, `AgendaBuddy.Booking.Api/**`, … at once.
           #
           # Two real bugs came from that misunderstanding, both fixed below:
           #   1. Markdown inside a code directory built the whole backend. `AgendaBuddy.Kafka/readme.md`
@@ -114,7 +114,7 @@ jobs:
               # the code that decides whether a request is authenticated — ran zero jobs.
               - 'AgendaBuddy.Library.ServerAuth/**'
               - 'AgendaBuddy.EventAndCommands/**'
-              - 'Booking.Api/**'
+              - 'AgendaBuddy.Booking.Api/**'
               - 'Calendar/**'
               - 'Customer/**'
               - 'Provider/**'
@@ -126,7 +126,7 @@ jobs:
               - 'AgendaBuddy.ServiceDefaults/**'
               # The 12 backend test projects, named explicitly. AgendaBuddy.MobileApp.Tests is absent on
               # purpose — it is covered by the mobile-tests job and must not gate the backend.
-              - 'Booking.Tests/**'
+              - 'AgendaBuddy.Booking.Tests/**'
               - 'Calendar.Tests/**'
               - 'Customer.Tests/**'
               - 'Provider.Tests/**'
@@ -163,7 +163,7 @@ jobs:
             # own container output. Scoped to exactly PRD Requirement 9's list: the 7 service dirs
             # (their .csproj files are inside these globs already), and docker-compose*.yml.
             docker:
-              - 'Booking.Api/**'
+              - 'AgendaBuddy.Booking.Api/**'
               - 'Calendar/**'
               - 'Customer/**'
               - 'Provider/**'
@@ -274,7 +274,7 @@ jobs:
           JWT_PUBLIC_KEY=$(cat "$RUNNER_TEMP/jwt.pub")
           export JWT_PRIVATE_KEY JWT_PUBLIC_KEY
 
-          for svc in Booking.Api Calendar Customer Provider Services Profession AgendaBuddy.Identity; do
+          for svc in AgendaBuddy.Booking.Api Calendar Customer Provider Services Profession AgendaBuddy.Identity; do
             log=$(mktemp)
             ASPNETCORE_ENVIRONMENT=Development \
             ConnectionStrings__mongodb='mongodb://localhost:27017' \
@@ -491,7 +491,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        service: [Booking.Api, Calendar, Customer, Provider, Services, Profession, AgendaBuddy.Identity]
+        service: [AgendaBuddy.Booking.Api, Calendar, Customer, Provider, Services, Profession, AgendaBuddy.Identity]
 
     steps:
       - uses: actions/checkout@v7
@@ -520,7 +520,7 @@ jobs:
       # disallowed in image names) and fails Trivy with "could not parse reference".
       #
       # F-019-T04: verified live against a real `dotnet publish -t:PublishContainer` for
-      # Booking.Api — the SDK's default derivation replaces `.` with `-`, not just lowercasing, so
+      # AgendaBuddy.Booking.Api — the SDK's default derivation replaces `.` with `-`, not just lowercasing, so
       # the built image is `booking-api:latest`, not `booking.api:latest`. The `tr` alone (dots
       # survive lowercasing unchanged) would have computed the wrong ref and failed Trivy the same
       # way the original uppercase bug did.

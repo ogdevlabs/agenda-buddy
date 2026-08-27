@@ -45,7 +45,7 @@ namespace Common.Tests.Security;
 public class TransportSecurityOrderTest
 {
     private static readonly string[] AllServices =
-        ["AgendaBuddy.Gateway", "AgendaBuddy.Identity", "Booking.Api", "Calendar", "Customer", "Profession", "Provider", "Services"];
+        ["AgendaBuddy.Gateway", "AgendaBuddy.Identity", "AgendaBuddy.Booking.Api", "Calendar", "Customer", "Profession", "Provider", "Services"];
 
     private const string TransportSecurityCall = "UseAgendaBuddyTransportSecurity(";
     private const string AuthenticationCall = "app.UseAuthentication()";
@@ -85,7 +85,7 @@ public class TransportSecurityOrderTest
 
     [Theory]
     [InlineData("AgendaBuddy.Identity")]
-    [InlineData("Booking.Api")]
+    [InlineData("AgendaBuddy.Booking.Api")]
     [InlineData("Calendar")]
     [InlineData("Customer")]
     [InlineData("Profession")]
@@ -121,7 +121,7 @@ public class TransportSecurityOrderTest
 
     [Theory]
     [InlineData("AgendaBuddy.Identity")]
-    [InlineData("Booking.Api")]
+    [InlineData("AgendaBuddy.Booking.Api")]
     [InlineData("Calendar")]
     [InlineData("Customer")]
     [InlineData("Profession")]

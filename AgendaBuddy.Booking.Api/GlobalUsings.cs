@@ -1,0 +1,34 @@
+global using AgendaBuddy.ServiceDefaults;
+global using AgendaBuddy.Library.Configuration;
+global using AgendaBuddy.Library.Diagnostics;
+// Global using directives
+
+global using System.Diagnostics;
+global using System.Diagnostics.CodeAnalysis;
+global using System.Net;
+global using System.Security.Claims;
+global using AgendaBuddy.Booking.Configuration;
+global using AgendaBuddy.Booking.Core.Commands;
+global using AgendaBuddy.Booking.Domain.Commands;
+global using AgendaBuddy.Booking.Domain.Responses;
+global using AgendaBuddy.Booking.Extensions;
+global using AgendaBuddy.Booking.Requests;
+global using AgendaBuddy.Booking.Domain.Queries;
+global using AgendaBuddy.Booking.Validation;
+global using AgendaBuddy.Kafka;
+global using AgendaBuddy.Library.Entities;
+global using AgendaBuddy.Library.Extensions;
+global using AgendaBuddy.Library.Tools;
+global using AgendaBuddy.Library.Repositories;
+global using AgendaBuddy.Library.Services;
+global using MediatR;
+global using Microsoft.AspNetCore.Diagnostics;
+global using Microsoft.AspNetCore.Http.HttpResults;
+global using Microsoft.AspNetCore.Mvc;
+global using Microsoft.AspNetCore.WebUtilities;
+global using Microsoft.Net.Http.Headers;
+global using MiniValidation;
+global using MongoDB.Driver;
+global using Validot;
+global using AgendaBuddy.EventAndCommands;
+global using AgendaBuddy.EventAndCommands.Persistence;

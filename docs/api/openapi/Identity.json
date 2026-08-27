@@ -1,14 +1,14 @@
 {
   "openapi": "3.0.4",
   "info": {
-    "title": "Identity",
+    "title": "AgendaBuddy.Identity",
     "version": "1.0"
   },
   "paths": {
     "/device-token": {
       "post": {
         "tags": [
-          "Identity"
+          "AgendaBuddy.Identity"
         ],
         "operationId": "RegisterDeviceToken",
         "requestBody": {
@@ -193,7 +193,7 @@
   },
   "tags": [
     {
-      "name": "Identity"
+      "name": "AgendaBuddy.Identity"
     }
   ]
 }

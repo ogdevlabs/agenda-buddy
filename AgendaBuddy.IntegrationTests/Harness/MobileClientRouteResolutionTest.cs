@@ -1,7 +1,7 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using Booking.Requests;
+using AgendaBuddy.Booking.Requests;
 using AgendaBuddy.Library.Entities;
 using AgendaBuddy.MobileApp.Routing;
 using MongoDB.Bson;

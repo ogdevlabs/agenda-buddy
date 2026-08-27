@@ -33,7 +33,7 @@ namespace Common.Tests.Security;
 /// ⚠️ <b>The second assertion matches <c>ProjectReference</c>, not the project name.</b> Seven
 /// production <c>.csproj</c> files legitimately name <c>AgendaBuddy.IntegrationTests</c> in an
 /// <c>&lt;InternalsVisibleTo&gt;</c> item, added by <c>F-016-T02</c> for AC-2 (e.g.
-/// <c>Booking.Api/Booking.Api.csproj:39</c>). That is a compile-time friend-assembly grant and pulls in no
+/// <c>AgendaBuddy.Booking.Api/AgendaBuddy.Booking.Api.csproj:39</c>). That is a compile-time friend-assembly grant and pulls in no
 /// code — it is not what AC-3 prohibits. A test that matched the bare string would be red forever,
 /// and the tempting fix would be deleting the grant and silently breaking AC-2. The
 /// <c>ProjectReferenceDetector_TreatsInternalsVisibleToAsHarmless</c> case exists to keep that

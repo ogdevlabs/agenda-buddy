@@ -88,7 +88,7 @@ export ASPNETCORE_ENVIRONMENT=Development
 # the service name to its actual project folder wherever the two now differ.
 project_dir() {
   case "$1" in
-    Booking) echo "Booking.Api" ;;
+    Booking) echo "AgendaBuddy.Booking.Api" ;;
     *) echo "$1" ;;
   esac
 }
