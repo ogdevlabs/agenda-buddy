@@ -93,9 +93,14 @@ public class AuthService : IAuthService
             var refreshToken = await _secureStorage.GetAsync(RefreshTokenKey);
             if (!string.IsNullOrEmpty(refreshToken))
             {
+                // Read before the storage clear below, and sent through the no-auth client (not
+                // JwtDelegatingHandler) deliberately — this call must never trigger that
+                // handler's own 401-refresh-and-retry, which would rotate the refresh token this
+                // request is trying to invalidate out from under it.
+                var accessToken = await _secureStorage.GetAsync(JwtDelegatingHandler.JwtKey);
                 var client = _httpClientFactory.CreateClient("AgendaBuddyApiNoAuth");
                 var route = AuthRouteBuilder.Logout();
-                await client.PostAsJsonAsync(route.Path, new { refreshToken });
+                await client.PostAsJsonAsync(route.Path, new { refreshToken, accessToken });
             }
         }
         finally

@@ -189,6 +189,10 @@
           "refreshToken": {
             "type": "string",
             "nullable": true
+          },
+          "accessToken": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false

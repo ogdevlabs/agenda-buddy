@@ -18,6 +18,9 @@ builder.AddServiceDefaults();
 builder.Services.AddSingleton<IMongoClient>(_ =>
     new MongoClient(MongoConnectionResolver.Resolve(builder.Configuration)));
 
+// Cross-service revocation denylist -- every service that authenticates a bearer token needs to check it.
+builder.Services.AddTokenRevocationStore(builder.Configuration);
+
 // Readiness probe. Singleton so the 5s result cache is process-wide.
 builder.Services.AddSingleton<MongoHealthCheck>();
 builder.Services.AddHealthChecks()
@@ -63,6 +66,20 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+
+// Idempotent -- safe on every startup across all seven processes sharing this collection.
+// Swallowed on failure, same as Profession's seed hosted service: an unreachable Mongo at
+// boot (e.g. the OpenApiSpecGenerator harness, which deliberately never touches a real one)
+// must not prevent the host from starting -- the denylist check itself already fails open
+// per-request if the collection or its index is missing.
+try
+{
+    await app.Services.GetRequiredService<MongoTokenRevocationStore>().EnsureIndexAsync();
+}
+catch (Exception ex)
+{
+    app.Logger.LogWarning(ex, "Could not ensure the revoked_tokens TTL index at startup");
+}
 
 // /health runs every check; /alive only the live-tagged ones, so a service waiting on MongoDB is
 // not restarted for being unready.
@@ -201,7 +218,7 @@ auth.MapPost("/logout", async (LogoutRequest req, IdentityService svc) =>
         return Results.NoContent();
     try
     {
-        await svc.LogoutAsync(req.RefreshToken);
+        await svc.LogoutAsync(req.RefreshToken, req.AccessToken);
         return Results.NoContent();
     }
     catch (ServiceUnavailableException ex) { return Results.Problem(detail: ex.Message, statusCode: 503, title: "service_unavailable"); }

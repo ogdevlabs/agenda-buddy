@@ -10,6 +10,7 @@ global using AgendaBuddy.Identity.Configurations;
 global using AgendaBuddy.Identity.Extensions;
 global using AgendaBuddy.Library.Entities;
 global using AgendaBuddy.Library.Extensions;
+global using AgendaBuddy.Library.Security;
 global using AgendaBuddy.Library.Repositories;
 global using AgendaBuddy.Library.Services;
 global using MediatR;

@@ -4,6 +4,18 @@ All notable changes to this project are documented in this file, in [Keep a Chan
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-08-27
+
+### Added
+
+- **F-023 token-revocation**: logging out now denylists the caller's own access token's `jti`
+  (`POST /api/v1/auth/logout` gains an optional `accessToken` field, backward compatible), so it stops
+  authenticating immediately across all seven services rather than staying valid for up to its full
+  60-minute lifetime. The denylist is a new MongoDB collection (`revoked_tokens`) with a TTL index —
+  cross-service, unlike the existing per-process `IDistributedCache` — checked once per authenticated
+  request in `AuthenticationExtensions`' `OnTokenValidated` hook (ADR-053). No `aud` claim was
+  introduced; `ValidateAudience` stays `false` (evaluated and rejected — see ADR-053).
+
 ## [0.11.0] - 2026-08-27
 
 ### Added

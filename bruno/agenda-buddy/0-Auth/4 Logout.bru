@@ -10,10 +10,12 @@ post {
 }
 body:json {
   {
-    "refreshToken": "{{refreshToken}}"
+    "refreshToken": "{{refreshToken}}",
+    "accessToken": "{{accessToken}}"
   }
 }
 docs {
-  Revokes the refresh token server-side. The **access token stays valid until it expires** — there is no
-  revocation list yet (F-023 owns token revocation).
+  Revokes the refresh token server-side, and denylists the access token's `jti` so it stops working
+  immediately rather than staying valid for its remaining lifetime. `accessToken` is optional — omitting
+  it clears the refresh token only, same as before.
 }

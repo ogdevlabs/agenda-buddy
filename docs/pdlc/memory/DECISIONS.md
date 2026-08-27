@@ -1171,3 +1171,62 @@ fix and would need a provider decision, credentials, and its own threat model, m
 ADR-038 already applied to payments. Returning the token directly in the `202` response body — rejected
 outright: it would let anyone who knows an email address reset that account's password with no proof of
 access to anything the account holder controls, defeating the feature's entire purpose.
+
+---
+
+## ADR-053 — Token revocation: MongoDB TTL collection as the denylist, no `aud` claim (F-023) *(design decision)*
+
+**Date:** 2026-08-27 · **Status:** Accepted
+
+**Context.** F-023 needed a real design decision, not a one-task fix: where does a cross-service access-
+token denylist live, given the shared `IDistributedCache` is per-process `AddDistributedMemoryCache`
+today and cannot see a revocation written by another of the seven services? Two questions to resolve:
+the denylist's storage, and whether to also introduce an `aud` claim (`ValidateAudience = true`) to
+narrow blast radius independent of any denylist.
+
+**Decision — denylist storage: a new MongoDB collection (`revoked_tokens`), keyed by `jti`, with a
+TTL index on `expires_at`.** Every service already holds an `IMongoClient` singleton and already
+depends on `AgendaBuddy.Library`/`AgendaBuddy.Library.ServerAuth` (both project references exist in
+every one of the seven `*.Api`/`Identity` projects today) — adding a Mongo-backed store costs zero new
+infrastructure, zero new package references, and zero new Aspire resources. `ITokenRevocationStore`
+lives in `Library.ServerAuth` (interface only, no Mongo dependency there) so
+`AuthenticationExtensions.AddAgendaBuddyAuthentication`'s `OnTokenValidated` hook can resolve it from
+DI without ServerAuth itself depending on MongoDB.Driver; the concrete `MongoTokenRevocationStore`
+lives in `AgendaBuddy.Library`, which already does. `AgendaBuddy.Library.csproj` gained a
+`ProjectReference` to `Library.ServerAuth` (previously zero references either direction) to make the
+interface type visible — an acyclic addition, since ServerAuth references nothing.
+
+The TTL index (`expireAfterSeconds: 0` against `expires_at`) means MongoDB's own background reaper
+deletes an entry the instant the token it revokes would have expired anyway — AC3/AC4's "no unbounded
+growth" is enforced by the database, not by application code that could be forgotten. Index creation
+is idempotent and runs at every service's own startup, wrapped in try/catch: an unreachable Mongo at
+boot must not crash the host (the `OpenApiSpecGenerator` test harness deliberately gives every service
+a syntactically-valid-but-unreachable connection string at DI-registration time, matching Profession's
+existing `ProfessionSeedHostedService` precedent — the first implementation of this ADR skipped the
+try/catch and broke that harness for all seven services; caught and fixed before merge, see the PR).
+
+**Decision — no `aud` claim, `ValidateAudience` stays `false`.** All seven services trust exactly one
+issuer (`agenda-buddy-identity`) today, uniformly — there is no notion of a token scoped to "just
+Booking" or "just Customer." A shared `aud` value equal across all seven would duplicate the existing
+`ValidateIssuer` check without narrowing anything a leaked token could reach. Per-service `aud` values
+would mean a token minted for one service could not authenticate against another — which is not a
+narrowing of an existing bug, it is the removal of this project's actual design (one token, every
+service accepts it), a separate and much larger change with its own migration story (every client, not
+just revocation-adjacent code, would need to know which audience to request). Out of scope here.
+
+**Consequences.** `POST /api/v1/auth/logout` gains an optional `accessToken` field (backward compatible
+— omitting it behaves exactly as before). `IdentityService.LogoutAsync` decodes (does not
+re-verify) the submitted access token to read its `jti`/`exp`: the caller can only submit a token it
+already legitimately holds, or garbage, which decodes to nothing and is silently ignored (R6) — there
+is no signature to usefully re-check here that every other service's own `AuthenticationExtensions`
+validation doesn't already enforce on the very next request that would have used it. `docs/api/openapi/Identity.json`
+regenerated for the new field, via `OpenApiSpecCatalog`'s byte-deterministic generator directly (not
+`scripts/generate-openapi.sh`, which was found — separately from this feature, and left unfixed as
+out of scope — to serialize with different JSON indentation than the pinned `OpenApiSpecGenerator`
+writer settings; filed as a follow-up rather than bundled in here).
+
+**Alternatives rejected.** A real distributed cache (Redis via Aspire) — rejected as new infrastructure
+disproportionate to one feature's needs, with no other consumer in this project today; revisit if a
+second cross-service caching need arises. Turning `ValidateAudience` on with a single shared value
+across all seven — rejected as pure overhead with no security benefit over the existing `ValidateIssuer`
+check, for the reason above.

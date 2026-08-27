@@ -15,6 +15,7 @@ global using AgendaBuddy.Services.Domain.Responses;
 global using AgendaBuddy.Services.Extensions;
 global using AgendaBuddy.Library.Entities;
 global using AgendaBuddy.Library.Extensions;
+global using AgendaBuddy.Library.Security;
 global using AgendaBuddy.Library.Repositories;
 global using AgendaBuddy.Library.Services;
 global using MediatR;

@@ -18,7 +18,8 @@ public record RefreshRequest(
 );
 
 public record LogoutRequest(
-    [Required] string RefreshToken
+    [Required] string RefreshToken,
+    string? AccessToken = null
 );
 
 public record TokenResponse(string AccessToken, string RefreshToken);

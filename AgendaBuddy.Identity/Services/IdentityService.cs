@@ -4,6 +4,7 @@ using System.Security.Cryptography;
 using AgendaBuddy.Identity.Configurations;
 using AgendaBuddy.Identity.Requests;
 using AgendaBuddy.Library.Entities;
+using AgendaBuddy.Library.Extensions;
 using AgendaBuddy.Library.Repositories;
 using AgendaBuddy.Library.Tools;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -19,7 +20,8 @@ public class IdentityService(
     IDateTimeProvider clock,
     IOptions<LockoutOptions>? lockoutOptions = null,
     ILogger<IdentityService>? logger = null,
-    INotificationService? notificationService = null)
+    INotificationService? notificationService = null,
+    ITokenRevocationStore? tokenRevocationStore = null)
 {
     private const string PrivateKeyEnvVar = "JWT_PRIVATE_KEY";
     private const string Issuer = "agenda-buddy-identity";
@@ -290,7 +292,7 @@ public class IdentityService(
             CreateAccessToken(privateKeyPem, credential.Email, credential.Role), refreshOpaque);
     }
 
-    public async Task LogoutAsync(string refreshToken)
+    public async Task LogoutAsync(string refreshToken, string? accessToken = null)
     {
         var hash = HashToken(refreshToken);
 
@@ -313,6 +315,38 @@ public class IdentityService(
             _log.LogInformation(
                 "credential.session-ended ok for {Account}", AccountReference(credential.Email));
         }
+
+        await RevokeAccessTokenAsync(accessToken);
+    }
+
+    /// <summary>
+    /// Denylists the caller's own access token so it stops working immediately, instead of
+    /// staying valid for up to its full 60-minute lifetime after logout. The token is decoded,
+    /// not re-validated — a caller can only submit a token it already legitimately holds (or a
+    /// garbage string, which decodes to nothing and is silently skipped, same as no token at
+    /// all); there is no signature to re-check here that every other service doesn't already
+    /// enforce on the next request that would have used it.
+    /// </summary>
+    private async Task RevokeAccessTokenAsync(string? accessToken)
+    {
+        if (string.IsNullOrWhiteSpace(accessToken) || tokenRevocationStore is null)
+            return;
+
+        JwtSecurityToken jwt;
+        try
+        {
+            jwt = new JwtSecurityTokenHandler().ReadJwtToken(accessToken);
+        }
+        catch (ArgumentException)
+        {
+            return;
+        }
+
+        var jti = jwt.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Jti)?.Value;
+        if (string.IsNullOrEmpty(jti))
+            return;
+
+        await tokenRevocationStore.RevokeAsync(jti, new DateTimeOffset(jwt.ValidTo, TimeSpan.Zero));
     }
 
     /// <summary>
