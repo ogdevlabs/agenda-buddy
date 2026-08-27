@@ -33,13 +33,12 @@ public static class ServiceCollectionExtension
         serviceCollection.AddScoped<ProviderService>();
         serviceCollection.AddScoped<ServiceService>();
 
-        // F-020-T10: GetServicesFromProviderQueryHandler/AddServicesToProviderCommandHandler/
+        // GetServicesFromProviderQueryHandler/AddServicesToProviderCommandHandler/
         // UpdateServicesFromProviderCommandHandler are typed against IProviderService, not the
         // concrete class -- it already covers everything they call. Forwarding to the already-scoped
         // concrete instance, not a second AddScoped<IProviderService, ProviderService>, so a request
         // that resolves both the concrete class and the interface in the same scope gets the same
-        // object, not two (same pattern as Booking's/Calendar's/Profession's own ServiceCollectionExtension
-        // -- the exact DI-registration gap each of those tasks' Party Reviews caught).
+        // object, not two (same pattern as Booking's/Calendar's/Profession's own ServiceCollectionExtension).
         serviceCollection.AddScoped<IProviderService>(sp => sp.GetRequiredService<ProviderService>());
 
         return serviceCollection;

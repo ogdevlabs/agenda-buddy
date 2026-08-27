@@ -5,7 +5,7 @@ namespace AgendaBuddy.AppHost.Tests;
 
 /// <summary>
 /// Structural, file-tree-based regression tests — no container runtime needed. Whether an image
-/// actually runs is verified live (F-017-T06/T07); these tests only pin the repository shape.
+/// actually runs is verified live elsewhere; these tests only pin the repository shape.
 /// </summary>
 public class DockerAndComposeHygieneTest
 {

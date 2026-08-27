@@ -9,7 +9,7 @@ using Microsoft.IdentityModel.Tokens;
 namespace AgendaBuddy.IntegrationTests.Harness;
 
 /// <summary>
-/// Pins <see cref="TokenFactory"/> — F-016-T05, the token half of AC-6.
+/// Pins <see cref="TokenFactory"/>.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -19,7 +19,7 @@ namespace AgendaBuddy.IntegrationTests.Harness;
 /// <see cref="JwtBearerOptions"/> — the same technique
 /// <c>Library.Tests/Extensions/AuthenticationExtensionsTest.cs</c> uses. Hand-copying the parameters
 /// into the test would let issuer, algorithm or clock-skew drift apart from production, and the
-/// symptom would be an unexplained 401 in F-016-T07 with nothing pointing at the cause.
+/// symptom would be an unexplained 401 with nothing pointing at the cause.
 /// </para>
 /// <para>
 /// This class mutates the process-wide <c>JWT_PUBLIC_KEY</c>, which is why it is in
@@ -90,7 +90,7 @@ public class TokenFactoryTest
         // The "foreign subject" token AC-6 calls for needs no dedicated factory method — it is simply
         // a valid token for somebody else. Recorded as a test so the absence of a
         // CreateForeignSubjectToken() reads as a decision rather than an omission. The 403 this
-        // produces against a real route is F-016-T07's assertion, not this task's.
+        // produces against a real route is asserted at the route level, not here.
         var principal = Validate(_tokens.CreateToken(Stranger));
 
         Assert.Equal(Stranger, principal.FindFirstValue(ClaimTypes.NameIdentifier));
@@ -100,10 +100,10 @@ public class TokenFactoryTest
     [Fact]
     public void TokenWithoutSubject_ValidatesButCarriesNoNameIdentifier()
     {
-        // The precondition for threat T-001. A token with no `sub` is perfectly well-formed and passes
+        // A token with no `sub` is perfectly well-formed and passes
         // signature, issuer and lifetime validation — it simply has no NameIdentifier. That is what
         // makes OwnershipGuard.AssertOwner's null-claim path reachable over HTTP rather than
-        // theoretical, and F-016-T09 is where the hole itself gets closed and asserted (AC-21).
+        // theoretical.
         var principal = Validate(_tokens.CreateTokenWithoutSubject());
 
         Assert.Null(principal.FindFirstValue(ClaimTypes.NameIdentifier));

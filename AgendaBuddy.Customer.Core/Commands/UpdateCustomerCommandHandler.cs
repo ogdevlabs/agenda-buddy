@@ -1,8 +1,7 @@
 namespace AgendaBuddy.Customer.Core.Commands;
 
-// F-020-T12: moved from AgendaBuddy.EventAndCommands.Commands.Customer. Constructor takes only
-// DI-resolvable services -- the pre-refactor handler took `email` as a per-instance constructor
-// parameter (Requests/RequestCollection.cs, deleted); it now comes from the command.
+// Constructor takes only DI-resolvable services -- the per-request email comes from the command,
+// not a per-instance constructor parameter.
 public class UpdateCustomerCommandHandler(
     IMediator mediator,
     ICustomerService customerService,
@@ -18,11 +17,9 @@ public class UpdateCustomerCommandHandler(
         var customer = await customerService.FindCustomerAsync(SupportTools<CustomerEntity>.FilterByEmail(request.Email));
         if (customer is null)
         {
-            // Preserved verbatim from AgendaBuddy.EventAndCommands.Commands.Customer.UpdateCustomerCommandHandler
-            // (deleted), including its Type string: a pre-existing copy-paste defect ("UpdateProviderCommand"
-            // instead of "UpdateCustomerCommand") that CustomerAuditTest's own remarks record as deliberately
-            // out of scope to fix (F-018-T13). Not corrected here either -- this task's recipe is
-            // envelope/dispatch only, not incidental bug fixes.
+            // Type string below is a pre-existing copy-paste defect ("UpdateProviderCommand" instead of
+            // "UpdateCustomerCommand") that CustomerAuditTest's own remarks record as deliberately out of
+            // scope to fix. Not corrected here either.
             await eventStore.SaveAsync(new Event
             {
                 Id = ObjectId.GenerateNewId(),

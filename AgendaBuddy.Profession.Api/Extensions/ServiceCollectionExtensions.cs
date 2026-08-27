@@ -36,13 +36,11 @@ public static class ServiceCollectionExtensions
         serviceCollection.AddScoped<ProfessionService>();
         serviceCollection.AddScoped<ProviderService>();
 
-        // F-020-T09: GetProfessionsQueryHandler/GetProfessionByNameQueryHandler are typed against
+        // GetProfessionsQueryHandler/GetProfessionByNameQueryHandler are typed against
         // IProfessionService, not the concrete class -- it already covers everything they call.
         // Forwarding to the already-scoped concrete instance, not a second AddScoped<IProfessionService,
         // ProfessionService>, so a request that resolves both the concrete class and the interface in
-        // the same scope gets the same object, not two (same pattern as Booking's and Calendar's own
-        // ServiceCollectionExtension -- the exact DI-registration gap both of those tasks' Party
-        // Reviews caught).
+        // the same scope gets the same object, not two.
         serviceCollection.AddScoped<IProfessionService>(sp => sp.GetRequiredService<ProfessionService>());
 
         serviceCollection.AddHostedService(serviceProvider =>

@@ -79,7 +79,7 @@ public class JwtDelegatingHandler : DelegatingHandler
             }
 
             // Refresh itself failed (network error, or the refresh token is invalid/expired/already
-            // consumed per F-021's single-use semantics) — fall back to the existing reactive logout.
+            // consumed, per its single-use semantics) — fall back to the existing reactive logout.
             _secureStorage.Remove(JwtKey);
             _secureStorage.Remove(RefreshTokenKey);
             UnauthorizedAccess?.Invoke(this, EventArgs.Empty);
@@ -111,7 +111,7 @@ public class JwtDelegatingHandler : DelegatingHandler
     /// than reading storage back — a mock/fake caller has no way to make a second GetAsync call
     /// return something different from the first, and production code shouldn't need to rely on
     /// that round-trip either. Returns <c>null</c> on any failure (network error, malformed
-    /// response, or a rejected/expired/already-consumed refresh token per F-021's single-use
+    /// response, or a rejected/expired/already-consumed refresh token, per its single-use
     /// semantics) — the caller falls back to reactive logout in that case.
     /// </summary>
     private async Task<string?> TryRefreshTokenAsync(CancellationToken cancellationToken)

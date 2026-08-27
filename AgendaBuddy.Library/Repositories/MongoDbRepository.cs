@@ -88,7 +88,7 @@ public class MongoDbRepository<TEntity> : IRepository<TEntity> where TEntity : c
 
     /// <inheritdoc />
     /// <remarks>
-    /// <c>IsUpsert</c> is left at its default of <c>false</c> and no option sets it — F-021 AC-9 depends
+    /// <c>IsUpsert</c> is left at its default of <c>false</c> and no option sets it — AC-9 depends
     /// on that, and it is stated here because the next person to add an overload will be tempted.
     /// <c>ReturnDocument.After</c> is what makes the returned counter usable for the lockout decision.
     /// </remarks>

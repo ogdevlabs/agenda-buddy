@@ -11,7 +11,7 @@ using MongoDB.Driver;
 namespace AgendaBuddy.IntegrationTests.Audit;
 
 /// <summary>
-/// F-018-T13 / AC-7. <c>UpdateCustomerCommandHandler</c> (success) and <c>AddCustomerCommandHandler</c>
+/// AC-7. <c>UpdateCustomerCommandHandler</c> (success) and <c>AddCustomerCommandHandler</c>
 /// (failure) both write a <c>CustomerService</c>-side audit event through <see cref="IEventStore"/>.
 /// </summary>
 /// <remarks>
@@ -27,7 +27,7 @@ namespace AgendaBuddy.IntegrationTests.Audit;
 /// ⚠️ <b>Not <c>UpdateCustomerCommandHandler</c>'s own failure branch.</b> A missing customer causes
 /// <c>UpdateCustomerCommandHandler.cs:51-59</c> to write a <c>Failed</c> event whose <c>Type</c> is
 /// literally <c>"UpdateProviderCommand"</c> — a pre-existing copy-paste defect in production code, out of
-/// this task's scope to fix (see F-018-T13's own scope discipline). Using the cross-handler pair above
+/// scope to fix here. Using the cross-handler pair above
 /// avoids pinning that mislabelled string as if it were the intended contract.
 /// </para>
 /// </remarks>

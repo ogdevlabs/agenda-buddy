@@ -32,7 +32,7 @@ public partial class MessageThreadPage : ContentPage
         _vm = vm;
         BindingContext = vm;
 
-        // UX F-001: handle 401 while composing a message
+        // Handle 401 while composing a message
         JwtDelegatingHandler.UnauthorizedAccess += OnUnauthorizedAccess;
     }
 

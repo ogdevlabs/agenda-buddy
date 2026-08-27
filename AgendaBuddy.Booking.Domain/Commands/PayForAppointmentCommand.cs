@@ -1,7 +1,7 @@
 namespace AgendaBuddy.Booking.Domain.Commands;
 
 /// <summary>
-/// Threat T-205: both participant emails are supplied by AgendaBuddy.Booking.Api from the STORED appointment,
+/// Both participant emails are supplied by AgendaBuddy.Booking.Api from the STORED appointment,
 /// never from the caller's request body, so a caller cannot record a payment against someone else.
 /// </summary>
 [ExcludeFromCodeCoverage]

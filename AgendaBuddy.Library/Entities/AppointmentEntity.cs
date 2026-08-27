@@ -74,7 +74,7 @@ public class AppointmentEntity
     /// </exception>
     /// <remarks>
     /// <para>
-    /// F-014 requirement 14 / threat T-203. <b>Until this existed, the rules above were dead code.</b>
+    /// <b>Until this existed, the rules above were dead code.</b>
     /// Nothing in production called <see cref="Book"/> or <see cref="Complete"/>; what ran instead was
     /// <c>appointment.AppointmentStatus = appointmentEntity.AppointmentStatus</c> in
     /// <c>UpdateAppointmentCommandHandler</c> — the client's value, copied in, with the guards bypassed. A

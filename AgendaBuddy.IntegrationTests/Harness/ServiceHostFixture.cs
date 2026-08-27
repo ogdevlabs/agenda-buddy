@@ -18,7 +18,7 @@ namespace AgendaBuddy.IntegrationTests.Harness;
 /// </typeparam>
 /// <remarks>
 /// <para>
-/// F-016 AC-4, AC-5 and AC-20. Use as a class fixture on a test class that is also in
+/// Use as a class fixture on a test class that is also in
 /// <see cref="HarnessCollection"/>:
 /// </para>
 /// <code>
@@ -26,9 +26,9 @@ namespace AgendaBuddy.IntegrationTests.Harness;
 /// public class MyServiceTest(ServiceHostFixture&lt;Anchor&gt; host) : IClassFixture&lt;...&gt;
 /// </code>
 /// <para>
-/// <b>Container per class, database per test</b> (ADR-017). F-018's spike measured 4.45 s warm
+/// <b>Container per class, database per test</b> (ADR-017). A spike measured 4.45 s warm
 /// container startup against the 1–3 s originally assumed, which reversed an earlier per-test design;
-/// wave 3 measured 3 s warm / 62 s cold on this hardware. Building a
+/// a later measurement found 3 s warm / 62 s cold on this hardware. Building a
 /// <see cref="WebApplicationFactory{TEntryPoint}"/> costs nothing by comparison, so
 /// <see cref="StartService"/> gives each test its own database inside the shared container. The Rancher
 /// VM is 2 CPUs / 4.1 GB and already runs a k8s cluster — if it thrashes, the mitigation is fewer,
@@ -94,23 +94,23 @@ public class ServiceHostFixture<TEntryPoint>(CryptoSessionFixture crypto) : IAsy
     /// <c>ASPNETCORE_ENVIRONMENT</c> for this instance, or <c>null</c> for the host default. Pass
     /// <c>"Production"</c> to exercise behaviour that differs by environment — the Development-only
     /// <c>UseExceptionHandler</c> lambda and Swagger are both registered inside
-    /// <c>if (app.Environment.IsDevelopment())</c>, so several F-016 criteria (notably AC-23 / threat
-    /// T-004, which is about the <c>Production</c> 403 body) are only meaningful with this set.
+    /// <c>if (app.Environment.IsDevelopment())</c>, so several behaviors (notably the
+    /// <c>Production</c> 403 body) are only meaningful with this set.
     /// </param>
     /// <param name="settings">
     /// Extra configuration for this instance, applied through <c>UseSetting</c> exactly as the
-    /// connection string is. Added by F-021 so the harness can switch on controls that are
+    /// connection string is, so the harness can switch on controls that are
     /// <b>off by default</b> — <c>Security:RateLimiting:Enabled</c> and <c>Security:Hsts:Enabled</c>.
     /// <para>
-    /// That capability is the mitigation for threat T-103: both controls are gated on configuration
+    /// Both controls are gated on configuration
     /// rather than on <c>IsProduction()</c>, because the AppHost runs every service as Production
     /// locally — so without a way to enable them here, the only tests that could reach them would be
-    /// ones that never run, and "shipped but never switched on" is precisely F-016's original defect.
+    /// ones that never run, and "shipped but never switched on" is exactly the defect this guards against.
     /// </para>
     /// </param>
     /// <param name="configureServices">
     /// Applied through <c>ConfigureTestServices</c>, so it runs after the service's own
-    /// <c>Program.cs</c> registrations — added by F-018-T10 so a singleton such as <c>IKafkaClient</c>
+    /// <c>Program.cs</c> registrations, so a singleton such as <c>IKafkaClient</c>
     /// can be swapped for a recording fake without touching the service itself.
     /// </param>
     public ServiceHost StartService(
@@ -234,7 +234,7 @@ public sealed class ServiceHost : IDisposable
     /// its own <see cref="HttpMessageHandler"/> against it via <see cref="TestServer.CreateHandler()"/>.
     /// </summary>
     /// <remarks>
-    /// F-015-T04: proving JWT passthrough and transport-security parity <b>through the gateway</b> needs
+    /// Proving JWT passthrough and transport-security parity <b>through the gateway</b> needs
     /// a real backend reachable by YARP's own outbound <c>HttpClient</c> — but this fixture's backend is
     /// hosted in-memory, with no TCP socket for a separate Gateway process to dial. Rather than stand up
     /// a real Kestrel listener (a second, parallel hosting mode this fixture would then have to maintain
@@ -249,7 +249,7 @@ public sealed class ServiceHost : IDisposable
     /// <summary>
     /// The hosted service's own DI container — lets a test resolve the exact <c>IConfiguration</c> the
     /// service itself built, e.g. to read a collection name through
-    /// <see cref="MongoConnectionResolver"/> instead of hardcoding the literal (F-018-T12).
+    /// <see cref="MongoConnectionResolver"/> instead of hardcoding the literal.
     /// </summary>
     public IServiceProvider Services { get; }
 

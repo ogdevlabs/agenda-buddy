@@ -7,7 +7,7 @@ namespace AgendaBuddy.IntegrationTests.OpenApi;
 
 /// <summary>
 /// Generates a byte-deterministic OpenAPI v3 JSON document for a service, straight from its own
-/// <see cref="ISwaggerProvider"/> (F-018-T16, AC-17/AC-18).
+/// <see cref="ISwaggerProvider"/>.
 /// </summary>
 /// <remarks>
 /// <para>

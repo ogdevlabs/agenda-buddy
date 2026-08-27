@@ -1,7 +1,7 @@
 namespace AgendaBuddy.Services.Core.Commands;
 
-// F-020-T10. Typed against IProviderService, not the concrete class: it already covers everything
-// this handler calls (FindProvidersAsync/UpdateProviderAsync).
+// Typed against IProviderService, not the concrete class: it already covers everything this handler
+// calls (FindProvidersAsync/UpdateProviderAsync).
 public class UpdateServicesFromProviderCommandHandler(
     IMediator mediator,
     IProviderService providerService,

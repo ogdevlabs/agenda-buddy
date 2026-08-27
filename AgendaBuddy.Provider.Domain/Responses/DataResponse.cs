@@ -1,7 +1,7 @@
 namespace AgendaBuddy.Provider.Domain.Responses;
 
 /// <summary>
-/// The response envelope for Provider's routes (F-020, following ADR-049's Booking precedent).
+/// The response envelope for Provider's routes, following ADR-049's Booking precedent.
 /// In-repo, not a package type -- see <c>AgendaBuddy.Booking.Domain.Responses.DataResponse</c> for the
 /// original rationale.
 /// </summary>

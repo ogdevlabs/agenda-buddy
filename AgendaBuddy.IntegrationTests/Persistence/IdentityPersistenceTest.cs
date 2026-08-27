@@ -12,7 +12,7 @@ using MongoDB.Driver;
 namespace AgendaBuddy.IntegrationTests.Persistence;
 
 /// <summary>
-/// F-018-T12 / AC-8. Identity gets tier 2 across ALL FIVE write endpoints — register, login, refresh,
+/// Identity gets tier 2 across ALL FIVE write endpoints — register, login, refresh,
 /// logout, device-token — not just one, because it is the most security-critical write surface in the
 /// system and the original tier matrix wrongly scoped it to route-contract only.
 /// </summary>

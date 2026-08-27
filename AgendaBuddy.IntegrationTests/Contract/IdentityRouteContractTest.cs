@@ -4,9 +4,9 @@ using System.Net.Http.Json;
 namespace AgendaBuddy.IntegrationTests.Contract;
 
 /// <summary>
-/// F-018-T11 AC-5, Identity: one real HTTP request through the real pipeline, asserting the status code
+/// Identity: one real HTTP request through the real pipeline, asserting the status code
 /// only. See <see cref="BookingRouteContractTest"/> for why status-only is the deliberate design
-/// (ADR-017, F-019's <c>DataResponse&lt;T&gt;</c>).
+/// (ADR-017, see <c>DataResponse&lt;T&gt;</c>).
 /// </summary>
 /// <remarks>
 /// <para>
@@ -18,7 +18,7 @@ namespace AgendaBuddy.IntegrationTests.Contract;
 /// own instructions.</b> A valid registration reaches <c>IdentityService.RegisterAsync</c>, which mints a
 /// token pair signed with <c>JWT_PRIVATE_KEY</c> — an environment variable
 /// <see cref="Harness.CryptoSessionFixture"/> deliberately never materialises in this public repository
-/// (F-016 AC-3: no private key may ever exist as a loggable/serialisable string). Every route that mints
+/// (no private key may ever exist as a loggable/serialisable string). Every route that mints
 /// a token therefore 500s under this harness today, and that is a harness limitation, not a production
 /// defect — the exact precedent already pinned by
 /// <see cref="Harness.LogoutTest.Refresh_WithAValidUnexpiredToken_MatchesTheCredential"/> and documented

@@ -5,7 +5,7 @@ using Xunit;
 namespace AgendaBuddy.Booking.Tests.Lifecycle;
 
 /// <summary>
-/// F-014 AC-14 / threat T-203: the transition rules become the only path to a status change.
+/// The transition rules are the only path to a status change.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -13,8 +13,7 @@ namespace AgendaBuddy.Booking.Tests.Lifecycle;
 /// it passed throughout — while <b>neither method was called anywhere in production</b>. What ran instead was
 /// <c>appointment.AppointmentStatus = appointmentEntity.AppointmentStatus</c> in
 /// <c>UpdateAppointmentCommandHandler</c>, copying whatever the client sent. So the rules were tested and
-/// unreachable at the same time, which is the same shape as the five services F-014 exists to wire: covered
-/// code that nothing calls.
+/// unreachable at the same time: covered code that nothing calls.
 /// </para>
 /// <para>
 /// These tests cover <see cref="AppointmentEntity.TransitionTo"/>, the method the new route goes through.

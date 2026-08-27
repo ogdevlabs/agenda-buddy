@@ -18,7 +18,7 @@ public class MongoDbRepositoryTest
 
     }
 
-    // ── F-016-T10 · ADR-023's repository half ────────────────────────────────────────────────────
+    // ── ADR-023's repository half ────────────────────────────────────────────────────
     //
     // These pin the SHAPE of the new paging primitive, not its Mongo behaviour.
     //
@@ -28,12 +28,11 @@ public class MongoDbRepositoryTest
     // abstraction over the driver purely to make it mockable is exactly the speculative layer the
     // yagni ladder rules out for two paginated endpoints.
     //
-    // So the split, agreed at the wave-3 standup (finding E-1) and recorded so F-016-T19's
-    // attestation does not overclaim:
-    //   * the CONTRACT is pinned here, because F-015 is written against it and T15 consumes it;
+    // So the split:
+    //   * the CONTRACT is pinned here, because api-contracts.md is written against it;
     //   * the SEMANTICS are pinned by InMemoryCredentialRepositoryPagingTest in AgendaBuddy.Identity.Tests;
     //   * Mongo's own Skip/Limit/CountDocumentsAsync behaviour gets its first real exercise through
-    //     F-016-T15's paginated endpoint tests on the integration harness.
+    //     the paginated endpoint tests on the integration harness.
     //
     // The empty METHOD() stub above predates this feature. It is worthless as a test, but AC-19
     // forbids deleting a pre-existing one, so it stays.
@@ -58,7 +57,7 @@ public class MongoDbRepositoryTest
     public void GetPagedAsync_ReturnsItemsAndALongTotalCount()
     {
         // TotalCount is long because CountDocumentsAsync returns long. api-contracts.md section 4
-        // records `totalCount` as long in the wire contract for the same reason, and F-015 is written
+        // records `totalCount` as long in the wire contract for the same reason and is written
         // against that shape — so narrowing it to int here would be a breaking change to a published
         // contract, not an implementation detail.
         var entityType = typeof(IRepository<>).GetGenericArguments()[0];
@@ -77,20 +76,19 @@ public class MongoDbRepositoryTest
     [Fact]
     public void MongoDbRepository_ImplementsGetPagedAsync()
     {
-        // Guards the failure mode that would otherwise only surface at runtime in T15: the interface
+        // Guards the failure mode that would otherwise only surface at runtime: the interface
         // gains the method and one of the two implementers is forgotten.
         var implementation = typeof(MongoDbRepository<>).GetMethod(PagedMethod);
 
         Assert.NotNull(implementation);
     }
 
-    // ── F-021-T01 · the partial-update primitive (ADR-032) ───────────────────────────────────────
+    // ── the partial-update primitive (ADR-032) ───────────────────────────────────────
     //
     // Same three-way split as GetPagedAsync above: contract here, semantics against the in-memory
     // implementer in AgendaBuddy.Identity.Tests/Helpers/InMemoryCredentialRepositoryUpdateTest.cs, and MongoDB's
     // own behaviour — including that it never upserts — in the integration harness's
-    // CredentialUpdatePrimitiveTest. Stated so F-021's verification does not claim the Mongo half is
-    // covered by a unit test.
+    // CredentialUpdatePrimitiveTest. This unit test does not cover the Mongo half.
 
     private const string UpdateMethod = "FindOneAndUpdateAsync";
 

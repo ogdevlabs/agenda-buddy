@@ -17,7 +17,7 @@ public record AppointmentStatusResponse(string Identifier, string Status);
 /// ⚠️ <b>It deliberately has no <c>providerEmail</c> and no <c>appointmentIdentifier</c>.</b> Both are
 /// determined by the server — the provider from the caller's <c>sub</c> claim, the appointment from the path.
 /// Leaving them off the request type is the cheapest possible guarantee that no handler can be refactored
-/// into trusting a caller for either, which is threat T-201: <c>NoteService</c> takes a
+/// into trusting a caller for either: <c>NoteService</c> takes a
 /// <c>providerEmail</c> parameter, and a route that passed a client-supplied one through would hand every
 /// provider's notes to any authenticated caller.
 /// </remarks>
@@ -28,13 +28,13 @@ public record NoteRequest(string Content);
 /// </summary>
 /// <remarks>
 /// <para>
-/// Also deliberately without participant emails: both come from the stored appointment (threat T-205), so a
+/// Also deliberately without participant emails: both come from the stored appointment, so a
 /// caller cannot record a payment against someone else.
 /// </para>
 /// <para>
 /// ⚠️ <b><c>Amount</c> is client-asserted and cannot be validated</b> — an appointment does not record which
 /// service it was booked for, so there is no price to check it against. Accepted residual risk, documented in
-/// threat T-205 and `api-contracts.md` §2. It matters little while the default gateway records rather than
+/// `api-contracts.md` §2. It matters little while the default gateway records rather than
 /// charges; it matters a great deal to whoever first configures a real Stripe key.
 /// </para>
 /// </remarks>

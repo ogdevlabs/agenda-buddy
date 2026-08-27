@@ -5,7 +5,7 @@ using System.Text;
 namespace AgendaBuddy.IntegrationTests.Harness;
 
 /// <summary>
-/// Pins <see cref="CryptoSessionFixture"/> and the collection that shares it — F-016 AC-3, the
+/// Pins <see cref="CryptoSessionFixture"/> and the collection that shares it — the
 /// in-memory half.
 /// </summary>
 [Collection(HarnessCollection.Name)]
@@ -27,8 +27,8 @@ public class CryptoSessionFixtureTest
     [Fact]
     public void SigningKey_AndPublicKeyPem_AreHalvesOfTheSameKeypair()
     {
-        // The property that matters to F-016-T05: a token signed with SigningKey must validate
-        // against the PEM that F-016-T06 will export as JWT_PUBLIC_KEY. If these ever drift, every
+        // The property that matters: a token signed with SigningKey must validate
+        // against the PEM exported as JWT_PUBLIC_KEY. If these ever drift, every
         // downstream auth test fails as a confusing 401 instead of naming the real cause.
         var payload = Encoding.UTF8.GetBytes("F-016 harness signing probe");
         var signature = _crypto.SigningKey.SignData(payload, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);

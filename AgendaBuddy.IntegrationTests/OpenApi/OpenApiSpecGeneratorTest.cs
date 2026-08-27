@@ -5,7 +5,7 @@ using AgendaBuddy.IntegrationTests.Harness;
 namespace AgendaBuddy.IntegrationTests.OpenApi;
 
 /// <summary>
-/// F-018-T16, AC-17/AC-18. The <see cref="OpenApiSpecGenerator"/> mechanism: resolve
+/// The <see cref="OpenApiSpecGenerator"/> mechanism: resolve
 /// <c>ISwaggerProvider</c> from a booted host's own DI container and serialize its "v1" document with
 /// pinned writer settings — no HTTP request, no Development override (spike-proven; see
 /// <c>Booking/Program.cs</c>'s unconditional <c>AddSwaggerGen()</c>).

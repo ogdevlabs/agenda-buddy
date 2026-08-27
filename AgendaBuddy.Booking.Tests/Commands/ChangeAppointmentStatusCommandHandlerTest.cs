@@ -1,7 +1,7 @@
 namespace AgendaBuddy.Booking.Tests.Commands;
 
-// F-019-T05. Same rationale as BookingAppointmentCommandHandlerTest: BookingService/ProviderService
-// are concrete, non-virtual (Library unchanged), so only the GuardClause path is unit-tested here;
+// Same rationale as BookingAppointmentCommandHandlerTest: BookingService/ProviderService
+// are concrete, non-virtual, so only the GuardClause path is unit-tested here;
 // the real transition/persistence/audit logic is verified end-to-end by AgendaBuddy.IntegrationTests.
 public class ChangeAppointmentStatusCommandHandlerTest
 {

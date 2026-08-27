@@ -7,7 +7,7 @@ namespace AgendaBuddy.EventAndCommands.Persistence;
 /// </summary>
 /// <remarks>
 /// <para>
-/// F-016-T18, the attribution half of AC-24 (threat <b>T-005</b>), ADR-027.
+/// ADR-027.
 /// </para>
 /// <para>
 /// A pure function of a <see cref="ClaimsPrincipal"/>, deliberately. It keeps the "what counts as an
@@ -16,8 +16,8 @@ namespace AgendaBuddy.EventAndCommands.Persistence;
 /// </para>
 /// <para>
 /// <b>Null is a correct answer, not a failure.</b> A hosted service writing an event has no request; an
-/// anonymous read has no subject; and a token carrying no <c>sub</c> claim (the threat T-001 shape) has
-/// nothing to attribute to. In all three cases the honest record is "unattributed", which is why
+/// anonymous read has no subject; and a token carrying no <c>sub</c> claim has nothing to attribute to.
+/// In all three cases the honest record is "unattributed", which is why
 /// <see cref="Event.Actor"/> is nullable and needs no backfill — the actor of a historical anonymous read
 /// is genuinely unknown, so inventing one would be worse than leaving it empty.
 /// </para>

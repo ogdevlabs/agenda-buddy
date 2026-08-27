@@ -7,8 +7,8 @@ using MongoDB.Driver;
 namespace AgendaBuddy.IntegrationTests.Audit;
 
 /// <summary>
-/// F-018-T13 / AC-7. <c>GetProfessionByNameQueryHandler</c> is Profession's only reachable audited
-/// handler: <c>POST /api/v1/professions</c> was deleted by F-016-T17 (<c>ProfessionWriteRouteRemovedTest</c>
+/// AC-7. <c>GetProfessionByNameQueryHandler</c> is Profession's only reachable audited
+/// handler: <c>POST /api/v1/professions</c> was deleted (<c>ProfessionWriteRouteRemovedTest</c>
 /// pins that), so <c>AddProfessionCommandHandler</c> has no HTTP path at all. The GET query handler still
 /// writes success/failure audit events, which is exactly why the task keeps Profession in Tier 3's scope.
 /// </summary>

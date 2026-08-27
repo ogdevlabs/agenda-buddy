@@ -10,18 +10,18 @@ using Xunit;
 namespace Common.Tests.Security;
 
 /// <summary>
-/// Pins F-016 AC-3: no PEM key material is committed to this repository, and no production project
+/// Pins: no PEM key material is committed to this repository, and no production project
 /// takes a <c>ProjectReference</c> on <c>AgendaBuddy.IntegrationTests</c>.
 /// </summary>
 /// <remarks>
 /// <para>
 /// <b>Why this lives in <c>Library.Tests</c> rather than in the harness project it describes.</b>
 /// <c>AgendaBuddy.IntegrationTests</c> is deliberately excluded from <c>agenda-buddy-backend.slnf</c>
-/// (ADR-031) so the unit gate stays Docker-free, and the integration CI job does not exist yet
-/// (<c>F-016-T20</c>). A secret-hygiene assertion that only runs when someone remembers a second
+/// (ADR-031) so the unit gate stays Docker-free, and the integration CI job does not exist yet.
+/// A secret-hygiene assertion that only runs when someone remembers a second
 /// command is decoration. These two tests need no container and no harness type, so they are hosted
 /// in a project the <c>api</c> CI job already runs on every pull request. Move them to the harness
-/// once <c>T20</c>'s job is green and blocking, if that reads better then.
+/// once that job is green and blocking, if that reads better then.
 /// </para>
 /// <para>
 /// <b>The repository is PUBLIC.</b> A committed key is a permanent artifact: deleting it from the
@@ -32,7 +32,7 @@ namespace Common.Tests.Security;
 /// <para>
 /// ⚠️ <b>The second assertion matches <c>ProjectReference</c>, not the project name.</b> Seven
 /// production <c>.csproj</c> files legitimately name <c>AgendaBuddy.IntegrationTests</c> in an
-/// <c>&lt;InternalsVisibleTo&gt;</c> item, added by <c>F-016-T02</c> for AC-2 (e.g.
+/// <c>&lt;InternalsVisibleTo&gt;</c> item, for AC-2 (e.g.
 /// <c>AgendaBuddy.Booking.Api/AgendaBuddy.Booking.Api.csproj:39</c>). That is a compile-time friend-assembly grant and pulls in no
 /// code — it is not what AC-3 prohibits. A test that matched the bare string would be red forever,
 /// and the tempting fix would be deleting the grant and silently breaking AC-2. The
@@ -147,7 +147,7 @@ public class KeyMaterialHygieneTest
     [Fact]
     public void ProjectReferenceDetector_TreatsInternalsVisibleToAsHarmless()
     {
-        // This is the shape all seven production services actually have (F-016 AC-2). It must not
+        // This is the shape all seven production services actually have (AC-2). It must not
         // be read as a reference, or AC-3 and AC-2 become impossible to satisfy at the same time.
         var friendGrantOnly = XDocument.Parse(
             """

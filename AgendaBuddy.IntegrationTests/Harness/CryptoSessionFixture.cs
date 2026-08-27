@@ -7,7 +7,7 @@ namespace AgendaBuddy.IntegrationTests.Harness;
 /// </summary>
 /// <remarks>
 /// <para>
-/// F-016 AC-3 / PRD requirement 3. <c>AgendaBuddy.Identity.Tests/Helpers/RsaKeyHelper.cs</c> is the existing
+/// <c>AgendaBuddy.Identity.Tests/Helpers/RsaKeyHelper.cs</c> is the existing
 /// precedent and this follows it, with one deliberate difference: <b>no private-key PEM string is
 /// ever produced.</b> Signing takes the live <see cref="RSA"/> instance instead
 /// (<see cref="SigningKey"/>), so the private half never exists in a form that can be logged,
@@ -19,8 +19,8 @@ namespace AgendaBuddy.IntegrationTests.Harness;
 /// <para>
 /// <b>Lifetime.</b> Shared through <see cref="HarnessCollection"/> as an
 /// <c>ICollectionFixture</c>, so xUnit constructs exactly one per test session and disposes it at the
-/// end. Consumers: <c>F-016-T05</c> (<c>TokenFactory</c>, signs with <see cref="SigningKey"/>) and
-/// <c>F-016-T06</c> (<c>ServiceHostFixture</c>, exports <see cref="PublicKeyPem"/> as
+/// end. Consumers: <c>TokenFactory</c> (signs with <see cref="SigningKey"/>) and
+/// <c>ServiceHostFixture</c> (exports <see cref="PublicKeyPem"/> as
 /// <c>JWT_PUBLIC_KEY</c>).
 /// </para>
 /// </remarks>

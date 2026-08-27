@@ -1,16 +1,12 @@
 namespace AgendaBuddy.Customer.Core.Commands;
 
-// F-020-T12: moved from AgendaBuddy.EventAndCommands.Commands.Customer, following Booking's/Calendar's/
-// Profession's/Services'/Provider's precedent. The duplicate-email check and the Kafka topic creation
-// both used to live in Customer/Program.cs (deleted) -- moved here so AgendaBuddy.Customer.Api stays
+// The duplicate-email check and the Kafka topic creation live here so AgendaBuddy.Customer.Api stays
 // endpoint/DI wiring only, per the architecture doc.
 //
-// IKafkaClient stays interface-typed, not the concrete KafkaClient class (agenda-buddy-5og). This is
-// the fix threat-model.md's T-204 named: the pre-refactor handler's constructor was typed to the
-// concrete KafkaClient, only safe because Customer/Requests/RequestCollection.cs (deleted) hand-cast
-// `(kafkaClient as KafkaClient)!` from the IKafkaClient DI registration. Provider's copy of this exact
-// bug shape was fixed at F-018 (agenda-buddy-5og), Booking's at F-019 -- Customer's was the last one
-// left, fixed here as a natural consequence of moving to real mediator.Send dispatch.
+// IKafkaClient stays interface-typed, not the concrete KafkaClient class (agenda-buddy-5og). A prior
+// handler's constructor was typed to the concrete KafkaClient, only safe because it hand-cast
+// `(kafkaClient as KafkaClient)!` from the IKafkaClient DI registration -- fixed here as a natural
+// consequence of moving to real mediator.Send dispatch.
 public class AddCustomerCommandHandler(
     IMediator mediator,
     IKafkaClient kafkaClient,

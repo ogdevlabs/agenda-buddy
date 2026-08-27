@@ -11,8 +11,8 @@ namespace AgendaBuddy.Identity.Tests.Helpers;
 /// </summary>
 /// <remarks>
 /// <para>
-/// The split follows F-016-T10, which established it for <c>GetPagedAsync</c>: the <b>contract</b> is
-/// pinned in <c>Library.Tests</c> (the shape F-021's callers compile against), the <b>semantics</b>
+/// The same split as <c>GetPagedAsync</c> follows here: the <b>contract</b> is
+/// pinned in <c>Library.Tests</c> (the shape callers compile against), the <b>semantics</b>
 /// here, and <b>MongoDB's own behaviour</b> by <c>CredentialUpdatePrimitiveTest</c> on the integration
 /// harness — because <c>MongoDbRepository&lt;T&gt;</c> takes an <c>IMongoDatabase</c> and cannot be unit
 /// tested.
@@ -43,7 +43,7 @@ public class InMemoryCredentialRepositoryUpdateTest
     [Fact]
     public async Task AFilterThatMatchesNothing_WritesNothingAndCreatesNothing()
     {
-        // F-021 AC-5. Never upserting is what stops a failed login for an unknown address from
+        // AC-5. Never upserting is what stops a failed login for an unknown address from
         // materialising a credential document.
         var repo = WithOneCredential(out _);
 

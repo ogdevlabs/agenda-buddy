@@ -6,7 +6,7 @@ namespace AgendaBuddy.MobileApp.Tests.Routing;
 public class AuthRouteBuilderTests
 {
     // Pins AuthService.LoginAsync's current (already-correct) route: POST "api/v1/auth/login".
-    // Extracted now so F-015-T09's refresh/logout wiring can add methods here using the same
+    // Extracted now so refresh/logout wiring can add methods here using the same
     // testable pattern, even though this route does not need correcting.
     [Fact]
     public void Login_BuildsPost()
@@ -27,7 +27,7 @@ public class AuthRouteBuilderTests
         Assert.Equal("api/v1/auth/register", route.Path);
     }
 
-    // F-015-T10 / AC11: AuthService.LogoutAsync calls this in addition to clearing local storage,
+    // AuthService.LogoutAsync calls this in addition to clearing local storage,
     // matching AgendaBuddy.Identity/Program.cs:196's `POST api/v1/auth/logout`.
     [Fact]
     public void Logout_BuildsPost()

@@ -3,10 +3,10 @@ using Validot;
 
 namespace AgendaBuddy.Booking.Tests.Validation;
 
-// F-019-T02 spike, corrected at Party Review. StatusSpec/PaymentSpec (and their tests) were deleted
-// as dead code -- authored, unit-tested, but never wired into a route (see
-// AppointmentExtrasRequestsSpecifications.cs's remarks). NoteSpec is now wired into AgendaBuddy.Booking.Api's two
-// note-content routes, replacing their inline IsNullOrWhiteSpace check.
+// StatusSpec/PaymentSpec (and their tests) were deleted as dead code -- authored, unit-tested, but
+// never wired into a route (see AppointmentExtrasRequestsSpecifications.cs's remarks). NoteSpec is
+// wired into AgendaBuddy.Booking.Api's two note-content routes, replacing their inline
+// IsNullOrWhiteSpace check.
 public class AppointmentExtrasRequestsSpecificationsTest
 {
     [Fact]

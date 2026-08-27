@@ -10,7 +10,7 @@ using MongoDB.Driver;
 namespace AgendaBuddy.IntegrationTests.Audit;
 
 /// <summary>
-/// F-018-T13 / AC-7. Calendar is read-only, but its QUERY handlers audit too — on both success and
+/// AC-7. Calendar is read-only, but its QUERY handlers audit too — on both success and
 /// failure paths (<c>CheckCalendarAppointmentsQueryHandler.cs</c>), which is exactly why the task keeps
 /// Calendar in Tier 3's scope despite it having no command handler at all.
 /// </summary>

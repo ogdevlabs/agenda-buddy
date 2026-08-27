@@ -9,7 +9,7 @@ namespace AgendaBuddy.IntegrationTests.Harness;
 /// </summary>
 /// <remarks>
 /// <para>
-/// F-016-T05 / AC-6. Deliberately mirrors <c>AgendaBuddy.Identity/Services/IdentityService.cs:200-213</c> claim for
+/// Deliberately mirrors <c>AgendaBuddy.Identity/Services/IdentityService.cs:200-213</c> claim for
 /// claim — issuer <c>agenda-buddy-identity</c>, <c>sub</c>, <c>role</c>, <c>jti</c>, RS256, no
 /// audience. A harness token that differs from a production token in any of those validates
 /// differently, and the symptom is a 401 that looks like an authorization bug in the code under test
@@ -57,10 +57,10 @@ internal sealed class TokenFactory(CryptoSessionFixture crypto)
     /// A valid, correctly signed, unexpired token carrying <b>no</b> <c>sub</c> claim.
     /// </summary>
     /// <remarks>
-    /// The precondition for threat <b>T-001</b>: such a token authenticates successfully and then
+    /// Such a token authenticates successfully and then
     /// presents a null <c>NameIdentifier</c> to <c>OwnershipGuard.AssertOwner</c>, whose null-claim
-    /// path currently falls through to the <em>owner</em> branch. F-016-T09 closes that (AC-21); this
-    /// method is what lets the closure be proven over real HTTP instead of argued about.
+    /// path currently falls through to the <em>owner</em> branch. This
+    /// method is what lets that be proven over real HTTP instead of argued about.
     /// </remarks>
     public string CreateTokenWithoutSubject(string role = ProviderRole) =>
         Write(Claims(role, subject: null), DateTime.UtcNow.AddHours(1));

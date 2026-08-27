@@ -1,14 +1,10 @@
 namespace AgendaBuddy.Provider.Core.Queries;
 
-// F-020-T11: moved from AgendaBuddy.EventAndCommands.Queries.Provider. Takes a PageRequest from the
-// query rather than a per-instance constructor parameter -- the pre-refactor handler
-// (Requests/RequestCollection.cs, deleted) constructed this by hand, once per call, passing `page` into
-// the constructor.
+// Takes a PageRequest from the query rather than a per-instance constructor parameter.
 //
-// Always returns Result.Ok, even for an empty page: preserved from Provider/Program.cs's pre-existing
-// behaviour, which never treated an empty provider list as anything other than a 200. The audit record
-// still distinguishes empty from non-empty (Failure vs Success) -- that is an AUDIT distinction only,
-// not a control-flow one, exactly as it was before this move.
+// Always returns Result.Ok, even for an empty page: an empty provider list is never anything other
+// than a 200. The audit record still distinguishes empty from non-empty (Failure vs Success) -- that
+// is an AUDIT distinction only, not a control-flow one.
 public class GetProvidersQueryHandler(
     IMediator mediator,
     IProviderService providerService,

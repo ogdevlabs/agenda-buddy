@@ -9,10 +9,10 @@ using Yarp.ReverseProxy.Configuration;
 namespace AgendaBuddy.IntegrationTests.Harness;
 
 /// <summary>
-/// F-015-T03: the YARP route table must be an explicit <c>api/v1/{service}/**</c> allowlist covering
+/// The YARP route table must be an explicit <c>api/v1/{service}/**</c> allowlist covering
 /// all seven backend services (never a catch-all forward), and a path outside every configured prefix
-/// must get the <c>gateway-no-route</c> 404 shape rather than a proxied response (threat T-302,
-/// <c>threat-model.md</c>).
+/// must get the <c>gateway-no-route</c> 404 shape rather than a proxied response
+/// (<c>threat-model.md</c>).
 /// </summary>
 /// <remarks>
 /// Both test classes here host the real <see cref="global::Gateway.Program"/> pipeline through
@@ -25,7 +25,7 @@ namespace AgendaBuddy.IntegrationTests.Harness;
 /// allowlisted route fails downstream (connection refused, surfaced as a non-404 by YARP) rather than
 /// succeeding — which is exactly the signal that distinguishes "matched a route, destination
 /// unreachable" from "no route matched at all". Destination-unreachable failure *translation* into a
-/// shaped ProblemDetails body is F-015-T04's job, not this task's.
+/// shaped ProblemDetails body is handled elsewhere, not here.
 /// </remarks>
 public class GatewayRoutingTest
 {
@@ -78,7 +78,7 @@ public class GatewayRoutingTest
             Assert.Single(cluster.Destinations!.Values).Address);
     }
 
-    // Found live at F-015-T14: messages/notifications are two new TOP-LEVEL route groups on Customer
+    // Messages/notifications are two new TOP-LEVEL route groups on Customer
     // (ADR-036), not children of /api/v1/customers/**, so no InlineData row above ever matched them —
     // AgendaBuddy.MobileApp's Messaging/Notifications screens were unreachable through the gateway. Both share the
     // "customer" cluster (RouteTable_HasExactlySevenClusters_NoMoreNoFewer below still holds — this adds
@@ -129,7 +129,7 @@ public class GatewayRoutingTest
     // No real backend is listening on any fake address, so a request that matches an allowlisted route
     // fails downstream rather than succeeding. That failure is exactly the signal that the request WAS
     // routed (never a 404) — the opposite of T302's "no match" case below. The shaped 502 body for an
-    // unreachable destination is F-015-T04's responsibility, not this task's; only "not a 404" is
+    // unreachable destination is handled elsewhere; only "not a 404" is
     // asserted here.
 
     [Theory]
@@ -141,8 +141,8 @@ public class GatewayRoutingTest
     [InlineData("/api/v1/professions")]
     [InlineData("/api/v1/auth/login")]
     [InlineData("/device-token")]
-    [InlineData("/api/v1/messages")] // found unreachable live at F-015-T14 — regression guard
-    [InlineData("/api/v1/notifications")] // found unreachable live at F-015-T14 — regression guard
+    [InlineData("/api/v1/messages")] // previously unreachable live — regression guard
+    [InlineData("/api/v1/notifications")] // previously unreachable live — regression guard
     public async Task AllowlistedPrefix_IsRoutedNotRejected(string path)
     {
         using var factory = CreateFactory();
@@ -155,8 +155,8 @@ public class GatewayRoutingTest
 }
 
 /// <summary>
-/// T-302 (threat-model.md): the gateway's route table is an explicit allowlist, never a catch-all
-/// forward. A request to any path outside every configured <c>api/v1/{service}/**</c> prefix — the
+/// The gateway's route table is an explicit allowlist, never a catch-all
+/// forward (<c>threat-model.md</c>). A request to any path outside every configured <c>api/v1/{service}/**</c> prefix — the
 /// canonical example being a probe at a backend's own bare <c>/health</c>, reached through the gateway
 /// rather than directly — must get a 404 in the <c>gateway-no-route</c> shape (<c>api-contracts.md</c>
 /// §1), not a proxied response.
@@ -180,11 +180,11 @@ public class GatewayNoRouteTest
 
     [Theory]
     // A backend's own bare /health, reached through the gateway rather than the allowlisted
-    // api/v1/booking/** prefix — exactly T-302's motivating example.
+    // api/v1/booking/** prefix — the motivating example for why the allowlist exists.
     [InlineData("/booking/health")]
     // A typo'd / never-configured service segment under the api/v1 convention itself.
     [InlineData("/api/v1/nonexistent/probe")]
-    // A stale client build calling the pre-F-015 broken path (no api/v1 prefix at all).
+    // A stale client build calling the old broken path (no api/v1 prefix at all).
     [InlineData("/booking")]
     public async Task T302_UnmappedPath_Returns404NotProxied(string path)
     {

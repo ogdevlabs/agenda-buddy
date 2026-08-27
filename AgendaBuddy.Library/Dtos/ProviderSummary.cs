@@ -7,11 +7,11 @@ namespace AgendaBuddy.Library.Dtos;
 /// </summary>
 /// <remarks>
 /// <para>
-/// F-016 AC-9 / requirement 10 (F-016-T11). <c>ProviderEntity</c> embeds <c>ServiceEntities</c>,
+/// AC-9. <c>ProviderEntity</c> embeds <c>ServiceEntities</c>,
 /// <c>AppointmentEntities</c> — each carrying <c>email_customer</c> — and <c>SubscribedCustomerCollection</c>
 /// (<c>ProviderEntity.cs:38-42</c>). Authentication alone does not fix that: an authenticated <em>customer</em>
-/// browsing for a coach would still receive every provider's appointment book and client roster. Requirement
-/// 10 therefore holds regardless of the authentication decision.
+/// browsing for a coach would still receive every provider's appointment book and client roster. This
+/// projection is required regardless of the authentication decision.
 /// </para>
 /// <para>
 /// <b>Deliberately absent:</b> <c>AppointmentEntities</c>, <c>SubscribedCustomerCollection</c>,
@@ -20,11 +20,11 @@ namespace AgendaBuddy.Library.Dtos;
 /// </para>
 /// <para>
 /// <b>A read-boundary projection, not a schema change.</b> The stored document keeps its embedded shape;
-/// restructuring it is a migration and belongs to F-019/F-020.
+/// restructuring it is a separate migration.
 /// </para>
 /// <para>
 /// ⚠️ <b>This is the first DTO folder in a codebase whose endpoints return entities directly.</b> The
-/// pattern is introduced here on purpose rather than appearing by accident, and F-019/F-020 will generalise
+/// pattern is introduced here on purpose rather than appearing by accident, and later work will generalise
 /// it (<c>ARCHITECTURE.md</c> §3.3).
 /// </para>
 /// <para>
@@ -32,8 +32,8 @@ namespace AgendaBuddy.Library.Dtos;
 /// <c>"profession": "Fitness Coach"</c> and a <c>"duration"</c> on each service. Neither exists:
 /// <c>ProviderEntity</c> has no profession property, and <c>ServiceEntity</c> has <c>Name</c>,
 /// <c>Description</c>, <c>Fee</c>, <c>FeeType</c> and <c>IsActive</c> but no duration. Verified by reading
-/// both entities. Corrected in <c>api-contracts.md</c>, because F-015 is written against that document and
-/// would otherwise bind to fields that do not exist.
+/// both entities. Corrected in <c>api-contracts.md</c>, since the mobile client is written against that
+/// document and would otherwise bind to fields that do not exist.
 /// </para>
 /// </remarks>
 public sealed class ProviderSummary

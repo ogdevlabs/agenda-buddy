@@ -4,7 +4,7 @@ using Xunit;
 namespace Common.Tests.Dtos;
 
 /// <summary>
-/// Pins <see cref="PageRequest"/> — F-016-T15, AC-15, the clamping half of ADR-023.
+/// Pins <see cref="PageRequest"/> — the clamping half of ADR-023.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -23,7 +23,7 @@ public class PageRequestTest
     [Fact]
     public void MaxPageSize_IsOneHundred()
     {
-        // Pinned as a number because F-015 is written against it (api-contracts.md section 4).
+        // Pinned as a number because api-contracts.md section 4 is written against it.
         Assert.Equal(100, PageRequest.MaxPageSize);
     }
 

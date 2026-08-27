@@ -20,7 +20,7 @@ internal sealed record ContainerRuntimeProbe(
     string? Failure);
 
 /// <summary>
-/// Thrown instead of letting the container runtime fail as an opaque timeout. F-016 AC-7.
+/// Thrown instead of letting the container runtime fail as an opaque timeout.
 /// </summary>
 internal sealed class ContainerRuntimeUnavailableException(string message) : Exception(message);
 
@@ -30,7 +30,7 @@ internal sealed class ContainerRuntimeUnavailableException(string message) : Exc
 /// </summary>
 /// <remarks>
 /// <para>
-/// F-016 AC-7 / PRD requirement 7. Absent this, the most likely local failure in the whole harness
+/// Absent this, the most likely local failure in the whole harness
 /// presents as a stall with no output.
 /// </para>
 /// <para>

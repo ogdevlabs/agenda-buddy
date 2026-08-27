@@ -23,10 +23,10 @@ builder.Services.AddMongoDbRepository(builder.Configuration);
 builder.Services.AddDistributedMemoryCache();
 
 // Add MediatR
-// F-020-T11: handlers moved to AgendaBuddy.Provider.Core, a separate assembly from
-// AgendaBuddy.Provider.Api -- MediatR's RegisterServicesFromAssembly only scans the one assembly it's
-// given, so both must be registered or mediator.Send(command/query) throws "no handler registered" at
-// runtime, not at compile time.
+// Handlers live in AgendaBuddy.Provider.Core, a separate assembly from AgendaBuddy.Provider.Api --
+// MediatR's RegisterServicesFromAssembly only scans the one assembly it's given, so both must be
+// registered or mediator.Send(command/query) throws "no handler registered" at runtime, not at compile
+// time.
 builder.Services.AddMediatR(cfg =>
     cfg.RegisterServicesFromAssemblies(typeof(Program).Assembly, typeof(GetProvidersQueryHandler).Assembly));
 builder.Services.AddEventStore();
@@ -34,9 +34,9 @@ builder.Services.AddEventStore();
 // Add services required to support using MVC's model binders
 builder.Services.AddMvcCore();
 
-// F-014: ObjectId has no JSON representation of its own, so System.Text.Json serialises the struct's public
+// ObjectId has no JSON representation of its own, so System.Text.Json serialises the struct's public
 // properties and emits `"id": { "timestamp": …, "machine": … }` — a shape that cannot be read back into an
-// ObjectId at all. Three of F-014's route families need the id from a create response in order to work
+// ObjectId at all. Some route families need the id from a create response in order to work
 // (PUT /notes/{id}, POST /messages/{id}/read, POST /notifications/{id}/read), so this is load-bearing rather
 // than cosmetic. Pre-existing for every other route that returns an entity; see ObjectIdJsonConverter.
 builder.Services.ConfigureHttpJsonOptions(options =>
@@ -46,7 +46,7 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 builder.Services.AddSingleton<IKafkaClient, KafkaClient>();
 
 // Enable & configure JSON Problem Details error responses
-// ADR-022 / F-016-T08: ForbiddenException -> 403 centrally, so an endpoint that omits a local
+// ADR-022: ForbiddenException -> 403 centrally, so an endpoint that omits a local
 // try/catch returns 403 rather than a bare 500. Registered unconditionally, unlike the
 // Development-only UseExceptionHandler lambda below.
 builder.Services.AddExceptionHandler<AgendaBuddyExceptionHandler>();
@@ -122,9 +122,9 @@ if (app.Environment.IsDevelopment())
 // ForbiddenException and the central 403 would fail in Development only. See AgendaBuddyExceptionHandler.
 app.UseExceptionHandler();
 
-// F-021 PRD requirement 13: HSTS (under its flag) and the HTTPS redirect run BEFORE authentication.
-// Registered after UseAuthentication, as it was until F-021, the redirect parsed and validated the
-// bearer token out of a plaintext request and only then told the client to come back over TLS.
+// HSTS (under its flag) and the HTTPS redirect must run BEFORE authentication. Registered after
+// UseAuthentication, the redirect would parse and validate the bearer token out of a plaintext
+// request and only then tell the client to come back over TLS.
 app.UseAgendaBuddyTransportSecurity();
 
 app.UseAntiforgery();
@@ -149,23 +149,20 @@ providers.MapPost("/", async Task<Results<ValidationProblem, Created<DataRespons
         if (!MiniValidator.TryValidate(providerEntity, out var errors))
             return TypedResults.ValidationProblem(errors);
 
-        // F-016 AC-11 -- BOTH arms are required. A role check alone still lets one Provider create a
+        // BOTH arms are required. A role check alone still lets one Provider create a
         // record under another provider's email, which is account takeover by registration. An ownership
         // check alone would let a Customer create provider records for themselves.
         //
-        // This is one of only two AssertRole call sites in the solution after F-016. Per
-        // 13-security.md:137 AssertRole had never been called anywhere, so the `role` claim authorized
-        // nothing at all before this feature.
+        // This is one of only two AssertRole call sites in the solution -- per 13-security.md:137, the
+        // `role` claim otherwise authorizes nothing at all.
         //
-        // F-020-T11: unchanged by the move -- confirmed both arms survive intact.
         // No local try/catch: T08's AgendaBuddyExceptionHandler maps ForbiddenException to 403 centrally.
         OwnershipGuard.AssertRole(user, "Provider");
         OwnershipGuard.AssertOwner(user, providerEntity.Email);
 
-        // F-020-T11: dispatched through the real mediator.Send with the real request CancellationToken --
-        // the pre-refactor path (Requests/RequestCollection.cs, deleted) manually `new`-ed the command
-        // handler and called .Handle() directly. The duplicate-name check and Kafka topic creation both
-        // moved into AddProviderCommandHandler, so this route is endpoint/DI wiring only.
+        // Dispatched through mediator.Send with the request's CancellationToken. The duplicate-name
+        // check and Kafka topic creation both live in AddProviderCommandHandler, so this route is
+        // endpoint/DI wiring only.
         var result = await mediator.Send(new AddProviderCommand { ProviderEntity = providerEntity }, cancellationToken);
 
         if (result.IsSuccess)
@@ -184,9 +181,9 @@ providers.MapGet("", async Task<Ok<DataResponse<PagedResponse<ProviderSummary>>>
     CancellationToken cancellationToken,
     int? page = null, int? pageSize = null) =>
 {
-    // F-016 AC-15 / ADR-023. Clamped, never rejected: a 400 would tell an attacker the exact boundary and
+    // ADR-023. Clamped, never rejected: a 400 would tell an attacker the exact boundary and
     // leave an honest client no way to discover the cap. MaxPageSize is a SECURITY control -- an uncapped
-    // page size restores the full-dataset dump this feature exists to remove.
+    // page size would restore a full-dataset dump.
     var pageRequest = PageRequest.Clamp(page, pageSize);
 
     // ⚠️ The cache key carries the page, or page 2 would serve page 1's entry. Cheap to get wrong and
@@ -206,22 +203,22 @@ providers.MapGet("", async Task<Ok<DataResponse<PagedResponse<ProviderSummary>>>
             PagedResponse<ProviderSummary>.From([], 0, pageRequest)));
     }
 
-    // F-016 AC-9 / requirement 10. ProviderEntity embeds AppointmentEntities (each carrying
-    // email_customer) and SubscribedCustomerCollection, so authentication alone does not fix this: an
-    // authenticated CUSTOMER browsing for a coach would still receive every provider's appointment book
-    // and client roster.
+    // ProviderEntity embeds AppointmentEntities (each carrying email_customer) and
+    // SubscribedCustomerCollection, so authentication alone does not fix this: an authenticated
+    // CUSTOMER browsing for a coach would still receive every provider's appointment book and client
+    // roster.
     //
     // ⚠️ THE LIST IS HOMOGENEOUS -- every element is a ProviderSummary, including the caller's own record.
     // api-contracts.md section 5.1 describes owner-gets-full for this route too, which would make `items`
-    // a MIXED array of two shapes. That is not deserialisable into a typed list, and F-015 is written
-    // against this contract. An owner loses nothing: GET /api/v1/providers/{email} returns their full
-    // record, and that route DOES apply the ownership branch. Deviation recorded in api-contracts.md.
+    // a MIXED array of two shapes. That is not deserialisable into a typed list. An owner loses nothing:
+    // GET /api/v1/providers/{email} returns their full record, and that route DOES apply the ownership
+    // branch. Deviation recorded in api-contracts.md.
     return TypedResults.Ok(DataResponse<PagedResponse<ProviderSummary>>.Ok(PagedResponse<ProviderSummary>.From(
         providerCollection.Items.Select(ProviderSummary.From).ToList(),
         providerCollection.TotalCount,
         pageRequest)));
 })
-    // F-016 AC-8 / requirement 9: PII-bearing read, so no longer anonymous. Breaking change with zero reachable consumers (01-api-surface.md:158).
+    // PII-bearing read, so no longer anonymous. Breaking change with zero reachable consumers (01-api-surface.md:158).
     .WithName("GetAllProviders")
     .RequireAuthorization();
 
@@ -244,13 +241,11 @@ providers.MapGet("/{email}", async Task<Results<Ok<DataResponse<ProviderEntity>>
     if (providerEntity is null)
         return TypedResults.NotFound();
 
-    // F-016 AC-9 / requirement 10: two shapes, selected by ownership. Deliberately NOT 403 for a provider
-    // you do not own -- reading another provider's SUMMARY is the discovery flow F-003 defines. Only the
-    // embedded data is withheld.
+    // Two shapes, selected by ownership. Deliberately NOT 403 for a provider you do not own -- reading
+    // another provider's SUMMARY is a supported discovery flow. Only the embedded data is withheld.
     //
-    // ⚠️ This branch is exactly why F-016-T09 had to land first (threat T-001). AssertOwner's null-claim
-    // fall-through used to land on the OWNER side, so a token carrying no `sub` would have received the
-    // unprojected entity. Pinned by ProviderProjectionTest.T001_*.
+    // ⚠️ AssertOwner's null-claim fall-through used to land on the OWNER side, so a token carrying no
+    // `sub` would have received the unprojected entity. Pinned by ProviderProjectionTest.T001_*.
     // IsOwner rather than catching AssertOwner's ForbiddenException: "not the owner" selects a narrower
     // shape here, it is not a failure, and exception-driven control flow on a read path is both slower and
     // misleading. Both share one implementation, so the null-claim rule cannot drift between them.
@@ -258,7 +253,7 @@ providers.MapGet("/{email}", async Task<Results<Ok<DataResponse<ProviderEntity>>
         ? TypedResults.Ok(DataResponse<ProviderEntity>.Ok(providerEntity))
         : TypedResults.Ok(DataResponse<ProviderSummary>.Ok(ProviderSummary.From(providerEntity)));
 })
-    // F-016 AC-8 / requirement 9: PII-bearing read, so no longer anonymous. Breaking change with zero reachable consumers (01-api-surface.md:158).
+    // PII-bearing read, so no longer anonymous. Breaking change with zero reachable consumers (01-api-surface.md:158).
     .WithName("GetProviderByEmail")
     .RequireAuthorization();
 
@@ -287,7 +282,7 @@ providers.MapPut("/{email}", async Task<Results<ValidationProblem, ForbidHttpRes
 .WithName("UpdateProvider")
 .RequireAuthorization();
 
-// ── F-014: reporting and deactivation ────────────────────────────────────────────────────────────────
+// ── Reporting and deactivation ────────────────────────────────────────────────────────────────
 
 // A provider's own metrics. {email} is in the path for symmetry with the other provider routes, NOT as a
 // selector — it must equal the caller's own claim, so there is nothing to enumerate.
@@ -297,12 +292,11 @@ providers.MapPut("/{email}", async Task<Results<ValidationProblem, ForbidHttpRes
 // appointment does not record which service it was booked for. `revenueAvailable: false` plus a reason,
 // rather than a plausible number that would be believed.
 //
-// F-020-T11: deliberately NOT wrapped in DataResponse<T>, unlike every other route in this file. This
-// route never went through MediatR/Result<T> -- it calls IReportingService directly, both before and
-// after this task -- and ReportAndDeactivationTest deserialises the body at the root
-// (ReadFromJsonAsync<ProviderReport>, and a root-level "revenueAvailable"/"revenueUnavailableReason").
-// Wrapping it would be a real behaviour change this task's recipe does not ask for. See
-// AgendaBuddy.Provider.Domain.Responses.DataResponse's own remarks.
+// Deliberately NOT wrapped in DataResponse<T>, unlike every other route in this file. This route calls
+// IReportingService directly rather than going through MediatR/Result<T>, and
+// ReportAndDeactivationTest deserialises the body at the root (ReadFromJsonAsync<ProviderReport>, and
+// a root-level "revenueAvailable"/"revenueUnavailableReason"). Wrapping it would be a real behaviour
+// change. See AgendaBuddy.Provider.Domain.Responses.DataResponse's own remarks.
 providers.MapGet("/{email}/report",
         async Task<Results<Ok<ProviderReport>, ForbidHttpResult, NotFound>> (
             string email, ClaimsPrincipal user, IReportingService reporting) =>
@@ -322,7 +316,7 @@ providers.MapGet("/{email}/report",
     .WithName("GetProviderReport")
     .RequireAuthorization();
 
-// Threat T-207: a provider deactivates THEMSELVES. Role plus ownership, and no administrative bypass —
+// A provider deactivates THEMSELVES. Role plus ownership, and no administrative bypass —
 // because there is no administrative role in this product (Identity's allow-list is exactly
 // {Provider, Customer}, ADR-025), so there is nobody else who could legitimately call this. An unguarded
 // version would let anyone take a business offline.
@@ -345,10 +339,6 @@ providers.MapPost("/{email}/deactivate",
                 SupportTools<ProviderEntity>.FilterByEmail(email));
             if (existing is null) return TypedResults.NotFound();
 
-            // F-020-T11: real mediator.Send dispatch. Previously the ONLY caller of
-            // DeactivateProviderCommandHandler `new`-ed it directly and called .Handle() by hand
-            // (Provider/Program.cs, deleted) -- this is the first time the handler is actually registered
-            // with MediatR.
             var result = await mediator.Send(new DeactivateProviderCommand { ProviderEntity = existing }, cancellationToken);
 
             return result.IsSuccess

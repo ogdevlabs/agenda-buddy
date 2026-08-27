@@ -1,6 +1,6 @@
 namespace AgendaBuddy.Calendar.Core.Queries;
 
-// F-020-T08. See CheckCalendarAvailabilityQueryHandler's remarks -- same shape, same interface
+// See CheckCalendarAvailabilityQueryHandler's remarks -- same shape, same interface
 // choice, same absence of any ICalendarService call site.
 public class CheckCalendarAppointmentsQueryHandler(
     IMediator mediator,

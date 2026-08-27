@@ -27,7 +27,7 @@ public class CustomerApiService : ICustomerApiService
     }
 
     /// <summary>
-    /// Customer's list route returns F-016/ADR-023's <c>{items, totalCount, page, pageSize}</c> envelope of
+    /// Customer's list route returns ADR-023's <c>{items, totalCount, page, pageSize}</c> envelope of
     /// full <c>CustomerEntity</c> objects, not a bare array of the client's <see cref="CustomerSummary"/>
     /// shape — deserializing straight into <c>List&lt;CustomerSummary&gt;</c> would fail against the
     /// object root. Reads the envelope, maps only the fields <c>CustomerEntity</c> actually has
@@ -36,12 +36,9 @@ public class CustomerApiService : ICustomerApiService
     /// out of this task's scope (route/verb/payload correctness only).
     /// </summary>
     /// <remarks>
-    /// F-020-T12: the paged envelope itself moved one level deeper, under a "data" property
+    /// The paged envelope itself sits one level deeper, under a "data" property
     /// (<c>{data: {items, totalCount, page, pageSize}, errors: []}</c>) — Customer's Clean Architecture
-    /// migration wraps every CQRS route's response in <c>DataResponse&lt;T&gt;</c> (ADR-049). Found live
-    /// here rather than assumed: none of the four prior F-020 migrations (Calendar/Profession/Services/
-    /// Provider) had a MobileApp client that parsed the wrapped route's body directly, so this is the
-    /// first migration where the envelope change was actually reachable from the mobile client.
+    /// wraps every CQRS route's response in <c>DataResponse&lt;T&gt;</c> (ADR-049).
     /// </remarks>
     internal static List<CustomerSummary> ParsePagedCustomers(string json)
     {

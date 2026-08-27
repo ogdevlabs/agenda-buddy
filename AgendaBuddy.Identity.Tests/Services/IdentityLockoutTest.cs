@@ -10,14 +10,14 @@ using Xunit;
 namespace AgendaBuddy.Identity.Tests.Services;
 
 /// <summary>
-/// F-021 AC-7 … AC-11: the per-account half of login defence — a counter that is never
+/// AC-7 … AC-11: the per-account half of login defence — a counter that is never
 /// read-modify-written, and a lock that expires by itself.
 /// </summary>
 /// <remarks>
 /// <para>
 /// The per-account counter and the per-IP limiter are <b>not redundant</b>. Identity verifies an unknown
-/// email against a dummy hash to keep enumeration constant-time (threat T-005,
-/// <c>IdentityService.cs:96</c>), so an attacker using random addresses spends the same 262 ms of server
+/// email against a dummy hash to keep enumeration constant-time
+/// (<c>IdentityService.cs:96</c>), so an attacker using random addresses spends the same 262 ms of server
 /// CPU per request while generating <b>no per-account state at all</b>. Only the limiter sees that
 /// traffic; only the counter sees a targeted attack on one known account. Both, or neither works.
 /// </para>
@@ -57,7 +57,7 @@ public class IdentityLockoutTest : IDisposable
     [Fact]
     public async Task T102_AFailedLogin_IncrementsTheCounterAtomically_NeverReplacingTheDocument()
     {
-        // AC-11 / threat T-102. The counter turns a read path into an attacker-influenced write path on
+        // AC-11. The counter turns a read path into an attacker-influenced write path on
         // the one collection with no backups, so the write must be the narrowest possible thing.
         await _svc.RegisterAsync(Email, Password, "Provider");
         _repo.AppliedUpdates.Clear();
@@ -85,7 +85,7 @@ public class IdentityLockoutTest : IDisposable
     public async Task AfterTheThreshold_TheAccountIsLocked_AndTheRefusalLooksIdenticalToAWrongPassword()
     {
         // AC-7. A distinct status or message for "locked" would tell an attacker which addresses exist
-        // and which they have successfully locked, undoing the enumeration mitigation T-005 added.
+        // and which they have successfully locked, undoing the enumeration mitigation already in place.
         await _svc.RegisterAsync(Email, Password, "Provider");
 
         var wrongPassword = await Assert.ThrowsAsync<UnauthorizedException>(
@@ -106,7 +106,7 @@ public class IdentityLockoutTest : IDisposable
     [Fact]
     public async Task ALockedAccount_SpendsNoBcryptAndTakesNoFurtherWrite()
     {
-        // Threat T-101's other half, and design decision D-9: the lock is checked *before* the verify,
+        // The other half of the enumeration-timing defense, and design decision D-9: the lock is checked *before* the verify,
         // or a locked account costs 262 ms of CPU per attempt and the lock amplifies the very denial of
         // service it sits beside. Asserted through the counter: the increment only happens on the
         // verify-failed path, so a locked attempt leaving the counter untouched proves the short
@@ -126,7 +126,7 @@ public class IdentityLockoutTest : IDisposable
     [Fact]
     public async Task WhenTheWindowElapses_TheCorrectPasswordSucceeds_WithNoUnlockWrite()
     {
-        // AC-8. F-022 does not exist, so a lock that needed clearing would leave a real provider with
+        // AC-8. Password reset does not exist yet, so a lock that needed clearing would leave a real provider with
         // no way back into their own business — and would let an attacker strand one deliberately.
         // "Unlocked" is therefore the absence of a future value, which costs no write and needs no job.
         await _svc.RegisterAsync(Email, Password, "Provider");

@@ -37,16 +37,16 @@ builder.Services.AddSingleton<IDateTimeProvider, SystemDateTimeProvider>();
 builder.Services.AddScoped<IdentityService>();
 builder.Services.AddScoped<IDeviceTokenService, DeviceTokenService>();
 
-// F-021: lockout thresholds. No enable flag — with the defaults an account locks only after 10
+// Lockout thresholds. No enable flag — with the defaults an account locks only after 10
 // consecutive wrong passwords and unlocks itself 15 minutes later, so there is nothing a local run
-// needs switched off, and a third flag would only be a third way for a control to go missing (T-103).
+// needs switched off, and a third flag would only be a third way for a control to go missing.
 builder.Services.Configure<LockoutOptions>(
     builder.Configuration.GetSection(LockoutOptions.Section));
 
-// F-021 / threat T-101: per-IP limiting on the two routes that spend BCrypt. Read eagerly because the
+// Per-IP limiting on the two routes that spend BCrypt. Read eagerly because the
 // flag decides whether the limiter is registered at all — with it off, neither this nor UseRateLimiter
-// runs and the pipeline is exactly what it was before F-021, which is what makes the feature revertible
-// by configuration alone.
+// runs and the pipeline is exactly what it was before this limiter existed, which is what makes the
+// feature revertible by configuration alone.
 var rateLimiting = new RateLimitingOptions();
 builder.Configuration.GetSection(RateLimitingOptions.Section).Bind(rateLimiting);
 if (rateLimiting.Enabled) builder.Services.AddAuthRateLimiter(rateLimiting);
@@ -68,7 +68,7 @@ var app = builder.Build();
 // not restarted for being unready.
 app.MapDefaultEndpoints();
 
-// FIRST in the pipeline, and that is the whole point (threat T-101): a throttled request must be
+// FIRST in the pipeline, and that is the whole point: a throttled request must be
 // refused before it can reach BCrypt or the database, so it costs no CPU and takes no write. A limiter
 // registered behind the handler would still let the denial of service land. Routing runs ahead of any
 // middleware registered here — WebApplication inserts it at the head of the pipeline when it is not
@@ -116,15 +116,15 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-// SECURITY (T-001): UseHttpLogging is intentionally NOT registered.
+// SECURITY: UseHttpLogging is intentionally NOT registered.
 // Request/response body logging is absent to prevent plaintext passwords and
 // JWT bearer tokens (which carry the email as the 'sub' claim — PII per CONSTITUTION §4)
 // from appearing in log output. Do not add UseHttpLogging or any request body
 // logging middleware without first excluding POST /api/v1/auth/login and
 // POST /api/v1/auth/device-token from the logged paths.
 // Identity is API-only — no HTML forms, no antiforgery
-// F-021 PRD requirement 13: HSTS (under its flag) and the HTTPS redirect run BEFORE authentication.
-// This service receives plaintext passwords, and until F-021 its redirect ran last — and only outside
+// HSTS (under its flag) and the HTTPS redirect run BEFORE authentication.
+// This service receives plaintext passwords, and its redirect previously ran last — and only outside
 // Development, a condition that meant nothing here because the AppHost runs every service as
 // Production (ARCHITECTURE.md D-6). The environment guard is gone: the flag is the switch now, and the
 // redirect is a no-op wherever no HTTPS port is configured.

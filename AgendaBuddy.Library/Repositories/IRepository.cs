@@ -24,15 +24,15 @@ public interface IRepository<TEntity> where TEntity : class
     /// A <paramref name="skip"/> past the end returns an empty page with the full count.
     /// </returns>
     /// <remarks>
-    /// ADR-023's repository half (F-016-T10). One primitive rather than a query abstraction: the
+    /// ADR-023's repository half. One primitive rather than a query abstraction: the
     /// requirement is two paginated list endpoints, not a query DSL. <c>TotalCount</c> is
     /// <see cref="long"/> because <c>CountDocumentsAsync</c> returns <see cref="long"/>, and
-    /// <c>api-contracts.md</c> §4 publishes <c>totalCount</c> as <see cref="long"/> to F-015 for the
+    /// <c>api-contracts.md</c> §4 publishes <c>totalCount</c> as <see cref="long"/> for the
     /// same reason.
     /// <para>
     /// Capping and clamping the caller's page size is the <b>endpoint's</b> job (ADR-023: clamp,
     /// never reject), not this method's. The page cap is a security control — an uncapped page size
-    /// restores the full-dataset dump F-016 exists to remove — so it belongs where the untrusted
+    /// restores the full-dataset dump this primitive exists to remove — so it belongs where the untrusted
     /// value arrives.
     /// </para>
     /// </remarks>
@@ -53,7 +53,7 @@ public interface IRepository<TEntity> where TEntity : class
     /// <returns>The post-update document, or <c>null</c> when the filter matched nothing.</returns>
     /// <remarks>
     /// <para>
-    /// F-021's one new primitive (ADR-032). It exists because <c>RefreshAsync</c> rotated a refresh
+    /// ADR-032. It exists because <c>RefreshAsync</c> rotated a refresh
     /// token by <b>deleting the whole credential document and re-inserting it</b>, so any fault between
     /// the two lines destroyed the account — and no primitive here could express "change this one
     /// field". <c>UpdateAsync</c> replaces the entire document, which is a different operation with a
@@ -62,7 +62,7 @@ public interface IRepository<TEntity> where TEntity : class
     /// <para>
     /// <b>It never upserts.</b> A filter that matches nothing writes nothing and returns <c>null</c>.
     /// That is a property of the primitive rather than of each call site, so counting a failed login
-    /// for an address that has no account cannot create one (F-021 AC-9).
+    /// for an address that has no account cannot create one (AC-9).
     /// </para>
     /// <para>
     /// <b>Post-image, deliberately.</b> Returning the updated document lets a caller act on the new

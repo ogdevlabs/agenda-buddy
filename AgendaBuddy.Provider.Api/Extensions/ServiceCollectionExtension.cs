@@ -26,15 +26,14 @@ public static class ServiceCollectionExtension
 
         serviceCollection.AddScoped<ProviderService>();
 
-        // F-020-T11: AddProviderCommandHandler/UpdateProviderCommandHandler/DeactivateProviderCommandHandler/
+        // AddProviderCommandHandler/UpdateProviderCommandHandler/DeactivateProviderCommandHandler/
         // GetProviderByEmailQueryHandler/GetProvidersQueryHandler are typed against IProviderService, not the
         // concrete class -- forwarding to the already-scoped concrete instance, not a second
         // AddScoped<IProviderService, ProviderService>, so a request that resolves both the concrete class
-        // and the interface in the same scope gets the same object, not two (same DI-forwarding gap every
-        // prior F-020 migration's Party Review caught -- done proactively here).
+        // and the interface in the same scope gets the same object, not two.
         serviceCollection.AddScoped<IProviderService>(sp => sp.GetRequiredService<ProviderService>());
 
-        // F-014: reporting. ReportingService reads the provider collection only — it needs no repository of
+        // Reporting. ReportingService reads the provider collection only — it needs no repository of
         // its own, which is part of why nobody noticed it was never registered.
         serviceCollection.AddScoped<IReportingService, ReportingService>();
 

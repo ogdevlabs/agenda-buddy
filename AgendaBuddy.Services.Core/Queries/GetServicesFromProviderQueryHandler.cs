@@ -1,16 +1,14 @@
 namespace AgendaBuddy.Services.Core.Queries;
 
-// F-020-T10. Constructor takes only DI-resolvable services; the per-request email comes from the
-// query, not a constructor parameter (the previous shape -- Requests/RequestCollection.cs, deleted --
-// constructed this handler by hand, once per call, passing `email` into the constructor). Typed
-// against IProviderService, not the concrete class: it already covers everything this handler calls.
+// Constructor takes only DI-resolvable services; the per-request email comes from the query, not a
+// constructor parameter. Typed against IProviderService, not the concrete class: it already covers
+// everything this handler calls.
 //
-// A missing provider is a successful EMPTY read here, not a failure -- preserved from
-// Services/Program.cs's pre-existing behaviour (its null-check on the result never actually fired,
-// because this handler already returned an empty, non-null list on that branch). Deliberately not
-// changed to Result.Fail (which is what Calendar's equivalent does): that would flip this route from
-// 200-with-empty-array to 404 for a caller checking their own missing profile, a real behaviour change
-// this task's scope does not ask for.
+// A missing provider is a successful EMPTY read here, not a failure -- its null-check on the result
+// never actually fires, because this handler already returns an empty, non-null list on that branch.
+// Deliberately not changed to Result.Fail (which is what Calendar's equivalent does): that would flip
+// this route from 200-with-empty-array to 404 for a caller checking their own missing profile, a real
+// behaviour change.
 public class GetServicesFromProviderQueryHandler(
     IMediator mediator,
     IProviderService providerService,

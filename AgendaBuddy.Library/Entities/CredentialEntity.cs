@@ -33,13 +33,13 @@ public class CredentialEntity
     public RefreshTokenDocument? RefreshToken { get; set; }
 
     /// <summary>
-    /// Consecutive failed logins. Reset to 0 by a successful one (F-021 AC-10).
+    /// Consecutive failed logins. Reset to 0 by a successful one (AC-10).
     /// </summary>
     /// <remarks>
     /// Written only by an atomic <c>$inc</c> through
     /// <c>IRepository&lt;T&gt;.FindOneAndUpdateAsync</c> — never by a read-modify-write, and never as
     /// part of a whole-document replacement. An absent field deserializes to 0, which is exactly "this
-    /// account has never failed a login", so F-021 needs no migration.
+    /// account has never failed a login", so existing documents need no migration.
     /// </remarks>
     [BsonElement("failed_attempts")]
     [BsonIgnoreIfDefault]
@@ -50,8 +50,8 @@ public class CredentialEntity
     /// </summary>
     /// <remarks>
     /// Storing only the expiry makes "unlocked" the <i>absence of a future value</i>, so the lock clears
-    /// itself with no write on the read path and no sweeper job (F-021 AC-8). There is deliberately no
-    /// permanent lock and no administrative unlock: F-022 (password reset) does not exist yet, so a lock
+    /// itself with no write on the read path and no sweeper job (AC-8). There is deliberately no
+    /// permanent lock and no administrative unlock: password reset does not exist yet, so a lock
     /// that needed a human to clear it would strand a real provider — and let an attacker strand one on
     /// purpose.
     /// </remarks>

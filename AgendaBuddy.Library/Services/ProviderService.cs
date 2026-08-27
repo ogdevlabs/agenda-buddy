@@ -8,7 +8,7 @@ public class ProviderService(IRepository<ProviderEntity> providerRepository) : I
     }
 
     /// <summary>
-    /// One page of providers, plus the total number of them. F-016-T15 / ADR-023.
+    /// One page of providers, plus the total number of them. ADR-023.
     /// </summary>
     /// <remarks>
     /// Paged at the database, not after the fact. Reading everything and slicing in the endpoint would bound
@@ -53,7 +53,7 @@ public class ProviderService(IRepository<ProviderEntity> providerRepository) : I
     /// <returns>The updated provider, or <c>null</c> when no provider has that email.</returns>
     /// <remarks>
     /// <para>
-    /// F-014 requirement 20 / ADR D-9. This replaces a read-append-replace: the booking handler used to load
+    /// ADR D-9. This replaces a read-append-replace: the booking handler used to load
     /// the provider, add to <see cref="ProviderEntity.AppointmentEntities"/>, and call
     /// <see cref="UpdateProviderAsync"/>, which is a <c>ReplaceOneAsync</c>. **Two concurrent bookings for
     /// one provider both read, both append, and the second replacement silently discards the first
@@ -62,7 +62,7 @@ public class ProviderService(IRepository<ProviderEntity> providerRepository) : I
     /// disappears from the dashboard.
     /// </para>
     /// <para>
-    /// <c>$push</c> has no read, so there is no window. The primitive it uses arrived with F-021 (ADR-032).
+    /// <c>$push</c> has no read, so there is no window. The primitive it uses is backed by ADR-032.
     /// </para>
     /// </remarks>
     public async Task<ProviderEntity?> AppendAppointmentAsync(string providerEmail, AppointmentEntity appointment)
@@ -77,10 +77,10 @@ public class ProviderService(IRepository<ProviderEntity> providerRepository) : I
     /// </summary>
     /// <returns>The updated provider, or <c>null</c> when no provider has that email.</returns>
     /// <remarks>
-    /// F-014 requirement 20. <c>DeactivateProviderCommandHandler</c> set <c>IsActive</c> on a loaded document
+    /// <c>DeactivateProviderCommandHandler</c> set <c>IsActive</c> on a loaded document
     /// and called <see cref="UpdateProviderAsync"/> — a whole-document replacement that would discard any
     /// appointment booked between the read and the write. It had never run, because nothing dispatched the
-    /// command; F-014 makes it reachable, so it stops being theoretical.
+    /// command; now that the command is reachable, the race stops being theoretical.
     /// </remarks>
     public async Task<ProviderEntity?> SetActiveAsync(string providerEmail, bool isActive)
     {

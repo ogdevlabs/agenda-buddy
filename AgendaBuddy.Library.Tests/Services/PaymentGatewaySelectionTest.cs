@@ -7,13 +7,13 @@ using Xunit;
 namespace AgendaBuddy.Library.Tests.Services;
 
 /// <summary>
-/// F-014 AC-17 / threat T-206: payments are non-charging unless a key is configured, and the absence is
+/// Payments are non-charging unless a key is configured, and the absence is
 /// announced.
 /// </summary>
 /// <remarks>
 /// There is no Stripe account, no key and no deployment (ADR-035 defers cloud until every pending feature
 /// ships). The two alternatives to a non-charging default both fail: a gateway that throws leaves
-/// <c>PaymentService</c> unreachable — the exact condition F-014 exists to end — and a gateway that charges by
+/// <c>PaymentService</c> unreachable — the exact condition this default exists to prevent — and a gateway that charges by
 /// default is unthinkable without an account.
 /// </remarks>
 public class PaymentGatewaySelectionTest
@@ -59,8 +59,8 @@ public class PaymentGatewaySelectionTest
     public void T206_ADeploymentWithNoKey_IsWarnedAbout_NamingTheKey()
     {
         // PRD risk R4: the residual risk of a non-charging default is that it becomes permanent — payments
-        // recorded that never happened, while every artifact says F-010 is delivered. Same shape as threat
-        // T-103, same mitigation as ADR-033: warn loudly rather than fail to start.
+        // recorded that never happened, while every artifact says the feature is delivered. Same mitigation
+        // as ADR-033: warn loudly rather than fail to start.
         var warning = PaymentGatewayFactory.RecordingModeWarning(ConfigurationWith(null), isLocalRun: false);
 
         Assert.NotNull(warning);

@@ -18,10 +18,10 @@ public enum PaymentGatewayMode
 /// </summary>
 /// <remarks>
 /// <para>
-/// <b>Non-charging by default</b> (F-014 requirement 17, ADR D-6). There is no Stripe account, no key and
+/// <b>Non-charging by default</b> (ADR D-6). There is no Stripe account, no key and
 /// no deployment — ADR-035 defers cloud until every pending feature ships. The two alternatives both fail:
-/// a gateway that throws leaves <c>PaymentService</c> unreachable, which is the exact condition F-014
-/// exists to end; a gateway that charges by default is unthinkable without an account. Recording locally
+/// a gateway that throws leaves <c>PaymentService</c> unreachable, which is the exact condition this default
+/// exists to prevent; a gateway that charges by default is unthinkable without an account. Recording locally
 /// is the only option that leaves the capability exercisable and the money untouched.
 /// </para>
 /// <para>
@@ -37,7 +37,7 @@ public static class PaymentGatewayFactory
     /// The configuration key holding the Stripe secret. <b>It must never appear in
     /// <c>appsettings.json</c></b> — it is a live payment credential, and `ISSUE-002` is this project's
     /// standing proof that a committed secret is permanent. It follows the JWT keys: an Aspire secret
-    /// parameter, prompted once, masked in the dashboard (threat T-206).
+    /// parameter, prompted once, masked in the dashboard.
     /// </summary>
     public const string ApiKeyConfigurationKey = "Payments:Stripe:ApiKey";
 
@@ -65,9 +65,8 @@ public static class PaymentGatewayFactory
     /// </summary>
     /// <remarks>
     /// PRD risk R4: the residual risk of a non-charging default is that it becomes permanent — a deployment
-    /// forgets the key and records payments that never happened, while every artifact says F-010 is
-    /// delivered. This is the same shape as threat T-103, and it gets the same mitigation F-021 chose
-    /// (ADR-033): warn loudly, naming the key, rather than failing to start. A missing payment key should
+    /// forgets the key and records payments that never happened, while every artifact says the feature is
+    /// delivered. The mitigation (ADR-033): warn loudly, naming the key, rather than failing to start. A missing payment key should
     /// not take down appointment booking.
     /// </remarks>
     public static string? RecordingModeWarning(IConfiguration configuration, bool isLocalRun)

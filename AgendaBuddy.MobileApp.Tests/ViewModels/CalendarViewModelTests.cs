@@ -42,7 +42,7 @@ public class CalendarViewModelTests
         Assert.Empty(vm.ErrorMessage);
     }
 
-    // F-015-T08 AC8: a genuine failure surfaces the error banner (HasError + a real ErrorMessage),
+    // A genuine failure surfaces the error banner (HasError + a real ErrorMessage),
     // never fabricated SeedDataProvider calendar days.
     [Fact]
     public async Task LoadAsync_NetworkError_SetsHasErrorTrueWithRealMessage_NoFabricatedData()
@@ -60,7 +60,7 @@ public class CalendarViewModelTests
         Assert.False(string.IsNullOrWhiteSpace(vm.ErrorMessage));
     }
 
-    // F-015-T08 AC1: a genuine zero-result success is assigned as-is, never replaced with
+    // A genuine zero-result success is assigned as-is, never replaced with
     // fabricated SeedDataProvider calendar days.
     [Fact]
     public async Task LoadAsync_EmptyResult_NoFabricatedData()

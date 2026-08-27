@@ -21,10 +21,9 @@ builder.Services.AddMongoDbRepository(builder.Configuration);
 builder.Services.AddDistributedMemoryCache();
 
 // Add MediatR
-// F-020-T09: handlers moved to AgendaBuddy.Profession.Core, a separate assembly from
-// AgendaBuddy.Profession.Api -- MediatR's RegisterServicesFromAssembly only scans the one assembly it's
-// given, so both must be registered or mediator.Send(query) throws "no handler registered" at runtime,
-// not at compile time.
+// Handlers live in AgendaBuddy.Profession.Core, a separate assembly from AgendaBuddy.Profession.Api --
+// MediatR's RegisterServicesFromAssembly only scans the one assembly it's given, so both must be
+// registered or mediator.Send(query) throws "no handler registered" at runtime, not at compile time.
 builder.Services.AddMediatR(cfg =>
     cfg.RegisterServicesFromAssemblies(typeof(Program).Assembly, typeof(GetProfessionsQueryHandler).Assembly));
 builder.Services.AddEventStore();
@@ -33,7 +32,7 @@ builder.Services.AddEventStore();
 builder.Services.AddMvcCore();
 
 // Enable & configure JSON Problem Details error responses
-// ADR-022 / F-016-T08: ForbiddenException -> 403 centrally, so an endpoint that omits a local
+// ADR-022: ForbiddenException -> 403 centrally, so an endpoint that omits a local
 // try/catch returns 403 rather than a bare 500. Registered unconditionally, unlike the
 // Development-only UseExceptionHandler lambda below.
 builder.Services.AddExceptionHandler<AgendaBuddyExceptionHandler>();
@@ -107,9 +106,9 @@ if (app.Environment.IsDevelopment())
 // ForbiddenException and the central 403 would fail in Development only. See AgendaBuddyExceptionHandler.
 app.UseExceptionHandler();
 
-// F-021 PRD requirement 13: HSTS (under its flag) and the HTTPS redirect run BEFORE authentication.
-// Registered after UseAuthentication, as it was until F-021, the redirect parsed and validated the
-// bearer token out of a plaintext request and only then told the client to come back over TLS.
+// HSTS (under its flag) and the HTTPS redirect run BEFORE authentication. Registered after
+// UseAuthentication, the redirect parsed and validated the bearer token out of a plaintext
+// request and only then told the client to come back over TLS.
 app.UseAgendaBuddyTransportSecurity();
 
 app.UseAntiforgery();
@@ -122,20 +121,17 @@ var professions = app.MapGroup("api/v1/professions")
     .WithOpenApi()
     .AddEndpointFilter<ProblemDetailsServiceEndpointFilter>();
 
-// F-016-T17 / ADR-025 / threat T-007: POST /api/v1/professions was DELETED, not role-gated.
-// PRD requirement 13 asked for a role check; there is no role to check for. Identity's allow-list is
-// exactly {Provider, Customer} (AgendaBuddy.Identity/Program.cs:121) with no administrative tier, so the only
-// implementable check would still let any self-registered provider write global reference data read by
-// every user. Professions are SEEDED from Library/Data/ProfessionSeedData.cs and no shipped flow creates
-// one, so nothing is lost. Verified live before removal: both a Provider AND a Customer token received
-// 201 and wrote to the catalogue.
-// F-020-T09: AddProfessionCommand/AddProfessionCommandHandler -- kept in place by F-016-T17 pending this
-// task's dead-handler audit -- were DELETED rather than migrated forward. No route ever reached them
-// (this MapGroup has no POST), and the handler's own constructor took a `ProfessionEntity` as a
-// per-instance argument with no matching DI registration anywhere, so it could never have been resolved
-// even if a route existed. Same shape of dead code as Calendar's BookCalendarCommand (F-020-T08), same
-// disposition. Pinned by ProfessionWriteRouteRemovedTest, which is unaffected -- it never referenced the
-// deleted types.
+// ADR-025: POST /api/v1/professions was DELETED, not role-gated. There is no role to check for --
+// Identity's allow-list is exactly {Provider, Customer} (AgendaBuddy.Identity/Program.cs:121) with no
+// administrative tier, so the only implementable check would still let any self-registered provider
+// write global reference data read by every user. Professions are SEEDED from
+// Library/Data/ProfessionSeedData.cs and no shipped flow creates one, so nothing is lost. Verified live
+// before removal: both a Provider AND a Customer token received 201 and wrote to the catalogue.
+// AddProfessionCommand/AddProfessionCommandHandler were DELETED rather than migrated forward. No route
+// ever reached them (this MapGroup has no POST), and the handler's own constructor took a
+// `ProfessionEntity` as a per-instance argument with no matching DI registration anywhere, so it could
+// never have been resolved even if a route existed. Pinned by ProfessionWriteRouteRemovedTest, which is
+// unaffected -- it never referenced the deleted types.
 
 professions.MapGet("",
     async Task<Results<Ok<DataResponse<List<ProfessionEntity>>>, NoContent>> (
@@ -145,10 +141,7 @@ professions.MapGet("",
     {
         const string key = "professions";
 
-        // F-020-T09: dispatched through the real mediator.Send with the real request
-        // CancellationToken -- the pre-refactor path (Requests/RequestCollection.cs, deleted) manually
-        // `new`-ed the query handler and called .Handle() directly, with `new CancellationToken()`
-        // rather than this one. A Fail result is mapped to null so CacheAside's "never cache a null"
+        // A Fail result is mapped to null so CacheAside's "never cache a null"
         // rule (CacheAside.cs) keeps an empty catalogue from poisoning the cache.
         var professionCollection = await cache.GetOrCreateAsync(key, async token =>
         {

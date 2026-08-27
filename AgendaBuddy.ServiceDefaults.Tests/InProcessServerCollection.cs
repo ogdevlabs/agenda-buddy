@@ -16,9 +16,9 @@ namespace AgendaBuddy.ServiceDefaults.Tests;
 /// expected span simply absent, and passing when run alone.
 /// </para>
 /// <para>
-/// This assembly had one server-starting class for a long time, so the problem could not appear. F-014 added a
-/// second (<c>TransportSecurityTest</c>, from F-021) and the overlap became real. The same mechanism F-016
-/// used for the integration harness applies here: one collection, parallelism off.
+/// This assembly had one server-starting class for a long time, so the problem could not appear. A second
+/// one (<c>TransportSecurityTest</c>) made the overlap real. The same mechanism used for the integration
+/// harness applies here: one collection, parallelism off.
 /// </para>
 /// <para>
 /// ⚠️ <b>Add any new class that calls <c>WebApplication.CreateBuilder</c> to this collection.</b> Forgetting

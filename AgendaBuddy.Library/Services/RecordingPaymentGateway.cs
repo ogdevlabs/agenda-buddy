@@ -7,9 +7,8 @@ namespace AgendaBuddy.Library.Services;
 /// </summary>
 /// <remarks>
 /// <para>
-/// F-014's default gateway (requirement 17, ADR D-6). It exists so that <c>PaymentService</c> — one of the
-/// six capabilities this feature makes reachable — can be exercised by a developer and by a test without a
-/// Stripe account, a live secret key, or any possibility of moving money.
+/// The default payment gateway. It exists so that <c>PaymentService</c> can be exercised by a developer
+/// and by a test without a Stripe account, a live secret key, or any possibility of moving money.
 /// </para>
 /// <para>
 /// <b>It reports success.</b> That is deliberate and it is the risk: a caller cannot tell a recorded
@@ -19,8 +18,7 @@ namespace AgendaBuddy.Library.Services;
 /// <see cref="PaymentGatewayFactory.RecordingModeWarning"/> says it at startup outside a local run.
 /// </para>
 /// <para>
-/// The alternative — failing every charge — would leave the capability unreachable, which is the exact
-/// condition F-014 exists to end, and would make PRD AC-6 unwritable.
+/// The alternative — failing every charge — would leave the capability unreachable.
 /// </para>
 /// </remarks>
 public sealed class RecordingPaymentGateway : IPaymentGateway

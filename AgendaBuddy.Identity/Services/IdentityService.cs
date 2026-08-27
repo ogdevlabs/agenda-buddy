@@ -26,7 +26,7 @@ public class IdentityService(
 
     /// <summary>
     /// Lockout thresholds. Both parameters are optional so the shipped defaults apply to any caller that
-    /// has not configured them — including the 20-odd unit tests that predate F-021.
+    /// has not configured them — including the 20-odd unit tests that predate this feature.
     /// </summary>
     private readonly LockoutOptions _lockout = lockoutOptions?.Value ?? new LockoutOptions();
 
@@ -97,14 +97,14 @@ public class IdentityService(
     /// </summary>
     /// <remarks>
     /// <para>
-    /// The order of the three checks is load-bearing (F-021 design decisions D-9, and AC-7):
+    /// The order of the three checks is load-bearing (design decisions D-9, and AC-7):
     /// </para>
     /// <list type="number">
     /// <item>an unknown email still verifies against a dummy hash, so it costs the same as a real one
-    /// (threat T-005 — removing this reintroduces timing-based user enumeration);</item>
+    /// (removing this reintroduces timing-based user enumeration);</item>
     /// <item>the <b>lock is checked before <c>BCrypt.Verify</c></b>, because a locked account that spent
     /// 262 ms per attempt would turn the lock into an amplifier for the denial of service it exists
-    /// beside (threat T-101);</item>
+    /// beside;</item>
     /// <item>the failure counter is written <b>only</b> on the verify-failed path, so a locked account
     /// takes no further writes — which is also how a test can prove the short circuit fired.</item>
     /// </list>
@@ -131,7 +131,7 @@ public class IdentityService(
 
         if (credential is null)
         {
-            // Constant-time dummy hash to prevent timing-based user enumeration (T-005)
+            // Constant-time dummy hash to prevent timing-based user enumeration
             BCrypt.Net.BCrypt.Verify(password, DummyHash);
             _log.LogInformation("credential.login-failed no-such-account for {Account}", account);
             throw new UnauthorizedException();
@@ -192,7 +192,7 @@ public class IdentityService(
 
         // PRD requirement 19 — a seam, and nothing more. `MustResetPassword` is written by
         // SeedAuthCredentials.cs:68 for migrated users and read by nothing, so a forced-reset flow does
-        // not exist. F-022 owns it, and needs NotificationService from F-014 first. Surfacing the flag
+        // not exist. Password reset doesn't exist yet, and needs a notification service first. Surfacing the flag
         // here means the branch has an obvious home, and meanwhile an operator can see that accounts
         // flagged for reset are signing in without one.
         _log.LogInformation(
@@ -216,7 +216,7 @@ public class IdentityService(
     /// <para>
     /// One round trip now does all of it. Single use is preserved by putting the presented hash in the
     /// <b>filter</b>: the update matches only while that hash is still stored, so a replayed token
-    /// matches nothing (AC-3). The expiry check and the "account not locked" check (AC-4 / threat T-104)
+    /// matches nothing (AC-3). The expiry check and the "account not locked" check (AC-4)
     /// ride in the same filter, costing no extra query.
     /// </para>
     /// <para>
@@ -234,7 +234,7 @@ public class IdentityService(
         // failure discovered afterwards would have already consumed the client's refresh token — but
         // throwing here would answer 500 to a request carrying a *bogus* token, which owes no such
         // answer. The integration harness caught exactly that: it hosts Identity with no
-        // JWT_PRIVATE_KEY (CryptoSessionFixture never materialises a private key as a string, F-016
+        // JWT_PRIVATE_KEY (CryptoSessionFixture never materialises a private key as a string,
         // AC-3), and every rejected refresh came back 500 instead of 401. No unit test could see it —
         // they all set the variable in their constructor.
         var privateKeyPem = Environment.GetEnvironmentVariable(PrivateKeyEnvVar)?.Replace("\\n", "\n");
@@ -316,7 +316,7 @@ public class IdentityService(
     /// </summary>
     /// <remarks>
     /// <para>
-    /// Two writes, not one, and never a read-modify-write (threat T-102 / AC-11). The increment is an
+    /// Two writes, not one, and never a read-modify-write (AC-11). The increment is an
     /// atomic <c>$inc</c>, so concurrent attempts cannot lose a count; the lock is a second, conditional
     /// update that runs on one attempt in N.
     /// </para>
@@ -464,11 +464,11 @@ public class IdentityService(
     /// SHA-256 over the lower-cased address.
     /// </summary>
     /// <remarks>
-    /// F-021 design decision D-8 / threat T-105. Email is PII under <c>CONSTITUTION.md</c> §4, and
+    /// Design decision D-8. Email is PII under <c>CONSTITUTION.md</c> §4, and
     /// <c>PiiRedactingProcessor</c> redacts <b>spans, not logs</b> — so an address written here would
-    /// reach the Aspire dashboard and any future aggregator with nothing downstream to catch it. F-013's
-    /// telemetry rollout is this project's own precedent: it began exporting real customer emails in
-    /// <c>url.path</c> the moment it was switched on (threat T-004).
+    /// reach the Aspire dashboard and any future aggregator with nothing downstream to catch it. This
+    /// project's own telemetry rollout is precedent: it began exporting real customer emails in
+    /// <c>url.path</c> the moment it was switched on.
     /// <para>
     /// A prefix, not the whole digest, because the point is correlating one account's mutations in a log,
     /// not resisting a dictionary attack — with a known address list any full hash is reversible anyway,

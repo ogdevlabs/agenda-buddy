@@ -47,9 +47,8 @@ public class UpdateCustomerCommandHandlerTest
             CancellationToken.None);
 
         Assert.True(result.IsFailed);
-        // Preserved verbatim from the pre-refactor handler: the audit Type here is literally
-        // "UpdateProviderCommand" -- a pre-existing copy-paste defect out of this task's scope to fix
-        // (F-018-T13's CustomerAuditTest remarks). Pinned here, not corrected.
+        // The audit Type here is literally "UpdateProviderCommand" -- a pre-existing copy-paste defect,
+        // out of scope to fix. Pinned here, not corrected.
         eventStore.Verify(e => e.SaveAsync(It.Is<Event>(ev => ev.Status == "Failed" && ev.Type == "UpdateProviderCommand")), Times.Once);
     }
 

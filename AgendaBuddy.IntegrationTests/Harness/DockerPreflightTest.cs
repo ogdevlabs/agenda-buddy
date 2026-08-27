@@ -1,7 +1,7 @@
 namespace AgendaBuddy.IntegrationTests.Harness;
 
 /// <summary>
-/// Pins F-016 AC-7: with the container runtime unreachable, the harness fails with a message that
+/// With the container runtime unreachable, the harness fails with a message that
 /// names the runtime problem and the remedy — not a bare timeout.
 /// </summary>
 /// <remarks>

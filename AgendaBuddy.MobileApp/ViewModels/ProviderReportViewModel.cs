@@ -7,8 +7,7 @@ using AgendaBuddy.MobileApp.Services;
 namespace AgendaBuddy.MobileApp.ViewModels;
 
 /// <summary>
-/// F-014's provider report route (api-contracts.md §2), never rendered anywhere in the client before
-/// F-015-T11 — F-015-T07 only wired the API call (<see cref="IProviderApiService.GetReportAsync"/>).
+/// The provider report route (api-contracts.md §2), wired via <see cref="IProviderApiService.GetReportAsync"/>.
 /// The one requirement this ViewModel exists to satisfy is PRD Requirement 12 / AC13: never a number
 /// or a blank field when revenue isn't computable — render the reason instead.
 /// </summary>
@@ -32,7 +31,7 @@ public partial class ProviderReportViewModel : ObservableObject
     /// <summary>
     /// ux-review.md finding 1 / PRD Requirement 12 / AC13: "Revenue isn't available yet —
     /// [revenueUnavailableReason]." — never a number, never blank. <see cref="ProviderReport"/> has no
-    /// revenue *amount* field at all today (F-014 removed the only one that existed, ADR D-7), so the
+    /// revenue *amount* field at all today (removed, ADR D-7), so the
     /// available branch below has nothing real to render yet; it exists so the property's shape does
     /// not have to change the day a real figure is added.
     /// </summary>

@@ -1,7 +1,7 @@
 namespace AgendaBuddy.Booking.Core.Queries;
 
-// F-019-T05 / CONSTITUTION §3. Found by EventStoreWriteGuardTest, not by review: Notes/Payment
-// operations were never audited before this refactor -- the gap existed all along but the guard's
+// CONSTITUTION §3. Found by EventStoreWriteGuardTest, not by review: Notes/Payment
+// operations were never audited -- the gap existed all along but the guard's
 // file-based scan couldn't see it while the logic lived inline in Program.cs, not in a handler file.
 public class GetAppointmentNotesQueryHandler(INoteService notes, IEventStore eventStore)
     : IRequestHandler<GetAppointmentNotesQuery, Result<IEnumerable<NoteEntity>>>

@@ -25,7 +25,7 @@ public sealed class TransportSecurityOptions
 }
 
 /// <summary>
-/// Whether F-021's configuration-gated security controls are on, and whether their being off is
+/// Whether these configuration-gated security controls are on, and whether their being off is
 /// expected.
 /// </summary>
 /// <remarks>
@@ -38,8 +38,8 @@ public sealed class TransportSecurityOptions
 /// projects, and an environment-gated limiter would throttle every local run (design decision D-6).
 /// </para>
 /// <para>
-/// The price is threat T-103: a deployment that never sets the flags ships with the controls absent
-/// while every artifact records the feature as delivered — the same shape as F-016's original defect,
+/// The price is a deployment that never sets the flags ships with the controls absent
+/// while every artifact records the feature as delivered — the same shape as a prior defect,
 /// where <c>AssertRole</c> existed and was never called. The mitigation is <b>warn loudly, do not fail
 /// fast</b> (D-7): a config slip should be visible, not an outage.
 /// </para>
@@ -104,7 +104,7 @@ public static class SecurityFlags
             warnings.Add(
                 "Rate limiting is OFF: set Security:RateLimiting:Enabled=true. login and register each "
                 + "spend ~262 ms of CPU on BCrypt per request, so roughly 4 unauthenticated requests "
-                + "per second pin a core (threat T-101).");
+                + "per second pin a core.");
         }
 
         return warnings;
@@ -120,7 +120,6 @@ public static class SecurityFlags
 /// is a property of each <c>Program.cs</c> — it is the sequence of <c>app.UseX()</c> calls — and
 /// <c>AddServiceDefaults()</c> runs on the <i>builder</i>, before any pipeline exists, so it cannot
 /// reposition anything. ServiceDefaults therefore owns the policy and each service places the call.
-/// Eliminating that last step means owning the whole pipeline here, which is F-019/F-020's job.
 /// </para>
 /// </remarks>
 public static class TransportSecurityExtensions

@@ -36,7 +36,7 @@ public class PayForAppointmentCommandHandlerTest
         Assert.Equal(charged, result.Value);
     }
 
-    // Threat T-205's Conflict case: a second charge for the same appointment. Thrown, not
+    // A second charge for the same appointment. Thrown, not
     // Result.Fail'd, matching ChangeAppointmentStatusCommandHandler's InvalidOperationException ->
     // 409 precedent, since Result.Fail alone can't distinguish "conflict" from an ordinary failure
     // in AgendaBuddy.Booking.Api's mapping.

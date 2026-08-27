@@ -6,7 +6,7 @@ namespace AgendaBuddy.Identity.Tests.Auth;
 
 /// <summary>
 /// IDOR tests for OwnershipGuard.
-/// Threat-model T-004: a valid token for user A must not grant access to resources owned by user B.
+/// A valid token for user A must not grant access to resources owned by user B.
 /// PRD AC 14-18.
 /// </summary>
 public class OwnershipGuardIdorTest

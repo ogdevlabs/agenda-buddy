@@ -3,13 +3,13 @@ using System.Net;
 namespace AgendaBuddy.IntegrationTests.Contract;
 
 /// <summary>
-/// F-018-T11 AC-5, Services: one real HTTP request through the real pipeline, asserting the status code
+/// Services: one real HTTP request through the real pipeline, asserting the status code
 /// only. See <see cref="BookingRouteContractTest"/> for why status-only is the deliberate design
-/// (ADR-017, F-019's <c>DataResponse&lt;T&gt;</c>).
+/// (ADR-017, see <c>DataResponse&lt;T&gt;</c>).
 /// </summary>
 /// <remarks>
 /// Route chosen: <c>GET /api/v1/services/{email}</c> (`Services/Program.cs`) — the service's only read
-/// route, and one of the five PII-bearing GETs F-016 closed. It carries
+/// route, and one of the five PII-bearing GETs. It carries
 /// <c>.RequireAuthorization()</c>, so an anonymous caller is refused before the handler ever runs —
 /// today, anonymously, this is <b>401</b>.
 /// </remarks>

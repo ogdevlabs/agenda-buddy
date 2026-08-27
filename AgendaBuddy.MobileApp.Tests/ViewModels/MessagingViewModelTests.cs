@@ -43,7 +43,7 @@ public class MessagingViewModelTests
         Assert.Empty(vm.ErrorMessage);
     }
 
-    // F-015-T08 AC8: a genuine failure surfaces the error banner (HasError + a real ErrorMessage),
+    // A genuine failure surfaces the error banner (HasError + a real ErrorMessage),
     // never fabricated seed threads.
     [Fact]
     public async Task LoadAsync_NetworkError_SetsHasErrorTrueWithRealMessage_NoFabricatedData()
@@ -61,7 +61,7 @@ public class MessagingViewModelTests
         Assert.False(string.IsNullOrWhiteSpace(vm.ErrorMessage));
     }
 
-    // F-015-T08 AC1/AC8: a genuine zero-result success surfaces the empty state (IsEmpty), never
+    // A genuine zero-result success surfaces the empty state (IsEmpty), never
     // fabricated seed threads.
     [Fact]
     public async Task LoadAsync_EmptyResult_SetsIsEmptyTrue_NoFabricatedData()

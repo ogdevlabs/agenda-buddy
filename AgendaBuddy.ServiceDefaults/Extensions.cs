@@ -36,7 +36,7 @@ public static class Extensions
         builder.ConfigureOpenTelemetry();
         builder.AddDefaultHealthChecks();
 
-        // F-021: the HSTS *policy*, shared by all seven services. Placing the middleware is each
+        // The HSTS *policy*, shared by all seven services. Placing the middleware is each
         // service's own call — see TransportSecurityExtensions for why that cannot be centralised here.
         builder.Services.AddAgendaBuddyTransportSecurity(builder.Configuration);
 
@@ -99,8 +99,8 @@ public static class Extensions
             .WithTracing(tracing => tracing
                 .AddAspNetCoreInstrumentation()
                 .AddHttpClientInstrumentation()
-                // Threat T-004: url.path carries the literal request path, and this system puts
-                // email addresses in paths. Must be added last so it sees the final tag set.
+                // url.path carries the literal request path, and this system puts email addresses in
+                // paths. Must be added last so it sees the final tag set.
                 .AddProcessor(new PiiRedactingProcessor()));
 
         builder.AddOpenTelemetryExporters();

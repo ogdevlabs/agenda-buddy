@@ -5,8 +5,8 @@ namespace AgendaBuddy.MobileApp.Tests.Routing;
 
 public class NotificationRouteBuilderTests
 {
-    // F-015-T07: corrected to the real backend route — hosted by Customer under a top-level
-    // /api/v1/notifications group (F-014, ADR D-2).
+    // The real backend route is hosted by Customer under a top-level /api/v1/notifications group
+    // (ADR D-2).
     [Fact]
     public void Notifications_BuildsGet()
     {
@@ -16,7 +16,7 @@ public class NotificationRouteBuilderTests
         Assert.Equal("api/v1/notifications", route.Path);
     }
 
-    // F-015-T07: POST, not PATCH — the real route is notifications.MapPost("/{id}/read", …).
+    // POST, not PATCH — the real route is notifications.MapPost("/{id}/read", …).
     [Fact]
     public void MarkRead_BuildsPostById()
     {

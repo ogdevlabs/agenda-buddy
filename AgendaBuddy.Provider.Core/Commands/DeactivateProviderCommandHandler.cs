@@ -1,10 +1,7 @@
 namespace AgendaBuddy.Provider.Core.Commands;
 
-// F-020-T11: moved from AgendaBuddy.EventAndCommands.Commands.Provider. Previously the ONLY caller
-// (Provider/Program.cs's deactivate route, deleted) `new`-ed this handler directly and called
-// .Handle() by hand instead of going through mediator.Send -- now a real MediatR dispatch, registered
-// the same way as every other Provider command. Typed against IProviderService, which F-020-T11 had to
-// extend with SetActiveAsync (see IProviderService's own remarks) to make this possible.
+// Typed against IProviderService, extended with SetActiveAsync to make this possible (see
+// IProviderService's own remarks).
 public class DeactivateProviderCommandHandler(
     IMediator mediator,
     IProviderService providerService,
@@ -34,8 +31,7 @@ public class DeactivateProviderCommandHandler(
             return Result.Fail<ProviderEntity>($"No provider found with email {request.ProviderEntity.Email}");
         }
 
-        // F-014 requirement 20: a targeted $set, not a whole-document replace -- see SetActiveAsync's own
-        // remarks.
+        // A targeted $set, not a whole-document replace -- see SetActiveAsync's own remarks.
         await providerService.SetActiveAsync(provider.Email, isActive: false);
         provider.IsActive = false;
 

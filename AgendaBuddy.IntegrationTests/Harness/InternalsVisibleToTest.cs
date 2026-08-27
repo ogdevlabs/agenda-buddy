@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 namespace AgendaBuddy.IntegrationTests.Harness;
 
 /// <summary>
-/// Pins F-016 AC-2: all seven services grant internals visibility to this project.
+/// All seven services grant internals visibility to this project.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -20,7 +20,7 @@ namespace AgendaBuddy.IntegrationTests.Harness;
 /// <para>
 /// Worth stating plainly: that means <c>InternalsVisibleTo</c> is <em>not</em> what makes the harness
 /// able to host a service — the original rationale for AC-2. It remains genuinely useful (asserting
-/// on internal helpers, and the tier tests F-018 will add), and it is an approved acceptance
+/// on internal helpers, and future tier tests), and it is an approved acceptance
 /// criterion, so it is implemented as specified. But the reason recorded in the PRD is no longer the
 /// operative one, and that is worth knowing rather than discovering later.
 /// </para>

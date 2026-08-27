@@ -8,7 +8,7 @@ namespace AgendaBuddy.IntegrationTests.Persistence;
 
 /// <summary>
 /// Resolves a hosted service's own collection name through <see cref="MongoConnectionResolver"/> instead
-/// of a literal string (F-018-T12). Every domain service resolves its collection name the same way at
+/// of a literal string. Every domain service resolves its collection name the same way at
 /// startup (see e.g. <c>Booking/Extensions/ServiceCollectionExtension.cs</c>); a test that hardcoded
 /// "providers" instead would keep passing even if that resolution ever changed, which defeats the point
 /// of proving persistence against the service's REAL configuration.

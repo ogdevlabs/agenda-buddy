@@ -7,7 +7,7 @@ namespace AgendaBuddy.Library.Services;
 /// configured — see <see cref="RecordingPaymentGateway"/> for what runs otherwise.
 /// </summary>
 /// <remarks>
-/// <b>The API key is assigned once, at construction</b> (F-014, threat T-206). It used to be assigned inside
+/// <b>The API key is assigned once, at construction.</b> It used to be assigned inside
 /// <see cref="CreatePaymentIntentAsync"/>, and <c>StripeConfiguration.ApiKey</c> is a <b>process-global
 /// static</b>: writing a live payment credential to a global from request handling makes the key's lifetime
 /// the process's rather than the call's, and makes the assignment a data race the moment two requests

@@ -8,26 +8,22 @@ using MongoDB.Driver;
 namespace AgendaBuddy.IntegrationTests.Harness;
 
 /// <summary>
-/// F-016 AC-17 and AC-24 (`[security]`, threat <b>T-005</b>) end to end: an authenticated read writes an
+/// An authenticated read writes an
 /// audit record that names <b>who</b> read and <b>how much</b>, and contains no personal data.
 /// </summary>
 /// <remarks>
 /// <para>
-/// <b>Why the Calendar route rather than the one AC-24 names.</b> AC-24 is worded against
-/// <c>GET /api/v1/providers</c>, but that route is <b>still anonymous</b> until F-016-T12 — so it cannot
-/// produce an <em>authenticated</em> read yet, and the actor half of the criterion would be untestable.
-/// <c>GET /api/v1/calendar/appointments/{email}</c> already carries <c>RequireAuthorization()</c>
-/// (<c>Calendar/Program.cs:171</c>) and goes through <c>CheckCalendarAppointmentsQueryHandler</c>, which is
-/// one of the nine handlers this task changed. It is also the better subject: the entity it reads embeds
+/// <b>Why the Calendar route.</b> <c>GET /api/v1/calendar/appointments/{email}</c> carries
+/// <c>RequireAuthorization()</c> (<c>Calendar/Program.cs:171</c>) and goes through
+/// <c>CheckCalendarAppointmentsQueryHandler</c>. It is also the better subject: the entity it reads embeds
 /// both a customer email and a full appointment record, so "no PII in the payload" has something real to
 /// be wrong about.
 /// </para>
 /// <para>
-/// ✅ <b>The literal wording is now covered too.</b> F-016-T12 authenticated
-/// <c>GET /api/v1/providers</c>, so F-016-T19 added
+/// ✅ <b>The literal wording is covered too</b>, by
 /// <see cref="T005_TheLiteralCriterion_AnAuthenticatedGetProvidersIsAttributedAndCarriesNoPii"/> against
-/// the exact route AC-24 names. The Calendar case is kept: it exercises a different one of the nine
-/// handlers.
+/// <c>GET /api/v1/providers</c> directly. The Calendar case is kept: it exercises a different query
+/// handler.
 /// </para>
 /// <para>
 /// The assertion searches the raw <c>data</c> string for values that were actually seeded, rather than
@@ -102,7 +98,7 @@ public class QueryAuditPayloadTest :
 
         Assert.NotNull(audit);
 
-        // WHO. Before F-016 the audit trail could not answer this at all
+        // WHO. Previously the audit trail could not answer this at all
         // (15-cqrs-and-messaging.md:215) — these routes had no authenticated caller to record.
         Assert.Equal(ProviderEmail, audit!.Actor);
 
@@ -150,10 +146,8 @@ public class QueryAuditPayloadTest :
     [Fact]
     public async Task T005_TheLiteralCriterion_AnAuthenticatedGetProvidersIsAttributedAndCarriesNoPii()
     {
-        // AC-24 is worded against GET /api/v1/providers. When this test's sibling above was written (T18)
-        // that route was still anonymous, so an AUTHENTICATED read of it was impossible and only the actor
-        // half could be shown on the Calendar route. F-016-T12 authenticated it, so the criterion can now be
-        // attested against the exact route it names. Added at T19 rather than left as a near-miss.
+        // AC-24 is worded against GET /api/v1/providers, which is authenticated, so this attests the
+        // criterion against the exact route it names.
         using var service = _providerHost.StartService("Production");
 
         await service.Database

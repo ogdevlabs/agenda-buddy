@@ -1,8 +1,8 @@
 namespace AgendaBuddy.MobileApp.Routing;
 
 /// <summary>
-/// Route-building logic for <see cref="Services.ProviderApiService"/> (new in F-015-T07) — F-014's report
-/// and deactivation routes, never called by the client before this task (api-contracts.md §2).
+/// Route-building logic for <see cref="Services.ProviderApiService"/>'s report and deactivation routes
+/// (api-contracts.md §2).
 /// </summary>
 public static class ProviderRouteBuilder
 {
@@ -13,7 +13,7 @@ public static class ProviderRouteBuilder
     public static RouteSpec Report(string email) =>
         new(HttpMethod.Get, $"api/v1/providers/{email}/report");
 
-    /// <summary>A provider deactivating themselves — no administrative bypass exists (threat T-207).</summary>
+    /// <summary>A provider deactivating themselves — no administrative bypass exists.</summary>
     public static RouteSpec Deactivate(string email) =>
         new(HttpMethod.Post, $"api/v1/providers/{email}/deactivate");
 }

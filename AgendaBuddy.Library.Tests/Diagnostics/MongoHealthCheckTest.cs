@@ -76,7 +76,7 @@ public class MongoHealthCheckTest
         Assert.NotNull(result.Exception);
     }
 
-    // Threat T-002: an anonymous caller must not be able to drive one Mongo round-trip per
+    // An anonymous caller must not be able to drive one Mongo round-trip per
     // request. Two probes inside the window produce exactly one ping.
     [Fact]
     public async Task CheckHealth_PingsOnce_ForRepeatedProbesInsideTheCacheWindow()

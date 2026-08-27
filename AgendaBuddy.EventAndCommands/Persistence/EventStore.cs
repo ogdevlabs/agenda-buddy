@@ -19,18 +19,16 @@ public class EventStore : IEventStore
     /// </param>
     /// <param name="configuration">Configuration supplying the database and collection names.</param>
     /// <param name="httpContextAccessor">
-    /// Supplies the calling principal so <see cref="Event.Actor"/> can be stamped centrally
-    /// (F-016-T18 / ADR-027). Attribution is stamped <b>here</b> rather than in each handler because no
-    /// handler has access to the caller: <c>ClaimsPrincipal</c> is dropped at the endpoint, the query
-    /// objects carry no properties, and <c>RequestCollection</c> hand-constructs handlers from domain data.
-    /// Threading an actor parameter down instead would have widened six public <c>IRequestCollection</c>
-    /// interfaces and touched roughly thirty files to carry one audit field, and could be half-done — miss
-    /// one handler and that path silently loses attribution. Setting it where the record is written cannot
-    /// be half-done, and it attributes the eleven command handlers for free.
+    /// Supplies the calling principal so <see cref="Event.Actor"/> can be stamped centrally (ADR-027).
+    /// Attribution is stamped <b>here</b> rather than in each handler because no handler has access to
+    /// the caller: <c>ClaimsPrincipal</c> is dropped at the endpoint, and the query objects carry no
+    /// such property. Threading an actor parameter down through every handler instead would touch far
+    /// more files to carry one audit field, and could be half-done — miss one handler and that path
+    /// silently loses attribution. Setting it where the record is written cannot be half-done.
     /// <para>
-    /// Accepted cost: this couples the CQRS kernel to ASP.NET, which it was not before. If F-019/F-020 ever
-    /// needs <c>EventAndCommands</c> HTTP-free again, the seam is a small <c>IAuditActorProvider</c>
-    /// interface owned here and implemented in <c>Library.ServerAuth</c>.
+    /// Accepted cost: this couples the CQRS kernel to ASP.NET, which it was not before. If
+    /// <c>EventAndCommands</c> ever needs to go HTTP-free again, the seam is a small
+    /// <c>IAuditActorProvider</c> interface owned here and implemented in <c>Library.ServerAuth</c>.
     /// </para>
     /// </param>
     public EventStore(

@@ -4,7 +4,7 @@ using Xunit;
 namespace AgendaBuddy.Identity.Tests.Helpers;
 
 /// <summary>
-/// Pins the semantics of <c>GetPagedAsync</c> — F-016-T10, ADR-023's repository half.
+/// Pins the semantics of <c>GetPagedAsync</c> — ADR-023's repository half.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -13,7 +13,7 @@ namespace AgendaBuddy.Identity.Tests.Helpers;
 /// extension method Moq cannot intercept (see <c>MongoDbRepositoryTest</c>), so
 /// <c>InMemoryCredentialRepository</c> — a test helper, but a real implementer of the interface — is
 /// where the contract becomes executable. Mongo's own <c>Skip</c>/<c>Limit</c>/
-/// <c>CountDocumentsAsync</c> behaviour is exercised by <c>F-016-T15</c> through the harness.
+/// <c>CountDocumentsAsync</c> behaviour is exercised through the integration harness instead.
 /// </para>
 /// <para>
 /// The behaviours pinned here are the ones <c>api-contracts.md</c> §4 makes promises about:
@@ -91,8 +91,8 @@ public class InMemoryCredentialRepositoryPagingTest
     [InlineData(0, -1)]
     public async Task GetPagedAsync_TreatsNegativeArgumentsAsZero(int skip, int take)
     {
-        // Clamping user input is the endpoint's job (ADR-023: clamp, never reject) and belongs to
-        // F-016-T15. This is a different concern: MongoDB's Skip(-1) throws while LINQ's Skip(-1) is a
+        // Clamping user input is the endpoint's job (ADR-023: clamp, never reject).
+        // This is a different concern: MongoDB's Skip(-1) throws while LINQ's Skip(-1) is a
         // silent no-op, so without normalising, the two implementers of one interface would disagree
         // on invalid input and the divergence would only ever show up in production.
         var repository = await RepositoryWith(10);

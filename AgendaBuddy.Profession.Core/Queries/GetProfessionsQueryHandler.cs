@@ -1,8 +1,7 @@
 namespace AgendaBuddy.Profession.Core.Queries;
 
-// F-020-T09: moved from AgendaBuddy.EventAndCommands.Queries.Professions, following Booking's and
-// Calendar's precedent. Typed against IProfessionService, not the concrete class -- it already
-// covers everything this handler calls.
+// Typed against IProfessionService, not the concrete class -- it already covers everything this
+// handler calls.
 public class GetProfessionsQueryHandler(
     IMediator mediator,
     IProfessionService professionService,

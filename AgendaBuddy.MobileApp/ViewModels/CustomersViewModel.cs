@@ -93,7 +93,7 @@ public partial class CustomersViewModel : ObservableObject
         catch (Exception)
         {
             // Real failure (network, timeout, malformed response, ambiguous write, etc.) — surface it
-            // through the error banner rather than masking it with fabricated data (F-015-T08, AC8).
+            // through the error banner rather than masking it with fabricated data.
             ErrorMessage = _session.IsCustomer
                 ? "Could not load providers. Check your connection and try again."
                 : "Could not load customers. Check your connection and try again.";

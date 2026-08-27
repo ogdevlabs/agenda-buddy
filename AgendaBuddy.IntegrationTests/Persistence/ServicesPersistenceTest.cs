@@ -9,7 +9,7 @@ using MongoDB.Bson;
 namespace AgendaBuddy.IntegrationTests.Persistence;
 
 /// <summary>
-/// F-018-T12 / AC-6. <c>PUT /api/v1/services/{email}</c> followed by <c>GET /api/v1/services/{email}</c>
+/// <c>PUT /api/v1/services/{email}</c> followed by <c>GET /api/v1/services/{email}</c>
 /// proves the embedded <see cref="ServiceEntity"/> list's <c>[BsonElement]</c> mapping round-trips — this
 /// is the entity <c>05-data-model.md</c> flags for breaking the snake_case convention
 /// (<c>feeType</c>/<c>isActive</c> instead of <c>fee_type</c>/<c>is_active</c>): self-consistent through
@@ -65,8 +65,8 @@ public class ServicesPersistenceTest(ServiceHostFixture<ServicesAnchor> host, Cr
         // unusable {timestamp,machine,...} shape client-side deserialisation cannot parse. None of the
         // fields this test cares about are "id".
         //
-        // F-020-T10: the response is now wrapped in DataResponse<T> (ADR-049, following Booking's
-        // precedent) -- the array moved from the response root to a "data" property.
+        // The response is wrapped in DataResponse<T> (ADR-049) -- the array is under a
+        // "data" property, not the response root.
         using var body = JsonDocument.Parse(await getResponse.Content.ReadAsStringAsync());
         var stored = Assert.Single(body.RootElement.GetProperty("data").EnumerateArray());
 

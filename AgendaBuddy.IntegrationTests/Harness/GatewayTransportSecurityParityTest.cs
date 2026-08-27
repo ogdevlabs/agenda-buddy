@@ -3,14 +3,14 @@ using System.Net;
 namespace AgendaBuddy.IntegrationTests.Harness;
 
 /// <summary>
-/// F-015-T04 <c>[security]</c> AC / threat T-303 (<c>threat-model.md</c>): a request reaching a backend
-/// service <b>through the gateway</b> must not change that service's HSTS/redirect behaviour compared to
+/// A request reaching a backend
+/// service <b>through the gateway</b> (<c>threat-model.md</c>) must not change that service's HSTS/redirect behaviour compared to
 /// a direct call — no new redirect loop, no incorrect scheme in a <c>Location</c> header.
 /// </summary>
 /// <remarks>
 /// <para>
 /// <b>TDD note (test-first, per the task).</b> Written against the pre-existing Gateway/Profession code
-/// with no production change made for it, and it passed on first run: T-303's own threat-model entry
+/// with no production change made for it, and it passed on first run: the threat-model entry
 /// already predicted this ("YARP's default HttpTransformer does forward X-Forwarded-* headers"), and
 /// neither Gateway nor any of the seven backends calls <c>UseForwardedHeaders()</c>, so the
 /// <c>X-Forwarded-Host</c>/<c>X-Forwarded-Proto</c> headers YARP adds by default are inert as far as
@@ -19,7 +19,7 @@ namespace AgendaBuddy.IntegrationTests.Harness;
 /// request actually arrived on, gateway hop or not. Because "no production change" leaves no natural
 /// red/green pair, this was instead confirmed non-vacuous by mutation: temporarily adding
 /// <c>app.UseForwardedHeaders(new() { ForwardedHeaders = ForwardedHeaders.All })</c> to Profession's
-/// pipeline (simulating exactly what T-303 warns against) turned the <c>scheme: "http"</c> case of
+/// pipeline (simulating exactly what the threat model warns against) turned the <c>scheme: "http"</c> case of
 /// <see cref="T303_GatewayForwardedRequest_TransportSecurityBehaviorMatchesDirectCall"/> red — the
 /// gateway-forwarded call started reporting HSTS where the direct call did not, because the backend
 /// started trusting the client's forwarded scheme instead of the scheme it actually received the

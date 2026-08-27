@@ -64,7 +64,7 @@ public class JwtMiddlewareMatrixTest : IDisposable
     [Fact]
     public void TokenSignedWithHS256_FailsValidation()
     {
-        // Threat-model T-003: algorithm confusion attack
+        // Algorithm confusion attack
         var hmacKey = new SymmetricSecurityKey(RandomNumberGenerator.GetBytes(64));
         var creds = new SigningCredentials(hmacKey, SecurityAlgorithms.HmacSha256);
         var jwt = new JwtSecurityToken(

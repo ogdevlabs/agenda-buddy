@@ -1,6 +1,6 @@
 namespace AgendaBuddy.Booking.Tests.Commands;
 
-// F-019 Party Review (Echo's Critical finding). IBookingService/IProviderService already cover
+// IBookingService/IProviderService already cover
 // everything this handler calls -- retyped from the concrete classes, so this is now real
 // Moq-based business-logic coverage, not just a GuardClause-null check.
 public class CancelAppointmentCommandHandlerTest
@@ -42,7 +42,7 @@ public class CancelAppointmentCommandHandlerTest
     [Fact]
     public async Task Handle_CompletedAppointment_RefusesToCancel_ReturnsFail()
     {
-        // F-014 requirement 15 / Discover finding F-3: a completed appointment is history, not
+        // A completed appointment is history, not
         // cancellable -- the opposite of the original (backwards) rule this codebase used to have.
         var appointment = MakeAppointment(status: AppointmentStatus.Completed);
         var providerEntity = new ProviderEntity

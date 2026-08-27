@@ -79,7 +79,7 @@ public class AuthService : IAuthService
     }
 
     /// <summary>
-    /// F-015-T10 / AC11: calls the server-side logout endpoint (invalidating the refresh token,
+    /// Calls the server-side logout endpoint (invalidating the refresh token,
     /// per Identity's single-use semantics) in addition to clearing local storage. Both must
     /// happen. The local clear runs in <c>finally</c> so a user tapping logout always ends up
     /// logged out on this device, even when the server call fails — but that failure is not

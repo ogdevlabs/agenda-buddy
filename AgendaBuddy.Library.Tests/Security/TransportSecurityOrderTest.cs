@@ -7,7 +7,7 @@ using Xunit;
 namespace Common.Tests.Security;
 
 /// <summary>
-/// Pins F-021 AC-12: every service registers transport security <b>before</b> authentication.
+/// Pins AC-12: every service registers transport security <b>before</b> authentication.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -21,8 +21,8 @@ namespace Common.Tests.Security;
 /// <b>Why a source-text assertion.</b> Middleware order is not observable from a built application:
 /// <c>IApplicationBuilder</c> exposes no ordered list of registered components, and the pipeline is a
 /// composed delegate by the time anything can look at it. The alternatives were hosting all seven
-/// services (a container each, for a question about two lines of text) or asserting nothing. F-016
-/// established the precedent for tree-level checks living in <c>Library.Tests</c>, where the existing
+/// services (a container each, for a question about two lines of text) or asserting nothing.
+/// Tree-level checks like this one live in <c>Library.Tests</c>, where the existing
 /// <c>api</c> CI job runs them on every pull request rather than only when someone remembers the
 /// Docker-dependent suite.
 /// </para>
@@ -33,10 +33,10 @@ namespace Common.Tests.Security;
 /// the most likely evasion by banning direct <c>UseHttpsRedirection</c> calls outright.
 /// </para>
 /// <para>
-/// <b>F-015-T01: Gateway (renamed <c>AgendaBuddy.Gateway</c> by F-020-T04) is an eighth process, added
+/// <b><c>AgendaBuddy.Gateway</c> is an eighth process, added
 /// to <see cref="AllServices"/> below, but it is not in the seven-item <c>[Theory]</c> data below.</b>
 /// It has no authentication middleware of its own (ARCHITECTURE.md §2's "Auth passthrough" decision —
-/// it forwards the <c>Authorization</c> header unvalidated once F-015-T03 adds YARP), so
+/// it forwards the <c>Authorization</c> header unvalidated), so
 /// <c>TransportSecurity_IsRegisteredBeforeAuthentication</c>'s assertion relative to
 /// <c>app.UseAuthentication()</c> does not apply to it. <see cref="GatewayCallsTransportSecurity"/> below
 /// covers the part that does apply: the call must still be present.

@@ -1,11 +1,9 @@
 namespace AgendaBuddy.Booking.Tests.Commands;
 
-// F-019-T04. BookingService/ProviderService are concrete, non-virtual classes (Library is unchanged
-// per this feature's explicit scope), so Moq cannot mock the business-logic path without an
-// out-of-scope Library change. The GuardClause null-check below is the genuinely new, cheaply
-// testable behavior; the Result<T> success/failure mapping is verified end-to-end by the real
-// AgendaBuddy.IntegrationTests suite (Contract/Persistence/Audit against a real Mongo container) --
-// the PRD's own named regression net for this rewrite.
+// BookingService/ProviderService are concrete, non-virtual classes, so Moq cannot mock the
+// business-logic path without a Library change. The GuardClause null-check below is the genuinely new,
+// cheaply testable behavior; the Result<T> success/failure mapping is verified end-to-end by the real
+// AgendaBuddy.IntegrationTests suite (Contract/Persistence/Audit against a real Mongo container).
 [TestSubject(typeof(BookingAppointmentCommandHandler))]
 public class BookingAppointmentCommandHandlerTest
 {

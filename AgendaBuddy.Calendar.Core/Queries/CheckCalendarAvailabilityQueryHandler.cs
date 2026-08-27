@@ -1,14 +1,10 @@
 namespace AgendaBuddy.Calendar.Core.Queries;
 
-// F-020-T08. Constructor takes only DI-resolvable services; the per-request email comes from the
-// query, not a constructor parameter (the previous shape -- RequestCollection.cs constructed this
-// handler by hand, once per call, passing `email` into the constructor -- meant the handler could
-// never be dispatched through a real mediator.Send). Typed against IProviderService, not the
-// concrete class: it already covers everything this handler calls. Unlike Booking's Book/ChangeStatus
-// handlers, this one has no genuine gap against the interface -- and, unlike the route wiring in
-// Calendar/Program.cs before this task, it never touched ICalendarService/CalendarService at all; that
-// parameter was threaded through Program.cs -> EventHelper -> RequestCollection and used by neither
-// query handler, so it has no call site here.
+// Constructor takes only DI-resolvable services; the per-request email comes from the query, not a
+// constructor parameter (the previous shape -- RequestCollection.cs constructed this handler by
+// hand, once per call, passing `email` into the constructor -- meant the handler could never be
+// dispatched through a real mediator.Send). Typed against IProviderService, not the concrete class:
+// it already covers everything this handler calls.
 public class CheckCalendarAvailabilityQueryHandler(
     IMediator mediator,
     IProviderService providerService,

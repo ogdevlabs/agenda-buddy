@@ -5,7 +5,7 @@ namespace AgendaBuddy.Booking.Core.Commands;
 /// </summary>
 /// <remarks>
 /// <para>
-/// F-014 requirement 14 / threat T-203. <b>The transition is applied by the entity</b>
+/// <b>The transition is applied by the entity</b>
 /// (<see cref="AppointmentEntity.TransitionTo"/>), so <c>Book()</c> and <c>Complete()</c> — which held the
 /// rules and were never called by anything outside a test — become the only path to a status change. An
 /// illegal transition throws <see cref="InvalidOperationException"/>, which AgendaBuddy.Booking.Api maps to <b>409</b>
@@ -27,9 +27,9 @@ namespace AgendaBuddy.Booking.Core.Commands;
 /// alternative is a transaction this deployment cannot provide.
 /// </para>
 /// <para>
-/// F-019-T05: authored fresh in AgendaBuddy.Booking.Core, returning <c>Result&lt;AppointmentEntity&gt;</c> rather than
-/// the string convention its AgendaBuddy.EventAndCommands predecessor used — the predecessor stays in place until T06
-/// rewires AgendaBuddy.Booking.Api's status route onto this one and T10 deletes it.
+/// Authored fresh in AgendaBuddy.Booking.Core, returning <c>Result&lt;AppointmentEntity&gt;</c> rather than
+/// the string convention its AgendaBuddy.EventAndCommands predecessor used — the predecessor stays in place until
+/// AgendaBuddy.Booking.Api's status route is rewired onto this one and the predecessor is deleted.
 /// </para>
 /// </remarks>
 public class ChangeAppointmentStatusCommandHandler(
@@ -80,8 +80,8 @@ public class ChangeAppointmentStatusCommandHandler(
             TimeStamp = DateTime.UtcNow,
             Status = status,
             Type = nameof(ChangeAppointmentStatusCommand),
-            // Identifier and target only. The appointment carries two email addresses, and F-016-T18
-            // established that audit payloads do not serialise entity data (QueryAudit / ADR-027).
+            // Identifier and target only. The appointment carries two email addresses, and
+            // audit payloads do not serialise entity data (QueryAudit / ADR-027).
             Data = JsonSerializer.Serialize(new { request.Identifier, request.TargetStatus, detail })
         });
 }

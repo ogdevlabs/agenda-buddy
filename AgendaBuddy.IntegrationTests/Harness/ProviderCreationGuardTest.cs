@@ -5,7 +5,7 @@ using System.Net.Http.Json;
 namespace AgendaBuddy.IntegrationTests.Harness;
 
 /// <summary>
-/// F-016 AC-11: <c>POST /api/v1/providers</c> requires the <c>Provider</c> role <b>and</b> that the record
+/// <c>POST /api/v1/providers</c> requires the <c>Provider</c> role <b>and</b> that the record
 /// being created is the caller's own.
 /// </summary>
 /// <remarks>
@@ -15,7 +15,7 @@ namespace AgendaBuddy.IntegrationTests.Harness;
 /// validation nicety. An ownership check alone would let a Customer create provider records for themselves.
 /// </para>
 /// <para>
-/// This is one of only two <c>AssertRole</c> call sites in the solution after F-016.
+/// This is one of only two <c>AssertRole</c> call sites in the solution.
 /// <c>13-security.md:137</c>: <c>AssertRole</c> had <b>never been called anywhere</b>, so the <c>role</c>
 /// claim authorized nothing at all before this feature.
 /// </para>
@@ -89,7 +89,7 @@ public class ProviderCreationGuardTest : IClassFixture<ServiceHostFixture<Provid
         // The control. Without it, a guard that refused every POST would satisfy both assertions above.
         //
         // ⚠️ It asserts "not refused by AUTHORIZATION", not "created". This route actually returns 400 in
-        // the harness, for a reason that predates F-016 and is out of its scope: the handler publishes to
+        // the harness, for a reason unrelated to authorization: the handler publishes to
         // Kafka, there is no broker here, and KafkaClient reports the failure as a validation problem
         // (Provider/Program.cs's Kafka error branch). Asserting 201 would be asserting that a Kafka broker
         // exists. Recorded so the weaker assertion reads as deliberate.

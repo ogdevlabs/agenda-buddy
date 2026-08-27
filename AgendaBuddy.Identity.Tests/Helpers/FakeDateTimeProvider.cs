@@ -5,7 +5,7 @@ namespace AgendaBuddy.Identity.Tests.Helpers;
 public class FakeDateTimeProvider(DateTime utcNow) : IDateTimeProvider
 {
     /// <summary>
-    /// Settable so a test can pass a lock window without a second service instance (F-021 AC-8).
+    /// Settable so a test can pass a lock window without a second service instance (AC-8).
     /// </summary>
     /// <remarks>
     /// The lock is time-based and self-clearing, so "the window elapsed" has to be expressible as time

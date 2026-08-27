@@ -7,7 +7,7 @@ using MongoDB.Driver;
 namespace AgendaBuddy.IntegrationTests.Harness;
 
 /// <summary>
-/// F-016 AC-18 and AC-26 (`[security]`, threat <b>T-007</b>): <c>POST /api/v1/professions</c> no longer
+/// <c>POST /api/v1/professions</c> no longer
 /// exists, and the two profession read routes are still anonymous.
 /// </summary>
 /// <remarks>
@@ -25,7 +25,7 @@ namespace AgendaBuddy.IntegrationTests.Harness;
 /// authorization model — not a route quietly restored.
 /// </para>
 /// <para>
-/// <b>Both roles are tried.</b> The point of T-007 is that <em>no</em> authenticated caller can write, so
+/// <b>Both roles are tried.</b> The point is that <em>no</em> authenticated caller can write, so
 /// testing one role would leave the other unexamined — and a role check is exactly the wrong fix someone
 /// might reintroduce.
 /// </para>

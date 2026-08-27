@@ -41,7 +41,7 @@ public class CustomersViewModelTests
         Assert.False(vm.HasError);
     }
 
-    // F-015-T08 AC1/AC8: a genuine zero-result success surfaces the empty state (IsEmpty), never
+    // A genuine zero-result success surfaces the empty state (IsEmpty), never
     // fabricated seed contacts.
     [Fact]
     public async Task LoadAsync_EmptyResult_SetsIsEmptyTrue_NoFabricatedData()
@@ -59,7 +59,7 @@ public class CustomersViewModelTests
         Assert.False(vm.IsLoading);
     }
 
-    // F-015-T08 AC8: a genuine failure surfaces the error banner (HasError + a real ErrorMessage),
+    // A genuine failure surfaces the error banner (HasError + a real ErrorMessage),
     // never fabricated seed contacts.
     [Fact]
     public async Task LoadAsync_NetworkError_SetsHasErrorTrueWithRealMessage_NoFabricatedData()

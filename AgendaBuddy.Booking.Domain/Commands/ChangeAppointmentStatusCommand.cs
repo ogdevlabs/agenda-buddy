@@ -4,7 +4,7 @@ namespace AgendaBuddy.Booking.Domain.Commands;
 /// Moves one appointment to a new status, through the transition rules on the entity.
 /// </summary>
 /// <remarks>
-/// F-014 requirement 14 / threat T-203. A dedicated command rather than a field on
+/// A dedicated command rather than a field on
 /// <see cref="UpdateAppointmentCommand"/>, because status is the one part of an appointment the caller does
 /// not own: the update path now preserves the stored status and this is the only way to change it. Two doors
 /// to the same state, one of them unguarded, would not be a fix.

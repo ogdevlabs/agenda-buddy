@@ -7,12 +7,12 @@ using MongoDB.Bson;
 namespace AgendaBuddy.IntegrationTests.Harness;
 
 /// <summary>
-/// F-016 AC-15: both list endpoints accept pagination, return a bounded page with total-count metadata, and
+/// Both list endpoints accept pagination, return a bounded page with total-count metadata, and
 /// cap page size server-side even when a larger one is requested.
 /// </summary>
 /// <remarks>
 /// <para>
-/// <b>This is the contract F-015 is written against</b> (ADR-023, <c>api-contracts.md</c> §4), which is why
+/// <b>This is the contract the mobile client is written against</b> (ADR-023, <c>api-contracts.md</c> §4), which is why
 /// the envelope's exact property set is asserted rather than just its contents.
 /// </para>
 /// <para>
@@ -69,9 +69,8 @@ public class PaginationTest : IClassFixture<ServiceHostFixture<ProviderAnchor>>
         return JsonDocument.Parse(await response.Content.ReadAsStringAsync());
     }
 
-    // F-020-T11: the response is now wrapped in DataResponse<T> (ADR-049, following Booking's/
-    // Calendar's/Profession's/Services' precedent) -- the paginated envelope moved from the response
-    // root to a "data" property. All accesses below go through Data(), not page.RootElement directly.
+    // The response is wrapped in DataResponse<T> (ADR-049) -- the paginated envelope is under a
+    // "data" property, not the response root. All accesses below go through Data(), not page.RootElement directly.
     private static JsonElement Data(JsonDocument page) => page.RootElement.GetProperty("data");
 
     private static int ItemCount(JsonDocument page) => Data(page).GetProperty("items").GetArrayLength();

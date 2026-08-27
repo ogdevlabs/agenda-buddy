@@ -7,7 +7,7 @@ namespace AgendaBuddy.MobileApp.Tests.Infrastructure;
 
 public class ApiBaseUrlResolverTests
 {
-    // F-015-T12 AC6: the client must resolve the gateway's address without a hardcoded, possibly
+    // The client must resolve the gateway's address without a hardcoded, possibly
     // stale port, and it must prefer the value scripts/run-ios.sh injects over anything else.
     [Fact]
     public void Resolve_EnvironmentVariableSet_WinsOverConfigurationAndFallback()

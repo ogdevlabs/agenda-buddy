@@ -6,7 +6,7 @@ using MongoDB.Bson;
 namespace AgendaBuddy.IntegrationTests.Harness;
 
 /// <summary>
-/// F-016 AC-22 (`[security]`, threat <b>T-003</b>, HIGH): <c>GET /api/v1/customers</c> requires the
+/// <c>GET /api/v1/customers</c> requires the
 /// <c>Provider</c> role, not merely a token.
 /// </summary>
 /// <remarks>
@@ -19,7 +19,7 @@ namespace AgendaBuddy.IntegrationTests.Harness;
 /// </para>
 /// <para>
 /// Reframed by Atlas as a product question rather than a control question: <em>who is this endpoint for?</em>
-/// F-003 defines discovery as customers finding <b>providers</b>, not each other. No shipped flow lists
+/// The ROADMAP defines discovery as customers finding <b>providers</b>, not each other. No shipped flow lists
 /// every customer, so the only defensible caller is a provider.
 /// </para>
 /// <para>

@@ -4,7 +4,7 @@ using Xunit;
 namespace AgendaBuddy.MobileApp.Tests.ViewModels;
 
 /// <summary>
-/// F-015-T08 AC1/AC8: SeedDataProvider must be unreachable from any ViewModel. The type itself no
+/// SeedDataProvider must be unreachable from any ViewModel. The type itself no
 /// longer exists in the AgendaBuddy.MobileApp assembly (Services/SeedDataProvider.cs was deleted), which is a
 /// stronger guarantee than a per-ViewModel check — if any ViewModel (or anything else) still
 /// referenced it, the assembly containing this very test would fail to build in the first place.

@@ -59,7 +59,7 @@ public class AuthServiceTests
     }
 
     // ---------------------------------------------------------------------------
-    // F-015-T10 / AC11 — LogoutAsync calls the server-side logout endpoint (in addition to
+    // LogoutAsync calls the server-side logout endpoint (in addition to
     // clearing local storage), carrying the stored refresh token so Identity can invalidate it.
     // ---------------------------------------------------------------------------
 

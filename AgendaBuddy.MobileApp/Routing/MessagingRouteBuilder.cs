@@ -1,9 +1,8 @@
 namespace AgendaBuddy.MobileApp.Routing;
 
 /// <summary>
-/// Route-building logic extracted from <see cref="Services.MessagingApiService"/> (F-015-T06), corrected to
-/// the real backend contract (F-015-T07, api-contracts.md §2). Hosted by the Customer service under a
-/// top-level <c>/api/v1/messages</c> group (F-014, ADR D-2) — not nested under <c>/api/v1/customers</c>.
+/// Hosted by the Customer service under a top-level <c>/api/v1/messages</c> group (ADR D-2) —
+/// not nested under <c>/api/v1/customers</c>.
 /// </summary>
 public static class MessagingRouteBuilder
 {

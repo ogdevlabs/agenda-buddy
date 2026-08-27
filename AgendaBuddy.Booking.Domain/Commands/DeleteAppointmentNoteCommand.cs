@@ -1,6 +1,6 @@
 namespace AgendaBuddy.Booking.Domain.Commands;
 
-/// <summary>Same T-202 indistinguishability as <see cref="UpdateAppointmentNoteCommand"/>.</summary>
+/// <summary>Same forbidden/not-found indistinguishability as <see cref="UpdateAppointmentNoteCommand"/>.</summary>
 [ExcludeFromCodeCoverage]
 public class DeleteAppointmentNoteCommand : IRequest<Result>
 {

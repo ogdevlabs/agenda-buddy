@@ -5,7 +5,7 @@ namespace AgendaBuddy.MobileApp.Tests.Routing;
 
 public class CustomerRouteBuilderTests
 {
-    // F-015-T07: corrected to the real backend route — GET api/v1/customers (paginated, F-016/ADR-023).
+    // The real backend route is GET api/v1/customers (paginated, ADR-023).
     [Fact]
     public void Customers_BuildsGet()
     {

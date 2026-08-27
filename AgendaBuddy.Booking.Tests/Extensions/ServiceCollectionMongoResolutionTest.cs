@@ -99,9 +99,8 @@ public class ServiceCollectionMongoResolutionTest
                                  && descriptor.ServiceType.GetGenericTypeDefinition() == typeof(IRepository<>))
             .ToList();
 
-        // 3 -> 5 at F-014: NoteEntity and PaymentEntity. Both were written by F-008 and F-010 and had never
-        // been persisted, because nothing registered a repository for them — which is the whole defect F-014
-        // exists to fix, and is why this count is asserted rather than left to drift.
+        // Includes NoteEntity and PaymentEntity -- both had never been persisted because nothing
+        // registered a repository for them, so this count is asserted rather than left to drift.
         Assert.Equal(5, repositories.Count);
         Assert.All(repositories, descriptor => Assert.Equal(ServiceLifetime.Scoped, descriptor.Lifetime));
     }

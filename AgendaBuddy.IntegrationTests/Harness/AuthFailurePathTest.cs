@@ -5,7 +5,7 @@ using System.Net.Http.Json;
 namespace AgendaBuddy.IntegrationTests.Harness;
 
 /// <summary>
-/// F-016 AC-6: an <b>expired</b> token gets 401 and a valid token for a <b>different subject</b> gets
+/// An <b>expired</b> token gets 401 and a valid token for a <b>different subject</b> gets
 /// 403 — both against a real route, over HTTP.
 /// </summary>
 /// <remarks>
@@ -27,8 +27,7 @@ namespace AgendaBuddy.IntegrationTests.Harness;
 /// <c>AssertOwner</c> at <c>:153</c>. A request with an empty or invalid body returns 400 and never
 /// reaches the ownership check — a test written without a valid body would read as "the guard does not
 /// fire". Recorded because it is a trap, and separately because validation preceding authorization is a
-/// mild information-disclosure smell: an unauthorized caller can probe validation rules. Pre-existing
-/// and out of scope for F-016; worth F-019/F-021's attention.
+/// mild information-disclosure smell: an unauthorized caller can probe validation rules.
 /// </para>
 /// <para>
 /// The owner case is asserted too. Without it, a guard that rejected <em>everything</em> would satisfy

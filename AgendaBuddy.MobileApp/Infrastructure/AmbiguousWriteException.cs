@@ -5,7 +5,7 @@ namespace AgendaBuddy.MobileApp.Infrastructure;
 /// e.g. an appointment status transition) fails ambiguously at the gateway hop: a request timeout,
 /// or a 502/504 from the gateway. In either case the backend may already have processed the write.
 ///
-/// AC10 (F-015-T09): the client must never silently auto-retry in this situation. Callers
+/// The client must never silently auto-retry in this situation. Callers
 /// (ViewModels) should catch this distinctly from a plain <see cref="HttpRequestException"/> or
 /// <see cref="TaskCanceledException"/> and render an "unknown result — check before retrying"
 /// state, rather than a generic failure message that invites the user to just try again.

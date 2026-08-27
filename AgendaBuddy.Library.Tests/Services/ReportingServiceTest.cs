@@ -104,7 +104,7 @@ public class ReportingServiceTest
     }
 
     /// <summary>
-    /// F-014 requirement 18 / AC-18. <b>Replaces</b> `GetProviderReportAsync_CalculatesEstimatedRevenue`,
+    /// AC-18. <b>Replaces</b> `GetProviderReportAsync_CalculatesEstimatedRevenue`,
     /// which asserted that one completed appointment against a single 50 service produced revenue of 50.
     /// </summary>
     /// <remarks>
@@ -120,7 +120,7 @@ public class ReportingServiceTest
     /// number would be believed, which is worse than an honest absence.
     /// </para>
     /// <para>
-    /// F-014's one deleted pre-existing test, the same class of deviation as F-016's ADR-025 and F-021's
+    /// One deleted pre-existing test, the same class of deviation as ADR-025 and
     /// ADR-034, and it needs the same acknowledgement.
     /// </para>
     /// </remarks>

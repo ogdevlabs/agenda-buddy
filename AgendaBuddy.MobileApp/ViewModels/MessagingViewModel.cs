@@ -43,7 +43,7 @@ public partial class MessagingViewModel : ObservableObject
         catch (Exception)
         {
             // Real failure (network, timeout, malformed response, ambiguous write, etc.) — surface it
-            // through the error banner rather than masking it with fabricated data (F-015-T08, AC8).
+            // through the error banner rather than masking it with fabricated data.
             ErrorMessage = "Could not load messages. Check your connection and try again.";
         }
         finally

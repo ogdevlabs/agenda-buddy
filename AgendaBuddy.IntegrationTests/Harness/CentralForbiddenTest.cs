@@ -6,7 +6,7 @@ using System.Text.Json;
 namespace AgendaBuddy.IntegrationTests.Harness;
 
 /// <summary>
-/// F-016 AC-13, AC-14 and AC-23 (`[security]`, threat <b>T-004</b>): the central 403, over real HTTP, in
+/// The central 403, over real HTTP, in
 /// both environments.
 /// </summary>
 /// <remarks>
@@ -70,7 +70,7 @@ public class CentralForbiddenTest : IClassFixture<ServiceHostFixture<CustomerAnc
     [Fact]
     public async Task T004_TheProductionForbiddenBody_CarriesOnlyStatusTitleAndRequestId()
     {
-        // The egress half of the change, and the reason T-004 exists. Production previously emitted NO
+        // The egress half of the change. Production previously emitted NO
         // body at all for an unhandled ForbiddenException, which was accidentally the most conservative
         // behaviour available. T08 starts emitting one, so what is in it is the entire safety margin.
         using var service = _host.StartService("Production");
