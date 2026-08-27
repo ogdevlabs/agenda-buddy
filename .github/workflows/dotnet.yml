@@ -478,6 +478,14 @@ jobs:
           echo "Scanning full range (all parents): $range"
           /tmp/gitleaks detect --source . --log-opts="$range" --redact -v --exit-code=1
 
+      # Regression guard for the step above: builds a throwaway repo reproducing the exact shape
+      # (a secret behind a --no-ff merge's second parent) and asserts gitleaks-action's own
+      # --first-parent invocation misses it while the full-range step's invocation catches it. If
+      # either assertion flips, the full-range step's fix (or the gap it works around) has changed
+      # shape and this should fail loudly rather than silently.
+      - name: Canary — gitleaks --first-parent gap and its fix both hold their expected shape
+        run: GITLEAKS_BIN=/tmp/gitleaks ./scripts/verify-gitleaks-firstparent-gap.sh
+
       # Review C1 (Party Review, 2026-08-26). Proves trivy-severity-gate.sh's project-vs-base-image
       # branching logic against synthetic fixtures — runs once here rather than per matrix entry in
       # docker-build-and-scan below, since it verifies the gate's generic logic, not any one
