@@ -115,7 +115,10 @@ jobs:
               - 'AgendaBuddy.Library.ServerAuth/**'
               - 'AgendaBuddy.EventAndCommands/**'
               - 'AgendaBuddy.Booking.Api/**'
-              - 'Calendar/**'
+              - 'AgendaBuddy.Calendar.Api/**'
+              - 'AgendaBuddy.Calendar.Core/**'
+              - 'AgendaBuddy.Calendar.Domain/**'
+              - 'AgendaBuddy.Calendar.Infrastructure/**'
               - 'Customer/**'
               - 'Provider/**'
               - 'Services/**'
@@ -164,7 +167,7 @@ jobs:
             # (their .csproj files are inside these globs already), and docker-compose*.yml.
             docker:
               - 'AgendaBuddy.Booking.Api/**'
-              - 'Calendar/**'
+              - 'AgendaBuddy.Calendar.Api/**'
               - 'Customer/**'
               - 'Provider/**'
               - 'Services/**'
@@ -274,7 +277,7 @@ jobs:
           JWT_PUBLIC_KEY=$(cat "$RUNNER_TEMP/jwt.pub")
           export JWT_PRIVATE_KEY JWT_PUBLIC_KEY
 
-          for svc in AgendaBuddy.Booking.Api Calendar Customer Provider Services Profession AgendaBuddy.Identity; do
+          for svc in AgendaBuddy.Booking.Api AgendaBuddy.Calendar.Api Customer Provider Services Profession AgendaBuddy.Identity; do
             log=$(mktemp)
             ASPNETCORE_ENVIRONMENT=Development \
             ConnectionStrings__mongodb='mongodb://localhost:27017' \
@@ -491,7 +494,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        service: [AgendaBuddy.Booking.Api, Calendar, Customer, Provider, Services, Profession, AgendaBuddy.Identity]
+        service: [AgendaBuddy.Booking.Api, AgendaBuddy.Calendar.Api, Customer, Provider, Services, Profession, AgendaBuddy.Identity]
 
     steps:
       - uses: actions/checkout@v7

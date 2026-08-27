@@ -32,11 +32,14 @@ namespace AgendaBuddy.IntegrationTests.Audit;
 /// <see cref="ExcludedHandlerFiles"/> is a maintained list, and it holds exactly one documented exception.
 /// </para>
 /// <para>
-/// <b>The one exclusion.</b> <c>BookCalendarCommandHandler.cs</c> takes no <c>IEventStore</c> at all and its
-/// <c>Handle</c> unconditionally throws <c>NotImplementedException</c> — there is no result, success or
-/// failure, for CONSTITUTION §3 to apply to. This mirrors the task's own Identity carve-out: inapplicable,
-/// not merely unaudited. It has no HTTP route either (<c>15-cqrs-and-messaging.md</c>'s command inventory),
-/// so nothing can ever reach it to find out.
+/// <b>The one exclusion, retired by F-020-T08.</b> <c>BookCalendarCommandHandler.cs</c> took no
+/// <c>IEventStore</c> at all and its <c>Handle</c> unconditionally threw <c>NotImplementedException</c> —
+/// there was no result, success or failure, for CONSTITUTION §3 to apply to, and it had no HTTP route
+/// either (<c>15-cqrs-and-messaging.md</c>'s command inventory), so nothing could ever reach it to find
+/// out. F-020-T08 deleted the file outright rather than moving dead code into
+/// <c>AgendaBuddy.Calendar.Core</c> alongside Calendar's two real, moved query handlers — see that task's
+/// own report for the disclosure. <see cref="ExcludedHandlerFiles"/> is now empty; kept as a named,
+/// documented list rather than removed, so a future genuine exclusion has an obvious place to go.
 /// </para>
 /// <para>
 /// <b>Mutation-tested once, by hand, as AC-15 requires.</b> Recorded in this task's final report rather than
@@ -48,10 +51,10 @@ namespace AgendaBuddy.IntegrationTests.Audit;
 public class EventStoreWriteGuardTest
 {
     /// <summary>
-    /// The one handler with no <see cref="AgendaBuddy.EventAndCommands.Persistence.IEventStore"/> to write through —
-    /// see this class's remarks.
+    /// Deliberately empty as of F-020-T08 — see this class's remarks on <c>BookCalendarCommandHandler.cs</c>,
+    /// the one former entry, which was deleted rather than moved.
     /// </summary>
-    private static readonly string[] ExcludedHandlerFiles = ["BookCalendarCommandHandler.cs"];
+    private static readonly string[] ExcludedHandlerFiles = [];
 
     private static string RepoRoot()
     {
@@ -75,9 +78,14 @@ public class EventStoreWriteGuardTest
     // moved handlers (Book/Update/Cancel) would otherwise silently drop out of this guard's
     // coverage. F-019-T07 confirmed this single root already covers every handler T04/T05 added
     // afterward (10 total in AgendaBuddy.Booking.Core as of F-019) with no further edits -- the recursive
-    // directory walk needs no per-handler awareness. A new root is only needed if another
-    // service's handlers move to their own Core project (F-020, out of scope here).
-    private static readonly string[] ScanRoots = ["AgendaBuddy.EventAndCommands", "AgendaBuddy.Booking.Core"];
+    // directory walk needs no per-handler awareness.
+    //
+    // F-020-T08: AgendaBuddy.Calendar.Core is the second such root, added for the same reason -- its 2 moved
+    // query handlers (CheckCalendarAvailability/CheckCalendarAppointments) would otherwise silently drop
+    // out of coverage. A new root is only needed when another service's handlers move to their own Core
+    // project.
+    private static readonly string[] ScanRoots =
+        ["AgendaBuddy.EventAndCommands", "AgendaBuddy.Booking.Core", "AgendaBuddy.Calendar.Core"];
 
     private static List<string> HandlerFiles()
     {
@@ -104,8 +112,8 @@ public class EventStoreWriteGuardTest
     {
         // Guards the guard: if this glob ever matches nothing (a directory rename, a naming convention
         // change), every assertion below would vacuously pass and CONSTITUTION §3 would have no test at
-        // all watching it. Twenty-one as of this task: twelve command handlers (thirteen minus the
-        // BookCalendar exclusion) plus nine query handlers.
+        // all watching it. Twenty as of F-020-T08: BookCalendarCommandHandler.cs (previously excluded,
+        // never counted here) was deleted rather than moved, so the count is unchanged by Calendar's move.
         Assert.True(HandlerFiles().Count >= 20, $"expected at least 20 handler files, found {HandlerFiles().Count}");
     }
 

@@ -1,7 +1,6 @@
 #nullable enable
-using System.Collections.Generic;
 using System.Linq;
-using Calendar.Extensions;
+using AgendaBuddy.Calendar.Extensions;
 using AgendaBuddy.Library.Entities;
 using AgendaBuddy.Library.Repositories;
 using Microsoft.Extensions.Configuration;

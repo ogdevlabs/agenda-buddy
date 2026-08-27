@@ -114,7 +114,7 @@ internal static class AppHostWiring
         var booking = AddApi<Projects.AgendaBuddy_Booking_Api>("booking", agendaDb, needsKafka: true);
         var customer = AddApi<Projects.Customer>("customer", agendaDb, needsKafka: true);
         var provider = AddApi<Projects.Provider>("provider", agendaDb, needsKafka: true);
-        var calendar = AddApi<Projects.Calendar>("calendar", agendaDb);
+        var calendar = AddApi<Projects.AgendaBuddy_Calendar_Api>("calendar", agendaDb);
         var services = AddApi<Projects.Services>("services", agendaDb);
         var profession = AddApi<Projects.Profession>("profession", agendaDb);
 

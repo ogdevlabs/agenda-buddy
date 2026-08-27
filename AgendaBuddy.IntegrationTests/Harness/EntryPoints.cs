@@ -39,7 +39,7 @@ internal static class EntryPoints
     public static Assembly Booking => typeof(global::AgendaBuddy.Booking.Configuration.MongoDbConfiguration).Assembly;
 
     /// <summary>Calendar service entry-point assembly.</summary>
-    public static Assembly Calendar => typeof(global::Calendar.Configurations.MongoDbConfiguration).Assembly;
+    public static Assembly Calendar => typeof(global::AgendaBuddy.Calendar.Configurations.MongoDbConfiguration).Assembly;
 
     /// <summary>Customer service entry-point assembly.</summary>
     public static Assembly Customer => typeof(global::Customer.Configurations.MongoDbConfiguration).Assembly;
