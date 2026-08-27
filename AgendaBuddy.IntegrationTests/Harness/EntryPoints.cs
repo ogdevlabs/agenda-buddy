@@ -51,7 +51,7 @@ internal static class EntryPoints
     public static Assembly Services => typeof(global::Services.Configurations.MongoDbConfiguration).Assembly;
 
     /// <summary>Profession service entry-point assembly.</summary>
-    public static Assembly Profession => typeof(global::Profession.Configurations.MongoDbConfiguration).Assembly;
+    public static Assembly Profession => typeof(global::AgendaBuddy.Profession.Configurations.MongoDbConfiguration).Assembly;
 
     /// <summary>Identity service entry-point assembly.</summary>
     public static Assembly Identity => typeof(global::AgendaBuddy.Identity.Configurations.MongoDbConfiguration).Assembly;

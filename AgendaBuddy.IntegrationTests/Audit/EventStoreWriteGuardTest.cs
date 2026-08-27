@@ -84,8 +84,15 @@ public class EventStoreWriteGuardTest
     // query handlers (CheckCalendarAvailability/CheckCalendarAppointments) would otherwise silently drop
     // out of coverage. A new root is only needed when another service's handlers move to their own Core
     // project.
+    //
+    // F-020-T09: AgendaBuddy.Profession.Core is the third such root -- its 2 moved query handlers
+    // (GetProfessions/GetProfessionByName) would otherwise silently drop out of coverage.
+    // AddProfessionCommandHandler was NOT moved here: it was dead code (no route reached it, and its
+    // constructor took a `ProfessionEntity` with no matching DI registration, so it could never have been
+    // resolved even if a route existed) and was deleted outright, the same disposition F-020-T08 gave
+    // BookCalendarCommandHandler.
     private static readonly string[] ScanRoots =
-        ["AgendaBuddy.EventAndCommands", "AgendaBuddy.Booking.Core", "AgendaBuddy.Calendar.Core"];
+        ["AgendaBuddy.EventAndCommands", "AgendaBuddy.Booking.Core", "AgendaBuddy.Calendar.Core", "AgendaBuddy.Profession.Core"];
 
     private static List<string> HandlerFiles()
     {

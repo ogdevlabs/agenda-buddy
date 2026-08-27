@@ -31,8 +31,11 @@ public class ProfessionPersistenceTest(ServiceHostFixture<ProfessionAnchor> host
         // register ObjectIdJsonConverter (per ObjectIdJsonConverter's own remarks), so its "id" field is
         // the unusable {timestamp,machine,...} shape client-side deserialisation cannot parse. The only
         // field this test cares about is "name".
+        //
+        // F-020-T09: the response is now wrapped in DataResponse<T> (ADR-049, following Booking's and
+        // Calendar's precedent) -- the array/object moved from the response root to a "data" property.
         using var listBody = JsonDocument.Parse(await listResponse.Content.ReadAsStringAsync());
-        var professionNames = listBody.RootElement.EnumerateArray()
+        var professionNames = listBody.RootElement.GetProperty("data").EnumerateArray()
             .Select(element => element.GetProperty("name").GetString())
             .ToList();
         Assert.Equal(expectedCount, professionNames.Count);
@@ -42,6 +45,6 @@ public class ProfessionPersistenceTest(ServiceHostFixture<ProfessionAnchor> host
         Assert.Equal(HttpStatusCode.OK, byNameResponse.StatusCode);
 
         using var professionBody = JsonDocument.Parse(await byNameResponse.Content.ReadAsStringAsync());
-        Assert.Equal("Coaching", professionBody.RootElement.GetProperty("name").GetString());
+        Assert.Equal("Coaching", professionBody.RootElement.GetProperty("data").GetProperty("name").GetString());
     }
 }

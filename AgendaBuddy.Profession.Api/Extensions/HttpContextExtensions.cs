@@ -1,4 +1,4 @@
-namespace Profession.Extensions;
+namespace AgendaBuddy.Profession.Extensions;
 
 [ExcludeFromCodeCoverage]
 public static class HttpContextExtensions

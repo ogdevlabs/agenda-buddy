@@ -1,4 +1,4 @@
-namespace Profession.Configurations;
+namespace AgendaBuddy.Profession.Configurations;
 
 public interface IMongoDbConfiguration
 {

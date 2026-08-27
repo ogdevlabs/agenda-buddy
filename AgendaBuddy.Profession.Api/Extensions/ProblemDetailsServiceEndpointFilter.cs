@@ -1,4 +1,4 @@
-namespace Customer.Extensions;
+namespace AgendaBuddy.Profession.Extensions;
 
 [ExcludeFromCodeCoverage]
 /// <summary>

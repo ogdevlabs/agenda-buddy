@@ -116,7 +116,7 @@ internal static class AppHostWiring
         var provider = AddApi<Projects.Provider>("provider", agendaDb, needsKafka: true);
         var calendar = AddApi<Projects.AgendaBuddy_Calendar_Api>("calendar", agendaDb);
         var services = AddApi<Projects.Services>("services", agendaDb);
-        var profession = AddApi<Projects.Profession>("profession", agendaDb);
+        var profession = AddApi<Projects.AgendaBuddy_Profession_Api>("profession", agendaDb);
 
         // F-015-T05: the eighth resource. launchProfileName: null for the same reason as the seven
         // services (AC-1.4) — Gateway has no appsettings.json/launchSettings.json of its own yet, but

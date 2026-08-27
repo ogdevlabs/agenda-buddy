@@ -122,7 +122,10 @@ jobs:
               - 'Customer/**'
               - 'Provider/**'
               - 'Services/**'
-              - 'Profession/**'
+              - 'AgendaBuddy.Profession.Api/**'
+              - 'AgendaBuddy.Profession.Core/**'
+              - 'AgendaBuddy.Profession.Domain/**'
+              - 'AgendaBuddy.Profession.Infrastructure/**'
               - 'AgendaBuddy.Identity/**'
               - 'AgendaBuddy.Kafka/**'
               - 'AgendaBuddy.AppHost/**'
@@ -171,7 +174,7 @@ jobs:
               - 'Customer/**'
               - 'Provider/**'
               - 'Services/**'
-              - 'Profession/**'
+              - 'AgendaBuddy.Profession.Api/**'
               - 'AgendaBuddy.Identity/**'
               - 'docker-compose*.yml'
             # Android and iOS each install a MAUI workload and take minutes (iOS runs on a macOS
@@ -277,7 +280,7 @@ jobs:
           JWT_PUBLIC_KEY=$(cat "$RUNNER_TEMP/jwt.pub")
           export JWT_PRIVATE_KEY JWT_PUBLIC_KEY
 
-          for svc in AgendaBuddy.Booking.Api AgendaBuddy.Calendar.Api Customer Provider Services Profession AgendaBuddy.Identity; do
+          for svc in AgendaBuddy.Booking.Api AgendaBuddy.Calendar.Api Customer Provider Services AgendaBuddy.Profession.Api AgendaBuddy.Identity; do
             log=$(mktemp)
             ASPNETCORE_ENVIRONMENT=Development \
             ConnectionStrings__mongodb='mongodb://localhost:27017' \
@@ -494,7 +497,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        service: [AgendaBuddy.Booking.Api, AgendaBuddy.Calendar.Api, Customer, Provider, Services, Profession, AgendaBuddy.Identity]
+        service: [AgendaBuddy.Booking.Api, AgendaBuddy.Calendar.Api, Customer, Provider, Services, AgendaBuddy.Profession.Api, AgendaBuddy.Identity]
 
     steps:
       - uses: actions/checkout@v7

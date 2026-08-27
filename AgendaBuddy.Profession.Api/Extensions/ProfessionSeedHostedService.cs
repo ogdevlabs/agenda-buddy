@@ -1,4 +1,4 @@
-namespace Profession.Extensions;
+namespace AgendaBuddy.Profession.Extensions;
 
 /// <summary>
 /// Seeds the profession catalogue once, after the host has started.

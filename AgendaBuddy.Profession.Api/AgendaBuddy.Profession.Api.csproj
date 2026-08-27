@@ -18,12 +18,14 @@
       <PackageReference Include="MediatR" Version="12.3.0" />
       <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.0" />
       <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.0" />
-      <PackageReference Include="MiniValidation" Version="0.9.1" />
       <PackageReference Include="MongoDB.Driver" Version="2.25.0" />
       <PackageReference Include="Swashbuckle.AspNetCore" Version="10.2.3" />
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\AgendaBuddy.Profession.Core\AgendaBuddy.Profession.Core.csproj" />
+      <ProjectReference Include="..\AgendaBuddy.Profession.Domain\AgendaBuddy.Profession.Domain.csproj" />
+      <ProjectReference Include="..\AgendaBuddy.Profession.Infrastructure\AgendaBuddy.Profession.Infrastructure.csproj" />
       <ProjectReference Include="..\AgendaBuddy.EventAndCommands\AgendaBuddy.EventAndCommands.csproj" />
       <ProjectReference Include="..\AgendaBuddy.Library\AgendaBuddy.Library.csproj" />
       <ProjectReference Include="..\AgendaBuddy.Library.ServerAuth\AgendaBuddy.Library.ServerAuth.csproj" />

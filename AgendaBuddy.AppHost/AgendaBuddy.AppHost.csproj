@@ -28,7 +28,7 @@
         <ProjectReference Include="..\AgendaBuddy.Calendar.Api\AgendaBuddy.Calendar.Api.csproj" />
         <ProjectReference Include="..\Customer\Customer.csproj" />
         <ProjectReference Include="..\AgendaBuddy.Identity\AgendaBuddy.Identity.csproj" />
-        <ProjectReference Include="..\Profession\Profession.csproj" />
+        <ProjectReference Include="..\AgendaBuddy.Profession.Api\AgendaBuddy.Profession.Api.csproj" />
         <ProjectReference Include="..\Provider\Provider.csproj" />
         <ProjectReference Include="..\Services\Services.csproj" />
         <!-- F-015-T05: the eighth process. Referenced here (not just added to agenda-buddy.sln) so

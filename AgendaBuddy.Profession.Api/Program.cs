@@ -21,19 +21,16 @@ builder.Services.AddMongoDbRepository(builder.Configuration);
 builder.Services.AddDistributedMemoryCache();
 
 // Add MediatR
-builder.Services.AddMediatR(cfg => { cfg.RegisterServicesFromAssembly(typeof(Program).Assembly); });
+// F-020-T09: handlers moved to AgendaBuddy.Profession.Core, a separate assembly from
+// AgendaBuddy.Profession.Api -- MediatR's RegisterServicesFromAssembly only scans the one assembly it's
+// given, so both must be registered or mediator.Send(query) throws "no handler registered" at runtime,
+// not at compile time.
+builder.Services.AddMediatR(cfg =>
+    cfg.RegisterServicesFromAssemblies(typeof(Program).Assembly, typeof(GetProfessionsQueryHandler).Assembly));
 builder.Services.AddEventStore();
 
 // Add services required to support using MVC's model binders
 builder.Services.AddMvcCore();
-
-// Register Singleton instances
-// Scoped, not Singleton: RequestCollection consumes the scoped IEventStore, and a
-// singleton capturing it fails DI validation — which is enabled in Development, the
-// environment the AppHost runs services in. RequestCollection is stateless, so request
-// scope is the correct lifetime rather than a workaround.
-builder.Services.AddScoped<IRequestCollection, RequestCollection>();
-
 
 // Enable & configure JSON Problem Details error responses
 // ADR-022 / F-016-T08: ForbiddenException -> 403 centrally, so an endpoint that omits a local
@@ -132,41 +129,59 @@ var professions = app.MapGroup("api/v1/professions")
 // every user. Professions are SEEDED from Library/Data/ProfessionSeedData.cs and no shipped flow creates
 // one, so nothing is lost. Verified live before removal: both a Provider AND a Customer token received
 // 201 and wrote to the catalogue.
-// AddProfessionCommand/AddProfessionCommandHandler are deliberately LEFT IN PLACE -- the refactor program
-// audits dead handlers systematically. If professions ever need to be user-creatable, that is a feature
-// with a real authorization model, not a route quietly restored. Pinned by
-// ProfessionWriteRouteRemovedTest.
+// F-020-T09: AddProfessionCommand/AddProfessionCommandHandler -- kept in place by F-016-T17 pending this
+// task's dead-handler audit -- were DELETED rather than migrated forward. No route ever reached them
+// (this MapGroup has no POST), and the handler's own constructor took a `ProfessionEntity` as a
+// per-instance argument with no matching DI registration anywhere, so it could never have been resolved
+// even if a route existed. Same shape of dead code as Calendar's BookCalendarCommand (F-020-T08), same
+// disposition. Pinned by ProfessionWriteRouteRemovedTest, which is unaffected -- it never referenced the
+// deleted types.
 
 professions.MapGet("",
-    async Task<Results<Ok<List<ProfessionEntity>>, NoContent>> (IRequestCollection requestCollection,
-        IMediator mediator, ProfessionService professionService, IDistributedCache cache) =>
+    async Task<Results<Ok<DataResponse<List<ProfessionEntity>>>, NoContent>> (
+        IMediator mediator,
+        IDistributedCache cache,
+        CancellationToken cancellationToken) =>
     {
-        var key = $"professions";
+        const string key = "professions";
 
-        var professionCollection = await cache.GetOrCreateAsync(key,
-            async token => await EventsHelper.GetAllProfessionsEvent(requestCollection, mediator, professionService));
+        // F-020-T09: dispatched through the real mediator.Send with the real request
+        // CancellationToken -- the pre-refactor path (Requests/RequestCollection.cs, deleted) manually
+        // `new`-ed the query handler and called .Handle() directly, with `new CancellationToken()`
+        // rather than this one. A Fail result is mapped to null so CacheAside's "never cache a null"
+        // rule (CacheAside.cs) keeps an empty catalogue from poisoning the cache.
+        var professionCollection = await cache.GetOrCreateAsync(key, async token =>
+        {
+            var result = await mediator.Send(new GetProfessionsQuery(), token);
+            return result.IsSuccess ? result.Value : null!;
+        }, cancellationToken: cancellationToken);
 
-        if (professionCollection != null) return TypedResults.Ok(professionCollection);
+        if (professionCollection is not null)
+            return TypedResults.Ok(DataResponse<List<ProfessionEntity>>.Ok(professionCollection));
+
         return TypedResults.NoContent();
     }).WithName("GetProfessionList");
 
-professions.MapGet("/{name}", async Task<Results<Ok<ProfessionEntity>, NotFound>> (
-    IRequestCollection requestCollection,
-    IMediator mediator,
-    ProfessionService professionService,
-    string name, IDistributedCache cache) =>
-{
-    var key = $"profession-{name}";
+professions.MapGet("/{name}",
+    async Task<Results<Ok<DataResponse<ProfessionEntity>>, NotFound>> (
+        IMediator mediator,
+        string name,
+        IDistributedCache cache,
+        CancellationToken cancellationToken) =>
+    {
+        var key = $"profession-{name}";
 
-    var profession = await cache.GetOrCreateAsync(key,
-        async token =>
-            await EventsHelper.GetProfessionByNameEvent(requestCollection, mediator, professionService, name));
+        var profession = await cache.GetOrCreateAsync(key, async token =>
+        {
+            var result = await mediator.Send(new GetProfessionByNameQuery { Name = name }, token);
+            return result.IsSuccess ? result.Value : null!;
+        }, cancellationToken: cancellationToken);
 
-    if (profession != null)
-        return TypedResults.Ok(profession);
+        if (profession is not null)
+            return TypedResults.Ok(DataResponse<ProfessionEntity>.Ok(profession));
 
-    return TypedResults.NotFound();
-}).WithName("GetProfessionByName");
+        return TypedResults.NotFound();
+    }).WithName("GetProfessionByName");
 
 app.Run();
 
