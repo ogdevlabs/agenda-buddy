@@ -4,7 +4,7 @@ title: password-reset-flow
 status: shipped
 priority: 22
 labels: [roadmap, "priority:22"]
-claimed_by: oscargarcia@ogdevlabs.onmicrosoft.com
+claimed_by: null
 created: 2026-08-18
 updated: 2026-08-27
 ---
