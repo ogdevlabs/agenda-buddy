@@ -11,13 +11,21 @@
 
 ## Current Phase
 
-Idle
+Inception
 
 ---
 
 ## Current Feature
 
-none
+api-refactor-rollout (F-020)
+
+_**Claimed 2026-08-27.** User: "now do F-20" — continuing under this session's standing full-autonomy grant
+(2026-08-26T23:12:00Z), which the user's terse go-ahead is read as extending to this feature: proceed through
+Inception/Construction/Ship self-answering routine gates, logging judgment calls, surfacing only genuinely
+destructive actions or unresolved Critical findings. F-020's own feature record says "do not plan this
+before F-019 ships" and "scope is deliberately deferred" — Discover is running a real current survey of the
+6 remaining services (Calendar, Customer, Provider, Services, Profession, Identity) rather than trusting the
+2026-08-18 description, since Identity is already known to lack a `RequestCollection.cs` the other 5 have._
 
 _**F-019 `api-refactor-pilot-booking` SHIPPED** as `v0.8.0` — merged directly to `main` (`fb91cb1`; no PR —
 `gh pr create` is blocked under this identity, `READ`-only on the repo), episode 008. Operation closed
@@ -96,11 +104,11 @@ none
 
 ---
 
-- **Feature ID:** none
-- **Feature record:** —
-- **Claimed by:** —
-- **Claimed at:** —
-- **Branch:** — (F-019's `feat/F-019-api-refactor-pilot-booking` merged and shipped; not deleted)
+- **Feature ID:** F-020
+- **Feature record:** `docs/pdlc/tasks/F-020/_feature.md`
+- **Claimed by:** oscargarcia@ogdevlabs.onmicrosoft.com
+- **Claimed at:** 2026-08-27T06:20:00Z
+- **Branch:** — (will be set at build pre-flight)
 
 _F-019 shipped as `v0.8.0` and its claim was released (`docs/pdlc/tasks/F-019/_feature.md` updated:
 `status: shipped`, `claimed_by: null`). `scripts/tasks.cjs` **does NOT exist** in this repo —
@@ -125,13 +133,19 @@ _None active. Run `/night-shift <F-NNN>` to start an autonomous run (requires by
 
 ## Current Sub-phase
 
-none
+Discover
 
 ---
 
 ## Last Checkpoint
 
-Operation / Complete / 2026-08-27T02:35:00Z — **F-019 SHIPPED as `v0.8.0`.** Merged directly to `main`
+Inception / Discover / 2026-08-27T06:20:00Z — F-020 claimed. Running a real current-state survey of the 6
+remaining services (Calendar, Customer, Provider, Services, Profession, Identity) before drafting the
+Discovery Summary, per the feature record's own "scope deliberately deferred" instruction — not trusting
+the 2026-08-18 description's "delete six RequestCollection classes" claim at face value (grep already
+confirms 5 of 6 have one; Identity does not, and needs checking for its actual dispatch shape).
+
+_Previously: Operation / Complete / 2026-08-27T02:35:00Z — **F-019 SHIPPED as `v0.8.0`.** Merged directly to `main`
 (`fb91cb1`, local `git merge --no-ff` + push — no PR was possible, `gh pr create` failed with the
 identity's `READ`-only access). Live CI on the resulting `main` push: all 15 jobs green, 0 new findings.
 Cloud deploy skipped (8th consecutive, 7th under ADR-035). **Full live AppHost smoke test run** (self-decided,
