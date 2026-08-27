@@ -4,7 +4,7 @@ title: token-revocation
 status: shipped
 priority: 23
 labels: [roadmap, "priority:23"]
-claimed_by: oscargarcia@ogdevlabs.onmicrosoft.com
+claimed_by: null
 created: 2026-08-18
 updated: 2026-08-27
 ---
