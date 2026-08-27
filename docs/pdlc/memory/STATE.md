@@ -5,13 +5,13 @@
      Claude reads this file at the start of every session to auto-resume from the last checkpoint.
      If this file is missing or empty, PDLC will prompt you to run /pdlc init. -->
 
-**Last updated:** 2026-08-27T04:30:00Z
+**Last updated:** 2026-08-27T04:50:00Z
 
 ---
 
 ## Current Phase
 
-Construction
+Construction Complete — Ready for /ship
 
 ---
 
@@ -114,13 +114,21 @@ _None active. Run `/night-shift <F-NNN>` to start an autonomous run (requires by
 
 ## Current Sub-phase
 
-Test
+none
 
 ---
 
 ## Last Checkpoint
 
-Construction / Review / 2026-08-27T04:30:00Z — **PARTY REVIEW DONE, SELF-APPROVED — moving to Test.**
+Construction / Complete / 2026-08-27T04:50:00Z — **CONSTRUCTION COMPLETE.** All 11 tasks done, Party Review
+self-approved (0 remaining Critical/Blocker), Test's required §7 security gate ran clean (dependency audit:
+only the pre-existing ADR-030 `SSH.NET` HIGH; secret scan: no leaks across 12 commits). Layers 3–6 skipped,
+same as every prior feature (no command exists, none required). Episode 008 drafted at the *correct*
+project location (`docs/pdlc/episodes/`, restoring the convention episodes 006/007 broke — see
+`episodes/index.md`'s new note) — `EPISODE_api-refactor-pilot-booking_2026-08-27.md`, Status: Draft. Final:
+516 backend + 310 integration + 165 mobile = 991 tests, 0 failing. Moving to `/ship`.
+
+_Previously: Construction / Review / 2026-08-27T04:30:00Z — **PARTY REVIEW DONE, SELF-APPROVED — moving to Test.**
 4-agent Party Review (Neo/Echo/Phantom/Jarvis) ran; converged 3-way (Neo/Phantom/Echo) on `agenda-buddy-2hd`
 (Update's response echoing the client's forged `AppointmentStatus`) plus Echo's own Critical (Update/Cancel
 handlers untestable — depended on concrete `ProviderService`/`BookingService`, only GuardClause-null unit
@@ -855,6 +863,9 @@ the feature branch after each wave completes.
 | 2026-08-27T04:15:00Z | review_regression_caught_and_fixed | The Critical-finding fix above (retyping to `IProviderService`/`IBookingService`) introduced a real regression: `Booking.Api`'s DI container only ever registered the concrete `ProviderService`/`BookingService`, not the interfaces. `dotnet build` stayed green (DI resolution is runtime-only); the full integration suite (no filter, per the standing T06 lesson) failed with 6 `ServiceProvider` validation errors at startup. Fixed by forwarding both interfaces to the already-scoped concrete instance in `ServiceCollectionExtension.cs`. Re-ran to 310/310 green before continuing — not assumed clean from the individual fix looking correct. |
 | 2026-08-27T04:20:00Z | review_important_fixed | F-019 Party Review's Important findings, all fixed in the same gate: Echo's gap (`BookingErrorLeakageTest` covered only the unhandled-500 path, not T-102's other named path, the handled `Result.Fail`→`DataResponse<T>.Fail` mapping — added a dedicated test forcing the real handler branch); Neo's YAGNI finding (unused `IKafkaClient? kafkaClient` param + its suppression pragma removed from all 3 moved handlers); Neo's dead-code finding (`StatusSpec`/`PaymentSpec` — authored, tested, never wired — deleted along with their 2 tests); Phantom's Medium finding (`NoteSpec`'s `.Required().NotEmpty()` would have accepted whitespace-only content, a real strictness regression against the inline check it replaces — fixed to `.NotWhiteSpace()`, verified live against Validot 2.6.0 before wiring); Jarvis's 4 findings on `CLAUDE.md` staleness (Project Structure/Architecture, `Booking/Program.cs`'s dead path, zero FluentResults/GuardClauses/Validot mention, stale 484/301/950 test counts) and the missing `CHANGELOG.md`, all fixed/created. |
 | 2026-08-27T04:25:00Z | review_warnings_accepted | F-019 Party Review approval gate, self-approved under the standing full-autonomy grant (2026-08-26T23:12:00Z): **0 remaining Critical/Blocker.** Every MAJOR/HIGH/CRITICAL finding from all 4 reviewers was fixed in this gate (see the 3 entries above), not deferred. Accepted as logged, already-disclosed deferrals, unchanged by this review: **`agenda-buddy-cy2`** (null `EmailProvider` 500s, pre-existing, out of scope) and **`agenda-buddy-02e`** (Update/Cancel still on `MiniValidator`, Requirement 6 now 3/10 routes not 1/10 after this review's `NoteSpec` fix — description updated, bead stays open, never assigned to any F-019 task). Full record: `docs/pdlc/reviews/REVIEW_api-refactor-pilot-booking_2026-08-27.md`. Suites re-verified after all fixes: 516 backend / 310 integration / 165 mobile = 991, 0 failing, `dotnet format --verify-no-changes` clean. |
+| 2026-08-27T04:35:00Z | party_review_committed | Party Review remediation committed on the feature branch: `b27efb0` (20 files, +781/−137). Not pushed — no push/PR action taken yet, per the conservative git policy for anything beyond a local feature-branch commit. |
+| 2026-08-27T04:40:00Z | test_layers_skipped | Test Step 15 layers 3–6 (E2E, performance/load, accessibility, visual regression) skipped for F-019, same as every prior feature — no command exists in this project and none is a required §7 gate. Layer 1 (unit, required): 516/516 backend. Layer 2 (integration, not required by §7 but run anyway per this project's own convention): 310/310, re-verified post-Party-Review-remediation. |
+| 2026-08-27T04:45:00Z | required_gate_flagged_accepted | Test Step 15 **Layer 7 (security scan — always required)** RAN. **7a dependency audit** (`dotnet list agenda-buddy.sln package --vulnerable --include-transitive`): exactly one finding, the pre-existing ADR-030-accepted SSH.NET HIGH in `AgendaBuddy.IntegrationTests` — nothing new. All 4 new `Booking.*` projects (Api/Core/Domain/Infrastructure) and the 4 new packages this feature introduced (FluentResults, Validot, GuardClauses, Mapster) are clean. **7b secret scan** (`gitleaks detect --log-opts="main..HEAD"`, 12 commits): no leaks found, including the Party Review remediation commit. |
 
 ---
 
@@ -1305,3 +1316,5 @@ re-planning (`/continue`).
 | 2026-08-27T03:45:00Z | blast_radius_complete | BLAST-RADIUS_api-refactor-pilot-booking_2026-08-27.md written — zero at-risk callers found; RequestCollection/IRequestCollection deletion confirmed zero cross-service impact, Booking→Booking.Api rename's consumers all found and updated | Review | api-refactor-pilot-booking |
 | 2026-08-27T04:00:00Z | party_review_complete | **Party Review (Neo/Echo/Phantom/Jarvis) run.** 1 Critical (Echo), 3-way convergence on agenda-buddy-2hd from Neo/Phantom/Echo, plus Important findings from all 4 — all fixed in this gate, none deferred. See Guardrail Log entries 04:10-04:25Z and REVIEW_api-refactor-pilot-booking_2026-08-27.md for the full record | Review | api-refactor-pilot-booking |
 | 2026-08-27T04:30:00Z | review_approved | **Party Review self-approved under the full-autonomy grant — 0 remaining Critical/Blocker.** agenda-buddy-2hd closed; agenda-buddy-02e description corrected (3/10 routes now, not 1/10); CLAUDE.md + CHANGELOG.md (new) updated per Jarvis; verification.md/api-contracts.md updated to match. Suites re-verified clean after all fixes: 516 backend + 310 integration + 165 mobile = 991, 0 failing, format clean. Moving to Test | Test | api-refactor-pilot-booking |
+| 2026-08-27T04:45:00Z | test_gates_passed | Layer 7 (security scan, always required) ran clean: dependency audit shows only the pre-existing ADR-030 SSH.NET HIGH, nothing new across the 4 new Booking.* projects/4 new packages; secret scan (gitleaks, 12 commits) found no leaks. Layers 3-6 skipped, same as every prior feature (no command exists, none required) | Test | api-refactor-pilot-booking |
+| 2026-08-27T04:50:00Z | construction_complete | **CONSTRUCTION COMPLETE.** 11/11 tasks, 991 tests (516+310+165), 0 failing. Episode 008 drafted at the correct location (docs/pdlc/episodes/, restoring the convention episodes 006/007 broke). Ready for /ship | Complete | api-refactor-pilot-booking |
