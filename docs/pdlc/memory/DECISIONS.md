@@ -1171,3 +1171,51 @@ fix and would need a provider decision, credentials, and its own threat model, m
 ADR-038 already applied to payments. Returning the token directly in the `202` response body — rejected
 outright: it would let anyone who knows an email address reset that account's password with no proof of
 access to anything the account holder controls, defeating the feature's entire purpose.
+
+---
+
+## ADR-053 — Wire both sides of the customer↔provider subscription (F-026)
+
+**Date:** 2026-08-27 · **Status:** Accepted
+
+**Context.** `ProviderEntity.SubscribedCustomerCollection` (`Library/Entities/ProviderEntity.cs:42`)
+has existed since before F-026, is used in three integration test fixtures
+(`QueryAuditPayloadTest`, `ProviderProjectionTest`, `ProviderPersistenceTest`), and is even named
+directly in `CustomerListRoleTest`'s own remarks: scoping `GET /api/v1/customers` to a provider's
+own `SubscribedCustomerCollection` was weighed at a prior threat-model gate as "the stronger fix" for
+an over-broad-read concern and explicitly "deferred, not rejected." Nothing has ever written to the
+field — it has been permanently empty in every environment since it was added.
+
+**Decision.** F-026's subscribe/unsubscribe handlers write both collections: the customer's
+`SubscribedProviderCollection` (the record the caller is actually changing) and the provider's
+`SubscribedCustomerCollection` (the reciprocal side), via two independent targeted
+`FindOneAndUpdateAsync` `$addToSet`/`$pull` calls (ADR-032) — no shared transaction, matching this
+codebase's existing non-transactional multi-write convention elsewhere (e.g.
+`BookingAppointmentCommandHandler`). The two writes are deliberately asymmetric on failure:
+subscribing requires the provider to exist first (`ProviderService.SubscribeCustomerAsync`'s
+`null` return doubles as the existence check, so a bad provider email never reaches the customer's
+list); unsubscribing always attempts the customer-side removal and treats the provider-side cleanup
+as best-effort, so a since-deleted provider can never block a customer from clearing a stale
+reference out of their own list.
+
+**Why now, not filed separately.** The field already exists with the exact right shape — this is
+not a new capability, it is completing one write path a pre-existing entity field was designed for
+but never got. The marginal cost is one more `FindOneAndUpdateAsync` call per handler; the
+alternative (shipping F-026 without it) would leave `SubscribedCustomerCollection` permanently
+empty for a second time, after the "deferred, not rejected" gate already flagged it as worth doing.
+
+**Consequences.** `CustomerListRoleTest`'s "stronger fix" is now *possible* — the data it would read
+is correct — but the fix itself (scoping `GET /api/v1/customers`'s response to a provider's own
+subscribers) is **not implemented here** and remains its own, larger, unimplemented decision: it
+changes an existing route's behavior for every caller, which is a bigger blast radius than adding
+two new ones. Filed as a follow-up beads issue rather than bundled in. No new Provider-side route
+reads `SubscribedCustomerCollection` yet either — same split.
+
+**Alternatives rejected.** Writing only the customer's side and leaving `SubscribedCustomerCollection`
+dead — rejected because it repeats the exact gap the feature-record's own Discover step flagged,
+for no savings beyond one extra line per handler. A MongoDB multi-document transaction across the
+two collections — rejected as disproportionate: this codebase accepts sequential best-effort writes
+elsewhere for the same class of two-collection update (e.g. Booking/Provider embedded appointment
+sync), and a genuinely inconsistent state here (customer subscribed, provider's reciprocal list
+missing the entry, or vice versa) self-heals on the next subscribe/unsubscribe call rather than
+corrupting anything load-bearing.

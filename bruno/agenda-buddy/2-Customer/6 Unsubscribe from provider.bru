@@ -1,0 +1,14 @@
+meta {
+  name: 6 Unsubscribe from provider
+  type: http
+  seq: 6
+}
+delete {
+  url: {{gatewayUrl}}/api/v1/customers/{{customerEmail}}/subscriptions/{{providerEmail}}
+  body: none
+}
+docs {
+  Unsubscribing from a provider never subscribed to (or since deleted) is a no-op `202`, not an
+  error. Cleans up the customer's own list unconditionally; the provider-side reciprocal cleanup is
+  best-effort and never blocks this response.
+}

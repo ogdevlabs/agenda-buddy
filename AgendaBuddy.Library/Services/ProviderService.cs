@@ -89,6 +89,20 @@ public class ProviderService(IRepository<ProviderEntity> providerRepository) : I
             new BsonDocument("$set", new BsonDocument("is_active", isActive)));
     }
 
+    public async Task<ProviderEntity?> SubscribeCustomerAsync(string providerEmail, string customerEmail)
+    {
+        return await providerRepository.FindOneAndUpdateAsync(
+            new BsonDocument("email", providerEmail),
+            new BsonDocument("$addToSet", new BsonDocument("subscribed_customer_collection", customerEmail)));
+    }
+
+    public async Task<ProviderEntity?> UnsubscribeCustomerAsync(string providerEmail, string customerEmail)
+    {
+        return await providerRepository.FindOneAndUpdateAsync(
+            new BsonDocument("email", providerEmail),
+            new BsonDocument("$pull", new BsonDocument("subscribed_customer_collection", customerEmail)));
+    }
+
     /// <summary>
     /// Writes a new status onto one appointment inside a provider's embedded list.
     /// </summary>

@@ -1,0 +1,14 @@
+meta {
+  name: 7 List my subscribed providers
+  type: http
+  seq: 7
+}
+get {
+  url: {{gatewayUrl}}/api/v1/customers/{{customerEmail}}/subscriptions
+  body: none
+}
+docs {
+  Provider emails only (not full `ProviderEntity` records) — call `GET /api/v1/providers/{email}`
+  per id to enrich the list, same as any other cross-service join in this API. Ownership-gated: only
+  the customer named in the path may read their own list.
+}

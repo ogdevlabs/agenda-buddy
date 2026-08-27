@@ -4,6 +4,25 @@ All notable changes to this project are documented in this file, in [Keep a Chan
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-08-27
+
+### Added
+
+- **F-026 provider-subscription**: `POST`/`DELETE /api/v1/customers/{email}/subscriptions/{providerEmail}`
+  and `GET /api/v1/customers/{email}/subscriptions` — idempotent subscribe/unsubscribe
+  (`$addToSet`/`$pull`), ownership-gated to the customer named in the path. Writes both sides of the
+  relationship: the customer's `subscribedProviderCollection` and the previously-unwired
+  `ProviderEntity.SubscribedCustomerCollection` (ADR-053). Unsubscribing from a provider that no
+  longer exists still succeeds for the customer's own cleanup. Mobile UI (`agenda-buddy-q9m`) and
+  scoping `GET /api/v1/customers` to a provider's own subscribers (`agenda-buddy-tbs`) are
+  deliberately out of scope.
+
+### Fixed
+
+- `AgendaBuddy.Customer.Api`'s DI registration never forwarded the concrete `ProviderService` to
+  `IProviderService` — a latent runtime resolution failure for any handler typed against the
+  interface, caught by this feature's own integration test before it shipped.
+
 ## [0.11.0] - 2026-08-27
 
 ### Added
@@ -76,6 +95,9 @@ All notable changes to this project are documented in this file, in [Keep a Chan
 - A `null` `EmailProvider` on `POST /appointments` passes both Validot and the ownership guard, then throws downstream during provider lookup, surfacing as an unhandled 500 rather than a 400 — `agenda-buddy-cy2`.
 - Mapster is approved (ADR-049) for this line of work but has zero call sites yet.
 
-[Unreleased]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.9.0...HEAD
+[Unreleased]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.12.0...HEAD
+[0.12.0]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.11.0...v0.12.0
+[0.11.0]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.10.0...v0.11.0
+[0.10.0]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.7.0...v0.8.0
