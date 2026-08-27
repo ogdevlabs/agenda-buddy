@@ -131,6 +131,10 @@ Examples:
 
 - `main` — requires PR + human approval. **No exceptions for tooling failures** — see the `gh` restriction below.
 
+### CI must be green before merge — no exceptions
+
+**Stated explicitly 2026-08-27.** Once a PR is open, its CI run (`.github/workflows/dotnet.yml`'s jobs — `build-and-test`, `security-scan`, `docker-build-and-scan` matrix, `integration`, mobile builds, whichever the change triggers) must be **polled to completion and confirmed green** before that PR is merged. Never merge speculatively, never merge while a check is still queued/running, and never merge on the assumption that a passing local run implies a passing CI run — they can diverge (container runtime differences, Docker matrix jobs, mobile workloads, drift checks). If a check fails, fix it and push a new commit to re-trigger CI; do not merge around a red check. This applies to every PR this project opens, including PDLC ship-bookkeeping PRs, not just feature-code PRs.
+
 ### `gh` CLI is restricted on this repo — PR-based merge is mandatory, not optional
 
 **This has been violated repeatedly (F-017 through F-020) and is not acceptable going forward.** The `gh` CLI on this machine authenticates as `OscarPaul-GarciaCapetillo_NordTech`, a Nordstrom work identity that is **READ-only** on `ogdevlabs/agenda-buddy` — `gh pr create`, `gh pr merge`, and `gh pr edit` all fail with `GraphQL: Unauthorized: As an Enterprise Managed User, you cannot access this content`. That failure is **not** evidence that PR-based workflow is impossible here, and it must never be treated as license to bypass `main`'s "requires PR" rule with a local `git merge --no-ff` + `git push origin main`. Every one of F-017–F-020's ship episodes did exactly that, skipping the PR entirely — a process failure, confirmed avoidable on 2026-08-27 when PR #70 was opened *and* merged cleanly with no `gh` involved at all.
