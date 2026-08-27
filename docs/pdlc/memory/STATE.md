@@ -11,7 +11,7 @@
 
 ## Current Phase
 
-Inception Complete — Ready for /build
+Construction
 
 ---
 
@@ -133,13 +133,17 @@ _None active. Run `/night-shift <F-NNN>` to start an autonomous run (requires by
 
 ## Current Sub-phase
 
-none
+Build
 
 ---
 
 ## Last Checkpoint
 
-Inception / Plan / 2026-08-27T07:50:00Z — **INCEPTION COMPLETE. 13 tasks created under
+Construction / Build / 2026-08-27T07:55:00Z — Branch `feat/F-020-api-refactor-rollout` created off `main`,
+pushed. Starting T01 (Library rename) via a forked agent, since the mechanical grep/sed/build-verify loop
+across a solution-wide rename would otherwise consume enormous main-context budget for no retained value.
+
+_Previously: Inception / Plan / 2026-08-27T07:50:00Z — **INCEPTION COMPLETE. 13 tasks created under
 `docs/pdlc/tasks/F-020/`** (T01–T13), in 5 waves: **Wave 1** (no deps, parallel-safe) — T01 Library rename,
 T02 Kafka rename, T04 Gateway rename. **Wave 2** — T03 EventAndCommands rename (needs T01+T02), T05
 Identity rename (needs T01), T06 MobileApp rename (needs T01, flagged highest-risk). **Wave 3** — T07
