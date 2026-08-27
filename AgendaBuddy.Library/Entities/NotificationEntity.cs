@@ -51,5 +51,6 @@ public enum NotificationType
     AppointmentBooked,
     AppointmentUpdated,
     AppointmentCancelled,
-    AppointmentCompleted
+    AppointmentCompleted,
+    PasswordResetRequested
 }

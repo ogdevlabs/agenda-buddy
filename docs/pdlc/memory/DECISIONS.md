@@ -1131,3 +1131,43 @@ decision is about the separate, narrower pre-insert overlap check.
 **Alternatives rejected.** See Context — both alternatives were evaluated and rejected for the reasons
 above, not merely deprioritized. Revisit if usage data ever shows this specific race firing in
 production; nothing here should be read as "this is fine forever regardless of load."
+
+---
+
+## ADR-052 — No real email/SMS provider exists; password-reset delivery is logged, not sent (F-022)
+
+**Date:** 2026-08-27 · **Status:** Accepted · **Category:** design decision
+
+**Context.** F-022's feature record assumed `NotificationService` was the delivery channel for a
+password-reset link — it is one of the six services F-014 wired. Building the feature surfaced that
+`NotificationService` is an **in-app inbox**, not an outbound channel: `SendAsync` only inserts a
+`NotificationEntity` document, and `GET /api/v1/notifications` requires an authenticated caller
+(`ClaimsPrincipal user`). A user who forgot their password cannot log in to read that inbox — the exact
+account this feature exists to help. No SMTP/SMS provider, credential, or package exists anywhere in
+this project to send anything externally.
+
+**Decision.** Same category as ADR-038 (payments are non-charging unless a real gateway is configured):
+password-reset "delivery" is honest about not existing yet, rather than pretending otherwise.
+`IdentityService.RequestPasswordResetAsync` logs the raw opaque token at `Information` (visible in the
+Aspire dashboard, a local-development-only channel) and separately writes a `NotificationEntity`
+(`NotificationType.PasswordResetRequested`) via the existing `INotificationService` as a secondary,
+audit-trail signal for an account holder who is still logged in elsewhere. Neither is the primary
+channel a real "forgot password" flow needs; both are what this project has today. The token itself is
+never returned to the HTTP caller — `RequestPasswordResetAsync` returns it only for testability, and the
+`POST /password-reset/request` endpoint discards the value it awaits.
+
+**Consequences.** Anyone with read access to the Identity service's logs — the Aspire dashboard locally,
+or any future log aggregator — can read a live reset token for up to its 30-minute lifetime. Acceptable
+today because this is a personal, synthetic-data project with no real users (same posture ADR-038 and
+the standing Atlas-credential note already establish for this codebase); **not** acceptable if this
+project ever handles real accounts, at which point real email/SMS delivery becomes a hard prerequisite,
+not an enhancement. `NotificationEntity` was extended with the `PasswordResetRequested` type (a
+5th value on `NotificationType`, previously appointment-lifecycle-only) — this also touches
+`Customer.json`'s committed OpenAPI baseline, since that service's `GET /notifications` schema serializes
+the same shared enum; both `Identity.json` and `Customer.json` were regenerated together for this reason.
+
+**Alternatives rejected.** Building a real SMTP integration — out of scope for a fast-turnaround backend
+fix and would need a provider decision, credentials, and its own threat model, matching the reasoning
+ADR-038 already applied to payments. Returning the token directly in the `202` response body — rejected
+outright: it would let anyone who knows an email address reset that account's password with no proof of
+access to anything the account holder controls, defeating the feature's entire purpose.

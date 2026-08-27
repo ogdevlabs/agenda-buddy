@@ -4,6 +4,19 @@ All notable changes to this project are documented in this file, in [Keep a Chan
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-08-27
+
+### Added
+
+- **F-022 password-reset-flow**: `POST /api/v1/auth/password-reset/request` and
+  `/password-reset/confirm` — a single-use, 30-minute-expiry opaque token (same hash-only-storage
+  pattern as the refresh token), anti-enumeration (`request` always returns `202`), and confirming
+  clears any active session and lockout. `LoginAsync` now enforces `CredentialEntity.MustResetPassword`
+  (`403 password_reset_required`) instead of silently ignoring it. No real email/SMS provider exists in
+  this project (ADR-052, same category as ADR-038's non-charging payment gateway) — the reset token is
+  logged for local development and mirrored into the existing in-app notification inbox as a secondary
+  signal. Mobile UI is deliberately out of scope (`agenda-buddy-qe9`).
+
 ## [0.10.0] - 2026-08-27
 
 ### Fixed

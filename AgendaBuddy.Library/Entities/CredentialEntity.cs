@@ -58,6 +58,11 @@ public class CredentialEntity
     [BsonElement("lock_until")]
     [BsonIgnoreIfNull]
     public DateTime? LockUntil { get; set; }
+
+    /// <summary>Embedded single-use password-reset token. Null when no reset is pending.</summary>
+    [BsonElement("reset_token")]
+    [BsonIgnoreIfNull]
+    public PasswordResetTokenDocument? ResetToken { get; set; }
 }
 
 /// <summary>Embedded sub-document storing the SHA-256 hash of the opaque refresh token.</summary>
@@ -69,6 +74,19 @@ public class RefreshTokenDocument
     public string Hash { get; set; }
 
     /// <summary>UTC expiry timestamp. TTL index on this field in MongoDB.</summary>
+    [BsonElement("expiry")]
+    public DateTime Expiry { get; set; }
+}
+
+/// <summary>Embedded sub-document storing the SHA-256 hash of an opaque password-reset token.</summary>
+[System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public class PasswordResetTokenDocument
+{
+    /// <summary>SHA-256 hex hash of the opaque token sent to the account holder. Raw token never stored.</summary>
+    [BsonElement("hash")]
+    public string Hash { get; set; }
+
+    /// <summary>UTC expiry timestamp — short-lived (30 minutes), unlike the 24-hour refresh token.</summary>
     [BsonElement("expiry")]
     public DateTime Expiry { get; set; }
 }
