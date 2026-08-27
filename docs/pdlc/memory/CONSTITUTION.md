@@ -129,7 +129,25 @@ Examples:
 
 ### Protected Branches
 
-- `main` — requires PR + human approval
+- `main` — requires PR + human approval. **No exceptions for tooling failures** — see the `gh` restriction below.
+
+### `gh` CLI is restricted on this repo — PR-based merge is mandatory, not optional
+
+**This has been violated repeatedly (F-017 through F-020) and is not acceptable going forward.** The `gh` CLI on this machine authenticates as `OscarPaul-GarciaCapetillo_NordTech`, a Nordstrom work identity that is **READ-only** on `ogdevlabs/agenda-buddy` — `gh pr create`, `gh pr merge`, and `gh pr edit` all fail with `GraphQL: Unauthorized: As an Enterprise Managed User, you cannot access this content`. That failure is **not** evidence that PR-based workflow is impossible here, and it must never be treated as license to bypass `main`'s "requires PR" rule with a local `git merge --no-ff` + `git push origin main`. Every one of F-017–F-020's ship episodes did exactly that, skipping the PR entirely — a process failure, confirmed avoidable on 2026-08-27 when PR #70 was opened *and* merged cleanly with no `gh` involved at all.
+
+**The required path, in order:**
+1. **Commit and push to a feature/chore branch**, never directly to `main`.
+2. **Open the PR via the GitHub REST API**, authenticated with the `ogdevlabs` git-credential token (the same one `git push` already uses) — never `gh`:
+   ```bash
+   TOKEN=$(printf "protocol=https\nhost=github.com\npath=ogdevlabs/agenda-buddy.git\n\n" \
+     | git credential fill | sed -n 's/^password=//p')
+   curl -s -X POST -H "Authorization: Bearer $TOKEN" -H "Accept: application/vnd.github+json" \
+     https://api.github.com/repos/ogdevlabs/agenda-buddy/pulls -d @pr.json
+   ```
+3. **Merge via the GitHub web UI, or the same REST token against `PUT .../pulls/<number>/merge`** — not `gh pr merge`, and not a local `git merge --no-ff` bypass. Only fall back to a local merge + push if both of those are demonstrably attempted and fail (not just assumed to fail because `gh` did), and only with the human's explicit confirmation.
+4. Use the `.gitconfig`-configured identity (`ogdevlabs`) for every commit — never pass `-c user.name`/`user.email` overrides, and never route commits through `gh`'s identity.
+
+**Also standing:** the Nordstrom Standards Readiness gate does not apply to this project at all (see §9, ADR-042) — do not detect, install, prompt for, or invoke it here, regardless of what a generic skill's preflight checks for.
 
 ---
 
