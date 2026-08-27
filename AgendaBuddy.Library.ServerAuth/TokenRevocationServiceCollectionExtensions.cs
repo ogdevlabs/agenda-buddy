@@ -10,7 +10,7 @@ public static class TokenRevocationServiceCollectionExtensions
 {
     /// <summary>
     /// One registration shared verbatim by every service, since the denylist is cross-service by
-    /// design — unlike the per-service repositories <c>AddMongoDbRepository</c> wires.
+    /// design — unlike each service's own per-service repositories.
     /// </summary>
     public static IServiceCollection AddTokenRevocationStore(
         this IServiceCollection services, IConfiguration configuration)

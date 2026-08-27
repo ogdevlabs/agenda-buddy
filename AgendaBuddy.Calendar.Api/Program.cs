@@ -57,18 +57,23 @@ builder.Services.AddSwaggerGen();
 var app = builder.Build();
 
 // Idempotent -- safe on every startup across all seven processes sharing this collection.
-// Swallowed on failure, same as Profession's seed hosted service: an unreachable Mongo at
-// boot (e.g. the OpenApiSpecGenerator harness, which deliberately never touches a real one)
-// must not prevent the host from starting -- the denylist check itself already fails open
-// per-request if the collection or its index is missing.
-try
+// Fire-and-forget, not awaited: MongoDB's server-selection timeout is ~30s by default, and
+// awaiting this inline would stall Kestrel's own startup for that long whenever Mongo isn't
+// immediately reachable (found live -- it pushed every service's CI boot check right up to,
+// and for one, past, its readiness window). Swallowed on failure for the same reason
+// Profession's seed hosted service swallows its own: the denylist check itself already
+// fails open per-request if the collection or its index is missing.
+_ = Task.Run(async () =>
 {
-    await app.Services.GetRequiredService<MongoTokenRevocationStore>().EnsureIndexAsync();
-}
-catch (Exception ex)
-{
-    app.Logger.LogWarning(ex, "Could not ensure the revoked_tokens TTL index at startup");
-}
+    try
+    {
+        await app.Services.GetRequiredService<MongoTokenRevocationStore>().EnsureIndexAsync();
+    }
+    catch (Exception ex)
+    {
+        app.Logger.LogWarning(ex, "Could not ensure the revoked_tokens TTL index at startup");
+    }
+});
 
 // /health runs every check; /alive only the live-tagged ones, so a service waiting on MongoDB is
 // not restarted for being unready.

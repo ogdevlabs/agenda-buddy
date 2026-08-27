@@ -24,10 +24,4 @@
         </Content>
     </ItemGroup>
 
-    <ItemGroup>
-        <!-- ITokenRevocationStore lives in ServerAuth (F-023) so AuthenticationExtensions can depend
-             on the interface without pulling MongoDB.Driver into a project that has none today. -->
-        <ProjectReference Include="..\AgendaBuddy.Library.ServerAuth\AgendaBuddy.Library.ServerAuth.csproj" />
-    </ItemGroup>
-
 </Project>
