@@ -133,13 +133,21 @@ _None active. Run `/night-shift <F-NNN>` to start an autonomous run (requires by
 
 ## Current Sub-phase
 
-Discover
+Design
 
 ---
 
 ## Last Checkpoint
 
-Inception / Discover / 2026-08-27T06:20:00Z — F-020 claimed. Running a real current-state survey of the 6
+Inception / Define / 2026-08-27T06:45:00Z — PRD drafted and self-approved under the standing full-autonomy
+grant: `docs/pdlc/prds/PRD_F-020_api-refactor-rollout_2026-08-27.md`. 16 requirements, 13 ACs, 4 user
+stories. Scope: 5 services (Calendar, Customer, Provider, Services, Profession), Identity excluded. Learned
+from F-019's actual outcome rather than repeating its unvalidated requirements: Mapster/response-DTOs and
+full Validot migration are explicitly OUT of scope (Booking never delivered either), interface-retyping and
+no-stub-tests are promoted to explicit MUSTs (Booking's own Party Review findings). Standards-readiness
+section marked not applicable (ADR-042 retired the gate outright). Moving to Design.
+
+_Previously: Inception / Discover / 2026-08-27T06:20:00Z — F-020 claimed. Running a real current-state survey of the 6
 remaining services (Calendar, Customer, Provider, Services, Profession, Identity) before drafting the
 Discovery Summary, per the feature record's own "scope deliberately deferred" instruction — not trusting
 the 2026-08-18 description's "delete six RequestCollection classes" claim at face value (grep already

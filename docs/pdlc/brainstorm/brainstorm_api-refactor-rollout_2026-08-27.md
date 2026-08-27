@@ -2,10 +2,10 @@
 feature: api-refactor-rollout
 date: 2026-08-27
 status: in-progress
-last-updated: 2026-08-27T06:20:00Z
-approved-by:
-approved-date:
-prd:
+last-updated: 2026-08-27T06:45:00Z
+approved-by: ogdevlabs (self-approved, standing full-autonomy grant)
+approved-date: 2026-08-27
+prd: docs/pdlc/prds/PRD_F-020_api-refactor-rollout_2026-08-27.md
 ---
 
 # Brainstorm Log: API Refactor Rollout (F-020)
