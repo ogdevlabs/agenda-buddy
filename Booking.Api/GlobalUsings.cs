@@ -10,7 +10,7 @@ global using System.Security.Claims;
 global using Booking.Configuration;
 global using Booking.Core.Commands;
 global using Booking.Domain.Commands;
-global using Booking.Events;
+global using Booking.Domain.Responses;
 global using Booking.Extensions;
 global using Booking.Requests;
 global using Booking.Validation;

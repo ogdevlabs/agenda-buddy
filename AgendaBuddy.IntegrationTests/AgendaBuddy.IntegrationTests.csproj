@@ -38,7 +38,7 @@
   <ItemGroup>
     <!-- All seven services. The harness resolves each service's entry-point assembly through a
          distinct PUBLIC type rather than `Program` — see EntryPoints.cs for why. -->
-    <ProjectReference Include="..\Booking\Booking.csproj" />
+    <ProjectReference Include="..\Booking.Api\Booking.Api.csproj" />
     <ProjectReference Include="..\Calendar\Calendar.csproj" />
     <ProjectReference Include="..\Customer\Customer.csproj" />
     <ProjectReference Include="..\Provider\Provider.csproj" />

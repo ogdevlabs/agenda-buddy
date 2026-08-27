@@ -19,7 +19,11 @@ builder.Services.AddHealthChecks()
 builder.Services.AddMongoDbRepository(builder.Configuration);
 
 // Add MediatR
-builder.Services.AddMediatR(cfg => { cfg.RegisterServicesFromAssembly(typeof(Program).Assembly); });
+// F-019-T04: handlers moved to Booking.Core, a separate assembly from Booking.Api -- MediatR's
+// RegisterServicesFromAssembly only scans the one assembly it's given, so both must be registered or
+// mediator.Send(command) throws "no handler registered" at runtime, not at compile time.
+builder.Services.AddMediatR(cfg =>
+    cfg.RegisterServicesFromAssemblies(typeof(Program).Assembly, typeof(BookingAppointmentCommandHandler).Assembly));
 builder.Services.AddEventStore();
 
 // Add services required to support using MVC's model binders
@@ -41,11 +45,6 @@ builder.Services.AddSingleton<IValidator<AppointmentEntity>>(
 
 // Register Singleton instances
 builder.Services.AddSingleton<IKafkaClient, KafkaClient>();
-// Scoped, not Singleton: RequestCollection consumes the scoped IEventStore, and a
-// singleton capturing it fails DI validation — which is enabled in Development, the
-// environment the AppHost runs services in. RequestCollection is stateless, so request
-// scope is the correct lifetime rather than a workaround.
-builder.Services.AddScoped<IRequestCollection, RequestCollection>();
 
 // Enable & configure JSON Problem Details error responses
 // ADR-022 / F-016-T08: ForbiddenException -> 403 centrally, so an endpoint that omits a local
@@ -150,12 +149,12 @@ var booking = app.MapGroup("api/v1/booking")
     .AddEndpointFilter<ProblemDetailsServiceEndpointFilter>();
 
 booking.MapPost("/appointments",
-        async Task<Results<ValidationProblem, ForbidHttpResult, Created<AppointmentEntity>, BadRequest>> (
+        async Task<Results<ValidationProblem, ForbidHttpResult, Created<DataResponse<AppointmentEntity>>, BadRequest<DataResponse<AppointmentEntity>>>> (
             IMediator mediator,
             ClaimsPrincipal user,
-            ProviderService providerService, BookingService bookingService, AppointmentEntity appointmentEntity,
-            IRequestCollection requestCollection,
-            IValidator<AppointmentEntity> appointmentValidator) =>
+            AppointmentEntity appointmentEntity,
+            IValidator<AppointmentEntity> appointmentValidator,
+            CancellationToken cancellationToken) =>
         {
             // F-019-T02 Validot spike: this is the one route swapped from MiniValidator.TryValidate to
             // Validot for a real vertical-slice comparison. The other two original routes below (PUT,
@@ -169,23 +168,24 @@ booking.MapPost("/appointments",
             try { OwnershipGuard.AssertOwnerAny(user, appointmentEntity.EmailProvider, appointmentEntity.EmailCustomer); }
             catch (ForbiddenException) { return TypedResults.Forbid(); }
 
-            var eventResponse = await EventsHelper.BookAppointmentEvent(requestCollection, mediator, providerService,
-                bookingService, appointmentEntity);
+            var result = await mediator.Send(new BookAppointmentCommand { AppointmentEntity = appointmentEntity },
+                cancellationToken);
 
-            if (!string.IsNullOrEmpty(eventResponse) && !eventResponse.ToLower().StartsWith("exception"))
-                return TypedResults.Created($"/api/v1/appointments/{appointmentEntity.Identifier}", appointmentEntity);
-            return TypedResults.ValidationProblem(GenerateErrorMessage(
-                "No record match found error", new[] { "No provider", $"{appointmentEntity.EmailProvider}" }));
+            if (result.IsSuccess)
+                return TypedResults.Created($"/api/v1/appointments/{appointmentEntity.Identifier}",
+                    DataResponse<AppointmentEntity>.Ok(result.Value));
+            return TypedResults.BadRequest(
+                DataResponse<AppointmentEntity>.Fail(result.Errors.Select(e => e.Message)));
         })
     .WithName("BookAppointment")
     .RequireAuthorization();
 
 booking.MapPut("/appointments/",
-        async Task<Results<ValidationProblem, ForbidHttpResult, Accepted<AppointmentEntity>, BadRequest>> (
+        async Task<Results<ValidationProblem, ForbidHttpResult, Accepted<DataResponse<AppointmentEntity>>, BadRequest<DataResponse<AppointmentEntity>>>> (
             IMediator mediator,
             ClaimsPrincipal user,
-            ProviderService providerService, BookingService bookingService, AppointmentEntity appointmentEntity,
-            IRequestCollection requestCollection) =>
+            AppointmentEntity appointmentEntity,
+            CancellationToken cancellationToken) =>
         {
             if (!MiniValidator.TryValidate(appointmentEntity, out var errors))
                 return TypedResults.ValidationProblem(errors);
@@ -193,24 +193,24 @@ booking.MapPut("/appointments/",
             try { OwnershipGuard.AssertOwnerAny(user, appointmentEntity.EmailProvider, appointmentEntity.EmailCustomer); }
             catch (ForbiddenException) { return TypedResults.Forbid(); }
 
-            var eventResponse = await EventsHelper.UpdateAppointmentEvent(requestCollection, mediator, providerService,
-                bookingService, appointmentEntity);
+            var result = await mediator.Send(new UpdateAppointmentCommand { AppointmentEntity = appointmentEntity },
+                cancellationToken);
 
-            if (!string.IsNullOrEmpty(eventResponse) && !eventResponse.ToLower().StartsWith("exception"))
-                return TypedResults.Accepted($"/api/v1/appointments/{appointmentEntity.Identifier}", appointmentEntity);
-            return TypedResults.ValidationProblem(GenerateErrorMessage(
-                "Update Appointment Error",
-                new[] { "Error when trying to update appointment identifier:", $"{appointmentEntity.Identifier}" }));
+            if (result.IsSuccess)
+                return TypedResults.Accepted($"/api/v1/appointments/{appointmentEntity.Identifier}",
+                    DataResponse<AppointmentEntity>.Ok(result.Value));
+            return TypedResults.BadRequest(
+                DataResponse<AppointmentEntity>.Fail(result.Errors.Select(e => e.Message)));
         })
     .WithName("UpdateAppointment")
     .RequireAuthorization();
 
 booking.MapDelete("/appointments/",
-        async Task<Results<ValidationProblem, ForbidHttpResult, NoContent, BadRequest>> (IMediator mediator,
+        async Task<Results<ValidationProblem, ForbidHttpResult, NoContent, BadRequest<DataResponse<AppointmentEntity>>>> (
+            IMediator mediator,
             ClaimsPrincipal user,
-            ProviderService providerService, BookingService bookingService,
             [FromBody] AppointmentEntity appointmentEntity,
-            IRequestCollection requestCollection) =>
+            CancellationToken cancellationToken) =>
         {
             if (!MiniValidator.TryValidate(appointmentEntity, out var errors))
                 return TypedResults.ValidationProblem(errors);
@@ -218,14 +218,15 @@ booking.MapDelete("/appointments/",
             try { OwnershipGuard.AssertOwnerAny(user, appointmentEntity.EmailProvider, appointmentEntity.EmailCustomer); }
             catch (ForbiddenException) { return TypedResults.Forbid(); }
 
-            var eventResponse = await EventsHelper.CancelAppointmentEvent(requestCollection, mediator, providerService,
-                bookingService, appointmentEntity);
+            var result = await mediator.Send(new CancelAppointmentCommand { Identifier = appointmentEntity.Identifier },
+                cancellationToken);
 
-            if (!string.IsNullOrEmpty(eventResponse) && !eventResponse.ToLower().StartsWith("exception"))
-                return TypedResults.NoContent();
-            return TypedResults.ValidationProblem(GenerateErrorMessage(
-                "Cancel Appointment Error",
-                new[] { "Error when trying to cancel appointment identifier:", $"{appointmentEntity.Identifier}" }));
+            // A 204 cannot carry a body by HTTP semantics, so the success Value is discarded here rather
+            // than forced into an envelope -- a disclosed exception to Requirement 10's blanket claim, not
+            // a silent one. See CancelAppointmentCommandHandler's remarks and T11's final verification.
+            if (result.IsSuccess) return TypedResults.NoContent();
+            return TypedResults.BadRequest(
+                DataResponse<AppointmentEntity>.Fail(result.Errors.Select(e => e.Message)));
         })
     .WithName("CancelAppointment")
     .RequireAuthorization();
@@ -467,10 +468,4 @@ app.Run();
 void CustomizeProblemDetails(ProblemDetails problemDetails, HttpContext httpContext)
 {
     problemDetails.Extensions["requestId"] = Activity.Current?.Id ?? httpContext.TraceIdentifier;
-}
-
-Dictionary<string, string[]> GenerateErrorMessage(string key, string[] values)
-{
-    var dictionary = new Dictionary<string, string[]> { { key, values } };
-    return dictionary;
 }

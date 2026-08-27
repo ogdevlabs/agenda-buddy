@@ -1,21 +1,28 @@
 #pragma warning disable CS9113 // Primary constructor parameter unused — kafkaClient reserved for future Kafka publishing
 namespace Booking.Core.Commands;
 
+// F-019-T04. Constructor takes only DI-resolvable services -- the per-request AppointmentEntity that
+// used to be a constructor parameter (so RequestCollection.cs could hand-construct this handler) now
+// comes from the command itself, which is what makes a real mediator.Send(command, ct) dispatch
+// possible: MediatR resolves this handler from the container, which has no way to supply a per-request
+// value through the constructor. Returns FluentResults.Result<AppointmentEntity> instead of a
+// string-sniffed "exception"-prefixed convention (PRD Requirement 5).
 public class BookingAppointmentCommandHandler(
     IMediator mediator,
-    KafkaClient? kafkaClient,
+    IKafkaClient? kafkaClient,
     ProviderService providerService,
     BookingService bookingService,
-    AppointmentEntity appointmentEntity,
     IEventStore eventStore)
-    : IRequestHandler<BookAppointmentCommand, string>
+    : IRequestHandler<BookAppointmentCommand, Result<AppointmentEntity>>
 {
-
-    public async Task<string> Handle(BookAppointmentCommand request, CancellationToken cancellationToken)
+    public async Task<Result<AppointmentEntity>> Handle(BookAppointmentCommand request, CancellationToken cancellationToken)
     {
+        GuardClause.ArgumentIsNotNull(request, nameof(request));
+
+        var appointmentEntity = request.AppointmentEntity;
         await mediator.Publish(new BookAppointmentEvent { AppointmentEntity = appointmentEntity }, cancellationToken);
 
-        if (await SearchAndUpdateProviderAppointments())
+        if (await SearchAndUpdateProviderAppointments(appointmentEntity))
         {
             var successEvent = new Event
             {
@@ -26,7 +33,7 @@ public class BookingAppointmentCommandHandler(
                 Data = JsonSerializer.Serialize(appointmentEntity)
             };
             await eventStore.SaveAsync(successEvent);
-            return appointmentEntity.ToJson();
+            return Result.Ok(appointmentEntity);
         }
 
         var failEvent = new Event
@@ -38,7 +45,7 @@ public class BookingAppointmentCommandHandler(
             Data = JsonSerializer.Serialize(appointmentEntity)
         };
         await eventStore.SaveAsync(failEvent);
-        return null!;
+        return Result.Fail<AppointmentEntity>($"No provider found for {appointmentEntity.EmailProvider}");
     }
 
     /// <remarks>
@@ -50,14 +57,14 @@ public class BookingAppointmentCommandHandler(
     /// vanished from the dashboard. <c>AppendAppointmentAsync</c> is a single atomic <c>$push</c> with no
     /// read, so there is no window.
     /// </remarks>
-    private async Task<bool> SearchAndUpdateProviderAppointments()
+    private async Task<bool> SearchAndUpdateProviderAppointments(AppointmentEntity appointmentEntity)
     {
         var filter = SupportTools<ProviderEntity>.FilterByEmail(appointmentEntity.EmailProvider);
         var providerEntity = await providerService.FindProvidersAsync(filter);
         if (providerEntity == null) return false;
         if (providerEntity.Email == appointmentEntity.EmailProvider)
         {
-            await AddAppointmentToCalendar();
+            await AddAppointmentToCalendar(appointmentEntity);
 
             var stored = await bookingService.SearchAppointmentAsync(appointmentEntity.Identifier);
             if (stored is null) return false;
@@ -68,7 +75,7 @@ public class BookingAppointmentCommandHandler(
         return false;
     }
 
-    private async Task AddAppointmentToCalendar()
+    private async Task AddAppointmentToCalendar(AppointmentEntity appointmentEntity)
     {
         await bookingService.BookAppointmentAsync(appointmentEntity);
     }

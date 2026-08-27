@@ -120,7 +120,40 @@ Build
 
 ## Last Checkpoint
 
-Construction / Build / 2026-08-26T23:35:00Z — **F-019-T03 done.** User granted full autonomy mid-build
+Construction / Build / 2026-08-27T00:20:00Z — **F-019-T04 done.** Built solo, at speed, under the
+full-autonomy grant — no roundtable/execution-mode prompts. Physically renamed `Booking` → `Booking.Api`
+(folder, csproj, solution refs, AppHost's generated `Projects.Booking_Api`) — kept internal namespaces as
+`Booking.*` rather than `Booking.Api.*` to stay proportional to T04's actual scope. **The rename cascaded
+further than anticipated and each was checked, not assumed:** CI's docker-build-and-scan matrix + path
+filters + its own structural test, `scripts/generate-openapi.sh`/`run-ios.sh`'s service arrays,
+`TransportSecurityOrderTest`'s hardcoded service list, and — found only by actually running
+`dotnet publish -t:PublishContainer` locally — the .NET SDK's container-name derivation replaces `.` with
+`-`, not just lowercasing (`booking-api`, not `booking.api`), which would have silently broken CI's Trivy
+step had it not been caught here rather than assumed from the existing lowercasing comment. Deleted
+`RequestCollection.cs`/`IRequestCollection.cs` per Requirement 3; deleted the now-fully-dead
+`EventsHelper.cs`/`EventsHelperTest.cs` as a direct, disclosed consequence (not a discretionary AC14
+violation — nothing survives to test once the class they delegated to is gone). **Real architectural
+finding:** the moved handlers' `AppointmentEntity`/`string identifier` constructor parameters were
+per-request values, not DI-resolvable — the exact reason `RequestCollection` existed as a hand-construction
+workaround in the first place. Fixed by moving those values onto the command/`Handle(request, ct)` instead,
+which is what makes today's real `mediator.Send(command, ct)` dispatch possible at all. Also fixed
+`AddMediatR` to scan `Booking.Core`'s assembly (handlers live in a separate assembly now — a silent
+"no handler registered" runtime gap otherwise) and changed the dormant `KafkaClient?` constructor
+parameter to `IKafkaClient?` (the interface actually registered in DI) — the definitive fix for
+`agenda-buddy-5og`, not just removing the `as KafkaClient` cast syntax. TDD: Moq can't mock
+`BookingService`/`ProviderService` (concrete, non-virtual, and Library is unchanged per explicit scope) —
+wrote real GuardClause-null red→green tests for the genuinely-new behavior, relied on the real
+`AgendaBuddy.IntegrationTests` suite (the PRD's own named regression net) for the Result-mapping/dispatch
+correctness; it caught one real regression (`BookingPersistenceTest` parsed the identifier from the
+response root, now under `.data`) and one real drift (OpenAPI title changed `Booking`→`Booking.Api`,
+regenerated and committed). Full integration suite: 301/301. Backend: 497→494 (net −3, exactly the deleted
+`EventsHelperTest` cases). `dotnet format` clean. Disclosed deviation for T11: Cancel's 204 stays bodyless
+(HTTP semantics — a body cannot ride a 204), a documented exception to Requirement 10's blanket claim, not
+silently unmet. Also disclosed: Requirement 6 (MiniValidator→Validot) wasn't in T04's assigned requirement
+list and Update/Cancel still use MiniValidator — a gap for T11 to reconcile, not silently assumed closed.
+T05 now unblocked.
+
+_Previously: Construction / Build / 2026-08-26T23:35:00Z — **F-019-T03 done.** User granted full autonomy mid-build
 ("stop asking too many decisions... stop only after ship complete") — subsequent tasks proceed without
 per-step confirmation; judgment calls are logged here and in the Guardrail Log instead. Design Roundtable
 (Neo, Bolt, Echo) diverged twice: Round 1 had Neo favoring "move, keep namespace" against Bolt/Echo's
@@ -1127,3 +1160,4 @@ re-planning (`/continue`).
 | 2026-08-26T23:12:00Z | full_autonomy_granted | User granted full autonomy through Ship — see Guardrail Log | Build | api-refactor-pilot-booking |
 | 2026-08-26T23:20:00Z | design_roundtable | **Roundtable on F-019-T03 (Neo, Bolt, Echo), 2-round cross-talk.** Converged on "move + rename now" plus a same-task fix to `EventStoreWriteGuardTest`'s scan roots rather than deferring to T07 | Build | api-refactor-pilot-booking |
 | 2026-08-26T23:35:00Z | task_complete | **F-019-T03 done.** Scaffolded Booking.Domain/Core/Infrastructure; moved+renamed the 3 original commands/handlers; caught and fixed a roundtable context gap (3 stub tests in `EventsAndCommands.Tests` referencing the moved types, moved to `Booking.Tests/Commands/`); `EventStoreWriteGuardTest` regression verified red (18<20) then fixed green with a second scan root. 13/13 Booking-scoped integration tests pass unmodified. Backend 497→500, 0 failing. T04 unblocked | Build | api-refactor-pilot-booking |
+| 2026-08-27T00:20:00Z | task_complete | **F-019-T04 done (solo, full autonomy).** Renamed Booking→Booking.Api project-wide (folder/csproj/sln/AppHost's Projects.Booking_Api); rewired the 3 original routes to real mediator.Send + DataResponse<T>; deleted RequestCollection/IRequestCollection and the now-dead EventsHelper+its test. Real findings: handlers' per-request ctor params blocked real DI dispatch (fixed by moving them onto the command); AddMediatR wasn't scanning Booking.Core's assembly (silent runtime gap); KafkaClient? should have been IKafkaClient? all along (the actual fix for agenda-buddy-5og); .NET SDK container naming replaces `.` with `-`, not just lowercasing (verified live, fixed CI's image-name step before it broke). Integration suite caught 1 real regression (BookingPersistenceTest's response parsing) and 1 real drift (OpenAPI title) — both fixed. 301/301 integration, 494 backend, 0 failing. T05 unblocked | Build | api-refactor-pilot-booking |

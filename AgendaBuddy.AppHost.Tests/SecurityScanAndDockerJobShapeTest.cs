@@ -15,7 +15,7 @@ public class SecurityScanAndDockerJobShapeTest
     private const string SecurityScanJobName = "security-scan";
     private const string DockerJobName = "docker-build-and-scan";
     private static readonly string[] ExpectedMatrixServices =
-        ["Booking", "Calendar", "Customer", "Provider", "Services", "Profession", "Identity"];
+        ["Booking.Api", "Calendar", "Customer", "Provider", "Services", "Profession", "Identity"];
     private static readonly string[] PreExistingJobNames =
         ["changes", "build-and-test", "build-android", "build-ios", "build-mobile-tests"];
 

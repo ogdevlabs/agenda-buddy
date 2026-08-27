@@ -1,20 +1,24 @@
 #pragma warning disable CS9113 // Primary constructor parameter unused — kafkaClient reserved for future Kafka publishing
 namespace Booking.Core.Commands;
 
+// F-019-T04. See BookingAppointmentCommandHandler's remarks: constructor takes only DI-resolvable
+// services; the per-request AppointmentEntity comes from the command, and the handler returns
+// Result<AppointmentEntity> instead of a string-sniffed convention.
 public class UpdateAppointmentCommandHandler(
     IMediator mediator,
-    KafkaClient? kafkaClient,
+    IKafkaClient? kafkaClient,
     ProviderService providerService,
     BookingService bookingService,
-    AppointmentEntity appointmentEntity,
-    IEventStore eventStore) : IRequestHandler<UpdateAppointmentCommand, string>
+    IEventStore eventStore) : IRequestHandler<UpdateAppointmentCommand, Result<AppointmentEntity>>
 {
-
-    public async Task<string> Handle(UpdateAppointmentCommand request, CancellationToken cancellationToken)
+    public async Task<Result<AppointmentEntity>> Handle(UpdateAppointmentCommand request, CancellationToken cancellationToken)
     {
+        GuardClause.ArgumentIsNotNull(request, nameof(request));
+
+        var appointmentEntity = request.AppointmentEntity;
         await mediator.Publish(new UpdateAppointmentEvent { AppointmentEntity = appointmentEntity },
             cancellationToken);
-        if (await SearchAndUpdateAppointment())
+        if (await SearchAndUpdateAppointment(appointmentEntity))
         {
             var successEvent = new Event
             {
@@ -25,7 +29,7 @@ public class UpdateAppointmentCommandHandler(
                 Data = JsonSerializer.Serialize(appointmentEntity)
             };
             await eventStore.SaveAsync(successEvent);
-            return appointmentEntity.ToJson();
+            return Result.Ok(appointmentEntity);
         }
 
         var failEvent = new Event
@@ -37,10 +41,11 @@ public class UpdateAppointmentCommandHandler(
             Data = JsonSerializer.Serialize(appointmentEntity)
         };
         await eventStore.SaveAsync(failEvent);
-        return null!;
+        return Result.Fail<AppointmentEntity>(
+            $"Error when trying to update appointment identifier: {appointmentEntity.Identifier}");
     }
 
-    private async Task<bool> SearchAndUpdateAppointment()
+    private async Task<bool> SearchAndUpdateAppointment(AppointmentEntity appointmentEntity)
     {
         var identifier = appointmentEntity.Identifier;
         var filter = SupportTools<ProviderEntity>.FilterByEmail(appointmentEntity.EmailProvider);

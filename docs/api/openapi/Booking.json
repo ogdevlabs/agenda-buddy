@@ -1,7 +1,7 @@
 {
   "openapi": "3.0.4",
   "info": {
-    "title": "Booking",
+    "title": "Booking.Api",
     "version": "1.0"
   },
   "paths": {
@@ -23,14 +23,21 @@
         },
         "responses": {
           "400": {
-            "description": "Bad Request"
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppointmentEntityDataResponse"
+                }
+              }
+            }
           },
           "201": {
             "description": "Created",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AppointmentEntity"
+                  "$ref": "#/components/schemas/AppointmentEntityDataResponse"
                 }
               }
             }
@@ -54,14 +61,21 @@
         },
         "responses": {
           "400": {
-            "description": "Bad Request"
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppointmentEntityDataResponse"
+                }
+              }
+            }
           },
           "202": {
             "description": "Accepted",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AppointmentEntity"
+                  "$ref": "#/components/schemas/AppointmentEntityDataResponse"
                 }
               }
             }
@@ -85,7 +99,14 @@
         },
         "responses": {
           "400": {
-            "description": "Bad Request"
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppointmentEntityDataResponse"
+                }
+              }
+            }
           },
           "204": {
             "description": "No Content"
@@ -446,6 +467,26 @@
           },
           "dayOff": {
             "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "AppointmentEntityDataResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/AppointmentEntity"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "success": {
+            "type": "boolean",
+            "readOnly": true
           }
         },
         "additionalProperties": false

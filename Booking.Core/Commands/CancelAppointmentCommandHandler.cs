@@ -1,17 +1,25 @@
 #pragma warning disable CS9113 // Primary constructor parameter unused — kafkaClient reserved for future Kafka publishing
 namespace Booking.Core.Commands;
 
+// F-019-T04. See BookingAppointmentCommandHandler's remarks: constructor takes only DI-resolvable
+// services; the per-request identifier comes from the command, and the handler returns
+// Result<AppointmentEntity> instead of a string-sniffed convention. Booking.Api's route discards the
+// success Value and answers 204 No Content unchanged (AC10) -- a JSON body cannot ride a 204 by HTTP
+// semantics, so Requirement 10's blanket "every route returns DataResponse<T>" is a disclosed,
+// deliberate exception here rather than silently unmet; see validot-spike-findings.md's sibling note
+// style and T11's final verification.
 public class CancelAppointmentCommandHandler(
     IMediator mediator,
-    KafkaClient? kafkaClient,
+    IKafkaClient? kafkaClient,
     ProviderService providerService,
     BookingService bookingService,
-    string appointmentIdentifier,
-    IEventStore eventStore) : IRequestHandler<CancelAppointmentCommand, string>
+    IEventStore eventStore) : IRequestHandler<CancelAppointmentCommand, Result<AppointmentEntity>>
 {
-
-    public async Task<string> Handle(CancelAppointmentCommand request, CancellationToken cancellationToken)
+    public async Task<Result<AppointmentEntity>> Handle(CancelAppointmentCommand request, CancellationToken cancellationToken)
     {
+        GuardClause.ArgumentIsNotNull(request, nameof(request));
+
+        var appointmentIdentifier = request.Identifier;
         await mediator.Publish(new CancelAppointmentEvent { Identifier = appointmentIdentifier },
             cancellationToken);
         var appointmentEntity = await bookingService.SearchAppointmentAsync(appointmentIdentifier);
@@ -27,7 +35,7 @@ public class CancelAppointmentCommandHandler(
                     Data = JsonSerializer.Serialize(appointmentEntity)
                 };
                 await eventStore.SaveAsync(successEvent);
-                return appointmentEntity.ToJson();
+                return Result.Ok(appointmentEntity);
             }
 
         var failEvent = new Event
@@ -43,7 +51,8 @@ public class CancelAppointmentCommandHandler(
             })
         };
         await eventStore.SaveAsync(failEvent);
-        return null!;
+        return Result.Fail<AppointmentEntity>(
+            $"Error when trying to cancel appointment identifier: {appointmentIdentifier}");
     }
 
     private async Task<bool> SearchAndCancelAppointment(string identifier)
