@@ -4,6 +4,8 @@ All notable changes to this project are documented in this file, in [Keep a Chan
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-08-27
+
 ### Changed
 
 - **Booking split into a 4-project Clean Architecture pilot** (`Booking.Api`, `Booking.Core`, `Booking.Domain`, `Booking.Infrastructure`), replacing the single `Booking/` project the other 6 services still use. `Booking.Api` is now thin — endpoint/DI wiring only; command/query handlers moved to `Booking.Core`, dispatched via `IMediator` instead of hand-constructed by the old `RequestCollection`, which is deleted.
@@ -24,4 +26,5 @@ All notable changes to this project are documented in this file, in [Keep a Chan
 - A `null` `EmailProvider` on `POST /appointments` passes both Validot and the ownership guard, then throws downstream during provider lookup, surfacing as an unhandled 500 rather than a 400 — `agenda-buddy-cy2`.
 - Mapster is approved (ADR-049) for this line of work but has zero call sites yet.
 
-[Unreleased]: https://github.com/fererelabs/agenda-buddy/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.7.0...v0.8.0
