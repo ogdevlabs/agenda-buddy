@@ -5,7 +5,7 @@
      Claude reads this file at the start of every session to auto-resume from the last checkpoint.
      If this file is missing or empty, PDLC will prompt you to run /pdlc init. -->
 
-**Last updated:** 2026-08-27T00:00:00Z
+**Last updated:** 2026-08-27T21:40:00Z
 
 ---
 
@@ -18,6 +18,35 @@ Idle
 ## Current Feature
 
 none
+
+_**F-023 `token-revocation` SHIPPED** as `v0.13.0` — merged via PR #79 (REST API, no `gh`), episode 013.
+Ran under this session's standing full-autonomy grant, self-answering Inception gates and logging judgment
+calls. Denylist: a new `revoked_tokens` MongoDB collection, TTL-indexed, checked once per authenticated
+request via `AuthenticationExtensions`' `OnTokenValidated` hook (ADR-054) — chosen over a distributed cache
+since no such infrastructure exists in this project. No `aud` claim introduced (evaluated and rejected,
+same ADR): all seven services share one issuer uniformly, so it would duplicate `ValidateIssuer` with no
+narrowing. Two real regressions caught by CI before merge, not shipped: (1) `EnsureIndexAsync()` was
+originally awaited inline at startup, and MongoDB's ~30s default server-selection timeout stalled every
+service's boot that long whenever Mongo wasn't immediately reachable — enough to tip Profession's own
+pre-existing seed step past the "starts in Development" check's 40s window; fixed to fire-and-forget. (2)
+`AgendaBuddy.Library` initially gained a `ProjectReference` to `Library.ServerAuth` to see
+`ITokenRevocationStore`, and `ServerAuth`'s `Microsoft.AspNetCore.App` `FrameworkReference` has no runtime
+pack for `net10.0-android`/`-ios` — breaking both Mobile CI builds, since `AgendaBuddy.MobileApp` references
+`Library` directly. Fixed by flipping the reference direction (`ServerAuth → Library`, which nothing mobile
+sees) and moving the Mongo-backed implementation into `ServerAuth`. A genuine `ADR-053`/`v0.12.0` numbering
+collision with F-026 (claimed and shipped concurrently on this same machine) was caught at merge, not
+after: F-026 held `ADR-053`/`v0.12.0` first (its PR #80 merged before mine), so this feature's decision was
+renumbered to `ADR-054` and its release to `v0.13.0` — F-026's own episode index also had a stray "#79"
+(actually this feature's PR number), corrected in the same merge. Backend 571/571, integration re-verified
+green post-merge, `dotnet format --verify-no-changes` clean. Atlas credential rotation and cloud deploy
+untouched, per the standing user deferral. Claim released._
+
+_**F-026 `provider-subscription` SHIPPED** as `v0.12.0` — merged via PR #80, episode 012. Wired both sides
+of the customer↔provider subscription (`SubscribedProviderCollection` and the previously-dead
+`ProviderEntity.SubscribedCustomerCollection`, ADR-053); a latent DI-registration gap (`IProviderService`
+never forwarded in `Customer.Api`) was caught by this feature's own integration test before shipping.
+Backend 568/568, integration 325/325. Mobile UI (`agenda-buddy-q9m`) and scoping `GET /api/v1/customers` to
+a provider's own subscribers (`agenda-buddy-tbs`) deliberately not built here._
 
 _**F-025 `booking-correctness` SHIPPED** as `v0.10.0` — merged via a real PR (**#72**, the GitHub REST API
 `PUT .../pulls/72/merge`, `75f5505`), episode 010. First feature shipped through an actual PR since the
@@ -1494,3 +1523,9 @@ re-planning (`/continue`).
 | 2026-08-27T21:16:04Z | roadmap_claim | F-026 claimed. Continuing this session's standing full-autonomy grant (2026-08-26T23:12:00Z) — self-answering routine gates, logging judgment calls here | Discover | provider-subscription |
 | 2026-08-27T21:16:04Z | inception_complete | Discover/Define/Design/Plan run autonomously (no live Q&A). PRD approved: 6 requirements, 3 explicit non-goals. Design decision made at Design, not carried from the feature record: wire both sides of the customer/provider relationship via the pre-existing but unwired ProviderEntity.SubscribedCustomerCollection (ADR-053) -- CustomerListRoleTest's own remarks had already named this "the stronger fix", deferred at a prior threat gate. Threat modeling: Skip (ownership-gated CRUD on an already-authenticated route family, no new attack surface) | Plan | provider-subscription |
 | 2026-08-27T21:16:04Z | construction_complete | 3 new routes (POST/DELETE/GET .../subscriptions/...), ICustomerService/IProviderService extended with 4 targeted FindOneAndUpdateAsync-backed methods, 3 new Domain commands/query, 3 new Core handlers. A real DI-registration gap caught by the new integration test before shipping: Customer.Api never forwarded ProviderService to IProviderService -- fixed in the same PR. Tests: 8 new unit tests (Customer.Tests), 8 new integration tests against a real MongoDB container (ProviderSubscriptionTest.cs, including the DI-resolution proof). Backend suite 568/568 (560+8), integration suite 325/325 (317+8), 0 failures, 0 regressions. dotnet format --verify-no-changes clean. docs/api/openapi/Customer.json regenerated (via OpenApiSpecCatalog directly -- scripts/generate-openapi.sh hit a transient build-cache issue under concurrent forks sharing this machine, worked around without touching the byte-deterministic generation mechanism itself). Mobile UI descoped to agenda-buddy-q9m; scoping GET /api/v1/customers to a provider's own subscribers descoped to agenda-buddy-tbs | Ship | provider-subscription |
+| 2026-08-27T21:16:04Z | roadmap_claim | F-023 claimed. Continuing this session's standing full-autonomy grant — self-answering routine gates, logging judgment calls here | Discover | token-revocation |
+| 2026-08-27T21:16:04Z | inception_complete | Discover/Define/Design/Plan run autonomously. PRD approved: 6 requirements, 3 non-goals. Design decision: MongoDB TTL collection as the cross-service denylist (ADR-054 -- originally drafted as ADR-053, renumbered at merge, see below), no aud claim introduced. Threat modeling ran with real depth given the security surface, not triaged to Skip | Plan | token-revocation |
+| 2026-08-27T21:23:38Z | ci_regression_caught | First PR push (eca2615) failed CI: build-and-test's "Assert every service starts in Development" step failed (Profession timed out) and both Mobile builds failed (NETSDK1082, no runtime pack for net10.0-android/-ios). Root causes: EnsureIndexAsync() awaited inline at startup blocked every service ~30s on Mongo's default server-selection timeout when unreachable; Library gained a ProjectReference to Library.ServerAuth (to see ITokenRevocationStore), whose Microsoft.AspNetCore.App FrameworkReference has no mobile runtime pack, and MobileApp references Library directly. Fixed: fire-and-forget the index-ensure call; flip the reference direction (ServerAuth -> Library, which nothing mobile-targeted sees) and move the Mongo-backed implementation into ServerAuth. Re-verified locally (Booking now starts in 2s, was ~32s) before repushing | Build | token-revocation |
+| 2026-08-27T21:35:00Z | merge_conflict_resolved | PR #79 was behind main by 2 merges (chore/ci-green-before-merge-mandate, feat/F-026-provider-subscription) -- both landed while this feature was in flight on the same machine. Merged origin/main into the feature branch: Customer.Api/Program.cs auto-merged clean; CHANGELOG.md and DECISIONS.md conflicted because F-026 independently claimed the same ADR-053 and v0.12.0 slots this feature had also drafted. F-026's PR (#80) merged to main first, so it keeps ADR-053/v0.12.0; this feature's decision renumbered to ADR-054 and its release to v0.13.0 across the PRD, episode, CHANGELOG, ROADMAP, and DECISIONS.md. Also caught and fixed in passing: F-026's own episode index row cited PR #79 (this feature's number) instead of its actual #80. Backend 571/571, format clean, re-verified post-merge | Ship | token-revocation |
+| 2026-08-27T21:40:00Z | operation_complete | Episode 013 finalized and committed. episodes/index.md, ROADMAP, CHANGELOG, DECISIONS updated. F-023 shipped as v0.13.0 via PR #79, claim released | Reflect | token-revocation |
+| 2026-08-27T21:40:00Z | operation_complete | Idle | — | none |
