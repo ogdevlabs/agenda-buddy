@@ -1,12 +1,12 @@
 ---
 id: F-026
 title: provider-subscription
-status: planned
+status: shipped
 priority: 26
 labels: [roadmap, "priority:26"]
 claimed_by: null
 created: 2026-08-24
-updated: 2026-08-24
+updated: 2026-08-27
 ---
 Filed 2026-08-24, found while reviewing customer onboarding at the user's request, immediately after F-015 shipped. The user's framing — "a customer that after registration can subscribe to one or many providers, not only to one" — turned out to be correcting a documentation artifact, not a code constraint: `CustomerEntity.SubscribedProviderCollection` (Library/Entities/CustomerEntity.cs:33-34) is already a `List<string>?`, so the type has never restricted a customer to one provider.
 

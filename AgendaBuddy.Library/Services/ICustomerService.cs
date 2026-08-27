@@ -16,4 +16,19 @@ public interface ICustomerService
     Task<bool> UpdateCustomerAsync(string id, CustomerEntity customerEntity);
     Task DeleteCustomerAsync(string id);
     Task<CustomerEntity> FindCustomerAsync(BsonDocument filter);
+
+    /// <summary>
+    /// Adds <paramref name="providerEmail"/> to the customer's subscription list via a targeted
+    /// <c>$addToSet</c> (ADR-032's partial-update primitive) — atomic, and naturally idempotent:
+    /// subscribing twice does not duplicate the entry.
+    /// </summary>
+    /// <returns>The customer post-update, or <c>null</c> if <paramref name="customerEmail"/> matches no customer.</returns>
+    Task<CustomerEntity?> SubscribeToProviderAsync(string customerEmail, string providerEmail);
+
+    /// <summary>
+    /// Removes <paramref name="providerEmail"/> from the customer's subscription list via a targeted
+    /// <c>$pull</c>. Unsubscribing from a provider that was never subscribed to is a no-op, not an error.
+    /// </summary>
+    /// <returns>The customer post-update, or <c>null</c> if <paramref name="customerEmail"/> matches no customer.</returns>
+    Task<CustomerEntity?> UnsubscribeFromProviderAsync(string customerEmail, string providerEmail);
 }

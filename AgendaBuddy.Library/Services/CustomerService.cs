@@ -37,4 +37,18 @@ public class CustomerService(IRepository<CustomerEntity> customerRepository) : I
     {
         return await customerRepository.Find(filter);
     }
+
+    public async Task<CustomerEntity?> SubscribeToProviderAsync(string customerEmail, string providerEmail)
+    {
+        var filter = SupportTools<CustomerEntity>.FilterByEmail(customerEmail);
+        var update = new BsonDocument("$addToSet", new BsonDocument("subscribed_provider_collection", providerEmail));
+        return await customerRepository.FindOneAndUpdateAsync(filter, update);
+    }
+
+    public async Task<CustomerEntity?> UnsubscribeFromProviderAsync(string customerEmail, string providerEmail)
+    {
+        var filter = SupportTools<CustomerEntity>.FilterByEmail(customerEmail);
+        var update = new BsonDocument("$pull", new BsonDocument("subscribed_provider_collection", providerEmail));
+        return await customerRepository.FindOneAndUpdateAsync(filter, update);
+    }
 }

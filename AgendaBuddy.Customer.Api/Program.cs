@@ -245,6 +245,73 @@ customers.MapGet("/{email}", async Task<Results<Ok<DataResponse<CustomerEntity>>
     .WithName("GetCustomerByEmail")
     .RequireAuthorization();
 
+// ── provider subscriptions ────────────────────────────────────────────────────────────────────
+//
+// A customer can only manage their own subscriptions -- OwnershipGuard.AssertOwner on {email} the
+// same way UpdateCustomer already does. Subscribe/unsubscribe are idempotent by construction
+// ($addToSet/$pull in CustomerService), so a repeat call is a success, not a conflict.
+
+customers.MapPost("/{email}/subscriptions/{providerEmail}",
+    async Task<Results<ForbidHttpResult, NotFound, Accepted<DataResponse<CustomerEntity>>>> (
+        string email,
+        string providerEmail,
+        ClaimsPrincipal user,
+        IMediator mediator,
+        CancellationToken cancellationToken) =>
+    {
+        OwnershipGuard.AssertOwner(user, email);
+
+        var result = await mediator.Send(
+            new SubscribeToProviderCommand { CustomerEmail = email, ProviderEmail = providerEmail }, cancellationToken);
+
+        if (result.IsSuccess)
+            return TypedResults.Accepted("api/v1/customers", DataResponse<CustomerEntity>.Ok(result.Value));
+
+        return TypedResults.NotFound();
+    })
+    .WithName("SubscribeToProvider")
+    .RequireAuthorization();
+
+customers.MapDelete("/{email}/subscriptions/{providerEmail}",
+    async Task<Results<ForbidHttpResult, NotFound, Accepted<DataResponse<CustomerEntity>>>> (
+        string email,
+        string providerEmail,
+        ClaimsPrincipal user,
+        IMediator mediator,
+        CancellationToken cancellationToken) =>
+    {
+        OwnershipGuard.AssertOwner(user, email);
+
+        var result = await mediator.Send(
+            new UnsubscribeFromProviderCommand { CustomerEmail = email, ProviderEmail = providerEmail }, cancellationToken);
+
+        if (result.IsSuccess)
+            return TypedResults.Accepted("api/v1/customers", DataResponse<CustomerEntity>.Ok(result.Value));
+
+        return TypedResults.NotFound();
+    })
+    .WithName("UnsubscribeFromProvider")
+    .RequireAuthorization();
+
+customers.MapGet("/{email}/subscriptions",
+    async Task<Results<ForbidHttpResult, NotFound, Ok<DataResponse<List<string>>>>> (
+        string email,
+        ClaimsPrincipal user,
+        IMediator mediator,
+        CancellationToken cancellationToken) =>
+    {
+        OwnershipGuard.AssertOwner(user, email);
+
+        var result = await mediator.Send(new GetSubscribedProvidersQuery { CustomerEmail = email }, cancellationToken);
+
+        if (result.IsSuccess)
+            return TypedResults.Ok(DataResponse<List<string>>.Ok(result.Value));
+
+        return TypedResults.NotFound();
+    })
+    .WithName("GetSubscribedProviders")
+    .RequireAuthorization();
+
 // ── messages and notifications ────────────────────────────────────────────────────────────────
 //
 // TWO NEW TOP-LEVEL ROUTE GROUPS in this process, not children of /api/v1/customers — and that is the point

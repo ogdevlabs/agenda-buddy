@@ -1,0 +1,18 @@
+meta {
+  name: 5 Subscribe to provider
+  type: http
+  seq: 5
+}
+post {
+  url: {{gatewayUrl}}/api/v1/customers/{{customerEmail}}/subscriptions/{{providerEmail}}
+  body: none
+}
+docs {
+  Idempotent: subscribing twice is still `202 Accepted` and does not duplicate the entry
+  (`$addToSet`). Writes both sides of the relationship — the customer's
+  `subscribedProviderCollection` and the provider's own `subscribedCustomerCollection` — so a
+  provider's own "my subscribers" view (not yet built) can read the same write.
+
+  `{{customerEmail}}` in the path must match the caller's own `sub` claim — a customer can only
+  manage their own subscriptions (`403` otherwise). `404` if `{{providerEmail}}` matches no provider.
+}
