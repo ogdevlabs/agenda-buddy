@@ -4,9 +4,9 @@
 **Feature name:** Booking Correctness — an appointment can no longer be booked backwards, in the past, or on top of another appointment for the same provider
 **Feature slug:** booking-correctness
 **Feature ID:** F-025
-**Date built:** 2026-08-27, on `feat/F-025-booking-correctness`
+**Date built:** 2026-08-27, on `feat/F-025-booking-correctness` — PR [#72](https://github.com/ogdevlabs/agenda-buddy/pull/72), all 15 CI checks green (mobile jobs correctly skipped, no `AgendaBuddy.MobileApp` path touched)
 **Phase delivered in:** Construction
-**Date shipped:** 2026-08-27
+**Date shipped:** 2026-08-27 — merged via the GitHub REST API `PUT .../pulls/72/merge` (`75f5505`), tagged **`v0.10.0`**, PR #72. First feature shipped through a real PR since the `gh`-failure-bypass pattern (F-017–F-020) was corrected the same day (ADR-050)
 **Status:** Final
 
 ---

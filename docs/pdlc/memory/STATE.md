@@ -5,7 +5,7 @@
      Claude reads this file at the start of every session to auto-resume from the last checkpoint.
      If this file is missing or empty, PDLC will prompt you to run /pdlc init. -->
 
-**Last updated:** 2026-08-27T10:40:00Z
+**Last updated:** 2026-08-27T00:00:00Z
 
 ---
 
@@ -18,6 +18,21 @@ Idle
 ## Current Feature
 
 none
+
+_**F-025 `booking-correctness` SHIPPED** as `v0.10.0` — merged via a real PR (**#72**, the GitHub REST API
+`PUT .../pulls/72/merge`, `75f5505`), episode 010. First feature shipped through an actual PR since the
+`gh`-failure-bypass pattern that skipped PRs on F-017–F-020 was corrected the same day (ADR-050,
+CONSTITUTION §6) — the REST-API path proven working end to end, including a live PR-triggered CI run (15/15
+checks green) before merge, not just after. Ran entirely under the project's full-autonomy grant, reaffirmed
+by the user for this feature specifically ("be fully autonomous"): Inception (Discover→Plan) answered from
+INTENT.md/CONSTITUTION.md/the feature record/direct code read rather than live Q&A, judgment calls logged
+here. Fixed the three named invariants (`Start < End`, future-dating, no overlap for the same provider) via
+Validot + a new `IDateTimeProvider`-based check + `BookingService.FindOverlappingAppointmentsAsync`; the
+overlap check is an accepted, documented race (ADR-051), not an atomic write. `AppointmentStatus.Cancelled`
+soft-delete descoped to `agenda-buddy-m6m` rather than bundled in. Backend 550/550, integration 314/314, 0
+regressions. Cloud deploy not attempted — no cloud-relevant change, and the Atlas credential rotation
+(`agenda-buddy-41s`, P0, human-only) remains outstanding regardless (ADR-035 deferral continues). Claim
+released._
 
 _**F-020 `api-refactor-rollout` SHIPPED** as `v0.9.0` — merged directly to `main` (`7cd4673`; no PR possible,
 `gh` READ-only), episode 009. Operation closed 2026-08-27T10:40:00Z: merged, tagged, cloud deploy skipped
@@ -114,11 +129,8 @@ none
 
 ---
 
-- **Feature ID:** F-020
-- **Feature record:** `docs/pdlc/tasks/F-020/_feature.md`
-- **Claimed by:** oscargarcia@ogdevlabs.onmicrosoft.com
-- **Claimed at:** 2026-08-27T06:20:00Z
-- **Branch:** — (will be set at build pre-flight)
+_None held. Last held F-025 `booking-correctness`, shipped as `v0.10.0` and released — see Current
+Feature below._
 
 _F-019 shipped as `v0.8.0` and its claim was released (`docs/pdlc/tasks/F-019/_feature.md` updated:
 `status: shipped`, `claimed_by: null`). `scripts/tasks.cjs` **does NOT exist** in this repo —
@@ -148,6 +160,22 @@ none
 ---
 
 ## Last Checkpoint
+
+Operation / Complete / 2026-08-27T00:00:00Z — **F-025 SHIPPED as `v0.10.0`.** Ran fully autonomously
+(user: "be fully autonomous"), Inception through Ship, per the standing full-autonomy grant. Three
+invariants fixed at `POST /appointments`: `Start < End` (Validot), future-dating and the overlap check
+(new `IDateTimeProvider`-based check + `BookingService.FindOverlappingAppointmentsAsync` in
+`BookingAppointmentCommandHandler`) — the overlap check is a documented, accepted race (ADR-051), not an
+atomic conditional write or slot-key index; both alternatives evaluated and rejected, not deprioritized.
+`AppointmentStatus.Cancelled`'s soft-delete question descoped to `agenda-buddy-m6m`, not silently dropped.
+Opened PR #72 via the GitHub REST API (never `gh`), waited for all 15 CI checks to go green
+(mobile jobs correctly skipped — no `MobileApp` path touched), then merged via the REST API
+`PUT .../pulls/72/merge` (`75f5505`) — the first feature shipped through a real PR since the `gh`-bypass
+pattern on F-017–F-020 was corrected the same day (ADR-050). Tagged `v0.10.0`. Backend 550/550 (547
+baseline + 3 new), integration 314/314 (310 baseline + 4 new, real MongoDB container), 0 regressions,
+`dotnet format --verify-no-changes` clean. Cloud deploy not attempted (no cloud-relevant change; Atlas
+credential rotation, `agenda-buddy-41s`, remains the standing human-only prerequisite regardless — ADR-035
+deferral continues). Episode 010, ROADMAP/CHANGELOG/episodes-index updated, claim released.
 
 Operation / Complete / 2026-08-27T10:40:00Z — **F-020 SHIPPED as `v0.9.0`.** All 13 tasks (T05-T13 completed
 without incremental STATE.md checkpoints — user directed "full speed"/"full autonomous", so intermediate
@@ -1451,3 +1479,9 @@ re-planning (`/continue`).
 | 2026-08-27T00:00:00Z | roadmap_claim | F-025 claimed. User: "continue with features implementation" → "be fully autonomous" — proceeding under this session's standing full-autonomy grant (2026-08-26T23:12:00Z), self-answering routine gates, logging judgment calls here | Discover | booking-correctness |
 | 2026-08-27T00:00:00Z | inception_complete | Discover/Define/Design/Plan run autonomously (no live Q&A — answered from INTENT.md/CONSTITUTION.md/the feature record/direct code read, per this entry's own note in the brainstorm log). PRD approved: 5 requirements, 2 explicit non-goals (soft-delete Cancelled, atomic-write concurrency). Design: accepted-race overlap check chosen over atomic conditional write / slot-key index (ADR-051) — see docs/pdlc/design/booking-correctness/ARCHITECTURE.md. Threat modeling: Skip (stricter checks only, no new attack surface) | Plan | booking-correctness |
 | 2026-08-27T00:00:00Z | construction_complete | 3 code changes (Validot Start<End rule, IDateTimeProvider future-dating check, BookingService.FindOverlappingAppointmentsAsync overlap check) plus tests at every layer: 2 new Validot unit tests, 2 new BookingService unit tests, 4 new integration tests against a real MongoDB container (BookingCorrectnessTest.cs). Backend suite 550/550 (547+3), integration suite 314/314 (310+4), 0 failures, 0 regressions. dotnet format --verify-no-changes clean. Cancelled/soft-delete descoped to agenda-buddy-m6m (not silently dropped — see ARCHITECTURE.md §4) | Ship | booking-correctness |
+| 2026-08-27T00:00:00Z | pr_opened_rest_api | PR #72 opened via the GitHub REST API with the ogdevlabs git-credential token, never `gh` — per ADR-050/CONSTITUTION §6, corrected the same day after F-017-F-020 skipped PRs entirely on gh failures | Ship | booking-correctness |
+| 2026-08-27T00:00:00Z | ci_verified_before_merge | Waited for PR #72's CI to complete: 15/15 checks green (mobile jobs skipped, no MobileApp path touched). Verified before merging, not after — the first time this project's autonomous ship flow had a real PR to wait on | Ship | booking-correctness |
+| 2026-08-27T00:00:00Z | merged_and_tagged | Merged PR #72 via the GitHub REST API PUT .../pulls/72/merge (75f5505) -- no gh, no local-merge bypass. Tagged v0.10.0 and pushed | Ship | booking-correctness |
+| 2026-08-27T00:00:00Z | deploy_not_attempted | Cloud deploy not attempted -- no cloud-relevant change in this feature, and the Atlas credential rotation (agenda-buddy-41s, P0, human-only) remains the standing prerequisite regardless (ADR-035 deferral continues) | Verify | booking-correctness |
+| 2026-08-27T00:00:00Z | operation_complete | Episode 010 finalized and committed. episodes/index.md, ROADMAP, CHANGELOG updated. F-025 shipped, claim released | Reflect | booking-correctness |
+| 2026-08-27T00:00:00Z | operation_complete | Idle | — | none |
