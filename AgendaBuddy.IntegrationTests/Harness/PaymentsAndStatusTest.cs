@@ -269,7 +269,8 @@ public class PaymentsAndStatusTest(ServiceHostFixture<BookingAnchor> host, Crypt
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
 
-        var payment = await response.Content.ReadFromJsonAsync<PaymentEntity>(HarnessJson.Options);
+        // F-019-T06: DataResponse<T> envelope -- the payment moved from the root to .data.
+        var payment = (await response.Content.ReadFromJsonAsync<DataResponse<PaymentEntity>>(HarnessJson.Options))!.Data;
         Assert.Equal(PaymentStatus.Succeeded, payment!.Status);
 
         // The proof that nothing was charged, and it is in the STORED DATA rather than only in a log: Stripe
@@ -301,7 +302,7 @@ public class PaymentsAndStatusTest(ServiceHostFixture<BookingAnchor> host, Crypt
                 customerEmail = Stranger
             }));
 
-        var payment = await response.Content.ReadFromJsonAsync<PaymentEntity>(HarnessJson.Options);
+        var payment = (await response.Content.ReadFromJsonAsync<DataResponse<PaymentEntity>>(HarnessJson.Options))!.Data;
 
         Assert.Equal(Provider, payment!.ProviderEmail);
         Assert.Equal(Customer, payment.CustomerEmail);

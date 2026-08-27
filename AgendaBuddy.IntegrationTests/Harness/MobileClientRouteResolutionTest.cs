@@ -106,7 +106,8 @@ public class MobileBookingRouteResolutionTest(ServiceHostFixture<BookingAnchor> 
             BookingRouteBuilder.CreateNote(Appointment),
             _tokens.CreateToken(Provider, TokenFactory.ProviderRole),
             BookingRouteBuilder.BuildNotePayload("first draft")));
-        var note = await created.Content.ReadFromJsonAsync<NoteEntity>(HarnessJson.Options);
+        // F-019-T06: DataResponse<T> envelope -- the identifier moved from the root to .data.
+        var note = (await created.Content.ReadFromJsonAsync<DataResponse<NoteEntity>>(HarnessJson.Options))!.Data;
 
         var route = BookingRouteBuilder.UpdateNote(note!.Id.ToString());
         var response = await service.Client.SendAsync(MobileRouteRequests.Build(

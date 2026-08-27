@@ -243,13 +243,13 @@ const string ProviderRole = "Provider";
 // the only way to change it. The transition runs through AppointmentEntity.TransitionTo, so Book() and
 // Complete() — dead code until now — hold the rules.
 booking.MapPost("/appointments/{identifier}/status",
-        async Task<Results<Ok<AppointmentStatusResponse>, ForbidHttpResult, NotFound, Conflict<string>, BadRequest<string>>> (
+        async Task<Results<Ok<DataResponse<AppointmentStatusResponse>>, ForbidHttpResult, NotFound, Conflict<string>, BadRequest<string>>> (
             string identifier,
             ClaimsPrincipal user,
             AppointmentStatusRequest request,
             BookingService bookingService,
-            ProviderService providerService,
-            IEventStore eventStore) =>
+            IMediator mediator,
+            CancellationToken cancellationToken) =>
         {
             // Enum.TryParse also accepts the NUMERIC form, and — less obviously — accepts undefined numbers:
             // TryParse<AppointmentStatus>("99") succeeds with the value 99. Enum.IsDefined is what turns that
@@ -277,20 +277,11 @@ booking.MapPost("/appointments/{identifier}/status",
 
             try
             {
-                // F-019-T05: the fresh Booking.Core/Booking.Domain equivalents now exist alongside this
-                // still-hand-constructed original -- fully qualified here to disambiguate until T06
-                // rewires this route onto mediator.Send and the EventAndCommands original is deleted (T10).
-                var result = await new EventAndCommands.Commands.Booking.ChangeAppointmentStatusCommandHandler(
-                        providerService, bookingService, eventStore)
-                    .Handle(
-                        new EventAndCommands.Commands.Booking.ChangeAppointmentStatusCommand
-                        {
-                            Identifier = identifier,
-                            TargetStatus = target
-                        },
-                        CancellationToken.None);
+                var result = await mediator.Send(
+                    new ChangeAppointmentStatusCommand { Identifier = identifier, TargetStatus = target },
+                    cancellationToken);
 
-                if (result is null) return TypedResults.NotFound();
+                if (result.IsFailed) return TypedResults.NotFound();
             }
             catch (InvalidOperationException ex)
             {
@@ -299,7 +290,8 @@ booking.MapPost("/appointments/{identifier}/status",
                 return TypedResults.Conflict(ex.Message);
             }
 
-            return TypedResults.Ok(new AppointmentStatusResponse(identifier, target.ToString()));
+            return TypedResults.Ok(DataResponse<AppointmentStatusResponse>.Ok(
+                new AppointmentStatusResponse(identifier, target.ToString())));
         })
     .WithName("ChangeAppointmentStatus")
     .RequireAuthorization();
@@ -315,8 +307,9 @@ booking.MapPost("/appointments/{identifier}/status",
 // tell "someone else's note" from "no such note". For a therapist, the existence of a note is itself
 // disclosure.
 booking.MapGet("/appointments/{identifier}/notes",
-        async Task<Results<Ok<IEnumerable<NoteEntity>>, ForbidHttpResult>> (
-            string identifier, ClaimsPrincipal user, BookingService bookingService, INoteService notes) =>
+        async Task<Results<Ok<DataResponse<IEnumerable<NoteEntity>>>, ForbidHttpResult>> (
+            string identifier, ClaimsPrincipal user, BookingService bookingService,
+            IMediator mediator, CancellationToken cancellationToken) =>
         {
             var providerEmail = user.FindFirstValue(ClaimTypes.NameIdentifier);
 
@@ -331,15 +324,18 @@ booking.MapGet("/appointments/{identifier}/notes",
             }
             catch (ForbiddenException) { return TypedResults.Forbid(); }
 
-            return TypedResults.Ok(await notes.GetByAppointmentAsync(providerEmail!, identifier));
+            var result = await mediator.Send(
+                new GetAppointmentNotesQuery { ProviderEmail = providerEmail!, Identifier = identifier },
+                cancellationToken);
+            return TypedResults.Ok(DataResponse<IEnumerable<NoteEntity>>.Ok(result.Value));
         })
     .WithName("GetAppointmentNotes")
     .RequireAuthorization();
 
 booking.MapPost("/appointments/{identifier}/notes",
-        async Task<Results<Created<NoteEntity>, ForbidHttpResult, BadRequest<string>>> (
+        async Task<Results<Created<DataResponse<NoteEntity>>, ForbidHttpResult, BadRequest<string>>> (
             string identifier, ClaimsPrincipal user, NoteRequest request,
-            BookingService bookingService, INoteService notes) =>
+            BookingService bookingService, IMediator mediator, CancellationToken cancellationToken) =>
         {
             if (string.IsNullOrWhiteSpace(request?.Content))
                 return TypedResults.BadRequest("content is required.");
@@ -356,21 +352,24 @@ booking.MapPost("/appointments/{identifier}/notes",
 
             // providerEmail from the token, appointmentIdentifier from the path. A body carrying either is
             // ignored — NoteRequest has no such field, which is the cheapest way to guarantee it.
-            var created = await notes.CreateAsync(new NoteEntity
-            {
-                ProviderEmail = providerEmail!,
-                AppointmentIdentifier = identifier,
-                Content = request.Content
-            });
+            var result = await mediator.Send(
+                new CreateAppointmentNoteCommand
+                {
+                    ProviderEmail = providerEmail!,
+                    Identifier = identifier,
+                    Content = request.Content
+                },
+                cancellationToken);
 
-            return TypedResults.Created($"/api/v1/booking/notes/{created.Id}", created);
+            return TypedResults.Created($"/api/v1/booking/notes/{result.Value.Id}", DataResponse<NoteEntity>.Ok(result.Value));
         })
     .WithName("CreateAppointmentNote")
     .RequireAuthorization();
 
 booking.MapPut("/notes/{id}",
-        async Task<Results<Ok<NoteEntity>, ForbidHttpResult, BadRequest<string>>> (
-            string id, ClaimsPrincipal user, NoteRequest request, INoteService notes) =>
+        async Task<Results<Ok<DataResponse<NoteEntity>>, ForbidHttpResult, BadRequest<string>>> (
+            string id, ClaimsPrincipal user, NoteRequest request,
+            IMediator mediator, CancellationToken cancellationToken) =>
         {
             if (string.IsNullOrWhiteSpace(request?.Content))
                 return TypedResults.BadRequest("content is required.");
@@ -382,7 +381,10 @@ booking.MapPut("/notes/{id}",
                 OwnershipGuard.AssertRole(user, ProviderRole);
                 if (providerEmail is null) throw new ForbiddenException();
 
-                return TypedResults.Ok(await notes.UpdateAsync(id, providerEmail, request.Content));
+                var result = await mediator.Send(
+                    new UpdateAppointmentNoteCommand { Id = id, ProviderEmail = providerEmail, Content = request.Content },
+                    cancellationToken);
+                return TypedResults.Ok(DataResponse<NoteEntity>.Ok(result.Value));
             }
             // Threat T-202: both causes answer the same way, deliberately.
             catch (ForbiddenException) { return TypedResults.Forbid(); }
@@ -394,7 +396,7 @@ booking.MapPut("/notes/{id}",
 
 booking.MapDelete("/notes/{id}",
         async Task<Results<NoContent, ForbidHttpResult>> (
-            string id, ClaimsPrincipal user, INoteService notes) =>
+            string id, ClaimsPrincipal user, IMediator mediator, CancellationToken cancellationToken) =>
         {
             var providerEmail = user.FindFirstValue(ClaimTypes.NameIdentifier);
 
@@ -403,7 +405,10 @@ booking.MapDelete("/notes/{id}",
                 OwnershipGuard.AssertRole(user, ProviderRole);
                 if (providerEmail is null) throw new ForbiddenException();
 
-                await notes.DeleteAsync(id, providerEmail);
+                await mediator.Send(
+                    new DeleteAppointmentNoteCommand { Id = id, ProviderEmail = providerEmail }, cancellationToken);
+                // A 204 cannot carry a body by HTTP semantics -- same disclosed exception to
+                // Requirement 10's blanket claim as Booking.Api's Cancel route (F-019-T04).
                 return TypedResults.NoContent();
             }
             catch (ForbiddenException) { return TypedResults.Forbid(); }
@@ -423,9 +428,9 @@ booking.MapDelete("/notes/{id}",
 // amount corrupts a record; with a real Stripe key it would be a real underpayment. Anyone configuring
 // Payments:Stripe:ApiKey must read threat T-205 first.
 booking.MapPost("/appointments/{identifier}/payment",
-        async Task<Results<Created<PaymentEntity>, ForbidHttpResult, NotFound, Conflict<string>, BadRequest<string>>> (
+        async Task<Results<Created<DataResponse<PaymentEntity>>, ForbidHttpResult, NotFound, Conflict<string>, BadRequest<string>>> (
             string identifier, ClaimsPrincipal user, PaymentRequest request,
-            BookingService bookingService, IPaymentService payments) =>
+            BookingService bookingService, IMediator mediator, CancellationToken cancellationToken) =>
         {
             if (request is null || request.Amount <= 0)
                 return TypedResults.BadRequest("amount must be greater than zero.");
@@ -436,27 +441,36 @@ booking.MapPost("/appointments/{identifier}/payment",
             try { OwnershipGuard.AssertOwnerAny(user, appointment.EmailProvider, appointment.EmailCustomer); }
             catch (ForbiddenException) { return TypedResults.Forbid(); }
 
-            if (await payments.GetByAppointmentAsync(identifier) is not null)
-                return TypedResults.Conflict("This appointment has already been paid.");
-
-            var charged = await payments.ChargeAsync(new PaymentEntity
+            try
             {
-                AppointmentIdentifier = identifier,
-                ProviderEmail = appointment.EmailProvider,
-                CustomerEmail = appointment.EmailCustomer,
-                Amount = request.Amount,
-                Currency = string.IsNullOrWhiteSpace(request.Currency) ? "usd" : request.Currency
-            });
+                var result = await mediator.Send(
+                    new PayForAppointmentCommand
+                    {
+                        Identifier = identifier,
+                        ProviderEmail = appointment.EmailProvider,
+                        CustomerEmail = appointment.EmailCustomer,
+                        Amount = request.Amount,
+                        Currency = string.IsNullOrWhiteSpace(request.Currency) ? "usd" : request.Currency
+                    },
+                    cancellationToken);
 
-            return TypedResults.Created($"/api/v1/booking/appointments/{identifier}/payment", charged);
+                return TypedResults.Created(
+                    $"/api/v1/booking/appointments/{identifier}/payment", DataResponse<PaymentEntity>.Ok(result.Value));
+            }
+            catch (InvalidOperationException ex)
+            {
+                // Threat T-205's Conflict case. 409 rather than 400: the request is well-formed, it
+                // conflicts with the current state (already paid).
+                return TypedResults.Conflict(ex.Message);
+            }
         })
     .WithName("PayForAppointment")
     .RequireAuthorization();
 
 booking.MapGet("/appointments/{identifier}/payment",
-        async Task<Results<Ok<PaymentEntity>, ForbidHttpResult, NotFound>> (
+        async Task<Results<Ok<DataResponse<PaymentEntity>>, ForbidHttpResult, NotFound>> (
             string identifier, ClaimsPrincipal user,
-            BookingService bookingService, IPaymentService payments) =>
+            BookingService bookingService, IMediator mediator, CancellationToken cancellationToken) =>
         {
             var appointment = await bookingService.SearchAppointmentAsync(identifier);
             if (appointment is null) return TypedResults.NotFound();
@@ -465,8 +479,8 @@ booking.MapGet("/appointments/{identifier}/payment",
             catch (ForbiddenException) { return TypedResults.Forbid(); }
 
             // 404 is safe here: the caller has already proven they are a participant in this appointment.
-            var payment = await payments.GetByAppointmentAsync(identifier);
-            return payment is null ? TypedResults.NotFound() : TypedResults.Ok(payment);
+            var result = await mediator.Send(new GetAppointmentPaymentQuery { Identifier = identifier }, cancellationToken);
+            return result.IsFailed ? TypedResults.NotFound() : TypedResults.Ok(DataResponse<PaymentEntity>.Ok(result.Value));
         })
     .WithName("GetAppointmentPayment")
     .RequireAuthorization();
