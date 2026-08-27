@@ -21,7 +21,7 @@ Delivery records, one per shipped feature. Permanent — episodes are never arch
 | 011 | password-reset-flow | 2026-08-27 | [EPISODE_password-reset-flow_2026-08-27.md](EPISODE_password-reset-flow_2026-08-27.md) | #77 | Shipped (`v0.11.0`) |
 | 012 | provider-subscription | 2026-08-27 | [EPISODE_provider-subscription_2026-08-27.md](EPISODE_provider-subscription_2026-08-27.md) | #80 (corrected here — the episode's own file said #79, which is actually F-023's PR) | Shipped (`v0.12.0`) |
 | 013 | token-revocation | 2026-08-27 | [EPISODE_token-revocation_2026-08-27.md](EPISODE_token-revocation_2026-08-27.md) | #79 | Shipped (`v0.13.0`) |
-| 014 | carter-route-modules | 2026-08-27 | [EPISODE_carter-route-modules_2026-08-27.md](EPISODE_carter-route-modules_2026-08-27.md) | #TBD | Shipped (`v0.14.0`) |
+| 014 | carter-route-modules | 2026-08-27 | [EPISODE_carter-route-modules_2026-08-27.md](EPISODE_carter-route-modules_2026-08-27.md) | #83 | Shipped (`v0.14.0`) |
 
 **Naming:** `EPISODE_<feature-slug>_<YYYY-MM-DD>.md`, where the date is when the episode was opened, not
 when the feature shipped — 002 opened 2026-08-18 and its ship gate closed 2026-08-22.

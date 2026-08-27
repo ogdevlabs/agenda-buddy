@@ -6,7 +6,7 @@
 **Feature ID:** F-027
 **Date built:** 2026-08-27, on `feat/F-027-carter-route-modules`
 **Phase delivered in:** Construction
-**Date shipped:** 2026-08-27 — merged via the mandated PR path (ADR-050), PR #TBD, tagged **`v0.14.0`**
+**Date shipped:** 2026-08-27 — merged via the mandated PR path (ADR-050), PR #83, tagged **`v0.14.0`**
 **Status:** Final
 
 ---
