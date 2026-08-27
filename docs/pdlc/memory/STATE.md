@@ -120,7 +120,21 @@ Build
 
 ## Last Checkpoint
 
-Construction / Build / 2026-08-27T02:45:00Z — **F-019-T08 done.** New `Contract/BookingValidotStrictnessTest.cs`
+Construction / Build / 2026-08-27T03:00:00Z — **F-019-T09 done.** New `Contract/BookingErrorLeakageTest.cs`
+reuses `agenda-buddy-cy2`'s exact real fault (null `EmailProvider`, passes Validot + OwnershipGuard, throws
+downstream) as genuine fault injection rather than a mocked exception, per episode 001's "reasoned, not
+observed" discipline. **Real, verified finding folded into the test's own design:** by code review, none of
+Booking.Core's `Result.Fail(...)` call sites ever wrap exception content (all hand-written strings) — so
+this specific fault never actually reaches `DataResponse<T>` at all; `AgendaBuddyExceptionHandler` (F-016)
+only maps `ForbiddenException` centrally, declines everything else, and Production has no Development-only
+fallback registered, so the exception propagates past both and api-contracts.md §3.3 already documents this
+class as "surfaces as 500" by design (ADR-022). The test therefore asserts the WIRE RESPONSE BODY, not a
+specific status code or envelope shape — proving the security property T-102 actually cares about
+(no exception message/stack fragment/type name reaches the caller) regardless of which path a future
+failure takes. AC1 linked. Integration suite: 310/310 (309+1). `dotnet format` clean. **F-019-T11 (final
+verification) is now the only task left before Review** — all of T03-T10 done.
+
+_Previously: Construction / Build / 2026-08-27T02:45:00Z — **F-019-T08 done.** New `Contract/BookingValidotStrictnessTest.cs`
 (2 real HTTP-level tests): malformed email and empty email both still 400 under Validot, matching
 `MiniValidator`'s behavior today. **Scope correction made explicit rather than followed literally:** the
 task description assumed all 10 routes' DTOs migrated to Validot; only `AppointmentEntity` (Book's route)
@@ -1235,4 +1249,5 @@ re-planning (`/continue`).
 | 2026-08-27T02:10:00Z | task_complete | **F-019-T07 done.** Confirmed the T03 ScanRoots fix already covers all 10 of Booking.Core's handlers with zero further edits. Doc comments updated. Guard test 29/29 green | Build | api-refactor-pilot-booking |
 | 2026-08-27T02:25:00Z | task_complete | **F-019-T10 done.** Deleted the superseded ChangeAppointmentStatusCommand/Handler from EventAndCommands (confirmed unreferenced by any real test). BookingRouteContractTest/BookingPersistenceTest/BookingAuditTest pass with zero new assertion changes. 512 backend, 307 integration (expected -1 from the guard test's dropped duplicate), 0 failing | Build | api-refactor-pilot-booking |
 | 2026-08-27T02:45:00Z | task_complete | **F-019-T08 done.** New BookingValidotStrictnessTest (2 real HTTP tests) — malformed/empty email still 400 under Validot. Scope corrected: only AppointmentEntity actually migrated to Validot, not all 10 DTOs as the task assumed. A 3rd planned test found a real, pre-existing, out-of-scope 500 defect (null EmailProvider) — filed agenda-buddy-cy2, not fixed inline. Integration 309/309 | Build | api-refactor-pilot-booking |
+| 2026-08-27T03:00:00Z | task_complete | **F-019-T09 done.** New BookingErrorLeakageTest reuses agenda-buddy-cy2's exact real fault as genuine fault injection. Confirmed by code review that no Result.Fail site ever wraps exception content, and the fault never reaches DataResponse<T> at all (propagates past AgendaBuddyExceptionHandler, no Production fallback, per ADR-022) — test asserts the wire body itself, proving the real security property regardless of path. Integration 310/310. All of T03-T10 done; only T11 (final verification) remains before Review | Build | api-refactor-pilot-booking |
 | 2026-08-27T01:10:00Z | task_complete | **F-019-T05 done.** Authored fresh commands/queries/handlers for all 7 F-014 routes in Booking.Domain/Booking.Core. Real CONSTITUTION §3 finding via EventStoreWriteGuardTest: Notes/Payment operations were never audited (pre-existing gap, invisible while inline in Program.cs) — fixed with eventStore.SaveAsync/QueryAudit calls matching the established convention. Notes/Payment got real Moq-based TDD (real interfaces, unlike T04). Backend 494→512, integration 13/13, guard test 19→29. T06 unblocked | Build | api-refactor-pilot-booking |
