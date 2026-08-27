@@ -11,7 +11,7 @@
 
 ## Current Phase
 
-Construction Complete — Ready for /ship
+Operation
 
 ---
 
@@ -114,13 +114,19 @@ _None active. Run `/night-shift <F-NNN>` to start an autonomous run (requires by
 
 ## Current Sub-phase
 
-none
+Ship
 
 ---
 
 ## Last Checkpoint
 
-Construction / Complete / 2026-08-27T04:50:00Z — **CONSTRUCTION COMPLETE.** All 11 tasks done, Party Review
+Operation / Ship / 2026-08-27T04:55:00Z — Remote sync checked: local `main` matches `origin/main` exactly
+(0/0 divergence), feature branch is 13 commits ahead, zero conflict risk. Pushing branch and opening a PR
+next, per this project's established precedent (F-017/F-018): `gh pr create` works, `gh pr merge` is
+blocked under this Enterprise Managed User `gh` identity, so the actual merge will be local
+`git merge --no-ff` + push once CI is green.
+
+_Previously: Construction / Complete / 2026-08-27T04:50:00Z — **CONSTRUCTION COMPLETE.** All 11 tasks done, Party Review
 self-approved (0 remaining Critical/Blocker), Test's required §7 security gate ran clean (dependency audit:
 only the pre-existing ADR-030 `SSH.NET` HIGH; secret scan: no leaks across 12 commits). Layers 3–6 skipped,
 same as every prior feature (no command exists, none required). Episode 008 drafted at the *correct*
