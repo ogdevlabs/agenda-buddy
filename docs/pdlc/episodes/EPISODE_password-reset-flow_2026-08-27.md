@@ -6,7 +6,7 @@
 **Feature ID:** F-022
 **Date built:** 2026-08-27, on `feat/F-022-password-reset-flow`
 **Phase delivered in:** Construction
-**Date shipped:** 2026-08-27 — merged via the mandated PR path (ADR-050), PR #76, tagged **`v0.11.0`**
+**Date shipped:** 2026-08-27 — merged via the mandated PR path (ADR-050), PR #77, tagged **`v0.11.0`**
 **Status:** Final
 
 ---
