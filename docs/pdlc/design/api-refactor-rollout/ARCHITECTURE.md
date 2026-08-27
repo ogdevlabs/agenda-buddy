@@ -185,6 +185,7 @@ not a silent gap.
 - Confirm what `Customer/Requests/MessageRequest.cs` actually wires to today — a handler file, an inline check, or nothing (dead code)? Needed before Customer's migration task can be sized accurately.
 - Confirm per-service whether any `CacheAside.GetOrCreateAsync` read site exists that must survive the migration untouched (§7) — do not assume "none, like Booking" without checking each service.
 - Size Customer's task list larger than the other four (PRD Known Risks) — both for its route count and for the dormant Kafka downcast fix it alone still needs.
+- **`EventAndCommands/Commands/` and `/Queries/` will be completely empty of handler implementations once this feature ships** — checked directly: today they contain exactly the 5 in-scope services' folders (Calendar, Provider, Profession, Services, Customer) and nothing else (Booking's moved out in F-019; Identity never had any). After F-020, `EventAndCommands` is purely the EventStore/audit kernel (`Persistence/`, `Events/`, `ConfigurationLoader.cs`) with zero command/query implementations left anywhere inside it. CLAUDE.md's current description ("CQRS kernel: all commands, queries, handlers, events, and EventStore persistence") becomes stale the moment this ships — flagged for the Ship-gate CLAUDE.md refresh, same as every prior feature's doc-staleness pass, not silently left wrong.
 
 ## 10. The solution-wide rename (workstream B)
 

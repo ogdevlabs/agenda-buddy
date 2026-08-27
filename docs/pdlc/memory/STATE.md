@@ -5,13 +5,13 @@
      Claude reads this file at the start of every session to auto-resume from the last checkpoint.
      If this file is missing or empty, PDLC will prompt you to run /pdlc init. -->
 
-**Last updated:** 2026-08-27T06:15:00Z
+**Last updated:** 2026-08-27T07:50:00Z
 
 ---
 
 ## Current Phase
 
-Inception
+Inception Complete — Ready for /build
 
 ---
 
@@ -133,13 +133,25 @@ _None active. Run `/night-shift <F-NNN>` to start an autonomous run (requires by
 
 ## Current Sub-phase
 
-Plan
+none
 
 ---
 
 ## Last Checkpoint
 
-Inception / Design / 2026-08-27T07:25:00Z — **Scope roughly doubled mid-Design, by explicit user
+Inception / Plan / 2026-08-27T07:50:00Z — **INCEPTION COMPLETE. 13 tasks created under
+`docs/pdlc/tasks/F-020/`** (T01–T13), in 5 waves: **Wave 1** (no deps, parallel-safe) — T01 Library rename,
+T02 Kafka rename, T04 Gateway rename. **Wave 2** — T03 EventAndCommands rename (needs T01+T02), T05
+Identity rename (needs T01), T06 MobileApp rename (needs T01, flagged highest-risk). **Wave 3** — T07
+Booking retroactive rename, T08 Calendar migration, T09 Profession migration, T10 Services migration, T11
+Provider migration (all need T01+T03, otherwise parallel-safe with each other). **Wave 4** — T12 Customer
+migration (needs T01+T02+T03; sequenced deliberately last per ARCHITECTURE.md §6.4's risk ordering, not
+just its dependency edges — it's the largest service and the one with the still-dormant Kafka downcast
+bug). **Wave 5** — T13 final verification (depends on all 12). Every task references its PRD ACs and
+ARCHITECTURE.md section. `tasks.cjs` doesn't exist in this repo — hand-maintained task files, same fallback
+as every prior feature. Moving to `/build`.
+
+_Previously: Inception / Design / 2026-08-27T07:25:00Z — **Scope roughly doubled mid-Design, by explicit user
 direction, not self-decided.** User: "Add also, to prefix every single project with AgendaBuddy.<Service>
 ... so there is consistency." Asked 2 clarifying questions (genuinely the user's call, not resolvable from
 code): (1) rename scope — user chose **full solution-wide** (all 30 projects) over "just F-020's 5 new
@@ -1404,3 +1416,9 @@ re-planning (`/continue`).
 | 2026-08-27T05:35:00Z | deploy_skipped | Cloud deploy skipped — 8th consecutive, 7th under ADR-035; F-022-F-026 remain. Full live AppHost smoke test run instead (larger production surface than F-018's one-line change justified going beyond CI evidence) | Verify | api-refactor-pilot-booking |
 | 2026-08-27T06:15:00Z | operation_complete | Episode 008 finalized (Status: Final) and committed. episodes/index.md, OVERVIEW, ROADMAP, DEPLOYMENTS, CHANGELOG updated. F-019 shipped, claim released | Reflect | api-refactor-pilot-booking |
 | 2026-08-27T06:15:00Z | operation_complete | Idle | — | none |
+| 2026-08-27T06:20:00Z | roadmap_claim | F-020 claimed. User: "now do F-20" | Discover | api-refactor-rollout |
+| 2026-08-27T06:35:00Z | discover_complete | Real current-state survey (forked agent) found Identity never adopted the CQRS/RequestCollection shape — scope corrected to 5 services, not 6 | Define | api-refactor-rollout |
+| 2026-08-27T06:45:00Z | prd_approved | PRD drafted and self-approved — 16 requirements, 13 ACs, 4 user stories, 5-service scope | Design | api-refactor-rollout |
+| 2026-08-27T07:05:00Z | design_approved | Design docs approved — Lite threat model (T-201-T-204), Skip UX, DataResponse<T> stays per-service | Plan | api-refactor-rollout |
+| 2026-08-27T07:25:00Z | scope_expanded | User direction mid-Design: prefix every project with AgendaBuddy. — full solution-wide, namespaces included (2 clarifying questions asked and answered). PRD/ARCHITECTURE.md revised, re-approved | Plan | api-refactor-rollout |
+| 2026-08-27T07:50:00Z | inception_complete | Inception Complete — 13 tasks, 5 waves, ready for /build | Plan | api-refactor-rollout |
