@@ -88,6 +88,7 @@ See [docs/pdlc/design/api-refactor-rollout/ARCHITECTURE.md](docs/pdlc/design/api
 - MongoDB field names via `[BsonElement("snake_case")]` attributes
 - PascalCase for classes, methods, properties; `_camelCase` for private fields
 - `[Required]`, `[EmailAddress]` data annotations on entity properties at the API boundary
+- Comments stay minimal — no F-XX/T-XX feature/task-ID references. State the invariant or constraint directly; project-history belongs in commit messages, not inline comments. ADR-XXX references are fine to keep
 
 ## Key Files
 

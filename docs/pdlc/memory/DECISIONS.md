@@ -1058,3 +1058,43 @@ package list — rejected because a dependency with zero actual call sites is cl
 surface than to insurance; if a real future need for `IHttpRequestHandler`-shaped dispatch or `ExceptionMiddleware`-shaped
 centralization ever arises, adding the package back then is cheap and the decision would be made against a
 real requirement instead of a residual one.
+
+---
+
+## ADR-050 — `gh` CLI restriction is not license to bypass PR-based merge; REST API + `.gitconfig` identity is mandatory (retroactive, covers F-017–F-020)
+
+**Date:** 2026-08-27 · **Status:** Accepted · **Amends:** CONSTITUTION §6 Protected Branches
+
+**Context.** The `gh` CLI on this machine authenticates as `OscarPaul-GarciaCapetillo_NordTech`, a Nordstrom
+work identity that is READ-only on `ogdevlabs/agenda-buddy` — `gh pr create`, `gh pr merge`, and `gh pr edit`
+all fail with `GraphQL: Unauthorized: As an Enterprise Managed User, you cannot access this content`. Every
+ship episode from F-017 through F-020 hit this failure and responded by merging locally
+(`git merge --no-ff` + `git push origin main`), bypassing `main`'s own "requires PR + human approval" rule
+(CONSTITUTION §6) entirely — four features shipped with **zero PRs**, on the mistaken premise that `gh`
+failing meant PR-based workflow was impossible on this repo.
+
+It is not impossible. On 2026-08-27, PR #70 was opened via a direct GitHub REST API call authenticated with
+the `ogdevlabs` git-credential token (the same one `git push` already uses — no `gh` involved), and merged
+cleanly via the GitHub web UI, producing a real "Merge pull request #70" commit. The `gh` restriction is
+identity-scoped, not repo-scoped: the `ogdevlabs` identity has full collaborator rights, `gh`'s identity does
+not, and nothing about the failure generalizes to "this repo can't do PRs."
+
+**Decision.** PR-based merge to `main` is mandatory, no exceptions for `gh` failures. The required sequence:
+commit and push to a feature/chore branch → open the PR via the REST API with the `ogdevlabs` token → merge
+via the GitHub web UI or the REST `PUT .../pulls/<number>/merge` endpoint with the same token. A local
+`git merge --no-ff` + push-to-main bypass is permitted **only** after both of those are actually attempted
+and fail (not assumed to fail because `gh` did), and only with the human's explicit confirmation — the same
+bar CONSTITUTION §6 already sets for any push to `main`. CONSTITUTION §6 is amended with the full recipe and
+this history so a future ship episode cannot repeat the same mistaken premise.
+
+**Consequences.** F-017's PR #47, F-018's (unopened) merge, F-019's api-refactor-pilot-booking merge, and
+F-020's PR (unopened) all shipped without going through a real PR — recorded here as history, not reverted;
+rewriting merged history is out of scope for this decision. Every future ship works through a real PR unless
+this decision is itself superseded. `gh` remains unused for repo-write operations on this project regardless
+(pre-existing preference, unrelated to this specific restriction).
+
+**Alternatives rejected.** Continuing to treat local-merge-on-`gh`-failure as the standing fallback —
+rejected because it was never actually forced; the REST API path was available the whole time and simply
+untried. Switching the git identity used by `gh` itself (e.g. `gh auth login` as `ogdevlabs`) — not pursued
+here since the REST-API-with-git-credential path already satisfies the requirement without changing any
+tool's stored auth state.
