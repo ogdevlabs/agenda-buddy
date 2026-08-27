@@ -28,7 +28,7 @@ namespace Booking.Core.Commands;
 /// </para>
 /// <para>
 /// F-019-T05: authored fresh in Booking.Core, returning <c>Result&lt;AppointmentEntity&gt;</c> rather than
-/// the string convention its EventAndCommands predecessor used — the predecessor stays in place until T06
+/// the string convention its AgendaBuddy.EventAndCommands predecessor used — the predecessor stays in place until T06
 /// rewires Booking.Api's status route onto this one and T10 deletes it.
 /// </para>
 /// </remarks>

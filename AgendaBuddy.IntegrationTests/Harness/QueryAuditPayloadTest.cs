@@ -1,6 +1,6 @@
 using System.Net;
 using System.Net.Http.Headers;
-using EventAndCommands.Persistence;
+using AgendaBuddy.EventAndCommands.Persistence;
 using AgendaBuddy.Library.Entities;
 using MongoDB.Bson;
 using MongoDB.Driver;

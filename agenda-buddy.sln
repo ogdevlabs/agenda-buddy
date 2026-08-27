@@ -8,7 +8,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AgendaBuddy.Library", "Agen
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "EventDriven", "EventDriven", "{3C051FBD-3D47-46A7-8531-785190666512}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventAndCommands", "EventAndCommands\EventAndCommands.csproj", "{92BECBA5-6094-471A-A1FA-AA42240856A6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AgendaBuddy.EventAndCommands", "AgendaBuddy.EventAndCommands\AgendaBuddy.EventAndCommands.csproj", "{92BECBA5-6094-471A-A1FA-AA42240856A6}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Provider", "Provider", "{7DF01E8B-5DE3-48D3-B013-CD6D2433FECE}"
 EndProject
@@ -24,7 +24,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Services", "Services", "{63
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Services", "Services\Services.csproj", "{FDD40EF1-545F-40AD-A861-760E371242DE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventsAndCommands.Tests", "EventsAndCommands.Tests\EventsAndCommands.Tests.csproj", "{414C7BA8-6B44-41C0-B37B-669D4850F7BE}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AgendaBuddy.EventsAndCommands.Tests", "AgendaBuddy.EventsAndCommands.Tests\AgendaBuddy.EventsAndCommands.Tests.csproj", "{414C7BA8-6B44-41C0-B37B-669D4850F7BE}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Calendar", "Calendar", "{1CDFDF3B-1B2E-4EE1-B4A5-8343189D071A}"
 EndProject

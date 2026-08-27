@@ -10,7 +10,7 @@ global using Booking.Core.Queries;
 global using Booking.Domain.Commands;
 global using Booking.Domain.Queries;
 global using Booking.Requests;
-global using EventAndCommands.Persistence;
+global using AgendaBuddy.EventAndCommands.Persistence;
 global using JetBrains.Annotations;
 global using AgendaBuddy.Kafka;
 global using AgendaBuddy.Library.Entities;

@@ -30,5 +30,5 @@ global using Microsoft.Net.Http.Headers;
 global using MiniValidation;
 global using MongoDB.Driver;
 global using Validot;
-global using EventAndCommands;
-global using EventAndCommands.Persistence;
+global using AgendaBuddy.EventAndCommands;
+global using AgendaBuddy.EventAndCommands.Persistence;

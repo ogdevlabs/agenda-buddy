@@ -34,7 +34,7 @@ jobs:
       library: ${{ steps.filter.outputs.library }}
       # F-017-T06: narrower than `api` on purpose — the image-build matrix is expensive (7 parallel
       # publishes), so it triggers only on the 7 service directories and docker-compose*.yml, not on
-      # every backend-adjacent change `api` also covers (AgendaBuddy.Library, EventAndCommands, test projects).
+      # every backend-adjacent change `api` also covers (AgendaBuddy.Library, AgendaBuddy.EventAndCommands, test projects).
       docker: ${{ steps.filter.outputs.docker }}
       # AND-ed into every build job so a markdown-only change never builds. See the long note on
       # the filters below for why this is a separate filter rather than a `!**/*.md` negation.
@@ -106,14 +106,14 @@ jobs:
             library:
               - 'AgendaBuddy.Library/**'
               - 'AgendaBuddy.Library.ServerAuth/**'
-              - 'EventAndCommands/**'
+              - 'AgendaBuddy.EventAndCommands/**'
               - 'Directory.Build.props'
             api:
               - 'AgendaBuddy.Library/**'
               # AgendaBuddy.Library.ServerAuth was absent from every filter, so a change to JWT validation —
               # the code that decides whether a request is authenticated — ran zero jobs.
               - 'AgendaBuddy.Library.ServerAuth/**'
-              - 'EventAndCommands/**'
+              - 'AgendaBuddy.EventAndCommands/**'
               - 'Booking.Api/**'
               - 'Calendar/**'
               - 'Customer/**'
@@ -135,7 +135,7 @@ jobs:
               - 'Identity.Tests/**'
               - 'AgendaBuddy.Library.Tests/**'
               - 'AgendaBuddy.Kafka.Tests/**'
-              - 'EventsAndCommands.Tests/**'
+              - 'AgendaBuddy.EventsAndCommands.Tests/**'
               - 'AgendaBuddy.AppHost.Tests/**'
               - 'AgendaBuddy.ServiceDefaults.Tests/**'
               # AgendaBuddy.IntegrationTests is the 13th test project and is deliberately OUTSIDE
@@ -158,7 +158,7 @@ jobs:
               # these jobs, so a deployment-pipeline edit no longer rebuilds the entire backend.
               - '.github/workflows/dotnet.yml'
             # F-017-T06: the docker-build-and-scan matrix's own trigger — deliberately NARROWER than
-            # `api` above. `api` also fires on AgendaBuddy.Library/EventAndCommands/AgendaBuddy.Kafka/test-project changes,
+            # `api` above. `api` also fires on AgendaBuddy.Library/AgendaBuddy.EventAndCommands/AgendaBuddy.Kafka/test-project changes,
             # which would run 7 parallel container publishes for a change that touches no service's
             # own container output. Scoped to exactly PRD Requirement 9's list: the 7 service dirs
             # (their .csproj files are inside these globs already), and docker-compose*.yml.
@@ -478,7 +478,7 @@ jobs:
   # container support — it never reads the 7 hand-written Dockerfiles. No Dockerfile is referenced
   # anywhere in this job on purpose (see ARCHITECTURE.md "What exists today and why it's the wrong
   # artifact to secure"). Depends on F-017-T02 landing first — `dotnet publish -t:PublishContainer`
-  # failed with NETSDK1152 for every service until that fix removed EventAndCommands.csproj's
+  # failed with NETSDK1152 for every service until that fix removed AgendaBuddy.EventAndCommands.csproj's
   # colliding appsettings.json copy. No registry push, no `docker run`, no health check — build and
   # scan (Trivy lands in F-017-T07) only.
   docker-build-and-scan:
