@@ -58,9 +58,13 @@ public class TelemetryPiiTest
         {
             var response = await app.GetTestServer().CreateClient().GetAsync(pathAndQuery);
             response.EnsureSuccessStatusCode();
+
+            // Explicit, bounded flush rather than relying on disposal's implicit shutdown timing —
+            // under host CPU contention (many test-project processes running at once) the latter proved
+            // to race the export, dropping the just-recorded span from `exported` intermittently.
+            app.Services.GetRequiredService<TracerProvider>().ForceFlush(10_000);
         }
 
-        // Disposing the app flushes the tracer provider, so every span has reached the exporter.
         return exported;
     }
 
