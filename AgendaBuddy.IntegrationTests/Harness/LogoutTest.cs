@@ -2,7 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using AgendaBuddy.Identity.Services;
 using AgendaBuddy.Library.Entities;
-using MobileApp.Routing;
+using AgendaBuddy.MobileApp.Routing;
 using MongoDB.Bson;
 using MongoDB.Driver;
 
@@ -11,7 +11,7 @@ namespace AgendaBuddy.IntegrationTests.Harness;
 /// <summary>
 /// F-015-T10 AC11 (PRD requirement 10): calling logout invokes the server-side logout endpoint, and the
 /// previously-valid refresh token is rejected on a subsequent refresh attempt — proved end-to-end
-/// against a real, running Identity service. Uses <see cref="MobileApp.Routing.AuthRouteBuilder"/>'s own
+/// against a real, running Identity service. Uses <see cref="AgendaBuddy.MobileApp.Routing.AuthRouteBuilder"/>'s own
 /// <c>Logout()</c>/<c>Refresh()</c> route specs, the same way <see cref="MobileClientRouteResolutionTest"/>
 /// exercises other <c>*RouteBuilder</c> classes, so this proves the client's actual route/verb/body — not
 /// a hand-typed path string that could drift from it.

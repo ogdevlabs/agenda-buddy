@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             x:Class="AgendaBuddy.MobileApp.Views.MessagingPage"
+             Title="Messages"
+             BackgroundColor="#F2F2F7"
+             Shell.NavBarIsVisible="False">
+
+    <ContentPage.Resources>
+        <toolkit:InvertedBoolConverter x:Key="InvertedBoolConverter" />
+        <Color x:Key="iOSBlue">#007AFF</Color>
+        <Color x:Key="iOSGray">#8E8E93</Color>
+        <Color x:Key="iOSGray5">#E5E5EA</Color>
+        <Color x:Key="iOSLabel">#000000</Color>
+    </ContentPage.Resources>
+
+    <Grid RowDefinitions="Auto,Auto,Auto,*">
+
+        <!-- Header -->
+        <Grid Grid.Row="0"
+              BackgroundColor="White"
+              Padding="20,16,20,12">
+            <Label Text="Messages"
+                   FontSize="34"
+                   FontAttributes="Bold"
+                   TextColor="{StaticResource iOSLabel}" />
+        </Grid>
+
+        <!-- Error banner -->
+        <Frame Grid.Row="1"
+               BackgroundColor="#FFF2F2"
+               CornerRadius="10"
+               BorderColor="#FFD6D6"
+               Padding="14,10"
+               HasShadow="False"
+               IsVisible="{Binding HasError}"
+               Margin="16,8">
+            <Grid ColumnDefinitions="*,Auto">
+                <Label Grid.Column="0"
+                       Text="{Binding ErrorMessage}"
+                       TextColor="#FF3B30"
+                       FontSize="14"
+                       VerticalOptions="Center" />
+                <Button Grid.Column="1"
+                        Text="Retry"
+                        Command="{Binding LoadCommand}"
+                        BackgroundColor="Transparent"
+                        TextColor="{StaticResource iOSBlue}"
+                        FontAttributes="Bold"
+                        FontSize="14" />
+            </Grid>
+        </Frame>
+
+        <!-- Loading indicator -->
+        <ActivityIndicator Grid.Row="2"
+                           IsRunning="{Binding IsLoading}"
+                           IsVisible="{Binding IsLoading}"
+                           Color="{StaticResource iOSGray}"
+                           HorizontalOptions="Center"
+                           Margin="0,24" />
+
+        <!-- Empty state -->
+        <VerticalStackLayout Grid.Row="3"
+                             IsVisible="{Binding IsEmpty}"
+                             VerticalOptions="Center"
+                             HorizontalOptions="Center"
+                             Spacing="8"
+                             Padding="40">
+            <Label Text="No Messages"
+                   FontSize="20"
+                   FontAttributes="Bold"
+                   TextColor="{StaticResource iOSLabel}"
+                   HorizontalOptions="Center" />
+            <Label Text="Your conversations will appear here."
+                   FontSize="15"
+                   TextColor="{StaticResource iOSGray}"
+                   HorizontalTextAlignment="Center" />
+        </VerticalStackLayout>
+
+        <!-- Thread list -->
+        <CollectionView Grid.Row="3"
+                        ItemsSource="{Binding Threads}"
+                        IsVisible="{Binding IsLoading, Converter={StaticResource InvertedBoolConverter}}"
+                        SelectionMode="None">
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Grid BackgroundColor="White">
+                        <Grid.GestureRecognizers>
+                            <TapGestureRecognizer
+                                Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.ToggleThreadCommand}"
+                                CommandParameter="{Binding .}" />
+                        </Grid.GestureRecognizers>
+
+                        <VerticalStackLayout Spacing="0">
+                            <!-- Main row -->
+                            <Grid ColumnDefinitions="Auto,*,Auto"
+                                  Padding="16,12,16,12"
+                                  ColumnSpacing="12">
+
+                                <!-- Avatar -->
+                                <Grid Grid.Column="0"
+                                      WidthRequest="48"
+                                      HeightRequest="48"
+                                      VerticalOptions="Start">
+                                    <BoxView CornerRadius="24"
+                                             WidthRequest="48"
+                                             HeightRequest="48"
+                                             Color="#E5E5EA" />
+                                    <Label Text="{Binding Initial}"
+                                           FontSize="20"
+                                           FontAttributes="Bold"
+                                           TextColor="{StaticResource iOSGray}"
+                                           HorizontalOptions="Center"
+                                           VerticalOptions="Center" />
+                                </Grid>
+
+                                <!-- Name + preview -->
+                                <VerticalStackLayout Grid.Column="1"
+                                                     Spacing="3"
+                                                     VerticalOptions="Center">
+                                    <Label Text="{Binding SenderName}"
+                                           FontSize="16"
+                                           FontAttributes="{Binding HasUnread, Converter={toolkit:BoolToObjectConverter TrueObject=Bold, FalseObject=None}}"
+                                           TextColor="{StaticResource iOSLabel}"
+                                           LineBreakMode="TailTruncation" />
+                                    <Label Text="{Binding LastMessageBody}"
+                                           FontSize="14"
+                                           TextColor="{StaticResource iOSGray}"
+                                           LineBreakMode="TailTruncation"
+                                           MaxLines="2" />
+                                </VerticalStackLayout>
+
+                                <!-- Time + badge -->
+                                <VerticalStackLayout Grid.Column="2"
+                                                     Spacing="6"
+                                                     VerticalOptions="Start"
+                                                     HorizontalOptions="End">
+                                    <Label Text="{Binding TimeAgo}"
+                                           FontSize="13"
+                                           TextColor="{StaticResource iOSGray}"
+                                           HorizontalOptions="End" />
+                                    <!-- Unread badge -->
+                                    <Grid IsVisible="{Binding HasUnread}"
+                                          HorizontalOptions="End">
+                                        <BoxView CornerRadius="10"
+                                                 WidthRequest="22"
+                                                 HeightRequest="22"
+                                                 Color="{StaticResource iOSBlue}" />
+                                        <Label Text="{Binding UnreadCount}"
+                                               FontSize="12"
+                                               FontAttributes="Bold"
+                                               TextColor="White"
+                                               HorizontalOptions="Center"
+                                               VerticalOptions="Center" />
+                                    </Grid>
+                                </VerticalStackLayout>
+                            </Grid>
+
+                            <!-- Expanded content -->
+                            <VerticalStackLayout Spacing="8"
+                                                 Margin="76,0,16,12"
+                                                 IsVisible="{Binding IsExpanded}">
+                                <BoxView HeightRequest="0.5" Color="{StaticResource iOSGray5}" />
+                                <Label Text="{Binding LastMessageBody}"
+                                       FontSize="15"
+                                       TextColor="{StaticResource iOSLabel}"
+                                       LineBreakMode="WordWrap"
+                                       Margin="0,4,0,0" />
+                                <Label Text="{Binding OtherPartyEmail}"
+                                       FontSize="13"
+                                       TextColor="{StaticResource iOSGray}" />
+                            </VerticalStackLayout>
+
+                            <!-- Separator -->
+                            <BoxView HeightRequest="0.5"
+                                     Color="{StaticResource iOSGray5}"
+                                     Margin="76,0,0,0" />
+                        </VerticalStackLayout>
+                    </Grid>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+    </Grid>
+
+</ContentPage>

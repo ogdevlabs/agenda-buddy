@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             x:Class="AgendaBuddy.MobileApp.Views.MessageThreadPage"
+             Title="{Binding RecipientEmail}"
+             BackgroundColor="#F1F5F9">
+
+    <ContentPage.Resources>
+        <toolkit:InvertedBoolConverter x:Key="InvertedBoolConverter" />
+    </ContentPage.Resources>
+
+    <Grid RowDefinitions="Auto,*,Auto">
+
+        <!-- Error banner -->
+        <Frame Grid.Row="0"
+               Style="{StaticResource ErrorBannerStyle}"
+               IsVisible="{Binding HasError}"
+               Margin="16,8">
+            <Label Text="{Binding ErrorMessage}"
+                   TextColor="{StaticResource Error}"
+                   FontSize="14" />
+        </Frame>
+
+        <!-- Loading indicator -->
+        <ActivityIndicator Grid.Row="1"
+                           IsRunning="{Binding IsLoading}"
+                           IsVisible="{Binding IsLoading}"
+                           Color="{StaticResource Primary}"
+                           HorizontalOptions="Center"
+                           VerticalOptions="Center" />
+
+        <!-- Messages list (chat bubbles) -->
+        <CollectionView Grid.Row="1"
+                        ItemsSource="{Binding Messages}"
+                        IsVisible="{Binding IsLoading, Converter={StaticResource InvertedBoolConverter}}"
+                        SelectionMode="None"
+                        Margin="16,8">
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <VerticalStackLayout Padding="0,4" Spacing="2">
+
+                        <!-- Message bubble -->
+                        <Frame CornerRadius="18"
+                               Padding="14,10"
+                               HasShadow="False"
+                               BorderColor="Transparent"
+                               BackgroundColor="{StaticResource Primary}"
+                               HorizontalOptions="End"
+                               MaximumWidthRequest="280">
+                            <VerticalStackLayout Spacing="4">
+                                <Label Text="{Binding Body}"
+                                       FontSize="15"
+                                       TextColor="White"
+                                       LineBreakMode="WordWrap" />
+                            </VerticalStackLayout>
+                        </Frame>
+
+                        <!-- Timestamp -->
+                        <Label Text="{Binding SentAt, StringFormat='{0:h:mm tt}'}"
+                               FontSize="10"
+                               TextColor="{StaticResource TextMuted}"
+                               HorizontalOptions="End"
+                               Margin="4,0,4,4" />
+
+                    </VerticalStackLayout>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <!-- Compose bar -->
+        <Frame Grid.Row="2"
+               BackgroundColor="{StaticResource BackgroundCard}"
+               CornerRadius="0"
+               BorderColor="{StaticResource BorderLight}"
+               HasShadow="True"
+               Padding="12,8">
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                <!-- Message input -->
+                <Frame Grid.Column="0"
+                       BackgroundColor="#F1F5F9"
+                       CornerRadius="20"
+                       BorderColor="Transparent"
+                       Padding="16,4"
+                       HasShadow="False">
+                    <Entry Placeholder="Type a message..."
+                           Text="{Binding NewMessageBody}"
+                           ReturnType="Send"
+                           ReturnCommand="{Binding SendCommand}"
+                           Style="{StaticResource InputStyle}"
+                           FontSize="15"
+                           BackgroundColor="Transparent"
+                           AutomationId="MessageEntry" />
+                </Frame>
+
+                <!-- Send button -->
+                <Frame Grid.Column="1"
+                       BackgroundColor="{StaticResource Primary}"
+                       CornerRadius="20"
+                       WidthRequest="40"
+                       HeightRequest="40"
+                       Padding="0"
+                       HasShadow="False"
+                       BorderColor="Transparent"
+                       VerticalOptions="Center">
+                    <Frame.GestureRecognizers>
+                        <TapGestureRecognizer Command="{Binding SendCommand}" />
+                    </Frame.GestureRecognizers>
+                    <Label Text="&#x2191;"
+                           FontSize="20"
+                           FontAttributes="Bold"
+                           TextColor="White"
+                           HorizontalOptions="Center"
+                           VerticalOptions="Center" />
+                </Frame>
+            </Grid>
+        </Frame>
+
+    </Grid>
+
+</ContentPage>

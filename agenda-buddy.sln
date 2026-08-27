@@ -58,9 +58,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AgendaBuddy.Identity.Tests"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Mobile", "Mobile", "{A1B2C3D4-E5F6-4A7B-8C9D-E0F1A2B3C4D5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MobileApp", "MobileApp\MobileApp.csproj", "{D1E2F3A4-B5C6-4D7E-8F9A-B0C1D2E3F4A5}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AgendaBuddy.MobileApp", "AgendaBuddy.MobileApp\AgendaBuddy.MobileApp.csproj", "{D1E2F3A4-B5C6-4D7E-8F9A-B0C1D2E3F4A5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MobileApp.Tests", "MobileApp.Tests\MobileApp.Tests.csproj", "{E1F2A3B4-C5D6-4E7F-8A9B-C0D1E2F3A4B5}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AgendaBuddy.MobileApp.Tests", "AgendaBuddy.MobileApp.Tests\AgendaBuddy.MobileApp.Tests.csproj", "{E1F2A3B4-C5D6-4E7F-8A9B-C0D1E2F3A4B5}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AgendaBuddy.Library.ServerAuth", "AgendaBuddy.Library.ServerAuth\AgendaBuddy.Library.ServerAuth.csproj", "{CE1D100D-1463-46EB-B416-256C4F4A22F2}"
 EndProject

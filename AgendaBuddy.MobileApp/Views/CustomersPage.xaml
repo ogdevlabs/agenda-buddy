@@ -1,0 +1,277 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             x:Class="AgendaBuddy.MobileApp.Views.CustomersPage"
+             Title="{Binding PageTitle}"
+             BackgroundColor="#F2F2F7"
+             Shell.NavBarIsVisible="False">
+
+    <ContentPage.Resources>
+        <toolkit:InvertedBoolConverter x:Key="InvertedBoolConverter" />
+        <Color x:Key="iOSBlue">#007AFF</Color>
+        <Color x:Key="iOSGreen">#34C759</Color>
+        <Color x:Key="iOSOrange">#FF9500</Color>
+        <Color x:Key="iOSPurple">#AF52DE</Color>
+        <Color x:Key="iOSGray">#8E8E93</Color>
+        <Color x:Key="iOSGray5">#E5E5EA</Color>
+        <Color x:Key="iOSLabel">#000000</Color>
+    </ContentPage.Resources>
+
+    <Grid RowDefinitions="Auto,Auto,Auto,Auto,*">
+
+        <!-- Immersive header -->
+        <Grid Grid.Row="0" BackgroundColor="#1C1C1E" Padding="0">
+            <VerticalStackLayout Padding="24,24,24,20" Spacing="6">
+                <Label Text="{Binding PageTitle}"
+                       FontSize="30"
+                       FontAttributes="Bold"
+                       TextColor="White" />
+                <Label Text="{Binding Customers.Count, StringFormat='{0} contacts'}"
+                       FontSize="14"
+                       TextColor="#AEAEB2" />
+            </VerticalStackLayout>
+        </Grid>
+
+        <!-- Search bar -->
+        <Frame Grid.Row="1"
+               BackgroundColor="White"
+               CornerRadius="10"
+               BorderColor="Transparent"
+               Padding="12,8"
+               HasShadow="False"
+               Margin="16,12,16,4">
+            <Grid ColumnDefinitions="Auto,*">
+                <Label Grid.Column="0"
+                       Text="&#x1F50D;"
+                       FontSize="14"
+                       TextColor="{StaticResource iOSGray}"
+                       VerticalOptions="Center"
+                       Margin="0,0,8,0" />
+                <Entry Grid.Column="1"
+                       Text="{Binding SearchText}"
+                       Placeholder="{Binding SearchPlaceholder}"
+                       PlaceholderColor="{StaticResource iOSGray}"
+                       FontSize="15"
+                       TextColor="{StaticResource iOSLabel}"
+                       BackgroundColor="Transparent"
+                       ReturnType="Search" />
+            </Grid>
+        </Frame>
+
+        <!-- Loading indicator -->
+        <ActivityIndicator Grid.Row="2"
+                           IsRunning="{Binding IsLoading}"
+                           IsVisible="{Binding IsLoading}"
+                           Color="{StaticResource iOSGray}"
+                           HorizontalOptions="Center"
+                           Margin="0,16,0,0" />
+
+        <!-- Error banner -->
+        <Frame Grid.Row="3"
+               BackgroundColor="#FFF2F2"
+               CornerRadius="10"
+               BorderColor="#FFD6D6"
+               Padding="14,10"
+               HasShadow="False"
+               IsVisible="{Binding HasError}"
+               Margin="16,8">
+            <Grid ColumnDefinitions="*,Auto">
+                <Label Grid.Column="0"
+                       Text="{Binding ErrorMessage}"
+                       TextColor="#FF3B30"
+                       FontSize="14"
+                       VerticalOptions="Center"
+                       AutomationId="ErrorLabel" />
+                <Button Grid.Column="1"
+                        Text="Retry"
+                        Command="{Binding LoadCommand}"
+                        BackgroundColor="Transparent"
+                        TextColor="{StaticResource iOSBlue}"
+                        FontAttributes="Bold"
+                        FontSize="14"
+                        AutomationId="RetryButton" />
+            </Grid>
+        </Frame>
+
+        <!-- Empty state -->
+        <VerticalStackLayout Grid.Row="4"
+                             IsVisible="{Binding IsEmpty}"
+                             VerticalOptions="Center"
+                             HorizontalOptions="Center"
+                             Spacing="8"
+                             Padding="40">
+            <Label Text="{Binding EmptyTitle}"
+                   FontSize="20"
+                   FontAttributes="Bold"
+                   TextColor="{StaticResource iOSLabel}"
+                   HorizontalOptions="Center" />
+            <Label Text="{Binding EmptySubtitle}"
+                   FontSize="15"
+                   TextColor="{StaticResource iOSGray}"
+                   HorizontalTextAlignment="Center"
+                   AutomationId="EmptyStateLabel" />
+        </VerticalStackLayout>
+
+        <!-- Contact list -->
+        <CollectionView Grid.Row="4"
+                        ItemsSource="{Binding Customers}"
+                        IsVisible="{Binding IsEmpty, Converter={StaticResource InvertedBoolConverter}}"
+                        SelectionMode="None"
+                        Margin="16,8,16,16"
+                        AutomationId="CustomersCollectionView">
+            <CollectionView.ItemsLayout>
+                <LinearItemsLayout Orientation="Vertical" ItemSpacing="8" />
+            </CollectionView.ItemsLayout>
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Frame BackgroundColor="White"
+                           CornerRadius="14"
+                           BorderColor="Transparent"
+                           HasShadow="False"
+                           Padding="0">
+                        <Frame.GestureRecognizers>
+                            <TapGestureRecognizer
+                                Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.ToggleCustomerCommand}"
+                                CommandParameter="{Binding .}" />
+                        </Frame.GestureRecognizers>
+
+                        <VerticalStackLayout Spacing="0">
+
+                            <!-- Main row -->
+                            <Grid ColumnDefinitions="Auto,*,Auto"
+                                  Padding="14,14,14,14"
+                                  ColumnSpacing="12">
+
+                                <!-- Colored avatar -->
+                                <Grid Grid.Column="0"
+                                      WidthRequest="46"
+                                      HeightRequest="46"
+                                      VerticalOptions="Center">
+                                    <BoxView CornerRadius="23"
+                                             WidthRequest="46"
+                                             HeightRequest="46"
+                                             Color="{Binding IsProvider, Converter={toolkit:BoolToObjectConverter TrueObject=#EDE9FE, FalseObject=#DBEAFE}}" />
+                                    <Label Text="{Binding Initial}"
+                                           FontSize="19"
+                                           FontAttributes="Bold"
+                                           TextColor="{Binding IsProvider, Converter={toolkit:BoolToObjectConverter TrueObject={StaticResource iOSPurple}, FalseObject={StaticResource iOSBlue}}}"
+                                           HorizontalOptions="Center"
+                                           VerticalOptions="Center" />
+                                </Grid>
+
+                                <!-- Name + subtitle -->
+                                <VerticalStackLayout Grid.Column="1"
+                                                     Spacing="3"
+                                                     VerticalOptions="Center">
+                                    <Label Text="{Binding FullName}"
+                                           FontSize="16"
+                                           FontAttributes="Bold"
+                                           TextColor="{StaticResource iOSLabel}"
+                                           LineBreakMode="TailTruncation"
+                                           AutomationId="CustomerFullName" />
+                                    <Label Text="{Binding LastSession}"
+                                           FontSize="13"
+                                           TextColor="{StaticResource iOSGray}"
+                                           LineBreakMode="TailTruncation" />
+                                </VerticalStackLayout>
+
+                                <!-- Sessions badge (tappable) -->
+                                <Frame Grid.Column="2"
+                                       CornerRadius="12"
+                                       Padding="10,6"
+                                       HasShadow="False"
+                                       BorderColor="Transparent"
+                                       BackgroundColor="{Binding IsProvider, Converter={toolkit:BoolToObjectConverter TrueObject=#EDE9FE, FalseObject=#DBEAFE}}"
+                                       VerticalOptions="Center">
+                                    <Frame.GestureRecognizers>
+                                        <TapGestureRecognizer
+                                            Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.ShowSessionsCommand}"
+                                            CommandParameter="{Binding .}" />
+                                    </Frame.GestureRecognizers>
+                                    <Label Text="{Binding SessionsLabel}"
+                                           FontSize="12"
+                                           FontAttributes="Bold"
+                                           TextColor="{Binding IsProvider, Converter={toolkit:BoolToObjectConverter TrueObject={StaticResource iOSPurple}, FalseObject={StaticResource iOSBlue}}}" />
+                                </Frame>
+                            </Grid>
+
+                            <!-- Expanded details -->
+                            <VerticalStackLayout Spacing="8"
+                                                 Margin="14,0,14,14"
+                                                 IsVisible="{Binding IsExpanded}">
+                                <BoxView HeightRequest="0.5" Color="{StaticResource iOSGray5}" />
+
+                                <Grid ColumnDefinitions="70,*" ColumnSpacing="0" Margin="0,6,0,0">
+                                    <Label Grid.Column="0" Text="Email"
+                                           FontSize="13" TextColor="{StaticResource iOSGray}" />
+                                    <Label Grid.Column="1" Text="{Binding Email}"
+                                           FontSize="15" TextColor="{StaticResource iOSLabel}"
+                                           AutomationId="CustomerEmail" />
+                                </Grid>
+                                <Grid ColumnDefinitions="70,*" ColumnSpacing="0">
+                                    <Label Grid.Column="0" Text="Phone"
+                                           FontSize="13" TextColor="{StaticResource iOSGray}" />
+                                    <Label Grid.Column="1" Text="{Binding Phone}"
+                                           FontSize="15" TextColor="{StaticResource iOSLabel}" />
+                                </Grid>
+
+                                <!-- Provider-specific fields -->
+                                <Grid ColumnDefinitions="70,*" ColumnSpacing="0"
+                                      IsVisible="{Binding IsProvider}">
+                                    <Label Grid.Column="0" Text="Hours"
+                                           FontSize="13" TextColor="{StaticResource iOSGray}" />
+                                    <Label Grid.Column="1" Text="{Binding Availability}"
+                                           FontSize="15" FontAttributes="Bold"
+                                           TextColor="{StaticResource iOSLabel}" />
+                                </Grid>
+                                <Grid ColumnDefinitions="70,*" ColumnSpacing="0"
+                                      IsVisible="{Binding IsProvider}">
+                                    <Label Grid.Column="0" Text="Services"
+                                           FontSize="13" TextColor="{StaticResource iOSGray}" />
+                                    <Label Grid.Column="1" Text="{Binding LastSession}"
+                                           FontSize="14" TextColor="{StaticResource iOSGray}"
+                                           LineBreakMode="WordWrap" />
+                                </Grid>
+
+                                <!-- Provider actions -->
+                                <HorizontalStackLayout Spacing="8" Margin="0,8,0,0"
+                                                       IsVisible="{Binding IsProvider}">
+                                    <Button Text="Book"
+                                            BackgroundColor="{StaticResource iOSPurple}"
+                                            TextColor="White"
+                                            CornerRadius="10"
+                                            FontSize="14"
+                                            FontAttributes="Bold"
+                                            HeightRequest="38"
+                                            Padding="18,0" />
+                                    <Button Text="View Availability"
+                                            BackgroundColor="#EDE9FE"
+                                            TextColor="{StaticResource iOSPurple}"
+                                            CornerRadius="10"
+                                            FontSize="14"
+                                            FontAttributes="Bold"
+                                            HeightRequest="38"
+                                            Padding="18,0" />
+                                </HorizontalStackLayout>
+
+                                <!-- Customer-specific -->
+                                <Grid ColumnDefinitions="70,*" ColumnSpacing="0"
+                                      IsVisible="{Binding IsProvider, Converter={StaticResource InvertedBoolConverter}}">
+                                    <Label Grid.Column="0" Text="Last"
+                                           FontSize="13" TextColor="{StaticResource iOSGray}" />
+                                    <Label Grid.Column="1" Text="{Binding LastSession}"
+                                           FontSize="15" FontAttributes="Bold"
+                                           TextColor="{StaticResource iOSLabel}" />
+                                </Grid>
+                            </VerticalStackLayout>
+
+                        </VerticalStackLayout>
+                    </Frame>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+    </Grid>
+
+</ContentPage>

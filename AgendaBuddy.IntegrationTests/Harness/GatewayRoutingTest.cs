@@ -80,7 +80,7 @@ public class GatewayRoutingTest
 
     // Found live at F-015-T14: messages/notifications are two new TOP-LEVEL route groups on Customer
     // (ADR-036), not children of /api/v1/customers/**, so no InlineData row above ever matched them —
-    // MobileApp's Messaging/Notifications screens were unreachable through the gateway. Both share the
+    // AgendaBuddy.MobileApp's Messaging/Notifications screens were unreachable through the gateway. Both share the
     // "customer" cluster (RouteTable_HasExactlySevenClusters_NoMoreNoFewer below still holds — this adds
     // routes to an existing cluster, not a new one).
     [Theory]

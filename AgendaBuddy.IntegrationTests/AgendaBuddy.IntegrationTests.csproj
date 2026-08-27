@@ -48,10 +48,10 @@
     <!-- F-015-T01: the eighth process. No MongoDB dependency, so it needs no Testcontainer — see
          Harness/GatewayHostTest.cs. -->
     <ProjectReference Include="..\AgendaBuddy.Gateway\AgendaBuddy.Gateway.csproj" />
-    <!-- F-015-T07 AC2: proves the corrected MobileApp.Routing.*RouteBuilder output actually resolves
+    <!-- F-015-T07 AC2: proves the corrected AgendaBuddy.MobileApp.Routing.*RouteBuilder output actually resolves
          against a live backend, not just that a hand-written path string in this project's own tests
-         does. Resolves against the net10.0 fallback TFM (UseMaui=false), same as MobileApp.Tests. -->
-    <ProjectReference Include="..\MobileApp\MobileApp.csproj" />
+         does. Resolves against the net10.0 fallback TFM (UseMaui=false), same as AgendaBuddy.MobileApp.Tests. -->
+    <ProjectReference Include="..\AgendaBuddy.MobileApp\AgendaBuddy.MobileApp.csproj" />
   </ItemGroup>
 
 </Project>

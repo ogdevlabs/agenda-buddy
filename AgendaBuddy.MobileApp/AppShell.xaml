@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Shell xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+       xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+       xmlns:views="clr-namespace:AgendaBuddy.MobileApp.Views"
+       x:Class="AgendaBuddy.MobileApp.AppShell"
+       Title="Agenda Buddy">
+
+    <ShellContent
+        Route="login"
+        ContentTemplate="{DataTemplate views:LoginPage}"
+        Shell.TabBarIsVisible="False" />
+
+    <ShellContent
+        Route="register"
+        ContentTemplate="{DataTemplate views:RegisterPage}"
+        Shell.TabBarIsVisible="False" />
+
+    <TabBar>
+        <Tab Title="Dashboard" Icon="dashboard_icon.png">
+            <ShellContent
+                Route="dashboard"
+                ContentTemplate="{DataTemplate views:DashboardPage}" />
+        </Tab>
+        <Tab Title="Calendar" Icon="calendar_icon.png">
+            <ShellContent
+                Route="calendar"
+                ContentTemplate="{DataTemplate views:CalendarPage}" />
+        </Tab>
+        <Tab x:Name="ContactsTab" Title="Customers" Icon="customers_icon.png">
+            <ShellContent
+                Route="customers"
+                ContentTemplate="{DataTemplate views:CustomersPage}" />
+        </Tab>
+        <Tab Title="Messages" Icon="messages_icon.png">
+            <ShellContent
+                Route="messages"
+                ContentTemplate="{DataTemplate views:MessagingPage}" />
+        </Tab>
+        <Tab Title="Notifications" Icon="notifications_icon.png">
+            <ShellContent
+                Route="notifications"
+                ContentTemplate="{DataTemplate views:NotificationsPage}" />
+        </Tab>
+    </TabBar>
+
+</Shell>

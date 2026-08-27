@@ -76,7 +76,7 @@ public class GatewayFailureTranslationTest
         Assert.Equal(502, body.GetProperty("status").GetInt32());
         Assert.Contains(expectedFailedService, body.GetProperty("detail").GetString()!);
 
-        // The field MobileApp's error-display logic (PRD AC5) actually reads — this is the whole point of
+        // The field AgendaBuddy.MobileApp's error-display logic (PRD AC5) actually reads — this is the whole point of
         // the transform, so it gets its own assertion rather than folding into the "detail" check above.
         Assert.Equal(expectedFailedService, body.GetProperty("failedService").GetString());
 

@@ -63,14 +63,14 @@ jobs:
           #   1. Markdown inside a code directory built the whole backend. `AgendaBuddy.Kafka/readme.md`
           #      matches `AgendaBuddy.Kafka/**`, so editing it ran the full build + test. `docs/**` and root-level `*.md`
           #      were always fine; markdown nested under a service was not.
-          #   2. `- '!MobileApp.Tests/**'` never excluded anything. `*.Tests/**` matches
-          #      `MobileApp.Tests/**`, so a mobile-test-only change ran the backend job.
+          #   2. `- '!AgendaBuddy.MobileApp.Tests/**'` never excluded anything. `*.Tests/**` matches
+          #      `AgendaBuddy.MobileApp.Tests/**`, so a mobile-test-only change ran the backend job.
           #
           # Fixes, both of which work under OR semantics:
           #   • A separate `code` filter lists code-ish file types positively. Build jobs require
           #     BOTH their area filter AND `code`, so a markdown-only change can never build.
           #   • `*.Tests/**` is replaced with the 12 backend test projects named explicitly, so
-          #     MobileApp.Tests is excluded by not being listed rather than by a no-op negation.
+          #     AgendaBuddy.MobileApp.Tests is excluded by not being listed rather than by a no-op negation.
           filters: |
             # True when at least one genuinely code-relevant file changed. AND-ed into every build
             # job's condition. Excludes markdown by simply not listing it.
@@ -96,7 +96,7 @@ jobs:
               - '**/.dockerignore'
               - '**/*.sh'
               - '**/*.editorconfig'
-              # MobileApp platform + resource files: these are compiled into the Android/iOS heads,
+              # AgendaBuddy.MobileApp platform + resource files: these are compiled into the Android/iOS heads,
               # so a change to a manifest, Info.plist, privacy manifest or app icon is a real build
               # input, not documentation.
               - '**/*.xml'
@@ -124,7 +124,7 @@ jobs:
               - 'AgendaBuddy.Kafka/**'
               - 'AgendaBuddy.AppHost/**'
               - 'AgendaBuddy.ServiceDefaults/**'
-              # The 12 backend test projects, named explicitly. MobileApp.Tests is absent on
+              # The 12 backend test projects, named explicitly. AgendaBuddy.MobileApp.Tests is absent on
               # purpose — it is covered by the mobile-tests job and must not gate the backend.
               - 'Booking.Tests/**'
               - 'Calendar.Tests/**'
@@ -173,17 +173,17 @@ jobs:
               - 'docker-compose*.yml'
             # Android and iOS each install a MAUI workload and take minutes (iOS runs on a macOS
             # runner, billed at 10x Linux). Reserved for changes to the app itself — a shared AgendaBuddy.Library
-            # change is covered by mobile-tests below, which compiles MobileApp against it under the
+            # change is covered by mobile-tests below, which compiles AgendaBuddy.MobileApp against it under the
             # fallback TFM and would catch a break (that is exactly how agenda-buddy-prr's CS0103
             # surfaced). If an AgendaBuddy.Library change ever breaks only the platform heads, add 'AgendaBuddy.Library/**'
             # back here and accept the minutes.
             mobile:
-              - 'MobileApp/**'
+              - 'AgendaBuddy.MobileApp/**'
               - 'Directory.Build.props'
               - '.github/workflows/dotnet.yml'
             mobile-tests:
-              - 'MobileApp/**'
-              - 'MobileApp.Tests/**'
+              - 'AgendaBuddy.MobileApp/**'
+              - 'AgendaBuddy.MobileApp.Tests/**'
               - 'AgendaBuddy.Library/**'
               - 'Directory.Build.props'
               - '.github/workflows/dotnet.yml'
@@ -212,14 +212,14 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nuget-
 
-      # agenda-buddy-backend.slnf is the solution minus MobileApp and MobileApp.Tests. Those are
+      # agenda-buddy-backend.slnf is the solution minus AgendaBuddy.MobileApp and AgendaBuddy.MobileApp.Tests. Those are
       # covered by the three dedicated mobile jobs below (build-android, build-ios, build-mobile-tests),
       # which install the MAUI workloads this job does not need. Keeping mobile out of the backend job
       # means a mobile-only break cannot fail the backend build for an unrelated reason.
       #
-      # Updated 2026-08-18: this comment previously said MobileApp "does not compile under
+      # Updated 2026-08-18: this comment previously said AgendaBuddy.MobileApp "does not compile under
       # /p:MobileWorkloads=false (agenda-buddy-prr)". That defect is fixed and the bead is closed —
-      # MobileApp.Tests passes 67 (7 skipped). The exclusion is by design, not a workaround.
+      # AgendaBuddy.MobileApp.Tests passes 67 (7 skipped). The exclusion is by design, not a workaround.
       - name: Restore dependencies
         run: dotnet restore agenda-buddy-backend.slnf /p:MobileWorkloads=false
 
@@ -249,10 +249,10 @@ jobs:
       - name: Build AppHost
         run: dotnet build AgendaBuddy.AppHost/AgendaBuddy.AppHost.csproj --configuration Release /p:MobileWorkloads=false
 
-      - name: Assert AppHost does not reference MobileApp        # AC-1.5
+      - name: Assert AppHost does not reference AgendaBuddy.MobileApp        # AC-1.5
         run: |
-          if dotnet list AgendaBuddy.AppHost/AgendaBuddy.AppHost.csproj reference | grep -q MobileApp; then
-            echo "::error::AppHost must not reference MobileApp"; exit 1
+          if dotnet list AgendaBuddy.AppHost/AgendaBuddy.AppHost.csproj reference | grep -q AgendaBuddy.MobileApp; then
+            echo "::error::AppHost must not reference AgendaBuddy.MobileApp"; exit 1
           fi
 
       # Guards the captive-dependency class of bug (F-013-T13). DI validation runs only in
@@ -353,7 +353,7 @@ jobs:
     needs: changes
     # Review I1 (Party Review, 2026-08-26): deliberately UNCONDITIONAL, not gated on any path
     # filter. The original api+code gate silently skipped this job on a docs/scripts/AgendaBuddy.Gateway/
-    # MobileApp-only PR — and the credential this feature exists to stop recurring (ISSUE-002)
+    # AgendaBuddy.MobileApp-only PR — and the credential this feature exists to stop recurring (ISSUE-002)
     # leaked partly into files under docs/pdlc/context/, exactly the path class that gate excluded.
     # A secret scanner and a dependency audit are cheap enough to run on every PR unconditionally;
     # "docs-only changes run no build jobs" (the changes job's own stated design goal) is the right
@@ -609,9 +609,9 @@ jobs:
       - name: Pre-pull the MongoDB image
         run: docker pull mongo:7.0
 
-      # /p:MobileWorkloads=false, same fix as the backend job: this project references MobileApp.csproj
-      # (F-015-T07, so MobileClientRouteResolutionTest can call MobileApp.Routing.*RouteBuilder). Without
-      # the flag, MobileApp.csproj's default TargetFrameworks include net10.0-android/net10.0-ios, and
+      # /p:MobileWorkloads=false, same fix as the backend job: this project references AgendaBuddy.MobileApp.csproj
+      # (F-015-T07, so MobileClientRouteResolutionTest can call AgendaBuddy.MobileApp.Routing.*RouteBuilder). Without
+      # the flag, AgendaBuddy.MobileApp.csproj's default TargetFrameworks include net10.0-android/net10.0-ios, and
       # restore fails on this runner with NETSDK1147 (maui-android/maui-ios workloads not installed).
       - name: Restore dependencies
         run: dotnet restore AgendaBuddy.IntegrationTests/AgendaBuddy.IntegrationTests.csproj /p:MobileWorkloads=false
@@ -684,7 +684,7 @@ jobs:
           reporter: dotnet-trx
 
   # ---------------------------------------------------------------------------
-  # Mobile — Android build (runs when MobileApp or shared library changes)
+  # Mobile — Android build (runs when AgendaBuddy.MobileApp or shared library changes)
   # ---------------------------------------------------------------------------
   build-android:
     name: "Mobile — Android Build"
@@ -704,10 +704,10 @@ jobs:
         run: dotnet workload install maui-android
 
       - name: Build Android (Release)
-        run: dotnet build MobileApp/MobileApp.csproj /p:MobilePlatform=android -c Release
+        run: dotnet build AgendaBuddy.MobileApp/AgendaBuddy.MobileApp.csproj /p:MobilePlatform=android -c Release
 
   # ---------------------------------------------------------------------------
-  # Mobile — iOS build (runs when MobileApp or shared library changes)
+  # Mobile — iOS build (runs when AgendaBuddy.MobileApp or shared library changes)
   # ---------------------------------------------------------------------------
   build-ios:
     name: "Mobile — iOS Build"
@@ -727,7 +727,7 @@ jobs:
         run: dotnet workload install maui-ios
 
       - name: Build iOS (Release)
-        run: dotnet build MobileApp/MobileApp.csproj /p:MobilePlatform=ios -c Release
+        run: dotnet build AgendaBuddy.MobileApp/AgendaBuddy.MobileApp.csproj /p:MobilePlatform=ios -c Release
 
   # ---------------------------------------------------------------------------
   # Mobile — ViewModel / Service unit tests
@@ -746,9 +746,9 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
-      - name: Test MobileApp (no mobile workloads)
+      - name: Test AgendaBuddy.MobileApp (no mobile workloads)
         run: >
-          dotnet test MobileApp.Tests/MobileApp.Tests.csproj
+          dotnet test AgendaBuddy.MobileApp.Tests/AgendaBuddy.MobileApp.Tests.csproj
           /p:MobileWorkloads=false
           --filter "Category!=Acceptance"
           --collect:"XPlat Code Coverage"
