@@ -52,6 +52,31 @@ public class AppointmentEntitySpecificationTest
         Assert.False(result.AnyErrors);
     }
 
+    [Fact]
+    public void Validate_EndBeforeStart_AnyErrors()
+    {
+        var appointment = MakeAppointment();
+        appointment.Start = DateTime.UtcNow.AddHours(2);
+        appointment.End = DateTime.UtcNow.AddHours(1);
+
+        var result = Validator.Validate(appointment);
+
+        Assert.True(result.AnyErrors);
+    }
+
+    [Fact]
+    public void Validate_EndEqualsStart_AnyErrors()
+    {
+        var appointment = MakeAppointment();
+        var same = DateTime.UtcNow.AddHours(1);
+        appointment.Start = same;
+        appointment.End = same;
+
+        var result = Validator.Validate(appointment);
+
+        Assert.True(result.AnyErrors);
+    }
+
     private static AppointmentEntity MakeAppointment(
         string provider = "provider@example.com",
         string customer = "customer@example.com") =>

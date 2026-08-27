@@ -76,6 +76,8 @@ public static class ServiceCollectionExtension
         // StripePaymentGateway assigns the process-global StripeConfiguration.ApiKey once at construction.
         serviceCollection.AddSingleton<IPaymentGateway>(_ => PaymentGatewayFactory.Create(configuration));
 
+        serviceCollection.AddSingleton<IDateTimeProvider, SystemDateTimeProvider>();
+
         return serviceCollection;
     }
 }

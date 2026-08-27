@@ -16,7 +16,8 @@ public class BookingAppointmentCommandHandler(
     IMediator mediator,
     ProviderService providerService,
     BookingService bookingService,
-    IEventStore eventStore)
+    IEventStore eventStore,
+    IDateTimeProvider dateTimeProvider)
     : IRequestHandler<BookAppointmentCommand, Result<AppointmentEntity>>
 {
     public async Task<Result<AppointmentEntity>> Handle(BookAppointmentCommand request, CancellationToken cancellationToken)
@@ -24,6 +25,16 @@ public class BookingAppointmentCommandHandler(
         GuardClause.ArgumentIsNotNull(request, nameof(request));
 
         var appointmentEntity = request.AppointmentEntity;
+
+        if (appointmentEntity.Start <= dateTimeProvider.UtcNow)
+            return Result.Fail<AppointmentEntity>("Appointments must be booked for a future time.");
+
+        var overlapping = await bookingService.FindOverlappingAppointmentsAsync(
+            appointmentEntity.EmailProvider, appointmentEntity.Start, appointmentEntity.End);
+        if (overlapping.Any())
+            return Result.Fail<AppointmentEntity>(
+                $"This time overlaps with an existing appointment for {appointmentEntity.EmailProvider}.");
+
         await mediator.Publish(new BookAppointmentEvent { AppointmentEntity = appointmentEntity }, cancellationToken);
 
         if (await SearchAndUpdateProviderAppointments(appointmentEntity))

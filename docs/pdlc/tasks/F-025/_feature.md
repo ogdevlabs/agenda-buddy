@@ -1,12 +1,12 @@
 ---
 id: F-025
 title: booking-correctness
-status: planned
+status: shipped
 priority: 25
 labels: [roadmap, "priority:25"]
-claimed_by: null
+claimed_by: oscargarcia@ogdevlabs.onmicrosoft.com
 created: 2026-08-23
-updated: 2026-08-23
+updated: 2026-08-27
 ---
 Split out of F-014 at Discover 2026-08-23. BookingService.BookAppointmentAsync is a bare InsertAsync: no Start<End check, no future-dating check, and no overlap check against the provider's existing appointments. AppointmentEntity carries no validation attribute on Start or End. So an appointment can be booked backwards (End before Start), in the past, and on top of another appointment for the same provider.
 
@@ -22,3 +22,9 @@ No technical dependency on F-014, though both touch BookAppointmentCommandHandle
 Also in scope, found at the same Discover: AppointmentStatus.Cancelled exists in the enum and is never assigned, because cancellation hard-deletes from both the appointments collection and the provider's embedded copy. Whether cancellation should be a soft delete is a product question that belongs with the booking rules rather than with F-024's erasure work.
 
 Tracker: agenda-buddy-ohw. Source: docs/pdlc/brainstorm/brainstorm_wire-unreached-services_2026-08-23.md §3.
+
+**Shipped 2026-08-27.** Went with option 3 (accepted, documented race) — see
+docs/pdlc/design/booking-correctness/ARCHITECTURE.md §3 for why the other two candidates were rejected.
+The Cancelled/soft-delete half was descoped to its own record at Design (agenda-buddy-m6m) rather than
+bundled in — different shape of work, same reasoning this feature's own split from F-014 used. PRD:
+docs/pdlc/prds/PRD_F-025_booking-correctness_2026-08-27.md.

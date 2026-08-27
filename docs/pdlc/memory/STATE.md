@@ -1213,9 +1213,9 @@ re-planning (`/continue`).
 
 ```json
 {
-  "triggered_at": "2026-08-27T10:41:13.785Z",
+  "triggered_at": "2026-08-27T10:41:24.232Z",
   "session_id": "6fa2c9f8-60c4-489a-82d1-f3cab5161e95",
-  "tool_count": 2174,
+  "tool_count": 2175,
   "estimated_usage": "88%",
   "active_task": null,
   "sub_phase": null,
@@ -1448,3 +1448,6 @@ re-planning (`/continue`).
 | 2026-08-27T10:40:00Z | deploy_skipped | Cloud deploy skipped — 9th consecutive, 8th under ADR-035; F-022-F-026 remain. Full live AppHost smoke test run instead | Verify | api-refactor-rollout |
 | 2026-08-27T10:40:00Z | operation_complete | Episode 009 finalized and committed. episodes/index.md, OVERVIEW, ROADMAP, DEPLOYMENTS, CHANGELOG updated. F-020 shipped, claim released. The API refactor program (F-018-F-019-F-020) is complete | Reflect | api-refactor-rollout |
 | 2026-08-27T10:40:00Z | operation_complete | Idle | — | none |
+| 2026-08-27T00:00:00Z | roadmap_claim | F-025 claimed. User: "continue with features implementation" → "be fully autonomous" — proceeding under this session's standing full-autonomy grant (2026-08-26T23:12:00Z), self-answering routine gates, logging judgment calls here | Discover | booking-correctness |
+| 2026-08-27T00:00:00Z | inception_complete | Discover/Define/Design/Plan run autonomously (no live Q&A — answered from INTENT.md/CONSTITUTION.md/the feature record/direct code read, per this entry's own note in the brainstorm log). PRD approved: 5 requirements, 2 explicit non-goals (soft-delete Cancelled, atomic-write concurrency). Design: accepted-race overlap check chosen over atomic conditional write / slot-key index (ADR-051) — see docs/pdlc/design/booking-correctness/ARCHITECTURE.md. Threat modeling: Skip (stricter checks only, no new attack surface) | Plan | booking-correctness |
+| 2026-08-27T00:00:00Z | construction_complete | 3 code changes (Validot Start<End rule, IDateTimeProvider future-dating check, BookingService.FindOverlappingAppointmentsAsync overlap check) plus tests at every layer: 2 new Validot unit tests, 2 new BookingService unit tests, 4 new integration tests against a real MongoDB container (BookingCorrectnessTest.cs). Backend suite 550/550 (547+3), integration suite 314/314 (310+4), 0 failures, 0 regressions. dotnet format --verify-no-changes clean. Cancelled/soft-delete descoped to agenda-buddy-m6m (not silently dropped — see ARCHITECTURE.md §4) | Ship | booking-correctness |

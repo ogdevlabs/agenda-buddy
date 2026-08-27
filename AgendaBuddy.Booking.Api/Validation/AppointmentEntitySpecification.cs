@@ -18,5 +18,7 @@ public static class AppointmentEntitySpecification
     public static readonly Specification<AppointmentEntity> Spec = s => s
         .Member(m => m.EmailProvider, m => m.Optional().Email(EmailValidationMode.DataAnnotationsCompatible))
         .And()
-        .Member(m => m.EmailCustomer, m => m.Optional().Email(EmailValidationMode.DataAnnotationsCompatible));
+        .Member(m => m.EmailCustomer, m => m.Optional().Email(EmailValidationMode.DataAnnotationsCompatible))
+        .And()
+        .Rule(m => m.Start < m.End).WithMessage("Start must be earlier than End.");
 }
