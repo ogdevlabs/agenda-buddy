@@ -21,10 +21,14 @@ namespace AgendaBuddy.IntegrationTests.Audit;
 /// <para>
 /// <b>Convention, not a maintained list.</b> Every <c>*CommandHandler.cs</c>/<c>*QueryHandler.cs</c> under
 /// <see cref="ScanRoots"/> (<c>EventAndCommands/</c>, and — as of F-019-T03 — <c>Booking.Core/</c>, the
-/// first handler location outside <c>EventAndCommands</c>) is discovered by directory walk, so a new
-/// handler is covered automatically — no edit here is needed when F-019/F-020 (or anything else) adds one
-/// under an already-listed root. A new root (e.g. another service's own Core project) still needs adding
-/// to <see cref="ScanRoots"/> — F-019-T07 generalizes this once every service's handlers have moved. Only
+/// first handler location outside <c>EventAndCommands</c>) is discovered by directory walk
+/// (<c>SearchOption.AllDirectories</c>), so a new handler is covered automatically — no edit here is
+/// needed when a task adds one under an already-listed root. **F-019-T07 confirmed this directly**: all
+/// 10 of Booking.Core's handlers (T03's 3 moved originals, T04's rename, T05's 6 freshly-authored F-014
+/// handlers, none from T06 — it only rewires routes, adds no handler files) are found with zero further
+/// edits here, because the recursive walk needs no per-handler awareness. A genuinely new root (e.g.
+/// F-020 moving another service's handlers into its own Core project) still needs adding to
+/// <see cref="ScanRoots"/> when that happens — out of scope for F-019, which only touches Booking. Only
 /// <see cref="ExcludedHandlerFiles"/> is a maintained list, and it holds exactly one documented exception.
 /// </para>
 /// <para>
@@ -69,8 +73,10 @@ public class EventStoreWriteGuardTest
 
     // F-019-T03. Booking.Core is the first handler location outside EventAndCommands — its 3
     // moved handlers (Book/Update/Cancel) would otherwise silently drop out of this guard's
-    // coverage. A minimal second scan root, not the general multi-project convention F-019-T07
-    // is scoped to build once every service's handlers have moved.
+    // coverage. F-019-T07 confirmed this single root already covers every handler T04/T05 added
+    // afterward (10 total in Booking.Core as of F-019) with no further edits -- the recursive
+    // directory walk needs no per-handler awareness. A new root is only needed if another
+    // service's handlers move to their own Core project (F-020, out of scope here).
     private static readonly string[] ScanRoots = ["EventAndCommands", "Booking.Core"];
 
     private static List<string> HandlerFiles()

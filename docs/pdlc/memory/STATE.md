@@ -120,7 +120,15 @@ Build
 
 ## Last Checkpoint
 
-Construction / Build / 2026-08-27T02:00:00Z — **F-019-T06 done.** Rewired all 7 F-014 routes onto T05's
+Construction / Build / 2026-08-27T02:10:00Z — **F-019-T07 done.** Confirmed rather than assumed: the
+`ScanRoots` fix already applied at T03 needed zero further edits — all 10 of Booking.Core's handlers (T03's
+3 + T04's rename + T05's 6 fresh F-014 handlers) are found automatically by the existing recursive walk.
+Updated the class's doc comments to record this confirmation explicitly rather than leaving T07 looking
+unaddressed. Guard test still 29/29 green, `dotnet format` clean. New wave (T07/T08/T09/T10 all unblocked
+simultaneously) — proceeding solo/sequentially without a formal standup (no parallel-agent conflict risk).
+T10 next.
+
+_Previously: Construction / Build / 2026-08-27T02:00:00Z — **F-019-T06 done.** Rewired all 7 F-014 routes onto T05's
 handlers via `mediator.Send` + real `CancellationToken`; only success branches gained `DataResponse<T>`
 wrapping, per `api-contracts.md` §3.3-3.5 — every `ForbidHttpResult`/`NotFound`/`Conflict<string>`/
 `BadRequest<string>` failure branch stays byte-identical, as the task explicitly required. Removed the last
@@ -1199,4 +1207,5 @@ re-planning (`/continue`).
 | 2026-08-26T23:35:00Z | task_complete | **F-019-T03 done.** Scaffolded Booking.Domain/Core/Infrastructure; moved+renamed the 3 original commands/handlers; caught and fixed a roundtable context gap (3 stub tests in `EventsAndCommands.Tests` referencing the moved types, moved to `Booking.Tests/Commands/`); `EventStoreWriteGuardTest` regression verified red (18<20) then fixed green with a second scan root. 13/13 Booking-scoped integration tests pass unmodified. Backend 497→500, 0 failing. T04 unblocked | Build | api-refactor-pilot-booking |
 | 2026-08-27T00:20:00Z | task_complete | **F-019-T04 done (solo, full autonomy).** Renamed Booking→Booking.Api project-wide (folder/csproj/sln/AppHost's Projects.Booking_Api); rewired the 3 original routes to real mediator.Send + DataResponse<T>; deleted RequestCollection/IRequestCollection and the now-dead EventsHelper+its test. Real findings: handlers' per-request ctor params blocked real DI dispatch (fixed by moving them onto the command); AddMediatR wasn't scanning Booking.Core's assembly (silent runtime gap); KafkaClient? should have been IKafkaClient? all along (the actual fix for agenda-buddy-5og); .NET SDK container naming replaces `.` with `-`, not just lowercasing (verified live, fixed CI's image-name step before it broke). Integration suite caught 1 real regression (BookingPersistenceTest's response parsing) and 1 real drift (OpenAPI title) — both fixed. 301/301 integration, 494 backend, 0 failing. T05 unblocked | Build | api-refactor-pilot-booking |
 | 2026-08-27T02:00:00Z | task_complete | **F-019-T06 done.** Rewired all 7 F-014 routes onto mediator.Send; only success branches wrapped in DataResponse<T>, failure branches byte-identical. AC2/AC7 now fully clean feature-wide. Caught own process gap: prior "integration tests pass" checks used a narrow `~Booking` filter that never matched SessionNotesTest/PaymentsAndStatusTest/MobileClientRouteResolutionTest — full-suite run surfaced 1 real regression (3 files parsing create-response identifiers from the JSON root, now under .data) and 1 expected OpenAPI drift, both fixed. Full suite run to completion for the first time this feature: 308/308. Backend 512, 0 failing. T07/T08/T09 unblocked | Build | api-refactor-pilot-booking |
+| 2026-08-27T02:10:00Z | task_complete | **F-019-T07 done.** Confirmed the T03 ScanRoots fix already covers all 10 of Booking.Core's handlers with zero further edits. Doc comments updated. Guard test 29/29 green | Build | api-refactor-pilot-booking |
 | 2026-08-27T01:10:00Z | task_complete | **F-019-T05 done.** Authored fresh commands/queries/handlers for all 7 F-014 routes in Booking.Domain/Booking.Core. Real CONSTITUTION §3 finding via EventStoreWriteGuardTest: Notes/Payment operations were never audited (pre-existing gap, invisible while inline in Program.cs) — fixed with eventStore.SaveAsync/QueryAudit calls matching the established convention. Notes/Payment got real Moq-based TDD (real interfaces, unlike T04). Backend 494→512, integration 13/13, guard test 19→29. T06 unblocked | Build | api-refactor-pilot-booking |
