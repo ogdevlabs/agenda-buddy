@@ -4,7 +4,7 @@ title: booking-correctness
 status: shipped
 priority: 25
 labels: [roadmap, "priority:25"]
-claimed_by: oscargarcia@ogdevlabs.onmicrosoft.com
+claimed_by: null
 created: 2026-08-23
 updated: 2026-08-27
 ---

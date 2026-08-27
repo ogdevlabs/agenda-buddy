@@ -4,6 +4,8 @@ All notable changes to this project are documented in this file, in [Keep a Chan
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-08-27
+
 ### Fixed
 
 - **F-025 booking-correctness**: `POST /api/v1/booking/appointments` accepted appointments booked
