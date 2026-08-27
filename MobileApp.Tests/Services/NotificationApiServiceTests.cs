@@ -1,6 +1,6 @@
 using System.Net;
 using System.Text;
-using Library.Entities;
+using AgendaBuddy.Library.Entities;
 using MobileApp.Models;
 using MobileApp.Services;
 using Moq;

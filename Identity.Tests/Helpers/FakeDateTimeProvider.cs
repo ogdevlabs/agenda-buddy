@@ -1,4 +1,4 @@
-using Library.Tools;
+using AgendaBuddy.Library.Tools;
 
 namespace Identity.Tests.Helpers;
 

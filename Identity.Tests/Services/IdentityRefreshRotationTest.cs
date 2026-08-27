@@ -167,6 +167,6 @@ public class IdentityRefreshRotationTest : IDisposable
         Assert.NotNull((await Stored()).LockUntil);
     }
 
-    private async Task<Library.Entities.CredentialEntity> Stored() =>
+    private async Task<AgendaBuddy.Library.Entities.CredentialEntity> Stored() =>
         Assert.Single(await _repo.GetAllAsync());
 }

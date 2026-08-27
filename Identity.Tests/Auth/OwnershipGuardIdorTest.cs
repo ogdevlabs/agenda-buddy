@@ -1,5 +1,5 @@
 using System.Security.Claims;
-using Library.Tools;
+using AgendaBuddy.Library.Tools;
 using Xunit;
 
 namespace Identity.Tests.Auth;

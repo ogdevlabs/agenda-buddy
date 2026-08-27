@@ -1,7 +1,7 @@
 using System.Text;
 using System.Text.Json;
-using Library.Entities;
-using Library.Tools;
+using AgendaBuddy.Library.Entities;
+using AgendaBuddy.Library.Tools;
 using MobileApp.Infrastructure;
 using MobileApp.Models;
 using MobileApp.Routing;
@@ -16,7 +16,7 @@ public class BookingApiService : IBookingApiService
     private static readonly JsonSerializerOptions JsonOptions =
         new() { PropertyNameCaseInsensitive = true };
 
-    // Booking registers Library.Tools.ObjectIdJsonConverter server-side (F-014), so NoteEntity/PaymentEntity
+    // Booking registers AgendaBuddy.Library.Tools.ObjectIdJsonConverter server-side (F-014), so NoteEntity/PaymentEntity
     // ids always arrive as plain hex strings here — safe to bind straight into ObjectId, unlike Calendar's
     // AppointmentEntity (see CalendarApiService.ParseAppointments).
     private static readonly JsonSerializerOptions EntityJsonOptions = new()

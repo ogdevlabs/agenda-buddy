@@ -1,5 +1,5 @@
 #if MOBILE
-using Library.Entities;
+using AgendaBuddy.Library.Entities;
 using MobileApp.Infrastructure;
 using MobileApp.Models;
 using MobileApp.ViewModels;

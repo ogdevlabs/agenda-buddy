@@ -1,7 +1,7 @@
 using System.Net;
 using System.Text.Json;
 using AgendaBuddy.IntegrationTests.Harness;
-using Library.Data;
+using AgendaBuddy.Library.Data;
 
 namespace AgendaBuddy.IntegrationTests.Persistence;
 

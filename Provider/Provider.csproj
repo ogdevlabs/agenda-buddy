@@ -25,8 +25,8 @@
 
     <ItemGroup>
         <ProjectReference Include="..\EventAndCommands\EventAndCommands.csproj" />
-        <ProjectReference Include="..\Library\Library.csproj" />
-        <ProjectReference Include="..\Library.ServerAuth\Library.ServerAuth.csproj" />
+        <ProjectReference Include="..\AgendaBuddy.Library\AgendaBuddy.Library.csproj" />
+        <ProjectReference Include="..\AgendaBuddy.Library.ServerAuth\AgendaBuddy.Library.ServerAuth.csproj" />
         <ProjectReference Include="..\AgendaBuddy.ServiceDefaults\AgendaBuddy.ServiceDefaults.csproj" />
     </ItemGroup>
 

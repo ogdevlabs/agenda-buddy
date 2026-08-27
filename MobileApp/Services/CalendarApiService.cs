@@ -1,5 +1,5 @@
 using System.Text.Json;
-using Library.Entities;
+using AgendaBuddy.Library.Entities;
 using MobileApp.Models;
 using MobileApp.Routing;
 

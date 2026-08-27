@@ -2,5 +2,5 @@
 
 global using System.Diagnostics.CodeAnalysis;
 global using FluentResults;
-global using Library.Entities;
+global using AgendaBuddy.Library.Entities;
 global using MediatR;

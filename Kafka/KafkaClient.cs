@@ -28,8 +28,8 @@ public class KafkaClient(IConfiguration? configuration = null) : IKafkaClient
     /// appsettings key, then the local default.
     /// </summary>
     /// <remarks>
-    /// Deliberately not sharing <c>Library.Configuration.MongoConnectionResolver</c>: coupling
-    /// this project to <c>Library</c> for a two-key lookup would cost more than it saves.
+    /// Deliberately not sharing <c>AgendaBuddy.Library.Configuration.MongoConnectionResolver</c>: coupling
+    /// this project to <c>AgendaBuddy.Library</c> for a two-key lookup would cost more than it saves.
     /// </remarks>
     private static string Resolve(IConfiguration? configuration)
     {

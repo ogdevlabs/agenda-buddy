@@ -1,5 +1,5 @@
 using System.Security.Claims;
-using Library.Tools;
+using AgendaBuddy.Library.Tools;
 using Microsoft.Extensions.Caching.Distributed;
 
 var builder = WebApplication.CreateBuilder(args);

@@ -1,5 +1,5 @@
 using System.Text.Json;
-using Library.Tools;
+using AgendaBuddy.Library.Tools;
 
 namespace AgendaBuddy.IntegrationTests.Harness;
 

@@ -9,7 +9,7 @@
         <MobileWorkloads Condition="'$(MobileWorkloads)' == ''">true</MobileWorkloads>
         <!--
             MobilePlatform: set to 'android' or 'ios' from CI to restrict the build to one platform
-            without cascading a TargetFrameworks override to project references (Library.csproj).
+            without cascading a TargetFrameworks override to project references (AgendaBuddy.Library.csproj).
             When workloads are present and no platform is pinned: build android + ios + net10.0
             so MobileApp.Tests (net10.0) can resolve the project reference.
             When workloads are absent: net10.0 only.
@@ -51,7 +51,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Library\Library.csproj" />
+        <ProjectReference Include="..\AgendaBuddy.Library\AgendaBuddy.Library.csproj" />
     </ItemGroup>
 
     <ItemGroup>

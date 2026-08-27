@@ -1,4 +1,4 @@
-using Library.Configuration;
+using AgendaBuddy.Library.Configuration;
 
 namespace Provider.Extensions;
 

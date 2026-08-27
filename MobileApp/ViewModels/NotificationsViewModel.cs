@@ -1,6 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Library.Entities;
+using AgendaBuddy.Library.Entities;
 using MobileApp.Models;
 using MobileApp.Services;
 

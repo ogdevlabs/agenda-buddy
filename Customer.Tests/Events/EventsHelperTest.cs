@@ -1,4 +1,4 @@
-using Library.Dtos;
+using AgendaBuddy.Library.Dtos;
 namespace Customer.Tests.Events;
 
 [TestSubject(typeof(EventsHelper))]

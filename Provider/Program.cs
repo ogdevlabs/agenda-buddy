@@ -1,4 +1,4 @@
-using Library.Dtos;
+using AgendaBuddy.Library.Dtos;
 ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls13;
 
 

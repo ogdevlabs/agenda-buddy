@@ -12,13 +12,13 @@ global using EventAndCommands.Events.Services;
 global using EventAndCommands.Persistence;
 global using Kafka;
 global using Kafka.Support;
-global using Library.Entities;
-global using Library.Services;
-global using Library.Tools;
+global using AgendaBuddy.Library.Entities;
+global using AgendaBuddy.Library.Services;
+global using AgendaBuddy.Library.Tools;
 global using MediatR;
 global using Microsoft.Extensions.Configuration;
 global using Microsoft.Extensions.DependencyInjection;
 global using MongoDB.Bson;
 global using MongoDB.Bson.Serialization.Attributes;
 global using MongoDB.Driver;
-global using Library.Dtos;   // F-016-T15: PageRequest / PagedResponse<T>
+global using AgendaBuddy.Library.Dtos;   // F-016-T15: PageRequest / PagedResponse<T>

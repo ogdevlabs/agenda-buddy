@@ -1,6 +1,6 @@
 using System.Security.Claims;
-using Library.Entities;
-using Library.Tools;
+using AgendaBuddy.Library.Entities;
+using AgendaBuddy.Library.Tools;
 
 namespace Customer.Tests.Auth;
 

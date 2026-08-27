@@ -2,8 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using Customer.Extensions;
-using Library.Entities;
-using Library.Repositories;
+using AgendaBuddy.Library.Entities;
+using AgendaBuddy.Library.Repositories;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Driver;

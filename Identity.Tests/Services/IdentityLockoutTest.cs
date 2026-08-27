@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using Identity.Configurations;
 using Identity.Services;
 using Identity.Tests.Helpers;
-using Library.Entities;
+using AgendaBuddy.Library.Entities;
 using Microsoft.Extensions.Options;
 using Xunit;
 

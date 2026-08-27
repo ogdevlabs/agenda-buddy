@@ -1,6 +1,6 @@
 global using AgendaBuddy.ServiceDefaults;
-global using Library.Configuration;
-global using Library.Diagnostics;
+global using AgendaBuddy.Library.Configuration;
+global using AgendaBuddy.Library.Diagnostics;
 // Global using directives
 
 global using System.Diagnostics;
@@ -9,10 +9,10 @@ global using Calendar.Events;
 global using Calendar.Extensions;
 global using Calendar.Requests;
 global using EventAndCommands.Queries.Calendar;
-global using Library.Entities;
-global using Library.Extensions;
-global using Library.Repositories;
-global using Library.Services;
+global using AgendaBuddy.Library.Entities;
+global using AgendaBuddy.Library.Extensions;
+global using AgendaBuddy.Library.Repositories;
+global using AgendaBuddy.Library.Services;
 global using MediatR;
 global using Microsoft.AspNetCore.Diagnostics;
 global using Microsoft.AspNetCore.Http.HttpResults;

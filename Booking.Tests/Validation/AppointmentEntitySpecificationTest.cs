@@ -1,6 +1,6 @@
 using System;
 using Booking.Validation;
-using Library.Entities;
+using AgendaBuddy.Library.Entities;
 using Validot;
 using Xunit;
 

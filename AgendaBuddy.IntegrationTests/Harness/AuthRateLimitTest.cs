@@ -1,6 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
-using Library.Entities;
+using AgendaBuddy.Library.Entities;
 using MongoDB.Bson;
 using MongoDB.Driver;
 

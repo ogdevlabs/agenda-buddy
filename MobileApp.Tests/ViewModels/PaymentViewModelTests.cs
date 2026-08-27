@@ -1,4 +1,4 @@
-using Library.Entities;
+using AgendaBuddy.Library.Entities;
 using MobileApp.Infrastructure;
 using MobileApp.Services;
 using MobileApp.ViewModels;

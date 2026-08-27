@@ -5,7 +5,7 @@ using System.Security.Cryptography;
 using System.Text.Json;
 using AgendaBuddy.IntegrationTests.Harness;
 using Identity.Services;
-using Library.Entities;
+using AgendaBuddy.Library.Entities;
 using MongoDB.Bson;
 using MongoDB.Driver;
 

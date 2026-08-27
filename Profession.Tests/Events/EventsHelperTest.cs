@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Library.Entities;
-using Library.Repositories;
-using Library.Services;
+using AgendaBuddy.Library.Entities;
+using AgendaBuddy.Library.Repositories;
+using AgendaBuddy.Library.Services;
 using MediatR;
 using Profession.Events;
 using Profession.Requests;

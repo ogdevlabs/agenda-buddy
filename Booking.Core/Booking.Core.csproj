@@ -17,7 +17,7 @@
         <ProjectReference Include="..\Booking.Domain\Booking.Domain.csproj" />
         <ProjectReference Include="..\EventAndCommands\EventAndCommands.csproj" />
         <ProjectReference Include="..\Kafka\Kafka.csproj" />
-        <ProjectReference Include="..\Library\Library.csproj" />
+        <ProjectReference Include="..\AgendaBuddy.Library\AgendaBuddy.Library.csproj" />
     </ItemGroup>
 
 </Project>

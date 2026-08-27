@@ -4,7 +4,7 @@ using System.Net.Http.Json;
 using AgendaBuddy.IntegrationTests.Harness;
 using AgendaBuddy.IntegrationTests.Persistence;
 using EventAndCommands.Persistence;
-using Library.Entities;
+using AgendaBuddy.Library.Entities;
 using MongoDB.Bson;
 using MongoDB.Driver;
 

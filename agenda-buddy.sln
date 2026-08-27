@@ -4,7 +4,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "kafka", "kafka", "{4273DC90
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Common", "Common", "{B4970DA5-0E62-4B6D-95D8-19F48A77B40C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Library", "Library\Library.csproj", "{49D2389C-97DF-4FE5-B080-F5252B2DDC9F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AgendaBuddy.Library", "AgendaBuddy.Library\AgendaBuddy.Library.csproj", "{49D2389C-97DF-4FE5-B080-F5252B2DDC9F}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "EventDriven", "EventDriven", "{3C051FBD-3D47-46A7-8531-785190666512}"
 EndProject
@@ -36,7 +36,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Booking.Tests", "Booking.Te
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Calendar.Tests", "Calendar.Tests\Calendar.Tests.csproj", "{0AD6008A-0FB4-42D5-8C00-9202AD1882C0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Library.Tests", "Library.Tests\Library.Tests.csproj", "{502A1F4F-D287-47A0-97B0-753B43EE3E3D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AgendaBuddy.Library.Tests", "AgendaBuddy.Library.Tests\AgendaBuddy.Library.Tests.csproj", "{502A1F4F-D287-47A0-97B0-753B43EE3E3D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kafka.Tests", "Kafka.Tests\Kafka.Tests.csproj", "{19A05E65-4F23-45E1-9DFF-00378397E905}"
 EndProject
@@ -62,7 +62,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MobileApp", "MobileApp\Mobi
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MobileApp.Tests", "MobileApp.Tests\MobileApp.Tests.csproj", "{E1F2A3B4-C5D6-4E7F-8A9B-C0D1E2F3A4B5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Library.ServerAuth", "Library.ServerAuth\Library.ServerAuth.csproj", "{CE1D100D-1463-46EB-B416-256C4F4A22F2}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AgendaBuddy.Library.ServerAuth", "AgendaBuddy.Library.ServerAuth\AgendaBuddy.Library.ServerAuth.csproj", "{CE1D100D-1463-46EB-B416-256C4F4A22F2}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AgendaBuddy.ServiceDefaults", "AgendaBuddy.ServiceDefaults\AgendaBuddy.ServiceDefaults.csproj", "{710E5BFF-CCC7-471B-AA2A-5BBE1461C17E}"
 EndProject

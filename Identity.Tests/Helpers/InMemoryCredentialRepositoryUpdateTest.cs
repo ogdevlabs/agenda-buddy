@@ -1,6 +1,6 @@
 using System;
 using System.Threading.Tasks;
-using Library.Entities;
+using AgendaBuddy.Library.Entities;
 using MongoDB.Bson;
 using Xunit;
 

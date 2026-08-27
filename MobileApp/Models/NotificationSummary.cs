@@ -1,5 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
-using Library.Entities;
+using AgendaBuddy.Library.Entities;
 
 namespace MobileApp.Models;
 

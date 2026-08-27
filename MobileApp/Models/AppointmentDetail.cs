@@ -1,4 +1,4 @@
-using Library.Entities;
+using AgendaBuddy.Library.Entities;
 
 namespace MobileApp.Models;
 

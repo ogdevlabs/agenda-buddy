@@ -1,6 +1,6 @@
 global using AgendaBuddy.ServiceDefaults;
-global using Library.Configuration;
-global using Library.Diagnostics;
+global using AgendaBuddy.Library.Configuration;
+global using AgendaBuddy.Library.Diagnostics;
 // Global using directives
 
 global using System.Diagnostics;
@@ -8,10 +8,10 @@ global using System.Net;
 global using System.Security.Claims;
 global using EventAndCommands.Commands.Services;
 global using EventAndCommands.Queries.Services;
-global using Library.Entities;
-global using Library.Extensions;
-global using Library.Repositories;
-global using Library.Services;
+global using AgendaBuddy.Library.Entities;
+global using AgendaBuddy.Library.Extensions;
+global using AgendaBuddy.Library.Repositories;
+global using AgendaBuddy.Library.Services;
 global using MediatR;
 global using MongoDB.Driver;
 global using Services.Configurations;

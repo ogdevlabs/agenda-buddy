@@ -1,6 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Library.Entities;
+using AgendaBuddy.Library.Entities;
 using MobileApp.Infrastructure;
 using MobileApp.Services;
 
@@ -35,7 +35,7 @@ public partial class PaymentViewModel : ObservableObject
     public bool HasPayment => Payment is not null;
 
     /// <summary>
-    /// True when the payment's Stripe intent id is <c>local_</c>-prefixed — <c>Library.Services.
+    /// True when the payment's Stripe intent id is <c>local_</c>-prefixed — <c>AgendaBuddy.Library.Services.
     /// PaymentGatewayFactory</c>'s non-charging gateway (ADR-038). No money moved regardless of what
     /// <see cref="PaymentEntity.Status"/> says.
     /// </summary>

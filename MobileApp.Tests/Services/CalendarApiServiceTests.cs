@@ -1,7 +1,7 @@
 using System.Net;
 using System.Net.Http;
 using System.Text;
-using Library.Entities;
+using AgendaBuddy.Library.Entities;
 using MobileApp.Services;
 using Moq;
 using Xunit;

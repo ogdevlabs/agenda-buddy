@@ -3,7 +3,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using AgendaBuddy.IntegrationTests.Harness;
-using Library.Entities;
+using AgendaBuddy.Library.Entities;
 using MongoDB.Bson;
 
 namespace AgendaBuddy.IntegrationTests.Persistence;

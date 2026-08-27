@@ -1,5 +1,5 @@
 using System;
-using Library.Entities;
+using AgendaBuddy.Library.Entities;
 using Xunit;
 
 namespace Booking.Tests.Lifecycle;

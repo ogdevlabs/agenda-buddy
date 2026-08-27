@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Library.Entities;
-using Library.Tools;
+using AgendaBuddy.Library.Entities;
+using AgendaBuddy.Library.Tools;
 using Xunit;
 
 namespace Calendar.Tests.Availability;

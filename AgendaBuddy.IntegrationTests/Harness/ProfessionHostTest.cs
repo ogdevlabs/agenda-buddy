@@ -1,5 +1,5 @@
 using System.Net;
-using Library.Entities;
+using AgendaBuddy.Library.Entities;
 using MongoDB.Bson;
 
 namespace AgendaBuddy.IntegrationTests.Harness;

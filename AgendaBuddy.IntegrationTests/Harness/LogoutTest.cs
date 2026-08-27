@@ -1,7 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using Identity.Services;
-using Library.Entities;
+using AgendaBuddy.Library.Entities;
 using MobileApp.Routing;
 using MongoDB.Bson;
 using MongoDB.Driver;

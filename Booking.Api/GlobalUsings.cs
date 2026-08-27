@@ -1,6 +1,6 @@
 global using AgendaBuddy.ServiceDefaults;
-global using Library.Configuration;
-global using Library.Diagnostics;
+global using AgendaBuddy.Library.Configuration;
+global using AgendaBuddy.Library.Diagnostics;
 // Global using directives
 
 global using System.Diagnostics;
@@ -16,11 +16,11 @@ global using Booking.Requests;
 global using Booking.Domain.Queries;
 global using Booking.Validation;
 global using Kafka;
-global using Library.Entities;
-global using Library.Extensions;
-global using Library.Tools;
-global using Library.Repositories;
-global using Library.Services;
+global using AgendaBuddy.Library.Entities;
+global using AgendaBuddy.Library.Extensions;
+global using AgendaBuddy.Library.Tools;
+global using AgendaBuddy.Library.Repositories;
+global using AgendaBuddy.Library.Services;
 global using MediatR;
 global using Microsoft.AspNetCore.Diagnostics;
 global using Microsoft.AspNetCore.Http.HttpResults;

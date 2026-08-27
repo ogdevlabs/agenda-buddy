@@ -1,4 +1,4 @@
-using Library.Configuration;
+using AgendaBuddy.Library.Configuration;
 using Microsoft.AspNetCore.Http;
 
 namespace EventAndCommands.Persistence;

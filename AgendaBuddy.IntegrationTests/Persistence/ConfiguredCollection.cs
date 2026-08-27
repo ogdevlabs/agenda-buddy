@@ -1,5 +1,5 @@
 using AgendaBuddy.IntegrationTests.Harness;
-using Library.Configuration;
+using AgendaBuddy.Library.Configuration;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Driver;

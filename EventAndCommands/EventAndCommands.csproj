@@ -26,7 +26,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\Kafka\Kafka.csproj"/>
-        <ProjectReference Include="..\Library\Library.csproj"/>
+        <ProjectReference Include="..\AgendaBuddy.Library\AgendaBuddy.Library.csproj"/>
     </ItemGroup>
 
 

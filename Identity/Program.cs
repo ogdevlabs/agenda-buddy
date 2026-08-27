@@ -2,8 +2,8 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Identity.Requests;
 using Identity.Services;
-using Library.Services;
-using Library.Tools;
+using AgendaBuddy.Library.Services;
+using AgendaBuddy.Library.Tools;
 
 ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls13;
 
