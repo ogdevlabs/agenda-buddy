@@ -1,12 +1,12 @@
 ---
 id: F-023
 title: token-revocation
-status: planned
+status: shipped
 priority: 23
 labels: [roadmap, "priority:23"]
-claimed_by: null
+claimed_by: oscargarcia@ogdevlabs.onmicrosoft.com
 created: 2026-08-18
-updated: 2026-08-18
+updated: 2026-08-27
 ---
 There is no token revocation. A fresh jti GUID is minted into every access token (IdentityService.cs:204) but it is never recorded and never checked, and no denylist exists. LogoutAsync:176 clears the stored refresh token, but the ACCESS token stays valid for up to 60 minutes after the user logs out. Combined with ValidateAudience = false (AuthenticationExtensions.cs:40) - no aud claim is issued, so all seven services accept any token this issuer minted - a leaked or post-logout token has the widest possible blast radius.
 

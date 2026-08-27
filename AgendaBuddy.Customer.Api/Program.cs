@@ -10,6 +10,9 @@ builder.AddServiceDefaults();
 builder.Services.AddSingleton<IMongoClient>(_ =>
     new MongoClient(MongoConnectionResolver.Resolve(builder.Configuration)));
 
+// Cross-service revocation denylist -- every service that authenticates a bearer token needs to check it.
+builder.Services.AddTokenRevocationStore(builder.Configuration);
+
 // Readiness probe. Singleton so the 5s result cache is process-wide.
 builder.Services.AddSingleton<MongoHealthCheck>();
 builder.Services.AddHealthChecks()
@@ -62,6 +65,25 @@ builder.Services.AddAuthorization();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 var app = builder.Build();
+
+// Idempotent -- safe on every startup across all seven processes sharing this collection.
+// Fire-and-forget, not awaited: MongoDB's server-selection timeout is ~30s by default, and
+// awaiting this inline would stall Kestrel's own startup for that long whenever Mongo isn't
+// immediately reachable (found live -- it pushed every service's CI boot check right up to,
+// and for one, past, its readiness window). Swallowed on failure for the same reason
+// Profession's seed hosted service swallows its own: the denylist check itself already
+// fails open per-request if the collection or its index is missing.
+_ = Task.Run(async () =>
+{
+    try
+    {
+        await app.Services.GetRequiredService<MongoTokenRevocationStore>().EnsureIndexAsync();
+    }
+    catch (Exception ex)
+    {
+        app.Logger.LogWarning(ex, "Could not ensure the revoked_tokens TTL index at startup");
+    }
+});
 
 // /health runs every check; /alive only the live-tagged ones, so a service waiting on MongoDB is
 // not restarted for being unready.

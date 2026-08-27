@@ -17,4 +17,14 @@
         <FrameworkReference Include="Microsoft.AspNetCore.App" />
     </ItemGroup>
 
+    <ItemGroup>
+        <!-- MongoTokenRevocationStore's DI wiring needs MongoConnectionResolver. Safe in this
+             direction only: AgendaBuddy.MobileApp references AgendaBuddy.Library directly but
+             never this project, so nothing mobile-targeted sees this edge. The reverse direction
+             (Library referencing ServerAuth) was tried first and broke MobileApp's Android/iOS
+             build, since this project's Microsoft.AspNetCore.App FrameworkReference above has no
+             runtime pack for net10.0-android/-ios and would have propagated transitively. -->
+        <ProjectReference Include="..\AgendaBuddy.Library\AgendaBuddy.Library.csproj" />
+    </ItemGroup>
+
 </Project>

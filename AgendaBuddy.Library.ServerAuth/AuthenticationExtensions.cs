@@ -1,3 +1,5 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using System.Security.Cryptography;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.DependencyInjection;
@@ -43,6 +45,27 @@ public static class AuthenticationExtensions
                     ValidateIssuerSigningKey = true,
                     IssuerSigningKey = rsaKey,
                     ValidAlgorithms = ["RS256"],
+                };
+
+                // Signature/issuer/lifetime pass before this runs — the denylist is a second,
+                // cheap check (single indexed lookup) for a jti logout already revoked. A missing
+                // jti claim fails closed rather than skipping the check.
+                options.Events = new JwtBearerEvents
+                {
+                    OnTokenValidated = async context =>
+                    {
+                        var jti = context.Principal?.FindFirstValue(JwtRegisteredClaimNames.Jti);
+                        if (string.IsNullOrEmpty(jti))
+                        {
+                            context.Fail("missing_jti");
+                            return;
+                        }
+
+                        var store = context.HttpContext.RequestServices
+                            .GetRequiredService<ITokenRevocationStore>();
+                        if (await store.IsRevokedAsync(jti))
+                            context.Fail("token_revoked");
+                    },
                 };
             });
 

@@ -18,6 +18,7 @@ global using AgendaBuddy.Booking.Validation;
 global using AgendaBuddy.Kafka;
 global using AgendaBuddy.Library.Entities;
 global using AgendaBuddy.Library.Extensions;
+global using AgendaBuddy.Library.Security;
 global using AgendaBuddy.Library.Tools;
 global using AgendaBuddy.Library.Repositories;
 global using AgendaBuddy.Library.Services;

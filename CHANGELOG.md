@@ -4,6 +4,18 @@ All notable changes to this project are documented in this file, in [Keep a Chan
 
 ## [Unreleased]
 
+## [0.13.0] - 2026-08-27
+
+### Added
+
+- **F-023 token-revocation**: logging out now denylists the caller's own access token's `jti`
+  (`POST /api/v1/auth/logout` gains an optional `accessToken` field, backward compatible), so it stops
+  authenticating immediately across all seven services rather than staying valid for up to its full
+  60-minute lifetime. The denylist is a new MongoDB collection (`revoked_tokens`) with a TTL index —
+  cross-service, unlike the existing per-process `IDistributedCache` — checked once per authenticated
+  request in `AuthenticationExtensions`' `OnTokenValidated` hook (ADR-054). No `aud` claim was
+  introduced; `ValidateAudience` stays `false` (evaluated and rejected — see ADR-054).
+
 ## [0.12.0] - 2026-08-27
 
 ### Added
@@ -95,7 +107,8 @@ All notable changes to this project are documented in this file, in [Keep a Chan
 - A `null` `EmailProvider` on `POST /appointments` passes both Validot and the ownership guard, then throws downstream during provider lookup, surfacing as an unhandled 500 rather than a 400 — `agenda-buddy-cy2`.
 - Mapster is approved (ADR-049) for this line of work but has zero call sites yet.
 
-[Unreleased]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.12.0...HEAD
+[Unreleased]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.13.0...HEAD
+[0.13.0]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.12.0...v0.13.0
 [0.12.0]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.9.0...v0.10.0
