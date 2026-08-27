@@ -11,6 +11,7 @@ global using AgendaBuddy.Identity.Extensions;
 global using AgendaBuddy.Library.Entities;
 global using AgendaBuddy.Library.Extensions;
 global using AgendaBuddy.Library.Repositories;
+global using AgendaBuddy.Library.Services;
 global using MediatR;
 global using Microsoft.AspNetCore.Diagnostics;
 global using Microsoft.AspNetCore.Http.HttpResults;

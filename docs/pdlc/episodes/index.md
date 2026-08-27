@@ -18,6 +18,7 @@ Delivery records, one per shipped feature. Permanent — episodes are never arch
 | 008 | api-refactor-pilot-booking | 2026-08-27 | [EPISODE_api-refactor-pilot-booking_2026-08-27.md](EPISODE_api-refactor-pilot-booking_2026-08-27.md) | none — merged directly (`fb91cb1`), see episode's Links section | Shipped (`v0.8.0`) |
 | 009 | api-refactor-rollout | 2026-08-27 | [EPISODE_api-refactor-rollout_2026-08-27.md](EPISODE_api-refactor-rollout_2026-08-27.md) | none — merged directly, see episode's Links section | Shipped (`v0.9.0`) |
 | 010 | booking-correctness | 2026-08-27 | [EPISODE_booking-correctness_2026-08-27.md](EPISODE_booking-correctness_2026-08-27.md) | #72 | Shipped (`v0.10.0`) |
+| 011 | password-reset-flow | 2026-08-27 | [EPISODE_password-reset-flow_2026-08-27.md](EPISODE_password-reset-flow_2026-08-27.md) | #76 | Shipped (`v0.11.0`) |
 
 **Naming:** `EPISODE_<feature-slug>_<YYYY-MM-DD>.md`, where the date is when the episode was opened, not
 when the feature shipped — 002 opened 2026-08-18 and its ship gate closed 2026-08-22.

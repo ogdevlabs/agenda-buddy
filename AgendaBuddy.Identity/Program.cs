@@ -172,6 +172,7 @@ var login = auth.MapPost("/login", async (LoginRequest req, IdentityService svc)
         return Results.Ok(new { accessToken = result!.AccessToken, refreshToken = result.RefreshToken });
     }
     catch (UnauthorizedException) { return Results.Unauthorized(); }
+    catch (PasswordResetRequiredException ex) { return Results.Problem(detail: ex.Message, statusCode: 403, title: "password_reset_required"); }
     catch (ServiceUnavailableException ex) { return Results.Problem(detail: ex.Message, statusCode: 503, title: "service_unavailable"); }
 }).WithName("Login");
 
@@ -205,6 +206,30 @@ auth.MapPost("/logout", async (LogoutRequest req, IdentityService svc) =>
     }
     catch (ServiceUnavailableException ex) { return Results.Problem(detail: ex.Message, statusCode: 503, title: "service_unavailable"); }
 }).WithName("Logout");
+
+// Always 202, whether or not the address matched an account — anti-enumeration, same principle as
+// /login's constant-time dummy hash. Unlimited, same reasoning as /refresh: it spends no BCrypt.
+auth.MapPost("/password-reset/request", async (PasswordResetRequestRequest req, IdentityService svc) =>
+{
+    try
+    {
+        await svc.RequestPasswordResetAsync(req.Email);
+    }
+    catch (ServiceUnavailableException ex) { return Results.Problem(detail: ex.Message, statusCode: 503, title: "service_unavailable"); }
+    return Results.Accepted();
+}).WithName("RequestPasswordReset");
+
+auth.MapPost("/password-reset/confirm", async (PasswordResetConfirmRequest req, IdentityService svc) =>
+{
+    try
+    {
+        await svc.ConfirmPasswordResetAsync(req.Email, req.Token, req.NewPassword);
+        return Results.NoContent();
+    }
+    catch (AuthValidationException ex) { return Results.BadRequest(new { error = "validation_error", message = ex.Message }); }
+    catch (UnauthorizedException ex) { return Results.Problem(detail: ex.Message, statusCode: 401, title: "unauthorized"); }
+    catch (ServiceUnavailableException ex) { return Results.Problem(detail: ex.Message, statusCode: 503, title: "service_unavailable"); }
+}).WithName("ConfirmPasswordReset");
 
 app.MapPost("/device-token", async (RegisterDeviceTokenRequest request, ClaimsPrincipal user, IDeviceTokenService svc) =>
 {

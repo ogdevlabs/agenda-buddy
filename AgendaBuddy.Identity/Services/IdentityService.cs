@@ -18,11 +18,13 @@ public class IdentityService(
     IRepository<CredentialEntity> repository,
     IDateTimeProvider clock,
     IOptions<LockoutOptions>? lockoutOptions = null,
-    ILogger<IdentityService>? logger = null)
+    ILogger<IdentityService>? logger = null,
+    INotificationService? notificationService = null)
 {
     private const string PrivateKeyEnvVar = "JWT_PRIVATE_KEY";
     private const string Issuer = "agenda-buddy-identity";
     private static readonly string[] AllowedRoles = ["Provider", "Customer"];
+    private static readonly TimeSpan ResetTokenLifetime = TimeSpan.FromMinutes(30);
 
     /// <summary>
     /// Lockout thresholds. Both parameters are optional so the shipped defaults apply to any caller that
@@ -151,6 +153,15 @@ public class IdentityService(
             throw new UnauthorizedException();
         }
 
+        // The password is correct, but the account is flagged for a forced reset — a migration-seeded
+        // stub (SeedAuthCredentials.cs) that has never had a real password chosen. No session is issued;
+        // the client must call the password-reset endpoints before it can log in normally.
+        if (credential.MustResetPassword)
+        {
+            _log.LogInformation("credential.login-blocked must-reset for {Account}", account);
+            throw new PasswordResetRequiredException();
+        }
+
         // Read before the write, so the log can say whether this login cleared anything.
         var clearedFailures = credential.FailedAttempts;
         var clearedLock = credential.LockUntil is not null;
@@ -190,14 +201,7 @@ public class IdentityService(
                 + "lock cleared {LockCleared}", account, clearedFailures, clearedLock);
         }
 
-        // PRD requirement 19 — a seam, and nothing more. `MustResetPassword` is written by
-        // SeedAuthCredentials.cs:68 for migrated users and read by nothing, so a forced-reset flow does
-        // not exist. Password reset doesn't exist yet, and needs a notification service first. Surfacing the flag
-        // here means the branch has an obvious home, and meanwhile an operator can see that accounts
-        // flagged for reset are signing in without one.
-        _log.LogInformation(
-            "credential.login-ok for {Account}, must-reset {MustResetPassword} (unenforced — F-022)",
-            account, credential.MustResetPassword);
+        _log.LogInformation("credential.login-ok for {Account}", account);
 
         return new TokenResponse(CreateAccessToken(privateKeyPem, email, credential.Role), refreshOpaque);
     }
@@ -312,6 +316,136 @@ public class IdentityService(
     }
 
     /// <summary>
+    /// Issues a single-use password-reset token for the account, if one exists.
+    /// </summary>
+    /// <remarks>
+    /// Always returns the same way regardless of whether the address matched an account (anti-
+    /// enumeration, same principle as <see cref="LoginAsync"/>'s constant-time dummy hash) — including the
+    /// return value, which is present only so this method is testable; the API layer must never forward
+    /// it to an HTTP caller. The targeted <c>FindOneAndUpdateAsync</c> never upserts, so an unknown
+    /// address writes nothing (ADR-032).
+    /// <para>
+    /// No real email/SMS provider exists in this project (same category as no real payment gateway,
+    /// ADR-038) — the reset link is logged at Information (visible in the Aspire dashboard, dev-only
+    /// channel) rather than actually delivered. A <see cref="NotificationEntity"/> is also written via
+    /// the existing in-app inbox as a secondary, audit-trail signal — not the primary channel, since that
+    /// inbox itself requires authentication and is therefore unreachable by the very user who is locked
+    /// out (ADR-052).
+    /// </para>
+    /// </remarks>
+    /// <returns>
+    /// The raw opaque token if an account matched, for tests and local-dev logging only — the HTTP
+    /// endpoint must discard this rather than including it in a response.
+    /// </returns>
+    public async Task<string?> RequestPasswordResetAsync(string email)
+    {
+        email = email.ToLowerInvariant();
+        var account = AccountReference(email);
+        var (resetOpaque, resetHash) = CreateRefreshToken();
+        var expiry = clock.UtcNow.Add(ResetTokenLifetime);
+
+        CredentialEntity? credential;
+        try
+        {
+            credential = await repository.FindOneAndUpdateAsync(
+                new BsonDocument("email", email),
+                new BsonDocument("$set", new BsonDocument("reset_token", ResetTokenSubdocument(resetHash, expiry))));
+        }
+        catch (Exception ex) when (IsMongoDown(ex))
+        {
+            throw new ServiceUnavailableException();
+        }
+
+        if (credential is null) return null; // No such account — nothing written, nothing to notify.
+
+        _log.LogInformation(
+            "credential.password-reset-requested for {Account}: token={ResetToken} expires {Expiry:O} "
+            + "(no email provider configured — logged for local development only, see ADR-052)",
+            account, resetOpaque, expiry);
+
+        if (notificationService is not null)
+        {
+            await notificationService.SendAsync(new NotificationEntity(
+                recipientEmail: credential.Email,
+                subject: "Password reset requested",
+                body: "A password reset was requested for your account. If this wasn't you, "
+                      + "you can ignore this — no change takes effect until a new password is confirmed.",
+                type: NotificationType.PasswordResetRequested,
+                appointmentIdentifier: string.Empty));
+        }
+
+        return resetOpaque;
+    }
+
+    /// <summary>
+    /// Consumes a single-use reset token and sets a new password.
+    /// </summary>
+    /// <remarks>
+    /// Filter-based single use, same technique as <see cref="RefreshAsync"/>: the presented hash and a
+    /// not-yet-expired expiry both ride the filter, so a replayed or expired token matches nothing rather
+    /// than being checked and rejected after the fact. On success, every other credential-security state
+    /// is cleared in the same write: the reset flag, any lockout, and the active refresh token — a
+    /// successful reset ends every existing session, the same posture a real "forgot password" flow takes
+    /// elsewhere, since the old password (and anything authenticated under it) can no longer be trusted.
+    /// </remarks>
+    public async Task ConfirmPasswordResetAsync(string email, string token, string newPassword)
+    {
+        email = email.ToLowerInvariant();
+        var account = AccountReference(email);
+
+        if (string.IsNullOrWhiteSpace(newPassword) || newPassword.Length < 8)
+            throw new AuthValidationException("Password must be at least 8 characters.");
+
+        var presentedHash = HashToken(token);
+        var now = clock.UtcNow;
+        var newHash = BCrypt.Net.BCrypt.HashPassword(newPassword, workFactor: 12);
+
+        CredentialEntity? credential;
+        try
+        {
+            var filter = new BsonDocument
+            {
+                { "email", email },
+                { "reset_token.hash", presentedHash },
+                { "reset_token.expiry", new BsonDocument("$gt", now) }
+            };
+
+            credential = await repository.FindOneAndUpdateAsync(
+                filter,
+                new BsonDocument
+                {
+                    {
+                        "$set", new BsonDocument
+                        {
+                            { "password_hash", newHash },
+                            { "must_reset_password", false }
+                        }
+                    },
+                    {
+                        "$unset", new BsonDocument
+                        {
+                            { "reset_token", "" }, { "refresh_token", "" }, { "lock_until", "" }
+                        }
+                    }
+                });
+        }
+        catch (Exception ex) when (IsMongoDown(ex))
+        {
+            throw new ServiceUnavailableException();
+        }
+
+        if (credential is null)
+        {
+            // Deliberately no account reference, same reasoning as RefreshAsync: unknown, expired,
+            // already-used and wrong-email are all one outcome to the caller.
+            _log.LogInformation("credential.password-reset-confirm refused: no unlocked token match");
+            throw new UnauthorizedException("Reset token is invalid or expired.");
+        }
+
+        _log.LogInformation("credential.password-reset-confirmed ok for {Account}", account);
+    }
+
+    /// <summary>
     /// Counts one failed attempt and applies the lock if that attempt reached the threshold.
     /// </summary>
     /// <remarks>
@@ -405,6 +539,9 @@ public class IdentityService(
     private static BsonDocument RefreshTokenSubdocument(string hash, DateTime expiry) =>
         new() { { "hash", hash }, { "expiry", expiry } };
 
+    private static BsonDocument ResetTokenSubdocument(string hash, DateTime expiry) =>
+        new() { { "hash", hash }, { "expiry", expiry } };
+
     private (string accessToken, string refreshOpaque, string refreshHash) GenerateTokenPair(
         string email, string role)
     {
@@ -495,3 +632,4 @@ public class AuthValidationException(string message) : Exception(message);
 public class ConflictException(string message) : Exception(message);
 public class UnauthorizedException(string message = "Invalid credentials.") : Exception(message);
 public class ServiceUnavailableException() : Exception("Authentication service temporarily unavailable.");
+public class PasswordResetRequiredException() : Exception("Password reset required before login.");

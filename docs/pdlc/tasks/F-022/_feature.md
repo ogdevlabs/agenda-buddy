@@ -1,12 +1,12 @@
 ---
 id: F-022
 title: password-reset-flow
-status: planned
+status: shipped
 priority: 22
 labels: [roadmap, "priority:22"]
-claimed_by: null
+claimed_by: oscargarcia@ogdevlabs.onmicrosoft.com
 created: 2026-08-18
-updated: 2026-08-18
+updated: 2026-08-27
 ---
 No password reset, change, or forced-reset flow exists anywhere in the solution. CredentialEntity.cs:29 declares MustResetPassword and SeedAuthCredentials.cs:68 sets it, but LoginAsync (IdentityService.cs:79-121) never inspects it - so the forced-reset flow the field exists for does not exist. There is no password-reset or change-password endpoint at all (01-api-surface.md), which means a user who forgets their password has NO recovery path.
 

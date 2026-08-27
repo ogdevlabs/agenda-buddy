@@ -143,6 +143,13 @@ public class InMemoryCredentialRepository : IRepository<CredentialEntity>
             {
                 Hash = entity.RefreshToken.Hash,
                 Expiry = entity.RefreshToken.Expiry
+            },
+        ResetToken = entity.ResetToken is null
+            ? null
+            : new PasswordResetTokenDocument
+            {
+                Hash = entity.ResetToken.Hash,
+                Expiry = entity.ResetToken.Expiry
             }
     };
 
@@ -187,11 +194,26 @@ public class InMemoryCredentialRepository : IRepository<CredentialEntity>
                         Expiry = value.AsBsonDocument["expiry"].ToUniversalTime()
                     };
                 break;
+            case "reset_token":
+                entity.ResetToken = value.IsBsonNull
+                    ? null
+                    : new PasswordResetTokenDocument
+                    {
+                        Hash = value.AsBsonDocument["hash"].AsString,
+                        Expiry = value.AsBsonDocument["expiry"].ToUniversalTime()
+                    };
+                break;
             case "failed_attempts":
                 entity.FailedAttempts = value.ToInt32();
                 break;
             case "lock_until":
                 entity.LockUntil = value.IsBsonNull ? null : value.ToUniversalTime();
+                break;
+            case "password_hash":
+                entity.PasswordHash = value.AsString;
+                break;
+            case "must_reset_password":
+                entity.MustResetPassword = value.AsBoolean;
                 break;
             default:
                 throw new NotSupportedException($"$set on unmapped field '{field}'.");
@@ -204,6 +226,7 @@ public class InMemoryCredentialRepository : IRepository<CredentialEntity>
         {
             case "lock_until": entity.LockUntil = null; break;
             case "refresh_token": entity.RefreshToken = null; break;
+            case "reset_token": entity.ResetToken = null; break;
             default: throw new NotSupportedException($"$unset on unmapped field '{field}'.");
         }
     }
@@ -246,6 +269,8 @@ public class InMemoryCredentialRepository : IRepository<CredentialEntity>
             "role" => Compare(e.Role, condition),
             "refresh_token.hash" => Compare(e.RefreshToken?.Hash, condition),
             "refresh_token.expiry" => Compare(e.RefreshToken?.Expiry, condition),
+            "reset_token.hash" => Compare(e.ResetToken?.Hash, condition),
+            "reset_token.expiry" => Compare(e.ResetToken?.Expiry, condition),
             "failed_attempts" => Compare(e.FailedAttempts, condition),
             "lock_until" => Compare(e.LockUntil, condition),
             _ => throw new NotSupportedException(

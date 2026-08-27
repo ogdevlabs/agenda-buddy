@@ -68,6 +68,7 @@ public class ServiceCollectionMongoResolutionTest
 
         Assert.NotNull(scope.ServiceProvider.GetService<IRepository<CredentialEntity>>());
         Assert.NotNull(scope.ServiceProvider.GetService<IRepository<DeviceTokenEntity>>());
+        Assert.NotNull(scope.ServiceProvider.GetService<IRepository<NotificationEntity>>());
     }
 
     // Backward compatibility: the pre-Aspire shape still resolves, so a revert keeps working.
@@ -81,7 +82,8 @@ public class ServiceCollectionMongoResolutionTest
         Assert.NotNull(scope.ServiceProvider.GetService<IRepository<DeviceTokenEntity>>());
     }
 
-    // The refactor must not change how many repositories exist, or their lifetime.
+    // F-022 added a third repository (NotificationEntity, for password-reset in-app notifications) —
+    // this pin now guards three, not two, but still asserts every one of them stays Scoped.
     [Fact]
     public void AddMongoDbRepository_KeepsRepositoryCountAndLifetimeUnchanged()
     {
@@ -95,7 +97,7 @@ public class ServiceCollectionMongoResolutionTest
                                  && descriptor.ServiceType.GetGenericTypeDefinition() == typeof(IRepository<>))
             .ToList();
 
-        Assert.Equal(2, repositories.Count);
+        Assert.Equal(3, repositories.Count);
         Assert.All(repositories, descriptor => Assert.Equal(ServiceLifetime.Scoped, descriptor.Lifetime));
     }
 }

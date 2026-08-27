@@ -27,3 +27,13 @@ public record RegisterDeviceTokenRequest(
     [Required] string Token,
     [Required] string Platform
 );
+
+public record PasswordResetRequestRequest(
+    [Required][EmailAddress] string Email
+);
+
+public record PasswordResetConfirmRequest(
+    [Required][EmailAddress] string Email,
+    [Required] string Token,
+    [Required] string NewPassword
+);
