@@ -1144,65 +1144,16 @@ re-planning (`/continue`).
 
 ```json
 {
-  "written_at": "2026-08-23T06:30:00Z",
-  "reason": "maintainer asked for a marker and called a stop",
-  "phase": "Construction Complete",
-  "feature": "wire-unreached-services",
-  "feature_id": "F-014",
+  "triggered_at": "2026-08-27T10:19:40.770Z",
+  "session_id": "6fa2c9f8-60c4-489a-82d1-f3cab5161e95",
+  "tool_count": 2130,
+  "estimated_usage": "86%",
   "active_task": null,
-  "resume_command": "SUPERSEDED — see top-of-file Last Checkpoint instead",
-
-  "where_everything_is": {
-    "main": "v0.3.0 (3d60896 + the f5d47d6 merge). F-021 shipped, tagged, verified live, Operation closed.",
-    "branch": "feat/F-014-wire-unreached-services @ 12c5286 — pushed, PR #40 OPEN, CI GREEN on all four jobs, mergeable/clean",
-    "working_tree": "clean apart from this marker",
-    "nothing_is_uncommitted": true
-  },
-
-  "what_happened_this_session": [
-    "Rolled origin/main back from 0d1a6ad to 5ef3e10 and put the in-flight F-021 work on a branch (maintainer's request). Only 0d1a6ad was rolled back; F-016's closeout and the tooling commit stayed on main deliberately.",
-    "Built F-021 identity-hardening, merged it as PR #39, verified it against a LIVE stack, tagged v0.3.0, closed Operation the same day (the four-day ship-gate lag F-016 had did not recur).",
-    "Recorded ADR-035: Azure is not reviewed until every pending feature ships AND the no-longer-needed tech debt is discharged. A skipped deploy is now EXPECTED, not a gap to report. Credential rotation does NOT wait for it.",
-    "Built F-014 wire-unreached-services end to end — Discover, PRD, 5 design artifacts, 9 tasks, implementation, 78 new tests — and opened PR #40. NOT merged.",
-    "Repaired 32 broken relative links across docs/pdlc (22 predated this session, including every artifact link in episode 002)."
-  ],
-
-  "the_single_most_important_thing_to_know": "F-014's PR #40 is green and unmerged. Merging it is the next action, then /ship. Do NOT rebuild any of it.",
-
-  "F014_FACTS_THAT_WILL_SAVE_TIME": {
-    "objectid_json": "System.Text.Json cannot serialise a MongoDB ObjectId usefully — it emits {timestamp, machine, pid, …} which cannot be read back. Library/Tools/ObjectIdJsonConverter.cs fixes it and IS registered in Booking, Customer, Provider. Calendar, Services and Profession still emit the broken shape (agenda-buddy-do5). Identity needs nothing: CredentialEntity.Id is a string with [BsonRepresentation(BsonType.ObjectId)] — arguably what every entity should have used.",
-    "enums_are_ints_on_the_wire": "No JsonStringEnumConverter is registered anywhere, so a string enum in a request body fails MODEL BINDING with a bare 400 and no validation detail. Send integers. The new status route takes a string on purpose and parses it (Enum.TryParse + Enum.IsDefined — TryParse accepts undefined numbers like \"99\").",
-    "appointment_status_is_server_owned": "The PUT ignores appointmentStatus. Status changes go through POST /api/v1/booking/appointments/{identifier}/status, applied via AppointmentEntity.TransitionTo, which routes through Book()/Complete(). Restoring the assignment in UpdateAppointmentCommandHandler reopens threat T-203.",
-    "both_status_copies_are_written": "An appointment lives in the `appointments` collection AND embedded in the provider document, and ReportingService counts from the EMBEDDED one. Writing only the collection leaves the dashboard stale. The two writes are not atomic together — no replica set, no transaction — and re-issuing the transition repairs a partial write.",
-    "payments_do_not_charge": "RecordingPaymentGateway is the default; StripePaymentGateway only when Payments:Stripe:ApiKey is set (an Aspire secret parameter, never appsettings.json). A `local_` intent-id prefix means no money moved. The AMOUNT IS UNVALIDATED and cannot be validated — see agenda-buddy-e87.",
-    "no_notification_writer_exists": "GET /api/v1/notifications returns [] and that is correct: nothing calls SendAsync. There is deliberately NO create route (threat T-208). F-022's dependency on NotificationService is NOT yet satisfied.",
-    "revenue_is_gone_on_purpose": "ProviderReport has revenueAvailable:false + revenueUnavailableReason instead of EstimatedRevenue. Do not 'restore' it: the old number was completed × the whole catalogue's fees, and the data to do it properly does not exist (agenda-buddy-e87)."
-  },
-
-  "GOTCHAS_THAT_COST_TIME_THIS_SESSION": [
-    "`scripts/tasks.cjs` DOES NOT EXIST in this repository, though docs/pdlc/tasks/index.md says it generates that file. F-021's and F-014's task stores are HAND-WRITTEN, and the structural security-AC-to-test check could not run.",
-    "Aspire streams service logs to the DASHBOARD over OTLP, not to the AppHost's stdout. Grepping the AppHost console for a service log line finds nothing and PROVES nothing — F-021's first AC-16 live check was vacuous for exactly this reason. Run the service standalone with --no-launch-profile to read its console.",
-    "The Aspire MongoDB container's root user is `admin`, not `root`, and ~/.microsoft/usersecrets/<id>/secrets.json is UTF-8 WITH A BOM (json.load needs encoding='utf-8-sig').",
-    "A bodyless 401 or 403 is NOT empty on the wire: UseStatusCodePages makes it ProblemDetails whose requestId differs per request. Compare normalised bodies.",
-    "Two TracerProviders in one process lose spans. Any new test class in AgendaBuddy.ServiceDefaults.Tests that starts a server MUST join InProcessServerCollection, or an unrelated telemetry test goes flaky at ~1 run in 3.",
-    "docker is NOT on PATH under Rancher Desktop: export PATH=\"$HOME/.rd/bin:$PATH\".",
-    "The integration suite takes ~2 minutes, which exceeds a 120 s foreground timeout — run it in the background."
-  ],
-
-  "test_state": {
-    "backend": "452 via `dotnet test agenda-buddy-backend.slnf`",
-    "integration": "175 via `dotnet test AgendaBuddy.IntegrationTests/AgendaBuddy.IntegrationTests.csproj` (separate command, ADR-031, needs a container runtime)",
-    "mobile": "74 (67 passing, 7 skipped) via `/p:MobileWorkloads=false`",
-    "total": 701
-  },
-
-  "next_actions_in_order": [
-    "1. Human: review and merge PR #40 (green, mergeable). Note the one replaced pre-existing test it asks you to acknowledge.",
-    "2. /ship F-014 — tag v0.4.0, CHANGELOG, episode 004, archive artifacts, release the claim. Verify against a live stack: the four defects this feature found were all found by running it.",
-    "3. Then F-015 api-gateway-and-mobile-contract, which inherits four client obligations recorded in F-014's ux-review.md, or F-025 booking-correctness, which is smaller.",
-    "4. Independent of all of the above and open across four features: rotate the Atlas credential (agenda-buddy-41s, P0)."
-  ],
-
+  "sub_phase": null,
+  "step": null,
+  "skill_file": null,
+  "work_in_progress": null,
+  "next_action": null,
   "files_open": []
 }
 ```
