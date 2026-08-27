@@ -1177,10 +1177,10 @@ re-planning (`/continue`).
 
 ```json
 {
-  "triggered_at": "2026-08-27T10:10:59.411Z",
+  "triggered_at": "2026-08-27T10:18:38.843Z",
   "session_id": "6fa2c9f8-60c4-489a-82d1-f3cab5161e95",
-  "tool_count": 2095,
-  "estimated_usage": "85%",
+  "tool_count": 2125,
+  "estimated_usage": "86%",
   "active_task": null,
   "sub_phase": null,
   "step": null,

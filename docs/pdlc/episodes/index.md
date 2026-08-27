@@ -16,6 +16,7 @@ Delivery records, one per shipped feature. Permanent — episodes are never arch
 | 006 | container-and-cd-hardening | 2026-08-26 | ⚠️ `docs/pdlc/memory/episodes/006_container-and-cd-hardening_2026-08-26.md` — wrong location, see note below | #48 | Shipped (`v0.6.0`) |
 | 007 | api-refactor-foundations | 2026-08-26 | ⚠️ `docs/pdlc/memory/episodes/007_api-refactor-foundations_2026-08-26.md` — wrong location, see note below | #69 | Shipped (`v0.7.0`) |
 | 008 | api-refactor-pilot-booking | 2026-08-27 | [EPISODE_api-refactor-pilot-booking_2026-08-27.md](EPISODE_api-refactor-pilot-booking_2026-08-27.md) | none — merged directly (`fb91cb1`), see episode's Links section | Shipped (`v0.8.0`) |
+| 009 | api-refactor-rollout | 2026-08-27 | [EPISODE_api-refactor-rollout_2026-08-27.md](EPISODE_api-refactor-rollout_2026-08-27.md) | none — merged directly, see episode's Links section | Shipped (`v0.9.0`) |
 
 **Naming:** `EPISODE_<feature-slug>_<YYYY-MM-DD>.md`, where the date is when the episode was opened, not
 when the feature shipped — 002 opened 2026-08-18 and its ship gate closed 2026-08-22.
