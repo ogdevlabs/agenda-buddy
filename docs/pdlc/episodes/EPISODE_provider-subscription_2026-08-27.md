@@ -6,7 +6,7 @@
 **Feature ID:** F-026
 **Date built:** 2026-08-27, on `feat/F-026-provider-subscription`
 **Phase delivered in:** Construction
-**Date shipped:** 2026-08-27 — merged via the mandated PR path (ADR-050), PR #79, tagged **`v0.12.0`**
+**Date shipped:** 2026-08-27 — merged via the mandated PR path (ADR-050), PR #80, tagged **`v0.12.0`**
 **Status:** Final
 
 ---
