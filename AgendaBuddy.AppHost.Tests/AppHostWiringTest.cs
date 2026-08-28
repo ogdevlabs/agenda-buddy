@@ -390,7 +390,7 @@ public class AppHostWiringTest
     // Container Apps keeps ingress internal unless told otherwise, which would deploy a stack
     // nothing can reach. The mobile app calls all seven services directly.
     [Fact]
-    public void CloudTargetExposesEveryServiceExternally()
+    public void CloudTargetExposesOnlyTheGatewayExternally()
     {
         var builder = BuildModel(DeploymentTarget.Cloud);
 
@@ -399,8 +399,12 @@ public class AppHostWiringTest
             var endpoints = Resource(builder, name).Annotations.OfType<EndpointAnnotation>().ToList();
 
             Assert.NotEmpty(endpoints);
-            Assert.Contains(endpoints, endpoint => endpoint.IsExternal);
+            Assert.DoesNotContain(endpoints, endpoint => endpoint.IsExternal);
         }
+
+        var gatewayEndpoints = Resource(builder, "gateway").Annotations.OfType<EndpointAnnotation>().ToList();
+        Assert.NotEmpty(gatewayEndpoints);
+        Assert.Contains(gatewayEndpoints, endpoint => endpoint.IsExternal);
     }
 
     // WaitFor observes a lifecycle. A connection string to a managed service has none, so gating on

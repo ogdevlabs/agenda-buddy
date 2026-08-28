@@ -128,13 +128,22 @@ internal static class AppHostWiring
         // goes stale across a destination's restart). WaitFor on all seven means the gateway only reports
         // healthy once every destination it could route to is also healthy, mirroring how every service
         // above waits on mongodb/kafka before it is considered up.
-        var gateway = builder.AddProject<Projects.AgendaBuddy_Gateway>("gateway", launchProfileName: null);
+        // Explicit, because Gateway has no appsettings.json for Aspire to derive one from (unlike
+        // the seven services above) — without this, the resource has zero EndpointAnnotations at
+        // all, so nothing is here for WithExternalHttpEndpoints() below to mark external, and the
+        // Cloud publisher would deploy a Gateway with no ingress whatsoever, not merely internal.
+        var gateway = builder.AddProject<Projects.AgendaBuddy_Gateway>("gateway", launchProfileName: null)
+            .WithHttpEndpoint(name: "http");
 
         foreach (var service in new[] { booking, calendar, customer, provider, services, profession, identity })
         {
             gateway.WithReference(service);
             gateway.WaitFor(service);
         }
+
+        // The Gateway is MobileApp's only address (F-015) — it is the one process that needs
+        // ingress. The seven domain services stay internal-only in the Cloud shape (see AddApi).
+        if (deployTarget == DeploymentTarget.Cloud) gateway.WithExternalHttpEndpoints();
 
         return builder;
 
@@ -206,12 +215,6 @@ internal static class AppHostWiring
 
             if (mongoToWaitFor is not null) service.WaitFor(mongoToWaitFor);
             if (needsKafka && kafkaToWaitFor is not null) service.WaitFor(kafkaToWaitFor);
-
-            // The mobile app calls every service directly, so each one needs ingress. Container
-            // Apps keeps them internal unless told otherwise, which would deploy a stack nothing
-            // can reach. See docs/deployment.md on fronting these with a gateway before this is
-            // anything more than a staging deployment.
-            if (deployTarget == DeploymentTarget.Cloud) service.WithExternalHttpEndpoints();
 
             return service;
         }

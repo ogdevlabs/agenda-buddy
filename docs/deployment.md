@@ -36,8 +36,8 @@ The graph is built in one of two shapes, chosen by `AppHostWiring.DeploymentTarg
 |---|---|---|
 | MongoDB | container + persistent volume, password from user secrets | **connection string parameter** — managed cluster (Atlas) |
 | Kafka | container, no volume (E-10) | **connection string parameter** — managed Kafka |
-| The 7 domain services | processes on dynamic localhost ports | one container app each, external HTTP ingress *(⚠️ see gap below — added before the Gateway existed, unchanged since)* |
-| The Gateway | process on a dynamic localhost port, `MobileApp`'s only address | one container app, **no external ingress configured** *(⚠️ backwards — see gap below)* |
+| The 7 domain services | processes on dynamic localhost ports | one container app each, internal-only (no external ingress) |
+| The Gateway | process on a dynamic localhost port, `MobileApp`'s only address | one container app, **external HTTP ingress** — the only externally reachable resource |
 | JWT keys | user secrets, masked in the dashboard | `azd` parameters, stored in Key Vault |
 | `WaitFor` gating | yes — mongo and kafka health-gate startup | **no** — a connection string has no lifecycle to wait on |
 
@@ -51,20 +51,20 @@ Both shapes are asserted by `AgendaBuddy.AppHost.Tests`: the cloud shape provisi
 containers, supplies each data service as a connection string under the same resource name as
 locally, waits for nothing, binds no hardcoded port, and keeps the JWT keys secret.
 
-### ⚠️ Known gap, found in code review, not yet exercised: cloud ingress is backwards post-Gateway
+### Fixed: cloud ingress was backwards post-Gateway
 
-`AppHostWiring.cs`'s `AddApi` helper still unconditionally calls `.WithExternalHttpEndpoints()` on
-each of the seven domain services in the `Cloud` shape — a comment there reads *"the mobile app calls
+`AppHostWiring.cs`'s `AddApi` helper used to unconditionally call `.WithExternalHttpEndpoints()` on
+each of the seven domain services in the `Cloud` shape — a comment there read *"the mobile app calls
 every service directly, so each one needs ingress."* That was true before the Gateway (F-015)
-shipped. It is not true now: `MobileApp` calls only the Gateway, and the Gateway resource itself has
-**no** `.WithExternalHttpEndpoints()` call anywhere in the file. Deploying today (against ADR-035's
-deferral, so nobody has) would produce a cloud graph with all seven domain services publicly
-reachable and the one process meant to be the public entry point internal-only — the opposite of the
-intended topology, and a wider attack surface than the local-dev threat model item 2 below describes.
-**Fix before any real deployment**: swap which resource(s) get `.WithExternalHttpEndpoints()` — the
-Gateway should have it, the seven domain services should not. Tracked under **F-017**, which owns the
-container/CD story; not fixed here because cloud deploy is deferred and unexercised (ADR-035), so
-nothing has hit this yet, but the next person to actually run `azd up` will.
+shipped, and stopped being fixed once `MobileApp` moved to calling only the Gateway. Found and fixed
+before any real deployment (the code had never been exercised — ADR-035): `.WithExternalHttpEndpoints()`
+now lives only on the `gateway` resource; the seven domain services stay internal-only. A second,
+related gap surfaced while fixing this: the Gateway resource had **zero** `EndpointAnnotation`s at
+all (Aspire derives them from a project's `appsettings.json` `Kestrel:Endpoints` block, and Gateway
+has none), so marking "external" had nothing to mark — `gateway` now gets an explicit
+`.WithHttpEndpoint(name: "http")` so it has a real endpoint to publish. Both are asserted by
+`AppHostWiringTest.CloudTargetExposesOnlyTheGatewayExternally`, so a regression fails a test rather
+than only surfacing on the first real `azd up`.
 
 ## Prerequisites
 
@@ -148,14 +148,13 @@ half-configured, which is the failure mode the `CI_JWT_*` guard in `dotnet.yml` 
 This gets a working staging deployment. It is **not** a production posture, and the gaps are
 specific:
 
-1. **⚠️ Rotate the Atlas credential first.** See
+1. **⚠️ Rotate the Atlas credential first, or deploy against a fresh cluster.** See
    `docs/issues/ISSUE-002-atlas-credential-rotation.md`. Deploying to the cloud while a credential
    with full read/write access to the cluster sits in public git history means the deployment and the
    attacker share a database.
-2. **The ingress topology needs the fix described above before anything else.** Even once the Gateway
-   is the only externally-reachable process, it alone has no rate limiting, no WAF, and no single
-   place to revoke a token — front it with Azure Front Door or API Management before real users
-   exist.
+2. **Ingress topology is now correct** (only the Gateway is externally reachable), but the Gateway
+   alone has no rate limiting, no WAF, and no single place to revoke a token — front it with Azure
+   Front Door or API Management before real users exist.
 3. **No staging/production separation.** One `azd` environment and one Atlas cluster. A deploy is a
    deploy.
 4. **The dashboard is a privileged surface.** The Aspire dashboard exposes environment variables,
