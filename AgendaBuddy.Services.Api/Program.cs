@@ -80,6 +80,22 @@ _ = Task.Run(async () =>
     }
 });
 
+// Same fire-and-forget rationale as above (F-024). IEventStore is scoped (it needs the
+// request's principal to stamp Event.Actor), so ensuring its index at startup -- outside any
+// request -- needs its own scope rather than resolving it straight from the root provider.
+_ = Task.Run(async () =>
+{
+    try
+    {
+        using var scope = app.Services.CreateScope();
+        await scope.ServiceProvider.GetRequiredService<IEventStore>().EnsureIndexAsync();
+    }
+    catch (Exception ex)
+    {
+        app.Logger.LogWarning(ex, "Could not ensure the events collection's retention index at startup");
+    }
+});
+
 // /health runs every check; /alive only the live-tagged ones, so a service waiting on MongoDB is
 // not restarted for being unready.
 app.MapDefaultEndpoints();

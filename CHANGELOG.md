@@ -4,6 +4,26 @@ All notable changes to this project are documented in this file, in [Keep a Chan
 
 ## [Unreleased]
 
+## [0.15.0] - 2026-08-27
+
+### Added
+
+- **F-024 data-subject-rights**: `IEventStore.EnsureIndexAsync()` creates a TTL index on `Event.TimeStamp`
+  (`EventStore:RetentionDays`, default 400 days) and a secondary index on `Event.Type`, wired into every
+  service that registers `IEventStore`. Bounded retention closes the one surviving gap in "does erasure
+  work" — the appointment 2-copy deletion and query-audit PII amplification named at this feature's
+  original filing were already fixed by earlier work; only the audit trail's unbounded lifetime remained
+  (ADR-056). Field-level encryption for `NoteEntity.Content` evaluated and descoped (ADR-057,
+  `agenda-buddy-vba`); a cross-service export/erasure API also descoped (`agenda-buddy-ge2`). New
+  `docs/pdlc/design/data-subject-rights/RETENTION.md` documents the policy.
+
+### Fixed
+
+- `AgendaBuddy.ServiceDefaults.Tests.TelemetryPiiTest` no longer intermittently drops its own exported
+  span under host CPU contention (many test-project processes running concurrently) — explicit, bounded
+  `TracerProvider.ForceFlush` before disposal, rather than relying on disposal's implicit flush timing.
+  Pre-existing flake, unrelated to any feature shipped this session.
+
 ## [0.14.0] - 2026-08-27
 
 ### Changed

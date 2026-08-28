@@ -1,12 +1,12 @@
 ---
 id: F-024
 title: data-subject-rights
-status: planned
+status: shipped
 priority: 24
 labels: [roadmap, "priority:24"]
 claimed_by: null
 created: 2026-08-18
-updated: 2026-08-18
+updated: 2026-08-28
 ---
 No data-subject-rights capability exists: no export, no deletion, no anonymisation. The deeper problem is that deletion is not currently possible even manually, because the same record is stored in three places. BookingService.CancelAppointmentAsync hard-deletes an appointment from the appointments collection, but the same appointment ALSO persists embedded inside the provider document (ProviderEntity.cs:40-42 embeds AppointmentEntities) and AGAIN inside the events audit blobs, where every command and every query serialises its full payload as a JSON string (Event.cs:14). So "delete" leaves at least two copies, and any erasure request is unsatisfiable today.
 

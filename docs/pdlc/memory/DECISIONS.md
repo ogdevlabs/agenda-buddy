@@ -1309,3 +1309,85 @@ Validot/MiniValidator migration (`agenda-buddy-02e`) is unaffected and unblocked
 **Alternatives rejected.** Adopting `Validate<T>` for the routes this feature touches anyway — rejected
 because it would mean three concurrent validation approaches in the same codebase with no plan to
 converge on one, worse than the current two-library transition state.
+
+---
+
+## ADR-056 — Bounded retention is the erasure mechanism for the audit trail, not per-record redaction (F-024)
+
+**Date:** 2026-08-27 · **Status:** Accepted
+
+**Context.** Re-verifying F-024's 2026-08-18 filing against current code found the appointment/provider
+2-copy deletion problem and the query-audit PII-amplification problem already fixed by earlier work
+(F-016's `QueryAudit`, and a `CancelAppointmentCommandHandler` fix that predates this session). The one
+surviving gap: the `events` collection has no index and no retention, and 11 command handlers write the
+full entity they acted on into their audit event's `Data` field by design (that IS the audit content for a
+write — see `QueryAudit`'s own remarks on why command and query audits are treated differently). So a
+cancelled appointment's data — and any other erased entity's data — still survives indefinitely inside its
+own audit record.
+
+**Decision.** Add a TTL index on `Event.TimeStamp` (`EventStore.EnsureIndexAsync`, configurable via
+`EventStore:RetentionDays`, default 400 days) plus a secondary index on `Event.Type`. Do **not** build a
+mechanism to find-and-redact a specific record's `Data` field on an erasure request.
+
+**Why not per-record redaction.** An audit trail's value is that it is append-only and trustworthy — "who
+did what, when." A mechanism that can selectively edit or delete individual records on request makes the
+trail indistinguishable from a tampered one: an incident investigator (or this project's own
+`EventStoreWriteGuardTest`) cannot tell "this record was redacted for a legitimate erasure request" apart
+from "this record was altered to hide something." Bounded retention deletes the *whole* record, on a
+schedule known in advance, which preserves that property — nothing is selectively edited, everything past
+the window is gone the same way for everyone.
+
+**Consequences.** After the retention window passes, no copy of an erased entity's data survives anywhere
+in the system (appointments collection: already deleted on cancel; provider's embedded copy: already
+removed on cancel; audit trail: expires via this TTL index). Within the window, a `DELETE` request is
+honored for the live collections immediately but the entity's *history* remains reconstructable from the
+audit trail until expiry — disclosed as a real property, not hidden. 400 days was chosen as long enough to
+cover a plausible incident-investigation or compliance-audit window and short enough to bound exposure; it
+is configuration, not a hardcoded constant, so it can be revisited without a code change.
+
+**Alternatives rejected.** Field-level redaction of `Data` (store a placeholder instead of the real payload
+once the referenced entity is deleted) — rejected for the tampering-indistinguishability reason above, and
+because it requires the audit system to know about every entity type's deletion, coupling it to every
+domain rather than staying a generic append-and-expire store. No retention at all (status quo) — rejected,
+it's the entire gap this ADR closes.
+
+---
+
+## ADR-057 — Field-level encryption for `NoteEntity.Content` is descoped, not implemented (F-024)
+
+**Date:** 2026-08-27 · **Status:** Accepted
+
+**Context.** `NoteEntity.Content` holds a provider's private therapy/coaching session notes about a
+customer — the most sensitive data in the product — with no encryption beyond whatever Atlas provides by
+default. F-024's PRD named this in scope for evaluation.
+
+**Decision.** Evaluate, do not implement, in this pass. Filed as `agenda-buddy-vba` for its own design
+pass.
+
+**Why not implemented now.** Two real candidates exist and neither is a low-risk addition alongside a
+fast-moving feature-shipping run:
+
+1. **CSFLE / MongoDB Queryable Encryption** — the "proper" MongoDB-native answer, but needs a KMS provider,
+   an encrypted-field schema map, and (for Queryable Encryption specifically) driver and Atlas-tier support
+   this project hasn't provisioned. A genuine new-infrastructure decision.
+2. **Application-layer AES-GCM** at the repository boundary (encrypt on write, decrypt on read, key from a
+   new secret parameter mirroring the existing `jwt-public-key`/`jwt-private-key` pattern) — lower
+   infrastructure cost, but still needs a real key-management/rotation story (a lost or rotated key makes
+   every existing note unreadable — worse than no encryption if rushed) and a decision on whether
+   `Content` ever needs to remain searchable (it currently isn't queried directly, which favors this
+   option, but that should be confirmed deliberately, not assumed under time pressure).
+
+Neither is something to implement correctly inside a one-pass, fully-autonomous feature run without
+stopping to think through key rotation and failure modes — doing it hastily risks the exact "worse than no
+encryption" failure mode above (an unreadable note because a key rotated incorrectly is a data-loss bug,
+not a privacy win).
+
+**Consequences.** `NoteEntity.Content` remains unencrypted at the application layer for now, protected only
+by whatever encryption-at-rest Atlas provides by default and this project's existing network/auth controls.
+This is a real, disclosed gap, not a hidden one — `agenda-buddy-vba` names it and both candidate approaches
+explicitly, so the next pass starts from an evaluated position rather than from scratch.
+
+**Alternatives rejected.** Implementing the AES-GCM option anyway inside this pass — rejected per the
+reasoning above (key-rotation risk in a one-shot, non-stop-to-think execution). Doing nothing and not
+filing the follow-up — rejected, the PRD's own Requirement 4 and the parent directive both required this
+be a recorded decision, not a silent skip.

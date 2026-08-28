@@ -5,8 +5,11 @@ namespace AgendaBuddy.EventAndCommands.Persistence;
 
 public class EventStore : IEventStore
 {
+    private const int DefaultRetentionDays = 400;
+
     private readonly IMongoCollection<Event> _eventCollection;
     private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly int _retentionDays;
 
     /// <summary>
     /// Resolves the events collection from the shared client.
@@ -43,6 +46,30 @@ public class EventStore : IEventStore
 
         _eventCollection = database.GetCollection<Event>(
             MongoConnectionResolver.ResolveSetting(configuration, "EventsCollection", "events"));
+
+        _retentionDays = int.TryParse(configuration["EventStore:RetentionDays"], out var configured)
+            ? configured
+            : DefaultRetentionDays;
+    }
+
+    /// <remarks>
+    /// This is the resolution to the audit trail outliving an erasure request (F-024): the
+    /// `appointments` collection and a provider's embedded copy are already cleaned up on
+    /// cancellation, but every command handler's audit record still carries the full entity it
+    /// acted on (by design — that IS the audit content for a write, see <see cref="QueryAudit"/>'s
+    /// remarks on why query and command audits are treated differently). Redacting one record on
+    /// request is not attempted — a selectively-edited audit trail is indistinguishable from a
+    /// tampered one. A bounded retention window is: no audit record, and nothing it carries,
+    /// survives longer than <see cref="_retentionDays"/> days.
+    /// </remarks>
+    public async Task EnsureIndexAsync()
+    {
+        var ttlKeys = Builders<Event>.IndexKeys.Ascending(e => e.TimeStamp);
+        var ttlOptions = new CreateIndexOptions { ExpireAfter = TimeSpan.FromDays(_retentionDays) };
+        await _eventCollection.Indexes.CreateOneAsync(new CreateIndexModel<Event>(ttlKeys, ttlOptions));
+
+        var typeKeys = Builders<Event>.IndexKeys.Ascending(e => e.Type);
+        await _eventCollection.Indexes.CreateOneAsync(new CreateIndexModel<Event>(typeKeys));
     }
 
     /// <summary>
