@@ -3,11 +3,20 @@ name: Deploy to Azure Container Apps
 # Manual only, deliberately. A push-triggered deploy on a project with one shared Atlas cluster and
 # no staging/production split is a foot-gun; wire this to `push: branches: [main]` once
 # docs/deployment.md's "Before this is production" list is actually done.
+#
+# No step in this workflow requires a human to run a CLI command by hand: Terraform provisions
+# this environment's resource group, deploy identity and secrets store, then azd/Aspire's own
+# publisher provisions and deploys the application resource graph — both non-interactively,
+# both authenticated via the same GitHub OIDC federated credential. The only human action left
+# is the one-time-per-subscription infra/terraform/bootstrap apply (see docs/deployment.md) and
+# the one-time-per-new-environment apply that creates that environment's own deploy identity
+# (chicken-and-egg: an identity that doesn't exist yet can't authenticate the run that creates
+# it — see docs/deployment.md's "One-time subscription bootstrap" section).
 on:
   workflow_dispatch:
     inputs:
       environment:
-        description: "azd environment name (e.g. staging)"
+        description: "Environment name (matches the GitHub Environment and the azd environment name, e.g. staging)"
         required: true
         default: staging
       provision:
@@ -16,8 +25,9 @@ on:
         required: false
         default: false
 
-# Federated credentials, not a stored client secret: id-token lets azd exchange a GitHub OIDC token
-# for an Azure one, so there is no long-lived credential in this repository to leak or rotate.
+# Federated credentials, not a stored client secret: id-token lets both terraform and azd
+# exchange a GitHub OIDC token for an Azure one, so there is no long-lived credential in this
+# repository to leak or rotate.
 permissions:
   id-token: write
   contents: read
@@ -25,6 +35,12 @@ permissions:
 concurrency:
   group: deploy-${{ inputs.environment }}
   cancel-in-progress: false
+
+env:
+  ARM_USE_OIDC: "true"
+  ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+  ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+  ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
 jobs:
   deploy:
@@ -44,18 +60,83 @@ jobs:
           AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
           AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
           AZURE_LOCATION: ${{ vars.AZURE_LOCATION }}
-          AZD_ENV_VARS: ${{ secrets.AZD_ENV_VARS }}
+          TF_STATE_RESOURCE_GROUP: ${{ vars.TF_STATE_RESOURCE_GROUP }}
+          TF_STATE_STORAGE_ACCOUNT: ${{ vars.TF_STATE_STORAGE_ACCOUNT }}
+          TF_STATE_CONTAINER: ${{ vars.TF_STATE_CONTAINER }}
+          TF_VAR_agenda_buddy_connection_string: ${{ secrets.ATLAS_AGENDA_BUDDY_CONNECTION_STRING }}
+          TF_VAR_identity_db_connection_string: ${{ secrets.ATLAS_IDENTITY_DB_CONNECTION_STRING }}
+          TF_VAR_kafka_bootstrap_servers: ${{ secrets.KAFKA_BOOTSTRAP_SERVERS }}
+          TF_VAR_jwt_public_key: ${{ secrets.JWT_PUBLIC_KEY }}
+          TF_VAR_jwt_private_key: ${{ secrets.JWT_PRIVATE_KEY }}
         run: |
           missing=""
-          for name in AZURE_CLIENT_ID AZURE_TENANT_ID AZURE_SUBSCRIPTION_ID AZURE_LOCATION; do
-            [ -n "${!name:-}" ] || missing="$missing $name (repository variable)"
+          for name in AZURE_CLIENT_ID AZURE_TENANT_ID AZURE_SUBSCRIPTION_ID AZURE_LOCATION \
+                      TF_STATE_RESOURCE_GROUP TF_STATE_STORAGE_ACCOUNT TF_STATE_CONTAINER; do
+            [ -n "${!name:-}" ] || missing="$missing $name (repository or environment variable)"
           done
-          [ -n "${AZD_ENV_VARS:-}" ] || missing="$missing AZD_ENV_VARS (repository secret)"
+          for name in TF_VAR_agenda_buddy_connection_string TF_VAR_identity_db_connection_string \
+                      TF_VAR_kafka_bootstrap_servers TF_VAR_jwt_public_key TF_VAR_jwt_private_key; do
+            [ -n "${!name:-}" ] || missing="$missing $name (environment secret)"
+          done
           if [ -n "$missing" ]; then
             echo "::error::Missing required configuration:$missing — see docs/deployment.md"
             exit 1
           fi
           echo "All required configuration present."
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~> 1.9"
+
+      # This environment's own deploy identity (client_id/tenant_id/subscription_id) is what
+      # authenticates this very step via OIDC — for a brand-new environment that identity does
+      # not exist yet, which is why creating one is a one-time human-run `terraform apply` (see
+      # docs/deployment.md) rather than something this workflow can do for itself. Every run
+      # after that first one is unattended.
+      - name: Terraform init
+        working-directory: infra/terraform/environment
+        run: |
+          terraform init -input=false \
+            -backend-config="resource_group_name=${{ vars.TF_STATE_RESOURCE_GROUP }}" \
+            -backend-config="storage_account_name=${{ vars.TF_STATE_STORAGE_ACCOUNT }}" \
+            -backend-config="container_name=${{ vars.TF_STATE_CONTAINER }}" \
+            -backend-config="key=agenda-buddy-${{ inputs.environment }}.tfstate"
+
+      - name: Terraform apply
+        working-directory: infra/terraform/environment
+        env:
+          TF_VAR_environment_name: ${{ inputs.environment }}
+          TF_VAR_location: ${{ vars.AZURE_LOCATION }}
+          TF_VAR_subscription_id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          TF_VAR_tenant_id: ${{ vars.AZURE_TENANT_ID }}
+          TF_VAR_agenda_buddy_connection_string: ${{ secrets.ATLAS_AGENDA_BUDDY_CONNECTION_STRING }}
+          TF_VAR_identity_db_connection_string: ${{ secrets.ATLAS_IDENTITY_DB_CONNECTION_STRING }}
+          TF_VAR_kafka_bootstrap_servers: ${{ secrets.KAFKA_BOOTSTRAP_SERVERS }}
+          TF_VAR_jwt_public_key: ${{ secrets.JWT_PUBLIC_KEY }}
+          TF_VAR_jwt_private_key: ${{ secrets.JWT_PRIVATE_KEY }}
+        run: terraform apply -input=false -auto-approve
+
+      # Feeds azd exactly what it would otherwise have asked a human for interactively:
+      # AZURE_CLIENT_ID/TENANT_ID/SUBSCRIPTION_ID for federated login, plus the connection
+      # strings and JWT keys the AppHost's cloud shape (AppHostWiring.cs) declares as parameters
+      # — read from this environment's own Key Vault rather than a hand-maintained secret blob.
+      - name: Read Terraform outputs
+        id: tf
+        working-directory: infra/terraform/environment
+        run: |
+          {
+            echo "client_id=$(terraform output -raw client_id)"
+            echo "resource_group_name=$(terraform output -raw resource_group_name)"
+            echo "key_vault_name=$(terraform output -raw key_vault_name)"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: azd login (federated, this environment's own identity)
+        run: |
+          azd auth login \
+            --client-id "${{ steps.tf.outputs.client_id }}" \
+            --tenant-id "${{ vars.AZURE_TENANT_ID }}" \
+            --federated-credential-provider github
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v6
@@ -65,22 +146,9 @@ jobs:
       - name: Install azd
         uses: Azure/setup-azd@v2
 
-      - name: azd login (federated)
-        run: |
-          azd auth login \
-            --client-id "${{ vars.AZURE_CLIENT_ID }}" \
-            --tenant-id "${{ vars.AZURE_TENANT_ID }}" \
-            --federated-credential-provider github
-
-      # AZD_ENV_VARS is a newline-separated KEY=VALUE list holding the values the AppHost's
-      # parameters and connection strings resolve to — the Atlas connection strings, the Kafka
-      # bootstrap endpoint and the two JWT keys. It is one secret rather than five so the exact
-      # names azd derives from the resource graph can change without editing this workflow; run
-      # `azd up` once interactively to see what it asks for. Multi-line values (the PEM keys) must
-      # be base64-encoded with a `_B64` suffix, since a KEY=VALUE line cannot carry newlines.
-      - name: Configure azd environment
+      - name: Configure azd environment from Key Vault
         env:
-          AZD_ENV_VARS: ${{ secrets.AZD_ENV_VARS }}
+          KEY_VAULT_NAME: ${{ steps.tf.outputs.key_vault_name }}
         run: |
           set -eu
           azd env new "${{ inputs.environment }}" \
@@ -88,14 +156,21 @@ jobs:
             --subscription "${{ vars.AZURE_SUBSCRIPTION_ID }}" \
             --no-prompt || azd env select "${{ inputs.environment }}"
 
-          printf '%s\n' "$AZD_ENV_VARS" | while IFS= read -r line; do
-            [ -z "$line" ] && continue
-            key=${line%%=*}
-            value=${line#*=}
-            case "$key" in
-              *_B64) key=${key%_B64}; value=$(printf '%s' "$value" | base64 -d) ;;
-            esac
-            azd env set "$key" "$value"
+          # Names on the left are what the AppHost's resource graph declares
+          # (AppHostWiring.cs: agenda-buddy / IdentityDb connection strings, kafka connection
+          # string, jwt-public-key / jwt-private-key parameters) — azd derives the exact
+          # environment-variable names it prompts for from that graph; capture them once from a
+          # `azd provision` dry run if this list ever needs updating.
+          declare -A secret_names=(
+            [agenda-buddy-connection]=CONNECTIONSTRING_AGENDA_BUDDY
+            [identity-db-connection]=CONNECTIONSTRING_IDENTITYDB
+            [kafka-bootstrap-servers]=CONNECTIONSTRING_KAFKA
+            [jwt-public-key]=JWT_PUBLIC_KEY
+            [jwt-private-key]=JWT_PRIVATE_KEY
+          )
+          for secret in "${!secret_names[@]}"; do
+            value=$(az keyvault secret show --vault-name "$KEY_VAULT_NAME" --name "$secret" --query value -o tsv)
+            azd env set "${secret_names[$secret]}" "$value"
           done
 
       - name: azd provision
@@ -105,6 +180,35 @@ jobs:
       - name: azd deploy
         run: azd deploy --no-prompt
 
-      - name: Report endpoints
+      - name: Smoke test — the gateway reports healthy
         if: always()
-        run: azd show --output json | tee "$RUNNER_TEMP/azd-show.json" || true
+        run: |
+          # Only the gateway has external ingress (AppHostWiring.cs — the 7 domain services
+          # are deliberately internal-only in the Cloud shape), so it is the only endpoint this
+          # runner can reach at all; a service being unreachable from here is expected, not a
+          # failure.
+          azd show --output json | tee "$RUNNER_TEMP/azd-show.json"
+          python3 - "$RUNNER_TEMP/azd-show.json" <<'PY'
+          import json, sys, urllib.request
+
+          with open(sys.argv[1]) as f:
+              data = json.load(f)
+
+          endpoint = (data.get("services", {}).get("gateway", {}).get("endpoint") or "").rstrip("/")
+          if not endpoint:
+              print("::error::azd show reported no endpoint for the gateway service.")
+              sys.exit(1)
+
+          for probe in ("/health", "/alive"):
+              url = f"{endpoint}{probe}"
+              try:
+                  with urllib.request.urlopen(url, timeout=15) as response:
+                      if response.status != 200:
+                          print(f"::error::{url} -> HTTP {response.status}")
+                          sys.exit(1)
+              except Exception as exc:
+                  print(f"::error::{url} -> {exc}")
+                  sys.exit(1)
+
+          print(f"Gateway healthy: {endpoint}/health and /alive both returned 200.")
+          PY

@@ -36,6 +36,10 @@ jobs:
       # publishes), so it triggers only on the 7 service directories and docker-compose*.yml, not on
       # every backend-adjacent change `api` also covers (AgendaBuddy.Library, AgendaBuddy.EventAndCommands, test projects).
       docker: ${{ steps.filter.outputs.docker }}
+      # Deliberately its own filter, not folded into `api`: infra/terraform/** has no .csproj/.cs
+      # for the backend build to compile and no container for the docker matrix to publish — the
+      # only thing worth running on it is terraform-validate.
+      terraform: ${{ steps.filter.outputs.terraform }}
       # AND-ed into every build job so a markdown-only change never builds. See the long note on
       # the filters below for why this is a separate filter rather than a `!**/*.md` negation.
       code: ${{ steps.filter.outputs.code }}
@@ -202,6 +206,8 @@ jobs:
               - 'AgendaBuddy.Library/**'
               - 'Directory.Build.props'
               - '.github/workflows/dotnet.yml'
+            terraform:
+              - 'infra/terraform/**'
 
   # ---------------------------------------------------------------------------
   # API services — build + test (runs when backend or shared library changes)
@@ -777,6 +783,41 @@ jobs:
           --collect:"XPlat Code Coverage"
 
   # ---------------------------------------------------------------------------
+  # Terraform — fmt + validate (infra/terraform/**). No plan/apply here — there is no Azure
+  # credential in a PR context, and a plan against a real backend needs one. This job only
+  # catches syntax/schema errors before they reach docs/deployment.md's "run this once" steps.
+  # ---------------------------------------------------------------------------
+  terraform-validate:
+    name: "Terraform — fmt + validate"
+    needs: changes
+    if: needs.changes.outputs.terraform == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        config: [bootstrap, environment]
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~> 1.9"
+
+      - name: terraform fmt -check
+        working-directory: infra/terraform/${{ matrix.config }}
+        run: terraform fmt -check -diff
+
+      # -backend=false: validate only checks syntax and provider schemas, which needs no
+      # credentials and no real backend/state.
+      - name: terraform init (no backend)
+        working-directory: infra/terraform/${{ matrix.config }}
+        run: terraform init -backend=false -input=false
+
+      - name: terraform validate
+        working-directory: infra/terraform/${{ matrix.config }}
+        run: terraform validate
+
+  # ---------------------------------------------------------------------------
   # One check that always reports, whatever the filters decided
   # ---------------------------------------------------------------------------
   # Path filtering means the set of jobs differs per PR, which makes "is CI green?" hard to answer
@@ -784,7 +825,7 @@ jobs:
   # always runs, prints which filters fired, and fails if any job that *did* run failed. Point
   # branch protection at this one.
   summary:
-    needs: [changes, build-and-test, security-scan, docker-build-and-scan, integration, build-android, build-ios, build-mobile-tests]
+    needs: [changes, build-and-test, security-scan, docker-build-and-scan, integration, build-android, build-ios, build-mobile-tests, terraform-validate]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -794,6 +835,7 @@ jobs:
           MOBILE: ${{ needs.changes.outputs.mobile }}
           MOBILE_TESTS: ${{ needs.changes.outputs.mobile-tests }}
           DOCKER: ${{ needs.changes.outputs.docker }}
+          TERRAFORM: ${{ needs.changes.outputs.terraform }}
           CODE: ${{ needs.changes.outputs.code }}
           R_BACKEND: ${{ needs.build-and-test.result }}
           R_SECURITY: ${{ needs.security-scan.result }}
@@ -802,6 +844,7 @@ jobs:
           R_ANDROID: ${{ needs.build-android.result }}
           R_IOS: ${{ needs.build-ios.result }}
           R_MOBILE_TESTS: ${{ needs.build-mobile-tests.result }}
+          R_TERRAFORM: ${{ needs.terraform-validate.result }}
         run: |
           {
             echo "### CI summary"
@@ -817,6 +860,7 @@ jobs:
             echo "| mobile | \`$MOBILE\` | Android build | \`$R_ANDROID\` |"
             echo "| mobile | \`$MOBILE\` | iOS build | \`$R_IOS\` |"
             echo "| mobile-tests | \`$MOBILE_TESTS\` | Mobile unit tests | \`$R_MOBILE_TESTS\` |"
+            echo "| terraform | \`$TERRAFORM\` | Terraform fmt + validate | \`$R_TERRAFORM\` |"
             echo
             echo "\`skipped\` means no file in that filter's paths changed — not that anything was ignored."
           } >> "$GITHUB_STEP_SUMMARY"
@@ -840,7 +884,7 @@ jobs:
           fi
 
           failed=""
-          for pair in "build-and-test:$R_BACKEND" "security-scan:$R_SECURITY" "docker-build-and-scan:$R_DOCKER" "android:$R_ANDROID" "ios:$R_IOS" "mobile-tests:$R_MOBILE_TESTS"; do
+          for pair in "build-and-test:$R_BACKEND" "security-scan:$R_SECURITY" "docker-build-and-scan:$R_DOCKER" "android:$R_ANDROID" "ios:$R_IOS" "mobile-tests:$R_MOBILE_TESTS" "terraform-validate:$R_TERRAFORM"; do
             name=${pair%%:*}; result=${pair#*:}
             case "$result" in
               failure|cancelled) failed="$failed $name($result)" ;;

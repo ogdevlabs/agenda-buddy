@@ -1391,3 +1391,52 @@ explicitly, so the next pass starts from an evaluated position rather than from 
 reasoning above (key-rotation risk in a one-shot, non-stop-to-think execution). Doing nothing and not
 filing the follow-up — rejected, the PRD's own Requirement 4 and the parent directive both required this
 be a recorded decision, not a silent skip.
+
+## ADR-058 — Terraform scoped to identity/state bootstrap only; Aspire/azd keeps owning the application resource graph
+
+**Date:** 2026-08-27 · **Status:** Accepted
+
+**Context.** Deploying to Azure required removing every manual CLI step a human ran by hand
+(`azd auth login`, `azd env new`, a batch of `azd env set` commands) and, separately, using
+Terraform. Those two asks are in tension with a third: follow Aspire's own deployment guidance,
+where the AppHost's resource graph is the infrastructure description and `azd`'s generated Bicep
+provisions it end-to-end (resource group, Container Apps environment, registry, the container
+apps themselves). Terraform is not a supported Aspire publisher — using it for that same layer
+means overriding Aspire's own model, which contradicts following its guidelines.
+
+**Decision.** Split ownership along the line Aspire's own guidance already implies: Terraform
+(`infra/terraform/`) provisions exactly what `azd`/Aspire has no opinion about and cannot
+bootstrap non-interactively —
+
+- the resource group each environment's resources live in,
+- the GitHub Actions deploy identity (an Entra app registration with a GitHub OIDC federated
+  credential, scoped to one GitHub Environment, plus the role assignments `azd` needs inside
+  that resource group), and
+- a Key Vault holding that environment's secrets (Atlas connection strings, JWT keypair, Kafka
+  endpoint).
+
+Aspire's own `azd` publisher keeps owning everything inside that resource group — the Container
+Apps environment, the registry, one container app per service — unchanged from
+`AgendaBuddy.AppHost/AppHostWiring.cs`'s existing cloud shape. `.github/workflows/deploy.yml` runs
+both non-interactively in sequence (`terraform apply` then `azd provision`/`azd deploy`),
+authenticated the same way for both steps.
+
+**Why not full Terraform ownership.** The alternative — Terraform also provisioning the Container
+Apps environment and registry, with the AppHost reconfigured to treat them as pre-existing
+resources — was considered and rejected for this pass: it works against Aspire's default
+assumptions rather than with them, is materially more custom wiring to get right, and (with no
+live Azure subscription available to test against in this environment) could not be verified
+end-to-end before shipping. The chosen split needed no changes to `AppHostWiring.cs`, `azure.yaml`,
+or their existing tests at all.
+
+**Consequences.** Two genuinely one-time, human-run `terraform apply` invocations remain — the
+state-backend bootstrap (once per Azure subscription) and each new environment's own deploy
+identity (once per environment, since an identity cannot create the trust relationship that lets
+it authenticate itself). Every deployment after that, including an environment's first, runs
+unattended from GitHub Actions. See `docs/deployment.md`'s "Why Terraform, and for exactly what"
+and "One-time subscription bootstrap" sections for the full mechanism.
+
+**Alternatives rejected.** Full Terraform ownership of the ACA layer — rejected above. Dropping
+Aspire's own publisher entirely in favor of hand-written Terraform for the container apps
+themselves — rejected outright: it would abandon the officially-supported Aspire→azd path this
+project otherwise follows, for infrastructure Aspire already knows how to generate correctly.

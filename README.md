@@ -251,9 +251,18 @@ The Aspire dashboard exposes environment variables, configuration, logs, and tra
 
 ### Deploying to the cloud
 
-**Deliberately deferred, not blocked.** Azure deployment is not reviewed or exercised until every pending roadmap feature ships and the tech debt of things no longer needed is discharged — deploying now would provision cost and attack surface for a system whose own roadmap says several features still don't work. See [DECISIONS.md](docs/pdlc/memory/DECISIONS.md) (ADR-035) and [docs/pdlc/memory/DEPLOYMENTS.md](docs/pdlc/memory/DEPLOYMENTS.md) for the current status. **Rotating the Atlas credential does not wait for this** — see [ISSUE-002](docs/issues/ISSUE-002-atlas-credential-rotation.md).
-
-The capability exists in code — `azd up` turns the AppHost's resource graph into Azure Container Apps — and is unit-tested, but has never been run. ⚠️ **Known gap in that code, not yet exercised**: the cloud shape still gives every one of the seven backend services public ingress and gives the Gateway none — backwards from the architecture since the Gateway shipped (the mobile client now calls only the Gateway). This needs fixing before a real deployment, tracked under **F-017**.
+**Capability added, not yet exercised.** With the roadmap's planned features shipped, cloud
+deployment wiring is now in place: the AppHost's resource graph, an `azd`/Aspire publisher for
+the Container Apps environment/registry/container apps, and a Terraform layer
+(`infra/terraform/`) for the identity and secrets bootstrap `azd` itself has no opinion about.
+The known cloud-ingress-topology bug (every backend service getting public ingress while the
+Gateway got none) is fixed — only the Gateway is externally reachable now, matching the
+architecture since it shipped. **No deployment has actually been run from this repository yet**
+— see [DECISIONS.md](docs/pdlc/memory/DECISIONS.md) (ADR-035, ADR-058) and
+[docs/pdlc/memory/DEPLOYMENTS.md](docs/pdlc/memory/DEPLOYMENTS.md) for current status.
+**Rotating the Atlas credential does not wait for this** — a fresh, uncompromised cluster is used
+for the new deployment instead; the original compromised credential remains separately tracked
+in [ISSUE-002](docs/issues/ISSUE-002-atlas-credential-rotation.md).
 
 → **[docs/deployment.md](docs/deployment.md)** for the full procedure, what is verified, and the list of gaps between this and a production posture.
 
@@ -326,7 +335,7 @@ The connection string is resolved in this order, first non-empty winning: `Conne
 | F-018–F-020 | Full Clean Architecture refactor (staged: harness → pilot on Booking → rollout) | 🔵 Planned | — |
 | F-022–F-025 | Password reset, token revocation, data-subject rights, booking slot-overlap correctness | 🔵 Planned | — |
 
-**Known, tracked gaps:** the Atlas credential in git history is unrotated (P0, human-only — [ISSUE-002](docs/issues/ISSUE-002-atlas-credential-rotation.md)); cloud deployment is deferred by decision (ADR-035), not blocked; three Dockerfiles publish `net10.0` onto a `dotnet/runtime:8.0` base and cannot run (F-017).
+**Known, tracked gaps:** the Atlas credential in git history is unrotated (P0, human-only — [ISSUE-002](docs/issues/ISSUE-002-atlas-credential-rotation.md), not blocking cloud deployment since a fresh cluster is used instead); cloud deployment wiring exists but has never been run (see "Deploying to the cloud" above); three Dockerfiles publish `net10.0` onto a `dotnet/runtime:8.0` base and cannot run (F-017).
 
 ---
 
