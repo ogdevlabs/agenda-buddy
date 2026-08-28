@@ -5,7 +5,7 @@
      Claude reads this file at the start of every session to auto-resume from the last checkpoint.
      If this file is missing or empty, PDLC will prompt you to run /pdlc init. -->
 
-**Last updated:** 2026-08-27T21:40:00Z
+**Last updated:** 2026-08-27T23:50:00Z
 
 ---
 
@@ -18,6 +18,25 @@ Idle
 ## Current Feature
 
 none
+
+_**F-024 `data-subject-rights` SHIPPED** as `v0.15.0` — merged via the mandated PR path (REST API, no
+`gh`), episode 015. Re-verified the 2026-08-18 filing against current code before Design: the appointment
+2-copy deletion and query-audit PII-amplification problems named at filing were already fixed by earlier
+work (a `CancelAppointmentCommandHandler` fix and F-016's `QueryAudit`) — no code change needed for
+either. The one surviving gap — the `events` collection had no index/retention, so 11 command handlers'
+full-entity audit payloads survived forever — fixed via `IEventStore.EnsureIndexAsync()` (TTL index on
+`timestamp`, secondary index on `type`, wired into all 6 `IEventStore`-registering services; Identity
+deliberately excluded, it has no CQRS handlers to audit). ADR-056: bounded retention chosen over
+per-record redaction, which would make the audit trail indistinguishable from a tampered one. Field-level
+encryption for `NoteEntity.Content` evaluated and descoped (ADR-057, `agenda-buddy-vba`) — both candidates
+(CSFLE, app-layer AES-GCM) are genuine design decisions needing a real key-management story, not safe to
+rush inside a one-shot autonomous run. A cross-service export/erasure self-service API also descoped
+(`agenda-buddy-ge2`). New `docs/pdlc/design/data-subject-rights/RETENTION.md` documents the policy.
+Backend 571/571, integration 329/329 (327 baseline + 2 new), both baseline-unchanged elsewhere, `dotnet
+format --verify-no-changes` clean. Also landed in this window: a standalone fix (not part of this
+feature) for a pre-existing, load-sensitive flake in `AgendaBuddy.ServiceDefaults.Tests.TelemetryPiiTest`
+— explicit `TracerProvider.ForceFlush` before disposal, found while investigating a user-reported
+local-vs-CI test-count inconsistency (`agenda-buddy-ka2`)._
 
 _**F-027 `carter-route-modules` SHIPPED** as `v0.14.0` — merged via the mandated PR path (REST API, no
 `gh`), episode 014. Ran under this session's standing full-autonomy grant. Reorganized every one of the
@@ -1286,10 +1305,10 @@ re-planning (`/continue`).
 
 ```json
 {
-  "triggered_at": "2026-08-27T10:41:24.232Z",
-  "session_id": "6fa2c9f8-60c4-489a-82d1-f3cab5161e95",
-  "tool_count": 2175,
-  "estimated_usage": "88%",
+  "triggered_at": "2026-08-28T00:13:35.365Z",
+  "session_id": "23a9abed-0776-4785-b91e-a4a0c67892c1",
+  "tool_count": 2187,
+  "estimated_usage": "79%",
   "active_task": null,
   "sub_phase": null,
   "step": null,
@@ -1550,3 +1569,10 @@ re-planning (`/continue`).
 | 2026-08-27T22:45:00Z | construction_complete | All 7 services converted: BookingModule, CalendarModule, CustomerModule/MessageModule/NotificationModule, ProviderModule, ServicesModule, ProfessionModule, AuthModule/DeviceTokenModule. Backend 571/571 (baseline unchanged), integration 327/327 (baseline unchanged, including all 7 OpenApiSpecDriftTest cases), `dotnet format --verify-no-changes` clean. No route path, verb, auth requirement, or response shape changed | Ship | carter-route-modules |
 | 2026-08-27T23:00:00Z | operation_complete | Episode 014 finalized and committed. episodes/index.md, ROADMAP, CHANGELOG, DECISIONS updated. F-027 shipped as v0.14.0, claim released | Reflect | carter-route-modules |
 | 2026-08-27T23:00:00Z | operation_complete | Idle | — | none |
+| 2026-08-27T23:15:00Z | roadmap_claim | F-024 claimed. An earlier attempt at this feature was started and deliberately killed (user wanted F-027 done first, sequentially) -- that attempt's stray branch and worktree were fully deleted with no PR opened, so this is a fresh start, nothing to reconcile. Continuing this session's standing full-autonomy grant -- self-answering routine gates, logging judgment calls here | Discover | data-subject-rights |
+| 2026-08-27T23:20:00Z | scope_verified_against_code | Re-verified the 2026-08-18 filing against current code before Design, per the parent directive's explicit instruction not to trust a six-features-old record. Two of the three named problems were already fixed by earlier work: the appointment 2-copy deletion (CancelAppointmentCommandHandler already cleans up both the appointments collection and ProviderEntity's embedded copy) and the query-audit PII amplification (F-016's QueryAudit already trims to a result count). Event.Actor already exists (ADR-027). Only the events collection's missing index/retention survived as a real gap | Discover | data-subject-rights |
+| 2026-08-27T23:25:00Z | inception_complete | Discover/Define/Design/Plan run autonomously (condensed given the narrowed, code-verified scope). PRD approved: 4 requirements, 4 non-goals, 6 acceptance criteria. Design decisions: bounded retention over per-record redaction for the audit trail (ADR-056 -- a selectively-editable trail is indistinguishable from a tampered one); field-level encryption for NoteEntity.Content evaluated and descoped rather than rushed (ADR-057, agenda-buddy-vba); cross-service export/erasure API descoped (agenda-buddy-ge2). Threat modeling ran with real depth given the correctness/privacy surface, not triaged to Skip | Plan | data-subject-rights |
+| 2026-08-27T23:35:00Z | construction_complete | IEventStore.EnsureIndexAsync() (TTL index on timestamp, secondary index on type) wired into all 6 IEventStore-registering services (Identity deliberately excluded -- confirmed via its own Program.cs comment that it registers no EventStore, no CQRS handlers to audit; caught and reverted a wrong first attempt that assumed all 7). Fire-and-forget at startup, mirroring F-023's MongoTokenRevocationStore pattern exactly. New EventStoreRetentionIndexTest.cs (2 integration tests against a real MongoDB container: index shape/TTL value, idempotency). Backend 571/571 (baseline unchanged), integration 329/329 (327 baseline + 2 new), dotnet format --verify-no-changes clean | Ship | data-subject-rights |
+| 2026-08-27T23:40:00Z | unrelated_flake_fixed | While investigating a user-reported local-vs-CI test-count inconsistency (agenda-buddy-ka2), reproduced and fixed a pre-existing, load-sensitive flake in AgendaBuddy.ServiceDefaults.Tests.TelemetryPiiTest -- 100% stable in isolation, failed on the first full-suite run (many test-project processes contending for CPU), fixed with an explicit bounded TracerProvider.ForceFlush before disposal instead of relying on implicit disposal-flush timing. Shipped separately via its own PR (#84), not bundled into any feature's PR, since it's orthogonal to all of them | Build | data-subject-rights |
+| 2026-08-27T23:50:00Z | operation_complete | Episode 015 finalized and committed. episodes/index.md, ROADMAP, CHANGELOG, DECISIONS updated. F-024 shipped as v0.15.0, claim released. This was the last of the currently-queued features (F-025/F-022/F-026/F-023/F-027/F-024) -- Atlas credential rotation (agenda-buddy-41s) remains deliberately deferred pending the user's own timing, not attempted | Reflect | data-subject-rights |
+| 2026-08-27T23:50:00Z | operation_complete | Idle | — | none |
