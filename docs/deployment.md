@@ -1,10 +1,14 @@
 # Deploying Agenda Buddy to the cloud
 
-**Status: capability added, not yet exercised.** The wiring, the `azd` project file and the deploy
-workflow are in place and unit-tested, but **no deployment has been performed from this repository
-yet**. The first one must be run by hand from a workstation (see [First deployment](#first-deployment-run-this-by-hand)) — the GitHub Actions
-workflow is for the second onwards. Nothing below should be read as attested until someone has run
-it; where a step could not be verified locally, that is stated.
+**Status: capability added, not yet exercised.** The wiring, the `azd` project file, the
+Terraform bootstrap/environment configs and the deploy workflow are in place and validated
+(`terraform validate`, `actionlint`, and the AppHost's own unit tests), but **no deployment has
+been performed from this repository yet**. There is no manual `azd`/`az` command anywhere in
+this deployment's steady-state path — the one-time exceptions are named explicitly in
+[One-time subscription bootstrap](#one-time-subscription-bootstrap) below, and both of them are
+about creating the identity the automation later authenticates as, which cannot bootstrap
+itself from nothing. Nothing below should be read as attested until someone has run it; where a
+step could not be verified locally, that is stated.
 
 ---
 
@@ -26,6 +30,26 @@ The alternatives were considered and rejected for this stage: **AKS** (real cost
 burden, no benefit at eight small processes), **App Service** (no first-class Aspire publisher, and
 no scale-to-zero for containers), and **Aspir8 / plain Kubernetes manifests** (adds a toolchain
 without removing one).
+
+## Why Terraform, and for exactly what
+
+Terraform is **not** a supported Aspire publisher — the AppHost's resource graph is, and `azd` is
+what turns it into the Container Apps environment, the registry and the container apps
+themselves. Using Terraform for that same layer would mean fighting Aspire's own model, which is
+the opposite of "follow Aspire's deployment guidelines." So Terraform (`infra/terraform/`) is
+scoped to exactly what `azd`/Aspire has no opinion about and cannot bootstrap non-interactively:
+
+- **The resource group** each environment's resources live in
+- **The GitHub Actions deploy identity** — an Entra app registration with a federated (OIDC)
+  credential scoped to one GitHub Environment, plus the role assignments `azd` needs to operate
+  inside that resource group
+- **A Key Vault** holding that environment's secrets (Atlas connection strings, JWT keypair,
+  Kafka endpoint) — Terraform writes them in, the deploy workflow reads them out at deploy time
+
+Everything inside the resource group that Aspire's own publisher already knows how to build —
+the Container Apps environment, the registry, one container app per service — stays owned by
+`azd`, unchanged from the design above. See `infra/terraform/{bootstrap,environment}/` and ADR-058
+in `docs/pdlc/memory/DECISIONS.md`.
 
 ## What deploys, and what does not
 
@@ -68,10 +92,12 @@ than only surfacing on the first real `azd up`.
 
 ## Prerequisites
 
-- [Azure Developer CLI](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd) (`azd`)
-- .NET 10 SDK, and a container runtime — `azd` builds images locally before pushing
-- An Azure subscription, and permission to create a resource group, container apps environment,
-  container registry and Log Analytics workspace
+Ongoing (every deploy, all automated in CI — nothing here is run by hand):
+
+- [Terraform](https://developer.hashicorp.com/terraform/install) and
+  [Azure Developer CLI](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd)
+  (`azd`) — only needed locally if you're changing `infra/terraform/` itself; the deploy workflow
+  installs both for you
 - **A managed MongoDB** reachable from Azure, with its own credential — *not* the credential in
   `docs/issues/ISSUE-002-atlas-credential-rotation.md`, which is compromised
 - **A managed Kafka** (Confluent Cloud, or Event Hubs' Kafka endpoint) — or drop the three Kafka
@@ -79,120 +105,203 @@ than only surfacing on the first real `azd up`.
 - An RSA keypair for JWT signing, **generated for this environment** and not shared with any
   developer's machine
 
-## First deployment — run this by hand
+One-time only, per subscription and per new environment (see
+[One-time subscription bootstrap](#one-time-subscription-bootstrap)):
 
-`azd` is interactive on first use, and that is a feature: it discovers the parameters from the graph
-and asks for each one. Do this once, from a workstation, and note down what it asks for.
+- An Azure subscription, and **specifically these permissions** for whoever runs the bootstrap
+  `terraform apply` (a subscription Owner has all of them; if you're assembling a narrower
+  identity, it needs exactly these three, no more):
+  - **Contributor** on the subscription (or at least rights to create resource groups, storage
+    accounts, and Key Vaults) — creates the state backend and each environment's resource group
+  - **User Access Administrator** on the subscription — creates the RBAC role assignments
+    (`Contributor`, `User Access Administrator`, `Key Vault Secrets Officer`) that the new deploy
+    identity needs; Contributor alone cannot grant roles to anyone, including itself
+  - **Cloud Application Administrator** (or **Application Administrator**) Entra role — creates
+    the app registration, service principal, and GitHub OIDC federated credential; this is an
+    Entra role, not an Azure RBAC role, and a subscription Owner does **not** automatically have
+    it
+- .NET 10 SDK and a container runtime locally, only for that first bootstrap run
+- A GitHub account with **Settings → Environments** write access on this repository, to create
+  the `staging`/`production` Environments and populate their variables/secrets (see
+  [Deployments — GitHub Actions](#deployments--github-actions))
+
+## One-time subscription bootstrap
+
+Two `terraform apply` runs, each genuinely one-time, and both about creating the identity the
+*rest* of this document's automation later authenticates as — an identity can't create the trust
+relationship that lets it authenticate itself, so exactly these two steps are run by a human with
+their own `az login`, and nowhere else in this deployment story is.
+
+**1. State backend — once per Azure subscription, never again after that:**
 
 ```bash
-azd auth login
-azd init          # only if .azure/ does not exist yet; azure.yaml is already committed
-azd env new staging --location <region> --subscription <subscription-id>
-
-# Values azd will prompt for, or set them up front:
-azd env set <name-azd-uses-for-agenda-buddy> "mongodb+srv://<user>:<password>@<cluster>/agenda_buddy?retryWrites=true&w=majority"
-azd env set <name-azd-uses-for-IdentityDb>   "mongodb+srv://<user>:<password>@<cluster>/IdentityDb?retryWrites=true&w=majority"
-azd env set <name-azd-uses-for-kafka>        "<bootstrap-host>:9092"
-azd env set <name-azd-uses-for-jwt-public-key>  "$(cat jwt.pub)"
-azd env set <name-azd-uses-for-jwt-private-key> "$(cat jwt.key)"
-
-azd up            # provision + deploy
-azd show          # the ingress URL of each service
+cd infra/terraform/bootstrap
+az login
+terraform init
+terraform apply -var subscription_id=<subscription-id> -var location=<region>
+terraform output backend_config    # capture these three values — the next step needs them
 ```
 
-> The exact environment-variable names `azd` derives from the resource graph are **not documented
-> here on purpose** — they are a function of the azd and Aspire versions, and writing a guess into
-> this file would be worse than writing nothing. `azd up` prints them; capture them then.
-
-Verify the deployment the same way the local run is verified:
+**2. This environment's own deploy identity — once per new environment** (`staging`,
+`production`, ...; repeated for each one, see
+[Adding another environment](#adding-another-environment)):
 
 ```bash
-curl -sS https://<service-ingress>/health   # expect 200 Healthy — this runs the MongoDB check
-curl -sS https://<service-ingress>/alive    # expect 200 Healthy
+cd infra/terraform/environment
+az login
+terraform init \
+  -backend-config="resource_group_name=<from step 1: resource_group_name>" \
+  -backend-config="storage_account_name=<from step 1: storage_account_name>" \
+  -backend-config="container_name=<from step 1: container_name>" \
+  -backend-config="key=agenda-buddy-<environment-name>.tfstate"
+
+terraform apply \
+  -var environment_name=<environment-name> \
+  -var location=<region> \
+  -var subscription_id=<subscription-id> \
+  -var tenant_id=<tenant-id> \
+  -var agenda_buddy_connection_string="mongodb+srv://<user>:<password>@<cluster>/agenda_buddy?retryWrites=true&w=majority" \
+  -var identity_db_connection_string="mongodb+srv://<user>:<password>@<cluster>/IdentityDb?retryWrites=true&w=majority" \
+  -var kafka_bootstrap_servers="<bootstrap-host>:9092" \
+  -var jwt_public_key="$(cat jwt.pub)" \
+  -var jwt_private_key="$(cat jwt.key)"
+
+terraform output client_id            # → GitHub Environment variable AZURE_CLIENT_ID
+terraform output resource_group_name  # informational — azd's own output shows this too
 ```
 
-`/health` exercising MongoDB is what proves the connection string reached the container correctly. If
-it returns `503`, the service is running and its database is not — check the connection string and
-the Atlas network access list before touching anything else.
+That second `apply` creates the Entra app registration, its GitHub OIDC federated credential
+(scoped to this exact GitHub Environment name), the role assignments `azd` needs inside the new
+resource group, and a Key Vault holding the five secret values passed above. From here on,
+**every deploy of this environment — including its first — runs unattended from GitHub Actions**
+(see below); nobody runs `azd auth login`, `azd env set`, or any other interactive command again
+for this environment.
 
-## Subsequent deployments — GitHub Actions
+## Deployments — GitHub Actions
 
-`.github/workflows/deploy.yml`, **manual dispatch only**. It authenticates with federated
-credentials (OIDC), so there is no long-lived Azure secret in this repository. The job declares
-`environment: ${{ inputs.environment }}`, which ties the run to a **GitHub Environment** matching
-the `azd` environment name (e.g. `staging`, `production`) — this is what makes replication to
-multiple managed environments actually isolated, so the setup below configures variables and
-secrets **per GitHub Environment**, not at the repository level. Repository-level values are read
-only as a fallback when an Environment doesn't override them, which is the wrong default here: a
-repo-level `AZD_ENV_VARS` would hand `staging` and `production` the same Atlas connection string
-and JWT keys, defeating the isolation the two-environment split exists for.
+`.github/workflows/deploy.yml`, **manual dispatch only** (see the comment at the top of that file
+for why push-triggering waits on the rest of the "Before this is production" list). It has two
+stages, both non-interactive:
 
-One-time setup, **repeated once per environment** (`staging`, `production`, or however many you
-need — see [Adding another environment](#adding-another-environment) below for the full
-replication checklist):
+1. **`terraform apply`** against `infra/terraform/environment`, authenticated via the same GitHub
+   OIDC federated credential the bootstrap step created — reconciles the resource group, identity
+   and Key Vault against any drift, and outputs this environment's `client_id`/`key_vault_name`.
+2. **`azd provision` + `azd deploy`**, authenticated as that same identity, reading the Atlas/JWT/
+   Kafka values out of the Key Vault Terraform just confirmed — no `AZD_ENV_VARS` secret blob, no
+   `_B64` PEM-encoding workaround.
 
-1. In GitHub → repo **Settings → Environments**, create an Environment whose name exactly matches
-   the `azd` environment name you'll pass as `inputs.environment` (case-sensitive).
-2. Create an Entra app registration with a **federated credential** scoped to this repository +
-   this GitHub Environment name, and give it Contributor plus User Access Administrator on that
-   environment's target resource group. Use one app registration per environment (or one with a
-   federated credential subject per environment) — not one shared across all of them, so a leaked
-   or over-broad credential in one environment can't reach another.
-3. Under that Environment, add **Environment variables**: `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`,
-   `AZURE_SUBSCRIPTION_ID`, `AZURE_LOCATION` — scoped to *this* environment's Azure identity,
-   subscription and region.
-4. Under that Environment, add **Environment secret** `AZD_ENV_VARS`: a newline-separated
-   `KEY=VALUE` list of the parameter values for *this* environment's first deployment (its own
-   Atlas cluster, its own JWT keypair — never reused from another environment). A `KEY` ending in
-   `_B64` is base64-decoded before use — that is how the multi-line PEM keys travel, since a
-   `KEY=VALUE` line cannot carry newlines:
+A **smoke test** closes the loop: after `azd deploy`, the workflow curls the gateway's `/health`
+and `/alive` (the only externally-reachable resource — see "Fixed: cloud ingress was backwards
+post-Gateway" above) and fails the run if either doesn't return 200, rather than reporting a green
+checkmark for a deploy nobody verified came up healthy.
 
-   ```
-   AGENDA_BUDDY_CONNECTION=mongodb+srv://...
-   JWT_PUBLIC_KEY_B64=LS0tLS1CRUdJTiBQVUJMSUMg...
-   ```
+The job declares `environment: ${{ inputs.environment }}`, tying the run to a **GitHub
+Environment** matching the Terraform `environment_name` (e.g. `staging`, `production`).
 
-5. For `production` specifically, add a **required reviewers** protection rule on the Environment
-   — this makes a production deploy wait for a manual approval click even though the workflow
-   itself is already manual-dispatch-only, a second gate for the one environment where a mistake
-   costs the most.
-6. Run the workflow with `provision: true` the first time infrastructure changes for that
-   environment, `false` for a code-only deploy.
+### Secrets and variables go on the GitHub Environment, never the repository
 
-**Unverified:** this workflow has never run. It could not be exercised from the development machine —
-there is no Azure subscription wired up here, and inventing a successful run would be worthless. Its
-preflight step is written to fail loudly and name every missing value rather than deploy something
-half-configured, which is the failure mode the `CI_JWT_*` guard in `dotnet.yml` demonstrated.
+**This is deliberate and non-negotiable for this project.** GitHub resolves an unset
+Environment-level value by falling back to the repository-level one of the same name — so setting
+anything at **Settings → Secrets and variables** (the repository-wide page) instead of inside a
+specific Environment does not fail loudly, it just quietly hands **every** environment the same
+Azure identity and the same Atlas/JWT credentials, which defeats the entire reason the
+staging/production split exists (one leaked or misused credential would then reach both). Every
+value below is set **only** on the Environment page for that one environment — the repository
+Settings → Secrets and variables page should have nothing related to this deployment on it at all.
+
+### Step-by-step: configuring one GitHub Environment
+
+Do this once per environment, right after that environment's [bootstrap `terraform
+apply`](#one-time-subscription-bootstrap) has run — step 4 reuses the exact values you passed
+that `apply` as `-var ...`, and steps 5–6 read its `terraform output`:
+
+1. GitHub → this repository → **Settings** tab → left sidebar **Environments** → **New
+   environment**.
+2. Type the environment name **exactly** as passed to `terraform apply -var
+   environment_name=...` and as you'll type it into the workflow's `environment` input — e.g.
+   `staging` (case-sensitive; `Staging` and `staging` are different Environments to GitHub and
+   the federated credential's `subject` won't match a mismatched name). Click **Configure
+   environment**.
+3. For `production` only: under **Deployment protection rules**, enable **Required reviewers**
+   and add at least yourself. This is the one deliberately-human gate left — a manual approval
+   click even though the workflow is already dispatch-only, for the environment where a mistake
+   costs the most. Skip this for `staging`.
+4. Under **Environment secrets**, click **Add secret** five times, once per row in the table
+   below — name exactly as shown, value is whatever you passed to that environment's bootstrap
+   `terraform apply -var ...`:
+
+   | GitHub secret name | Terraform variable it must match | Source |
+   |---|---|---|
+   | `ATLAS_AGENDA_BUDDY_CONNECTION_STRING` | `agenda_buddy_connection_string` | your Atlas cluster, `agenda_buddy` database |
+   | `ATLAS_IDENTITY_DB_CONNECTION_STRING` | `identity_db_connection_string` | your Atlas cluster, `IdentityDb` database |
+   | `KAFKA_BOOTSTRAP_SERVERS` | `kafka_bootstrap_servers` | your managed Kafka's bootstrap endpoint |
+   | `JWT_PUBLIC_KEY` | `jwt_public_key` | `cat jwt.pub` — the environment's own keypair |
+   | `JWT_PRIVATE_KEY` | `jwt_private_key` | `cat jwt.key` — the environment's own keypair |
+
+   These must be the **same values** you passed to the bootstrap `apply`, not new ones — a
+   mismatch means the next CI-run `terraform apply` (step 1 of every deploy) reconciles the Key
+   Vault to whatever the GitHub secret says, silently overwriting what bootstrap set.
+5. Under **Environment variables**, click **Add variable** four times:
+
+   | GitHub variable name | Value |
+   |---|---|
+   | `AZURE_CLIENT_ID` | output of `terraform output client_id` from this environment's bootstrap apply |
+   | `AZURE_TENANT_ID` | your Entra tenant ID |
+   | `AZURE_SUBSCRIPTION_ID` | your Azure subscription ID |
+   | `AZURE_LOCATION` | the Azure region, e.g. `eastus` (must match `-var location=...` used above) |
+
+6. Also under **Environment variables**, add the three state-backend values from [step 1 of the
+   bootstrap](#one-time-subscription-bootstrap) (`terraform output backend_config` in
+   `infra/terraform/bootstrap`) — these are the **same three values for every environment** in
+   this subscription, since they name the shared state backend, not this environment's own
+   resources:
+
+   | GitHub variable name | Terraform bootstrap output |
+   |---|---|
+   | `TF_STATE_RESOURCE_GROUP` | `resource_group_name` |
+   | `TF_STATE_STORAGE_ACCOUNT` | `storage_account_name` |
+   | `TF_STATE_CONTAINER` | `container_name` |
+
+7. Repeat this whole procedure for every additional environment (see [Adding another
+   environment](#adding-another-environment)) — each gets its own Environment, its own five
+   secrets, and its own four `AZURE_*` variables; only the three `TF_STATE_*` variables are
+   copied identically across environments.
+
+Once this is done for an environment, running `.github/workflows/deploy.yml` with
+`environment: <that name>` needs no further setup — the preflight step re-checks all 14 of the
+above by name and fails loudly, naming exactly which is missing, before anything is provisioned
+or deployed.
+
+**Unverified:** this workflow has never run. It could not be exercised from the development
+machine — there is no Azure subscription wired up here, and inventing a successful run would be
+worthless. Its preflight step fails loudly and names every missing value rather than deploying
+something half-configured, the failure mode the `CI_JWT_*` guard in `dotnet.yml` demonstrated.
 
 ## Adding another environment
 
-Nothing in this repository's code, `azure.yaml`, or the AppHost's resource graph hardcodes a single
-environment — `azd env new <name>` is the whole mechanism, and Aspire's azd integration derives each
-environment's Azure resource group from its `azd` environment name, so two environments never
-collide on resource names as long as the names themselves differ. Replicating this setup to a new
+Nothing in `infra/terraform/`, `azure.yaml`, or the AppHost's resource graph hardcodes a single
+environment name — every resource is parameterized by it, and Terraform state is keyed by it, so
+two environments never collide as long as the names differ. Replicating this setup to a new
 environment (e.g. going from just `staging` to also having `production`) means repeating, in full,
 for the new name:
 
 1. **A dedicated MongoDB Atlas cluster and credential.** Never share a cluster (or the compromised
    one named in `docs/issues/ISSUE-002-atlas-credential-rotation.md`) across environments — a bug or
    a leaked credential in one environment must not reach another's data.
-2. **A dedicated RSA keypair for JWT signing**, generated fresh for that environment (see
-   [Prerequisites](#prerequisites)) — never the same keypair as another environment or a developer's
-   machine.
+2. **A dedicated RSA keypair for JWT signing**, generated fresh for that environment — never the
+   same keypair as another environment or a developer's machine.
 3. **A dedicated managed Kafka target**, or a deliberate decision to drop the three Kafka consumers
    for that environment.
-4. **First deployment run by hand** ([above](#first-deployment-run-this-by-hand)), using
-   `azd env new <name> --location <region> --subscription <subscription-id>` with *that*
-   environment's own region/subscription if they differ, and `azd env set` for every value from
-   steps 1–3 above — never copied from another environment's `.azure/<name>/.env` (which is
-   `.gitignore`'d and must stay that way; confirmed `.gitignore` covers `.azure/`).
-5. **A matching GitHub Environment** ([above](#subsequent-deployments--github-actions)), named
-   identically to the `azd` environment, with its own scoped variables and `AZD_ENV_VARS` secret —
-   so `.github/workflows/deploy.yml`'s `environment: ${{ inputs.environment }}` resolves to the
-   right, isolated set of credentials for that run.
+4. **The environment's own deploy identity** — step 2 of
+   [One-time subscription bootstrap](#one-time-subscription-bootstrap), run once with the new
+   `environment_name` (the state backend from step 1 is shared, not recreated).
+5. **A matching GitHub Environment** ([above](#deployments--github-actions)), named identically,
+   with its own scoped variables and secrets — so `deploy.yml`'s
+   `environment: ${{ inputs.environment }}` resolves to the right, isolated identity for that run.
 
-None of this requires a code or workflow change — the replication is entirely a matter of repeating
-the above with a new name and genuinely distinct credentials per environment, not shared ones.
+None of this requires a code or workflow change — the replication is entirely a matter of
+repeating the above with a new name and genuinely distinct credentials per environment, not
+shared ones.
 
 ## Before this is production
 
@@ -215,10 +324,11 @@ specific:
    configuration, logs and traces for every resource. Do not expose it publicly in a deployed
    environment.
 5. **No database backups or restore drill.** Atlas can do both; nobody has configured or tested them.
-6. **No smoke test after deploy.** The workflow deploys and reports endpoints; it does not verify
-   `/health` came back green. Add that before anyone relies on a green checkmark.
-7. **Secrets have no rotation story.** The JWT keys are set once by hand. Rotating them means
-   restarting all seven services with a new pair, which is currently an undocumented manual dance.
+6. **Secrets rotation is a `terraform apply`, but nothing triggers one.** Rotating the JWT keypair
+   or an Atlas credential means re-running `terraform apply` on `infra/terraform/environment` with
+   new variable values (updates the Key Vault) followed by a deploy (so the running containers
+   pick up the new values) — the *mechanism* exists, but nothing schedules or reminds anyone to do
+   it, and each service still restarts with the new pair rather than rotating without downtime.
 
 ## Rollback
 

@@ -453,3 +453,13 @@ MigrationBackup/
 
 # azd creates this per-environment; it holds deployment parameter values
 .azure/
+
+# Terraform local state/plugin cache — infra/terraform/* uses a remote (azurerm) or explicitly
+# local-only backend, never a committed local .tfstate. *.lock.hcl IS committed (deliberately
+# not ignored here) so provider version selection stays reproducible.
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+crash.*.log
