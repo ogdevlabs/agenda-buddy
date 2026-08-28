@@ -108,9 +108,22 @@ Ongoing (every deploy, all automated in CI — nothing here is run by hand):
 One-time only, per subscription and per new environment (see
 [One-time subscription bootstrap](#one-time-subscription-bootstrap)):
 
-- An Azure subscription, and permission to create resource groups, Entra app registrations,
-  role assignments, and Key Vaults — needed once, by whoever runs the bootstrap `terraform apply`
+- An Azure subscription, and **specifically these permissions** for whoever runs the bootstrap
+  `terraform apply` (a subscription Owner has all of them; if you're assembling a narrower
+  identity, it needs exactly these three, no more):
+  - **Contributor** on the subscription (or at least rights to create resource groups, storage
+    accounts, and Key Vaults) — creates the state backend and each environment's resource group
+  - **User Access Administrator** on the subscription — creates the RBAC role assignments
+    (`Contributor`, `User Access Administrator`, `Key Vault Secrets Officer`) that the new deploy
+    identity needs; Contributor alone cannot grant roles to anyone, including itself
+  - **Cloud Application Administrator** (or **Application Administrator**) Entra role — creates
+    the app registration, service principal, and GitHub OIDC federated credential; this is an
+    Entra role, not an Azure RBAC role, and a subscription Owner does **not** automatically have
+    it
 - .NET 10 SDK and a container runtime locally, only for that first bootstrap run
+- A GitHub account with **Settings → Environments** write access on this repository, to create
+  the `staging`/`production` Environments and populate their variables/secrets (see
+  [Deployments — GitHub Actions](#deployments--github-actions))
 
 ## One-time subscription bootstrap
 
@@ -183,28 +196,81 @@ post-Gateway" above) and fails the run if either doesn't return 200, rather than
 checkmark for a deploy nobody verified came up healthy.
 
 The job declares `environment: ${{ inputs.environment }}`, tying the run to a **GitHub
-Environment** matching the Terraform `environment_name` (e.g. `staging`, `production`) — this is
-what keeps environments isolated, so configuration below is set **per GitHub Environment**, never
-at the repository level (a repo-level value would hand every environment the same Azure identity
-and the same secrets, defeating the point of the split).
+Environment** matching the Terraform `environment_name` (e.g. `staging`, `production`).
 
-Per-environment GitHub configuration (set once, when [bootstrapping that environment](#one-time-subscription-bootstrap), not
-per deploy):
+### Secrets and variables go on the GitHub Environment, never the repository
 
-- **Settings → Environments** → an Environment named identically to the `azd`/Terraform
-  environment name (case-sensitive).
-- **Environment variables**: `AZURE_CLIENT_ID` (from `terraform output client_id`),
-  `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`, `AZURE_LOCATION`, and the three
-  `TF_STATE_RESOURCE_GROUP` / `TF_STATE_STORAGE_ACCOUNT` / `TF_STATE_CONTAINER` values from step 1
-  of the bootstrap (shared across every environment in the same subscription — they name the
-  *state backend*, not this environment's own resources).
-- **Environment secrets**: `ATLAS_AGENDA_BUDDY_CONNECTION_STRING`, `ATLAS_IDENTITY_DB_CONNECTION_STRING`,
-  `KAFKA_BOOTSTRAP_SERVERS`, `JWT_PUBLIC_KEY`, `JWT_PRIVATE_KEY` — the same five values passed to
-  the bootstrap `terraform apply` above, so a later `terraform apply` run from CI reconciles to
-  the same state rather than drifting.
-- For `production` specifically, a **required reviewers** protection rule — a manual approval
-  click even though the workflow is already dispatch-only, the one deliberately-human gate for
-  the environment where a mistake costs the most.
+**This is deliberate and non-negotiable for this project.** GitHub resolves an unset
+Environment-level value by falling back to the repository-level one of the same name — so setting
+anything at **Settings → Secrets and variables** (the repository-wide page) instead of inside a
+specific Environment does not fail loudly, it just quietly hands **every** environment the same
+Azure identity and the same Atlas/JWT credentials, which defeats the entire reason the
+staging/production split exists (one leaked or misused credential would then reach both). Every
+value below is set **only** on the Environment page for that one environment — the repository
+Settings → Secrets and variables page should have nothing related to this deployment on it at all.
+
+### Step-by-step: configuring one GitHub Environment
+
+Do this once per environment, right after that environment's [bootstrap `terraform
+apply`](#one-time-subscription-bootstrap) has run — step 4 reuses the exact values you passed
+that `apply` as `-var ...`, and steps 5–6 read its `terraform output`:
+
+1. GitHub → this repository → **Settings** tab → left sidebar **Environments** → **New
+   environment**.
+2. Type the environment name **exactly** as passed to `terraform apply -var
+   environment_name=...` and as you'll type it into the workflow's `environment` input — e.g.
+   `staging` (case-sensitive; `Staging` and `staging` are different Environments to GitHub and
+   the federated credential's `subject` won't match a mismatched name). Click **Configure
+   environment**.
+3. For `production` only: under **Deployment protection rules**, enable **Required reviewers**
+   and add at least yourself. This is the one deliberately-human gate left — a manual approval
+   click even though the workflow is already dispatch-only, for the environment where a mistake
+   costs the most. Skip this for `staging`.
+4. Under **Environment secrets**, click **Add secret** five times, once per row in the table
+   below — name exactly as shown, value is whatever you passed to that environment's bootstrap
+   `terraform apply -var ...`:
+
+   | GitHub secret name | Terraform variable it must match | Source |
+   |---|---|---|
+   | `ATLAS_AGENDA_BUDDY_CONNECTION_STRING` | `agenda_buddy_connection_string` | your Atlas cluster, `agenda_buddy` database |
+   | `ATLAS_IDENTITY_DB_CONNECTION_STRING` | `identity_db_connection_string` | your Atlas cluster, `IdentityDb` database |
+   | `KAFKA_BOOTSTRAP_SERVERS` | `kafka_bootstrap_servers` | your managed Kafka's bootstrap endpoint |
+   | `JWT_PUBLIC_KEY` | `jwt_public_key` | `cat jwt.pub` — the environment's own keypair |
+   | `JWT_PRIVATE_KEY` | `jwt_private_key` | `cat jwt.key` — the environment's own keypair |
+
+   These must be the **same values** you passed to the bootstrap `apply`, not new ones — a
+   mismatch means the next CI-run `terraform apply` (step 1 of every deploy) reconciles the Key
+   Vault to whatever the GitHub secret says, silently overwriting what bootstrap set.
+5. Under **Environment variables**, click **Add variable** four times:
+
+   | GitHub variable name | Value |
+   |---|---|
+   | `AZURE_CLIENT_ID` | output of `terraform output client_id` from this environment's bootstrap apply |
+   | `AZURE_TENANT_ID` | your Entra tenant ID |
+   | `AZURE_SUBSCRIPTION_ID` | your Azure subscription ID |
+   | `AZURE_LOCATION` | the Azure region, e.g. `eastus` (must match `-var location=...` used above) |
+
+6. Also under **Environment variables**, add the three state-backend values from [step 1 of the
+   bootstrap](#one-time-subscription-bootstrap) (`terraform output backend_config` in
+   `infra/terraform/bootstrap`) — these are the **same three values for every environment** in
+   this subscription, since they name the shared state backend, not this environment's own
+   resources:
+
+   | GitHub variable name | Terraform bootstrap output |
+   |---|---|
+   | `TF_STATE_RESOURCE_GROUP` | `resource_group_name` |
+   | `TF_STATE_STORAGE_ACCOUNT` | `storage_account_name` |
+   | `TF_STATE_CONTAINER` | `container_name` |
+
+7. Repeat this whole procedure for every additional environment (see [Adding another
+   environment](#adding-another-environment)) — each gets its own Environment, its own five
+   secrets, and its own four `AZURE_*` variables; only the three `TF_STATE_*` variables are
+   copied identically across environments.
+
+Once this is done for an environment, running `.github/workflows/deploy.yml` with
+`environment: <that name>` needs no further setup — the preflight step re-checks all 14 of the
+above by name and fails loudly, naming exactly which is missing, before anything is provisioned
+or deployed.
 
 **Unverified:** this workflow has never run. It could not be exercised from the development
 machine — there is no Azure subscription wired up here, and inventing a successful run would be
