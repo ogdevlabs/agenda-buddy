@@ -118,30 +118,81 @@ the Atlas network access list before touching anything else.
 ## Subsequent deployments — GitHub Actions
 
 `.github/workflows/deploy.yml`, **manual dispatch only**. It authenticates with federated
-credentials (OIDC), so there is no long-lived Azure secret in this repository.
+credentials (OIDC), so there is no long-lived Azure secret in this repository. The job declares
+`environment: ${{ inputs.environment }}`, which ties the run to a **GitHub Environment** matching
+the `azd` environment name (e.g. `staging`, `production`) — this is what makes replication to
+multiple managed environments actually isolated, so the setup below configures variables and
+secrets **per GitHub Environment**, not at the repository level. Repository-level values are read
+only as a fallback when an Environment doesn't override them, which is the wrong default here: a
+repo-level `AZD_ENV_VARS` would hand `staging` and `production` the same Atlas connection string
+and JWT keys, defeating the isolation the two-environment split exists for.
 
-One-time setup:
+One-time setup, **repeated once per environment** (`staging`, `production`, or however many you
+need — see [Adding another environment](#adding-another-environment) below for the full
+replication checklist):
 
-1. Create an Entra app registration with a **federated credential** for this repository, and give it
-   Contributor plus User Access Administrator on the target resource group.
-2. Repository **variables**: `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`,
-   `AZURE_LOCATION`.
-3. Repository **secret** `AZD_ENV_VARS`: a newline-separated `KEY=VALUE` list of the parameter values
-   from the first deployment. A `KEY` ending in `_B64` is base64-decoded before use — that is how the
-   multi-line PEM keys travel, since a `KEY=VALUE` line cannot carry newlines:
+1. In GitHub → repo **Settings → Environments**, create an Environment whose name exactly matches
+   the `azd` environment name you'll pass as `inputs.environment` (case-sensitive).
+2. Create an Entra app registration with a **federated credential** scoped to this repository +
+   this GitHub Environment name, and give it Contributor plus User Access Administrator on that
+   environment's target resource group. Use one app registration per environment (or one with a
+   federated credential subject per environment) — not one shared across all of them, so a leaked
+   or over-broad credential in one environment can't reach another.
+3. Under that Environment, add **Environment variables**: `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`,
+   `AZURE_SUBSCRIPTION_ID`, `AZURE_LOCATION` — scoped to *this* environment's Azure identity,
+   subscription and region.
+4. Under that Environment, add **Environment secret** `AZD_ENV_VARS`: a newline-separated
+   `KEY=VALUE` list of the parameter values for *this* environment's first deployment (its own
+   Atlas cluster, its own JWT keypair — never reused from another environment). A `KEY` ending in
+   `_B64` is base64-decoded before use — that is how the multi-line PEM keys travel, since a
+   `KEY=VALUE` line cannot carry newlines:
 
    ```
    AGENDA_BUDDY_CONNECTION=mongodb+srv://...
    JWT_PUBLIC_KEY_B64=LS0tLS1CRUdJTiBQVUJMSUMg...
    ```
 
-4. Run the workflow with `provision: true` the first time infrastructure changes, `false` for a
-   code-only deploy.
+5. For `production` specifically, add a **required reviewers** protection rule on the Environment
+   — this makes a production deploy wait for a manual approval click even though the workflow
+   itself is already manual-dispatch-only, a second gate for the one environment where a mistake
+   costs the most.
+6. Run the workflow with `provision: true` the first time infrastructure changes for that
+   environment, `false` for a code-only deploy.
 
 **Unverified:** this workflow has never run. It could not be exercised from the development machine —
 there is no Azure subscription wired up here, and inventing a successful run would be worthless. Its
 preflight step is written to fail loudly and name every missing value rather than deploy something
 half-configured, which is the failure mode the `CI_JWT_*` guard in `dotnet.yml` demonstrated.
+
+## Adding another environment
+
+Nothing in this repository's code, `azure.yaml`, or the AppHost's resource graph hardcodes a single
+environment — `azd env new <name>` is the whole mechanism, and Aspire's azd integration derives each
+environment's Azure resource group from its `azd` environment name, so two environments never
+collide on resource names as long as the names themselves differ. Replicating this setup to a new
+environment (e.g. going from just `staging` to also having `production`) means repeating, in full,
+for the new name:
+
+1. **A dedicated MongoDB Atlas cluster and credential.** Never share a cluster (or the compromised
+   one named in `docs/issues/ISSUE-002-atlas-credential-rotation.md`) across environments — a bug or
+   a leaked credential in one environment must not reach another's data.
+2. **A dedicated RSA keypair for JWT signing**, generated fresh for that environment (see
+   [Prerequisites](#prerequisites)) — never the same keypair as another environment or a developer's
+   machine.
+3. **A dedicated managed Kafka target**, or a deliberate decision to drop the three Kafka consumers
+   for that environment.
+4. **First deployment run by hand** ([above](#first-deployment-run-this-by-hand)), using
+   `azd env new <name> --location <region> --subscription <subscription-id>` with *that*
+   environment's own region/subscription if they differ, and `azd env set` for every value from
+   steps 1–3 above — never copied from another environment's `.azure/<name>/.env` (which is
+   `.gitignore`'d and must stay that way; confirmed `.gitignore` covers `.azure/`).
+5. **A matching GitHub Environment** ([above](#subsequent-deployments--github-actions)), named
+   identically to the `azd` environment, with its own scoped variables and `AZD_ENV_VARS` secret —
+   so `.github/workflows/deploy.yml`'s `environment: ${{ inputs.environment }}` resolves to the
+   right, isolated set of credentials for that run.
+
+None of this requires a code or workflow change — the replication is entirely a matter of repeating
+the above with a new name and genuinely distinct credentials per environment, not shared ones.
 
 ## Before this is production
 
@@ -155,8 +206,11 @@ specific:
 2. **Ingress topology is now correct** (only the Gateway is externally reachable), but the Gateway
    alone has no rate limiting, no WAF, and no single place to revoke a token — front it with Azure
    Front Door or API Management before real users exist.
-3. **No staging/production separation.** One `azd` environment and one Atlas cluster. A deploy is a
-   deploy.
+3. **No staging/production separation exists yet.** The mechanism to create one is documented above
+   ([Adding another environment](#adding-another-environment)) and requires no code change, but as
+   of this writing only one environment has actually been provisioned. A deploy today is still a
+   deploy against whatever single environment exists until a second one is created following that
+   checklist.
 4. **The dashboard is a privileged surface.** The Aspire dashboard exposes environment variables,
    configuration, logs and traces for every resource. Do not expose it publicly in a deployed
    environment.
