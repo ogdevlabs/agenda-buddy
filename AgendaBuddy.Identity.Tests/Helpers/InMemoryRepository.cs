@@ -203,6 +203,18 @@ public class InMemoryCredentialRepository : IRepository<CredentialEntity>
                         Expiry = value.AsBsonDocument["expiry"].ToUniversalTime()
                     };
                 break;
+            case "email_verification_token":
+                entity.EmailVerificationToken = value.IsBsonNull
+                    ? null
+                    : new EmailVerificationTokenDocument
+                    {
+                        Hash = value.AsBsonDocument["hash"].AsString,
+                        Expiry = value.AsBsonDocument["expiry"].ToUniversalTime()
+                    };
+                break;
+            case "email_verified":
+                entity.EmailVerified = value.AsBoolean;
+                break;
             case "failed_attempts":
                 entity.FailedAttempts = value.ToInt32();
                 break;
@@ -227,6 +239,7 @@ public class InMemoryCredentialRepository : IRepository<CredentialEntity>
             case "lock_until": entity.LockUntil = null; break;
             case "refresh_token": entity.RefreshToken = null; break;
             case "reset_token": entity.ResetToken = null; break;
+            case "email_verification_token": entity.EmailVerificationToken = null; break;
             default: throw new NotSupportedException($"$unset on unmapped field '{field}'.");
         }
     }
@@ -271,6 +284,8 @@ public class InMemoryCredentialRepository : IRepository<CredentialEntity>
             "refresh_token.expiry" => Compare(e.RefreshToken?.Expiry, condition),
             "reset_token.hash" => Compare(e.ResetToken?.Hash, condition),
             "reset_token.expiry" => Compare(e.ResetToken?.Expiry, condition),
+            "email_verification_token.hash" => Compare(e.EmailVerificationToken?.Hash, condition),
+            "email_verification_token.expiry" => Compare(e.EmailVerificationToken?.Expiry, condition),
             "failed_attempts" => Compare(e.FailedAttempts, condition),
             "lock_until" => Compare(e.LockUntil, condition),
             _ => throw new NotSupportedException(

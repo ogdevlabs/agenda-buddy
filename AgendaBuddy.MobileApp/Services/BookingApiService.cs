@@ -54,6 +54,17 @@ public class BookingApiService : IBookingApiService
         return appointments.FirstOrDefault(a => a.Id == id);
     }
 
+    public async Task<List<AppointmentSummary>> GetPastAppointmentsAsync(CancellationToken ct = default)
+    {
+        var appointments = await _calendarApiService.GetAppointmentsAsync(ct);
+
+        return appointments
+            .Where(a => a.Status is AppointmentStatus.Completed or AppointmentStatus.Cancelled)
+            .OrderByDescending(a => a.ScheduledAt)
+            .Select(ToSummary)
+            .ToList();
+    }
+
     private static AppointmentSummary ToSummary(AppointmentDetail detail) => new()
     {
         Id = detail.Id,
@@ -66,6 +77,74 @@ public class BookingApiService : IBookingApiService
         ServiceName = detail.ServiceName,
         CustomerNotes = detail.CustomerNotes
     };
+
+    // ── Create / cancel ───────────────────────────────────────────────────────────────────────────────
+
+    public async Task<string?> BookAppointmentAsync(string emailProvider, string emailCustomer, DateTime start, DateTime end, CancellationToken ct = default)
+    {
+        var client = _httpClientFactory.CreateClient("AgendaBuddyApi");
+        var route = BookingRouteBuilder.BookAppointment();
+        var body = JsonSerializer.Serialize(
+            BookingRouteBuilder.BuildBookAppointmentPayload(emailProvider, emailCustomer, start, end), JsonOptions);
+        var content = new StringContent(body, Encoding.UTF8, "application/json");
+
+        var response = await client.PostAsync(route.Path, content, ct);
+        if (!response.IsSuccessStatusCode)
+            return null;
+
+        var json = await response.Content.ReadAsStringAsync(ct);
+        return ExtractDataField(json, "identifier");
+    }
+
+    public async Task<bool> CancelAppointmentAsync(string identifier, string emailProvider, string emailCustomer, CancellationToken ct = default)
+    {
+        var client = _httpClientFactory.CreateClient("AgendaBuddyApi");
+        var route = BookingRouteBuilder.CancelAppointment();
+        var body = JsonSerializer.Serialize(
+            BookingRouteBuilder.BuildCancelAppointmentPayload(identifier, emailProvider, emailCustomer), JsonOptions);
+
+        // DELETE with a body has no HttpClient.DeleteAsync(url, content) overload — build the request
+        // message directly, matching BookingModule.cs's [FromBody] AppointmentEntity binding on DELETE.
+        using var request = new HttpRequestMessage(HttpMethod.Delete, route.Path)
+        {
+            Content = new StringContent(body, Encoding.UTF8, "application/json")
+        };
+        var response = await client.SendAsync(request, ct);
+        return response.IsSuccessStatusCode;
+    }
+
+    /// <summary>
+    /// Reads one string field out of a <c>DataResponse&lt;T&gt;</c> envelope's <c>data</c> object without
+    /// deserializing the whole thing — used for the one field (<c>identifier</c>) a caller needs back from a
+    /// create response.
+    /// </summary>
+    private static string? ExtractDataField(string json, string fieldName)
+    {
+        using var doc = JsonDocument.Parse(json);
+        if (doc.RootElement.ValueKind != JsonValueKind.Object
+            || !doc.RootElement.TryGetProperty("data", out var data)
+            || data.ValueKind != JsonValueKind.Object
+            || !data.TryGetProperty(fieldName, out var value)
+            || value.ValueKind != JsonValueKind.String)
+            return null;
+
+        return value.GetString();
+    }
+
+    /// <summary>
+    /// Unwraps a <c>DataResponse&lt;T&gt;</c> envelope's <c>data</c> property before deserializing into
+    /// <typeparamref name="T"/> — every Booking route wraps its response this way (ADR-049); deserializing the
+    /// envelope itself straight into <typeparamref name="T"/> silently produces a default/empty instance
+    /// rather than throwing, since none of the envelope's own property names match.
+    /// </summary>
+    private static T? UnwrapData<T>(string json, JsonSerializerOptions options)
+    {
+        using var doc = JsonDocument.Parse(json);
+        if (doc.RootElement.ValueKind != JsonValueKind.Object || !doc.RootElement.TryGetProperty("data", out var data))
+            return default;
+
+        return JsonSerializer.Deserialize<T>(data.GetRawText(), options);
+    }
 
     // ── Status transition ─────────────────────────────────────────────────────────────────────────────
 
@@ -109,7 +188,7 @@ public class BookingApiService : IBookingApiService
             return new List<NoteEntity>();
 
         var json = await response.Content.ReadAsStringAsync(ct);
-        return JsonSerializer.Deserialize<List<NoteEntity>>(json, EntityJsonOptions) ?? new List<NoteEntity>();
+        return UnwrapData<List<NoteEntity>>(json, EntityJsonOptions) ?? new List<NoteEntity>();
     }
 
     public async Task<NoteEntity?> CreateNoteAsync(string identifier, string content, CancellationToken ct = default)
@@ -123,7 +202,7 @@ public class BookingApiService : IBookingApiService
             return null;
 
         var json = await response.Content.ReadAsStringAsync(ct);
-        return JsonSerializer.Deserialize<NoteEntity>(json, EntityJsonOptions);
+        return UnwrapData<NoteEntity>(json, EntityJsonOptions);
     }
 
     public async Task<NoteEntity?> UpdateNoteAsync(string noteId, string content, CancellationToken ct = default)
@@ -137,7 +216,7 @@ public class BookingApiService : IBookingApiService
             return null;
 
         var json = await response.Content.ReadAsStringAsync(ct);
-        return JsonSerializer.Deserialize<NoteEntity>(json, EntityJsonOptions);
+        return UnwrapData<NoteEntity>(json, EntityJsonOptions);
     }
 
     // ── Payments ───────────────────────────────────────────────────────────────────────────────────────
@@ -158,7 +237,7 @@ public class BookingApiService : IBookingApiService
         }
 
         var json = await response.Content.ReadAsStringAsync(ct);
-        return JsonSerializer.Deserialize<PaymentEntity>(json, EntityJsonOptions);
+        return UnwrapData<PaymentEntity>(json, EntityJsonOptions);
     }
 
     public async Task<PaymentEntity?> CreatePaymentAsync(string identifier, decimal amount, string? currency, CancellationToken ct = default)
@@ -172,6 +251,6 @@ public class BookingApiService : IBookingApiService
             return null;
 
         var json = await response.Content.ReadAsStringAsync(ct);
-        return JsonSerializer.Deserialize<PaymentEntity>(json, EntityJsonOptions);
+        return UnwrapData<PaymentEntity>(json, EntityJsonOptions);
     }
 }

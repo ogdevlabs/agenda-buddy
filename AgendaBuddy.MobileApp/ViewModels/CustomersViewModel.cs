@@ -5,9 +5,16 @@ using AgendaBuddy.MobileApp.Services;
 
 namespace AgendaBuddy.MobileApp.ViewModels;
 
+public class BookRequestedEventArgs : EventArgs
+{
+    public required string CounterpartEmail { get; init; }
+    public required string CounterpartName { get; init; }
+}
+
 public partial class CustomersViewModel : ObservableObject
 {
     private readonly ICustomerApiService _customerApiService;
+    private readonly IProviderApiService _providerApiService;
     private readonly IUserSessionService _session;
     private List<CustomerSummary> _allContacts = new();
 
@@ -40,9 +47,12 @@ public partial class CustomersViewModel : ObservableObject
 
     public bool IsEmpty => !IsLoading && Customers.Count == 0 && !HasError;
 
-    public CustomersViewModel(ICustomerApiService customerApiService, IUserSessionService session)
+    public event EventHandler<BookRequestedEventArgs>? BookRequested;
+
+    public CustomersViewModel(ICustomerApiService customerApiService, IProviderApiService providerApiService, IUserSessionService session)
     {
         _customerApiService = customerApiService;
+        _providerApiService = providerApiService;
         _session = session;
     }
 
@@ -59,7 +69,9 @@ public partial class CustomersViewModel : ObservableObject
         var query = SearchText.Trim();
         Customers = _allContacts
             .Where(c => c.FullName.Contains(query, StringComparison.OrdinalIgnoreCase)
-                        || c.LastSession.Contains(query, StringComparison.OrdinalIgnoreCase))
+                        || c.Email.Contains(query, StringComparison.OrdinalIgnoreCase)
+                        || c.LastSession.Contains(query, StringComparison.OrdinalIgnoreCase)
+                        || c.Professions.Any(p => p.Contains(query, StringComparison.OrdinalIgnoreCase)))
             .ToList();
     }
 
@@ -87,8 +99,22 @@ public partial class CustomersViewModel : ObservableObject
 
         try
         {
-            var results = await _customerApiService.GetCustomersAsync();
-            _allContacts = results;
+            if (_session.IsCustomer)
+            {
+                // Bug fix: this used to call GetCustomersAsync (GET /api/v1/customers) unconditionally, which
+                // is Provider-role-gated server-side — a Customer got a 403 every time they opened this tab.
+                // The real capability for a Customer here is the provider directory.
+                var providers = await _providerApiService.GetProvidersAsync();
+                var subscriptions = await _customerApiService.GetSubscriptionsAsync(_session.Email);
+                foreach (var provider in providers)
+                    provider.IsSubscribed = subscriptions.Contains(provider.Email, StringComparer.OrdinalIgnoreCase);
+
+                _allContacts = providers;
+            }
+            else
+            {
+                _allContacts = await _customerApiService.GetCustomersAsync();
+            }
         }
         catch (Exception)
         {
@@ -110,6 +136,51 @@ public partial class CustomersViewModel : ObservableObject
     {
         customer.IsExpanded = !customer.IsExpanded;
     }
+
+    [RelayCommand]
+    private async Task ToggleSubscriptionAsync(CustomerSummary provider)
+    {
+        if (!provider.IsProvider || provider.IsBusy)
+            return;
+
+        provider.IsBusy = true;
+        try
+        {
+            var succeeded = provider.IsSubscribed
+                ? await _customerApiService.UnsubscribeAsync(_session.Email, provider.Email)
+                : await _customerApiService.SubscribeAsync(_session.Email, provider.Email);
+
+            if (succeeded)
+            {
+                provider.IsSubscribed = !provider.IsSubscribed;
+                await Infrastructure.ToastNotifier.ShowAsync(provider.IsSubscribed ? "Subscribed." : "Unsubscribed.");
+            }
+            else
+            {
+                ErrorMessage = provider.IsSubscribed
+                    ? "Could not unsubscribe. Try again."
+                    : "Could not subscribe. Try again.";
+                await Infrastructure.ToastNotifier.ShowAsync(ErrorMessage);
+            }
+        }
+        catch (Exception)
+        {
+            ErrorMessage = "Could not reach the server. Check your connection and try again.";
+            await Infrastructure.ToastNotifier.ShowAsync(ErrorMessage);
+        }
+        finally
+        {
+            provider.IsBusy = false;
+        }
+    }
+
+    [RelayCommand]
+    private void Book(CustomerSummary contact) =>
+        BookRequested?.Invoke(this, new BookRequestedEventArgs
+        {
+            CounterpartEmail = contact.Email,
+            CounterpartName = contact.FullName
+        });
 
     [RelayCommand]
     private async Task ShowSessionsAsync(CustomerSummary customer)

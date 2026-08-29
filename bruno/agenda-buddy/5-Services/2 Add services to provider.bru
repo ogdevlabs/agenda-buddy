@@ -13,8 +13,16 @@ body:json {
       "name": "60-minute session",
       "description": "One hour, one-to-one",
       "fee": 65.00,
-      "isActive": true
+      "isActive": true,
+      "professionName": "Fitness"
     }
   ]
 }
-docs { Ownership-guarded. Body is a **JSON array** of services, not a single object. }
+docs {
+  Ownership-guarded. Body is a **JSON array** of services, not a single object.
+
+  `professionName` is required and must be one of the provider's own Professions
+  (`PUT /api/v1/professions/providers/{email}`) — the handler rejects a service naming no
+  profession, or one the provider doesn't have, with a failed `Result` (see
+  `AddServicesToProviderCommandHandler.MissingProfessionErrorMessage`).
+}

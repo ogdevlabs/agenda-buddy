@@ -32,6 +32,10 @@ public class UpdateServicesFromProviderCommandHandler(
             serviceMatch.Description = updatedService.Description;
             serviceMatch.Fee = updatedService.Fee;
             serviceMatch.FeeType = updatedService.FeeType;
+            // Previously dropped silently: a client toggling a service off (soft-delete/restore) or
+            // setting a session length had no way to persist it through this route at all.
+            serviceMatch.IsActive = updatedService.IsActive;
+            serviceMatch.DurationMinutes = updatedService.DurationMinutes;
         }
 
         var updateResult = await providerService.UpdateProviderAsync(existingProvider.Id.ToString(), existingProvider);

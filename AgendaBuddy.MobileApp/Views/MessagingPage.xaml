@@ -170,6 +170,19 @@
                                 <Label Text="{Binding OtherPartyEmail}"
                                        FontSize="13"
                                        TextColor="{StaticResource iOSGray}" />
+                                <Button Text="Open conversation"
+                                        BackgroundColor="{StaticResource iOSBlue}"
+                                        TextColor="White"
+                                        CornerRadius="10"
+                                        FontSize="13"
+                                        FontAttributes="Bold"
+                                        HeightRequest="36"
+                                        HorizontalOptions="Start"
+                                        Padding="16,4"
+                                        Margin="0,6,0,0"
+                                        Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.OpenThreadCommand}"
+                                        CommandParameter="{Binding .}"
+                                        AutomationId="OpenConversationButton" />
                             </VerticalStackLayout>
 
                             <!-- Separator -->

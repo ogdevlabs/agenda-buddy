@@ -13,8 +13,18 @@ public partial class CustomerSummary : ObservableObject
     public bool IsProvider { get; set; }
     public string Availability { get; set; } = string.Empty;
 
+    /// <summary>Only meaningful when <see cref="IsProvider"/> — their own selected Professions.</summary>
+    public List<string> Professions { get; set; } = new();
+
     [ObservableProperty]
     private bool _isExpanded;
+
+    /// <summary>Only meaningful when <see cref="IsProvider"/> — whether the signed-in Customer is subscribed.</summary>
+    [ObservableProperty]
+    private bool _isSubscribed;
+
+    [ObservableProperty]
+    private bool _isBusy;
 
     public string Initial => string.IsNullOrEmpty(FullName) ? "?" : FullName[0].ToString();
     public string SessionsLabel => IsProvider ? $"{TotalSessions} services" : $"{TotalSessions} sessions";

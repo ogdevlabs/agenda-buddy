@@ -14,6 +14,18 @@ public interface IProviderService
     Task<ProviderEntity> FindProvidersAsync(BsonDocument filter);
 
     /// <summary>
+    /// Every appointment booked with <paramref name="customerEmail"/>, gathered across all providers.
+    /// </summary>
+    /// <remarks>
+    /// Appointments are embedded in each provider's own document
+    /// (<see cref="ProviderEntity.AppointmentEntities"/>); a customer's
+    /// <c>CustomerEntity.AppointmentCollection</c> holds bare identifier strings, not the appointments
+    /// themselves. So a customer's own calendar cannot be answered by looking that customer up — it has
+    /// to be gathered from the provider side, which is what this exists for.
+    /// </remarks>
+    Task<List<AppointmentEntity>> FindAppointmentsByCustomerAsync(string customerEmail);
+
+    /// <summary>
     /// Flips a provider's active flag with a single targeted write. Added so
     /// DeactivateProviderCommandHandler can be typed against this interface rather than the concrete
     /// <see cref="ProviderService"/> class — the only two call sites (this one and
@@ -37,4 +49,11 @@ public interface IProviderService
     /// blocked by a since-deleted provider.
     /// </summary>
     Task<ProviderEntity?> UnsubscribeCustomerAsync(string providerEmail, string customerEmail);
+
+    /// <summary>Adds to the provider's <c>professions</c> list via <c>$addToSet</c>/<c>$each</c> — a
+    /// targeted update (ADR-032), so already-present names are silently deduplicated rather than erroring.</summary>
+    Task<ProviderEntity?> AddProfessionsAsync(string providerEmail, List<string> professionNames);
+
+    /// <summary>Removes one profession from the provider's list via a targeted <c>$pull</c>.</summary>
+    Task<ProviderEntity?> RemoveProfessionAsync(string providerEmail, string professionName);
 }

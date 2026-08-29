@@ -15,7 +15,7 @@ public class UpdateServicesFromProviderCommandHandlerTest
     [Fact]
     public async Task Handle_MatchingServiceExistsAndUpdateSucceeds_ReturnsOkWithUpdatedProvider()
     {
-        var existingService = new ServiceEntity("Massage", "60 minutes", 80m);
+        var existingService = new ServiceEntity("Massage", "60 minutes", 80m) { IsActive = true, DurationMinutes = 60 };
         var provider = Provider(ProviderEmail, existingService);
         var providerService = new Mock<IProviderService>();
         providerService.Setup(p => p.FindProvidersAsync(It.IsAny<BsonDocument>())).ReturnsAsync(provider);
@@ -27,7 +27,7 @@ public class UpdateServicesFromProviderCommandHandlerTest
         var command = new UpdateServicesFromProviderCommand
         {
             Email = ProviderEmail,
-            ServiceEntities = [new ServiceEntity("Massage", "90 minutes", 120m)]
+            ServiceEntities = [new ServiceEntity("Massage", "90 minutes", 120m) { IsActive = false, DurationMinutes = 90 }]
         };
 
         var result = await handler.Handle(command, CancellationToken.None);
@@ -35,6 +35,9 @@ public class UpdateServicesFromProviderCommandHandlerTest
         Assert.True(result.IsSuccess);
         Assert.Equal("90 minutes", existingService.Description);
         Assert.Equal(120m, existingService.Fee);
+        // Previously dropped silently — a soft-delete toggle or a duration edit had no effect at all.
+        Assert.False(existingService.IsActive);
+        Assert.Equal(90, existingService.DurationMinutes);
         eventStore.Verify(e => e.SaveAsync(It.Is<Event>(ev => ev.Status == "Success" && ev.Type == "UpdateServicesFromProviderCommand")), Times.Once);
         mediator.Verify(m => m.Publish(It.IsAny<INotification>(), It.IsAny<CancellationToken>()), Times.Once);
     }

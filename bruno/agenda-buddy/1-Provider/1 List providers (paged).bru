@@ -40,6 +40,11 @@ docs {
      `subscribedCustomerCollection`, no `kafkaTopic`, no `_id`. The list is homogeneous even for the
      owning provider — use `2 Get provider by email` to see your own full record.
 
+  `items[].professions` (2026-08-29) is the provider's own Professions
+  (`PUT /api/v1/professions/providers/{email}`). This route caches page 1/size 25 under the key
+  `providers-p1-s25` (5-minute TTL) — `3 Create provider` invalidates exactly that key on success, so a
+  newly-registered provider shows up here immediately rather than after the TTL expires.
+
   `pageSize` is **clamped, not rejected**: try `pageSize=100000` and you get `200` with
   `data.pageSize: 100`. The response always echoes the *effective* value. The cap is a security
   control (ADR-023).

@@ -49,6 +49,8 @@ public static class MauiProgram
         builder.Services.AddTransient<IMessagingApiService, MessagingApiService>();
         builder.Services.AddTransient<INotificationApiService, NotificationApiService>();
         builder.Services.AddTransient<IProviderApiService, ProviderApiService>();
+        builder.Services.AddTransient<IServicesApiService, ServicesApiService>();
+        builder.Services.AddTransient<IProfessionApiService, ProfessionApiService>();
         builder.Services.AddSingleton<PushNotificationService>();
 
         // ViewModels
@@ -63,6 +65,12 @@ public static class MauiProgram
         builder.Services.AddTransient<NotificationsViewModel>();
         builder.Services.AddTransient<ProviderReportViewModel>();
         builder.Services.AddTransient<PaymentViewModel>();
+        builder.Services.AddTransient<BookAppointmentViewModel>();
+        builder.Services.AddTransient<ServicesViewModel>();
+        builder.Services.AddTransient<ProfessionsViewModel>();
+        builder.Services.AddTransient<AccountViewModel>();
+        builder.Services.AddTransient<ForgotPasswordViewModel>();
+        builder.Services.AddTransient<ResetPasswordConfirmViewModel>();
 
         // Views
         builder.Services.AddTransient<LoginPage>();
@@ -76,6 +84,12 @@ public static class MauiProgram
         builder.Services.AddTransient<AppointmentDetailPage>();
         builder.Services.AddTransient<ProviderReportPage>();
         builder.Services.AddTransient<PaymentPage>();
+        builder.Services.AddTransient<BookAppointmentPage>();
+        builder.Services.AddTransient<ServicesPage>();
+        builder.Services.AddTransient<ProfessionsPage>();
+        builder.Services.AddTransient<AccountPage>();
+        builder.Services.AddTransient<ForgotPasswordPage>();
+        builder.Services.AddTransient<ResetPasswordConfirmPage>();
 
         // Shell
         builder.Services.AddSingleton<AppShell>();

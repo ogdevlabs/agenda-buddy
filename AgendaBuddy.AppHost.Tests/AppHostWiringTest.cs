@@ -1,3 +1,4 @@
+using AgendaBuddy.Library;
 using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
 using Aspire.Hosting.Azure;
@@ -175,6 +176,40 @@ public class AppHostWiringTest
                 Assert.Null(endpoint.TargetPort);
             });
         }
+    }
+
+    // The Gateway is deliberately exempt from the rule above — it is the one stable, client-facing
+    // entry point, and a dynamic port here is what left AgendaBuddy.MobileApp addressing a dead
+    // localhost port on any launch that did not go through scripts/run-ios.sh. Only the HOST port is
+    // pinned; the port the Gateway itself listens on stays Aspire-assigned.
+    [Fact]
+    public void GatewayPinsItsHostPortLocally_SoClientsHaveOneStableAddress()
+    {
+        var endpoint = Assert.Single(
+            Resource(BuildModel(DeploymentTarget.Local), "gateway").Annotations.OfType<EndpointAnnotation>());
+
+        Assert.Equal(LocalGatewayAddress.Port, endpoint.Port);
+        Assert.Null(endpoint.TargetPort);
+    }
+
+    // Pinning is a local-run affordance. In the Cloud shape the platform owns ingress
+    // (WithExternalHttpEndpoints), so a fixed host port would be meaningless at best.
+    [Fact]
+    public void GatewayDoesNotPinAPortInTheCloudShape()
+    {
+        var endpoint = Assert.Single(
+            Resource(BuildModel(DeploymentTarget.Cloud), "gateway").Annotations.OfType<EndpointAnnotation>());
+
+        Assert.Null(endpoint.Port);
+    }
+
+    // The pinned port must stay clear of the 6030–6039 band a `Local (standalone)` run uses for the
+    // seven services, or the Gateway could collide with — or be mistaken for — one of them.
+    [Fact]
+    public void GatewayPinnedPortSitsOutsideThePerServiceStandalonePortBand()
+    {
+        Assert.False(LocalGatewayAddress.Port is >= 6030 and <= 6039,
+            $"the Gateway's pinned port {LocalGatewayAddress.Port} collides with the standalone service band.");
     }
 
     // The signing keys must never be committed. Declaring them secret keeps them in

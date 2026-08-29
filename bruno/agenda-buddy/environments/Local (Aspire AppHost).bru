@@ -1,5 +1,9 @@
 vars {
-  gatewayUrl: http://localhost:PORT
+  # Fixed — the Gateway's host port is pinned for local runs (AgendaBuddy.Library/LocalGatewayAddress.cs),
+  # so this one needs no per-run discovery. Requests through it reach any service via api/v1/{service}/**.
+  # The seven below stay PORT placeholders on purpose: they address each service DIRECTLY, bypassing the
+  # Gateway, and those ports are still AppHost-assigned per run (AC-1.4).
+  gatewayUrl: http://localhost:6080
   providerUrl: http://localhost:PORT
   servicesUrl: http://localhost:PORT
   calendarUrl: http://localhost:PORT

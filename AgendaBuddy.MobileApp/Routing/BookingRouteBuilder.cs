@@ -20,6 +20,32 @@ namespace AgendaBuddy.MobileApp.Routing;
 public static class BookingRouteBuilder
 {
     /// <summary>
+    /// <c>BookingModule.cs</c>'s <c>POST /appointments</c> — binds the full <see cref="AppointmentEntity"/>
+    /// directly (no wrapper request type). Leave <c>identifier</c> out of the payload so the server generates
+    /// a fresh one.
+    /// </summary>
+    public static RouteSpec BookAppointment() => new(HttpMethod.Post, "api/v1/booking/appointments");
+
+    /// <summary>
+    /// Payload shape <c>BookingModule.cs</c>'s <c>POST /appointments</c> binds directly into
+    /// <see cref="AppointmentEntity"/> — <c>emailProvider</c>/<c>emailCustomer</c> are the only fields the
+    /// validator (<c>AppointmentEntitySpecification</c>) checks, plus <c>Start &lt; End</c>.
+    /// </summary>
+    public static object BuildBookAppointmentPayload(string emailProvider, string emailCustomer, DateTime start, DateTime end) =>
+        new { emailProvider, emailCustomer, start, end, dayOff = false };
+
+    /// <summary>
+    /// <c>BookingModule.cs</c>'s <c>DELETE /appointments/</c> (trailing slash, no path param) — the target is
+    /// identified by the request BODY, not a route segment, and only for
+    /// <c>OwnershipGuard.AssertOwnerAny(user, appointmentEntity.EmailProvider, appointmentEntity.EmailCustomer)</c>
+    /// to check against; <c>CancelAppointmentCommand</c> itself only reads <c>Identifier</c>.
+    /// </summary>
+    public static RouteSpec CancelAppointment() => new(HttpMethod.Delete, "api/v1/booking/appointments/");
+
+    public static object BuildCancelAppointmentPayload(string identifier, string emailProvider, string emailCustomer) =>
+        new { identifier, emailProvider, emailCustomer };
+
+    /// <summary>
     /// The dedicated status-transition route. Replaces the legacy
     /// <c>PUT booking/{id}</c> call, which is now ignored entirely.
     /// </summary>

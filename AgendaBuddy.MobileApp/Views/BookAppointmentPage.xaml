@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             x:Class="AgendaBuddy.MobileApp.Views.BookAppointmentPage"
+             Title="Book Appointment"
+             BackgroundColor="{StaticResource BackgroundPage}"
+             Shell.NavBarIsVisible="False">
+
+    <ContentPage.Resources>
+        <toolkit:InvertedBoolConverter x:Key="InvertedBoolConverter" />
+    </ContentPage.Resources>
+
+    <Grid RowDefinitions="Auto,*">
+
+        <Grid Grid.Row="0" BackgroundColor="{StaticResource Primary}" Padding="24,48,24,24">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <Button Grid.Row="0"
+                    Text="&#x2190; Back"
+                    BackgroundColor="Transparent"
+                    TextColor="#C7D2FE"
+                    FontSize="14"
+                    HorizontalOptions="Start"
+                    Padding="4"
+                    Margin="0,0,0,16"
+                    Clicked="OnBackClicked" />
+            <Label Grid.Row="1"
+                   Text="{Binding CounterpartName}"
+                   FontSize="24"
+                   FontAttributes="Bold"
+                   TextColor="White" />
+        </Grid>
+
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Padding="24" Spacing="14">
+
+                <Frame CornerRadius="20"
+                       BackgroundColor="White"
+                       BorderColor="#E2E8F0"
+                       HasShadow="True"
+                       Padding="20">
+                    <VerticalStackLayout Spacing="14">
+
+                        <Label Text="No live availability preview for a counterpart's calendar is available yet — pick a date/time and the other party will confirm it."
+                               FontSize="13"
+                               TextColor="{StaticResource TextMuted}" />
+
+                        <Label Text="Date" Style="{StaticResource Caption}" FontAttributes="Bold" />
+                        <Frame Style="{StaticResource InputFrame}">
+                            <DatePicker Date="{Binding SelectedDate}"
+                                        AutomationId="BookDatePicker" />
+                        </Frame>
+
+                        <Label Text="Time" Style="{StaticResource Caption}" FontAttributes="Bold" />
+                        <Frame Style="{StaticResource InputFrame}">
+                            <TimePicker Time="{Binding SelectedTime}" AutomationId="BookTimePicker" />
+                        </Frame>
+
+                        <Frame Style="{StaticResource ErrorBannerStyle}" IsVisible="{Binding HasError}">
+                            <Label Text="{Binding ErrorMessage}" TextColor="{StaticResource Error}" FontSize="14" />
+                        </Frame>
+
+                        <Grid Margin="0,8,0,0">
+                            <Button Text="Book"
+                                    Style="{StaticResource PrimaryButton}"
+                                    Command="{Binding BookCommand}"
+                                    IsVisible="{Binding IsBooking, Converter={StaticResource InvertedBoolConverter}}"
+                                    AutomationId="ConfirmBookButton" />
+                            <ActivityIndicator IsRunning="{Binding IsBooking}" IsVisible="{Binding IsBooking}"
+                                               Color="{StaticResource Primary}" HorizontalOptions="Center" />
+                        </Grid>
+
+                    </VerticalStackLayout>
+                </Frame>
+
+            </VerticalStackLayout>
+        </ScrollView>
+
+    </Grid>
+
+</ContentPage>

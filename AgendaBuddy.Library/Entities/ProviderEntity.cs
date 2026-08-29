@@ -42,4 +42,8 @@ public class ProviderEntity
     [BsonElement("subscribed_customer_collection")] public List<string> SubscribedCustomerCollection { get; set; } = [];
 
     [BsonElement("is_active")] public bool IsActive { get; set; } = true;
+
+    /// <summary>Profession catalog names (see ProfessionEntity) this provider currently practices under.
+    /// Additive field (2026-08-28) — a missing value on an older stored document reads back as an empty list.</summary>
+    [BsonElement("professions")] public List<string> Professions { get; set; } = [];
 }

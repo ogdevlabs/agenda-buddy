@@ -22,7 +22,7 @@
                     TextColor="#C7D2FE"
                     FontSize="14"
                     HorizontalOptions="Start"
-                    Padding="0"
+                    Padding="4"
                     Margin="0,0,0,16"
                     Clicked="OnBackClicked" />
             <Label Grid.Row="1"

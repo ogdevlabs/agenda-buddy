@@ -46,6 +46,7 @@ public class ServicesModule : ICarterModule
                 ClaimsPrincipal user,
                 [FromBody] List<ServiceEntity> serviceEntities,
                 string email,
+                IDistributedCache cache,
                 CancellationToken cancellationToken) =>
             {
                 if (!MiniValidator.TryValidate(serviceEntities, out var errors))
@@ -61,7 +62,13 @@ public class ServicesModule : ICarterModule
                 }, cancellationToken);
 
                 if (result.IsSuccess)
+                {
+                    // agenda-buddy-xrw: cache-aside reads were never invalidated on write, so the GET
+                    // route's 5-minute TTL kept serving the pre-write list. This is the one instance of
+                    // that gap actually fixed so far -- the other cached services still have it.
+                    await cache.RemoveAsync($"services-{email}", cancellationToken);
                     return TypedResults.Ok(DataResponse<ProviderEntity>.Ok(result.Value));
+                }
 
                 return TypedResults.NotFound();
             })
@@ -74,6 +81,7 @@ public class ServicesModule : ICarterModule
                 ClaimsPrincipal user,
                 [FromBody] List<ServiceEntity> serviceEntities,
                 string email,
+                IDistributedCache cache,
                 CancellationToken cancellationToken) =>
             {
                 if (!MiniValidator.TryValidate(serviceEntities, out var errors))
@@ -89,11 +97,46 @@ public class ServicesModule : ICarterModule
                 }, cancellationToken);
 
                 if (result.IsSuccess)
+                {
+                    await cache.RemoveAsync($"services-{email}", cancellationToken);
                     return TypedResults.Ok(DataResponse<ProviderEntity>.Ok(result.Value));
+                }
 
                 return TypedResults.NotFound();
             })
             .WithName("UpdateServicesFromProvider")
+            .RequireAuthorization();
+
+        // {name} is matched exactly against ServiceEntity.Name, same key AddServicesToProvider/
+        // UpdateServicesFromProvider already use — there is no id-based lookup for a service anywhere
+        // in this route group (agenda-buddy-do5: Services.Api doesn't register ObjectIdJsonConverter, so
+        // a service's id is unusable on the wire regardless).
+        services.MapDelete("/{email}/{name}",
+            async Task<Results<NotFound, Ok<DataResponse<ProviderEntity>>>> (
+                IMediator mediator,
+                ClaimsPrincipal user,
+                string email,
+                string name,
+                IDistributedCache cache,
+                CancellationToken cancellationToken) =>
+            {
+                OwnershipGuard.AssertOwner(user, email);
+
+                var result = await mediator.Send(new RemoveServiceFromProviderCommand
+                {
+                    Email = email,
+                    ServiceName = name
+                }, cancellationToken);
+
+                if (result.IsSuccess)
+                {
+                    await cache.RemoveAsync($"services-{email}", cancellationToken);
+                    return TypedResults.Ok(DataResponse<ProviderEntity>.Ok(result.Value));
+                }
+
+                return TypedResults.NotFound();
+            })
+            .WithName("RemoveServiceFromProvider")
             .RequireAuthorization();
     }
 }

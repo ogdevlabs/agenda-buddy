@@ -47,6 +47,22 @@ public class ProviderService(IRepository<ProviderEntity> providerRepository) : I
         return await providerRepository.Find(filter);
     }
 
+    public async Task<List<AppointmentEntity>> FindAppointmentsByCustomerAsync(string customerEmail)
+    {
+        // Dot notation into the embedded array matches a document when ANY element matches, so this
+        // selects only the providers holding at least one appointment with this customer -- but those
+        // providers' OTHER customers' appointments come back in the same documents, hence the second
+        // filter below. Dropping it would leak every co-customer of every provider this customer books.
+        var filter = new BsonDocument("appointments.email_customer", customerEmail);
+        var providers = await providerRepository.FindAllAsync(filter);
+
+        return providers
+            .SelectMany(provider => provider.AppointmentEntities)
+            .Where(appointment => string.Equals(appointment.EmailCustomer, customerEmail, StringComparison.OrdinalIgnoreCase))
+            .OrderBy(appointment => appointment.Start)
+            .ToList();
+    }
+
     /// <summary>
     /// Appends an appointment to a provider's embedded list with a single atomic <c>$push</c>.
     /// </summary>
@@ -101,6 +117,21 @@ public class ProviderService(IRepository<ProviderEntity> providerRepository) : I
         return await providerRepository.FindOneAndUpdateAsync(
             new BsonDocument("email", providerEmail),
             new BsonDocument("$pull", new BsonDocument("subscribed_customer_collection", customerEmail)));
+    }
+
+    public async Task<ProviderEntity?> AddProfessionsAsync(string providerEmail, List<string> professionNames)
+    {
+        return await providerRepository.FindOneAndUpdateAsync(
+            new BsonDocument("email", providerEmail),
+            new BsonDocument("$addToSet",
+                new BsonDocument("professions", new BsonDocument("$each", new BsonArray(professionNames)))));
+    }
+
+    public async Task<ProviderEntity?> RemoveProfessionAsync(string providerEmail, string professionName)
+    {
+        return await providerRepository.FindOneAndUpdateAsync(
+            new BsonDocument("email", providerEmail),
+            new BsonDocument("$pull", new BsonDocument("professions", professionName)));
     }
 
     /// <summary>

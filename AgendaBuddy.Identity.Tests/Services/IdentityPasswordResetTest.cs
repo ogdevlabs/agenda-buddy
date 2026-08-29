@@ -69,6 +69,7 @@ public class IdentityPasswordResetTest : IDisposable
         var notifier = new RecordingNotificationService();
         var svc = new IdentityService(_repo, _clock, notificationService: notifier);
         await svc.RegisterAsync(Email, Password, "Provider");
+        notifier.Sent.Clear(); // Registration itself sends an email-confirmation notification — not under test here.
 
         await svc.RequestPasswordResetAsync(Email);
 

@@ -27,11 +27,32 @@ public partial class PaymentViewModel : ObservableObject
     [ObservableProperty]
     private string _errorMessage = string.Empty;
 
+    // GetAppointmentPaymentQuery answers 404 ("result.IsFailed") when no payment has been recorded YET —
+    // a normal state that should offer the Pay action below, not the scary error banner LoadAsync's
+    // ErrorMessage renders. IsLoading gates both so the "no payment yet" form doesn't flash before the
+    // first real read completes.
+    [ObservableProperty]
+    private bool _hasLoaded;
+
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(PayCommand))]
+    private string _payAmountInput = string.Empty;
+
+    [ObservableProperty]
+    private string _payErrorMessage = string.Empty;
+
+    [ObservableProperty]
+    private bool _isPaying;
+
     public string AppointmentId { get; set; } = string.Empty;
 
     public bool HasError => !string.IsNullOrEmpty(ErrorMessage);
 
     public bool HasPayment => Payment is not null;
+
+    public bool ShowPayForm => HasLoaded && !HasPayment && !HasError;
+
+    public bool HasPayError => !string.IsNullOrEmpty(PayErrorMessage);
 
     /// <summary>
     /// True when the payment's Stripe intent id is <c>local_</c>-prefixed — <c>AgendaBuddy.Library.Services.
@@ -78,14 +99,14 @@ public partial class PaymentViewModel : ObservableObject
     {
         IsLoading = true;
         ErrorMessage = string.Empty;
+        HasLoaded = false;
 
         try
         {
-            var result = await _bookingApiService.GetPaymentAsync(AppointmentId);
-            if (result is null)
-                ErrorMessage = "Could not load payment details — try again.";
-            else
-                Payment = result;
+            // A 404 (no payment recorded yet) and a genuine failure are indistinguishable at this layer
+            // (GetPaymentAsync returns null for either) — ShowPayForm is the honest "nothing recorded yet"
+            // state, so no ErrorMessage is set here; only a thrown exception below is a real error.
+            Payment = await _bookingApiService.GetPaymentAsync(AppointmentId);
         }
         catch (GatewayServiceUnavailableException ex)
         {
@@ -98,15 +119,68 @@ public partial class PaymentViewModel : ObservableObject
         finally
         {
             IsLoading = false;
+            HasLoaded = true;
         }
     }
 
-    partial void OnErrorMessageChanged(string value) => OnPropertyChanged(nameof(HasError));
+    [RelayCommand(CanExecute = nameof(CanPay))]
+    private async Task PayAsync()
+    {
+        if (!decimal.TryParse(PayAmountInput, out var amount) || amount <= 0)
+        {
+            PayErrorMessage = "Enter an amount greater than zero.";
+            return;
+        }
+
+        IsPaying = true;
+        PayErrorMessage = string.Empty;
+
+        try
+        {
+            var created = await _bookingApiService.CreatePaymentAsync(AppointmentId, amount, currency: null);
+            if (created is null)
+            {
+                PayErrorMessage = "Could not record this payment — try again.";
+                await ToastNotifier.ShowAsync(PayErrorMessage);
+                return;
+            }
+
+            Payment = created;
+            await ToastNotifier.ShowAsync("Payment recorded.");
+        }
+        catch (GatewayServiceUnavailableException ex)
+        {
+            PayErrorMessage = GatewayErrorMapper.Describe(ex.FailedService);
+            await ToastNotifier.ShowAsync(PayErrorMessage);
+        }
+        catch (HttpRequestException)
+        {
+            PayErrorMessage = "Could not record this payment — check your connection and try again.";
+            await ToastNotifier.ShowAsync(PayErrorMessage);
+        }
+        finally
+        {
+            IsPaying = false;
+        }
+    }
+
+    private bool CanPay() => !string.IsNullOrWhiteSpace(PayAmountInput);
+
+    partial void OnErrorMessageChanged(string value)
+    {
+        OnPropertyChanged(nameof(HasError));
+        OnPropertyChanged(nameof(ShowPayForm));
+    }
+
+    partial void OnHasLoadedChanged(bool value) => OnPropertyChanged(nameof(ShowPayForm));
+
+    partial void OnPayErrorMessageChanged(string value) => OnPropertyChanged(nameof(HasPayError));
 
     partial void OnPaymentChanged(PaymentEntity? value)
     {
         OnPropertyChanged(nameof(HasPayment));
         OnPropertyChanged(nameof(StatusMessage));
         OnPropertyChanged(nameof(IsNonCharging));
+        OnPropertyChanged(nameof(ShowPayForm));
     }
 }

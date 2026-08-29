@@ -44,8 +44,19 @@ public partial class DashboardViewModel : ObservableObject
 
     public bool IsEmpty => !IsLoading && Appointments.Count == 0 && !HasError;
 
-    // The provider report route is provider-only.
+    // The provider report route is provider-only; a Customer sees session history instead.
     public bool IsProvider => _session.IsProvider;
+    public bool IsCustomer => _session.IsCustomer;
+
+    public string SectionTitle => IsCustomer ? "Recent Sessions" : "Appointments";
+    public string PrimaryStatLabel => IsCustomer ? "Completed" : "Today";
+    public string PrimaryStatCaption => IsCustomer ? "" : "Sessions";
+    public string SecondaryStatLabel => IsCustomer ? "Cancelled" : "This Week";
+    public string SecondaryStatCaption => IsCustomer ? "" : "Upcoming";
+    public string EmptyStateTitle => IsCustomer ? "No Sessions Yet" : "No Appointments";
+    public string EmptyStateSubtitle => IsCustomer
+        ? "Your completed and cancelled sessions will show up here."
+        : "Check your calendar for upcoming sessions.";
 
     public event EventHandler? AppointmentsLoaded;
 
@@ -68,6 +79,16 @@ public partial class DashboardViewModel : ObservableObject
         ErrorMessage = string.Empty;
 
         await _session.RefreshAsync();
+        OnPropertyChanged(nameof(IsProvider));
+        OnPropertyChanged(nameof(IsCustomer));
+        OnPropertyChanged(nameof(SectionTitle));
+        OnPropertyChanged(nameof(PrimaryStatLabel));
+        OnPropertyChanged(nameof(PrimaryStatCaption));
+        OnPropertyChanged(nameof(SecondaryStatLabel));
+        OnPropertyChanged(nameof(SecondaryStatCaption));
+        OnPropertyChanged(nameof(EmptyStateTitle));
+        OnPropertyChanged(nameof(EmptyStateSubtitle));
+
         Greeting = DateTime.Now.Hour switch
         {
             < 12 => "Good morning",
@@ -77,13 +98,25 @@ public partial class DashboardViewModel : ObservableObject
 
         try
         {
-            var results = await _bookingApiService.GetTodayAppointmentsAsync();
+            var results = IsCustomer
+                ? await _bookingApiService.GetPastAppointmentsAsync()
+                : await _bookingApiService.GetTodayAppointmentsAsync();
 
             _allAppointments = results;
             _pageIndex = 0;
             UpdatePage();
-            TodayCount = results.Count(a => a.ScheduledAt.Date == DateTime.Today);
-            WeekCount = results.Count;
+
+            if (IsCustomer)
+            {
+                TodayCount = results.Count(a => a.Status == AgendaBuddy.Library.Entities.AppointmentStatus.Completed);
+                WeekCount = results.Count(a => a.Status == AgendaBuddy.Library.Entities.AppointmentStatus.Cancelled);
+            }
+            else
+            {
+                TodayCount = results.Count(a => a.ScheduledAt.Date == DateTime.Today);
+                WeekCount = results.Count;
+            }
+
             AppointmentsLoaded?.Invoke(this, EventArgs.Empty);
         }
         catch (Exception)

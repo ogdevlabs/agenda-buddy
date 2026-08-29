@@ -21,7 +21,7 @@
     <Grid RowDefinitions="Auto,Auto,Auto,Auto,*">
 
         <!-- Immersive header -->
-        <Grid Grid.Row="0" BackgroundColor="#1C1C1E" Padding="0">
+        <Grid Grid.Row="0" BackgroundColor="{StaticResource Primary}" Padding="0">
             <VerticalStackLayout Padding="24,24,24,20" Spacing="6">
                 <Label Text="{Binding PageTitle}"
                        FontSize="30"
@@ -244,15 +244,38 @@
                                             FontSize="14"
                                             FontAttributes="Bold"
                                             HeightRequest="38"
-                                            Padding="18,0" />
-                                    <Button Text="View Availability"
-                                            BackgroundColor="#EDE9FE"
-                                            TextColor="{StaticResource iOSPurple}"
+                                            Padding="18,4"
+                                            Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.BookCommand}"
+                                            CommandParameter="{Binding .}"
+                                            AutomationId="BookProviderButton" />
+                                    <Button Text="{Binding IsSubscribed, Converter={toolkit:BoolToObjectConverter TrueObject='Unsubscribe', FalseObject='Subscribe'}}"
+                                            BackgroundColor="{Binding IsSubscribed, Converter={toolkit:BoolToObjectConverter TrueObject=#F1F5F9, FalseObject=#EDE9FE}}"
+                                            TextColor="{Binding IsSubscribed, Converter={toolkit:BoolToObjectConverter TrueObject={StaticResource iOSGray}, FalseObject={StaticResource iOSPurple}}}"
                                             CornerRadius="10"
                                             FontSize="14"
                                             FontAttributes="Bold"
                                             HeightRequest="38"
-                                            Padding="18,0" />
+                                            Padding="18,4"
+                                            IsEnabled="{Binding IsBusy, Converter={StaticResource InvertedBoolConverter}}"
+                                            Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.ToggleSubscriptionCommand}"
+                                            CommandParameter="{Binding .}"
+                                            AutomationId="SubscribeToggleButton" />
+                                </HorizontalStackLayout>
+
+                                <!-- Customer actions (provider's own contact list — book a session with a known customer) -->
+                                <HorizontalStackLayout Spacing="8" Margin="0,8,0,0"
+                                                       IsVisible="{Binding IsProvider, Converter={StaticResource InvertedBoolConverter}}">
+                                    <Button Text="Book"
+                                            BackgroundColor="{StaticResource iOSBlue}"
+                                            TextColor="White"
+                                            CornerRadius="10"
+                                            FontSize="14"
+                                            FontAttributes="Bold"
+                                            HeightRequest="38"
+                                            Padding="18,4"
+                                            Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.BookCommand}"
+                                            CommandParameter="{Binding .}"
+                                            AutomationId="BookCustomerButton" />
                                 </HorizontalStackLayout>
 
                                 <!-- Customer-specific -->

@@ -8,7 +8,8 @@ public class AddServicesToProviderCommandHandlerTest
     {
         FirstName = "Test",
         LastName = "Provider",
-        Email = email
+        Email = email,
+        Professions = ["Fitness"]
     };
 
     [Fact]
@@ -25,7 +26,7 @@ public class AddServicesToProviderCommandHandlerTest
         var command = new AddServicesToProviderCommand
         {
             Email = ProviderEmail,
-            ServiceEntities = [new ServiceEntity("Massage", "60 minutes", 80m)]
+            ServiceEntities = [new ServiceEntity("Massage", "60 minutes", 80m) { ProfessionName = "Fitness" }]
         };
 
         var result = await handler.Handle(command, CancellationToken.None);
@@ -49,7 +50,7 @@ public class AddServicesToProviderCommandHandlerTest
         var command = new AddServicesToProviderCommand
         {
             Email = "missing@example.com",
-            ServiceEntities = [new ServiceEntity("Massage", "60 minutes", 80m)]
+            ServiceEntities = [new ServiceEntity("Massage", "60 minutes", 80m) { ProfessionName = "Fitness" }]
         };
 
         var result = await handler.Handle(command, CancellationToken.None);
@@ -74,13 +75,56 @@ public class AddServicesToProviderCommandHandlerTest
         var command = new AddServicesToProviderCommand
         {
             Email = ProviderEmail,
-            ServiceEntities = [new ServiceEntity("Massage", "60 minutes", 80m)]
+            ServiceEntities = [new ServiceEntity("Massage", "60 minutes", 80m) { ProfessionName = "Fitness" }]
         };
 
         var result = await handler.Handle(command, CancellationToken.None);
 
         Assert.True(result.IsFailed);
         eventStore.Verify(e => e.SaveAsync(It.IsAny<Event>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Handle_ServiceNamesNoProfession_ReturnsFailAndWritesFailedAudit()
+    {
+        var provider = Provider(ProviderEmail);
+        var providerService = new Mock<IProviderService>();
+        providerService.Setup(p => p.FindProvidersAsync(It.IsAny<BsonDocument>())).ReturnsAsync(provider);
+        var eventStore = new Mock<IEventStore>();
+        var mediator = new Mock<IMediator>();
+        var handler = new AddServicesToProviderCommandHandler(mediator.Object, providerService.Object, eventStore.Object);
+
+        var command = new AddServicesToProviderCommand
+        {
+            Email = ProviderEmail,
+            ServiceEntities = [new ServiceEntity("Massage", "60 minutes", 80m)]
+        };
+
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        Assert.True(result.IsFailed);
+        Assert.Contains(result.Errors, e => e.Message == AddServicesToProviderCommandHandler.MissingProfessionErrorMessage);
+        providerService.Verify(p => p.UpdateProviderAsync(It.IsAny<string>(), It.IsAny<ProviderEntity>()), Times.Never);
+        eventStore.Verify(e => e.SaveAsync(It.Is<Event>(ev => ev.Status == "Failed" && ev.Type == "AddServicesToProviderCommand")), Times.Once);
+    }
+
+    [Fact]
+    public async Task Handle_ServiceNamesAProfessionTheProviderDoesNotHave_ReturnsFail()
+    {
+        var provider = Provider(ProviderEmail);
+        var providerService = new Mock<IProviderService>();
+        providerService.Setup(p => p.FindProvidersAsync(It.IsAny<BsonDocument>())).ReturnsAsync(provider);
+        var handler = new AddServicesToProviderCommandHandler(Mock.Of<IMediator>(), providerService.Object, Mock.Of<IEventStore>());
+
+        var command = new AddServicesToProviderCommand
+        {
+            Email = ProviderEmail,
+            ServiceEntities = [new ServiceEntity("Tutoring", "1 hour", 40m) { ProfessionName = "Tutoring" }]
+        };
+
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        Assert.True(result.IsFailed);
     }
 
     [Fact]

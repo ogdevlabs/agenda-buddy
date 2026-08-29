@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             x:Class="AgendaBuddy.MobileApp.Views.ProfessionsPage"
+             x:Name="ThisPage"
+             Title="Professions"
+             BackgroundColor="{StaticResource BackgroundPage}"
+             Shell.NavBarIsVisible="False">
+
+    <ContentPage.Resources>
+        <toolkit:InvertedBoolConverter x:Key="InvertedBoolConverter" />
+    </ContentPage.Resources>
+
+    <ScrollView>
+        <VerticalStackLayout Padding="20,16,20,24" Spacing="14">
+
+            <Frame Style="{StaticResource ErrorBannerStyle}" IsVisible="{Binding HasError}">
+                <Label Text="{Binding ErrorMessage}" TextColor="{StaticResource Error}" FontSize="14" />
+            </Frame>
+
+            <ActivityIndicator IsRunning="{Binding IsLoading}" IsVisible="{Binding IsLoading}"
+                                Color="{StaticResource Primary}" HorizontalOptions="Center" />
+
+            <!-- Your Professions (provider only) -->
+            <VerticalStackLayout Spacing="8" IsVisible="{Binding IsProvider}">
+                <Label Text="Your Professions" FontSize="13" FontAttributes="Bold" TextColor="{StaticResource TextMuted}" />
+
+                <Label Text="You haven't selected any professions yet." IsVisible="{Binding CurrentProfessions, Converter={toolkit:IsListNullOrEmptyConverter}}"
+                       TextColor="{StaticResource TextMuted}" FontSize="13" />
+
+                <FlexLayout Wrap="Wrap" IsVisible="{Binding CurrentProfessions, Converter={toolkit:IsListNotNullOrEmptyConverter}}"
+                            BindableLayout.ItemsSource="{Binding CurrentProfessions}">
+                    <BindableLayout.ItemTemplate>
+                        <DataTemplate>
+                            <Frame CornerRadius="16" BackgroundColor="{StaticResource Primary}" HasShadow="False"
+                                   Padding="12,6" Margin="0,0,8,8">
+                                <HorizontalStackLayout Spacing="6">
+                                    <Label Text="{Binding}" TextColor="White" FontSize="13" VerticalOptions="Center" />
+                                    <Label Text="&#x2715;" TextColor="White" FontSize="11" VerticalOptions="Center"
+                                           AutomationId="RemoveProfessionChip">
+                                        <Label.GestureRecognizers>
+                                            <TapGestureRecognizer
+                                                Command="{Binding Source={x:Reference ThisPage}, Path=BindingContext.RemoveCurrentCommand}"
+                                                CommandParameter="{Binding}" />
+                                        </Label.GestureRecognizers>
+                                    </Label>
+                                </HorizontalStackLayout>
+                            </Frame>
+                        </DataTemplate>
+                    </BindableLayout.ItemTemplate>
+                </FlexLayout>
+            </VerticalStackLayout>
+
+            <BoxView HeightRequest="0.5" Color="#E2E8F0" IsVisible="{Binding IsProvider}" />
+
+            <!-- Catalog search -->
+            <SearchBar Text="{Binding SearchText}" Placeholder="Search professions"
+                       BackgroundColor="White" TextColor="{StaticResource TextPrimary}"
+                       PlaceholderColor="{StaticResource TextMuted}" CancelButtonColor="{StaticResource Primary}"
+                       AutomationId="ProfessionSearchBar" />
+
+            <Label Text="No professions found." IsVisible="{Binding IsEmpty}"
+                   TextColor="{StaticResource TextMuted}" HorizontalOptions="Center" Margin="0,40" />
+
+            <!-- Provider: selectable catalog -->
+            <CollectionView ItemsSource="{Binding FilteredCatalog}" SelectionMode="None"
+                             IsVisible="{Binding IsProvider}" AutomationId="ProfessionsCatalogCollectionView">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Frame CornerRadius="14" BackgroundColor="White" BorderColor="#E2E8F0" HasShadow="False" Padding="16" Margin="0,0,0,8">
+                            <Frame.GestureRecognizers>
+                                <TapGestureRecognizer
+                                    Command="{Binding Source={x:Reference ThisPage}, Path=BindingContext.ToggleSelectCommand}"
+                                    CommandParameter="{Binding}" />
+                            </Frame.GestureRecognizers>
+                            <Grid ColumnDefinitions="Auto,*">
+                                <Label Grid.Column="0" Text="{Binding IsSelected, Converter={toolkit:BoolToObjectConverter TrueObject='&#x2713;', FalseObject='&#x25CB;'}}"
+                                       TextColor="{StaticResource Primary}" FontSize="16" WidthRequest="24" />
+                                <Label Grid.Column="1" Text="{Binding Name}" FontSize="15" TextColor="{StaticResource TextPrimary}" />
+                            </Grid>
+                        </Frame>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+            <!-- Customer: read-only browse -->
+            <CollectionView ItemsSource="{Binding FilteredCatalog}" SelectionMode="None"
+                             IsVisible="{Binding IsProvider, Converter={StaticResource InvertedBoolConverter}}"
+                             AutomationId="ProfessionsBrowseCollectionView">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Frame CornerRadius="14" BackgroundColor="White" BorderColor="#E2E8F0" HasShadow="False" Padding="16" Margin="0,0,0,8">
+                            <Label Text="{Binding Name}" FontSize="15" TextColor="{StaticResource TextPrimary}" />
+                        </Frame>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+            <Grid IsVisible="{Binding IsProvider}">
+                <Button Text="Save Professions"
+                        Style="{StaticResource PrimaryButton}"
+                        HeightRequest="48"
+                        Command="{Binding SaveSelectionCommand}"
+                        IsVisible="{Binding IsSaving, Converter={StaticResource InvertedBoolConverter}}"
+                        AutomationId="SaveProfessionsButton" />
+                <ActivityIndicator IsRunning="{Binding IsSaving}" IsVisible="{Binding IsSaving}"
+                                    Color="{StaticResource Primary}" HorizontalOptions="Center" />
+            </Grid>
+
+            <Button Text="Continue to My Services"
+                    Style="{StaticResource SecondaryButton}"
+                    HeightRequest="48"
+                    IsVisible="{Binding HasAnyProfession}"
+                    Clicked="OnContinueToServicesClicked"
+                    AutomationId="ContinueToServicesButton" />
+
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>

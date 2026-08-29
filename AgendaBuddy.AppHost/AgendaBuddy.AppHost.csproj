@@ -37,6 +37,16 @@
         <ProjectReference Include="..\AgendaBuddy.Gateway\AgendaBuddy.Gateway.csproj" />
     </ItemGroup>
 
+    <!-- A COMPILE reference, not a resource. IsAspireProjectResource="false" is what distinguishes the
+         two: every reference above is a process for the AppHost to orchestrate, whereas this one is only
+         needed so AppHostWiring.cs can read LocalGatewayAddress.Port — the port the mobile client's
+         fallback also reads, so the two cannot drift. Without the attribute the Aspire SDK would try to
+         generate a Projects.AgendaBuddy_Library metadata type and treat a class library as a runnable
+         resource. -->
+    <ItemGroup>
+        <ProjectReference Include="..\AgendaBuddy.Library\AgendaBuddy.Library.csproj" IsAspireProjectResource="false" />
+    </ItemGroup>
+
     <ItemGroup>
         <InternalsVisibleTo Include="AgendaBuddy.AppHost.Tests" />
     </ItemGroup>

@@ -114,4 +114,20 @@ public class AuthService : IAuthService
     {
         return _secureStorage.GetAsync(JwtDelegatingHandler.JwtKey);
     }
+
+    public async Task<bool> RequestPasswordResetAsync(string email, CancellationToken ct = default)
+    {
+        var client = _httpClientFactory.CreateClient("AgendaBuddyApiNoAuth");
+        var route = AuthRouteBuilder.RequestPasswordReset();
+        var response = await client.PostAsJsonAsync(route.Path, new { email }, ct);
+        return response.IsSuccessStatusCode;
+    }
+
+    public async Task<bool> ConfirmPasswordResetAsync(string email, string token, string newPassword, CancellationToken ct = default)
+    {
+        var client = _httpClientFactory.CreateClient("AgendaBuddyApiNoAuth");
+        var route = AuthRouteBuilder.ConfirmPasswordReset();
+        var response = await client.PostAsJsonAsync(route.Path, new { email, token, newPassword }, ct);
+        return response.IsSuccessStatusCode;
+    }
 }

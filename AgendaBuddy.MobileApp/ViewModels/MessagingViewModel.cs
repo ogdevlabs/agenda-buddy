@@ -22,6 +22,13 @@ public partial class MessagingViewModel : ObservableObject
     public bool HasError => !string.IsNullOrEmpty(ErrorMessage);
     public bool IsEmpty => !IsLoading && Threads.Count == 0 && !HasError;
 
+    /// <summary>
+    /// No page/ViewModel called <c>Shell.Current.GoToAsync("messageThread", …)</c> anywhere — the fully
+    /// built <see cref="MessageThreadPage"/>/<see cref="MessageThreadViewModel"/> were unreachable dead code
+    /// from a navigation standpoint. This is the "open thread" affordance that was missing.
+    /// </summary>
+    public event EventHandler<MessageThreadStub>? ThreadOpenRequested;
+
     public MessagingViewModel(IMessagingApiService messagingService, IUserSessionService session)
     {
         _messagingService = messagingService;
@@ -61,6 +68,9 @@ public partial class MessagingViewModel : ObservableObject
         if (thread.IsExpanded && thread.UnreadCount > 0)
             ScheduleMarkRead(thread);
     }
+
+    [RelayCommand]
+    private void OpenThread(MessageThreadStub thread) => ThreadOpenRequested?.Invoke(this, thread);
 
     private async void ScheduleMarkRead(MessageThreadStub thread)
     {

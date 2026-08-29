@@ -31,6 +31,55 @@ public class ProviderApiServiceTests
     }
 
     [Fact]
+    public async Task GetProviders_Returns200_ParsesProfessions()
+    {
+        const string json = """
+            {
+                "data": {
+                    "items": [
+                        {
+                            "email": "coach@example.com",
+                            "firstName": "Pat",
+                            "lastName": "Coach",
+                            "services": [],
+                            "professions": ["Fitness", "Nutrition"]
+                        }
+                    ],
+                    "totalCount": 1,
+                    "page": 1,
+                    "pageSize": 25
+                },
+                "errors": []
+            }
+            """;
+
+        var result = ProviderApiService.ParsePagedProviders(json);
+
+        Assert.Single(result);
+        Assert.Equal(["Fitness", "Nutrition"], result[0].Professions);
+    }
+
+    [Fact]
+    public async Task GetProviders_MissingProfessions_ParsesAsEmptyList()
+    {
+        const string json = """
+            {
+                "data": {
+                    "items": [{"email": "coach@example.com", "firstName": "Pat", "lastName": "Coach", "services": []}],
+                    "totalCount": 1,
+                    "page": 1,
+                    "pageSize": 25
+                },
+                "errors": []
+            }
+            """;
+
+        var result = ProviderApiService.ParsePagedProviders(json);
+
+        Assert.Empty(result[0].Professions);
+    }
+
+    [Fact]
     public async Task GetReport_Returns200_DeserializesReport()
     {
         const string json = """

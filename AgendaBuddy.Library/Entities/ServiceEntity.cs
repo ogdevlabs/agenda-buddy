@@ -27,6 +27,16 @@ public class ServiceEntity
     [BsonElement("feeType")] public FeeType FeeType { get; set; }
 
     [BsonElement("isActive")] public bool IsActive { get; set; } = true;
+
+    /// <summary>The session length this service books for, in minutes. Additive field (2026-08-28) — a
+    /// missing/null value on an older stored document reads back as null, not zero.</summary>
+    [BsonElement("duration_minutes")] public int? DurationMinutes { get; set; }
+
+    /// <summary>The provider's own Profession (<see cref="ProviderEntity.Professions"/>) this service is
+    /// offered under. Additive field (2026-08-28) — null on services created before this existed. A new
+    /// service must name one of the provider's current professions (enforced in
+    /// AddServicesToProviderCommandHandler); existing services keep whatever they had, even null.</summary>
+    [BsonElement("profession_name")] public string? ProfessionName { get; set; }
 }
 
 public enum FeeType

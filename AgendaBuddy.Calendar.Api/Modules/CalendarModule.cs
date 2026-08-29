@@ -1,5 +1,4 @@
 using AgendaBuddy.Library.Tools;
-using Microsoft.Extensions.Caching.Distributed;
 
 namespace AgendaBuddy.Calendar.Api.Modules;
 
@@ -17,32 +16,25 @@ public class CalendarModule : ICarterModule
                 IMediator mediator,
                 ClaimsPrincipal user,
                 string email,
-                IDistributedCache cache,
                 CancellationToken cancellationToken) =>
             {
                 // A valid token proves the caller is SOMEBODY, not that {email} is theirs. Without this line
                 // any registered user could read any provider's full appointment list, including every
                 // customer email in it.
                 //
-                // ⚠️ DESIGN INVARIANT, NOT AN IMPLEMENTATION DETAIL: this MUST stay ABOVE the cache read. The
-                // cache key is derived from {email} -- the request SUBJECT -- never the CALLER, so a cached value
-                // is not necessarily one the next caller may see. Ordering is the only thing that makes it safe.
-                // Reordering these lines, extracting a helper, or caching the RESPONSE instead of the DATA creates
-                // a cross-tenant leak. Pinned by CalendarOwnershipTest.T006_AWarmCacheIsNotServedToADifferentPrincipal.
-                //
                 // No local try/catch: AgendaBuddyExceptionHandler maps ForbiddenException to 403 centrally.
                 OwnershipGuard.AssertOwner(user, email);
 
-                var key = $"availability-{email}";
-
-                // Dispatched through the real mediator.Send with the real request CancellationToken. A Fail
-                // result is mapped to null so CacheAside's "never cache a null" rule (CacheAside.cs) keeps a
-                // missing provider from poisoning the cache.
-                var slots = await cache.GetOrCreateAsync(key, async token =>
-                {
-                    var result = await mediator.Send(new CheckCalendarAvailabilityQuery { Email = email }, token);
-                    return result.IsSuccess ? result.Value : null!;
-                }, cancellationToken: cancellationToken);
+                // Deliberately NOT cached (2026-08-28, agenda-buddy-326): this data is written by
+                // Booking.Api, a different process with its own in-memory-only IDistributedCache
+                // (AddDistributedMemoryCache -- not a shared backend like Redis). Booking has no way to
+                // invalidate Calendar's copy, so caching here meant up to 5 minutes of a stale calendar
+                // after any booking/cancel/confirm/complete action -- worse than the read-amplification
+                // caching was meant to solve. Revisit once there is a real shared cache or an
+                // event-driven invalidation path (e.g. Booking publishing to Kafka, Calendar evicting on
+                // receipt).
+                var result = await mediator.Send(new CheckCalendarAvailabilityQuery { Email = email }, cancellationToken);
+                var slots = result.IsSuccess ? result.Value : null;
 
                 // Unlike the appointments route below, an empty slot list answers 404 here too -- this mirrors the
                 // route's pre-existing behaviour, not a new rule.
@@ -59,29 +51,20 @@ public class CalendarModule : ICarterModule
                 IMediator mediator,
                 ClaimsPrincipal user,
                 string email,
-                IDistributedCache cache,
                 CancellationToken cancellationToken) =>
             {
                 // A valid token proves the caller is SOMEBODY, not that {email} is theirs. Without this line
                 // any registered user could read any provider's full appointment list, including every
                 // customer email in it.
                 //
-                // ⚠️ DESIGN INVARIANT, NOT AN IMPLEMENTATION DETAIL: this MUST stay ABOVE the cache read. The
-                // cache key is derived from {email} -- the request SUBJECT -- never the CALLER, so a cached value
-                // is not necessarily one the next caller may see. Ordering is the only thing that makes it safe.
-                // Reordering these lines, extracting a helper, or caching the RESPONSE instead of the DATA creates
-                // a cross-tenant leak. Pinned by CalendarOwnershipTest.T006_AWarmCacheIsNotServedToADifferentPrincipal.
-                //
                 // No local try/catch: AgendaBuddyExceptionHandler maps ForbiddenException to 403 centrally.
                 OwnershipGuard.AssertOwner(user, email);
 
-                var key = $"appointments-{email}";
-
-                var appointmentEntities = await cache.GetOrCreateAsync(key, async token =>
-                {
-                    var result = await mediator.Send(new CheckCalendarAppointmentsQuery { Email = email }, token);
-                    return result.IsSuccess ? result.Value : null!;
-                }, cancellationToken: cancellationToken);
+                // Deliberately NOT cached -- see the remark on the availability route above; same
+                // cross-process staleness gap, and this is the exact data the mobile Calendar tab
+                // renders, so a stale read here is directly user-visible.
+                var result = await mediator.Send(new CheckCalendarAppointmentsQuery { Email = email }, cancellationToken);
+                var appointmentEntities = result.IsSuccess ? result.Value : null;
 
                 // Unlike availability above, an empty (but non-null) appointment list is a valid 200 -- a provider
                 // with no appointments is not "not found". This mirrors the route's pre-existing behaviour,

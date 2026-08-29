@@ -7,6 +7,9 @@ public class AddServicesToProviderCommandHandler(
     IProviderService providerService,
     IEventStore eventStore) : IRequestHandler<AddServicesToProviderCommand, Result<ProviderEntity>>
 {
+    public const string MissingProfessionErrorMessage =
+        "A service must be offered under one of your professions. Add the profession first, then the service.";
+
     public async Task<Result<ProviderEntity>> Handle(AddServicesToProviderCommand request, CancellationToken cancellationToken)
     {
         GuardClause.ArgumentIsNotNull(request, nameof(request));
@@ -29,6 +32,22 @@ public class AddServicesToProviderCommandHandler(
                 Data = JsonSerializer.Serialize(new ProviderEntity())
             });
             return Result.Fail<ProviderEntity>($"No provider found with email {request.Email}");
+        }
+
+        var invalidService = request.ServiceEntities.Any(s =>
+            string.IsNullOrWhiteSpace(s.ProfessionName)
+            || !provider.Professions.Contains(s.ProfessionName, StringComparer.OrdinalIgnoreCase));
+        if (invalidService)
+        {
+            await eventStore.SaveAsync(new Event
+            {
+                Id = ObjectId.GenerateNewId(),
+                TimeStamp = DateTime.UtcNow,
+                Status = "Failed",
+                Type = nameof(AddServicesToProviderCommand),
+                Data = JsonSerializer.Serialize(provider)
+            });
+            return Result.Fail<ProviderEntity>(MissingProfessionErrorMessage);
         }
 
         provider.ServiceEntities.AddRange(SupportTools<ServiceEntity>.GenerateIdForRecord(request.ServiceEntities));

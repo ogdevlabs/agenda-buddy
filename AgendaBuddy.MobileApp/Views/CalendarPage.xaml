@@ -51,7 +51,7 @@
                             FontSize="18"
                             WidthRequest="40"
                             HeightRequest="40"
-                            Padding="0" />
+                            Padding="2" />
                     <Button Text="&#x276F;"
                             Command="{Binding NextPageCommand}"
                             IsEnabled="{Binding CanGoForward}"
@@ -60,7 +60,7 @@
                             FontSize="18"
                             WidthRequest="40"
                             HeightRequest="40"
-                            Padding="0" />
+                            Padding="2" />
                 </HorizontalStackLayout>
             </Grid>
         </Grid>

@@ -1,10 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
              x:Class="AgendaBuddy.MobileApp.Views.PaymentPage"
              Title="Payment"
              BackgroundColor="{StaticResource BackgroundPage}"
              Shell.NavBarIsVisible="False">
+
+    <ContentPage.Resources>
+        <toolkit:InvertedBoolConverter x:Key="InvertedBoolConverter" />
+    </ContentPage.Resources>
 
     <Grid RowDefinitions="Auto,*">
 
@@ -22,7 +27,7 @@
                     TextColor="#C7D2FE"
                     FontSize="14"
                     HorizontalOptions="Start"
-                    Padding="0"
+                    Padding="4"
                     Margin="0,0,0,16"
                     Clicked="OnBackClicked" />
             <Label Grid.Row="1"
@@ -90,6 +95,47 @@
                     </VerticalStackLayout>
                 </Frame>
 
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <!-- No payment recorded yet — offer to record one (POST .../payment) -->
+        <ScrollView Grid.Row="1" IsVisible="{Binding ShowPayForm}">
+            <VerticalStackLayout Padding="24" Spacing="14">
+                <Frame CornerRadius="20"
+                       BackgroundColor="White"
+                       BorderColor="#E2E8F0"
+                       HasShadow="True"
+                       Padding="20">
+                    <VerticalStackLayout Spacing="12">
+                        <Label Text="No payment recorded yet" FontSize="16" FontAttributes="Bold"
+                               TextColor="{StaticResource TextPrimary}" />
+                        <Label Text="AgendaBuddy has no live payment gateway configured — recording a payment here does not move real money."
+                               FontSize="13" TextColor="{StaticResource TextMuted}" />
+
+                        <Label Text="Amount" Style="{StaticResource Caption}" FontAttributes="Bold" />
+                        <Frame Style="{StaticResource InputFrame}">
+                            <Entry Text="{Binding PayAmountInput}"
+                                   Placeholder="0.00"
+                                   Keyboard="Numeric"
+                                   Style="{StaticResource InputStyle}"
+                                   AutomationId="PayAmountEntry" />
+                        </Frame>
+
+                        <Frame Style="{StaticResource ErrorBannerStyle}" IsVisible="{Binding HasPayError}">
+                            <Label Text="{Binding PayErrorMessage}" TextColor="{StaticResource Error}" FontSize="14" />
+                        </Frame>
+
+                        <Grid>
+                            <Button Text="Record Payment"
+                                    Style="{StaticResource PrimaryButton}"
+                                    Command="{Binding PayCommand}"
+                                    IsVisible="{Binding IsPaying, Converter={StaticResource InvertedBoolConverter}}"
+                                    AutomationId="RecordPaymentButton" />
+                            <ActivityIndicator IsRunning="{Binding IsPaying}" IsVisible="{Binding IsPaying}"
+                                               Color="{StaticResource Primary}" HorizontalOptions="Center" />
+                        </Grid>
+                    </VerticalStackLayout>
+                </Frame>
             </VerticalStackLayout>
         </ScrollView>
 

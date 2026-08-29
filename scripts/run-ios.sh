@@ -53,7 +53,7 @@ export PATH="$HOME/.rd/bin:$PATH"
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 APPHOST_LOG="${TMPDIR:-/tmp}/agenda-buddy-apphost.log"
-SERVICES=(AgendaBuddy.Identity AgendaBuddy.Booking.Api Customer Provider Calendar Services Profession)
+SERVICES=(AgendaBuddy.Identity AgendaBuddy.Booking.Api AgendaBuddy.Customer.Api AgendaBuddy.Provider.Api AgendaBuddy.Calendar.Api AgendaBuddy.Services.Api AgendaBuddy.Profession.Api)
 GATEWAY="AgendaBuddy.Gateway"         # the eighth AppHost resource (F-015-T05) — project dir matches AppHostWiring.cs's Projects.AgendaBuddy_Gateway
 READY_TIMEOUT=300          # a cold run builds seven services first
 XCODE_APP="/Applications/Xcode.app"
@@ -331,8 +331,13 @@ if [ "$run_app" = "1" ]; then
   export SIMCTL_CHILD_MAUI_API_BASE_URL="$gateway_url"
 
   say "building and launching AgendaBuddy.MobileApp on the simulator ($rid) — a cold build takes a few minutes"
+  # -f net10.0-ios (not just -p:MobilePlatform=ios): TargetFrameworks stays a PLURAL property even once
+  # the csproj's own conditions collapse it to one value (net10.0-ios), so MSBuild still treats this as a
+  # cross-targeting wrapper project. The outer wrapper forwards Build but not Run — "-t:Run" on it fails
+  # with MSB4057 ("The target does not exist"). "-f" selects the inner per-TFM build directly, where the
+  # iOS SDK's own targets (and Run) are actually imported.
   dotnet build "$REPO_ROOT/AgendaBuddy.MobileApp/AgendaBuddy.MobileApp.csproj" \
-    -p:MobilePlatform=ios \
+    -f net10.0-ios \
     -p:RuntimeIdentifier="$rid" \
     -t:Run \
     -p:_DeviceName=":v2:udid=$udid"
@@ -341,9 +346,10 @@ if [ "$run_app" = "1" ]; then
 
 ==> NOTE — the app now points at the gateway ($gateway_url), but most routes still 404.
     F-015-T12 fixed the base address: AgendaBuddy.MobileApp/Infrastructure/ApiBaseUrlResolver.cs reads
-    MAUI_API_BASE_URL (set above) ahead of the ApiBaseUrl config key and the hardcoded
-    http://localhost:6036/ fallback (which addressed nothing under the AppHost — ports are dynamic
-    by design, AC-1.4). Still outstanding: every mobile path is missing the api/v1/ prefix the
+    MAUI_API_BASE_URL (set above) ahead of the ApiBaseUrl config key and its fallback. That fallback
+    is now the Gateway's PINNED local address (AgendaBuddy.Library/LocalGatewayAddress.cs), so
+    launching the app WITHOUT this script also reaches the backend — it previously named 6036, which
+    is Identity's standalone port and dead under the AppHost. Still outstanding: every mobile path is missing the api/v1/ prefix the
     backend actually serves (F-015-T07, Planned). Until that lands, the ViewModels still fall back
     to AgendaBuddy.MobileApp/Services/SeedDataProvider.cs for most calls.
     Details: docs/pdlc/context/01-api-surface.md, docs/pdlc/context/16-mobile-client.md

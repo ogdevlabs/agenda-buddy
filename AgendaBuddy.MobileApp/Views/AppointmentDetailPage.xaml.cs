@@ -63,6 +63,7 @@ public partial class AppointmentDetailPage : ContentPage
         };
 
         _viewModel.LoadWithFallbackCommand.Execute(fallback);
+        _viewModel.LoadNotesCommand.Execute(null);
     }
 
     private async void OnActionRequested(object? sender, AppointmentActionEventArgs e)
@@ -83,11 +84,11 @@ public partial class AppointmentDetailPage : ContentPage
                     null,
                     "Cancel appointment");
                 if (cancelChoice == "Cancel appointment")
-                    // KNOWN GAP: the status route does not accept Cancelled as a target — only
-                    // Booked/Completed. Cancelling an appointment is really Booking's DELETE
-                    // /api/v1/booking/appointments/ route, not a status transition, and IBookingApiService has
-                    // no such method yet.
-                    await _viewModel.ExecuteStatusUpdateAsync(AppointmentStatus.Cancelled);
+                {
+                    var cancelled = await _viewModel.ExecuteCancelAsync();
+                    if (cancelled)
+                        await Shell.Current.GoToAsync("..");
+                }
                 break;
 
             case ActionType.Complete:
