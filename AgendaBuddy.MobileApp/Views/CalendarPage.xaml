@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:controls="clr-namespace:AgendaBuddy.MobileApp.Controls"
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
              x:Class="AgendaBuddy.MobileApp.Views.CalendarPage"
              Title="Calendar"
@@ -43,7 +44,7 @@
                 </VerticalStackLayout>
                 <!-- Nav arrows -->
                 <HorizontalStackLayout Grid.Column="1" Spacing="4" VerticalOptions="Center">
-                    <Button Text="&#x276E;"
+                    <controls:SafeButton Text="&#x276E;"
                             Command="{Binding PreviousPageCommand}"
                             IsEnabled="{Binding CanGoBack}"
                             BackgroundColor="Transparent"
@@ -52,7 +53,7 @@
                             WidthRequest="40"
                             HeightRequest="40"
                             Padding="2" />
-                    <Button Text="&#x276F;"
+                    <controls:SafeButton Text="&#x276F;"
                             Command="{Binding NextPageCommand}"
                             IsEnabled="{Binding CanGoForward}"
                             BackgroundColor="Transparent"

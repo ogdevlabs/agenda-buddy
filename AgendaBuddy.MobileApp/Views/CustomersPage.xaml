@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:controls="clr-namespace:AgendaBuddy.MobileApp.Controls"
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
              x:Class="AgendaBuddy.MobileApp.Views.CustomersPage"
              Title="{Binding PageTitle}"
@@ -83,7 +84,7 @@
                        FontSize="14"
                        VerticalOptions="Center"
                        AutomationId="ErrorLabel" />
-                <Button Grid.Column="1"
+                <controls:SafeButton Grid.Column="1"
                         Text="Retry"
                         Command="{Binding LoadCommand}"
                         BackgroundColor="Transparent"
@@ -237,7 +238,7 @@
                                 <!-- Provider actions -->
                                 <HorizontalStackLayout Spacing="8" Margin="0,8,0,0"
                                                        IsVisible="{Binding IsProvider}">
-                                    <Button Text="Book"
+                                    <controls:SafeButton Text="Book"
                                             BackgroundColor="{StaticResource iOSPurple}"
                                             TextColor="White"
                                             CornerRadius="10"
@@ -248,7 +249,7 @@
                                             Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.BookCommand}"
                                             CommandParameter="{Binding .}"
                                             AutomationId="BookProviderButton" />
-                                    <Button Text="{Binding IsSubscribed, Converter={toolkit:BoolToObjectConverter TrueObject='Unsubscribe', FalseObject='Subscribe'}}"
+                                    <controls:SafeButton Text="{Binding IsSubscribed, Converter={toolkit:BoolToObjectConverter TrueObject='Unsubscribe', FalseObject='Subscribe'}}"
                                             BackgroundColor="{Binding IsSubscribed, Converter={toolkit:BoolToObjectConverter TrueObject=#F1F5F9, FalseObject=#EDE9FE}}"
                                             TextColor="{Binding IsSubscribed, Converter={toolkit:BoolToObjectConverter TrueObject={StaticResource iOSGray}, FalseObject={StaticResource iOSPurple}}}"
                                             CornerRadius="10"
@@ -265,7 +266,7 @@
                                 <!-- Customer actions (provider's own contact list — book a session with a known customer) -->
                                 <HorizontalStackLayout Spacing="8" Margin="0,8,0,0"
                                                        IsVisible="{Binding IsProvider, Converter={StaticResource InvertedBoolConverter}}">
-                                    <Button Text="Book"
+                                    <controls:SafeButton Text="Book"
                                             BackgroundColor="{StaticResource iOSBlue}"
                                             TextColor="White"
                                             CornerRadius="10"

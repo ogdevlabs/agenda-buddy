@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:controls="clr-namespace:AgendaBuddy.MobileApp.Controls"
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
              x:Class="AgendaBuddy.MobileApp.Views.ProfessionsPage"
              x:Name="ThisPage"
@@ -98,7 +99,7 @@
             </CollectionView>
 
             <Grid IsVisible="{Binding IsProvider}">
-                <Button Text="Save Professions"
+                <controls:SafeButton Text="Save Professions"
                         Style="{StaticResource PrimaryButton}"
                         HeightRequest="48"
                         Command="{Binding SaveSelectionCommand}"
@@ -108,7 +109,7 @@
                                     Color="{StaticResource Primary}" HorizontalOptions="Center" />
             </Grid>
 
-            <Button Text="Continue to My Services"
+            <controls:SafeButton Text="Continue to My Services"
                     Style="{StaticResource SecondaryButton}"
                     HeightRequest="48"
                     IsVisible="{Binding HasAnyProfession}"

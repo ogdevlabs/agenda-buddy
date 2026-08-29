@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:controls="clr-namespace:AgendaBuddy.MobileApp.Controls"
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
              xmlns:System="clr-namespace:System;assembly=netstandard"
              x:Class="AgendaBuddy.MobileApp.Views.DashboardPage"
@@ -117,7 +118,7 @@
                                    FontSize="14"
                                    VerticalOptions="Center"
                                    AutomationId="ErrorBanner" />
-                            <Button Grid.Column="1"
+                            <controls:SafeButton Grid.Column="1"
                                     Text="Retry"
                                     Command="{Binding LoadCommand}"
                                     BackgroundColor="Transparent"
@@ -138,7 +139,7 @@
                                TextColor="{StaticResource iOSLabel}"
                                VerticalOptions="Center" />
                         <HorizontalStackLayout Grid.Column="1" Spacing="4" VerticalOptions="Center">
-                            <Button Text="&#x276E;"
+                            <controls:SafeButton Text="&#x276E;"
                                     Command="{Binding PreviousPageCommand}"
                                     IsEnabled="{Binding CanGoBack}"
                                     BackgroundColor="Transparent"
@@ -151,7 +152,7 @@
                                    FontSize="13"
                                    TextColor="{StaticResource iOSGray}"
                                    VerticalOptions="Center" />
-                            <Button Text="&#x276F;"
+                            <controls:SafeButton Text="&#x276F;"
                                     Command="{Binding NextPageCommand}"
                                     IsEnabled="{Binding CanGoForward}"
                                     BackgroundColor="Transparent"
@@ -294,7 +295,7 @@
                                                            TextColor="{StaticResource iOSGray}"
                                                            LineBreakMode="WordWrap" />
                                                 </Grid>
-                                                <Button Text="View Details"
+                                                <controls:SafeButton Text="View Details"
                                                         BackgroundColor="{StaticResource iOSBlue}"
                                                         TextColor="White"
                                                         CornerRadius="10"
@@ -333,7 +334,7 @@
                    Padding="0"
                    HeightRequest="44"
                    IsVisible="{Binding IsProvider}">
-                <Button Text="Your Report"
+                <controls:SafeButton Text="Your Report"
                         BackgroundColor="Transparent"
                         TextColor="{StaticResource iOSBlue}"
                         FontSize="15"
@@ -352,7 +353,7 @@
                    HasShadow="False"
                    Padding="0"
                    HeightRequest="44">
-                <Button Text="Sign Out"
+                <controls:SafeButton Text="Sign Out"
                         BackgroundColor="Transparent"
                         TextColor="{StaticResource iOSRed}"
                         FontSize="15"

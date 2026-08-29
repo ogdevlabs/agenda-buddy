@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:controls="clr-namespace:AgendaBuddy.MobileApp.Controls"
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
              x:Class="AgendaBuddy.MobileApp.Views.AppointmentDetailPage"
              Title="Appointment"
@@ -22,7 +23,7 @@
             </Grid.RowDefinitions>
 
             <!-- Back button -->
-            <Button Grid.Row="0"
+            <controls:SafeButton Grid.Row="0"
                     Text="&#x2190; Back"
                     BackgroundColor="Transparent"
                     TextColor="#C7D2FE"
@@ -107,7 +108,7 @@
                        FontSize="14"
                        VerticalOptions="Center"
                        AutomationId="ErrorBanner" />
-                <Button Grid.Column="1"
+                <controls:SafeButton Grid.Column="1"
                         Text="Retry"
                         Command="{Binding LoadCommand}"
                         BackgroundColor="{StaticResource Error}"
@@ -274,7 +275,7 @@
                                FontAttributes="Bold"
                                TextColor="{StaticResource TextPrimary}"
                                VerticalOptions="Center" />
-                        <Button Grid.Column="1"
+                        <controls:SafeButton Grid.Column="1"
                                 Text="View"
                                 Style="{StaticResource PrimaryButton}"
                                 FontSize="13"
@@ -323,7 +324,7 @@
                                        Style="{StaticResource InputStyle}"
                                        AutomationId="NewNoteEntry" />
                             </Frame>
-                            <Button Grid.Column="1"
+                            <controls:SafeButton Grid.Column="1"
                                     Text="Add"
                                     Style="{StaticResource PrimaryButton}"
                                     FontSize="13"
@@ -347,14 +348,14 @@
                Padding="20,16">
             <Grid ColumnDefinitions="*,*,*" ColumnSpacing="10">
 
-                <Button Grid.Column="0"
+                <controls:SafeButton Grid.Column="0"
                         Text="Confirm"
                         Style="{StaticResource SuccessButton}"
                         Command="{Binding ConfirmCommand}"
                         IsEnabled="{Binding IsNotLoading}"
                         AutomationId="ConfirmButton" />
 
-                <Button Grid.Column="1"
+                <controls:SafeButton Grid.Column="1"
                         Text="Cancel"
                         Style="{StaticResource DangerButton}"
                         Command="{Binding CancelCommand}"
@@ -364,7 +365,7 @@
                 <!-- Complete button + activity indicator (ux-review.md 8-state spot-check, finding
                      P3), matching the Sign In button/ActivityIndicator overlay pattern on LoginPage. -->
                 <Grid Grid.Column="2">
-                    <Button Text="Complete"
+                    <controls:SafeButton Text="Complete"
                             Style="{StaticResource PrimaryButton}"
                             FontSize="14"
                             Padding="12,14"

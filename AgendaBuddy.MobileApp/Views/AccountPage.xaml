@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:controls="clr-namespace:AgendaBuddy.MobileApp.Controls"
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
              x:Class="AgendaBuddy.MobileApp.Views.AccountPage"
              Title="Account"
@@ -21,7 +22,7 @@
                             <Label Text="{Binding Email}" FontSize="16" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" AutomationId="AccountEmailLabel" />
                             <Label Text="{Binding Role}" FontSize="13" TextColor="{StaticResource TextMuted}" AutomationId="AccountRoleLabel" />
                         </VerticalStackLayout>
-                        <Button Grid.Column="1"
+                        <controls:SafeButton Grid.Column="1"
                                 Text="{Binding IsEditingProfile, Converter={toolkit:BoolToObjectConverter TrueObject='Cancel', FalseObject='Edit'}}"
                                 BackgroundColor="Transparent"
                                 TextColor="{StaticResource Primary}"
@@ -42,7 +43,7 @@
                             <Label Text="{Binding ProfileErrorMessage}" TextColor="{StaticResource Error}" FontSize="13" />
                         </Frame>
                         <Grid>
-                            <Button Text="Save"
+                            <controls:SafeButton Text="Save"
                                     Style="{StaticResource PrimaryButton}"
                                     HeightRequest="44"
                                     Command="{Binding SaveProfileCommand}"
@@ -57,7 +58,7 @@
 
             <Frame CornerRadius="16" BackgroundColor="White" BorderColor="#E2E8F0" HasShadow="False" Padding="0">
                 <VerticalStackLayout>
-                    <Button Text="My Services"
+                    <controls:SafeButton Text="My Services"
                             IsVisible="{Binding IsProvider}"
                             BackgroundColor="Transparent"
                             TextColor="{StaticResource TextPrimary}"
@@ -65,7 +66,7 @@
                             Padding="18,16"
                             Clicked="OnServicesClicked"
                             AutomationId="MyServicesButton" />
-                    <Button Text="Professions"
+                    <controls:SafeButton Text="Professions"
                             IsVisible="{Binding IsProvider}"
                             BackgroundColor="Transparent"
                             TextColor="{StaticResource TextPrimary}"
@@ -73,7 +74,7 @@
                             Padding="18,16"
                             Clicked="OnProfessionsClicked"
                             AutomationId="ProfessionsButton" />
-                    <Button Text="Change Password"
+                    <controls:SafeButton Text="Change Password"
                             BackgroundColor="Transparent"
                             TextColor="{StaticResource TextPrimary}"
                             HorizontalOptions="Fill"
@@ -87,12 +88,12 @@
                 <Label Text="{Binding ErrorMessage}" TextColor="{StaticResource Error}" FontSize="14" />
             </Frame>
 
-            <Button Text="Log Out"
+            <controls:SafeButton Text="Log Out"
                     Style="{StaticResource SecondaryButton}"
                     Command="{Binding LogoutCommand}"
                     AutomationId="AccountLogoutButton" />
 
-            <Button Text="Deactivate Account"
+            <controls:SafeButton Text="Deactivate Account"
                     Style="{StaticResource DangerButton}"
                     IsVisible="{Binding IsProvider}"
                     Clicked="OnDeactivateClicked"
