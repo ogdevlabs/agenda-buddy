@@ -1,771 +1,771 @@
 {
-    "openapi": "3.0.4",
-    "info": {
-        "title": "AgendaBuddy.Booking.Api",
-        "version": "1.0"
-    },
-    "paths": {
-        "/api/v1/booking/appointments": {
-            "post": {
-                "tags": [
-                    "BookingAPI"
-                ],
-                "operationId": "BookAppointment",
-                "requestBody": {
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/AppointmentEntity"
-                            }
-                        }
-                    },
-                    "required": true
-                },
-                "responses": {
-                    "400": {
-                        "description": "Bad Request",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/AppointmentEntityDataResponse"
-                                }
-                            }
-                        }
-                    },
-                    "201": {
-                        "description": "Created",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/AppointmentEntityDataResponse"
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            "put": {
-                "tags": [
-                    "BookingAPI"
-                ],
-                "operationId": "UpdateAppointment",
-                "requestBody": {
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/AppointmentEntity"
-                            }
-                        }
-                    },
-                    "required": true
-                },
-                "responses": {
-                    "400": {
-                        "description": "Bad Request",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/AppointmentEntityDataResponse"
-                                }
-                            }
-                        }
-                    },
-                    "202": {
-                        "description": "Accepted",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/AppointmentEntityDataResponse"
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "tags": [
-                    "BookingAPI"
-                ],
-                "operationId": "CancelAppointment",
-                "requestBody": {
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/AppointmentEntity"
-                            }
-                        }
-                    },
-                    "required": true
-                },
-                "responses": {
-                    "400": {
-                        "description": "Bad Request",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/AppointmentEntityDataResponse"
-                                }
-                            }
-                        }
-                    },
-                    "204": {
-                        "description": "No Content"
-                    }
-                }
+  "openapi": "3.0.4",
+  "info": {
+    "title": "AgendaBuddy.Booking.Api",
+    "version": "1.0"
+  },
+  "paths": {
+    "/api/v1/booking/appointments": {
+      "post": {
+        "tags": [
+          "BookingAPI"
+        ],
+        "operationId": "BookAppointment",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppointmentEntity"
+              }
             }
+          },
+          "required": true
         },
-        "/api/v1/booking/appointments/{identifier}/status": {
-            "post": {
-                "tags": [
-                    "BookingAPI"
-                ],
-                "operationId": "ChangeAppointmentStatus",
-                "parameters": [
-                    {
-                        "name": "identifier",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/AppointmentStatusRequest"
-                            }
-                        }
-                    },
-                    "required": true
-                },
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/AppointmentStatusResponseDataResponse"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found"
-                    },
-                    "409": {
-                        "description": "Conflict",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "string"
-                                }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "string"
-                                }
-                            }
-                        }
-                    }
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppointmentEntityDataResponse"
                 }
+              }
             }
-        },
-        "/api/v1/booking/appointments/{identifier}/notes": {
-            "get": {
-                "tags": [
-                    "BookingAPI"
-                ],
-                "operationId": "GetAppointmentNotes",
-                "parameters": [
-                    {
-                        "name": "identifier",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/NoteEntityIEnumerableDataResponse"
-                                }
-                            }
-                        }
-                    }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppointmentEntityDataResponse"
                 }
-            },
-            "post": {
-                "tags": [
-                    "BookingAPI"
-                ],
-                "operationId": "CreateAppointmentNote",
-                "parameters": [
-                    {
-                        "name": "identifier",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/NoteRequest"
-                            }
-                        }
-                    },
-                    "required": true
-                },
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/NoteEntityDataResponse"
-                                }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "string"
-                                }
-                            }
-                        }
-                    }
-                }
+              }
             }
-        },
-        "/api/v1/booking/notes/{id}": {
-            "put": {
-                "tags": [
-                    "BookingAPI"
-                ],
-                "operationId": "UpdateAppointmentNote",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/NoteRequest"
-                            }
-                        }
-                    },
-                    "required": true
-                },
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/NoteEntityDataResponse"
-                                }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "string"
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "tags": [
-                    "BookingAPI"
-                ],
-                "operationId": "DeleteAppointmentNote",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "No Content"
-                    }
-                }
-            }
-        },
-        "/api/v1/booking/appointments/{identifier}/payment": {
-            "post": {
-                "tags": [
-                    "BookingAPI"
-                ],
-                "operationId": "PayForAppointment",
-                "parameters": [
-                    {
-                        "name": "identifier",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/PaymentRequest"
-                            }
-                        }
-                    },
-                    "required": true
-                },
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/PaymentEntityDataResponse"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found"
-                    },
-                    "409": {
-                        "description": "Conflict",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "string"
-                                }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "string"
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            "get": {
-                "tags": [
-                    "BookingAPI"
-                ],
-                "operationId": "GetAppointmentPayment",
-                "parameters": [
-                    {
-                        "name": "identifier",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/PaymentEntityDataResponse"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found"
-                    }
-                }
-            }
+          }
         }
-    },
-    "components": {
-        "schemas": {
-            "AppointmentEntity": {
-                "required": [
-                    "emailCustomer",
-                    "emailProvider"
-                ],
-                "type": "object",
-                "properties": {
-                    "id": {
-                        "$ref": "#/components/schemas/ObjectId"
-                    },
-                    "identifier": {
-                        "type": "string",
-                        "nullable": true
-                    },
-                    "emailProvider": {
-                        "type": "string",
-                        "format": "email",
-                        "nullable": true
-                    },
-                    "emailCustomer": {
-                        "type": "string",
-                        "format": "email",
-                        "nullable": true
-                    },
-                    "start": {
-                        "type": "string",
-                        "format": "date-time"
-                    },
-                    "end": {
-                        "type": "string",
-                        "format": "date-time"
-                    },
-                    "appointmentStatus": {
-                        "$ref": "#/components/schemas/AppointmentStatus"
-                    },
-                    "appointmentDescription": {
-                        "type": "string",
-                        "nullable": true
-                    },
-                    "dayOff": {
-                        "type": "boolean"
-                    },
-                    "serviceName": {
-                        "type": "string",
-                        "nullable": true
-                    },
-                    "serviceDurationMinutes": {
-                        "type": "integer",
-                        "format": "int32",
-                        "nullable": true
-                    }
-                },
-                "additionalProperties": false
-            },
-            "AppointmentEntityDataResponse": {
-                "type": "object",
-                "properties": {
-                    "data": {
-                        "$ref": "#/components/schemas/AppointmentEntity"
-                    },
-                    "errors": {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "nullable": true
-                    },
-                    "success": {
-                        "type": "boolean",
-                        "readOnly": true
-                    }
-                },
-                "additionalProperties": false
-            },
-            "AppointmentStatus": {
-                "enum": [
-                    0,
-                    1,
-                    2,
-                    3,
-                    4
-                ],
-                "type": "integer",
-                "format": "int32"
-            },
-            "AppointmentStatusRequest": {
-                "type": "object",
-                "properties": {
-                    "status": {
-                        "type": "string",
-                        "nullable": true
-                    }
-                },
-                "additionalProperties": false
-            },
-            "AppointmentStatusResponse": {
-                "type": "object",
-                "properties": {
-                    "identifier": {
-                        "type": "string",
-                        "nullable": true
-                    },
-                    "status": {
-                        "type": "string",
-                        "nullable": true
-                    }
-                },
-                "additionalProperties": false
-            },
-            "AppointmentStatusResponseDataResponse": {
-                "type": "object",
-                "properties": {
-                    "data": {
-                        "$ref": "#/components/schemas/AppointmentStatusResponse"
-                    },
-                    "errors": {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "nullable": true
-                    },
-                    "success": {
-                        "type": "boolean",
-                        "readOnly": true
-                    }
-                },
-                "additionalProperties": false
-            },
-            "NoteEntity": {
-                "required": [
-                    "appointmentIdentifier",
-                    "content",
-                    "providerEmail"
-                ],
-                "type": "object",
-                "properties": {
-                    "id": {
-                        "$ref": "#/components/schemas/ObjectId"
-                    },
-                    "providerEmail": {
-                        "minLength": 1,
-                        "type": "string",
-                        "format": "email"
-                    },
-                    "appointmentIdentifier": {
-                        "minLength": 1,
-                        "type": "string"
-                    },
-                    "content": {
-                        "minLength": 1,
-                        "type": "string"
-                    },
-                    "createdAt": {
-                        "type": "string",
-                        "format": "date-time"
-                    },
-                    "updatedAt": {
-                        "type": "string",
-                        "format": "date-time"
-                    }
-                },
-                "additionalProperties": false
-            },
-            "NoteEntityDataResponse": {
-                "type": "object",
-                "properties": {
-                    "data": {
-                        "$ref": "#/components/schemas/NoteEntity"
-                    },
-                    "errors": {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "nullable": true
-                    },
-                    "success": {
-                        "type": "boolean",
-                        "readOnly": true
-                    }
-                },
-                "additionalProperties": false
-            },
-            "NoteEntityIEnumerableDataResponse": {
-                "type": "object",
-                "properties": {
-                    "data": {
-                        "type": "array",
-                        "items": {
-                            "$ref": "#/components/schemas/NoteEntity"
-                        },
-                        "nullable": true
-                    },
-                    "errors": {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "nullable": true
-                    },
-                    "success": {
-                        "type": "boolean",
-                        "readOnly": true
-                    }
-                },
-                "additionalProperties": false
-            },
-            "NoteRequest": {
-                "type": "object",
-                "properties": {
-                    "content": {
-                        "type": "string",
-                        "nullable": true
-                    }
-                },
-                "additionalProperties": false
-            },
-            "ObjectId": {
-                "type": "object",
-                "properties": {
-                    "timestamp": {
-                        "type": "integer",
-                        "format": "int32",
-                        "readOnly": true
-                    },
-                    "machine": {
-                        "type": "integer",
-                        "format": "int32",
-                        "readOnly": true,
-                        "deprecated": true
-                    },
-                    "pid": {
-                        "type": "integer",
-                        "format": "int32",
-                        "readOnly": true,
-                        "deprecated": true
-                    },
-                    "increment": {
-                        "type": "integer",
-                        "format": "int32",
-                        "readOnly": true,
-                        "deprecated": true
-                    },
-                    "creationTime": {
-                        "type": "string",
-                        "format": "date-time",
-                        "readOnly": true
-                    }
-                },
-                "additionalProperties": false
-            },
-            "PaymentEntity": {
-                "required": [
-                    "appointmentIdentifier",
-                    "customerEmail",
-                    "providerEmail"
-                ],
-                "type": "object",
-                "properties": {
-                    "id": {
-                        "$ref": "#/components/schemas/ObjectId"
-                    },
-                    "appointmentIdentifier": {
-                        "minLength": 1,
-                        "type": "string"
-                    },
-                    "providerEmail": {
-                        "minLength": 1,
-                        "type": "string",
-                        "format": "email"
-                    },
-                    "customerEmail": {
-                        "minLength": 1,
-                        "type": "string",
-                        "format": "email"
-                    },
-                    "amount": {
-                        "type": "number",
-                        "format": "double"
-                    },
-                    "currency": {
-                        "type": "string",
-                        "nullable": true
-                    },
-                    "stripePaymentIntentId": {
-                        "type": "string",
-                        "nullable": true
-                    },
-                    "status": {
-                        "$ref": "#/components/schemas/PaymentStatus"
-                    },
-                    "createdAt": {
-                        "type": "string",
-                        "format": "date-time"
-                    }
-                },
-                "additionalProperties": false
-            },
-            "PaymentEntityDataResponse": {
-                "type": "object",
-                "properties": {
-                    "data": {
-                        "$ref": "#/components/schemas/PaymentEntity"
-                    },
-                    "errors": {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "nullable": true
-                    },
-                    "success": {
-                        "type": "boolean",
-                        "readOnly": true
-                    }
-                },
-                "additionalProperties": false
-            },
-            "PaymentRequest": {
-                "type": "object",
-                "properties": {
-                    "amount": {
-                        "type": "number",
-                        "format": "double"
-                    },
-                    "currency": {
-                        "type": "string",
-                        "nullable": true
-                    }
-                },
-                "additionalProperties": false
-            },
-            "PaymentStatus": {
-                "enum": [
-                    0,
-                    1,
-                    2,
-                    3
-                ],
-                "type": "integer",
-                "format": "int32"
+      },
+      "put": {
+        "tags": [
+          "BookingAPI"
+        ],
+        "operationId": "UpdateAppointment",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppointmentEntity"
+              }
             }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppointmentEntityDataResponse"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Accepted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppointmentEntityDataResponse"
+                }
+              }
+            }
+          }
         }
+      },
+      "delete": {
+        "tags": [
+          "BookingAPI"
+        ],
+        "operationId": "CancelAppointment",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppointmentEntity"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppointmentEntityDataResponse"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
+    "/api/v1/booking/appointments/{identifier}/status": {
+      "post": {
+        "tags": [
+          "BookingAPI"
+        ],
+        "operationId": "ChangeAppointmentStatus",
+        "parameters": [
+          {
+            "name": "identifier",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppointmentStatusRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppointmentStatusResponseDataResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/booking/appointments/{identifier}/notes": {
+      "get": {
+        "tags": [
+          "BookingAPI"
+        ],
+        "operationId": "GetAppointmentNotes",
+        "parameters": [
+          {
+            "name": "identifier",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoteEntityIEnumerableDataResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "BookingAPI"
+        ],
+        "operationId": "CreateAppointmentNote",
+        "parameters": [
+          {
+            "name": "identifier",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NoteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoteEntityDataResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/booking/notes/{id}": {
+      "put": {
+        "tags": [
+          "BookingAPI"
+        ],
+        "operationId": "UpdateAppointmentNote",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NoteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoteEntityDataResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "BookingAPI"
+        ],
+        "operationId": "DeleteAppointmentNote",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
+    "/api/v1/booking/appointments/{identifier}/payment": {
+      "post": {
+        "tags": [
+          "BookingAPI"
+        ],
+        "operationId": "PayForAppointment",
+        "parameters": [
+          {
+            "name": "identifier",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaymentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentEntityDataResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "BookingAPI"
+        ],
+        "operationId": "GetAppointmentPayment",
+        "parameters": [
+          {
+            "name": "identifier",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentEntityDataResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
     }
+  },
+  "components": {
+    "schemas": {
+      "AppointmentEntity": {
+        "required": [
+          "emailCustomer",
+          "emailProvider"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "identifier": {
+            "type": "string",
+            "nullable": true
+          },
+          "emailProvider": {
+            "type": "string",
+            "format": "email",
+            "nullable": true
+          },
+          "emailCustomer": {
+            "type": "string",
+            "format": "email",
+            "nullable": true
+          },
+          "start": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "end": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "appointmentStatus": {
+            "$ref": "#/components/schemas/AppointmentStatus"
+          },
+          "appointmentDescription": {
+            "type": "string",
+            "nullable": true
+          },
+          "dayOff": {
+            "type": "boolean"
+          },
+          "serviceName": {
+            "type": "string",
+            "nullable": true
+          },
+          "serviceDurationMinutes": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "AppointmentEntityDataResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/AppointmentEntity"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "success": {
+            "type": "boolean",
+            "readOnly": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "AppointmentStatus": {
+        "enum": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "type": "integer",
+        "format": "int32"
+      },
+      "AppointmentStatusRequest": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "AppointmentStatusResponse": {
+        "type": "object",
+        "properties": {
+          "identifier": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "AppointmentStatusResponseDataResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/AppointmentStatusResponse"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "success": {
+            "type": "boolean",
+            "readOnly": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "NoteEntity": {
+        "required": [
+          "appointmentIdentifier",
+          "content",
+          "providerEmail"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "providerEmail": {
+            "minLength": 1,
+            "type": "string",
+            "format": "email"
+          },
+          "appointmentIdentifier": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "content": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "NoteEntityDataResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/NoteEntity"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "success": {
+            "type": "boolean",
+            "readOnly": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "NoteEntityIEnumerableDataResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NoteEntity"
+            },
+            "nullable": true
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "success": {
+            "type": "boolean",
+            "readOnly": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "NoteRequest": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ObjectId": {
+        "type": "object",
+        "properties": {
+          "timestamp": {
+            "type": "integer",
+            "format": "int32",
+            "readOnly": true
+          },
+          "machine": {
+            "type": "integer",
+            "format": "int32",
+            "readOnly": true,
+            "deprecated": true
+          },
+          "pid": {
+            "type": "integer",
+            "format": "int32",
+            "readOnly": true,
+            "deprecated": true
+          },
+          "increment": {
+            "type": "integer",
+            "format": "int32",
+            "readOnly": true,
+            "deprecated": true
+          },
+          "creationTime": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PaymentEntity": {
+        "required": [
+          "appointmentIdentifier",
+          "customerEmail",
+          "providerEmail"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "appointmentIdentifier": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "providerEmail": {
+            "minLength": 1,
+            "type": "string",
+            "format": "email"
+          },
+          "customerEmail": {
+            "minLength": 1,
+            "type": "string",
+            "format": "email"
+          },
+          "amount": {
+            "type": "number",
+            "format": "double"
+          },
+          "currency": {
+            "type": "string",
+            "nullable": true
+          },
+          "stripePaymentIntentId": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "$ref": "#/components/schemas/PaymentStatus"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "PaymentEntityDataResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/PaymentEntity"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "success": {
+            "type": "boolean",
+            "readOnly": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PaymentRequest": {
+        "type": "object",
+        "properties": {
+          "amount": {
+            "type": "number",
+            "format": "double"
+          },
+          "currency": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PaymentStatus": {
+        "enum": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "type": "integer",
+        "format": "int32"
+      }
+    }
+  }
 }

@@ -45,7 +45,10 @@ public class ProviderModule : ICarterModule
                     // passes through unchanged) -- the one key actually served, not a general invalidate-all.
                     // A newly-registered provider was invisible to the directory for up to the 5-minute TTL
                     // without this.
-                    await cache.RemoveAsync("providers-p1-s25", cancellationToken);
+                    // Both variants of the page the mobile client actually requests -- the filtered one is
+                    // what the directory reads, the unfiltered one is the route's default.
+                    await cache.RemoveAsync("providers-p1-s25-bTrue", cancellationToken);
+                    await cache.RemoveAsync("providers-p1-s25-bFalse", cancellationToken);
                     return TypedResults.Created($"/api/v1/providers/{providerEntity.Id}", DataResponse<ProviderEntity>.Ok(result.Value));
                 }
 
@@ -60,7 +63,7 @@ public class ProviderModule : ICarterModule
             IMediator mediator,
             IDistributedCache cache,
             CancellationToken cancellationToken,
-            int? page = null, int? pageSize = null) =>
+            int? page = null, int? pageSize = null, bool bookableOnly = false) =>
         {
             // ADR-023. Clamped, never rejected: a 400 would tell an attacker the exact boundary and
             // leave an honest client no way to discover the cap. MaxPageSize is a SECURITY control -- an uncapped
@@ -69,10 +72,13 @@ public class ProviderModule : ICarterModule
 
             // ⚠️ The cache key carries the page, or page 2 would serve page 1's entry. Cheap to get wrong and
             // invisible in a single-page test.
-            var key = $"providers-p{pageRequest.Page}-s{pageRequest.PageSize}";
+            // bookableOnly is part of the key: the filtered and unfiltered pages are different result
+            // sets, and sharing one entry would serve whichever was cached first to both callers.
+            var key = $"providers-p{pageRequest.Page}-s{pageRequest.PageSize}-b{bookableOnly}";
             var providerCollection = await cache.GetOrCreateAsync(key, async token =>
             {
-                var result = await mediator.Send(new GetProvidersQuery { Page = pageRequest }, token);
+                var result = await mediator.Send(
+                    new GetProvidersQuery { Page = pageRequest, BookableOnly = bookableOnly }, token);
                 return result.IsSuccess ? result.Value : null!;
             }, cancellationToken: cancellationToken);
 

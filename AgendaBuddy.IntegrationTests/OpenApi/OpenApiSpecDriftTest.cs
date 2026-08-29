@@ -43,8 +43,11 @@ public class OpenApiSpecDriftTest(CryptoSessionFixture crypto)
 
         Assert.True(
             File.Exists(committedPath),
-            $"No committed baseline at {committedPath} — run ./scripts/generate-openapi.sh {serviceName} " +
-            "and commit it (F-018-T16 / ADR-048).");
+            $"No committed baseline at {committedPath} — regenerate with " +
+            "REGENERATE_OPENAPI_BASELINES=1 dotnet test AgendaBuddy.IntegrationTests " +
+            "--filter FullyQualifiedName~OpenApiSpecBaselineWriter, and commit it (F-018-T16 / ADR-048). " +
+            "NOT scripts/generate-openapi.sh — that reformats with python json.tool (4-space) and will " +
+            "fail this check for every service.");
 
         var committed = File.ReadAllText(committedPath);
 
@@ -79,8 +82,14 @@ public class OpenApiSpecDriftTest(CryptoSessionFixture crypto)
             $"{Path.GetRelativePath(RepoRoot(), committedPath)} (first differing line {firstDifference + 1}).\n" +
             $"  committed:   {committedLine}\n" +
             $"  regenerated: {regeneratedLine}\n" +
-            "A route, verb, parameter, or operation ID changed without regenerating the spec. Run " +
-            $"./scripts/generate-openapi.sh {serviceName} and commit the result, or revert the source change.";
+            "A route, verb, parameter, or operation ID changed without regenerating the spec — or the " +
+            "baselines were rewritten by the wrong tool. Regenerate with:\n" +
+            "  REGENERATE_OPENAPI_BASELINES=1 dotnet test AgendaBuddy.IntegrationTests " +
+            "/p:MobileWorkloads=false --filter FullyQualifiedName~OpenApiSpecBaselineWriter\n" +
+            "then commit the result, or revert the source change. Do NOT use " +
+            "scripts/generate-openapi.sh for this: it reformats with python json.tool (4-space) while " +
+            "these baselines are OpenApiJsonWriter output (2-space), so it fails this check for every " +
+            "service at once.";
     }
 
     // Same repo-root-by-marker-file pattern as AgendaBuddy.AppHost.Tests/DockerAndComposeHygieneTest.cs

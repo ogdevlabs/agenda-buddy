@@ -15,9 +15,7 @@ public class GetProvidersQueryHandlerTest
         var providers = new List<ProviderEntity> { Provider("a@example.com"), Provider("b@example.com") };
         var page = PageRequest.Clamp(1, 25);
         var providerService = new Mock<IProviderService>();
-        // The default is now the BOOKABLE page, not every provider -- this list is the customer-facing
-        // directory and an unbookable provider dead-ends the flow.
-        providerService.Setup(p => p.GetPagedBookableProvidersAsync(page.Skip, page.PageSize))
+        providerService.Setup(p => p.GetPagedProvidersAsync(page.Skip, page.PageSize))
             .ReturnsAsync(((IEnumerable<ProviderEntity>)providers, (long)providers.Count));
         var eventStore = new Mock<IEventStore>();
         var mediator = new Mock<IMediator>();
@@ -84,9 +82,12 @@ public class GetProvidersQueryHandlerTest
             bookableOnly ? Times.Never() : Times.Once());
     }
 
+    // Opt-in, not the default: defaulting it to true narrowed a general paginated list and broke seven
+    // integration tests covering pagination, the non-owner projection and query auditing. The
+    // customer-facing client asks for it explicitly instead.
     [Fact]
-    public void BookableOnly_DefaultsToTrue()
+    public void BookableOnly_DefaultsToFalse_SoTheListContractIsUnchanged()
     {
-        Assert.True(new GetProvidersQuery { Page = PageRequest.Clamp(1, 25) }.BookableOnly);
+        Assert.False(new GetProvidersQuery { Page = PageRequest.Clamp(1, 25) }.BookableOnly);
     }
 }

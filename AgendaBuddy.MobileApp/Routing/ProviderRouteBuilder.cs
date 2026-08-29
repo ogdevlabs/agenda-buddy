@@ -11,8 +11,15 @@ public static class ProviderRouteBuilder
     /// <c>DataResponse&lt;PagedResponse&lt;ProviderSummary&gt;&gt;</c> envelope (ADR-023), same shape as
     /// <see cref="CustomerRouteBuilder.Customers"/>'s paged read.
     /// </summary>
-    public static RouteSpec Providers(int page = 1, int pageSize = 25) =>
-        new(HttpMethod.Get, $"api/v1/providers?page={page}&pageSize={pageSize}");
+    /// <remarks>
+    /// <c>bookableOnly=true</c> is sent because this is the customer-facing directory: a provider with no
+    /// active, profession-classified service cannot be booked, so offering one dead-ends the flow. It is a
+    /// query parameter rather than the route's default — the endpoint itself is a general paginated list
+    /// whose <c>totalCount</c> and paging other callers rely on.
+    /// </remarks>
+    public static RouteSpec Providers(int page = 1, int pageSize = 25, bool bookableOnly = true) =>
+        new(HttpMethod.Get,
+            $"api/v1/providers?page={page}&pageSize={pageSize}&bookableOnly={(bookableOnly ? "true" : "false")}");
 
     public static RouteSpec GetProvider(string email) => new(HttpMethod.Get, $"api/v1/providers/{email}");
 

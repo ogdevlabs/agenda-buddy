@@ -53,20 +53,20 @@ public sealed class ProviderSummary
 
     /// <summary>Projects a stored provider to the shape a non-owner may see.</summary>
     /// <remarks>
-    /// <b>Services are narrowed to the bookable ones</b> — active, and classified under a profession.
-    /// A non-owner's only use for this list is choosing something to book, and the booking flow selects a
-    /// profession before a service, so an inactive or unclassified entry is an option that dead-ends.
-    /// The owner still sees everything through <c>GET /api/v1/providers/{email}</c>, which returns the
-    /// full entity, so nothing is hidden from the person who has to fix it.
+    /// <b>The whole service catalogue is exposed, deliberately.</b> Narrowing it to the "bookable" ones
+    /// (active and classified under a profession) was tried and reverted: this is a general discovery
+    /// projection whose contract is "services visible, appointments and customers not", and filtering here
+    /// broke that — <c>ProviderProjectionTest</c> caught it. Bookability is filtered where it belongs
+    /// instead: at the provider level by <c>bookableOnly=true</c> on the list route, and at the service
+    /// level by the booking screen, which reads the catalogue from
+    /// <c>GET /api/v1/services/{email}</c> and drops inactive/unclassified entries itself.
     /// </remarks>
     public static ProviderSummary From(ProviderEntity provider) => new()
     {
         Email = provider.Email,
         FirstName = provider.FirstName,
         LastName = provider.LastName,
-        Services = (provider.ServiceEntities ?? [])
-            .Where(service => service.IsActive && !string.IsNullOrWhiteSpace(service.ProfessionName))
-            .ToList(),
+        Services = provider.ServiceEntities ?? [],
         Professions = provider.Professions,
     };
 }

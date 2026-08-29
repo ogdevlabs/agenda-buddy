@@ -36,13 +36,24 @@ public class ServicesPersistenceTest(ServiceHostFixture<ServicesAnchor> host, Cr
                 FirstName = "Services",
                 LastName = "RoundTrip",
                 Email = Email,
+                // A service must be classified under one of the provider's own professions
+                // (AddServicesToProviderCommandHandler), so the provider has to hold it first.
+                Professions = ["Massage Therapy"],
             });
 
         var putRequest = new HttpRequestMessage(HttpMethod.Put, $"api/v1/services/{Email}")
         {
             Content = JsonContent.Create(new[]
             {
-                new { Name = "Deep tissue massage", Description = "90 minutes", Fee = 120m, FeeType = FeeType.Fixed, IsActive = true },
+                new
+                {
+                    Name = "Deep tissue massage",
+                    Description = "90 minutes",
+                    Fee = 120m,
+                    FeeType = FeeType.Fixed,
+                    IsActive = true,
+                    ProfessionName = "Massage Therapy",
+                },
             }),
             Headers =
             {
@@ -75,5 +86,55 @@ public class ServicesPersistenceTest(ServiceHostFixture<ServicesAnchor> host, Cr
         Assert.Equal(120m, stored.GetProperty("fee").GetDecimal());
         Assert.Equal((int)FeeType.Fixed, stored.GetProperty("feeType").GetInt32());
         Assert.True(stored.GetProperty("isActive").GetBoolean());
+
+        // The classification round-trips too — it is what scopes the service to a profession in the
+        // customer-facing booking flow, so losing it silently would make the service unbookable.
+        Assert.Equal("Massage Therapy", stored.GetProperty("professionName").GetString());
+    }
+
+    // The rule the test above had to be updated for: a service must name one of the provider's own
+    // professions. Checked before any write, so a rejected add leaves nothing behind — the earlier shape
+    // of this handler persisted the appointment/service first and validated afterwards.
+    [Theory]
+    [InlineData(null)]                    // unclassified
+    [InlineData("Something Else")]        // a profession this provider does not hold
+    public async Task AServiceThatNamesNoProfessionOfThisProviderIsRejected_AndNothingIsStored(string? professionName)
+    {
+        using var service = host.StartService("Production");
+        var email = $"reject-{Guid.NewGuid():N}@example.com";
+
+        await ConfiguredCollection.Of<ProviderEntity>(service, "ProvidersCollection", "providers")
+            .InsertOneAsync(new ProviderEntity
+            {
+                Id = ObjectId.GenerateNewId(),
+                FirstName = "Services",
+                LastName = "Reject",
+                Email = email,
+                Professions = ["Massage Therapy"],
+            });
+
+        var putRequest = new HttpRequestMessage(HttpMethod.Put, $"api/v1/services/{email}")
+        {
+            Content = JsonContent.Create(new[]
+            {
+                new { Name = "Unclassified", Description = "no profession", Fee = 10m, FeeType = FeeType.Fixed, IsActive = true, ProfessionName = professionName },
+            }),
+            Headers =
+            {
+                Authorization = new AuthenticationHeaderValue(
+                    "Bearer", _tokens.CreateToken(email, TokenFactory.ProviderRole)),
+            },
+        };
+
+        Assert.NotEqual(HttpStatusCode.OK, (await service.Client.SendAsync(putRequest)).StatusCode);
+
+        var getRequest = new HttpRequestMessage(HttpMethod.Get, $"api/v1/services/{email}");
+        getRequest.Headers.Authorization = new AuthenticationHeaderValue(
+            "Bearer", _tokens.CreateToken(email, TokenFactory.ProviderRole));
+
+        using var body = JsonDocument.Parse(
+            await (await service.Client.SendAsync(getRequest)).Content.ReadAsStringAsync());
+
+        Assert.Empty(body.RootElement.GetProperty("data").EnumerateArray());
     }
 }

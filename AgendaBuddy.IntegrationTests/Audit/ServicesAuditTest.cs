@@ -42,13 +42,16 @@ public class ServicesAuditTest(ServiceHostFixture<ServicesAnchor> host, CryptoSe
                 FirstName = "Services",
                 LastName = "Audit",
                 Email = Email,
+                // A service must be classified under one of the provider's own professions
+                // (AddServicesToProviderCommandHandler), so the provider has to hold it first.
+                Professions = ["Massage Therapy"],
             });
 
         var request = new HttpRequestMessage(HttpMethod.Put, $"api/v1/services/{Email}")
         {
             Content = JsonContent.Create(new[]
             {
-                new { Name = "Deep tissue massage", Description = "90 minutes", Fee = 120m },
+                new { Name = "Deep tissue massage", Description = "90 minutes", Fee = 120m, ProfessionName = "Massage Therapy" },
             }),
             Headers =
             {
@@ -79,7 +82,7 @@ public class ServicesAuditTest(ServiceHostFixture<ServicesAnchor> host, CryptoSe
         {
             Content = JsonContent.Create(new[]
             {
-                new { Name = "Deep tissue massage", Description = "90 minutes", Fee = 120m },
+                new { Name = "Deep tissue massage", Description = "90 minutes", Fee = 120m, ProfessionName = "Massage Therapy" },
             }),
             Headers =
             {
