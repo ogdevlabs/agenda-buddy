@@ -129,7 +129,7 @@ public class CustomersViewModelTests
         await vm.LoadCommand.ExecuteAsync(null);
 
         Assert.Equal("Providers", vm.PageTitle);
-        Assert.Equal("Search by name or service...", vm.SearchPlaceholder);
+        Assert.Equal("Search by name, email or service...", vm.SearchPlaceholder);
         Assert.Single(vm.Customers);
         customerApi.Verify(s => s.GetCustomersAsync(It.IsAny<CancellationToken>()), Times.Never);
         providerApi.Verify(p => p.GetProvidersAsync(It.IsAny<CancellationToken>()), Times.Once);
@@ -160,5 +160,119 @@ public class CustomersViewModelTests
 
         Assert.Equal("Customers", vm.PageTitle);
         Assert.Equal("Search customers...", vm.SearchPlaceholder);
+    }
+
+    private static CustomersViewModel CustomerFacing(List<CustomerSummary> providers) =>
+        new(CreateMockCustomerApi().Object,
+            CreateMockProviderApi(providers).Object,
+            CreateMockSession(role: "Customer").Object);
+
+    private static List<CustomerSummary> TwoProfessions() =>
+    [
+        new() { Email = "coach@example.com", FullName = "Pat Coach", Professions = ["Fitness"] },
+        new() { Email = "tutor@example.com", FullName = "Sam Tutor", Professions = ["Tutoring"] },
+        new() { Email = "both@example.com",  FullName = "Max Both",  Professions = ["Fitness", "Tutoring"] },
+    ];
+
+    // Profession is the FIRST filter layer: picking one narrows the provider list before any text search.
+    [Fact]
+    public async Task LoadAsync_CustomerRole_CollectsProfessionsFromTheLoadedProviders()
+    {
+        var vm = CustomerFacing(TwoProfessions());
+        await vm.LoadCommand.ExecuteAsync(null);
+
+        Assert.Equal(["Fitness", "Tutoring"], vm.AvailableProfessions);
+        Assert.True(vm.HasProfessionFilter);
+        Assert.Null(vm.SelectedProfession);
+        Assert.Equal(3, vm.Customers.Count);
+    }
+
+    [Fact]
+    public async Task SelectingAProfessionNarrowsToProvidersOfferingIt()
+    {
+        var vm = CustomerFacing(TwoProfessions());
+        await vm.LoadCommand.ExecuteAsync(null);
+
+        vm.SelectProfessionCommand.Execute("Fitness");
+
+        Assert.Equal(["coach@example.com", "both@example.com"], vm.Customers.Select(c => c.Email));
+        Assert.True(vm.HasSelectedProfession);
+    }
+
+    // Tapping the active chip clears it, so "all" is reachable without a separate control.
+    [Fact]
+    public async Task SelectingTheAlreadySelectedProfessionClearsIt()
+    {
+        var vm = CustomerFacing(TwoProfessions());
+        await vm.LoadCommand.ExecuteAsync(null);
+
+        vm.SelectProfessionCommand.Execute("Fitness");
+        vm.SelectProfessionCommand.Execute("Fitness");
+
+        Assert.Null(vm.SelectedProfession);
+        Assert.Equal(3, vm.Customers.Count);
+    }
+
+    // The two layers compose: text searches WITHIN the chosen profession rather than replacing it.
+    [Fact]
+    public async Task ProfessionAndSearchTextApplyTogether()
+    {
+        var vm = CustomerFacing(TwoProfessions());
+        await vm.LoadCommand.ExecuteAsync(null);
+
+        vm.SelectProfessionCommand.Execute("Fitness");
+        vm.SearchText = "Max";
+
+        Assert.Equal(["both@example.com"], vm.Customers.Select(c => c.Email));
+
+        // ...and a term that only matches OUTSIDE the profession finds nothing, proving the scope holds.
+        vm.SearchText = "Sam";
+        Assert.Empty(vm.Customers);
+    }
+
+    // A filter offering one option filters nothing, so it is not shown.
+    [Fact]
+    public async Task ASingleProfessionDoesNotOfferAFilter()
+    {
+        var vm = CustomerFacing([new() { Email = "a@example.com", FullName = "A", Professions = ["Fitness"] }]);
+        await vm.LoadCommand.ExecuteAsync(null);
+
+        Assert.False(vm.HasProfessionFilter);
+    }
+
+    // A stale selection must not silently hide every provider after a reload that no longer has it.
+    [Fact]
+    public async Task AReloadDropsASelectionThatNoLongerExists()
+    {
+        var vm = CustomerFacing(TwoProfessions());
+        await vm.LoadCommand.ExecuteAsync(null);
+        vm.SelectProfessionCommand.Execute("Tutoring");
+
+        var narrowed = new Mock<IProviderApiService>();
+        narrowed.Setup(p => p.GetProvidersAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync([new CustomerSummary { Email = "coach@example.com", Professions = ["Fitness"] }]);
+        var reloaded = new CustomersViewModel(
+            CreateMockCustomerApi().Object, narrowed.Object, CreateMockSession(role: "Customer").Object)
+        { SelectedProfession = "Tutoring" };
+
+        await reloaded.LoadCommand.ExecuteAsync(null);
+
+        Assert.Null(reloaded.SelectedProfession);
+        Assert.Single(reloaded.Customers);
+    }
+
+    // A Provider viewing their customers has no profession dimension at all.
+    [Fact]
+    public async Task ProviderRole_HasNoProfessionFilter()
+    {
+        var vm = new CustomersViewModel(
+            CreateMockCustomerApi([new() { Email = "c@example.com", FullName = "C" }]).Object,
+            CreateMockProviderApi().Object,
+            CreateMockSession().Object);
+
+        await vm.LoadCommand.ExecuteAsync(null);
+
+        Assert.Empty(vm.AvailableProfessions);
+        Assert.False(vm.HasProfessionFilter);
     }
 }

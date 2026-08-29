@@ -17,7 +17,7 @@ public interface IBookingApiService
     /// are whichever the caller is booking with, not necessarily their own email. Returns the identifier the
     /// server generated, or <c>null</c> on failure.
     /// </summary>
-    Task<string?> BookAppointmentAsync(string emailProvider, string emailCustomer, DateTime start, DateTime end, CancellationToken ct = default);
+    Task<string?> BookAppointmentAsync(string emailProvider, string emailCustomer, DateTime start, DateTime end, string? serviceName = null, CancellationToken ct = default);
 
     /// <summary>
     /// The real cancellation route — <c>DELETE /api/v1/booking/appointments/</c>, body-identified. Distinct

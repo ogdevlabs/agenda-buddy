@@ -40,7 +40,7 @@ public class CalendarApiService : ICalendarApiService
             return BuildDayTiles(days, noSlots, bookedByDate);
 
         var client = _httpClientFactory.CreateClient("AgendaBuddyApi");
-        var route = CalendarRouteBuilder.Availability(_session.Email, DateOnly.FromDateTime(DateTime.UtcNow), days);
+        var route = CalendarRouteBuilder.Availability(_session.Email, days);
 
         var response = await client.GetAsync(route.Path, ct);
 
@@ -79,6 +79,41 @@ public class CalendarApiService : ICalendarApiService
 
         return result;
     }
+
+
+    public async Task<ProviderAvailability> GetProviderAvailabilityAsync(
+        string providerEmail, string? serviceName, int days = 90, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(providerEmail))
+            return ProviderAvailability.Empty;
+
+        var client = _httpClientFactory.CreateClient("AgendaBuddyApi");
+        var route = CalendarRouteBuilder.Availability(providerEmail, days, serviceName);
+
+        var response = await client.GetAsync(route.Path, ct);
+
+        // 404 means "no such provider" now; a fully-booked provider answers 200 with an empty list. Both
+        // land here as "nothing to offer", which is what the UI shows -- it must not read either as an error,
+        // because a booked-out calendar is a normal state.
+        if (!response.IsSuccessStatusCode)
+            return ProviderAvailability.Empty;
+
+        var json = await response.Content.ReadAsStringAsync(ct);
+        return GroupByDate(ParseAvailabilitySlots(json));
+    }
+
+    /// <summary>
+    /// Groups flat UTC start times by date, dropping dates with nothing free so the calendar can tell
+    /// "bookable" from "full" by presence alone.
+    /// </summary>
+    internal static ProviderAvailability GroupByDate(IEnumerable<DateTime> slots) =>
+        new()
+        {
+            SlotsByDate = slots
+                .Select(slot => slot.Kind == DateTimeKind.Utc ? slot : slot.ToUniversalTime())
+                .GroupBy(slot => DateOnly.FromDateTime(slot))
+                .ToDictionary(group => group.Key, group => group.OrderBy(slot => slot).ToList())
+        };
 
     /// <summary>Unwraps <c>{"data": [ISO-8601 datetimes], "errors": []}</c> into a flat list.</summary>
     internal static List<DateTime> ParseAvailabilitySlots(string json)

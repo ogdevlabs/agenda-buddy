@@ -80,12 +80,12 @@ public class BookingApiService : IBookingApiService
 
     // ── Create / cancel ───────────────────────────────────────────────────────────────────────────────
 
-    public async Task<string?> BookAppointmentAsync(string emailProvider, string emailCustomer, DateTime start, DateTime end, CancellationToken ct = default)
+    public async Task<string?> BookAppointmentAsync(string emailProvider, string emailCustomer, DateTime start, DateTime end, string? serviceName = null, CancellationToken ct = default)
     {
         var client = _httpClientFactory.CreateClient("AgendaBuddyApi");
         var route = BookingRouteBuilder.BookAppointment();
         var body = JsonSerializer.Serialize(
-            BookingRouteBuilder.BuildBookAppointmentPayload(emailProvider, emailCustomer, start, end), JsonOptions);
+            BookingRouteBuilder.BuildBookAppointmentPayload(emailProvider, emailCustomer, start, end, serviceName), JsonOptions);
         var content = new StringContent(body, Encoding.UTF8, "application/json");
 
         var response = await client.PostAsync(route.Path, content, ct);

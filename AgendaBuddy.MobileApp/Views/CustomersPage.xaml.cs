@@ -27,7 +27,8 @@ public partial class CustomersPage : ContentPage
         var nav = new Dictionary<string, object>
         {
             ["counterpartEmail"] = e.CounterpartEmail,
-            ["counterpartName"] = e.CounterpartName
+            ["counterpartName"] = e.CounterpartName,
+            ["profession"] = e.Profession ?? string.Empty
         };
         await Shell.Current.GoToAsync("book", nav);
     }

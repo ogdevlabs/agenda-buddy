@@ -31,8 +31,16 @@ public static class BookingRouteBuilder
     /// <see cref="AppointmentEntity"/> — <c>emailProvider</c>/<c>emailCustomer</c> are the only fields the
     /// validator (<c>AppointmentEntitySpecification</c>) checks, plus <c>Start &lt; End</c>.
     /// </summary>
-    public static object BuildBookAppointmentPayload(string emailProvider, string emailCustomer, DateTime start, DateTime end) =>
-        new { emailProvider, emailCustomer, start, end, dayOff = false };
+    /// <remarks>
+    /// <paramref name="serviceName"/> must be one the provider actually offers — the server rejects an
+    /// unmatched name with a 400 rather than storing it. Omitted when blank, which keeps the
+    /// provider-initiated path (which has never sent a service) working unchanged.
+    /// </remarks>
+    public static object BuildBookAppointmentPayload(
+        string emailProvider, string emailCustomer, DateTime start, DateTime end, string? serviceName = null) =>
+        string.IsNullOrWhiteSpace(serviceName)
+            ? new { emailProvider, emailCustomer, start, end, dayOff = false }
+            : new { emailProvider, emailCustomer, start, end, dayOff = false, serviceName };
 
     /// <summary>
     /// <c>BookingModule.cs</c>'s <c>DELETE /appointments/</c> (trailing slash, no path param) — the target is

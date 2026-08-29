@@ -9,6 +9,12 @@ public class BookRequestedEventArgs : EventArgs
 {
     public required string CounterpartEmail { get; init; }
     public required string CounterpartName { get; init; }
+
+    /// <summary>
+    /// The profession the directory was filtered to, if any — carried through so the booking screen
+    /// offers only that provider's services in the same scope the customer was already browsing.
+    /// </summary>
+    public string? Profession { get; init; }
 }
 
 public partial class CustomersViewModel : ObservableObject
@@ -43,7 +49,28 @@ public partial class CustomersViewModel : ObservableObject
     [ObservableProperty]
     private string _searchText = string.Empty;
 
+    /// <summary>
+    /// The professions represented by the loaded providers — the FIRST filter layer a customer applies,
+    /// before narrowing to a provider. Empty for a Provider viewing their customers.
+    /// </summary>
+    [ObservableProperty]
+    private List<string> _availableProfessions = new();
+
+    /// <summary>
+    /// The chosen profession, or null for "all". Applied together with <see cref="SearchText"/>, so
+    /// picking a profession and then typing narrows within it rather than starting over.
+    /// </summary>
+    [ObservableProperty]
+    private string? _selectedProfession;
+
     public bool HasError => !string.IsNullOrEmpty(ErrorMessage);
+
+    /// <summary>Only worth showing when there is something to choose between.</summary>
+    public bool HasProfessionFilter => AvailableProfessions.Count > 1;
+
+    public bool HasSelectedProfession => !string.IsNullOrWhiteSpace(SelectedProfession);
+
+    public string SelectedProfessionLabel => $"Profession: {SelectedProfession}";
 
     public bool IsEmpty => !IsLoading && Customers.Count == 0 && !HasError;
 
@@ -58,21 +85,49 @@ public partial class CustomersViewModel : ObservableObject
 
     partial void OnSearchTextChanged(string value) => ApplyFilter();
 
+    partial void OnSelectedProfessionChanged(string? value)
+    {
+        OnPropertyChanged(nameof(HasSelectedProfession));
+        OnPropertyChanged(nameof(SelectedProfessionLabel));
+        ApplyFilter();
+    }
+
+    partial void OnAvailableProfessionsChanged(List<string> value) =>
+        OnPropertyChanged(nameof(HasProfessionFilter));
+
+    [RelayCommand]
+    private void ClearProfession() => SelectedProfession = null;
+
+    [RelayCommand]
+    private void SelectProfession(string? profession) =>
+        // Tapping the active chip clears it, so "all" is reachable without a separate control.
+        SelectedProfession = string.Equals(SelectedProfession, profession, StringComparison.OrdinalIgnoreCase)
+            ? null
+            : profession;
+
+    /// <summary>
+    /// Profession first, then free text within it. Both layers are applied together rather than as
+    /// alternatives, because the profession is a scope and the text is a search inside that scope.
+    /// </summary>
     private void ApplyFilter()
     {
-        if (string.IsNullOrWhiteSpace(SearchText))
+        IEnumerable<CustomerSummary> filtered = _allContacts;
+
+        if (!string.IsNullOrWhiteSpace(SelectedProfession))
+            filtered = filtered.Where(c =>
+                c.Professions.Contains(SelectedProfession, StringComparer.OrdinalIgnoreCase));
+
+        if (!string.IsNullOrWhiteSpace(SearchText))
         {
-            Customers = new List<CustomerSummary>(_allContacts);
-            return;
+            var query = SearchText.Trim();
+            filtered = filtered.Where(c =>
+                c.FullName.Contains(query, StringComparison.OrdinalIgnoreCase)
+                || c.Email.Contains(query, StringComparison.OrdinalIgnoreCase)
+                || c.LastSession.Contains(query, StringComparison.OrdinalIgnoreCase)
+                || c.Professions.Any(p => p.Contains(query, StringComparison.OrdinalIgnoreCase)));
         }
 
-        var query = SearchText.Trim();
-        Customers = _allContacts
-            .Where(c => c.FullName.Contains(query, StringComparison.OrdinalIgnoreCase)
-                        || c.Email.Contains(query, StringComparison.OrdinalIgnoreCase)
-                        || c.LastSession.Contains(query, StringComparison.OrdinalIgnoreCase)
-                        || c.Professions.Any(p => p.Contains(query, StringComparison.OrdinalIgnoreCase)))
-            .ToList();
+        Customers = filtered.ToList();
     }
 
     [RelayCommand]
@@ -85,7 +140,7 @@ public partial class CustomersViewModel : ObservableObject
         if (_session.IsCustomer)
         {
             PageTitle = "Providers";
-            SearchPlaceholder = "Search by name or service...";
+            SearchPlaceholder = "Search by name, email or service...";
             EmptyTitle = "No providers yet";
             EmptySubtitle = "Browse and subscribe to providers to book appointments.";
         }
@@ -110,10 +165,27 @@ public partial class CustomersViewModel : ObservableObject
                     provider.IsSubscribed = subscriptions.Contains(provider.Email, StringComparer.OrdinalIgnoreCase);
 
                 _allContacts = providers;
+
+                // Only professions that actually have a bookable provider behind them — offering a chip
+                // that filters to nothing is worse than not offering it.
+                AvailableProfessions = providers
+                    .SelectMany(provider => provider.Professions)
+                    .Where(profession => !string.IsNullOrWhiteSpace(profession))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .OrderBy(profession => profession, StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+
+                if (SelectedProfession is not null
+                    && !AvailableProfessions.Contains(SelectedProfession, StringComparer.OrdinalIgnoreCase))
+                {
+                    SelectedProfession = null;
+                }
             }
             else
             {
                 _allContacts = await _customerApiService.GetCustomersAsync();
+                AvailableProfessions = [];
+                SelectedProfession = null;
             }
         }
         catch (Exception)
@@ -179,7 +251,8 @@ public partial class CustomersViewModel : ObservableObject
         BookRequested?.Invoke(this, new BookRequestedEventArgs
         {
             CounterpartEmail = contact.Email,
-            CounterpartName = contact.FullName
+            CounterpartName = contact.FullName,
+            Profession = SelectedProfession
         });
 
     [RelayCommand]

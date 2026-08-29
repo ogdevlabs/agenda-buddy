@@ -4,6 +4,7 @@
              xmlns:controls="clr-namespace:AgendaBuddy.MobileApp.Controls"
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
              x:Class="AgendaBuddy.MobileApp.Views.CustomersPage"
+             x:Name="ThisPage"
              Title="{Binding PageTitle}"
              BackgroundColor="#F2F2F7"
              Shell.NavBarIsVisible="False">
@@ -19,7 +20,7 @@
         <Color x:Key="iOSLabel">#000000</Color>
     </ContentPage.Resources>
 
-    <Grid RowDefinitions="Auto,Auto,Auto,Auto,*">
+    <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,*">
 
         <!-- Immersive header -->
         <Grid Grid.Row="0" BackgroundColor="{StaticResource Primary}" Padding="0">
@@ -60,8 +61,62 @@
             </Grid>
         </Frame>
 
+
+        <!-- Profession chips: the FIRST filter layer, before narrowing to a provider. Hidden for a
+             Provider viewing customers, and hidden when only one profession exists (a filter with a
+             single option filters nothing). -->
+        <ScrollView Grid.Row="2"
+                    Orientation="Horizontal"
+                    HorizontalScrollBarVisibility="Never"
+                    Margin="0,4,0,0"
+                    IsVisible="{Binding HasProfessionFilter}">
+            <HorizontalStackLayout Padding="16,0" Spacing="8"
+                                   BindableLayout.ItemsSource="{Binding AvailableProfessions}">
+                <BindableLayout.ItemTemplate>
+                    <DataTemplate>
+                        <Frame CornerRadius="16"
+                               Padding="14,7"
+                               HasShadow="False"
+                               BorderColor="{StaticResource iOSGray5}"
+                               BackgroundColor="White"
+                               AutomationId="ProfessionChip">
+                            <Frame.GestureRecognizers>
+                                <TapGestureRecognizer
+                                    Command="{Binding Source={x:Reference ThisPage}, Path=BindingContext.SelectProfessionCommand}"
+                                    CommandParameter="{Binding}" />
+                            </Frame.GestureRecognizers>
+                            <Label Text="{Binding}"
+                                   FontSize="14"
+                                   TextColor="{StaticResource iOSLabel}"
+                                   VerticalOptions="Center" />
+                        </Frame>
+                    </DataTemplate>
+                </BindableLayout.ItemTemplate>
+            </HorizontalStackLayout>
+        </ScrollView>
+
+        <!-- The active filter, with a way back to "all". Separate from the chips above because a chip
+             cannot show its own selected state through BindableLayout without a per-item view model. -->
+        <HorizontalStackLayout Grid.Row="3"
+                               Padding="16,8,16,0"
+                               Spacing="8"
+                               IsVisible="{Binding HasSelectedProfession}">
+            <Label Text="{Binding SelectedProfessionLabel}"
+                   FontSize="13"
+                   FontAttributes="Bold"
+                   TextColor="{StaticResource Primary}"
+                   VerticalOptions="Center" />
+            <controls:SafeButton Text="Clear"
+                    BackgroundColor="Transparent"
+                    TextColor="{StaticResource iOSBlue}"
+                    FontSize="13"
+                    Padding="4"
+                    Command="{Binding ClearProfessionCommand}"
+                    AutomationId="ClearProfessionButton" />
+        </HorizontalStackLayout>
+
         <!-- Loading indicator -->
-        <ActivityIndicator Grid.Row="2"
+        <ActivityIndicator Grid.Row="3"
                            IsRunning="{Binding IsLoading}"
                            IsVisible="{Binding IsLoading}"
                            Color="{StaticResource iOSGray}"
@@ -69,7 +124,7 @@
                            Margin="0,16,0,0" />
 
         <!-- Error banner -->
-        <Frame Grid.Row="3"
+        <Frame Grid.Row="4"
                BackgroundColor="#FFF2F2"
                CornerRadius="10"
                BorderColor="#FFD6D6"
@@ -96,7 +151,7 @@
         </Frame>
 
         <!-- Empty state -->
-        <VerticalStackLayout Grid.Row="4"
+        <VerticalStackLayout Grid.Row="5"
                              IsVisible="{Binding IsEmpty}"
                              VerticalOptions="Center"
                              HorizontalOptions="Center"
@@ -115,7 +170,7 @@
         </VerticalStackLayout>
 
         <!-- Contact list -->
-        <CollectionView Grid.Row="4"
+        <CollectionView Grid.Row="5"
                         ItemsSource="{Binding Customers}"
                         IsVisible="{Binding IsEmpty, Converter={StaticResource InvertedBoolConverter}}"
                         SelectionMode="None"
