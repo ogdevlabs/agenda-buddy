@@ -275,6 +275,15 @@
                     },
                     "dayOff": {
                         "type": "boolean"
+                    },
+                    "serviceName": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "serviceDurationMinutes": {
+                        "type": "integer",
+                        "format": "int32",
+                        "nullable": true
                     }
                 },
                 "additionalProperties": false

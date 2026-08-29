@@ -48,6 +48,29 @@ public class AppointmentEntity
 
     [BsonElement("day_off")] public bool DayOff { get; set; }
 
+    /// <summary>
+    /// The provider's service this session is for, by name — the same key <c>ServiceEntity.Name</c> is
+    /// matched on everywhere else (PUT/PATCH/DELETE on services all match by name, because
+    /// <c>ServiceEntity.Id</c> is unusable over the wire, see <c>ObjectIdJsonConverter</c>'s remarks).
+    /// </summary>
+    /// <remarks>
+    /// Additive (2026-08-29). Null on every appointment booked before a service could be chosen, so it
+    /// stays nullable rather than required — a historical appointment genuinely has no service, and
+    /// backfilling one would be inventing data. <c>AppointmentDetail</c>/<c>AppointmentSummary</c> on the
+    /// client already carried <c>ServiceName</c> with nothing to populate it; this is what populates it.
+    /// </remarks>
+    [BsonElement("service_name")]
+    [BsonIgnoreIfNull]
+    public string? ServiceName { get; set; }
+
+    /// <summary>
+    /// Session length in minutes as it was when booked, so a later edit to the service does not
+    /// retroactively change what was agreed. Null for appointments booked before services were selectable.
+    /// </summary>
+    [BsonElement("service_duration_minutes")]
+    [BsonIgnoreIfNull]
+    public int? ServiceDurationMinutes { get; set; }
+
     public void Book()
     {
         if (AppointmentStatus == AppointmentStatus.Requested)

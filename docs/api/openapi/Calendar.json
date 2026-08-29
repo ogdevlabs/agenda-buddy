@@ -19,6 +19,21 @@
                         "schema": {
                             "type": "string"
                         }
+                    },
+                    {
+                        "name": "days",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "format": "int32"
+                        }
+                    },
+                    {
+                        "name": "service",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
                     }
                 ],
                 "responses": {
@@ -115,6 +130,15 @@
                     },
                     "dayOff": {
                         "type": "boolean"
+                    },
+                    "serviceName": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "serviceDurationMinutes": {
+                        "type": "integer",
+                        "format": "int32",
+                        "nullable": true
                     }
                 },
                 "additionalProperties": false
