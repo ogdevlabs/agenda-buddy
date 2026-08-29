@@ -52,12 +52,21 @@ public sealed class ProviderSummary
     public required List<string> Professions { get; init; }
 
     /// <summary>Projects a stored provider to the shape a non-owner may see.</summary>
+    /// <remarks>
+    /// <b>Services are narrowed to the bookable ones</b> — active, and classified under a profession.
+    /// A non-owner's only use for this list is choosing something to book, and the booking flow selects a
+    /// profession before a service, so an inactive or unclassified entry is an option that dead-ends.
+    /// The owner still sees everything through <c>GET /api/v1/providers/{email}</c>, which returns the
+    /// full entity, so nothing is hidden from the person who has to fix it.
+    /// </remarks>
     public static ProviderSummary From(ProviderEntity provider) => new()
     {
         Email = provider.Email,
         FirstName = provider.FirstName,
         LastName = provider.LastName,
-        Services = provider.ServiceEntities,
+        Services = (provider.ServiceEntities ?? [])
+            .Where(service => service.IsActive && !string.IsNullOrWhiteSpace(service.ProfessionName))
+            .ToList(),
         Professions = provider.Professions,
     };
 }

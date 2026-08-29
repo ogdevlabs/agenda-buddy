@@ -7,6 +7,25 @@ public interface IProviderService
     /// <summary>One page of providers, plus the total number of them. ADR-023.</summary>
     Task<(IEnumerable<ProviderEntity> Items, long TotalCount)> GetPagedProvidersAsync(int skip, int take);
 
+    /// <summary>
+    /// One page of providers a customer could actually book, plus how many there are.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// "Bookable" means the provider has at least one service that is active <b>and</b> classified under
+    /// one of their professions. A provider with no services cannot be booked at all, and an unclassified
+    /// service cannot be reached by a flow that selects a profession before a service — so listing either
+    /// in the customer directory offers something that dead-ends.
+    /// </para>
+    /// <para>
+    /// Matching and paging both happen in the database (see
+    /// <c>IRepository.GetPagedAsync(BsonDocument,int,int)</c>): filtering a page after the fact would
+    /// return short pages with a count that disagrees, and filtering a full read in memory is the
+    /// full-dataset load ADR-023 exists to prevent.
+    /// </para>
+    /// </remarks>
+    Task<(IEnumerable<ProviderEntity> Items, long TotalCount)> GetPagedBookableProvidersAsync(int skip, int take);
+
     Task<ProviderEntity> GetProviderByIdAsync(string id);
     Task AddProviderAsync(ProviderEntity provider);
     Task<bool> UpdateProviderAsync(string id, ProviderEntity provider);

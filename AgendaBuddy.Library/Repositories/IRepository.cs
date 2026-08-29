@@ -39,6 +39,18 @@ public interface IRepository<TEntity> where TEntity : class
     Task<(IEnumerable<TEntity> Items, long TotalCount)> GetPagedAsync(int skip, int take);
 
     /// <summary>
+    /// One page of the documents matching <paramref name="filter"/>, plus how many match in total.
+    /// </summary>
+    /// <remarks>
+    /// The filtered sibling of <see cref="GetPagedAsync(int,int)"/>. It exists because filtering after
+    /// paging is wrong in two ways at once — a page of 25 silently returns fewer, and
+    /// <c>TotalCount</c> counts documents the caller is never shown — while filtering a full read and
+    /// paging in memory reintroduces exactly the full-dataset load ADR-023 exists to remove. Both the
+    /// match and the page therefore have to happen in the database.
+    /// </remarks>
+    Task<(IEnumerable<TEntity> Items, long TotalCount)> GetPagedAsync(BsonDocument filter, int skip, int take);
+
+    /// <summary>
     /// Applies <paramref name="update"/> to the single document matching <paramref name="filter"/>,
     /// atomically, and returns the document <b>as it is after the update</b>.
     /// </summary>

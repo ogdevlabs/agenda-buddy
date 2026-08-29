@@ -42,6 +42,25 @@ public class ProviderService(IRepository<ProviderEntity> providerRepository) : I
         await providerRepository.DeleteAsync(id);
     }
 
+    public async Task<(IEnumerable<ProviderEntity> Items, long TotalCount)> GetPagedBookableProvidersAsync(
+        int skip, int take)
+    {
+        // $elemMatch so BOTH conditions must hold on the SAME service. Without it Mongo would match a
+        // provider having one active-but-unclassified service and a separate classified-but-inactive one,
+        // neither of which is bookable.
+        //
+        // $ne/$nin rather than equality, because both fields are omitted from older documents:
+        // isActive defaults to true in code and profession_name postdates the services already stored,
+        // so "missing" has to be read as active and as unclassified respectively.
+        var bookable = new BsonDocument("services", new BsonDocument("$elemMatch", new BsonDocument
+        {
+            { "isActive", new BsonDocument("$ne", false) },
+            { "profession_name", new BsonDocument("$nin", new BsonArray { BsonNull.Value, "" }) }
+        }));
+
+        return await providerRepository.GetPagedAsync(bookable, skip, take);
+    }
+
     public async Task<ProviderEntity> FindProvidersAsync(BsonDocument filter)
     {
         return await providerRepository.Find(filter);

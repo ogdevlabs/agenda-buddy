@@ -15,7 +15,9 @@ public class GetProvidersQueryHandlerTest
         var providers = new List<ProviderEntity> { Provider("a@example.com"), Provider("b@example.com") };
         var page = PageRequest.Clamp(1, 25);
         var providerService = new Mock<IProviderService>();
-        providerService.Setup(p => p.GetPagedProvidersAsync(page.Skip, page.PageSize))
+        // The default is now the BOOKABLE page, not every provider -- this list is the customer-facing
+        // directory and an unbookable provider dead-ends the flow.
+        providerService.Setup(p => p.GetPagedBookableProvidersAsync(page.Skip, page.PageSize))
             .ReturnsAsync(((IEnumerable<ProviderEntity>)providers, (long)providers.Count));
         var eventStore = new Mock<IEventStore>();
         var mediator = new Mock<IMediator>();
@@ -56,5 +58,35 @@ public class GetProvidersQueryHandlerTest
         var handler = new GetProvidersQueryHandler(Mock.Of<IMediator>(), Mock.Of<IProviderService>(), Mock.Of<IEventStore>());
 
         await Assert.ThrowsAsync<ArgumentNullException>(() => handler.Handle(null!, CancellationToken.None));
+    }
+
+    // Which of the two reads is used is the whole point of BookableOnly, so both directions are pinned --
+    // a default that silently flipped back to "every provider" would reintroduce unbookable entries.
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task Handle_RoutesToTheBookableOrUnfilteredRead(bool bookableOnly)
+    {
+        var page = PageRequest.Clamp(1, 25);
+        var empty = ((IEnumerable<ProviderEntity>)new List<ProviderEntity>(), 0L);
+        var providerService = new Mock<IProviderService>();
+        providerService.Setup(p => p.GetPagedBookableProvidersAsync(page.Skip, page.PageSize)).ReturnsAsync(empty);
+        providerService.Setup(p => p.GetPagedProvidersAsync(page.Skip, page.PageSize)).ReturnsAsync(empty);
+        var handler = new GetProvidersQueryHandler(
+            Mock.Of<IMediator>(), providerService.Object, Mock.Of<IEventStore>());
+
+        await handler.Handle(
+            new GetProvidersQuery { Page = page, BookableOnly = bookableOnly }, CancellationToken.None);
+
+        providerService.Verify(p => p.GetPagedBookableProvidersAsync(page.Skip, page.PageSize),
+            bookableOnly ? Times.Once() : Times.Never());
+        providerService.Verify(p => p.GetPagedProvidersAsync(page.Skip, page.PageSize),
+            bookableOnly ? Times.Never() : Times.Once());
+    }
+
+    [Fact]
+    public void BookableOnly_DefaultsToTrue()
+    {
+        Assert.True(new GetProvidersQuery { Page = PageRequest.Clamp(1, 25) }.BookableOnly);
     }
 }
