@@ -116,9 +116,12 @@ public class BookAppointmentViewModelTests
 
         await vm.SelectServiceCommand.ExecuteAsync(vm.Services[0]);
 
-        Assert.Equal([new DateOnly(2026, 9, 10), new DateOnly(2026, 9, 12)], vm.BookableDates);
-        Assert.Equal(new DateOnly(2026, 9, 10), vm.SelectedDate);
-        Assert.Equal([Slot9, Slot10], vm.TimesForSelectedDate);
+        // Dates are the device's, so they are derived rather than hardcoded.
+        Assert.Equal(
+            new[] { Slot9, Slot11 }.Select(s => DateOnly.FromDateTime(s.ToLocalTime())).Distinct().OrderBy(d => d),
+            vm.BookableDates);
+        Assert.Equal(DateOnly.FromDateTime(Slot9.ToLocalTime()), vm.SelectedDate);
+        Assert.Equal([Slot9, Slot10], vm.TimesForSelectedDate.Select(t => t.StartUtc));
     }
 
     // Slot boundaries come from the service's duration, so switching service must not keep a slot that
@@ -130,7 +133,7 @@ public class BookAppointmentViewModelTests
         var vm = Build(ServicesApi(Svc("A", "Fitness", 60), Svc("B", "Fitness", 90)), calendar);
         await vm.LoadCommand.ExecuteAsync(null);
         await vm.SelectServiceCommand.ExecuteAsync(vm.Services[0]);
-        vm.SelectSlotCommand.Execute(Slot9);
+        vm.SelectSlotCommand.Execute(vm.TimesForSelectedDate.Single(t => t.StartUtc == Slot9));
         Assert.NotNull(vm.SelectedSlot);
 
         await vm.SelectServiceCommand.ExecuteAsync(vm.Services[1]);
@@ -145,12 +148,12 @@ public class BookAppointmentViewModelTests
     {
         var vm = Build(ServicesApi(Svc("A", "Fitness", 60)), CalendarApi(Slot9, Slot11));
         await vm.LoadCommand.ExecuteAsync(null);
-        vm.SelectSlotCommand.Execute(Slot9);
+        vm.SelectSlotCommand.Execute(vm.TimesForSelectedDate.Single(t => t.StartUtc == Slot9));
 
-        vm.SelectDateCommand.Execute(new DateOnly(2026, 9, 12));
+        vm.SelectDateCommand.Execute(DateOnly.FromDateTime(Slot11.ToLocalTime()));
 
         Assert.Null(vm.SelectedSlot);
-        Assert.Equal([Slot11], vm.TimesForSelectedDate);
+        Assert.Equal([Slot11], vm.TimesForSelectedDate.Select(t => t.StartUtc));
     }
 
     [Fact]
@@ -163,7 +166,7 @@ public class BookAppointmentViewModelTests
         await vm.SelectServiceCommand.ExecuteAsync(vm.Services[0]);
         Assert.False(vm.CanBook);
 
-        vm.SelectSlotCommand.Execute(Slot9);
+        vm.SelectSlotCommand.Execute(vm.TimesForSelectedDate.Single(t => t.StartUtc == Slot9));
         Assert.True(vm.CanBook);
     }
 
@@ -184,7 +187,7 @@ public class BookAppointmentViewModelTests
 
         var vm = Build(ServicesApi(Svc("Deep Tissue", "Wellness", 90)), CalendarApi(Slot9), booking);
         await vm.LoadCommand.ExecuteAsync(null);
-        vm.SelectSlotCommand.Execute(Slot9);
+        vm.SelectSlotCommand.Execute(vm.TimesForSelectedDate.Single(t => t.StartUtc == Slot9));
 
         await vm.BookCommand.ExecuteAsync(null);
 
@@ -210,7 +213,7 @@ public class BookAppointmentViewModelTests
 
         var vm = Build(ServicesApi(Svc("No Duration", "Wellness", null)), CalendarApi(Slot9), booking);
         await vm.LoadCommand.ExecuteAsync(null);
-        vm.SelectSlotCommand.Execute(Slot9);
+        vm.SelectSlotCommand.Execute(vm.TimesForSelectedDate.Single(t => t.StartUtc == Slot9));
 
         await vm.BookCommand.ExecuteAsync(null);
 
@@ -231,7 +234,7 @@ public class BookAppointmentViewModelTests
 
         var vm = Build(ServicesApi(Svc("A", "Fitness", 60)), calendar, booking);
         await vm.LoadCommand.ExecuteAsync(null);
-        vm.SelectSlotCommand.Execute(Slot9);
+        vm.SelectSlotCommand.Execute(vm.TimesForSelectedDate.Single(t => t.StartUtc == Slot9));
 
         await vm.BookCommand.ExecuteAsync(null);
 

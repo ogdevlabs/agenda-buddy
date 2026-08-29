@@ -173,8 +173,56 @@ public class ProviderApiService : IProviderApiService
         var entity = JsonNode.Parse(data.GetRawText())!.AsObject();
         entity["firstName"] = firstName;
         entity["lastName"] = lastName;
+
+        // The device's zone IS the provider's working-hours zone. Recorded on every profile save so it
+        // follows the device rather than needing to be picked from a list.
+        entity["timeZoneId"] = TimeZoneInfo.Local.Id;
         // "id" round-trips fine here (Provider registers ObjectIdJsonConverter — see this file's other
         // remarks), so no field needs stripping before sending the merged document back.
+
+        var route = ProviderRouteBuilder.UpdateProvider(email);
+        var response = await client.PutAsync(route.Path,
+            new StringContent(entity.ToJsonString(), Encoding.UTF8, "application/json"), ct);
+        return response.IsSuccessStatusCode;
+    }
+
+
+    /// <summary>
+    /// Records this device's timezone as the provider's, when it is not already what the server has.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The provider's zone is what availability's 09:00–19:00 window is generated in, so a wrong or absent
+    /// one offers slots at the wrong hours — a provider at UTC-6 with no zone recorded was offered
+    /// 03:00–13:00 local. Taking it from the device means it is never asked for and follows a move.
+    /// </para>
+    /// <para>
+    /// Silent by design: it is a background correction, not something to interrupt anyone about, and a
+    /// failure just leaves the previous value in place. Returns whether anything was written.
+    /// </para>
+    /// </remarks>
+    public async Task<bool> SyncTimeZoneAsync(string email, CancellationToken ct = default)
+    {
+        var deviceZone = TimeZoneInfo.Local.Id;
+        var client = _httpClientFactory.CreateClient("AgendaBuddyApi");
+
+        var getResponse = await client.GetAsync(ProviderRouteBuilder.GetProvider(email).Path, ct);
+        if (!getResponse.IsSuccessStatusCode)
+            return false;
+
+        var currentJson = await getResponse.Content.ReadAsStringAsync(ct);
+        using var doc = JsonDocument.Parse(currentJson);
+        if (doc.RootElement.ValueKind != JsonValueKind.Object || !doc.RootElement.TryGetProperty("data", out var data))
+            return false;
+
+        var entity = JsonNode.Parse(data.GetRawText())!.AsObject();
+
+        // Nothing to do when it already matches -- this runs on every Account load, so it must not write
+        // on every Account load.
+        if (entity["timeZoneId"]?.GetValue<string>() == deviceZone)
+            return false;
+
+        entity["timeZoneId"] = deviceZone;
 
         var route = ProviderRouteBuilder.UpdateProvider(email);
         var response = await client.PutAsync(route.Path,

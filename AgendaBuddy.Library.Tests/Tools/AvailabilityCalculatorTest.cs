@@ -17,6 +17,9 @@ public class AvailabilityCalculatorTest
     // A Monday, mid-morning, so "today" always has remaining slots.
     private static readonly DateTime NowUtc = new(2026, 9, 7, 10, 30, 0, DateTimeKind.Utc);
 
+    // No TimeZoneId, so UTC applies — the behaviour a provider had before the field existed, which keeps
+    // every expectation below expressible in plain UTC. Zone-specific behaviour is covered separately in
+    // AvailabilityCalculatorTimeZoneTest.
     private static ProviderEntity Provider(params AppointmentEntity[] appointments) => new()
     {
         FirstName = "Test",
@@ -45,7 +48,7 @@ public class AvailabilityCalculatorTest
         Assert.NotEmpty(slots);
         Assert.All(slots, s => Assert.True(s > NowUtc, $"{s:O} is not in the future"));
         Assert.All(slots, s => Assert.Equal(DateTimeKind.Utc, s.Kind));
-        Assert.All(slots, s => Assert.InRange(s.Hour, AvailabilityCalculator.OpeningHourUtc, AvailabilityCalculator.ClosingHourUtc - 1));
+        Assert.All(slots, s => Assert.InRange(s.Hour, AvailabilityCalculator.OpeningHour, AvailabilityCalculator.ClosingHour - 1));
     }
 
     // The defect that mattered most: a long appointment used to block only the hour it STARTED in, so
@@ -94,7 +97,7 @@ public class AvailabilityCalculatorTest
         var slots = AvailabilityCalculator.GetAvailability(Provider(), NowUtc, days: 2, durationMinutes: 120);
 
         var latest = slots.Where(s => s.Date == At(1, 0).Date).Max();
-        Assert.Equal(At(1, AvailabilityCalculator.ClosingHourUtc - 2), latest);
+        Assert.Equal(At(1, AvailabilityCalculator.ClosingHour - 2), latest);
     }
 
     [Fact]

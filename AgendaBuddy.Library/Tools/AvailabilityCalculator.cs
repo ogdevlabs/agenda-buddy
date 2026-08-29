@@ -26,19 +26,33 @@ namespace AgendaBuddy.Library.Tools;
 /// </item>
 /// </list>
 /// <para>
-/// ⚠️ <b>Business hours are still fixed at 09:00–19:00 and interpreted as UTC</b>, because there is
-/// nowhere to store a provider's hours or timezone — <c>ProviderEntity</c> has no such field (the
-/// long-standing F-005 gap, <c>05-data-model.md</c>). That is a real limitation, not an oversight here:
-/// this class makes the calculation consistent and testable, it does not invent schedule storage.
+/// <b>Business hours are 09:00–19:00 in the PROVIDER'S OWN timezone</b>
+/// (<see cref="ProviderEntity.TimeZoneId"/>), converted to UTC instants on the way out. Generating them
+/// in UTC for everyone — which is what this did until 2026-08-29 — offered a provider at UTC-6 slots from
+/// 03:00 to 13:00 local, i.e. in the middle of the night. A provider with no zone recorded is treated as
+/// UTC, which is precisely the behaviour they had before the field existed.
+/// </para>
+/// <para>
+/// ⚠️ <b>The 09:00–19:00 window itself is still fixed</b>, and every weekday is treated alike: there is
+/// nowhere to store per-weekday hours (the remaining half of the F-005 gap, <c>05-data-model.md</c>).
+/// The zone is now the provider's; the hours are not yet.
+/// </para>
+/// <para>
+/// DST is handled rather than ignored: a local start that does not exist (the spring-forward gap) is
+/// skipped, and an ambiguous one (the autumn repeat) resolves to a single instant, so a transition day
+/// never yields a duplicate or an impossible slot.
 /// </para>
 /// </remarks>
 public static class AvailabilityCalculator
 {
-    /// <summary>First bookable hour, UTC. See the class remarks on why this is not per-provider.</summary>
-    public const int OpeningHourUtc = 9;
+    /// <summary>First bookable hour, in the provider's own timezone.</summary>
+    public const int OpeningHour = 9;
 
-    /// <summary>The hour by which a session must have ENDED, UTC.</summary>
-    public const int ClosingHourUtc = 19;
+    /// <summary>The hour by which a session must have ENDED, in the provider's own timezone.</summary>
+    public const int ClosingHour = 19;
+
+    /// <summary>Used when a provider has no timezone recorded — their behaviour before the field existed.</summary>
+    public const string FallbackTimeZoneId = "UTC";
 
     /// <summary>Spacing between candidate start times.</summary>
     public const int SlotStepMinutes = 60;
@@ -93,20 +107,35 @@ public static class AvailabilityCalculator
             })
             .ToList();
 
+        var zone = ResolveZone(provider.TimeZoneId);
+
         var slots = new List<DateTime>();
-        var firstDate = nowUtc.Date;
+
+        // Days are walked in the PROVIDER'S calendar, not UTC's: at UTC-6 the provider's "today" starts
+        // six hours after the UTC date rolls over, so iterating UTC dates would offer a window shifted off
+        // their actual working day.
+        var firstLocalDate = TimeZoneInfo.ConvertTimeFromUtc(nowUtc, zone).Date;
 
         for (var offset = 0; offset < window; offset++)
         {
-            var date = firstDate.AddDays(offset);
-            if (daysOff.Contains(date)) continue;
+            var localDate = firstLocalDate.AddDays(offset);
 
-            var open = DateTime.SpecifyKind(date.AddHours(OpeningHourUtc), DateTimeKind.Utc);
-            var close = DateTime.SpecifyKind(date.AddHours(ClosingHourUtc), DateTimeKind.Utc);
-
-            for (var slot = open; slot + duration <= close; slot = slot.AddMinutes(SlotStepMinutes))
+            for (var hour = OpeningHour; hour < ClosingHour; hour++)
             {
+                var localStart = new DateTime(
+                    localDate.Year, localDate.Month, localDate.Day, hour, 0, 0, DateTimeKind.Unspecified);
+
+                // A session must finish by closing time, measured on the same local clock -- so a DST
+                // shift cannot silently stretch or shorten the working day.
+                if (localStart.AddMinutes(durationMinutes > 0 ? durationMinutes : DefaultDurationMinutes)
+                    > localDate.AddHours(ClosingHour))
+                    continue;
+
+                if (!TryToUtc(localStart, zone, out var slot)) continue;
                 if (slot <= nowUtc) continue;
+
+                // Day-off is judged on the provider's local date too, for the same reason as above.
+                if (daysOff.Contains(TimeZoneInfo.ConvertTimeFromUtc(slot, zone).Date)) continue;
 
                 // Half-open intervals: an appointment ending exactly when a slot starts is not a clash,
                 // so back-to-back sessions remain bookable.
@@ -116,5 +145,48 @@ public static class AvailabilityCalculator
         }
 
         return slots;
+    }
+
+    /// <summary>
+    /// The provider's zone, or UTC when it is missing or unknown to this machine.
+    /// </summary>
+    /// <remarks>
+    /// An id this host cannot resolve must not take the whole calendar down — a provider whose zone was
+    /// recorded on a platform with a different tz database still needs to be bookable, just on UTC hours.
+    /// </remarks>
+    internal static TimeZoneInfo ResolveZone(string? timeZoneId)
+    {
+        if (string.IsNullOrWhiteSpace(timeZoneId)) return TimeZoneInfo.Utc;
+
+        try
+        {
+            return TimeZoneInfo.FindSystemTimeZoneById(timeZoneId);
+        }
+        catch (Exception exception) when (exception is TimeZoneNotFoundException or InvalidTimeZoneException)
+        {
+            return TimeZoneInfo.Utc;
+        }
+    }
+
+    /// <summary>
+    /// Converts a wall-clock time in <paramref name="zone"/> to a UTC instant.
+    /// </summary>
+    /// <returns>
+    /// <c>false</c> when that wall-clock time does not exist — the hour skipped by spring-forward. Such a
+    /// slot is dropped rather than shifted, because offering a start time that cannot occur would fail at
+    /// booking. An AMBIGUOUS time (the hour autumn repeats) is resolved to a single instant, so a
+    /// transition day yields one slot for that hour rather than two identical-looking ones.
+    /// </returns>
+    private static bool TryToUtc(DateTime localStart, TimeZoneInfo zone, out DateTime utc)
+    {
+        if (zone.IsInvalidTime(localStart))
+        {
+            utc = default;
+            return false;
+        }
+
+        utc = TimeZoneInfo.ConvertTimeToUtc(
+            DateTime.SpecifyKind(localStart, DateTimeKind.Unspecified), zone);
+        return true;
     }
 }

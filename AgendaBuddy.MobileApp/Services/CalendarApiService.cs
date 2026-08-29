@@ -103,16 +103,23 @@ public class CalendarApiService : ICalendarApiService
     }
 
     /// <summary>
-    /// Groups flat UTC start times by date, dropping dates with nothing free so the calendar can tell
-    /// "bookable" from "full" by presence alone.
+    /// Groups free start times by the date they fall on FOR THIS DEVICE, dropping dates with nothing free
+    /// so the calendar can tell "bookable" from "full" by presence alone.
     /// </summary>
+    /// <remarks>
+    /// Grouped on the local date, not the UTC one: a 01:00Z slot belongs to the previous evening for anyone
+    /// behind UTC, and grouping by UTC put it on the wrong day's tile. The values keep the UTC instant,
+    /// because that is what the booking POST must send back.
+    /// </remarks>
     internal static ProviderAvailability GroupByDate(IEnumerable<DateTime> slots) =>
         new()
         {
             SlotsByDate = slots
-                .Select(slot => slot.Kind == DateTimeKind.Utc ? slot : slot.ToUniversalTime())
-                .GroupBy(slot => DateOnly.FromDateTime(slot))
-                .ToDictionary(group => group.Key, group => group.OrderBy(slot => slot).ToList())
+                .Select(slot => new AvailabilitySlot(slot.Kind == DateTimeKind.Utc ? slot : slot.ToUniversalTime()))
+                .GroupBy(slot => DateOnly.FromDateTime(slot.LocalStart))
+                .ToDictionary(
+                    group => group.Key,
+                    group => group.OrderBy(slot => slot.StartUtc).ToList())
         };
 
     /// <summary>Unwraps <c>{"data": [ISO-8601 datetimes], "errors": []}</c> into a flat list.</summary>
@@ -155,6 +162,17 @@ public class CalendarApiService : ICalendarApiService
             appointment.ContactEmail = _session.IsProvider ? appointment.CustomerEmail : appointment.ProviderEmail;
             if (string.IsNullOrWhiteSpace(appointment.DisplayName))
                 appointment.DisplayName = appointment.ContactEmail;
+
+            // Appointments are persisted UTC, but every consumer of ScheduledAt treats it as wall-clock:
+            // it is formatted with {0:h:mm tt} for display and compared against DateTime.Today to decide
+            // what counts as "today". Left in UTC, a user at UTC-6 saw a 17:00Z session as "5:00 PM" when
+            // it is 11:00 AM for them, and a late-evening session counted toward the wrong day. Converting
+            // once here fixes display and those comparisons together. Nothing sends ScheduledAt back —
+            // booking supplies its own start/end, and cancel/status go by identifier — so this cannot
+            // round-trip a shifted instant.
+            appointment.ScheduledAt = appointment.ScheduledAt.Kind == DateTimeKind.Utc
+                ? appointment.ScheduledAt.ToLocalTime()
+                : appointment.ScheduledAt;
         }
 
         return appointments;

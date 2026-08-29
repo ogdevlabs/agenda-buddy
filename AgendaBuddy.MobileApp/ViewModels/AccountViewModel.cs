@@ -84,6 +84,16 @@ public partial class AccountViewModel : ObservableObject
                 FirstName = profile.FirstName;
                 LastName = profile.LastName;
             }
+
+            // A provider's availability window (09:00-19:00) is generated in THEIR timezone, so the server
+            // needs to know it. Taken from the device rather than asked for, and written only when it has
+            // actually changed. Failure here is deliberately silent: it is a background correction, and a
+            // provider whose zone is stale still has a working profile screen.
+            if (IsProvider)
+            {
+                try { await _providerApiService.SyncTimeZoneAsync(Email); }
+                catch (Exception) { /* leaves the previous zone in place */ }
+            }
         }
         catch (Exception)
         {

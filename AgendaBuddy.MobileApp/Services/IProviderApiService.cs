@@ -23,4 +23,10 @@ public interface IProviderApiService
     Task<ProfileInfo?> GetProfileAsync(string email, CancellationToken ct = default);
 
     Task<bool> UpdateProfileAsync(string email, string firstName, string lastName, CancellationToken ct = default);
+
+    /// <summary>
+    /// Records this device's timezone as the provider's working-hours zone, if it differs from what the
+    /// server holds. Silent, and a no-op when already correct.
+    /// </summary>
+    Task<bool> SyncTimeZoneAsync(string email, CancellationToken ct = default);
 }

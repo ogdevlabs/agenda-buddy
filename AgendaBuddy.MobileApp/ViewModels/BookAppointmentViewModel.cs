@@ -52,10 +52,14 @@ public partial class BookAppointmentViewModel : ObservableObject
     private DateOnly? _selectedDate;
 
     [ObservableProperty]
-    private List<DateTime> _timesForSelectedDate = new();
+    private List<AvailabilitySlot> _timesForSelectedDate = new();
 
+    /// <summary>
+    /// The chosen slot. Holds the server's own UTC instant, and renders through
+    /// <see cref="AvailabilitySlot.Label"/> in the device's zone — the two must not be conflated.
+    /// </summary>
     [ObservableProperty]
-    private DateTime? _selectedSlot;
+    private AvailabilitySlot? _selectedSlot;
 
     [ObservableProperty]
     private bool _isLoading;
@@ -103,6 +107,11 @@ public partial class BookAppointmentViewModel : ObservableObject
     public string SelectedServiceLabel => SelectedService is null
         ? "Choose a service"
         : $"{SelectedService.Name} · {SelectedService.DurationLabel}";
+
+    /// <summary>The chosen slot on this device's clock — never the raw UTC value.</summary>
+    public string SelectedSlotLabel => SelectedSlot is null
+        ? string.Empty
+        : $"Selected: {SelectedSlot.LocalStart:ddd d MMM, h:mm tt}";
 
     public event EventHandler<string>? BookingSucceeded;
 
@@ -227,7 +236,7 @@ public partial class BookAppointmentViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void SelectSlot(DateTime slot)
+    private void SelectSlot(AvailabilitySlot slot)
     {
         SelectedSlot = slot;
         NotifyDerived();
@@ -244,9 +253,9 @@ public partial class BookAppointmentViewModel : ObservableObject
 
         try
         {
-            // The slot is the exact UTC instant the server offered, sent back unchanged. End comes from the
-            // service's own duration, so the booked length matches what was advertised.
-            var start = SelectedSlot.Value;
+            // The exact UTC instant the server offered, sent back unchanged — NOT the local rendering of
+            // it. End comes from the service's own duration, so the booked length matches what was shown.
+            var start = SelectedSlot.StartUtc;
             var minutes = SelectedService.DurationMinutes ?? 60;
             var end = start.AddMinutes(minutes);
 
@@ -296,6 +305,7 @@ public partial class BookAppointmentViewModel : ObservableObject
         OnPropertyChanged(nameof(HasTimes));
         OnPropertyChanged(nameof(CanBook));
         OnPropertyChanged(nameof(HasSelectedSlot));
+        OnPropertyChanged(nameof(SelectedSlotLabel));
         OnPropertyChanged(nameof(IsFullyBooked));
         OnPropertyChanged(nameof(SelectedServiceLabel));
         BookCommand.NotifyCanExecuteChanged();

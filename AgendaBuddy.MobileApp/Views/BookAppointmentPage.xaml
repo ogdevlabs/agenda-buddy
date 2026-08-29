@@ -172,7 +172,7 @@
                                                 Command="{Binding Source={x:Reference ThisPage}, Path=BindingContext.SelectSlotCommand}"
                                                 CommandParameter="{Binding}" />
                                         </Frame.GestureRecognizers>
-                                        <Label Text="{Binding ., StringFormat='{0:h:mm tt}'}" FontSize="14"
+                                        <Label Text="{Binding Label}" FontSize="14"
                                                TextColor="{StaticResource TextPrimary}" VerticalOptions="Center" />
                                     </Frame>
                                 </DataTemplate>
@@ -186,7 +186,7 @@
                 <Frame CornerRadius="20" BackgroundColor="White" BorderColor="#E2E8F0" HasShadow="True"
                        Padding="20" IsVisible="{Binding HasSelectedService}">
                     <VerticalStackLayout Spacing="10">
-                        <Label Text="{Binding SelectedSlot, StringFormat='Selected: {0:ddd d MMM, h:mm tt}'}"
+                        <Label Text="{Binding SelectedSlotLabel}"
                                FontSize="14" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}"
                                IsVisible="{Binding HasSelectedSlot}"
                                AutomationId="SelectedSlotLabel" />
