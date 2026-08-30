@@ -9,7 +9,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="MediatR" Version="12.3.0"/>
+        <PackageReference Include="MediatR" Version="14.2.0"/>
         <!-- Microsoft.Extensions.Configuration/.Json/.DependencyInjection were removed by F-016-T18:
              the FrameworkReference below supplies them, and NuGet flags keeping both (NU1510). -->
         <PackageReference Include="MongoDB.Bson" Version="2.25.0"/>
