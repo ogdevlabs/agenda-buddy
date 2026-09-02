@@ -38,10 +38,15 @@ public partial class BookAppointmentPage : ContentPage
         _viewModel.LoadCommand.Execute(null);
     }
 
+    /// <summary>
+    /// Lands on the Dashboard, not the appointment detail page. Previously this popped back to the
+    /// directory and pushed detail, which left the customer on a leaf screen with the provider list behind
+    /// it and no sight of the booking in the place they look for their schedule. <c>//dashboard</c> is an
+    /// absolute route, so it also clears the booking stack rather than burying it.
+    /// </summary>
     private async void OnBookingSucceeded(object? sender, string identifier)
     {
-        await Shell.Current.GoToAsync("..");
-        await AppShell.NavigateToAppointmentAsync(identifier);
+        await Shell.Current.GoToAsync("//dashboard");
     }
 
     private async void OnBackClicked(object? sender, EventArgs e)

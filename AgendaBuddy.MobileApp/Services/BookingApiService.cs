@@ -40,7 +40,10 @@ public class BookingApiService : IBookingApiService
     public async Task<List<AppointmentSummary>> GetTodayAppointmentsAsync(CancellationToken ct = default)
     {
         var appointments = await _calendarApiService.GetAppointmentsAsync(ct);
-        var today = DateTime.UtcNow.Date;
+
+        // DateTime.Today, not UtcNow.Date — ScheduledAt arrives already converted to local time, so a
+        // device behind UTC was matching against tomorrow's date for the last hours of every evening.
+        var today = DateTime.Today;
 
         return appointments
             .Where(a => a.ScheduledAt.Date == today)
@@ -61,6 +64,26 @@ public class BookingApiService : IBookingApiService
         return appointments
             .Where(a => a.Status is AppointmentStatus.Completed or AppointmentStatus.Cancelled)
             .OrderByDescending(a => a.ScheduledAt)
+            .Select(ToSummary)
+            .ToList();
+    }
+
+    public async Task<List<AppointmentSummary>> GetUpcomingAppointmentsAsync(CancellationToken ct = default)
+    {
+        var appointments = await _calendarApiService.GetAppointmentsAsync(ct);
+
+        // DateTime.Now, not UtcNow: CalendarApiService converts ScheduledAt to local time on the way in
+        // (see its GetAppointmentsAsync), so every consumer treats it as wall-clock. Comparing it against
+        // UtcNow silently hid every session inside the device's UTC offset — a booking made for later
+        // today vanished from the dashboard the moment it was created.
+        var now = DateTime.Now;
+
+        // Compared against the current instant rather than the date, so a session earlier today has
+        // already dropped off while one later today is still ahead. Cancelled sessions are not "upcoming"
+        // however they are dated.
+        return appointments
+            .Where(a => a.ScheduledAt >= now && a.Status != AppointmentStatus.Cancelled)
+            .OrderBy(a => a.ScheduledAt)
             .Select(ToSummary)
             .ToList();
     }

@@ -13,7 +13,7 @@
         <toolkit:InvertedBoolConverter x:Key="InvertedBoolConverter" />
     </ContentPage.Resources>
 
-    <Grid RowDefinitions="Auto,*">
+    <Grid RowDefinitions="Auto,*,Auto">
 
         <Grid Grid.Row="0" BackgroundColor="{StaticResource Primary}" Padding="24,48,24,24">
             <Grid.RowDefinitions>
@@ -36,8 +36,10 @@
                    TextColor="White" />
         </Grid>
 
+        <!-- Bottom padding clears the pinned confirm bar, so the last time chips can be scrolled into view
+             rather than sitting permanently behind it. -->
         <ScrollView Grid.Row="1">
-            <VerticalStackLayout Padding="20" Spacing="14">
+            <VerticalStackLayout Padding="20,20,20,24" Spacing="14">
 
                 <ActivityIndicator IsRunning="{Binding IsLoading}" IsVisible="{Binding IsLoading}"
                                    Color="{StaticResource Primary}" HorizontalOptions="Center" />
@@ -77,16 +79,34 @@
                                                 Command="{Binding Source={x:Reference ThisPage}, Path=BindingContext.SelectServiceCommand}"
                                                 CommandParameter="{Binding}" />
                                         </Frame.GestureRecognizers>
-                                        <VerticalStackLayout Spacing="2">
-                                            <Label Text="{Binding Name}" FontSize="15" FontAttributes="Bold"
-                                                   TextColor="{StaticResource TextPrimary}" />
-                                            <Label Text="{Binding Description}" FontSize="13"
-                                                   TextColor="{StaticResource TextSecondary}" />
-                                            <Label Text="{Binding DurationLabel}" FontSize="12"
-                                                   TextColor="{StaticResource TextMuted}" />
-                                            <Label Text="{Binding FeeLabel}" FontSize="12"
-                                                   TextColor="{StaticResource TextMuted}" />
-                                        </VerticalStackLayout>
+                                        <!-- Chosen state is a tinted fill plus a heavier accent border, so it
+                                             survives greyscale and does not rely on colour alone. -->
+                                        <Frame.Triggers>
+                                            <DataTrigger TargetType="Frame" Binding="{Binding IsSelected}" Value="True">
+                                                <Setter Property="BackgroundColor" Value="{StaticResource PrimarySubtle}" />
+                                                <Setter Property="BorderColor" Value="{StaticResource Primary}" />
+                                            </DataTrigger>
+                                        </Frame.Triggers>
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <VerticalStackLayout Grid.Column="0" Spacing="2">
+                                                <Label Text="{Binding Name}" FontSize="15" FontAttributes="Bold"
+                                                       TextColor="{StaticResource TextPrimary}" />
+                                                <Label Text="{Binding Description}" FontSize="13"
+                                                       TextColor="{StaticResource TextSecondary}" />
+                                                <Label Text="{Binding DurationLabel}" FontSize="12"
+                                                       TextColor="{StaticResource TextMuted}" />
+                                                <Label Text="{Binding FeeLabel}" FontSize="12"
+                                                       TextColor="{StaticResource TextMuted}" />
+                                            </VerticalStackLayout>
+                                            <Label Grid.Column="1"
+                                                   Text="&#x2713;"
+                                                   FontSize="20"
+                                                   FontAttributes="Bold"
+                                                   TextColor="{StaticResource Primary}"
+                                                   VerticalOptions="Center"
+                                                   Margin="8,0,0,0"
+                                                   IsVisible="{Binding IsSelected}" />
+                                        </Grid>
                                     </Frame>
                                 </DataTemplate>
                             </CollectionView.ItemTemplate>
@@ -130,22 +150,49 @@
                                 <DataTemplate>
                                     <Frame CornerRadius="14" BackgroundColor="White" BorderColor="#E2E8F0"
                                            HasShadow="False" Padding="12,10" WidthRequest="74"
-                                           AutomationId="DateChoice">
+                                           AutomationId="DateChoice"
+                                           SemanticProperties.Description="{Binding AccessibilityLabel}">
                                         <Frame.GestureRecognizers>
                                             <TapGestureRecognizer
                                                 Command="{Binding Source={x:Reference ThisPage}, Path=BindingContext.SelectDateCommand}"
                                                 CommandParameter="{Binding}" />
                                         </Frame.GestureRecognizers>
+                                        <!-- The chosen date inverts to a solid accent fill: unmistakable at a
+                                             glance, which a matching border alone was not. -->
+                                        <Frame.Triggers>
+                                            <DataTrigger TargetType="Frame" Binding="{Binding IsSelected}" Value="True">
+                                                <Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
+                                                <Setter Property="BorderColor" Value="{StaticResource Primary}" />
+                                            </DataTrigger>
+                                        </Frame.Triggers>
                                         <VerticalStackLayout Spacing="2" HorizontalOptions="Center">
-                                            <Label Text="{Binding ., StringFormat='{0:ddd}'}" FontSize="11"
+                                            <Label Text="{Binding DayName}" FontSize="11"
                                                    TextColor="{StaticResource TextMuted}"
-                                                   HorizontalOptions="Center" TextTransform="Uppercase" />
-                                            <Label Text="{Binding ., StringFormat='{0:dd}'}" FontSize="20"
+                                                   HorizontalOptions="Center">
+                                                <Label.Triggers>
+                                                    <DataTrigger TargetType="Label" Binding="{Binding IsSelected}" Value="True">
+                                                        <Setter Property="TextColor" Value="#DDE3FF" />
+                                                    </DataTrigger>
+                                                </Label.Triggers>
+                                            </Label>
+                                            <Label Text="{Binding DayNumber}" FontSize="20"
                                                    FontAttributes="Bold" TextColor="{StaticResource TextPrimary}"
-                                                   HorizontalOptions="Center" />
-                                            <Label Text="{Binding ., StringFormat='{0:MMM}'}" FontSize="11"
+                                                   HorizontalOptions="Center">
+                                                <Label.Triggers>
+                                                    <DataTrigger TargetType="Label" Binding="{Binding IsSelected}" Value="True">
+                                                        <Setter Property="TextColor" Value="White" />
+                                                    </DataTrigger>
+                                                </Label.Triggers>
+                                            </Label>
+                                            <Label Text="{Binding MonthName}" FontSize="11"
                                                    TextColor="{StaticResource TextMuted}"
-                                                   HorizontalOptions="Center" />
+                                                   HorizontalOptions="Center">
+                                                <Label.Triggers>
+                                                    <DataTrigger TargetType="Label" Binding="{Binding IsSelected}" Value="True">
+                                                        <Setter Property="TextColor" Value="#DDE3FF" />
+                                                    </DataTrigger>
+                                                </Label.Triggers>
+                                            </Label>
                                         </VerticalStackLayout>
                                     </Frame>
                                 </DataTemplate>
@@ -166,14 +213,28 @@
                                 <DataTemplate>
                                     <Frame CornerRadius="14" BackgroundColor="White" BorderColor="#E2E8F0"
                                            HasShadow="False" Padding="14,9" Margin="0,0,8,8"
-                                           AutomationId="TimeChoice">
+                                           AutomationId="TimeChoice"
+                                           SemanticProperties.Description="{Binding AccessibilityLabel}">
                                         <Frame.GestureRecognizers>
                                             <TapGestureRecognizer
                                                 Command="{Binding Source={x:Reference ThisPage}, Path=BindingContext.SelectSlotCommand}"
                                                 CommandParameter="{Binding}" />
                                         </Frame.GestureRecognizers>
+                                        <Frame.Triggers>
+                                            <DataTrigger TargetType="Frame" Binding="{Binding IsSelected}" Value="True">
+                                                <Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
+                                                <Setter Property="BorderColor" Value="{StaticResource Primary}" />
+                                            </DataTrigger>
+                                        </Frame.Triggers>
                                         <Label Text="{Binding Label}" FontSize="14"
-                                               TextColor="{StaticResource TextPrimary}" VerticalOptions="Center" />
+                                               TextColor="{StaticResource TextPrimary}" VerticalOptions="Center">
+                                            <Label.Triggers>
+                                                <DataTrigger TargetType="Label" Binding="{Binding IsSelected}" Value="True">
+                                                    <Setter Property="TextColor" Value="White" />
+                                                    <Setter Property="FontAttributes" Value="Bold" />
+                                                </DataTrigger>
+                                            </Label.Triggers>
+                                        </Label>
                                     </Frame>
                                 </DataTemplate>
                             </BindableLayout.ItemTemplate>
@@ -181,29 +242,95 @@
                     </VerticalStackLayout>
                 </Frame>
 
-                <!-- Confirm. The command is disabled until a service AND a slot are chosen, so a
-                     half-made booking is not expressible. -->
-                <Frame CornerRadius="20" BackgroundColor="White" BorderColor="#E2E8F0" HasShadow="True"
-                       Padding="20" IsVisible="{Binding HasSelectedService}">
-                    <VerticalStackLayout Spacing="10">
-                        <Label Text="{Binding SelectedSlotLabel}"
-                               FontSize="14" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}"
-                               IsVisible="{Binding HasSelectedSlot}"
-                               AutomationId="SelectedSlotLabel" />
-                        <Grid>
-                            <controls:SafeButton Text="Confirm Booking"
-                                    Style="{StaticResource PrimaryButton}"
-                                    Command="{Binding BookCommand}"
-                                    IsVisible="{Binding IsBooking, Converter={StaticResource InvertedBoolConverter}}"
-                                    AutomationId="ConfirmBookButton" />
-                            <ActivityIndicator IsRunning="{Binding IsBooking}" IsVisible="{Binding IsBooking}"
-                                               Color="{StaticResource Primary}" HorizontalOptions="Center" />
-                        </Grid>
-                    </VerticalStackLayout>
-                </Frame>
-
             </VerticalStackLayout>
         </ScrollView>
+
+        <!-- Confirm bar. Deliberately OUTSIDE the ScrollView: as the last card in a scrolling column it
+             measured below the fold behind the tab bar, so the customer had to scroll blind to reach the
+             one action that commits money and time. The command stays disabled until a service AND a slot
+             are chosen, so a half-made booking is not expressible. -->
+        <Frame Grid.Row="2"
+               BackgroundColor="White"
+               BorderColor="#E2E8F0"
+               CornerRadius="0"
+               HasShadow="True"
+               Padding="20,14,20,16"
+               IsVisible="{Binding HasSelectedService}">
+            <VerticalStackLayout Spacing="10">
+
+                <!-- Before a slot exists there is nothing to summarise; say what is still needed rather
+                     than showing an empty summary above a dead button. -->
+                <Label Text="{Binding ConfirmPrompt}"
+                       FontSize="13"
+                       TextColor="{StaticResource TextMuted}"
+                       HorizontalTextAlignment="Center"
+                       IsVisible="{Binding ShowConfirmPrompt}"
+                       AutomationId="ConfirmPromptLabel" />
+
+                <!-- The whole commitment, restated at the point of commitment — but in three lines, not a
+                     stacked block. This bar is pinned, so every extra row it takes is a row of the time
+                     grid the customer can no longer see while choosing. -->
+                <VerticalStackLayout Spacing="2" IsVisible="{Binding HasSelectedSlot}"
+                                     AutomationId="BookingSummary">
+
+                    <!-- When and how long. -->
+                    <Label FontSize="16" TextColor="{StaticResource TextPrimary}"
+                           AutomationId="SummaryWhenLabel">
+                        <Label.FormattedText>
+                            <FormattedString>
+                                <Span Text="{Binding SummaryDate}" FontAttributes="Bold" />
+                                <Span Text="  ·  " TextColor="{StaticResource TextMuted}" />
+                                <Span Text="{Binding SummaryTimeRange}" FontAttributes="Bold"
+                                      TextColor="{StaticResource Primary}" />
+                            </FormattedString>
+                        </Label.FormattedText>
+                    </Label>
+
+                    <!-- Duration, and the zone the times above are expressed in — a time with no zone is
+                         ambiguous the moment the two parties are not in the same one. -->
+                    <Label FontSize="11" TextColor="{StaticResource TextMuted}"
+                           AutomationId="SummaryDurationZoneLabel">
+                        <Label.FormattedText>
+                            <FormattedString>
+                                <Span Text="{Binding SummaryDuration}" />
+                                <Span Text="  ·  " />
+                                <Span Text="{Binding SummaryTimeZone}" />
+                            </FormattedString>
+                        </Label.FormattedText>
+                    </Label>
+
+                    <!-- What, with whom, for how much. -->
+                    <Label FontSize="13" TextColor="{StaticResource TextSecondary}" Margin="0,3,0,0"
+                           AutomationId="SummaryWhatLabel">
+                        <Label.FormattedText>
+                            <FormattedString>
+                                <Span Text="{Binding SummaryService}" FontAttributes="Bold"
+                                      TextColor="{StaticResource TextPrimary}" />
+                                <Span Text=" with " />
+                                <Span Text="{Binding SummaryWith}" TextColor="{StaticResource TextPrimary}" />
+                                <Span Text="  ·  " />
+                                <Span Text="{Binding SummaryPrice}" FontAttributes="Bold"
+                                      TextColor="{StaticResource TextPrimary}" />
+                            </FormattedString>
+                        </Label.FormattedText>
+                    </Label>
+
+                    <!-- Kept for tests and for assistive tech, which reads the whole selection in one string. -->
+                    <Label Text="{Binding SelectedSlotLabel}" IsVisible="False"
+                           AutomationId="SelectedSlotLabel" />
+                </VerticalStackLayout>
+
+                <Grid>
+                    <controls:SafeButton Text="Confirm Booking"
+                            Style="{StaticResource PrimaryButton}"
+                            Command="{Binding BookCommand}"
+                            IsVisible="{Binding IsBooking, Converter={StaticResource InvertedBoolConverter}}"
+                            AutomationId="ConfirmBookButton" />
+                    <ActivityIndicator IsRunning="{Binding IsBooking}" IsVisible="{Binding IsBooking}"
+                                       Color="{StaticResource Primary}" HorizontalOptions="Center" />
+                </Grid>
+            </VerticalStackLayout>
+        </Frame>
 
     </Grid>
 

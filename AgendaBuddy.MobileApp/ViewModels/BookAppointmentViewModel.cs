@@ -39,6 +39,9 @@ public partial class BookAppointmentViewModel : ObservableObject
     /// <summary>How far ahead to offer. The server clamps to the same ceiling.</summary>
     public const int WindowDays = 90;
 
+    /// <summary>Fallback session length for a service saved without one.</summary>
+    public const int DefaultDurationMinutes = 60;
+
     [ObservableProperty]
     private List<ServiceItem> _services = new();
 
@@ -46,20 +49,20 @@ public partial class BookAppointmentViewModel : ObservableObject
     private ServiceItem? _selectedService;
 
     [ObservableProperty]
-    private List<DateOnly> _bookableDates = new();
+    private List<DateChoice> _bookableDates = new();
 
     [ObservableProperty]
     private DateOnly? _selectedDate;
 
     [ObservableProperty]
-    private List<AvailabilitySlot> _timesForSelectedDate = new();
+    private List<SlotChoice> _timesForSelectedDate = new();
 
     /// <summary>
     /// The chosen slot. Holds the server's own UTC instant, and renders through
     /// <see cref="AvailabilitySlot.Label"/> in the device's zone — the two must not be conflated.
     /// </summary>
     [ObservableProperty]
-    private AvailabilitySlot? _selectedSlot;
+    private SlotChoice? _selectedSlot;
 
     [ObservableProperty]
     private bool _isLoading;
@@ -113,6 +116,60 @@ public partial class BookAppointmentViewModel : ObservableObject
         ? string.Empty
         : $"Selected: {SelectedSlot.LocalStart:ddd d MMM, h:mm tt}";
 
+    /// <summary>Prompt shown on the confirm bar before a slot is chosen, so the bar is never a bare button.</summary>
+    public string ConfirmPrompt => SelectedService is null
+        ? "Choose a service to see available times"
+        : SelectedSlot is null ? "Choose a date and time" : string.Empty;
+
+    public bool ShowConfirmPrompt => SelectedSlot is null;
+
+    // ── Booking summary ───────────────────────────────────────────────────────────────────────────
+    // Everything the customer is committing to, restated at the point of commitment. Each piece was
+    // already on screen one step earlier; not repeating it here meant confirming a paid appointment on
+    // the strength of a date and a time alone.
+
+    public string SummaryWith => string.IsNullOrWhiteSpace(CounterpartName) ? CounterpartEmail : CounterpartName;
+
+    public string SummaryService => SelectedService?.Name ?? string.Empty;
+
+    public string SummaryPrice => SelectedService?.FeeLabel ?? string.Empty;
+
+    /// <summary>Long-form date, e.g. "Saturday 5 September".</summary>
+    public string SummaryDate => SelectedSlot is null ? string.Empty : $"{SelectedSlot.LocalStart:dddd d MMMM}";
+
+    /// <summary>
+    /// Start and end on this device's clock. The end is derived from the service's own duration — the same
+    /// arithmetic the booking POST uses — so the window shown is the window booked.
+    /// </summary>
+    public string SummaryTimeRange
+    {
+        get
+        {
+            if (SelectedSlot is null || SelectedService is null) return string.Empty;
+            var start = SelectedSlot.LocalStart;
+            var end = start.AddMinutes(SelectedService.DurationMinutes ?? DefaultDurationMinutes);
+            return $"{start:h:mm tt} – {end:h:mm tt}";
+        }
+    }
+
+    public string SummaryDuration => SelectedService is null
+        ? string.Empty
+        : $"{SelectedService.DurationMinutes ?? DefaultDurationMinutes} min";
+
+    /// <summary>
+    /// Names the zone the times above are expressed in. A time with no zone is ambiguous the moment the
+    /// customer and provider are not in the same one.
+    /// </summary>
+    public string SummaryTimeZone
+    {
+        get
+        {
+            if (SelectedSlot is null) return string.Empty;
+            var zone = TimeZoneInfo.Local;
+            return zone.IsDaylightSavingTime(SelectedSlot.LocalStart) ? zone.DaylightName : zone.StandardName;
+        }
+    }
+
     public event EventHandler<string>? BookingSucceeded;
 
     public BookAppointmentViewModel(
@@ -156,6 +213,7 @@ public partial class BookAppointmentViewModel : ObservableObject
             if (Services.Count == 1)
             {
                 SelectedService = Services[0];
+                MarkSelectedService();
                 await RefreshAvailabilityAsync();
             }
         }
@@ -174,8 +232,16 @@ public partial class BookAppointmentViewModel : ObservableObject
     private async Task SelectServiceAsync(ServiceItem? service)
     {
         SelectedService = service;
+        MarkSelectedService();
         ErrorMessage = string.Empty;
         await RefreshAvailabilityAsync();
+    }
+
+    /// <summary>Keeps exactly one service card reading as chosen, including the auto-picked single service.</summary>
+    private void MarkSelectedService()
+    {
+        foreach (var candidate in Services)
+            candidate.IsSelected = ReferenceEquals(candidate, SelectedService);
     }
 
     /// <summary>
@@ -205,11 +271,11 @@ public partial class BookAppointmentViewModel : ObservableObject
             _availability = await _calendarApiService.GetProviderAvailabilityAsync(
                 ProviderEmail, service.Name, WindowDays);
 
-            BookableDates = _availability.BookableDates;
+            BookableDates = _availability.BookableDates.Select(date => new DateChoice(date)).ToList();
 
             // Land on the soonest date with room rather than today, which may well be full.
             if (_availability.FirstBookableDate is { } first)
-                SelectDate(first);
+                SelectDateOn(first);
         }
         catch (Exception)
         {
@@ -223,12 +289,22 @@ public partial class BookAppointmentViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void SelectDate(DateOnly date)
+    private void SelectDate(DateChoice? choice)
+    {
+        if (choice is not null) SelectDateOn(choice.Date);
+    }
+
+    private void SelectDateOn(DateOnly date)
     {
         SelectedDate = date;
 
+        // Exactly one card reads as chosen. Driven off the collection rather than the tapped item so the
+        // auto-selected soonest date highlights too, not only a date the customer tapped.
+        foreach (var candidate in BookableDates)
+            candidate.IsSelected = candidate.Date == date;
+
         // Read from the already-fetched window — switching dates never costs a request.
-        TimesForSelectedDate = _availability.SlotsOn(date);
+        TimesForSelectedDate = _availability.SlotsOn(date).Select(slot => new SlotChoice(slot)).ToList();
 
         // A slot from the previous date must not survive the change.
         SelectedSlot = null;
@@ -236,9 +312,13 @@ public partial class BookAppointmentViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void SelectSlot(AvailabilitySlot slot)
+    private void SelectSlot(SlotChoice? choice)
     {
-        SelectedSlot = slot;
+        SelectedSlot = choice;
+
+        foreach (var candidate in TimesForSelectedDate)
+            candidate.IsSelected = ReferenceEquals(candidate, choice);
+
         NotifyDerived();
     }
 
@@ -256,7 +336,7 @@ public partial class BookAppointmentViewModel : ObservableObject
             // The exact UTC instant the server offered, sent back unchanged — NOT the local rendering of
             // it. End comes from the service's own duration, so the booked length matches what was shown.
             var start = SelectedSlot.StartUtc;
-            var minutes = SelectedService.DurationMinutes ?? 60;
+            var minutes = SelectedService.DurationMinutes ?? DefaultDurationMinutes;
             var end = start.AddMinutes(minutes);
 
             var emailProvider = _session.IsProvider ? _session.Email : CounterpartEmail;
@@ -308,10 +388,22 @@ public partial class BookAppointmentViewModel : ObservableObject
         OnPropertyChanged(nameof(SelectedSlotLabel));
         OnPropertyChanged(nameof(IsFullyBooked));
         OnPropertyChanged(nameof(SelectedServiceLabel));
+        OnPropertyChanged(nameof(ConfirmPrompt));
+        OnPropertyChanged(nameof(ShowConfirmPrompt));
+        OnPropertyChanged(nameof(SummaryWith));
+        OnPropertyChanged(nameof(SummaryService));
+        OnPropertyChanged(nameof(SummaryPrice));
+        OnPropertyChanged(nameof(SummaryDate));
+        OnPropertyChanged(nameof(SummaryTimeRange));
+        OnPropertyChanged(nameof(SummaryDuration));
+        OnPropertyChanged(nameof(SummaryTimeZone));
         BookCommand.NotifyCanExecuteChanged();
     }
 
     partial void OnErrorMessageChanged(string value) => NotifyDerived();
     partial void OnIsLoadingChanged(bool value) => NotifyDerived();
     partial void OnIsLoadingAvailabilityChanged(bool value) => NotifyDerived();
+
+    // Assigned from a Shell query property after the first binding pass, so the summary has to be told.
+    partial void OnCounterpartNameChanged(string value) => NotifyDerived();
 }

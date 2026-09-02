@@ -48,14 +48,14 @@ public partial class DashboardViewModel : ObservableObject
     public bool IsProvider => _session.IsProvider;
     public bool IsCustomer => _session.IsCustomer;
 
-    public string SectionTitle => IsCustomer ? "Recent Sessions" : "Appointments";
-    public string PrimaryStatLabel => IsCustomer ? "Completed" : "Today";
+    public string SectionTitle => IsCustomer ? "Upcoming Sessions" : "Appointments";
+    public string PrimaryStatLabel => IsCustomer ? "Today" : "Today";
     public string PrimaryStatCaption => IsCustomer ? "" : "Sessions";
-    public string SecondaryStatLabel => IsCustomer ? "Cancelled" : "This Week";
+    public string SecondaryStatLabel => IsCustomer ? "Upcoming" : "This Week";
     public string SecondaryStatCaption => IsCustomer ? "" : "Upcoming";
-    public string EmptyStateTitle => IsCustomer ? "No Sessions Yet" : "No Appointments";
+    public string EmptyStateTitle => IsCustomer ? "Nothing Booked Yet" : "No Appointments";
     public string EmptyStateSubtitle => IsCustomer
-        ? "Your completed and cancelled sessions will show up here."
+        ? "Book a session with a provider and it will show up here."
         : "Check your calendar for upcoming sessions.";
 
     public event EventHandler? AppointmentsLoaded;
@@ -98,8 +98,10 @@ public partial class DashboardViewModel : ObservableObject
 
         try
         {
+            // A Customer leads with what is still ahead. This used to fetch past appointments only, which
+            // meant a session booked seconds earlier could never appear here however often it refreshed.
             var results = IsCustomer
-                ? await _bookingApiService.GetPastAppointmentsAsync()
+                ? await _bookingApiService.GetUpcomingAppointmentsAsync()
                 : await _bookingApiService.GetTodayAppointmentsAsync();
 
             _allAppointments = results;
@@ -108,8 +110,8 @@ public partial class DashboardViewModel : ObservableObject
 
             if (IsCustomer)
             {
-                TodayCount = results.Count(a => a.Status == AgendaBuddy.Library.Entities.AppointmentStatus.Completed);
-                WeekCount = results.Count(a => a.Status == AgendaBuddy.Library.Entities.AppointmentStatus.Cancelled);
+                TodayCount = results.Count(a => a.ScheduledAt.Date == DateTime.Today);
+                WeekCount = results.Count;
             }
             else
             {

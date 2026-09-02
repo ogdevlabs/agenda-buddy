@@ -119,7 +119,7 @@ public class BookAppointmentViewModelTests
         // Dates are the device's, so they are derived rather than hardcoded.
         Assert.Equal(
             new[] { Slot9, Slot11 }.Select(s => DateOnly.FromDateTime(s.ToLocalTime())).Distinct().OrderBy(d => d),
-            vm.BookableDates);
+            vm.BookableDates.Select(d => d.Date));
         Assert.Equal(DateOnly.FromDateTime(Slot9.ToLocalTime()), vm.SelectedDate);
         Assert.Equal([Slot9, Slot10], vm.TimesForSelectedDate.Select(t => t.StartUtc));
     }
@@ -150,7 +150,8 @@ public class BookAppointmentViewModelTests
         await vm.LoadCommand.ExecuteAsync(null);
         vm.SelectSlotCommand.Execute(vm.TimesForSelectedDate.Single(t => t.StartUtc == Slot9));
 
-        vm.SelectDateCommand.Execute(DateOnly.FromDateTime(Slot11.ToLocalTime()));
+        vm.SelectDateCommand.Execute(
+            vm.BookableDates.Single(d => d.Date == DateOnly.FromDateTime(Slot11.ToLocalTime())));
 
         Assert.Null(vm.SelectedSlot);
         Assert.Equal([Slot11], vm.TimesForSelectedDate.Select(t => t.StartUtc));
@@ -302,5 +303,104 @@ public class BookAppointmentViewModelTests
 
         Assert.True(vm.HasError);
         Assert.False(vm.IsLoading);
+    }
+
+    // ── Selection state ───────────────────────────────────────────────────────────────────────────
+    // The chosen date and time carry their own IsSelected so the UI can render them differently. Without
+    // it every card looked identical and the customer could not see what they had picked.
+
+    [Fact]
+    public async Task TheAutoSelectedSoonestDate_IsMarkedSelected()
+    {
+        var vm = Build(ServicesApi(Svc("A", "Fitness", 60)), CalendarApi(Slot9, Slot11));
+
+        await vm.LoadCommand.ExecuteAsync(null);
+
+        var soonest = DateOnly.FromDateTime(Slot9.ToLocalTime());
+        Assert.Single(vm.BookableDates, d => d.IsSelected);
+        Assert.True(vm.BookableDates.Single(d => d.Date == soonest).IsSelected);
+    }
+
+    [Fact]
+    public async Task SelectingADate_MarksItAndUnmarksThePrevious()
+    {
+        var vm = Build(ServicesApi(Svc("A", "Fitness", 60)), CalendarApi(Slot9, Slot11));
+        await vm.LoadCommand.ExecuteAsync(null);
+        var later = vm.BookableDates.Single(d => d.Date == DateOnly.FromDateTime(Slot11.ToLocalTime()));
+
+        vm.SelectDateCommand.Execute(later);
+
+        Assert.Single(vm.BookableDates, d => d.IsSelected);
+        Assert.True(later.IsSelected);
+    }
+
+    [Fact]
+    public async Task SelectingASlot_MarksExactlyThatOne()
+    {
+        var vm = Build(ServicesApi(Svc("A", "Fitness", 60)), CalendarApi(Slot9, Slot10));
+        await vm.LoadCommand.ExecuteAsync(null);
+        var nine = vm.TimesForSelectedDate.Single(t => t.StartUtc == Slot9);
+
+        vm.SelectSlotCommand.Execute(nine);
+
+        Assert.Single(vm.TimesForSelectedDate, t => t.IsSelected);
+        Assert.True(nine.IsSelected);
+        Assert.Contains("selected", nine.AccessibilityLabel);
+    }
+
+    [Fact]
+    public async Task SelectingTheSingleService_MarksItSelected()
+    {
+        var vm = Build(ServicesApi(Svc("Only", "Fitness", 60)), CalendarApi(Slot9));
+
+        await vm.LoadCommand.ExecuteAsync(null);
+
+        Assert.True(vm.Services.Single().IsSelected);
+    }
+
+    // ── Confirmation summary ──────────────────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task TheSummary_RestatesTheWholeCommitment()
+    {
+        var vm = Build(ServicesApi(Svc("Strength", "Fitness", 45)), CalendarApi(Slot9));
+        vm.CounterpartName = "Oscar Coach";
+        await vm.LoadCommand.ExecuteAsync(null);
+        vm.SelectSlotCommand.Execute(vm.TimesForSelectedDate.Single(t => t.StartUtc == Slot9));
+
+        var localStart = Slot9.ToLocalTime();
+
+        Assert.Equal("Oscar Coach", vm.SummaryWith);
+        Assert.Equal("Strength", vm.SummaryService);
+        Assert.Equal("45 min", vm.SummaryDuration);
+        Assert.Equal($"{localStart:dddd d MMMM}", vm.SummaryDate);
+        // End is the service's own duration past the start — the same arithmetic the booking POST uses.
+        Assert.Equal($"{localStart:h:mm tt} – {localStart.AddMinutes(45):h:mm tt}", vm.SummaryTimeRange);
+        Assert.False(string.IsNullOrWhiteSpace(vm.SummaryTimeZone));
+    }
+
+    [Fact]
+    public async Task TheSummary_FallsBackToTheDefaultDurationWhenTheServiceHasNone()
+    {
+        var vm = Build(ServicesApi(Svc("Unset", "Fitness", null)), CalendarApi(Slot9));
+        await vm.LoadCommand.ExecuteAsync(null);
+        vm.SelectSlotCommand.Execute(vm.TimesForSelectedDate.Single(t => t.StartUtc == Slot9));
+
+        Assert.Equal($"{BookAppointmentViewModel.DefaultDurationMinutes} min", vm.SummaryDuration);
+    }
+
+    [Fact]
+    public async Task BeforeASlotIsChosen_ThePromptAsksForOneInsteadOfSummarising()
+    {
+        var vm = Build(ServicesApi(Svc("A", "Fitness", 60)), CalendarApi(Slot9));
+        await vm.LoadCommand.ExecuteAsync(null);
+
+        Assert.True(vm.ShowConfirmPrompt);
+        Assert.Equal("Choose a date and time", vm.ConfirmPrompt);
+        Assert.Equal(string.Empty, vm.SummaryDate);
+
+        vm.SelectSlotCommand.Execute(vm.TimesForSelectedDate.Single(t => t.StartUtc == Slot9));
+
+        Assert.False(vm.ShowConfirmPrompt);
     }
 }
