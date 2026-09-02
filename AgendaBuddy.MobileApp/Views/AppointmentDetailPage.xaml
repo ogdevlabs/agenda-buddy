@@ -10,19 +10,14 @@
 
     <Grid RowDefinitions="Auto,*,Auto">
 
-        <!-- Hero header — customer-focused -->
+        <!-- Header: the SERVICE is the title — it is what the appointment actually is. The counterpart's
+             name, the date and the time all moved into the single card below, replacing an avatar
+             monogram, a name label and two coloured pills. -->
         <Grid Grid.Row="0"
               BackgroundColor="{StaticResource Primary}"
-              Padding="24,48,24,32">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-            </Grid.RowDefinitions>
+              Padding="24,48,24,28"
+              RowDefinitions="Auto,Auto,Auto">
 
-            <!-- Back button -->
             <controls:SafeButton Grid.Row="0"
                     Text="&#x2190; Back"
                     BackgroundColor="Transparent"
@@ -30,69 +25,27 @@
                     FontSize="14"
                     HorizontalOptions="Start"
                     Padding="4"
-                    Margin="0,0,0,16"
+                    Margin="0,0,0,12"
                     Clicked="OnBackClicked" />
 
-            <!-- Contact avatar -->
-            <Frame Grid.Row="1"
-                   BackgroundColor="#FFFFFF30"
-                   CornerRadius="36"
-                   WidthRequest="72"
-                   HeightRequest="72"
-                   Padding="4"
-                   HasShadow="False"
-                   BorderColor="Transparent"
-                   HorizontalOptions="Center">
-                <Label Text="{Binding Appointment.DisplayName, StringFormat='{0[0]}'}"
-                       FontSize="28"
-                       FontAttributes="Bold"
-                       TextColor="White"
-                       HorizontalOptions="Center"
-                       VerticalOptions="Center"
-                       TextTransform="Uppercase" />
-            </Frame>
-
-            <!-- Contact name -->
-            <Label Grid.Row="2"
-                   Text="{Binding Appointment.DisplayName}"
-                   FontSize="20"
+            <Label Grid.Row="1"
+                   Text="{Binding Appointment.ServiceName}"
+                   FontSize="28"
                    FontAttributes="Bold"
                    TextColor="White"
-                   HorizontalOptions="Center"
-                   Margin="0,12,0,4" />
+                   LineBreakMode="WordWrap" />
 
-            <!-- Service type pill -->
-            <Frame Grid.Row="3"
-                   BackgroundColor="{StaticResource Accent}"
-                   CornerRadius="14"
-                   Padding="14,6"
-                   HasShadow="False"
-                   BorderColor="Transparent"
-                   HorizontalOptions="Center"
-                   Margin="0,4">
-                <Label Text="{Binding Appointment.ServiceName}"
-                       FontSize="13"
-                       FontAttributes="Bold"
-                       TextColor="White" />
-            </Frame>
-
-            <!-- Status pill -->
-            <Frame Grid.Row="4"
-                   BackgroundColor="#FFFFFF25"
-                   CornerRadius="12"
-                   Padding="12,5"
-                   HasShadow="False"
-                   BorderColor="Transparent"
-                   HorizontalOptions="Center"
-                   Margin="0,6,0,0">
-                <Label Text="{Binding Appointment.Status}"
-                       FontSize="11"
-                       FontAttributes="Bold"
-                       TextColor="White"
-                       TextTransform="Uppercase"
-                       CharacterSpacing="1"
-                       AutomationId="StatusLabel" />
-            </Frame>
+            <!-- Status as plain text rather than a pill. The pill was #FFFFFF25, which MAUI reads as
+                 #AARRGGBB — opaque (255,255,37), i.e. yellow, not translucent white. -->
+            <Label Grid.Row="2"
+                   Text="{Binding Appointment.Status}"
+                   FontSize="12"
+                   FontAttributes="Bold"
+                   TextColor="#C7D2FE"
+                   TextTransform="Uppercase"
+                   CharacterSpacing="1.5"
+                   Margin="0,6,0,0"
+                   AutomationId="StatusLabel" />
         </Grid>
 
         <!-- Error banner -->
@@ -135,129 +88,64 @@
                     Margin="0,-16,0,0">
             <VerticalStackLayout Padding="20,0,20,24" Spacing="14">
 
-                <!-- Schedule card -->
+                <!-- ONE card: who it is with, when, and how to reach them. Previously two cards plus a
+                     date tile and two icon chips; the information is the same, with four fewer components. -->
                 <Frame CornerRadius="20"
                        BackgroundColor="White"
                        BorderColor="#E2E8F0"
                        HasShadow="True"
                        Padding="20">
-                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="16">
-                        <Frame Grid.Column="0"
-                               BackgroundColor="{StaticResource PrimarySubtle}"
-                               CornerRadius="16"
-                               WidthRequest="52"
-                               HeightRequest="52"
-                               Padding="4"
-                               HasShadow="False"
-                               BorderColor="Transparent">
-                            <VerticalStackLayout HorizontalOptions="Center" VerticalOptions="Center" Spacing="0">
-                                <Label Text="{Binding Appointment.ScheduledAt, StringFormat='{0:dd}'}"
-                                       FontSize="18"
-                                       FontAttributes="Bold"
-                                       TextColor="{StaticResource Primary}"
-                                       HorizontalOptions="Center" />
-                                <Label Text="{Binding Appointment.ScheduledAt, StringFormat='{0:MMM}'}"
-                                       FontSize="10"
-                                       TextColor="{StaticResource Primary}"
-                                       TextTransform="Uppercase"
-                                       HorizontalOptions="Center" />
-                            </VerticalStackLayout>
-                        </Frame>
+                    <VerticalStackLayout Spacing="14">
 
-                        <VerticalStackLayout Grid.Column="1" Spacing="4" VerticalOptions="Center">
-                            <Label Text="{Binding Appointment.ScheduledAt, StringFormat='{0:dddd}'}"
+                        <!-- Counterpart: the provider when a customer is looking, the customer when a
+                             provider is. -->
+                        <Label Text="{Binding Appointment.DisplayName}"
+                               FontSize="20"
+                               FontAttributes="Bold"
+                               TextColor="{StaticResource TextPrimary}" />
+
+                        <!-- Date and time on one line each, no tile. -->
+                        <VerticalStackLayout Spacing="2">
+                            <Label Text="{Binding Appointment.ScheduledAt, StringFormat='{0:dddd d MMMM}'}"
                                    FontSize="16"
-                                   FontAttributes="Bold"
                                    TextColor="{StaticResource TextPrimary}" />
                             <Label Text="{Binding TimeAndDurationLabel}"
+                                   FontSize="16"
+                                   FontAttributes="Bold"
+                                   TextColor="{StaticResource Primary}" />
+                        </VerticalStackLayout>
+
+                        <BoxView HeightRequest="1" Color="#EEF1F6" />
+
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="{Binding Appointment.ContactEmail}"
                                    FontSize="14"
                                    TextColor="{StaticResource TextSecondary}" />
+                            <Label Text="{Binding Appointment.ContactPhone}"
+                                   FontSize="14"
+                                   TextColor="{StaticResource TextSecondary}"
+                                   IsVisible="{Binding HasContactPhone}" />
                         </VerticalStackLayout>
-                    </Grid>
+                    </VerticalStackLayout>
                 </Frame>
 
-                <!-- Customer contact card -->
+                <!-- Customer notes, only when there are some. Was an amber card with an emoji; the note is
+                     information, not a warning, so it reads in the same neutral treatment as everything else. -->
                 <Frame CornerRadius="20"
                        BackgroundColor="White"
                        BorderColor="#E2E8F0"
                        HasShadow="True"
-                       Padding="20">
-                    <VerticalStackLayout Spacing="12">
-                        <Label Text="CONTACT"
+                       Padding="20"
+                       IsVisible="{Binding Appointment.HasNotes}">
+                    <VerticalStackLayout Spacing="8">
+                        <Label Text="NOTES FROM CUSTOMER"
                                FontSize="11"
                                TextColor="{StaticResource TextMuted}"
                                TextTransform="Uppercase"
                                CharacterSpacing="1.5" />
-
-                        <!-- Email -->
-                        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
-                            <Frame Grid.Column="0"
-                                   BackgroundColor="{StaticResource PrimarySubtle}"
-                                   CornerRadius="12"
-                                   WidthRequest="36"
-                                   HeightRequest="36"
-                                   Padding="4"
-                                   HasShadow="False"
-                                   BorderColor="Transparent">
-                                <Label Text="&#x2709;"
-                                       FontSize="16"
-                                       HorizontalOptions="Center"
-                                       VerticalOptions="Center" />
-                            </Frame>
-                            <Label Grid.Column="1"
-                                   Text="{Binding Appointment.ContactEmail}"
-                                   FontSize="14"
-                                   TextColor="{StaticResource TextPrimary}"
-                                   VerticalOptions="Center" />
-                        </Grid>
-
-                        <!-- Phone -->
-                        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
-                            <Frame Grid.Column="0"
-                                   BackgroundColor="{StaticResource SuccessSubtle}"
-                                   CornerRadius="12"
-                                   WidthRequest="36"
-                                   HeightRequest="36"
-                                   Padding="4"
-                                   HasShadow="False"
-                                   BorderColor="Transparent">
-                                <Label Text="&#x260E;"
-                                       FontSize="16"
-                                       HorizontalOptions="Center"
-                                       VerticalOptions="Center" />
-                            </Frame>
-                            <Label Grid.Column="1"
-                                   Text="{Binding Appointment.ContactPhone}"
-                                   FontSize="14"
-                                   TextColor="{StaticResource TextPrimary}"
-                                   VerticalOptions="Center" />
-                        </Grid>
-                    </VerticalStackLayout>
-                </Frame>
-
-                <!-- Customer notes card (only visible if notes exist) -->
-                <Frame CornerRadius="20"
-                       BackgroundColor="#FFFBEB"
-                       BorderColor="#FCD34D"
-                       HasShadow="True"
-                       Padding="20"
-                       IsVisible="{Binding Appointment.HasNotes}">
-                    <VerticalStackLayout Spacing="10">
-                        <HorizontalStackLayout Spacing="8">
-                            <Label Text="&#x1F4DD;"
-                                   FontSize="14"
-                                   VerticalOptions="Center" />
-                            <Label Text="CUSTOMER NOTES"
-                                   FontSize="11"
-                                   TextColor="#92400E"
-                                   TextTransform="Uppercase"
-                                   CharacterSpacing="1.5"
-                                   FontAttributes="Bold"
-                                   VerticalOptions="Center" />
-                        </HorizontalStackLayout>
                         <Label Text="{Binding Appointment.CustomerNotes}"
                                FontSize="15"
-                               TextColor="#78350F"
+                               TextColor="{StaticResource TextPrimary}"
                                LineBreakMode="WordWrap" />
                     </VerticalStackLayout>
                 </Frame>
@@ -306,7 +194,9 @@
                         <ActivityIndicator IsRunning="{Binding IsLoadingNotes}" IsVisible="{Binding IsLoadingNotes}"
                                            Color="{StaticResource Primary}" HorizontalOptions="Center" />
 
-                        <CollectionView ItemsSource="{Binding Notes}" SelectionMode="None" AutomationId="NotesCollectionView">
+                        <CollectionView ItemsSource="{Binding Notes}" SelectionMode="None"
+                                        IsVisible="{Binding HasSessionNotes}"
+                                        AutomationId="NotesCollectionView">
                             <CollectionView.ItemTemplate>
                                 <DataTemplate>
                                     <VerticalStackLayout Spacing="2" Margin="0,4">

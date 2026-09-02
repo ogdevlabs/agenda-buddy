@@ -69,14 +69,14 @@
                             <VerticalStackLayout Spacing="4">
                                 <Label Text="{Binding PrimaryStatLabel}"
                                        FontSize="13"
-                                       TextColor="#FFFFFF99" />
+                                       TextColor="#99FFFFFF" />
                                 <Label Text="{Binding TodayCount}"
                                        FontSize="36"
                                        FontAttributes="Bold"
                                        TextColor="White" />
                                 <Label Text="{Binding PrimaryStatCaption}"
                                        FontSize="13"
-                                       TextColor="#FFFFFF99" />
+                                       TextColor="#99FFFFFF" />
                             </VerticalStackLayout>
                         </Frame>
 
@@ -90,14 +90,14 @@
                             <VerticalStackLayout Spacing="4">
                                 <Label Text="{Binding SecondaryStatLabel}"
                                        FontSize="13"
-                                       TextColor="#FFFFFF99" />
+                                       TextColor="#99FFFFFF" />
                                 <Label Text="{Binding WeekCount}"
                                        FontSize="36"
                                        FontAttributes="Bold"
                                        TextColor="White" />
                                 <Label Text="{Binding SecondaryStatCaption}"
                                        FontSize="13"
-                                       TextColor="#FFFFFF99" />
+                                       TextColor="#99FFFFFF" />
                             </VerticalStackLayout>
                         </Frame>
 

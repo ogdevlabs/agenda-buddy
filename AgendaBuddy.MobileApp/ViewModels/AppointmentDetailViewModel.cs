@@ -71,6 +71,15 @@ public partial class AppointmentDetailViewModel : ObservableObject
     public bool ShowConfirmButton => _session.IsProvider;
 
     /// <summary>
+    /// Keeps the notes list out of the layout entirely when there are none. An empty CollectionView still
+    /// claims its default height, which showed as a tall blank card and pushed the add-note field off-screen.
+    /// </summary>
+    public bool HasSessionNotes => Notes.Count > 0;
+
+    /// <summary>Hides the phone line rather than leaving an empty row when no number was ever given.</summary>
+    public bool HasContactPhone => !string.IsNullOrWhiteSpace(Appointment?.ContactPhone);
+
+    /// <summary>
     /// Start time and how long the session runs, e.g. "10:00 AM · 45 min". The duration used to be the
     /// literal string "30 min" in XAML, so every appointment claimed 30 minutes however long it was booked
     /// for — a 45-minute session told both parties it was 30.
@@ -322,9 +331,12 @@ public partial class AppointmentDetailViewModel : ObservableObject
         OnPropertyChanged(nameof(ShowCompletingIndicator));
     }
 
+    partial void OnNotesChanged(List<NoteEntity> value) => OnPropertyChanged(nameof(HasSessionNotes));
+
     partial void OnAppointmentChanged(AppointmentDetail? value)
     {
         OnPropertyChanged(nameof(HasAppointment));
         OnPropertyChanged(nameof(TimeAndDurationLabel));
+        OnPropertyChanged(nameof(HasContactPhone));
     }
 }
