@@ -9,11 +9,19 @@ public class CalendarApiService : ICalendarApiService
 {
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IUserSessionService _session;
+    private readonly ICustomerApiService _customerApiService;
+    private readonly IProviderApiService _providerApiService;
 
-    public CalendarApiService(IHttpClientFactory httpClientFactory, IUserSessionService session)
+    public CalendarApiService(
+        IHttpClientFactory httpClientFactory,
+        IUserSessionService session,
+        ICustomerApiService customerApiService,
+        IProviderApiService providerApiService)
     {
         _httpClientFactory = httpClientFactory;
         _session = session;
+        _customerApiService = customerApiService;
+        _providerApiService = providerApiService;
     }
 
     /// <summary>
@@ -157,9 +165,27 @@ public class CalendarApiService : ICalendarApiService
         // "the other party" — it left DisplayName empty, which rendered as a nameless row wherever an
         // appointment is listed. Fill it in here, where the session role is known: a Provider sees their
         // customer, a Customer sees their provider.
+        // The appointment payload carries only the counterpart's email, so a name and phone have to come
+        // from the directory. Best-effort and deliberately non-fatal: a directory that fails to load
+        // degrades to the email address, which is what every row showed before, rather than losing the
+        // appointments themselves.
+        var directory = await LoadCounterpartDirectoryAsync(ct);
+
         foreach (var appointment in appointments)
         {
             appointment.ContactEmail = _session.IsProvider ? appointment.CustomerEmail : appointment.ProviderEmail;
+
+            if (directory.TryGetValue(appointment.ContactEmail, out var contact))
+            {
+                if (!string.IsNullOrWhiteSpace(contact.FullName))
+                    appointment.DisplayName = contact.FullName;
+
+                // Both, deliberately: the dashboard card reads CustomerPhone and the detail page's contact
+                // block reads ContactPhone. Filling only one left whichever screen used the other blank.
+                appointment.CustomerPhone = contact.Phone;
+                appointment.ContactPhone = contact.Phone;
+            }
+
             if (string.IsNullOrWhiteSpace(appointment.DisplayName))
                 appointment.DisplayName = appointment.ContactEmail;
 
@@ -176,6 +202,30 @@ public class CalendarApiService : ICalendarApiService
         }
 
         return appointments;
+    }
+
+    /// <summary>
+    /// The counterparts this session can be booked with, keyed by email: customers for a Provider,
+    /// providers for a Customer. Swallows failure and returns empty — this only enriches the display, so a
+    /// directory outage must not take the appointment list with it.
+    /// </summary>
+    private async Task<Dictionary<string, CustomerSummary>> LoadCounterpartDirectoryAsync(CancellationToken ct)
+    {
+        try
+        {
+            var contacts = _session.IsProvider
+                ? await _customerApiService.GetCustomersAsync(ct)
+                : await _providerApiService.GetProvidersAsync(ct);
+
+            return contacts
+                .Where(contact => !string.IsNullOrWhiteSpace(contact.Email))
+                .GroupBy(contact => contact.Email, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(group => group.Key, group => group.First(), StringComparer.OrdinalIgnoreCase);
+        }
+        catch (Exception)
+        {
+            return new Dictionary<string, CustomerSummary>(StringComparer.OrdinalIgnoreCase);
+        }
     }
 
     /// <summary>
@@ -222,7 +272,11 @@ public class CalendarApiService : ICalendarApiService
             ProviderEmail = GetString(element, "emailProvider"),
             ContactEmail = customerEmail,
             ScheduledAt = GetDateTime(element, "start"),
-            Status = GetStatus(element)
+            Status = GetStatus(element),
+            // Both are on the wire and were simply never read, so every screen bound to ServiceName
+            // rendered an empty row even though the appointment records which service it was booked for.
+            ServiceName = GetString(element, "serviceName"),
+            ServiceDurationMinutes = GetInt(element, "serviceDurationMinutes")
         };
     }
 
@@ -230,6 +284,11 @@ public class CalendarApiService : ICalendarApiService
         element.TryGetProperty(propertyName, out var value) && value.ValueKind == JsonValueKind.String
             ? value.GetString() ?? string.Empty
             : string.Empty;
+
+    private static int? GetInt(JsonElement element, string propertyName) =>
+        element.TryGetProperty(propertyName, out var value) && value.ValueKind == JsonValueKind.Number
+            ? value.GetInt32()
+            : null;
 
     private static DateTime GetDateTime(JsonElement element, string propertyName) =>
         element.TryGetProperty(propertyName, out var value) && value.TryGetDateTime(out var dt)

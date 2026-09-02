@@ -32,6 +32,10 @@ public partial class AccountViewModel : ObservableObject
     [NotifyCanExecuteChangedFor(nameof(SaveProfileCommand))]
     private string _lastName = string.Empty;
 
+    /// <summary>Optional contact number, editable here as well as captured at registration.</summary>
+    [ObservableProperty]
+    private string _phoneNumber = string.Empty;
+
     [ObservableProperty]
     private bool _isEditingProfile;
 
@@ -83,6 +87,7 @@ public partial class AccountViewModel : ObservableObject
             {
                 FirstName = profile.FirstName;
                 LastName = profile.LastName;
+                PhoneNumber = profile.PhoneNumber;
             }
 
             // A provider's availability window (09:00-19:00) is generated in THEIR timezone, so the server
@@ -113,8 +118,8 @@ public partial class AccountViewModel : ObservableObject
         try
         {
             var succeeded = IsProvider
-                ? await _providerApiService.UpdateProfileAsync(Email, FirstName, LastName)
-                : await _customerApiService.UpdateProfileAsync(Email, FirstName, LastName);
+                ? await _providerApiService.UpdateProfileAsync(Email, FirstName, LastName, PhoneNumber)
+                : await _customerApiService.UpdateProfileAsync(Email, FirstName, LastName, PhoneNumber);
 
             if (succeeded)
             {

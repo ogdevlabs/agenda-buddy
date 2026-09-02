@@ -190,6 +190,11 @@
                     </VerticalStackLayout>
 
                     <!-- Appointments list -->
+                    <!-- Every card is the same fixed height, and tapping one opens the appointment detail
+                         page rather than expanding in place. The cards used to expand inline, which on iOS
+                         a CollectionView cell grows for but never shrinks back from: a closed card kept its
+                         opened height as dead space. Detail belongs on the detail page anyway — it already
+                         shows the service, phone and notes, and carries the actions. -->
                     <CollectionView ItemsSource="{Binding Appointments}"
                                     SelectionMode="None"
                                     Margin="16,0,16,16"
@@ -206,7 +211,7 @@
                                        Padding="0">
                                     <Frame.GestureRecognizers>
                                         <TapGestureRecognizer
-                                            Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.ToggleAppointmentCommand}"
+                                            Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.SelectAppointmentCommand}"
                                             CommandParameter="{Binding .}" />
                                     </Frame.GestureRecognizers>
 
@@ -269,45 +274,6 @@
                                                 </Frame>
                                             </Grid>
 
-                                            <!-- Expanded details -->
-                                            <VerticalStackLayout Spacing="8"
-                                                                 Margin="0,14,0,0"
-                                                                 IsVisible="{Binding IsExpanded}">
-                                                <BoxView HeightRequest="0.5" Color="{StaticResource iOSGray5}" />
-                                                <Grid ColumnDefinitions="80,*" ColumnSpacing="0" Margin="0,6,0,0">
-                                                    <Label Grid.Column="0" Text="Service"
-                                                           FontSize="13" TextColor="{StaticResource iOSGray}" />
-                                                    <Label Grid.Column="1" Text="{Binding ServiceName}"
-                                                           FontSize="15" FontAttributes="Bold"
-                                                           TextColor="{StaticResource iOSLabel}" />
-                                                </Grid>
-                                                <Grid ColumnDefinitions="80,*" ColumnSpacing="0">
-                                                    <Label Grid.Column="0" Text="Phone"
-                                                           FontSize="13" TextColor="{StaticResource iOSGray}" />
-                                                    <Label Grid.Column="1" Text="{Binding CustomerPhone}"
-                                                           FontSize="15" TextColor="{StaticResource iOSLabel}" />
-                                                </Grid>
-                                                <Grid ColumnDefinitions="80,*" ColumnSpacing="0">
-                                                    <Label Grid.Column="0" Text="Notes"
-                                                           FontSize="13" TextColor="{StaticResource iOSGray}" />
-                                                    <Label Grid.Column="1" Text="{Binding CustomerNotes}"
-                                                           FontSize="14"
-                                                           TextColor="{StaticResource iOSGray}"
-                                                           LineBreakMode="WordWrap" />
-                                                </Grid>
-                                                <controls:SafeButton Text="View Details"
-                                                        BackgroundColor="{StaticResource iOSBlue}"
-                                                        TextColor="White"
-                                                        CornerRadius="10"
-                                                        FontSize="14"
-                                                        FontAttributes="Bold"
-                                                        HeightRequest="38"
-                                                        Padding="16,4"
-                                                        HorizontalOptions="End"
-                                                        Margin="0,6,0,0"
-                                                        Clicked="OnViewDetailsClicked"
-                                                        CommandParameter="{Binding .}" />
-                                            </VerticalStackLayout>
 
                                         </VerticalStackLayout>
                                     </Grid>

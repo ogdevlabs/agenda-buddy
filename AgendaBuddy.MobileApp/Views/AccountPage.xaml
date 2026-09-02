@@ -39,6 +39,10 @@
                         <Frame Style="{StaticResource InputFrame}" Margin="0">
                             <Entry Text="{Binding LastName}" Placeholder="Last name" Style="{StaticResource InputStyle}" AutomationId="ProfileLastNameEntry" />
                         </Frame>
+                        <Frame Style="{StaticResource InputFrame}">
+                            <Entry Text="{Binding PhoneNumber}" Placeholder="Phone (optional)" Keyboard="Telephone"
+                                   Style="{StaticResource InputStyle}" AutomationId="ProfilePhoneEntry" />
+                        </Frame>
                         <Frame Style="{StaticResource ErrorBannerStyle}" IsVisible="{Binding HasProfileError}" Margin="0">
                             <Label Text="{Binding ProfileErrorMessage}" TextColor="{StaticResource Error}" FontSize="13" />
                         </Frame>

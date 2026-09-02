@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using AgendaBuddy.MobileApp.Models;
 using AgendaBuddy.MobileApp.Routing;
 
@@ -61,16 +62,58 @@ public class CustomerApiService : ICustomerApiService
         {
             Email = GetString(data, "email"),
             FirstName = GetString(data, "firstName"),
-            LastName = GetString(data, "lastName")
+            LastName = GetString(data, "lastName"),
+            PhoneNumber = GetString(data, "phoneNumber")
         };
     }
 
-    public async Task<bool> UpdateProfileAsync(string email, string firstName, string lastName, CancellationToken ct = default)
+    /// <summary>
+    /// Creates the CustomerEntity that <c>POST api/v1/auth/register</c> does not. Called straight after a
+    /// successful registration.
+    /// </summary>
+    public async Task<bool> CreateProfileAsync(
+        string email, string firstName, string lastName, string? phoneNumber, CancellationToken ct = default)
     {
         var client = _httpClientFactory.CreateClient("AgendaBuddyApi");
+        var route = CustomerRouteBuilder.CreateCustomer();
+        var body = JsonSerializer.Serialize(
+            CustomerRouteBuilder.BuildCreateCustomerPayload(email, firstName, lastName, phoneNumber));
+        var response = await client.PostAsync(route.Path, new StringContent(body, Encoding.UTF8, "application/json"), ct);
+        return response.IsSuccessStatusCode;
+    }
+
+    /// <summary>
+    /// Fetch-merge-PUT, matching the Provider path. <c>PUT api/v1/customers/{email}</c> is a whole-document
+    /// replace, so sending only the edited fields silently dropped everything else on the record —
+    /// phone number, subscribedProviderCollection and appointmentCollection all went with it.
+    /// </summary>
+    public async Task<bool> UpdateProfileAsync(
+        string email, string firstName, string lastName, string? phoneNumber, CancellationToken ct = default)
+    {
+        var client = _httpClientFactory.CreateClient("AgendaBuddyApi");
+
+        var getResponse = await client.GetAsync(CustomerRouteBuilder.GetCustomer(email).Path, ct);
+        if (!getResponse.IsSuccessStatusCode)
+            return false;
+
+        var currentJson = await getResponse.Content.ReadAsStringAsync(ct);
+        using var doc = JsonDocument.Parse(currentJson);
+        if (doc.RootElement.ValueKind != JsonValueKind.Object || !doc.RootElement.TryGetProperty("data", out var data))
+            return false;
+
+        var entity = JsonNode.Parse(data.GetRawText())!.AsObject();
+        entity["firstName"] = firstName;
+        entity["lastName"] = lastName;
+        entity["phoneNumber"] = string.IsNullOrWhiteSpace(phoneNumber) ? null : phoneNumber;
+
+        // Customer.Api does not register ObjectIdJsonConverter (agenda-buddy-do5), so "id" arrives as the
+        // broken multi-field BSON shape and cannot be sent back — strip it and let the server match on the
+        // route's email, which is what it keys the replace on anyway.
+        entity.Remove("id");
+
         var route = CustomerRouteBuilder.UpdateCustomer(email);
-        var body = JsonSerializer.Serialize(CustomerRouteBuilder.BuildUpdateCustomerPayload(email, firstName, lastName));
-        var response = await client.PutAsync(route.Path, new StringContent(body, Encoding.UTF8, "application/json"), ct);
+        var response = await client.PutAsync(route.Path,
+            new StringContent(entity.ToJsonString(), Encoding.UTF8, "application/json"), ct);
         return response.IsSuccessStatusCode;
     }
 
@@ -131,7 +174,8 @@ public class CustomerApiService : ICustomerApiService
             {
                 Id = GetString(element, "id"),
                 Email = GetString(element, "email"),
-                FullName = string.Join(' ', new[] { firstName, lastName }.Where(s => !string.IsNullOrWhiteSpace(s)))
+                FullName = string.Join(' ', new[] { firstName, lastName }.Where(s => !string.IsNullOrWhiteSpace(s))),
+                Phone = GetString(element, "phoneNumber")
             });
         }
 

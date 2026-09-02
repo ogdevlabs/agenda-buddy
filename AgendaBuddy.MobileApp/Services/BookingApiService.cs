@@ -98,6 +98,11 @@ public class BookingApiService : IBookingApiService
         Status = detail.Status,
         ServiceId = detail.ServiceId,
         ServiceName = detail.ServiceName,
+        ServiceDurationMinutes = detail.ServiceDurationMinutes,
+        // Carried through so the provider's expanded card can show who to call. Dropping these here left
+        // the Phone row permanently blank however well the directory lookup worked upstream.
+        CustomerName = detail.CustomerName,
+        CustomerPhone = detail.CustomerPhone,
         CustomerNotes = detail.CustomerNotes
     };
 

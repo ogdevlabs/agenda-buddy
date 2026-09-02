@@ -29,7 +29,7 @@ public class DashboardViewModelTests
         };
 
         var service = new Mock<IBookingApiService>();
-        service.Setup(s => s.GetTodayAppointmentsAsync(It.IsAny<CancellationToken>()))
+        service.Setup(s => s.GetUpcomingAppointmentsAsync(It.IsAny<CancellationToken>()))
                .ReturnsAsync(appointments);
 
         var vm = new DashboardViewModel(service.Object, CreateMockSession().Object);
@@ -47,7 +47,7 @@ public class DashboardViewModelTests
     public async Task LoadAsync_NetworkError_SetsHasErrorTrueWithRealMessage_NoFabricatedData()
     {
         var service = new Mock<IBookingApiService>();
-        service.Setup(s => s.GetTodayAppointmentsAsync(It.IsAny<CancellationToken>()))
+        service.Setup(s => s.GetUpcomingAppointmentsAsync(It.IsAny<CancellationToken>()))
                .ThrowsAsync(new HttpRequestException("Network error"));
 
         var vm = new DashboardViewModel(service.Object, CreateMockSession().Object);
@@ -66,7 +66,7 @@ public class DashboardViewModelTests
     public async Task LoadAsync_EmptyResult_SetsIsEmptyTrue_NoFabricatedData()
     {
         var service = new Mock<IBookingApiService>();
-        service.Setup(s => s.GetTodayAppointmentsAsync(It.IsAny<CancellationToken>()))
+        service.Setup(s => s.GetUpcomingAppointmentsAsync(It.IsAny<CancellationToken>()))
                .ReturnsAsync(new List<AppointmentSummary>());
 
         var vm = new DashboardViewModel(service.Object, CreateMockSession().Object);
@@ -82,7 +82,7 @@ public class DashboardViewModelTests
     public async Task LoadAsync_CustomerRole_SetsDisplayNameToProviderName()
     {
         var service = new Mock<IBookingApiService>();
-        service.Setup(s => s.GetTodayAppointmentsAsync(It.IsAny<CancellationToken>()))
+        service.Setup(s => s.GetUpcomingAppointmentsAsync(It.IsAny<CancellationToken>()))
                .ReturnsAsync(new List<AppointmentSummary>());
 
         var vm = new DashboardViewModel(service.Object, CreateMockSession("alex.chen@agendabuddy.dev", "Customer").Object);
@@ -97,7 +97,7 @@ public class DashboardViewModelTests
     public async Task LoadAsync_ProviderRole_SetsDisplayNameToCustomerName()
     {
         var service = new Mock<IBookingApiService>();
-        service.Setup(s => s.GetTodayAppointmentsAsync(It.IsAny<CancellationToken>()))
+        service.Setup(s => s.GetUpcomingAppointmentsAsync(It.IsAny<CancellationToken>()))
                .ReturnsAsync(new List<AppointmentSummary>());
 
         var vm = new DashboardViewModel(service.Object, CreateMockSession().Object);

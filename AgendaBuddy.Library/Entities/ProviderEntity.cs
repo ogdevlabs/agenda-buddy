@@ -33,6 +33,15 @@ public class ProviderEntity
     [BsonElement("email")]
     public string Email { get; set; }
 
+    /// <summary>
+    /// Contact number shown to customers who have booked. Optional, for the same reason as
+    /// <see cref="CustomerEntity.PhoneNumber"/>.
+    /// </summary>
+    [Phone]
+    [BsonElement("phone_number")]
+    [BsonIgnoreIfNull]
+    public string? PhoneNumber { get; set; }
+
     [BsonElement("kafka_topic")] public string? KafkaTopic { get; set; }
 
     [BsonElement("services")] public List<ServiceEntity> ServiceEntities { get; set; } = [];

@@ -28,6 +28,15 @@ public class CustomerEntity
     [Required]
     public string? Email { get; set; }
 
+    /// <summary>
+    /// Contact number. Optional — an account is usable without one — but it is the only fallback channel a
+    /// provider has when a session is about to be missed, so registration asks for it.
+    /// </summary>
+    [Phone]
+    [BsonElement("phone_number")]
+    [BsonIgnoreIfNull]
+    public string? PhoneNumber { get; set; }
+
     [BsonElement("kafka_topic")] public string? KafkaTopic { get; set; }
 
     [BsonElement("subscribed_provider_collection")]

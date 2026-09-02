@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http;
 using System.Text;
 using AgendaBuddy.Library.Entities;
+using AgendaBuddy.MobileApp.Models;
 using AgendaBuddy.MobileApp.Services;
 using Moq;
 using Xunit;
@@ -86,7 +87,7 @@ public class CalendarApiServiceTests
             ["availability"] = availabilityJson,
             ["appointments"] = appointmentsJson
         });
-        var sut = new CalendarApiService(factory, CreateSession());
+        var sut = Sut(factory, CreateSession());
 
         var result = await sut.GetAvailabilityAsync(7);
 
@@ -132,7 +133,7 @@ public class CalendarApiServiceTests
         var session = new Mock<IUserSessionService>();
         session.SetupGet(s => s.Email).Returns("alice@example.com");
         session.SetupGet(s => s.IsProvider).Returns(false);
-        var sut = new CalendarApiService(factory, session.Object);
+        var sut = Sut(factory, session.Object);
 
         var result = await sut.GetAvailabilityAsync(1);
 
@@ -166,7 +167,7 @@ public class CalendarApiServiceTests
         session.SetupGet(s => s.Email).Returns(isProvider ? "prov@example.com" : "bob@example.com");
         session.SetupGet(s => s.IsProvider).Returns(isProvider);
         session.SetupGet(s => s.IsCustomer).Returns(!isProvider);
-        var sut = new CalendarApiService(CreateFactory(HttpStatusCode.OK, json), session.Object);
+        var sut = Sut(CreateFactory(HttpStatusCode.OK, json), session.Object);
 
         var result = await sut.GetAppointmentsAsync();
 
@@ -180,7 +181,7 @@ public class CalendarApiServiceTests
         // A failed availability call must not collapse the day-selector strip to nothing — same
         // reasoning as the 404-for-a-Customer case this mirrors (see GetAvailabilityAsync's remarks).
         var factory = CreateFactory(HttpStatusCode.Unauthorized);
-        var sut = new CalendarApiService(factory, CreateSession());
+        var sut = Sut(factory, CreateSession());
 
         var result = await sut.GetAvailabilityAsync(3);
 
@@ -220,7 +221,7 @@ public class CalendarApiServiceTests
         session.SetupGet(s => s.Email).Returns("alice@example.com");
         session.SetupGet(s => s.IsProvider).Returns(false);
         session.SetupGet(s => s.IsCustomer).Returns(true);
-        var sut = new CalendarApiService(factory, session.Object);
+        var sut = Sut(factory, session.Object);
 
         var result = await sut.GetAvailabilityAsync(3);
 
@@ -255,7 +256,7 @@ public class CalendarApiServiceTests
             }
             """;
 
-        var sut = new CalendarApiService(CreateFactory(HttpStatusCode.OK, json), CreateSession());
+        var sut = Sut(CreateFactory(HttpStatusCode.OK, json), CreateSession());
 
         var result = await sut.GetAppointmentsAsync();
 
@@ -288,7 +289,7 @@ public class CalendarApiServiceTests
             }
             """;
 
-        var sut = new CalendarApiService(CreateFactory(HttpStatusCode.OK, json), CreateSession());
+        var sut = Sut(CreateFactory(HttpStatusCode.OK, json), CreateSession());
 
         var result = await sut.GetAppointmentsAsync();
 
@@ -299,7 +300,7 @@ public class CalendarApiServiceTests
     [Fact]
     public async Task GetAppointments_Returns401_ReturnsEmptyList()
     {
-        var sut = new CalendarApiService(CreateFactory(HttpStatusCode.Unauthorized), CreateSession());
+        var sut = Sut(CreateFactory(HttpStatusCode.Unauthorized), CreateSession());
 
         var result = await sut.GetAppointmentsAsync();
 
@@ -351,4 +352,20 @@ public class CalendarApiServiceTests
             return Task.FromResult(response);
         }
     }
+    // CalendarApiService enriches appointments with the counterpart's name and phone from the directory.
+    // These tests are about the appointment/availability parsing, so the directory is empty here: rows then
+    // fall back to the email address, which is the behaviour the DisplayName assertions below expect.
+    private static CalendarApiService Sut(IHttpClientFactory factory, IUserSessionService session)
+    {
+        var customers = new Mock<ICustomerApiService>();
+        customers.Setup(c => c.GetCustomersAsync(It.IsAny<CancellationToken>()))
+                 .ReturnsAsync(new List<CustomerSummary>());
+
+        var providers = new Mock<IProviderApiService>();
+        providers.Setup(p => p.GetProvidersAsync(It.IsAny<CancellationToken>()))
+                 .ReturnsAsync(new List<CustomerSummary>());
+
+        return new CalendarApiService(factory, session, customers.Object, providers.Object);
+    }
+
 }

@@ -18,5 +18,8 @@ public interface ICustomerApiService
 
     Task<ProfileInfo?> GetProfileAsync(string email, CancellationToken ct = default);
 
-    Task<bool> UpdateProfileAsync(string email, string firstName, string lastName, CancellationToken ct = default);
+    /// <summary>Creates the domain profile that <c>POST api/v1/auth/register</c> does not.</summary>
+    Task<bool> CreateProfileAsync(string email, string firstName, string lastName, string? phoneNumber, CancellationToken ct = default);
+
+    Task<bool> UpdateProfileAsync(string email, string firstName, string lastName, string? phoneNumber, CancellationToken ct = default);
 }

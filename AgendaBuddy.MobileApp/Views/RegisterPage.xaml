@@ -53,18 +53,63 @@
                                Margin="0,4,0,0" />
                     </VerticalStackLayout>
 
+                    <!-- Name. Required: it is what the other party sees on a booking. -->
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                        <VerticalStackLayout Grid.Column="0">
+                            <Label Text="First Name"
+                                   Style="{StaticResource Caption}"
+                                   FontAttributes="Bold"
+                                   TextColor="{StaticResource TextSecondary}"
+                                   Margin="4,0,0,0" />
+                            <Frame Style="{StaticResource InputFrame}">
+                                <Entry Placeholder="Casey"
+                                       Text="{Binding FirstName}"
+                                       Style="{StaticResource InputStyle}"
+                                       AutomationId="RegisterFirstNameEntry" />
+                            </Frame>
+                        </VerticalStackLayout>
+                        <VerticalStackLayout Grid.Column="1">
+                            <Label Text="Last Name"
+                                   Style="{StaticResource Caption}"
+                                   FontAttributes="Bold"
+                                   TextColor="{StaticResource TextSecondary}"
+                                   Margin="4,0,0,0" />
+                            <Frame Style="{StaticResource InputFrame}">
+                                <Entry Placeholder="Client"
+                                       Text="{Binding LastName}"
+                                       Style="{StaticResource InputStyle}"
+                                       AutomationId="RegisterLastNameEntry" />
+                            </Frame>
+                        </VerticalStackLayout>
+                    </Grid>
+
                     <!-- Email -->
                     <Label Text="Email"
                            Style="{StaticResource Caption}"
                            FontAttributes="Bold"
                            TextColor="{StaticResource TextSecondary}"
-                           Margin="4,0,0,0" />
+                           Margin="4,8,0,0" />
                     <Frame Style="{StaticResource InputFrame}">
                         <Entry Placeholder="you@example.com"
                                Keyboard="Email"
                                Text="{Binding Email}"
                                Style="{StaticResource InputStyle}"
                                AutomationId="RegisterEmailEntry" />
+                    </Frame>
+
+                    <!-- Phone. Optional, and labelled so, but asked for here because it is the only
+                         fallback channel when a session is about to be missed. -->
+                    <Label Text="Phone (optional)"
+                           Style="{StaticResource Caption}"
+                           FontAttributes="Bold"
+                           TextColor="{StaticResource TextSecondary}"
+                           Margin="4,8,0,0" />
+                    <Frame Style="{StaticResource InputFrame}">
+                        <Entry Placeholder="555 123 4567"
+                               Keyboard="Telephone"
+                               Text="{Binding PhoneNumber}"
+                               Style="{StaticResource InputStyle}"
+                               AutomationId="RegisterPhoneEntry" />
                     </Frame>
 
                     <!-- Password -->

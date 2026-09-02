@@ -169,7 +169,7 @@
                                    FontSize="16"
                                    FontAttributes="Bold"
                                    TextColor="{StaticResource TextPrimary}" />
-                            <Label Text="{Binding Appointment.ScheduledAt, StringFormat='{0:h:mm tt} · 30 min'}"
+                            <Label Text="{Binding TimeAndDurationLabel}"
                                    FontSize="14"
                                    TextColor="{StaticResource TextSecondary}" />
                         </VerticalStackLayout>
@@ -353,6 +353,7 @@
                         Style="{StaticResource SuccessButton}"
                         Command="{Binding ConfirmCommand}"
                         IsEnabled="{Binding IsNotLoading}"
+                        IsVisible="{Binding ShowConfirmButton}"
                         AutomationId="ConfirmButton" />
 
                 <controls:SafeButton Grid.Column="1"

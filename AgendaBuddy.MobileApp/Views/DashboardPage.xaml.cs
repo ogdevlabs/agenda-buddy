@@ -16,6 +16,8 @@ public partial class DashboardPage : ContentPage
         _viewModel = viewModel;
         _secureStorage = secureStorage;
         BindingContext = _viewModel;
+
+        _viewModel.AppointmentSelected += OnAppointmentSelected;
     }
 
     protected override void OnAppearing()
@@ -29,6 +31,15 @@ public partial class DashboardPage : ContentPage
         if (sender is not Button btn || btn.CommandParameter is not AppointmentSummary selected)
             return;
 
+        await OpenAppointmentAsync(selected);
+    }
+
+    /// <summary>Tapping a card anywhere opens its detail page — the cards no longer expand in place.</summary>
+    private async void OnAppointmentSelected(object? sender, AppointmentSummary selected) =>
+        await OpenAppointmentAsync(selected);
+
+    private static async Task OpenAppointmentAsync(AppointmentSummary selected)
+    {
         var nav = new Dictionary<string, object>
         {
             ["appointmentId"] = selected.Id,
@@ -40,6 +51,7 @@ public partial class DashboardPage : ContentPage
             ["scheduledAt"] = selected.ScheduledAt.ToString("O"),
             ["status"] = selected.Status.ToString(),
             ["serviceName"] = selected.ServiceName,
+            ["serviceDurationMinutes"] = selected.ServiceDurationMinutes?.ToString() ?? "",
             ["customerNotes"] = selected.CustomerNotes ?? ""
         };
 

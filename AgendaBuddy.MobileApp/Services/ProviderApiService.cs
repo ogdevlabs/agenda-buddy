@@ -144,7 +144,8 @@ public class ProviderApiService : IProviderApiService
         {
             Email = data.TryGetProperty("email", out var e) && e.ValueKind == JsonValueKind.String ? e.GetString() ?? "" : "",
             FirstName = data.TryGetProperty("firstName", out var f) && f.ValueKind == JsonValueKind.String ? f.GetString() ?? "" : "",
-            LastName = data.TryGetProperty("lastName", out var l) && l.ValueKind == JsonValueKind.String ? l.GetString() ?? "" : ""
+            LastName = data.TryGetProperty("lastName", out var l) && l.ValueKind == JsonValueKind.String ? l.GetString() ?? "" : "",
+            PhoneNumber = data.TryGetProperty("phoneNumber", out var p) && p.ValueKind == JsonValueKind.String ? p.GetString() ?? "" : ""
         };
     }
 
@@ -157,7 +158,24 @@ public class ProviderApiService : IProviderApiService
     /// during this feature's own end-to-end validation. This fetches the current full document, patches
     /// only the two edited fields in place, and PUTs the whole thing back.
     /// </summary>
-    public async Task<bool> UpdateProfileAsync(string email, string firstName, string lastName, CancellationToken ct = default)
+    /// <summary>
+    /// Creates the ProviderEntity that <c>POST api/v1/auth/register</c> does not. Called straight after a
+    /// successful registration — until it exists the mandatory profession gate cannot be satisfied, because
+    /// the repository never upserts and so the professions PUT has nothing to update.
+    /// </summary>
+    public async Task<bool> CreateProfileAsync(
+        string email, string firstName, string lastName, string? phoneNumber, CancellationToken ct = default)
+    {
+        var client = _httpClientFactory.CreateClient("AgendaBuddyApi");
+        var route = ProviderRouteBuilder.CreateProvider();
+        var body = JsonSerializer.Serialize(
+            ProviderRouteBuilder.BuildCreateProviderPayload(email, firstName, lastName, phoneNumber));
+        var response = await client.PostAsync(route.Path, new StringContent(body, Encoding.UTF8, "application/json"), ct);
+        return response.IsSuccessStatusCode;
+    }
+
+    public async Task<bool> UpdateProfileAsync(
+        string email, string firstName, string lastName, string? phoneNumber, CancellationToken ct = default)
     {
         var client = _httpClientFactory.CreateClient("AgendaBuddyApi");
 
@@ -173,6 +191,7 @@ public class ProviderApiService : IProviderApiService
         var entity = JsonNode.Parse(data.GetRawText())!.AsObject();
         entity["firstName"] = firstName;
         entity["lastName"] = lastName;
+        entity["phoneNumber"] = string.IsNullOrWhiteSpace(phoneNumber) ? null : phoneNumber;
 
         // The device's zone IS the provider's working-hours zone. Recorded on every profile save so it
         // follows the device rather than needing to be picked from a list.
