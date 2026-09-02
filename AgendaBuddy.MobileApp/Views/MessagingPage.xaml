@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:controls="clr-namespace:AgendaBuddy.MobileApp.Controls"
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
              x:Class="AgendaBuddy.MobileApp.Views.MessagingPage"
              Title="Messages"
@@ -42,7 +43,7 @@
                        TextColor="#FF3B30"
                        FontSize="14"
                        VerticalOptions="Center" />
-                <Button Grid.Column="1"
+                <controls:SafeButton Grid.Column="1"
                         Text="Retry"
                         Command="{Binding LoadCommand}"
                         BackgroundColor="Transparent"
@@ -170,6 +171,19 @@
                                 <Label Text="{Binding OtherPartyEmail}"
                                        FontSize="13"
                                        TextColor="{StaticResource iOSGray}" />
+                                <controls:SafeButton Text="Open conversation"
+                                        BackgroundColor="{StaticResource iOSBlue}"
+                                        TextColor="White"
+                                        CornerRadius="10"
+                                        FontSize="13"
+                                        FontAttributes="Bold"
+                                        HeightRequest="36"
+                                        HorizontalOptions="Start"
+                                        Padding="16,4"
+                                        Margin="0,6,0,0"
+                                        Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.OpenThreadCommand}"
+                                        CommandParameter="{Binding .}"
+                                        AutomationId="OpenConversationButton" />
                             </VerticalStackLayout>
 
                             <!-- Separator -->

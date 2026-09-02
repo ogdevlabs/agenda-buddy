@@ -63,6 +63,22 @@ public class CredentialEntity
     [BsonElement("reset_token")]
     [BsonIgnoreIfNull]
     public PasswordResetTokenDocument? ResetToken { get; set; }
+
+    /// <summary>
+    /// True once the account holder has confirmed ownership of their registered email address.
+    /// Not gated on for login (ADR-052: no email provider is configured, so this is logged for
+    /// local development the same way a password-reset token is) — an informational/UX signal, not
+    /// an access control. Every account created before this field existed deserializes to false,
+    /// same tradeoff as <see cref="MustResetPassword"/>'s migration-stub default.
+    /// </summary>
+    [BsonElement("email_verified")]
+    [BsonIgnoreIfDefault]
+    public bool EmailVerified { get; set; }
+
+    /// <summary>Embedded single-use email-confirmation token. Null when no confirmation is pending.</summary>
+    [BsonElement("email_verification_token")]
+    [BsonIgnoreIfNull]
+    public EmailVerificationTokenDocument? EmailVerificationToken { get; set; }
 }
 
 /// <summary>Embedded sub-document storing the SHA-256 hash of the opaque refresh token.</summary>
@@ -87,6 +103,20 @@ public class PasswordResetTokenDocument
     public string Hash { get; set; }
 
     /// <summary>UTC expiry timestamp — short-lived (30 minutes), unlike the 24-hour refresh token.</summary>
+    [BsonElement("expiry")]
+    public DateTime Expiry { get; set; }
+}
+
+/// <summary>Embedded sub-document storing the SHA-256 hash of an opaque email-confirmation token.</summary>
+[System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public class EmailVerificationTokenDocument
+{
+    /// <summary>SHA-256 hex hash of the opaque token sent to the account holder. Raw token never stored.</summary>
+    [BsonElement("hash")]
+    public string Hash { get; set; }
+
+    /// <summary>UTC expiry timestamp — 24 hours, longer-lived than a password-reset token since
+    /// confirming ownership is not as time-sensitive as a credential change.</summary>
     [BsonElement("expiry")]
     public DateTime Expiry { get; set; }
 }

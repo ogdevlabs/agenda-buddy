@@ -145,6 +145,47 @@
           }
         }
       }
+    },
+    "/api/v1/services/{email}/{name}": {
+      "delete": {
+        "tags": [
+          "ServiceAPI"
+        ],
+        "operationId": "RemoveServiceFromProvider",
+        "parameters": [
+          {
+            "name": "email",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "404": {
+            "description": "Not Found"
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProviderEntityDataResponse"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -190,6 +231,15 @@
           },
           "dayOff": {
             "type": "boolean"
+          },
+          "serviceName": {
+            "type": "string",
+            "nullable": true
+          },
+          "serviceDurationMinutes": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -336,6 +386,17 @@
           },
           "isActive": {
             "type": "boolean"
+          },
+          "professions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "timeZoneId": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -388,6 +449,15 @@
           },
           "isActive": {
             "type": "boolean"
+          },
+          "durationMinutes": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "professionName": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false

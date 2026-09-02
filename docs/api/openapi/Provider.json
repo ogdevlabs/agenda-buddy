@@ -65,6 +65,14 @@
               "type": "integer",
               "format": "int32"
             }
+          },
+          {
+            "name": "bookableOnly",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
           }
         ],
         "responses": {
@@ -275,6 +283,15 @@
           },
           "dayOff": {
             "type": "boolean"
+          },
+          "serviceName": {
+            "type": "string",
+            "nullable": true
+          },
+          "serviceDurationMinutes": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -421,6 +438,17 @@
           },
           "isActive": {
             "type": "boolean"
+          },
+          "professions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "timeZoneId": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -491,6 +519,7 @@
           "email",
           "firstName",
           "lastName",
+          "professions",
           "services"
         ],
         "type": "object",
@@ -511,6 +540,13 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/ServiceEntity"
+            },
+            "nullable": true
+          },
+          "professions": {
+            "type": "array",
+            "items": {
+              "type": "string"
             },
             "nullable": true
           }
@@ -610,6 +646,15 @@
           },
           "isActive": {
             "type": "boolean"
+          },
+          "durationMinutes": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "professionName": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false

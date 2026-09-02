@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:controls="clr-namespace:AgendaBuddy.MobileApp.Controls"
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
              x:Class="AgendaBuddy.MobileApp.Views.LoginPage"
              Title="Sign In"
@@ -94,7 +95,7 @@
 
                     <!-- Sign in button + activity indicator -->
                     <Grid Margin="0,16,0,0">
-                        <Button Text="Sign In"
+                        <controls:SafeButton Text="Sign In"
                                 Style="{StaticResource PrimaryButton}"
                                 Command="{Binding SignInCommand}"
                                 IsVisible="{Binding IsLoading, Converter={StaticResource InvertedBoolConverter}}"
@@ -106,8 +107,24 @@
                                            VerticalOptions="Center" />
                     </Grid>
 
-                    <!-- Navigate to registration -->
+                    <!-- Forgot password -->
                     <Label HorizontalOptions="Center" Margin="0,16,0,0">
+                        <Label.FormattedText>
+                            <FormattedString>
+                                <Span Text="Forgot password?"
+                                      TextColor="{StaticResource Primary}"
+                                      FontAttributes="Bold"
+                                      FontSize="14">
+                                    <Span.GestureRecognizers>
+                                        <TapGestureRecognizer Tapped="OnForgotPasswordTapped" />
+                                    </Span.GestureRecognizers>
+                                </Span>
+                            </FormattedString>
+                        </Label.FormattedText>
+                    </Label>
+
+                    <!-- Navigate to registration -->
+                    <Label HorizontalOptions="Center" Margin="0,8,0,0">
                         <Label.FormattedText>
                             <FormattedString>
                                 <Span Text="Don't have an account? "

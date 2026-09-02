@@ -35,6 +35,29 @@ public class BookingAppointmentCommandHandler(
             return Result.Fail<AppointmentEntity>(
                 $"This time overlaps with an existing appointment for {appointmentEntity.EmailProvider}.");
 
+        // A named service has to be one this provider actually offers. Checked BEFORE any write, unlike
+        // the provider lookup further down, which happens after the appointment has already been
+        // persisted to its own collection -- validating there would leave an orphan behind.
+        //
+        // Deliberately not REQUIRED: appointments predate services being selectable and the provider-side
+        // booking path has never sent one, so demanding it would break existing callers. The client
+        // enforces choosing one; this stops an unmatched or invented name being stored.
+        if (!string.IsNullOrWhiteSpace(appointmentEntity.ServiceName))
+        {
+            var provider = await providerService.FindProvidersAsync(
+                SupportTools<ProviderEntity>.FilterByEmail(appointmentEntity.EmailProvider));
+
+            var service = provider?.ServiceEntities?.FirstOrDefault(s =>
+                string.Equals(s.Name, appointmentEntity.ServiceName, StringComparison.OrdinalIgnoreCase));
+
+            if (service is null)
+                return Result.Fail<AppointmentEntity>(
+                    $"{appointmentEntity.EmailProvider} does not offer a service named '{appointmentEntity.ServiceName}'.");
+
+            // Snapshot the length as booked, so editing the service later cannot rewrite what was agreed.
+            appointmentEntity.ServiceDurationMinutes ??= service.DurationMinutes;
+        }
+
         await mediator.Publish(new BookAppointmentEvent { AppointmentEntity = appointmentEntity }, cancellationToken);
 
         if (await SearchAndUpdateProviderAppointments(appointmentEntity))

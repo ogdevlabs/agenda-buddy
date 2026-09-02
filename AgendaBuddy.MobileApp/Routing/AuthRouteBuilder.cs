@@ -25,4 +25,12 @@ public static class AuthRouteBuilder
     /// (<c>AgendaBuddy.Identity/Program.cs:196</c>) instead of leaving it valid for its full 24-hour lifetime.
     /// </summary>
     public static RouteSpec Logout() => new(HttpMethod.Post, "api/v1/auth/logout");
+
+    /// <summary>
+    /// Always answers 202 regardless of whether the address matched an account (anti-enumeration,
+    /// AuthModule.cs) — the client cannot and should not distinguish "email sent" from "no such account".
+    /// </summary>
+    public static RouteSpec RequestPasswordReset() => new(HttpMethod.Post, "api/v1/auth/password-reset/request");
+
+    public static RouteSpec ConfirmPasswordReset() => new(HttpMethod.Post, "api/v1/auth/password-reset/confirm");
 }

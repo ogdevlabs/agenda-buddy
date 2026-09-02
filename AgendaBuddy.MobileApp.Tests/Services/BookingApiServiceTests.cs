@@ -148,11 +148,15 @@ public class BookingApiServiceTests
     // Session notes
     // ---------------------------------------------------------------------------
 
+    // Every Booking route wraps its response in DataResponse<T> — {"data": ..., "errors": []} (ADR-049).
+    // These fixtures carry that envelope; a bare body (the previous fixture shape) is not what the real
+    // backend ever sends.
+
     [Fact]
     public async Task GetNotes_Returns200_DeserializesList()
     {
         var json = """
-            [{"_id":"64f0c2f1a1b2c3d4e5f6a7b8","id":"64f0c2f1a1b2c3d4e5f6a7b8","providerEmail":"prov@example.com","appointmentIdentifier":"a1","content":"Knee injury noted."}]
+            {"data":[{"_id":"64f0c2f1a1b2c3d4e5f6a7b8","id":"64f0c2f1a1b2c3d4e5f6a7b8","providerEmail":"prov@example.com","appointmentIdentifier":"a1","content":"Knee injury noted."}],"errors":[]}
             """;
 
         var sut = new BookingApiService(CreateFactory(HttpStatusCode.OK, json), new Mock<ICalendarApiService>().Object);
@@ -167,7 +171,7 @@ public class BookingApiServiceTests
     public async Task CreateNote_Returns201_DeserializesNote()
     {
         var json = """
-            {"id":"64f0c2f1a1b2c3d4e5f6a7b8","providerEmail":"prov@example.com","appointmentIdentifier":"a1","content":"New note."}
+            {"data":{"id":"64f0c2f1a1b2c3d4e5f6a7b8","providerEmail":"prov@example.com","appointmentIdentifier":"a1","content":"New note."},"errors":[]}
             """;
 
         var sut = new BookingApiService(CreateFactory(HttpStatusCode.Created, json), new Mock<ICalendarApiService>().Object);
@@ -192,7 +196,7 @@ public class BookingApiServiceTests
     public async Task UpdateNote_Returns200_DeserializesNote()
     {
         var json = """
-            {"id":"64f0c2f1a1b2c3d4e5f6a7b8","providerEmail":"prov@example.com","appointmentIdentifier":"a1","content":"Updated."}
+            {"data":{"id":"64f0c2f1a1b2c3d4e5f6a7b8","providerEmail":"prov@example.com","appointmentIdentifier":"a1","content":"Updated."},"errors":[]}
             """;
 
         var sut = new BookingApiService(CreateFactory(HttpStatusCode.OK, json), new Mock<ICalendarApiService>().Object);
@@ -211,7 +215,7 @@ public class BookingApiServiceTests
     public async Task GetPayment_Returns200_DeserializesPayment()
     {
         var json = """
-            {"id":"64f0c2f1a1b2c3d4e5f6a7b8","appointmentIdentifier":"a1","providerEmail":"prov@example.com","customerEmail":"alice@example.com","amount":50,"currency":"usd","status":1}
+            {"data":{"id":"64f0c2f1a1b2c3d4e5f6a7b8","appointmentIdentifier":"a1","providerEmail":"prov@example.com","customerEmail":"alice@example.com","amount":50,"currency":"usd","status":1},"errors":[]}
             """;
 
         var sut = new BookingApiService(CreateFactory(HttpStatusCode.OK, json), new Mock<ICalendarApiService>().Object);
@@ -236,7 +240,7 @@ public class BookingApiServiceTests
     public async Task CreatePayment_Returns201_DeserializesPayment()
     {
         var json = """
-            {"id":"64f0c2f1a1b2c3d4e5f6a7b8","appointmentIdentifier":"a1","providerEmail":"prov@example.com","customerEmail":"alice@example.com","amount":75,"currency":"usd","status":1}
+            {"data":{"id":"64f0c2f1a1b2c3d4e5f6a7b8","appointmentIdentifier":"a1","providerEmail":"prov@example.com","customerEmail":"alice@example.com","amount":75,"currency":"usd","status":1},"errors":[]}
             """;
 
         var sut = new BookingApiService(CreateFactory(HttpStatusCode.Created, json), new Mock<ICalendarApiService>().Object);

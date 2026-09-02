@@ -36,6 +36,22 @@ public partial class AppointmentDetailViewModel : ObservableObject
     // matching the Sign In button + ActivityIndicator overlay pattern already used on LoginPage.
     [ObservableProperty] private bool _isCompleting;
 
+    [ObservableProperty] private bool _isCancelling;
+
+    // Booking's GET/POST/PUT notes routes are all Provider-role-gated server-side
+    // (OwnershipGuard.AssertRole(user, "Provider") in BookingModule.cs) — a Customer calling any of them gets
+    // 403, so the section is hidden rather than shown-then-erroring.
+    [ObservableProperty] private List<NoteEntity> _notes = new();
+
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(AddNoteCommand))]
+    private string _newNoteContent = string.Empty;
+    [ObservableProperty] private bool _isLoadingNotes;
+    [ObservableProperty] private string _notesErrorMessage = string.Empty;
+
+    public bool ShowNotesSection => _session.IsProvider;
+    public bool HasNotesError => !string.IsNullOrEmpty(NotesErrorMessage);
+
     public bool HasError => !string.IsNullOrEmpty(ErrorMessage);
     public bool IsNotLoading => !IsLoading;
     public bool HasAppointment => Appointment is not null;
@@ -123,6 +139,110 @@ public partial class AppointmentDetailViewModel : ObservableObject
     private void Complete() =>
         ActionRequested?.Invoke(this, new AppointmentActionEventArgs(ActionType.Complete));
 
+    /// <summary>
+    /// The real cancellation path — <c>DELETE /api/v1/booking/appointments/</c> — replacing the previous
+    /// (broken) attempt to reach <c>Cancelled</c> through the status-transition route, which only accepts
+    /// <c>Booked</c>/<c>Completed</c> as a target.
+    /// </summary>
+    public async Task<bool> ExecuteCancelAsync()
+    {
+        if (Appointment is null)
+            return false;
+
+        IsLoading = true;
+        IsCancelling = true;
+        ErrorMessage = string.Empty;
+
+        try
+        {
+            var cancelled = await _bookingApiService.CancelAppointmentAsync(
+                AppointmentId, Appointment.ProviderEmail, Appointment.CustomerEmail);
+
+            if (!cancelled)
+            {
+                ErrorMessage = "Could not cancel this appointment — try again.";
+                await ToastNotifier.ShowAsync(ErrorMessage);
+                return false;
+            }
+
+            Appointment.Status = AppointmentStatus.Cancelled;
+            OnPropertyChanged(nameof(Appointment));
+            await ToastNotifier.ShowAsync("Appointment cancelled.");
+            return true;
+        }
+        catch (GatewayServiceUnavailableException ex)
+        {
+            ErrorMessage = GatewayErrorMapper.Describe(ex.FailedService);
+            await ToastNotifier.ShowAsync(ErrorMessage);
+            return false;
+        }
+        catch (HttpRequestException)
+        {
+            ErrorMessage = "Could not cancel this appointment — check your connection and try again.";
+            await ToastNotifier.ShowAsync(ErrorMessage);
+            return false;
+        }
+        finally
+        {
+            IsLoading = false;
+            IsCancelling = false;
+        }
+    }
+
+    [RelayCommand]
+    private async Task LoadNotesAsync()
+    {
+        if (!ShowNotesSection)
+            return;
+
+        IsLoadingNotes = true;
+        NotesErrorMessage = string.Empty;
+
+        try
+        {
+            Notes = await _bookingApiService.GetNotesAsync(AppointmentId);
+        }
+        catch (Exception)
+        {
+            NotesErrorMessage = "Could not load notes. Check your connection and try again.";
+        }
+        finally
+        {
+            IsLoadingNotes = false;
+        }
+    }
+
+    [RelayCommand(CanExecute = nameof(CanAddNote))]
+    private async Task AddNoteAsync()
+    {
+        var content = NewNoteContent;
+        NewNoteContent = string.Empty;
+
+        try
+        {
+            var created = await _bookingApiService.CreateNoteAsync(AppointmentId, content);
+            if (created is not null)
+            {
+                Notes = new List<NoteEntity>(Notes) { created };
+                await ToastNotifier.ShowAsync("Note added.");
+            }
+            else
+            {
+                NotesErrorMessage = "Could not save the note. Check your connection and try again.";
+                NewNoteContent = content;
+                await ToastNotifier.ShowAsync(NotesErrorMessage);
+            }
+        }
+        catch (Exception)
+        {
+            NotesErrorMessage = "Could not save the note. Check your connection and try again.";
+            NewNoteContent = content;
+            await ToastNotifier.ShowAsync(NotesErrorMessage);
+        }
+    }
+
+    private bool CanAddNote() => !string.IsNullOrWhiteSpace(NewNoteContent);
+
     public async Task ExecuteStatusUpdateAsync(AppointmentStatus status)
     {
         IsLoading = true;
@@ -138,20 +258,24 @@ public partial class AppointmentDetailViewModel : ObservableObject
             {
                 // API returned non-success (e.g., 400 for invalid status).
                 ErrorMessage = "Status update failed";
+                await ToastNotifier.ShowAsync(ErrorMessage);
             }
             else
             {
                 Appointment = updated;
+                await ToastNotifier.ShowAsync($"Appointment {status.ToString().ToLowerInvariant()}.");
             }
         }
         catch (GatewayServiceUnavailableException ex)
         {
             // ux-review.md finding 2: name the failed cluster rather than a generic message.
             ErrorMessage = GatewayErrorMapper.Describe(ex.FailedService);
+            await ToastNotifier.ShowAsync(ErrorMessage);
         }
         catch (HttpRequestException)
         {
             ErrorMessage = "Status update failed — check your connection and try again.";
+            await ToastNotifier.ShowAsync(ErrorMessage);
         }
         finally
         {
@@ -162,6 +286,8 @@ public partial class AppointmentDetailViewModel : ObservableObject
     }
 
     partial void OnErrorMessageChanged(string value) => OnPropertyChanged(nameof(HasError));
+
+    partial void OnNotesErrorMessageChanged(string value) => OnPropertyChanged(nameof(HasNotesError));
 
     partial void OnIsLoadingChanged(bool value) => OnPropertyChanged(nameof(IsNotLoading));
 

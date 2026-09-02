@@ -27,6 +27,7 @@ public class IdentityService(
     private const string Issuer = "agenda-buddy-identity";
     private static readonly string[] AllowedRoles = ["Provider", "Customer"];
     private static readonly TimeSpan ResetTokenLifetime = TimeSpan.FromMinutes(30);
+    private static readonly TimeSpan EmailVerificationTokenLifetime = TimeSpan.FromHours(24);
 
     /// <summary>
     /// Lockout thresholds. Both parameters are optional so the shipped defaults apply to any caller that
@@ -66,6 +67,8 @@ public class IdentityService(
 
         var hash = BCrypt.Net.BCrypt.HashPassword(password, workFactor: 12);
         var (accessToken, refreshOpaque, refreshHash) = GenerateTokenPair(email, role);
+        var (verificationOpaque, verificationHash) = CreateRefreshToken();
+        var verificationExpiry = clock.UtcNow.Add(EmailVerificationTokenLifetime);
 
         var credential = new CredentialEntity
         {
@@ -78,6 +81,12 @@ public class IdentityService(
             {
                 Hash = refreshHash,
                 Expiry = clock.UtcNow.AddHours(24)
+            },
+            EmailVerified = false,
+            EmailVerificationToken = new EmailVerificationTokenDocument
+            {
+                Hash = verificationHash,
+                Expiry = verificationExpiry
             }
         };
 
@@ -93,7 +102,63 @@ public class IdentityService(
         _log.LogInformation(
             "credential.created ok for {Account} as {Role}", AccountReference(email), role);
 
-        return new TokenResponse(accessToken, refreshOpaque);
+        // No email provider is configured (ADR-052) — logged for local development the same way a
+        // password-reset token is, not gated on for login (see EmailVerified's own remarks).
+        _log.LogInformation(
+            "credential.email-confirmation-requested for {Account}: token={ConfirmationToken} expires {Expiry:O}",
+            AccountReference(email), verificationOpaque, verificationExpiry);
+
+        if (notificationService is not null)
+        {
+            await notificationService.SendAsync(new NotificationEntity(
+                recipientEmail: email,
+                subject: "Confirm your email address",
+                body: "Welcome to Agenda Buddy. Please confirm you own this email address to finish setting up your account.",
+                type: NotificationType.EmailConfirmationRequested,
+                appointmentIdentifier: string.Empty));
+        }
+
+        return new TokenResponse(accessToken, refreshOpaque, verificationOpaque);
+    }
+
+    /// <summary>
+    /// Consumes a single-use email-confirmation token. Not required for login (see
+    /// <see cref="CredentialEntity.EmailVerified"/>'s own remarks) — this only flips that flag.
+    /// </summary>
+    public async Task ConfirmEmailAsync(string email, string token)
+    {
+        email = email.ToLowerInvariant();
+        var account = AccountReference(email);
+        var presentedHash = HashToken(token);
+        var now = clock.UtcNow;
+
+        CredentialEntity? credential;
+        try
+        {
+            var filter = new BsonDocument
+            {
+                { "email", email },
+                { "email_verification_token.hash", presentedHash },
+                { "email_verification_token.expiry", new BsonDocument("$gt", now) }
+            };
+
+            credential = await repository.FindOneAndUpdateAsync(
+                filter,
+                new BsonDocument
+                {
+                    { "$set", new BsonDocument("email_verified", true) },
+                    { "$unset", new BsonDocument("email_verification_token", 1) }
+                });
+        }
+        catch (Exception ex) when (IsMongoDown(ex))
+        {
+            throw new ServiceUnavailableException();
+        }
+
+        if (credential is null)
+            throw new UnauthorizedException("This confirmation link is invalid or has expired.");
+
+        _log.LogInformation("credential.email-confirmed ok for {Account}", account);
     }
 
     /// <summary>

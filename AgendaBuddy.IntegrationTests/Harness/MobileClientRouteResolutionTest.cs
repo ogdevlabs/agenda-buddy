@@ -198,7 +198,7 @@ public class MobileCalendarRouteResolutionTest(ServiceHostFixture<CalendarAnchor
     public async Task Availability_Resolves()
     {
         using var service = await SeedAsync();
-        var route = CalendarRouteBuilder.Availability(Provider, DateOnly.FromDateTime(DateTime.UtcNow), 30);
+        var route = CalendarRouteBuilder.Availability(Provider, 30);
 
         var response = await service.Client.SendAsync(MobileRouteRequests.Build(
             route, _tokens.CreateToken(Provider, TokenFactory.ProviderRole)));

@@ -39,10 +39,18 @@ public class MongoDbRepositoryTest
 
     private const string PagedMethod = "GetPagedAsync";
 
+    // GetPagedAsync is overloaded (unfiltered, and filtered by a BsonDocument), so a name-only lookup is
+    // AmbiguousMatchException. Every lookup below states the parameter types it means.
+    private static MethodInfo PagedBySkipTake(Type declaring) =>
+        declaring.GetMethod(PagedMethod, [typeof(int), typeof(int)])!;
+
+    private static MethodInfo PagedByFilter(Type declaring) =>
+        declaring.GetMethod(PagedMethod, [typeof(BsonDocument), typeof(int), typeof(int)])!;
+
     [Fact]
     public void IRepository_DeclaresGetPagedAsync_TakingSkipAndTake()
     {
-        var method = typeof(IRepository<>).GetMethod(PagedMethod);
+        var method = PagedBySkipTake(typeof(IRepository<>));
 
         Assert.NotNull(method);
         Assert.Equal(
@@ -61,7 +69,7 @@ public class MongoDbRepositoryTest
         // against that shape — so narrowing it to int here would be a breaking change to a published
         // contract, not an implementation detail.
         var entityType = typeof(IRepository<>).GetGenericArguments()[0];
-        var returnType = typeof(IRepository<>).GetMethod(PagedMethod)!.ReturnType;
+        var returnType = PagedBySkipTake(typeof(IRepository<>)).ReturnType;
 
         Assert.Equal(typeof(Task<>), returnType.GetGenericTypeDefinition());
 
@@ -78,9 +86,33 @@ public class MongoDbRepositoryTest
     {
         // Guards the failure mode that would otherwise only surface at runtime: the interface
         // gains the method and one of the two implementers is forgotten.
-        var implementation = typeof(MongoDbRepository<>).GetMethod(PagedMethod);
+        var implementation = PagedBySkipTake(typeof(MongoDbRepository<>));
 
         Assert.NotNull(implementation);
+    }
+
+    // The filtered overload exists so a caller can page a SUBSET without either short-paging (filtering
+    // after the page) or loading everything (filtering a full read) -- see the interface's own remarks.
+    [Fact]
+    public void IRepository_DeclaresAFilteredGetPagedAsync_AndBothImplementersHaveIt()
+    {
+        var declared = PagedByFilter(typeof(IRepository<>));
+
+        Assert.NotNull(declared);
+        Assert.Equal(
+            new[] { "filter", "skip", "take" },
+            declared.GetParameters().Select(parameter => parameter.Name).ToArray());
+
+        Assert.NotNull(PagedByFilter(typeof(MongoDbRepository<>)));
+    }
+
+    // Both overloads must agree on the page shape, or callers cannot swap one for the other.
+    [Fact]
+    public void BothGetPagedAsyncOverloadsReturnTheSamePageShape()
+    {
+        Assert.Equal(
+            PagedBySkipTake(typeof(IRepository<>)).ReturnType,
+            PagedByFilter(typeof(IRepository<>)).ReturnType);
     }
 
     // ── the partial-update primitive (ADR-032) ───────────────────────────────────────

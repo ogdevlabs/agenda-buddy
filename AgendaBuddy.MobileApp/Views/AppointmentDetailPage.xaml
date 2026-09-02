@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:controls="clr-namespace:AgendaBuddy.MobileApp.Controls"
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
              x:Class="AgendaBuddy.MobileApp.Views.AppointmentDetailPage"
              Title="Appointment"
@@ -22,13 +23,13 @@
             </Grid.RowDefinitions>
 
             <!-- Back button -->
-            <Button Grid.Row="0"
+            <controls:SafeButton Grid.Row="0"
                     Text="&#x2190; Back"
                     BackgroundColor="Transparent"
                     TextColor="#C7D2FE"
                     FontSize="14"
                     HorizontalOptions="Start"
-                    Padding="0"
+                    Padding="4"
                     Margin="0,0,0,16"
                     Clicked="OnBackClicked" />
 
@@ -38,7 +39,7 @@
                    CornerRadius="36"
                    WidthRequest="72"
                    HeightRequest="72"
-                   Padding="0"
+                   Padding="4"
                    HasShadow="False"
                    BorderColor="Transparent"
                    HorizontalOptions="Center">
@@ -107,7 +108,7 @@
                        FontSize="14"
                        VerticalOptions="Center"
                        AutomationId="ErrorBanner" />
-                <Button Grid.Column="1"
+                <controls:SafeButton Grid.Column="1"
                         Text="Retry"
                         Command="{Binding LoadCommand}"
                         BackgroundColor="{StaticResource Error}"
@@ -146,7 +147,7 @@
                                CornerRadius="16"
                                WidthRequest="52"
                                HeightRequest="52"
-                               Padding="0"
+                               Padding="4"
                                HasShadow="False"
                                BorderColor="Transparent">
                             <VerticalStackLayout HorizontalOptions="Center" VerticalOptions="Center" Spacing="0">
@@ -195,7 +196,7 @@
                                    CornerRadius="12"
                                    WidthRequest="36"
                                    HeightRequest="36"
-                                   Padding="0"
+                                   Padding="4"
                                    HasShadow="False"
                                    BorderColor="Transparent">
                                 <Label Text="&#x2709;"
@@ -217,7 +218,7 @@
                                    CornerRadius="12"
                                    WidthRequest="36"
                                    HeightRequest="36"
-                                   Padding="0"
+                                   Padding="4"
                                    HasShadow="False"
                                    BorderColor="Transparent">
                                 <Label Text="&#x260E;"
@@ -274,7 +275,7 @@
                                FontAttributes="Bold"
                                TextColor="{StaticResource TextPrimary}"
                                VerticalOptions="Center" />
-                        <Button Grid.Column="1"
+                        <controls:SafeButton Grid.Column="1"
                                 Text="View"
                                 Style="{StaticResource PrimaryButton}"
                                 FontSize="13"
@@ -282,6 +283,57 @@
                                 Clicked="OnViewPaymentClicked"
                                 AutomationId="ViewPaymentButton" />
                     </Grid>
+                </Frame>
+
+                <!-- Session notes (Provider-only — the backend routes are role-gated) -->
+                <Frame CornerRadius="20"
+                       BackgroundColor="White"
+                       BorderColor="#E2E8F0"
+                       HasShadow="True"
+                       Padding="20"
+                       IsVisible="{Binding ShowNotesSection}">
+                    <VerticalStackLayout Spacing="10">
+                        <Label Text="SESSION NOTES"
+                               FontSize="11"
+                               TextColor="{StaticResource TextMuted}"
+                               TextTransform="Uppercase"
+                               CharacterSpacing="1.5" />
+
+                        <Frame Style="{StaticResource ErrorBannerStyle}" IsVisible="{Binding HasNotesError}">
+                            <Label Text="{Binding NotesErrorMessage}" TextColor="{StaticResource Error}" FontSize="13" />
+                        </Frame>
+
+                        <ActivityIndicator IsRunning="{Binding IsLoadingNotes}" IsVisible="{Binding IsLoadingNotes}"
+                                           Color="{StaticResource Primary}" HorizontalOptions="Center" />
+
+                        <CollectionView ItemsSource="{Binding Notes}" SelectionMode="None" AutomationId="NotesCollectionView">
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate>
+                                    <VerticalStackLayout Spacing="2" Margin="0,4">
+                                        <Label Text="{Binding Content}" FontSize="14" TextColor="{StaticResource TextPrimary}" />
+                                        <BoxView HeightRequest="0.5" Color="#F1F5F9" Margin="0,6,0,0" />
+                                    </VerticalStackLayout>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" Margin="0,4,0,0">
+                            <Frame Grid.Column="0" Style="{StaticResource InputFrame}" Margin="0">
+                                <Entry Text="{Binding NewNoteContent}"
+                                       Placeholder="Add a note..."
+                                       Style="{StaticResource InputStyle}"
+                                       AutomationId="NewNoteEntry" />
+                            </Frame>
+                            <controls:SafeButton Grid.Column="1"
+                                    Text="Add"
+                                    Style="{StaticResource PrimaryButton}"
+                                    FontSize="13"
+                                    Padding="16,8"
+                                    HeightRequest="44"
+                                    Command="{Binding AddNoteCommand}"
+                                    AutomationId="AddNoteButton" />
+                        </Grid>
+                    </VerticalStackLayout>
                 </Frame>
 
             </VerticalStackLayout>
@@ -296,14 +348,14 @@
                Padding="20,16">
             <Grid ColumnDefinitions="*,*,*" ColumnSpacing="10">
 
-                <Button Grid.Column="0"
+                <controls:SafeButton Grid.Column="0"
                         Text="Confirm"
                         Style="{StaticResource SuccessButton}"
                         Command="{Binding ConfirmCommand}"
                         IsEnabled="{Binding IsNotLoading}"
                         AutomationId="ConfirmButton" />
 
-                <Button Grid.Column="1"
+                <controls:SafeButton Grid.Column="1"
                         Text="Cancel"
                         Style="{StaticResource DangerButton}"
                         Command="{Binding CancelCommand}"
@@ -313,7 +365,7 @@
                 <!-- Complete button + activity indicator (ux-review.md 8-state spot-check, finding
                      P3), matching the Sign In button/ActivityIndicator overlay pattern on LoginPage. -->
                 <Grid Grid.Column="2">
-                    <Button Text="Complete"
+                    <controls:SafeButton Text="Complete"
                             Style="{StaticResource PrimaryButton}"
                             FontSize="14"
                             Padding="12,14"

@@ -17,7 +17,9 @@ public class GetProvidersQueryHandler(
 
         await mediator.Publish(new GetAllProvidersEvent(), cancellationToken);
 
-        var (items, totalCount) = await providerService.GetPagedProvidersAsync(request.Page.Skip, request.Page.PageSize);
+        var (items, totalCount) = request.BookableOnly
+            ? await providerService.GetPagedBookableProvidersAsync(request.Page.Skip, request.Page.PageSize)
+            : await providerService.GetPagedProvidersAsync(request.Page.Skip, request.Page.PageSize);
         var providerEntities = items.ToList();
 
         await eventStore.SaveAsync(providerEntities.Count != 0

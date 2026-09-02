@@ -47,12 +47,26 @@ public sealed class ProviderSummary
     /// <summary>The provider's service catalogue — what a customer needs in order to choose one.</summary>
     public required List<ServiceEntity> Services { get; init; }
 
+    /// <summary>The provider's own Professions (<see cref="ProviderEntity.Professions"/>) — added
+    /// 2026-08-29 alongside that field; this DTO's own remarks about a missing profession field predate it.</summary>
+    public required List<string> Professions { get; init; }
+
     /// <summary>Projects a stored provider to the shape a non-owner may see.</summary>
+    /// <remarks>
+    /// <b>The whole service catalogue is exposed, deliberately.</b> Narrowing it to the "bookable" ones
+    /// (active and classified under a profession) was tried and reverted: this is a general discovery
+    /// projection whose contract is "services visible, appointments and customers not", and filtering here
+    /// broke that — <c>ProviderProjectionTest</c> caught it. Bookability is filtered where it belongs
+    /// instead: at the provider level by <c>bookableOnly=true</c> on the list route, and at the service
+    /// level by the booking screen, which reads the catalogue from
+    /// <c>GET /api/v1/services/{email}</c> and drops inactive/unclassified entries itself.
+    /// </remarks>
     public static ProviderSummary From(ProviderEntity provider) => new()
     {
         Email = provider.Email,
         FirstName = provider.FirstName,
         LastName = provider.LastName,
-        Services = provider.ServiceEntities,
+        Services = provider.ServiceEntities ?? [],
+        Professions = provider.Professions,
     };
 }

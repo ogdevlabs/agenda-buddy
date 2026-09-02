@@ -1,3 +1,5 @@
+using AgendaBuddy.Library;
+
 namespace AgendaBuddy.AppHost;
 
 /// <summary>
@@ -119,8 +121,8 @@ internal static class AppHostWiring
         var profession = AddApi<Projects.AgendaBuddy_Profession_Api>("profession", agendaDb);
 
         // The eighth resource. launchProfileName: null for the same reason as the seven
-        // services (AC-1.4) — Gateway has no appsettings.json/launchSettings.json of its own yet, but
-        // the AppHost must still assign its port rather than adopt one.
+        // services (AC-1.4) — Gateway has no appsettings.json/launchSettings.json of its own to adopt
+        // an applicationUrl from.
         //
         // WithReference injects services__<name>__http__0 for each destination — the service-discovery
         // keys the routing config reads to resolve where to forward a request (Aspire's DCP orchestrator
@@ -132,8 +134,16 @@ internal static class AppHostWiring
         // the seven services above) — without this, the resource has zero EndpointAnnotations at
         // all, so nothing is here for WithExternalHttpEndpoints() below to mark external, and the
         // Cloud publisher would deploy a Gateway with no ingress whatsoever, not merely internal.
+        //
+        // Locally the host port is PINNED (LocalGatewayAddress — see its remarks for why the Gateway is
+        // exempt from AC-1.4 while the seven services are not). Only the host port is fixed; the port the
+        // Gateway itself listens on stays Aspire-assigned, so this reserves one predictable address for
+        // clients without reintroducing a hardcoded bind. In the Cloud shape the platform owns ingress,
+        // so no port is pinned there.
         var gateway = builder.AddProject<Projects.AgendaBuddy_Gateway>("gateway", launchProfileName: null)
-            .WithHttpEndpoint(name: "http");
+            .WithHttpEndpoint(
+                name: "http",
+                port: deployTarget == DeploymentTarget.Local ? LocalGatewayAddress.Port : null);
 
         foreach (var service in new[] { booking, calendar, customer, provider, services, profession, identity })
         {

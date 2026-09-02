@@ -15,6 +15,16 @@
         ContentTemplate="{DataTemplate views:RegisterPage}"
         Shell.TabBarIsVisible="False" />
 
+    <ShellContent
+        Route="forgotPassword"
+        ContentTemplate="{DataTemplate views:ForgotPasswordPage}"
+        Shell.TabBarIsVisible="False" />
+
+    <ShellContent
+        Route="resetPasswordConfirm"
+        ContentTemplate="{DataTemplate views:ResetPasswordConfirmPage}"
+        Shell.TabBarIsVisible="False" />
+
     <TabBar>
         <Tab Title="Dashboard" Icon="dashboard_icon.png">
             <ShellContent
@@ -40,6 +50,11 @@
             <ShellContent
                 Route="notifications"
                 ContentTemplate="{DataTemplate views:NotificationsPage}" />
+        </Tab>
+        <Tab Title="Account">
+            <ShellContent
+                Route="account"
+                ContentTemplate="{DataTemplate views:AccountPage}" />
         </Tab>
     </TabBar>
 

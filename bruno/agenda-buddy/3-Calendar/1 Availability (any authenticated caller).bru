@@ -1,0 +1,44 @@
+meta {
+  name: 1 Availability (any authenticated caller)
+  type: http
+  seq: 1
+}
+get {
+  url: {{gatewayUrl}}/api/v1/calendar/availability/{{providerEmail}}?days=90&service=
+}
+params:query {
+  days: 90
+  service: 
+}
+tests {
+  test("200 even for a caller who is not the provider", function () {
+    expect(res.getStatus()).to.equal(200);
+  });
+  test("free start times only — never appointment detail", function () {
+    const body = JSON.stringify(res.getBody());
+    expect(body).to.not.include("emailCustomer");
+    expect(body).to.not.include("appointmentStatus");
+  });
+  test("honours the requested window", function () {
+    const days = new Set(res.getBody().data.map(s => s.substring(0, 10)));
+    expect(days.size).to.be.at.most(90);
+  });
+}
+docs {
+  **Ownership guard removed 2026-08-29, deliberately.** A customer has to see a provider's free slots to
+  book one, and `AssertOwner` made this route answer `403` to every customer — the booking flow was
+  impossible. Authentication is still required.
+
+  What that exposes is bounded by the response shape: **free start times and nothing else** — no
+  appointment, no counterparty, no service, no reason. Busy time is only inferable as "absent from this
+  list", which is inherent to any booking product. `2 Appointments` stays owner-only, because that one
+  *does* carry customer emails.
+
+  - `days` — window length, clamped to 1..90 server-side (`AvailabilityCalculator.MaxDays`).
+  - `service` — a service NAME belonging to this provider. Slots are sized to that service's
+    `durationMinutes`, so a 90-minute service is never offered a start time that would run into the next
+    appointment. Unknown/blank falls back to a 60-minute grid rather than returning nothing.
+
+  An empty list is now `200`, not `404`: a fully-booked provider is not "not found". `404` means only
+  that `{email}` matches no provider.
+}

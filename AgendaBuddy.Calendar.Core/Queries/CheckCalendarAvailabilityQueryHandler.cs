@@ -24,7 +24,16 @@ public class CheckCalendarAvailabilityQueryHandler(
             return Result.Fail<List<DateTime>>("No provider found for this email.");
         }
 
-        var slots = SupportTools<ProviderEntity>.GetThirtyDaysCalendarAvailability(providerEntity);
+        // Slot length follows the chosen service, so a 90-minute service is never offered a start time
+        // that would run into the next appointment. An unknown/absent service falls back to the default
+        // length rather than yielding an empty calendar.
+        var duration = providerEntity.ServiceEntities
+            ?.FirstOrDefault(service => string.Equals(service.Name, request.ServiceName, StringComparison.OrdinalIgnoreCase))
+            ?.DurationMinutes
+            ?? AvailabilityCalculator.DefaultDurationMinutes;
+
+        var slots = AvailabilityCalculator.GetAvailability(
+            providerEntity, DateTime.UtcNow, request.Days, duration);
         await eventStore.SaveAsync(QueryAudit.Success(nameof(CheckCalendarAvailabilityQuery), slots.Count));
         return Result.Ok(slots);
     }

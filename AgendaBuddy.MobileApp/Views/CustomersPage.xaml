@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:controls="clr-namespace:AgendaBuddy.MobileApp.Controls"
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
              x:Class="AgendaBuddy.MobileApp.Views.CustomersPage"
+             x:Name="ThisPage"
              Title="{Binding PageTitle}"
              BackgroundColor="#F2F2F7"
              Shell.NavBarIsVisible="False">
@@ -18,10 +20,10 @@
         <Color x:Key="iOSLabel">#000000</Color>
     </ContentPage.Resources>
 
-    <Grid RowDefinitions="Auto,Auto,Auto,Auto,*">
+    <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,*">
 
         <!-- Immersive header -->
-        <Grid Grid.Row="0" BackgroundColor="#1C1C1E" Padding="0">
+        <Grid Grid.Row="0" BackgroundColor="{StaticResource Primary}" Padding="0">
             <VerticalStackLayout Padding="24,24,24,20" Spacing="6">
                 <Label Text="{Binding PageTitle}"
                        FontSize="30"
@@ -59,8 +61,62 @@
             </Grid>
         </Frame>
 
+
+        <!-- Profession chips: the FIRST filter layer, before narrowing to a provider. Hidden for a
+             Provider viewing customers, and hidden when only one profession exists (a filter with a
+             single option filters nothing). -->
+        <ScrollView Grid.Row="2"
+                    Orientation="Horizontal"
+                    HorizontalScrollBarVisibility="Never"
+                    Margin="0,4,0,0"
+                    IsVisible="{Binding HasProfessionFilter}">
+            <HorizontalStackLayout Padding="16,0" Spacing="8"
+                                   BindableLayout.ItemsSource="{Binding AvailableProfessions}">
+                <BindableLayout.ItemTemplate>
+                    <DataTemplate>
+                        <Frame CornerRadius="16"
+                               Padding="14,7"
+                               HasShadow="False"
+                               BorderColor="{StaticResource iOSGray5}"
+                               BackgroundColor="White"
+                               AutomationId="ProfessionChip">
+                            <Frame.GestureRecognizers>
+                                <TapGestureRecognizer
+                                    Command="{Binding Source={x:Reference ThisPage}, Path=BindingContext.SelectProfessionCommand}"
+                                    CommandParameter="{Binding}" />
+                            </Frame.GestureRecognizers>
+                            <Label Text="{Binding}"
+                                   FontSize="14"
+                                   TextColor="{StaticResource iOSLabel}"
+                                   VerticalOptions="Center" />
+                        </Frame>
+                    </DataTemplate>
+                </BindableLayout.ItemTemplate>
+            </HorizontalStackLayout>
+        </ScrollView>
+
+        <!-- The active filter, with a way back to "all". Separate from the chips above because a chip
+             cannot show its own selected state through BindableLayout without a per-item view model. -->
+        <HorizontalStackLayout Grid.Row="3"
+                               Padding="16,8,16,0"
+                               Spacing="8"
+                               IsVisible="{Binding HasSelectedProfession}">
+            <Label Text="{Binding SelectedProfessionLabel}"
+                   FontSize="13"
+                   FontAttributes="Bold"
+                   TextColor="{StaticResource Primary}"
+                   VerticalOptions="Center" />
+            <controls:SafeButton Text="Clear"
+                    BackgroundColor="Transparent"
+                    TextColor="{StaticResource iOSBlue}"
+                    FontSize="13"
+                    Padding="4"
+                    Command="{Binding ClearProfessionCommand}"
+                    AutomationId="ClearProfessionButton" />
+        </HorizontalStackLayout>
+
         <!-- Loading indicator -->
-        <ActivityIndicator Grid.Row="2"
+        <ActivityIndicator Grid.Row="3"
                            IsRunning="{Binding IsLoading}"
                            IsVisible="{Binding IsLoading}"
                            Color="{StaticResource iOSGray}"
@@ -68,7 +124,7 @@
                            Margin="0,16,0,0" />
 
         <!-- Error banner -->
-        <Frame Grid.Row="3"
+        <Frame Grid.Row="4"
                BackgroundColor="#FFF2F2"
                CornerRadius="10"
                BorderColor="#FFD6D6"
@@ -83,7 +139,7 @@
                        FontSize="14"
                        VerticalOptions="Center"
                        AutomationId="ErrorLabel" />
-                <Button Grid.Column="1"
+                <controls:SafeButton Grid.Column="1"
                         Text="Retry"
                         Command="{Binding LoadCommand}"
                         BackgroundColor="Transparent"
@@ -95,7 +151,7 @@
         </Frame>
 
         <!-- Empty state -->
-        <VerticalStackLayout Grid.Row="4"
+        <VerticalStackLayout Grid.Row="5"
                              IsVisible="{Binding IsEmpty}"
                              VerticalOptions="Center"
                              HorizontalOptions="Center"
@@ -114,7 +170,7 @@
         </VerticalStackLayout>
 
         <!-- Contact list -->
-        <CollectionView Grid.Row="4"
+        <CollectionView Grid.Row="5"
                         ItemsSource="{Binding Customers}"
                         IsVisible="{Binding IsEmpty, Converter={StaticResource InvertedBoolConverter}}"
                         SelectionMode="None"
@@ -237,22 +293,45 @@
                                 <!-- Provider actions -->
                                 <HorizontalStackLayout Spacing="8" Margin="0,8,0,0"
                                                        IsVisible="{Binding IsProvider}">
-                                    <Button Text="Book"
+                                    <controls:SafeButton Text="Book"
                                             BackgroundColor="{StaticResource iOSPurple}"
                                             TextColor="White"
                                             CornerRadius="10"
                                             FontSize="14"
                                             FontAttributes="Bold"
                                             HeightRequest="38"
-                                            Padding="18,0" />
-                                    <Button Text="View Availability"
-                                            BackgroundColor="#EDE9FE"
-                                            TextColor="{StaticResource iOSPurple}"
+                                            Padding="18,4"
+                                            Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.BookCommand}"
+                                            CommandParameter="{Binding .}"
+                                            AutomationId="BookProviderButton" />
+                                    <controls:SafeButton Text="{Binding IsSubscribed, Converter={toolkit:BoolToObjectConverter TrueObject='Unsubscribe', FalseObject='Subscribe'}}"
+                                            BackgroundColor="{Binding IsSubscribed, Converter={toolkit:BoolToObjectConverter TrueObject=#F1F5F9, FalseObject=#EDE9FE}}"
+                                            TextColor="{Binding IsSubscribed, Converter={toolkit:BoolToObjectConverter TrueObject={StaticResource iOSGray}, FalseObject={StaticResource iOSPurple}}}"
                                             CornerRadius="10"
                                             FontSize="14"
                                             FontAttributes="Bold"
                                             HeightRequest="38"
-                                            Padding="18,0" />
+                                            Padding="18,4"
+                                            IsEnabled="{Binding IsBusy, Converter={StaticResource InvertedBoolConverter}}"
+                                            Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.ToggleSubscriptionCommand}"
+                                            CommandParameter="{Binding .}"
+                                            AutomationId="SubscribeToggleButton" />
+                                </HorizontalStackLayout>
+
+                                <!-- Customer actions (provider's own contact list — book a session with a known customer) -->
+                                <HorizontalStackLayout Spacing="8" Margin="0,8,0,0"
+                                                       IsVisible="{Binding IsProvider, Converter={StaticResource InvertedBoolConverter}}">
+                                    <controls:SafeButton Text="Book"
+                                            BackgroundColor="{StaticResource iOSBlue}"
+                                            TextColor="White"
+                                            CornerRadius="10"
+                                            FontSize="14"
+                                            FontAttributes="Bold"
+                                            HeightRequest="38"
+                                            Padding="18,4"
+                                            Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.BookCommand}"
+                                            CommandParameter="{Binding .}"
+                                            AutomationId="BookCustomerButton" />
                                 </HorizontalStackLayout>
 
                                 <!-- Customer-specific -->

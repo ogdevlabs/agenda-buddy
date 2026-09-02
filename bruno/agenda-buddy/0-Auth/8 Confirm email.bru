@@ -1,0 +1,25 @@
+meta {
+  name: 8 Confirm email
+  type: http
+  seq: 8
+}
+post {
+  url: {{gatewayUrl}}/api/v1/auth/register/confirm
+  body: json
+  auth: none
+}
+body:json {
+  {
+    "email": "{{providerEmail}}",
+    "token": "paste the emailVerificationToken logged by 1 Register here"
+  }
+}
+tests {
+  test("204 on a valid, unexpired, unused token", function () { expect(res.getStatus()).to.equal(204); });
+}
+docs {
+  Single-use and 24-hour-lived — a second attempt with the same token, or one made after expiry, gets
+  `401`. Not required for login (ADR-052: no email provider is configured, so the raw token is only
+  logged server-side, mirroring password-reset) — this only flips `email_verified` to true on the
+  account, an informational signal rather than an access control.
+}

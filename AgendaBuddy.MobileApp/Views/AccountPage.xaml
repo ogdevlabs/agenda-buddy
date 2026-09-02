@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:controls="clr-namespace:AgendaBuddy.MobileApp.Controls"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             x:Class="AgendaBuddy.MobileApp.Views.AccountPage"
+             Title="Account"
+             BackgroundColor="#F2F2F7"
+             Shell.NavBarIsVisible="False">
+
+    <ContentPage.Resources>
+        <toolkit:InvertedBoolConverter x:Key="InvertedBoolConverter" />
+    </ContentPage.Resources>
+
+    <ScrollView>
+        <VerticalStackLayout Padding="20,16,20,24" Spacing="14">
+
+            <Frame CornerRadius="16" BackgroundColor="White" BorderColor="#E2E8F0" HasShadow="False" Padding="18">
+                <VerticalStackLayout Spacing="10">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <VerticalStackLayout Grid.Column="0" Spacing="4">
+                            <Label Text="{Binding Email}" FontSize="16" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" AutomationId="AccountEmailLabel" />
+                            <Label Text="{Binding Role}" FontSize="13" TextColor="{StaticResource TextMuted}" AutomationId="AccountRoleLabel" />
+                        </VerticalStackLayout>
+                        <controls:SafeButton Grid.Column="1"
+                                Text="{Binding IsEditingProfile, Converter={toolkit:BoolToObjectConverter TrueObject='Cancel', FalseObject='Edit'}}"
+                                BackgroundColor="Transparent"
+                                TextColor="{StaticResource Primary}"
+                                FontSize="13"
+                                Command="{Binding ToggleEditProfileCommand}"
+                                AutomationId="EditProfileButton" />
+                    </Grid>
+
+                    <VerticalStackLayout Spacing="8" IsVisible="{Binding IsEditingProfile}" Margin="0,4,0,0">
+                        <BoxView HeightRequest="0.5" Color="#F1F5F9" />
+                        <Frame Style="{StaticResource InputFrame}" Margin="0,4,0,0">
+                            <Entry Text="{Binding FirstName}" Placeholder="First name" Style="{StaticResource InputStyle}" AutomationId="ProfileFirstNameEntry" />
+                        </Frame>
+                        <Frame Style="{StaticResource InputFrame}" Margin="0">
+                            <Entry Text="{Binding LastName}" Placeholder="Last name" Style="{StaticResource InputStyle}" AutomationId="ProfileLastNameEntry" />
+                        </Frame>
+                        <Frame Style="{StaticResource ErrorBannerStyle}" IsVisible="{Binding HasProfileError}" Margin="0">
+                            <Label Text="{Binding ProfileErrorMessage}" TextColor="{StaticResource Error}" FontSize="13" />
+                        </Frame>
+                        <Grid>
+                            <controls:SafeButton Text="Save"
+                                    Style="{StaticResource PrimaryButton}"
+                                    HeightRequest="44"
+                                    Command="{Binding SaveProfileCommand}"
+                                    IsVisible="{Binding IsSavingProfile, Converter={StaticResource InvertedBoolConverter}}"
+                                    AutomationId="SaveProfileButton" />
+                            <ActivityIndicator IsRunning="{Binding IsSavingProfile}" IsVisible="{Binding IsSavingProfile}"
+                                               Color="{StaticResource Primary}" HorizontalOptions="Center" />
+                        </Grid>
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+            </Frame>
+
+            <Frame CornerRadius="16" BackgroundColor="White" BorderColor="#E2E8F0" HasShadow="False" Padding="0">
+                <VerticalStackLayout>
+                    <controls:SafeButton Text="My Services"
+                            IsVisible="{Binding IsProvider}"
+                            BackgroundColor="Transparent"
+                            TextColor="{StaticResource TextPrimary}"
+                            HorizontalOptions="Fill"
+                            Padding="18,16"
+                            Clicked="OnServicesClicked"
+                            AutomationId="MyServicesButton" />
+                    <controls:SafeButton Text="Professions"
+                            IsVisible="{Binding IsProvider}"
+                            BackgroundColor="Transparent"
+                            TextColor="{StaticResource TextPrimary}"
+                            HorizontalOptions="Fill"
+                            Padding="18,16"
+                            Clicked="OnProfessionsClicked"
+                            AutomationId="ProfessionsButton" />
+                    <controls:SafeButton Text="Change Password"
+                            BackgroundColor="Transparent"
+                            TextColor="{StaticResource TextPrimary}"
+                            HorizontalOptions="Fill"
+                            Padding="18,16"
+                            Command="{Binding RequestPasswordChangeCommand}"
+                            AutomationId="ChangePasswordButton" />
+                </VerticalStackLayout>
+            </Frame>
+
+            <Frame Style="{StaticResource ErrorBannerStyle}" IsVisible="{Binding HasError}">
+                <Label Text="{Binding ErrorMessage}" TextColor="{StaticResource Error}" FontSize="14" />
+            </Frame>
+
+            <controls:SafeButton Text="Log Out"
+                    Style="{StaticResource SecondaryButton}"
+                    Command="{Binding LogoutCommand}"
+                    AutomationId="AccountLogoutButton" />
+
+            <controls:SafeButton Text="Deactivate Account"
+                    Style="{StaticResource DangerButton}"
+                    IsVisible="{Binding IsProvider}"
+                    Clicked="OnDeactivateClicked"
+                    IsEnabled="{Binding IsDeactivating, Converter={StaticResource InvertedBoolConverter}}"
+                    AutomationId="DeactivateAccountButton" />
+
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>

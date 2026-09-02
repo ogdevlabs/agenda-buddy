@@ -29,6 +29,17 @@ namespace AgendaBuddy.IntegrationTests.Harness;
 /// inverted.
 /// </para>
 /// <para>
+/// ⚠️ <b>Scope narrowed 2026-08-29: only <c>appointments</c> is owner-only.</b> <c>availability</c> was
+/// deliberately opened to any authenticated caller, because a customer must be able to see a provider's
+/// free slots in order to book one, and the guard made that route answer 403 to every customer. The two
+/// routes are not equivalent and never really were: <c>availability</c> returns bare free start times,
+/// whereas <c>appointments</c> projects whole appointments carrying counterparty emails. The IDOR
+/// described above was always about the latter. <see cref="AvailabilityIsReadableByANonOwner_ButLeaksNoAppointmentDetail"/>
+/// holds the new boundary — readable, but still no appointment detail in the body. Neither route is
+/// cached any more (agenda-buddy-326), so the ordering invariant below now only concerns
+/// <c>appointments</c> should caching ever return.
+/// </para>
+/// <para>
 /// ⚠️ <b>The assertion is "not 200-with-data", not "exactly 403"</b>, and that is deliberate.
 /// <c>CacheAside</c> has no test at all and returns <c>default!</c> on a 500 ms lock timeout, which surfaces
 /// as a spurious 404 (<c>11-testing.md:90</c>). A strict 403 assertion would flake under cache-lock
@@ -92,8 +103,18 @@ public class CalendarOwnershipTest : IClassFixture<ServiceHostFixture<CalendarAn
         $"api/v1/calendar/appointments/{Owner}",
     };
 
+    /// <summary>
+    /// Only <c>appointments</c> is owner-only now. <c>availability</c> was deliberately opened to any
+    /// authenticated caller so a customer can see a provider's free slots and book one — with the guard in
+    /// place that route answered 403 to every customer, which made booking impossible.
+    /// </summary>
+    public static TheoryData<string> OwnerOnlyRoutes() => new()
+    {
+        $"api/v1/calendar/appointments/{Owner}",
+    };
+
     [Theory]
-    [MemberData(nameof(BothRoutes))]
+    [MemberData(nameof(OwnerOnlyRoutes))]
     public async Task AC10_ADifferentAuthenticatedPrincipalGets403(string route)
     {
         using var service = await StartWithTheOwnersCalendar();
@@ -115,6 +136,26 @@ public class CalendarOwnershipTest : IClassFixture<ServiceHostFixture<CalendarAn
 
         Assert.NotEqual(HttpStatusCode.Forbidden, response.StatusCode);
         Assert.NotEqual(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    // The bound on opening availability up: a non-owner may learn WHEN the provider is free, and nothing
+    // else. If this route ever starts projecting appointments — the mistake the sibling route exists to
+    // prevent — a counterparty email appears in the body and this fails.
+    [Fact]
+    public async Task AvailabilityIsReadableByANonOwner_ButLeaksNoAppointmentDetail()
+    {
+        using var service = await StartWithTheOwnersCalendar();
+
+        var response = await service.Client.SendAsync(
+            Read($"api/v1/calendar/availability/{Owner}", Intruder));
+
+        Assert.NotEqual(HttpStatusCode.Forbidden, response.StatusCode);
+        Assert.NotEqual(HttpStatusCode.Unauthorized, response.StatusCode);
+
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.DoesNotContain(CustomerInTheBook, body, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("emailCustomer", body, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("appointmentStatus", body, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

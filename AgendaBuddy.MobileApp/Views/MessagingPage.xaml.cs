@@ -1,5 +1,6 @@
 #if MOBILE
 using AgendaBuddy.MobileApp.Infrastructure;
+using AgendaBuddy.MobileApp.Models;
 using AgendaBuddy.MobileApp.ViewModels;
 
 namespace AgendaBuddy.MobileApp.Views;
@@ -15,6 +16,17 @@ public partial class MessagingPage : ContentPage
         BindingContext = vm;
 
         JwtDelegatingHandler.UnauthorizedAccess += OnUnauthorizedAccess;
+        _vm.ThreadOpenRequested += OnThreadOpenRequested;
+    }
+
+    private async void OnThreadOpenRequested(object? sender, MessageThreadStub thread)
+    {
+        var nav = new Dictionary<string, object>
+        {
+            ["threadId"] = thread.ThreadId,
+            ["recipientEmail"] = thread.OtherPartyEmail
+        };
+        await Shell.Current.GoToAsync("messageThread", nav);
     }
 
     protected override async void OnAppearing()

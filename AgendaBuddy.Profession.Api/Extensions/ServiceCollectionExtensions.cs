@@ -43,6 +43,12 @@ public static class ServiceCollectionExtensions
         // the same scope gets the same object, not two.
         serviceCollection.AddScoped<IProfessionService>(sp => sp.GetRequiredService<ProfessionService>());
 
+        // Same forwarding for IProviderService (2026-08-28, provider-professions handlers) --
+        // ProviderService was registered above but never bound to its interface, so any handler
+        // typed against IProviderService (matching every other service's own convention) failed
+        // DI resolution with a 500 the moment it was actually dispatched through.
+        serviceCollection.AddScoped<IProviderService>(sp => sp.GetRequiredService<ProviderService>());
+
         serviceCollection.AddHostedService(serviceProvider =>
             new ProfessionSeedHostedService(
                 serviceProvider.GetRequiredService<IMongoClient>(),

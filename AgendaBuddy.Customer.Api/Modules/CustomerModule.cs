@@ -39,6 +39,7 @@ public class CustomerModule : ICarterModule
                 ClaimsPrincipal user,
                 IMediator mediator,
                 CustomerEntity customerEntity,
+                IDistributedCache cache,
                 CancellationToken cancellationToken) =>
             {
                 if (!MiniValidator.TryValidate(customerEntity, out var errors))
@@ -54,7 +55,12 @@ public class CustomerModule : ICarterModule
                 var result = await mediator.Send(new UpdateCustomerCommand { Email = email, CustomerEntity = customerEntity }, cancellationToken);
 
                 if (result.IsSuccess)
+                {
+                    // agenda-buddy-xrw: same gap as Provider's PUT -- the 5-minute cache-aside TTL on
+                    // GET /{email} was never invalidated on write.
+                    await cache.RemoveAsync($"customers-{email}", cancellationToken);
                     return TypedResults.Accepted("api/v1/customers", DataResponse<CustomerEntity>.Ok(result.Value));
+                }
 
                 return TypedResults.NotFound();
             })

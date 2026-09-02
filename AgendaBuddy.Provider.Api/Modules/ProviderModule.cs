@@ -15,6 +15,7 @@ public class ProviderModule : ICarterModule
                 IMediator mediator,
                 ClaimsPrincipal user,
                 ProviderEntity providerEntity,
+                IDistributedCache cache,
                 CancellationToken cancellationToken) =>
             {
                 if (!MiniValidator.TryValidate(providerEntity, out var errors))
@@ -37,7 +38,19 @@ public class ProviderModule : ICarterModule
                 var result = await mediator.Send(new AddProviderCommand { ProviderEntity = providerEntity }, cancellationToken);
 
                 if (result.IsSuccess)
+                {
+                    // GetAllProviders below caches by page/pageSize (key "providers-p{page}-s{size}"), and
+                    // a new provider changes that list's content. The mobile client only ever requests
+                    // page=1/size=25 (ProviderRouteBuilder.Providers' own defaults, which PageRequest.Clamp
+                    // passes through unchanged) -- the one key actually served, not a general invalidate-all.
+                    // A newly-registered provider was invisible to the directory for up to the 5-minute TTL
+                    // without this.
+                    // Both variants of the page the mobile client actually requests -- the filtered one is
+                    // what the directory reads, the unfiltered one is the route's default.
+                    await cache.RemoveAsync("providers-p1-s25-bTrue", cancellationToken);
+                    await cache.RemoveAsync("providers-p1-s25-bFalse", cancellationToken);
                     return TypedResults.Created($"/api/v1/providers/{providerEntity.Id}", DataResponse<ProviderEntity>.Ok(result.Value));
+                }
 
                 return TypedResults.ValidationProblem(GenerateErrorMessage(
                     "Provider Registration Error", result.Errors.Select(e => e.Message).ToArray()));
@@ -50,7 +63,7 @@ public class ProviderModule : ICarterModule
             IMediator mediator,
             IDistributedCache cache,
             CancellationToken cancellationToken,
-            int? page = null, int? pageSize = null) =>
+            int? page = null, int? pageSize = null, bool bookableOnly = false) =>
         {
             // ADR-023. Clamped, never rejected: a 400 would tell an attacker the exact boundary and
             // leave an honest client no way to discover the cap. MaxPageSize is a SECURITY control -- an uncapped
@@ -59,10 +72,13 @@ public class ProviderModule : ICarterModule
 
             // ⚠️ The cache key carries the page, or page 2 would serve page 1's entry. Cheap to get wrong and
             // invisible in a single-page test.
-            var key = $"providers-p{pageRequest.Page}-s{pageRequest.PageSize}";
+            // bookableOnly is part of the key: the filtered and unfiltered pages are different result
+            // sets, and sharing one entry would serve whichever was cached first to both callers.
+            var key = $"providers-p{pageRequest.Page}-s{pageRequest.PageSize}-b{bookableOnly}";
             var providerCollection = await cache.GetOrCreateAsync(key, async token =>
             {
-                var result = await mediator.Send(new GetProvidersQuery { Page = pageRequest }, token);
+                var result = await mediator.Send(
+                    new GetProvidersQuery { Page = pageRequest, BookableOnly = bookableOnly }, token);
                 return result.IsSuccess ? result.Value : null!;
             }, cancellationToken: cancellationToken);
 
@@ -132,6 +148,7 @@ public class ProviderModule : ICarterModule
             ClaimsPrincipal user,
             IMediator mediator,
             ProviderEntity providerEntity,
+            IDistributedCache cache,
             CancellationToken cancellationToken) =>
         {
             if (!MiniValidator.TryValidate(providerEntity, out var errors))
@@ -143,7 +160,13 @@ public class ProviderModule : ICarterModule
             var result = await mediator.Send(new UpdateProviderCommand { Email = email, ProviderEntity = providerEntity }, cancellationToken);
 
             if (result.IsSuccess)
+            {
+                // agenda-buddy-xrw: the 5-minute cache-aside TTL on GET /{email} was never invalidated
+                // on write, so a provider saving their own profile (AccountViewModel.SaveProfileAsync)
+                // couldn't see the change reflected back for up to 5 minutes.
+                await cache.RemoveAsync($"providers-{email}", cancellationToken);
                 return TypedResults.Accepted("api/v1/providers", DataResponse<ProviderEntity>.Ok(result.Value));
+            }
 
             return TypedResults.NotFound();
         })
@@ -194,6 +217,7 @@ public class ProviderModule : ICarterModule
                     ClaimsPrincipal user,
                     IMediator mediator,
                     IProviderService providerService,
+                    IDistributedCache cache,
                     CancellationToken cancellationToken) =>
                 {
                     try
@@ -209,9 +233,11 @@ public class ProviderModule : ICarterModule
 
                     var result = await mediator.Send(new DeactivateProviderCommand { ProviderEntity = existing }, cancellationToken);
 
-                    return result.IsSuccess
-                        ? TypedResults.Accepted($"/api/v1/providers/{email}", DataResponse<ProviderEntity>.Ok(result.Value))
-                        : TypedResults.NotFound();
+                    if (!result.IsSuccess)
+                        return TypedResults.NotFound();
+
+                    await cache.RemoveAsync($"providers-{email}", cancellationToken);
+                    return TypedResults.Accepted($"/api/v1/providers/{email}", DataResponse<ProviderEntity>.Ok(result.Value));
                 })
             .WithName("DeactivateProvider")
             .RequireAuthorization();

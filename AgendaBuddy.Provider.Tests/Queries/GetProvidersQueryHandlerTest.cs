@@ -57,4 +57,37 @@ public class GetProvidersQueryHandlerTest
 
         await Assert.ThrowsAsync<ArgumentNullException>(() => handler.Handle(null!, CancellationToken.None));
     }
+
+    // Which of the two reads is used is the whole point of BookableOnly, so both directions are pinned --
+    // a default that silently flipped back to "every provider" would reintroduce unbookable entries.
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task Handle_RoutesToTheBookableOrUnfilteredRead(bool bookableOnly)
+    {
+        var page = PageRequest.Clamp(1, 25);
+        var empty = ((IEnumerable<ProviderEntity>)new List<ProviderEntity>(), 0L);
+        var providerService = new Mock<IProviderService>();
+        providerService.Setup(p => p.GetPagedBookableProvidersAsync(page.Skip, page.PageSize)).ReturnsAsync(empty);
+        providerService.Setup(p => p.GetPagedProvidersAsync(page.Skip, page.PageSize)).ReturnsAsync(empty);
+        var handler = new GetProvidersQueryHandler(
+            Mock.Of<IMediator>(), providerService.Object, Mock.Of<IEventStore>());
+
+        await handler.Handle(
+            new GetProvidersQuery { Page = page, BookableOnly = bookableOnly }, CancellationToken.None);
+
+        providerService.Verify(p => p.GetPagedBookableProvidersAsync(page.Skip, page.PageSize),
+            bookableOnly ? Times.Once() : Times.Never());
+        providerService.Verify(p => p.GetPagedProvidersAsync(page.Skip, page.PageSize),
+            bookableOnly ? Times.Never() : Times.Once());
+    }
+
+    // Opt-in, not the default: defaulting it to true narrowed a general paginated list and broke seven
+    // integration tests covering pagination, the non-owner projection and query auditing. The
+    // customer-facing client asks for it explicitly instead.
+    [Fact]
+    public void BookableOnly_DefaultsToFalse_SoTheListContractIsUnchanged()
+    {
+        Assert.False(new GetProvidersQuery { Page = PageRequest.Clamp(1, 25) }.BookableOnly);
+    }
 }

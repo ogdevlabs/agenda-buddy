@@ -59,5 +59,79 @@ public class ProfessionModule : ICarterModule
 
                 return TypedResults.NotFound();
             }).WithName("GetProfessionByName");
+
+        // ── Provider-profession association ─────────────────────────────────────────────────────
+        // A provider's own selection from the catalog above, not a write to the catalog itself
+        // (ADR-025 still stands unchanged for /api/v1/professions and /api/v1/professions/{name}).
+
+        professions.MapGet("/providers/{email}",
+                async Task<Ok<DataResponse<List<string>>>> (
+                    IMediator mediator,
+                    string email,
+                    CancellationToken cancellationToken) =>
+                {
+                    var result = await mediator.Send(new GetProfessionsFromProviderQuery { Email = email }, cancellationToken);
+                    return TypedResults.Ok(DataResponse<List<string>>.Ok(result.IsSuccess ? result.Value : []));
+                })
+            .WithName("GetProfessionsFromProvider")
+            .RequireAuthorization();
+
+        professions.MapPut("/providers/{email}",
+                async Task<Results<ValidationProblem, NotFound, Ok<DataResponse<List<string>>>>> (
+                    IMediator mediator,
+                    ClaimsPrincipal user,
+                    string email,
+                    [FromBody] List<string> professionNames,
+                    CancellationToken cancellationToken) =>
+                {
+                    if (professionNames is null || professionNames.Count == 0)
+                        return TypedResults.ValidationProblem(new Dictionary<string, string[]>
+                        {
+                            { "professionNames", ["At least one profession name is required."] }
+                        });
+
+                    OwnershipGuard.AssertOwner(user, email);
+
+                    var result = await mediator.Send(new AddProfessionsToProviderCommand
+                    {
+                        Email = email,
+                        ProfessionNames = professionNames
+                    }, cancellationToken);
+
+                    if (result.IsSuccess)
+                        return TypedResults.Ok(DataResponse<List<string>>.Ok(result.Value));
+
+                    return TypedResults.NotFound();
+                })
+            .WithName("AddProfessionsToProvider")
+            .RequireAuthorization();
+
+        professions.MapDelete("/providers/{email}/{name}",
+                async Task<Results<NotFound, Conflict<DataResponse<List<string>>>, Ok<DataResponse<List<string>>>>> (
+                    IMediator mediator,
+                    ClaimsPrincipal user,
+                    string email,
+                    string name,
+                    CancellationToken cancellationToken) =>
+                {
+                    OwnershipGuard.AssertOwner(user, email);
+
+                    var result = await mediator.Send(new RemoveProfessionFromProviderCommand
+                    {
+                        Email = email,
+                        ProfessionName = name
+                    }, cancellationToken);
+
+                    if (result.IsSuccess)
+                        return TypedResults.Ok(DataResponse<List<string>>.Ok(result.Value));
+
+                    if (result.Errors.Any(e => e.Message == RemoveProfessionFromProviderCommandHandler.ActiveAppointmentsErrorMessage))
+                        return TypedResults.Conflict(DataResponse<List<string>>.Fail(
+                            [RemoveProfessionFromProviderCommandHandler.ActiveAppointmentsErrorMessage]));
+
+                    return TypedResults.NotFound();
+                })
+            .WithName("RemoveProfessionFromProvider")
+            .RequireAuthorization();
     }
 }

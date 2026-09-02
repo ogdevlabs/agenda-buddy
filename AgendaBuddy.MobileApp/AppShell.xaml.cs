@@ -18,6 +18,9 @@ public partial class AppShell : Shell
         Microsoft.Maui.Controls.Routing.RegisterRoute("appointmentDetail", typeof(AppointmentDetailPage));
         Microsoft.Maui.Controls.Routing.RegisterRoute("report", typeof(ProviderReportPage));
         Microsoft.Maui.Controls.Routing.RegisterRoute("payment", typeof(PaymentPage));
+        Microsoft.Maui.Controls.Routing.RegisterRoute("book", typeof(BookAppointmentPage));
+        Microsoft.Maui.Controls.Routing.RegisterRoute("services", typeof(ServicesPage));
+        Microsoft.Maui.Controls.Routing.RegisterRoute("professions", typeof(ProfessionsPage));
 
         JwtDelegatingHandler.UnauthorizedAccess += async (_, _) =>
             await Shell.Current.GoToAsync("//login");

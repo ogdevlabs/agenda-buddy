@@ -1,4 +1,5 @@
 using System.Net;
+using System.Text.Json;
 using System.Net.Http.Headers;
 using AgendaBuddy.IntegrationTests.Harness;
 using AgendaBuddy.IntegrationTests.Persistence;
@@ -66,22 +67,37 @@ public class CalendarAuditTest(ServiceHostFixture<CalendarAnchor> host, CryptoSe
         Assert.Equal("Success", audit.Status);
     }
 
+    // Contract CHANGED 2026-08-29, and this test changed with it rather than being deleted.
+    //
+    // It used to assert 404 + a "Failed" audit for an address matching no provider, because looking the
+    // address up as a provider was the handler's only path. That is exactly what made a CUSTOMER's own
+    // appointments unreachable — a customer never has a ProviderEntity, so every customer got 404 for
+    // their own calendar. The handler now falls through to gathering the caller's appointments from the
+    // provider side, so "no provider with this email" is no longer a failure: it is a successful read that
+    // happens to be empty, which is also what a customer with no bookings legitimately gets.
+    //
+    // The route is ownership-guarded, so the caller already owns the address; there is nothing useful to
+    // distinguish "unknown address" from "no appointments yet", and 404 for the latter was the bug. What
+    // still matters — and is what this now pins — is that the read is ATTRIBUTED: an audit event is written
+    // either way, so a query cannot happen unrecorded.
     [Fact]
-    public async Task AC7_ACheckOfAMissingProvidersAppointments_WritesAFailedAuditEvent()
+    public async Task AC7_ACheckOfAnAddressWithNoAppointments_Is200AndStillWritesAnAuditEvent()
     {
         using var service = host.StartService("Production");
-        // Deliberately not seeded: providerService.FindProvidersAsync returns null, which is the
-        // handler's only failure branch (CheckCalendarAppointmentsQueryHandler.cs).
+        // Deliberately not seeded: no provider and no appointments anywhere for this address.
 
         var response = await service.Client.SendAsync(
             Read($"api/v1/calendar/appointments/{MissingProviderEmail}", MissingProviderEmail));
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode); // the route maps the handler's null! to 404
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Empty(body.RootElement.GetProperty("data").EnumerateArray());
 
         var audit = await Events(service)
             .Find(Builders<Event>.Filter.Eq(e => e.Type, "CheckCalendarAppointmentsQuery"))
             .SingleOrDefaultAsync();
 
         Assert.NotNull(audit);
-        Assert.Equal("Failed", audit.Status);
+        Assert.Equal("Success", audit.Status);
     }
 }

@@ -2,10 +2,13 @@
 
 global using System;
 global using System.Collections.Generic;
+global using System.Linq;
 global using System.Threading;
 global using System.Threading.Tasks;
 global using AgendaBuddy.Profession.Configurations;
+global using AgendaBuddy.Profession.Core.Commands;
 global using AgendaBuddy.Profession.Core.Queries;
+global using AgendaBuddy.Profession.Domain.Commands;
 global using AgendaBuddy.Profession.Domain.Queries;
 global using AgendaBuddy.EventAndCommands.Persistence;
 global using JetBrains.Annotations;

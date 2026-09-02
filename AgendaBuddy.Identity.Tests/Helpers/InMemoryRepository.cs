@@ -69,9 +69,26 @@ public class InMemoryCredentialRepository : IRepository<CredentialEntity>
     // ADR-023's repository half. Negatives are normalised to zero to match
     // MongoDbRepository, where Skip(-1) throws rather than being the no-op LINQ makes it.
     public Task<(IEnumerable<CredentialEntity> Items, long TotalCount)> GetPagedAsync(int skip, int take) =>
-        Task.FromResult<(IEnumerable<CredentialEntity>, long)>((
-            _store.Skip(Math.Max(0, skip)).Take(Math.Max(0, take)).ToList(),
-            _store.Count));
+        GetPagedAsync(new BsonDocument(), skip, take);
+
+    /// <summary>
+    /// Filtered paging, over the same <see cref="MatchesFilter"/> the other reads use — so this double
+    /// applies the caller's filter for real rather than ignoring it, which would let a test pass on a
+    /// filter that was never evaluated.
+    /// </summary>
+    public Task<(IEnumerable<CredentialEntity> Items, long TotalCount)> GetPagedAsync(
+        BsonDocument filter, int skip, int take)
+    {
+        ArgumentNullException.ThrowIfNull(filter);
+
+        var matched = _store.Where(entity => MatchesFilter(entity, filter)).ToList();
+
+        // Counted from the matched set, matching MongoDbRepository: TotalCount describes what the caller
+        // can reach, not the whole collection.
+        return Task.FromResult<(IEnumerable<CredentialEntity>, long)>((
+            matched.Skip(Math.Max(0, skip)).Take(Math.Max(0, take)).ToList(),
+            matched.Count));
+    }
 
     /// <summary>
     /// Runs between matching a document and applying the update, so a test can inject the fault that
@@ -203,6 +220,18 @@ public class InMemoryCredentialRepository : IRepository<CredentialEntity>
                         Expiry = value.AsBsonDocument["expiry"].ToUniversalTime()
                     };
                 break;
+            case "email_verification_token":
+                entity.EmailVerificationToken = value.IsBsonNull
+                    ? null
+                    : new EmailVerificationTokenDocument
+                    {
+                        Hash = value.AsBsonDocument["hash"].AsString,
+                        Expiry = value.AsBsonDocument["expiry"].ToUniversalTime()
+                    };
+                break;
+            case "email_verified":
+                entity.EmailVerified = value.AsBoolean;
+                break;
             case "failed_attempts":
                 entity.FailedAttempts = value.ToInt32();
                 break;
@@ -227,6 +256,7 @@ public class InMemoryCredentialRepository : IRepository<CredentialEntity>
             case "lock_until": entity.LockUntil = null; break;
             case "refresh_token": entity.RefreshToken = null; break;
             case "reset_token": entity.ResetToken = null; break;
+            case "email_verification_token": entity.EmailVerificationToken = null; break;
             default: throw new NotSupportedException($"$unset on unmapped field '{field}'.");
         }
     }
@@ -271,6 +301,8 @@ public class InMemoryCredentialRepository : IRepository<CredentialEntity>
             "refresh_token.expiry" => Compare(e.RefreshToken?.Expiry, condition),
             "reset_token.hash" => Compare(e.ResetToken?.Hash, condition),
             "reset_token.expiry" => Compare(e.ResetToken?.Expiry, condition),
+            "email_verification_token.hash" => Compare(e.EmailVerificationToken?.Hash, condition),
+            "email_verification_token.expiry" => Compare(e.EmailVerificationToken?.Expiry, condition),
             "failed_attempts" => Compare(e.FailedAttempts, condition),
             "lock_until" => Compare(e.LockUntil, condition),
             _ => throw new NotSupportedException(

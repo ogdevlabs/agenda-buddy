@@ -108,5 +108,18 @@ public class AuthModule : ICarterModule
             catch (UnauthorizedException ex) { return Results.Problem(detail: ex.Message, statusCode: 401, title: "unauthorized"); }
             catch (ServiceUnavailableException ex) { return Results.Problem(detail: ex.Message, statusCode: 503, title: "service_unavailable"); }
         }).WithName("ConfirmPasswordReset");
+
+        // Not required for login (see CredentialEntity.EmailVerified's own remarks) — confirms
+        // ownership of the registered address, an informational/UX signal only.
+        auth.MapPost("/register/confirm", async (EmailConfirmRequest req, IdentityService svc) =>
+        {
+            try
+            {
+                await svc.ConfirmEmailAsync(req.Email, req.Token);
+                return Results.NoContent();
+            }
+            catch (UnauthorizedException ex) { return Results.Problem(detail: ex.Message, statusCode: 401, title: "unauthorized"); }
+            catch (ServiceUnavailableException ex) { return Results.Problem(detail: ex.Message, statusCode: 503, title: "service_unavailable"); }
+        }).WithName("ConfirmEmail");
     }
 }

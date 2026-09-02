@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:controls="clr-namespace:AgendaBuddy.MobileApp.Controls"
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
              xmlns:System="clr-namespace:System;assembly=netstandard"
              x:Class="AgendaBuddy.MobileApp.Views.DashboardPage"
@@ -34,9 +35,14 @@
                 <VerticalStackLayout Padding="0" Spacing="0">
 
                     <!-- Immersive gradient header -->
-                    <Grid BackgroundColor="#1C1C1E" Padding="0">
-                        <BoxView BackgroundColor="#1C1C1E" />
+                    <Grid BackgroundColor="{StaticResource Primary}" Padding="0">
+                        <BoxView BackgroundColor="{StaticResource Primary}" />
                         <VerticalStackLayout Padding="24,24,24,28" Spacing="6">
+                            <Label Text="AGENDA BUDDY"
+                                   FontSize="12"
+                                   FontAttributes="Bold"
+                                   CharacterSpacing="1.5"
+                                   TextColor="#C7D2FE" />
                             <Label Text="{Binding Greeting}"
                                    FontSize="30"
                                    FontAttributes="Bold"
@@ -61,14 +67,14 @@
                                HasShadow="False"
                                Padding="18">
                             <VerticalStackLayout Spacing="4">
-                                <Label Text="Today"
+                                <Label Text="{Binding PrimaryStatLabel}"
                                        FontSize="13"
                                        TextColor="#FFFFFF99" />
                                 <Label Text="{Binding TodayCount}"
                                        FontSize="36"
                                        FontAttributes="Bold"
                                        TextColor="White" />
-                                <Label Text="Sessions"
+                                <Label Text="{Binding PrimaryStatCaption}"
                                        FontSize="13"
                                        TextColor="#FFFFFF99" />
                             </VerticalStackLayout>
@@ -82,14 +88,14 @@
                                HasShadow="False"
                                Padding="18">
                             <VerticalStackLayout Spacing="4">
-                                <Label Text="This Week"
+                                <Label Text="{Binding SecondaryStatLabel}"
                                        FontSize="13"
                                        TextColor="#FFFFFF99" />
                                 <Label Text="{Binding WeekCount}"
                                        FontSize="36"
                                        FontAttributes="Bold"
                                        TextColor="White" />
-                                <Label Text="Upcoming"
+                                <Label Text="{Binding SecondaryStatCaption}"
                                        FontSize="13"
                                        TextColor="#FFFFFF99" />
                             </VerticalStackLayout>
@@ -112,7 +118,7 @@
                                    FontSize="14"
                                    VerticalOptions="Center"
                                    AutomationId="ErrorBanner" />
-                            <Button Grid.Column="1"
+                            <controls:SafeButton Grid.Column="1"
                                     Text="Retry"
                                     Command="{Binding LoadCommand}"
                                     BackgroundColor="Transparent"
@@ -127,13 +133,13 @@
                     <Grid ColumnDefinitions="*,Auto"
                           Margin="20,24,20,10">
                         <Label Grid.Column="0"
-                               Text="Appointments"
+                               Text="{Binding SectionTitle}"
                                FontSize="20"
                                FontAttributes="Bold"
                                TextColor="{StaticResource iOSLabel}"
                                VerticalOptions="Center" />
                         <HorizontalStackLayout Grid.Column="1" Spacing="4" VerticalOptions="Center">
-                            <Button Text="&#x276E;"
+                            <controls:SafeButton Text="&#x276E;"
                                     Command="{Binding PreviousPageCommand}"
                                     IsEnabled="{Binding CanGoBack}"
                                     BackgroundColor="Transparent"
@@ -141,12 +147,12 @@
                                     FontSize="16"
                                     WidthRequest="36"
                                     HeightRequest="36"
-                                    Padding="0" />
+                                    Padding="2" />
                             <Label Text="{Binding PageLabel}"
                                    FontSize="13"
                                    TextColor="{StaticResource iOSGray}"
                                    VerticalOptions="Center" />
-                            <Button Text="&#x276F;"
+                            <controls:SafeButton Text="&#x276F;"
                                     Command="{Binding NextPageCommand}"
                                     IsEnabled="{Binding CanGoForward}"
                                     BackgroundColor="Transparent"
@@ -154,7 +160,7 @@
                                     FontSize="16"
                                     WidthRequest="36"
                                     HeightRequest="36"
-                                    Padding="0" />
+                                    Padding="2" />
                         </HorizontalStackLayout>
                     </Grid>
 
@@ -172,12 +178,12 @@
                                          Margin="0,40"
                                          Padding="40,0"
                                          AutomationId="EmptyStateLabel">
-                        <Label Text="No Appointments"
+                        <Label Text="{Binding EmptyStateTitle}"
                                FontSize="20"
                                FontAttributes="Bold"
                                TextColor="{StaticResource iOSLabel}"
                                HorizontalOptions="Center" />
-                        <Label Text="Check your calendar for upcoming sessions."
+                        <Label Text="{Binding EmptyStateSubtitle}"
                                FontSize="15"
                                TextColor="{StaticResource iOSGray}"
                                HorizontalTextAlignment="Center" />
@@ -289,14 +295,14 @@
                                                            TextColor="{StaticResource iOSGray}"
                                                            LineBreakMode="WordWrap" />
                                                 </Grid>
-                                                <Button Text="View Details"
+                                                <controls:SafeButton Text="View Details"
                                                         BackgroundColor="{StaticResource iOSBlue}"
                                                         TextColor="White"
                                                         CornerRadius="10"
                                                         FontSize="14"
                                                         FontAttributes="Bold"
                                                         HeightRequest="38"
-                                                        Padding="16,0"
+                                                        Padding="16,4"
                                                         HorizontalOptions="End"
                                                         Margin="0,6,0,0"
                                                         Clicked="OnViewDetailsClicked"
@@ -328,14 +334,14 @@
                    Padding="0"
                    HeightRequest="44"
                    IsVisible="{Binding IsProvider}">
-                <Button Text="Your Report"
+                <controls:SafeButton Text="Your Report"
                         BackgroundColor="Transparent"
                         TextColor="{StaticResource iOSBlue}"
                         FontSize="15"
                         FontAttributes="Bold"
                         HorizontalOptions="Center"
                         VerticalOptions="Center"
-                        Padding="16,0"
+                        Padding="16,4"
                         Clicked="OnViewReportClicked"
                         AutomationId="ViewReportButton" />
             </Frame>
@@ -347,14 +353,14 @@
                    HasShadow="False"
                    Padding="0"
                    HeightRequest="44">
-                <Button Text="Sign Out"
+                <controls:SafeButton Text="Sign Out"
                         BackgroundColor="Transparent"
                         TextColor="{StaticResource iOSRed}"
                         FontSize="15"
                         FontAttributes="Bold"
                         HorizontalOptions="Center"
                         VerticalOptions="Center"
-                        Padding="16,0"
+                        Padding="16,4"
                         Clicked="OnLogoutClicked" />
             </Frame>
         </Grid>

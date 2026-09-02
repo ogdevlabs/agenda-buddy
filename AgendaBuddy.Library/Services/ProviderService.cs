@@ -42,9 +42,44 @@ public class ProviderService(IRepository<ProviderEntity> providerRepository) : I
         await providerRepository.DeleteAsync(id);
     }
 
+    public async Task<(IEnumerable<ProviderEntity> Items, long TotalCount)> GetPagedBookableProvidersAsync(
+        int skip, int take)
+    {
+        // $elemMatch so BOTH conditions must hold on the SAME service. Without it Mongo would match a
+        // provider having one active-but-unclassified service and a separate classified-but-inactive one,
+        // neither of which is bookable.
+        //
+        // $ne/$nin rather than equality, because both fields are omitted from older documents:
+        // isActive defaults to true in code and profession_name postdates the services already stored,
+        // so "missing" has to be read as active and as unclassified respectively.
+        var bookable = new BsonDocument("services", new BsonDocument("$elemMatch", new BsonDocument
+        {
+            { "isActive", new BsonDocument("$ne", false) },
+            { "profession_name", new BsonDocument("$nin", new BsonArray { BsonNull.Value, "" }) }
+        }));
+
+        return await providerRepository.GetPagedAsync(bookable, skip, take);
+    }
+
     public async Task<ProviderEntity> FindProvidersAsync(BsonDocument filter)
     {
         return await providerRepository.Find(filter);
+    }
+
+    public async Task<List<AppointmentEntity>> FindAppointmentsByCustomerAsync(string customerEmail)
+    {
+        // Dot notation into the embedded array matches a document when ANY element matches, so this
+        // selects only the providers holding at least one appointment with this customer -- but those
+        // providers' OTHER customers' appointments come back in the same documents, hence the second
+        // filter below. Dropping it would leak every co-customer of every provider this customer books.
+        var filter = new BsonDocument("appointments.email_customer", customerEmail);
+        var providers = await providerRepository.FindAllAsync(filter);
+
+        return providers
+            .SelectMany(provider => provider.AppointmentEntities)
+            .Where(appointment => string.Equals(appointment.EmailCustomer, customerEmail, StringComparison.OrdinalIgnoreCase))
+            .OrderBy(appointment => appointment.Start)
+            .ToList();
     }
 
     /// <summary>
@@ -101,6 +136,21 @@ public class ProviderService(IRepository<ProviderEntity> providerRepository) : I
         return await providerRepository.FindOneAndUpdateAsync(
             new BsonDocument("email", providerEmail),
             new BsonDocument("$pull", new BsonDocument("subscribed_customer_collection", customerEmail)));
+    }
+
+    public async Task<ProviderEntity?> AddProfessionsAsync(string providerEmail, List<string> professionNames)
+    {
+        return await providerRepository.FindOneAndUpdateAsync(
+            new BsonDocument("email", providerEmail),
+            new BsonDocument("$addToSet",
+                new BsonDocument("professions", new BsonDocument("$each", new BsonArray(professionNames)))));
+    }
+
+    public async Task<ProviderEntity?> RemoveProfessionAsync(string providerEmail, string professionName)
+    {
+        return await providerRepository.FindOneAndUpdateAsync(
+            new BsonDocument("email", providerEmail),
+            new BsonDocument("$pull", new BsonDocument("professions", professionName)));
     }
 
     /// <summary>

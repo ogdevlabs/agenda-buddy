@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.Json;
 using AgendaBuddy.MobileApp.Models;
 using AgendaBuddy.MobileApp.Routing;
@@ -24,6 +25,75 @@ public class CustomerApiService : ICustomerApiService
 
         var json = await response.Content.ReadAsStringAsync(ct);
         return ParsePagedCustomers(json);
+    }
+
+    public async Task<bool> SubscribeAsync(string customerEmail, string providerEmail, CancellationToken ct = default)
+    {
+        var client = _httpClientFactory.CreateClient("AgendaBuddyApi");
+        var route = CustomerRouteBuilder.Subscribe(customerEmail, providerEmail);
+        var response = await client.PostAsync(route.Path, null, ct);
+        return response.IsSuccessStatusCode;
+    }
+
+    public async Task<bool> UnsubscribeAsync(string customerEmail, string providerEmail, CancellationToken ct = default)
+    {
+        var client = _httpClientFactory.CreateClient("AgendaBuddyApi");
+        var route = CustomerRouteBuilder.Unsubscribe(customerEmail, providerEmail);
+        var response = await client.DeleteAsync(route.Path, ct);
+        return response.IsSuccessStatusCode;
+    }
+
+    public async Task<ProfileInfo?> GetProfileAsync(string email, CancellationToken ct = default)
+    {
+        var client = _httpClientFactory.CreateClient("AgendaBuddyApi");
+        var route = CustomerRouteBuilder.GetCustomer(email);
+        var response = await client.GetAsync(route.Path, ct);
+
+        if (!response.IsSuccessStatusCode)
+            return null;
+
+        var json = await response.Content.ReadAsStringAsync(ct);
+        using var doc = JsonDocument.Parse(json);
+        if (doc.RootElement.ValueKind != JsonValueKind.Object || !doc.RootElement.TryGetProperty("data", out var data))
+            return null;
+
+        return new ProfileInfo
+        {
+            Email = GetString(data, "email"),
+            FirstName = GetString(data, "firstName"),
+            LastName = GetString(data, "lastName")
+        };
+    }
+
+    public async Task<bool> UpdateProfileAsync(string email, string firstName, string lastName, CancellationToken ct = default)
+    {
+        var client = _httpClientFactory.CreateClient("AgendaBuddyApi");
+        var route = CustomerRouteBuilder.UpdateCustomer(email);
+        var body = JsonSerializer.Serialize(CustomerRouteBuilder.BuildUpdateCustomerPayload(email, firstName, lastName));
+        var response = await client.PutAsync(route.Path, new StringContent(body, Encoding.UTF8, "application/json"), ct);
+        return response.IsSuccessStatusCode;
+    }
+
+    public async Task<List<string>> GetSubscriptionsAsync(string customerEmail, CancellationToken ct = default)
+    {
+        var client = _httpClientFactory.CreateClient("AgendaBuddyApi");
+        var route = CustomerRouteBuilder.Subscriptions(customerEmail);
+        var response = await client.GetAsync(route.Path, ct);
+
+        if (!response.IsSuccessStatusCode)
+            return new List<string>();
+
+        var json = await response.Content.ReadAsStringAsync(ct);
+        using var doc = JsonDocument.Parse(json);
+        if (doc.RootElement.ValueKind != JsonValueKind.Object
+            || !doc.RootElement.TryGetProperty("data", out var data)
+            || data.ValueKind != JsonValueKind.Array)
+            return new List<string>();
+
+        return data.EnumerateArray()
+            .Where(e => e.ValueKind == JsonValueKind.String)
+            .Select(e => e.GetString() ?? string.Empty)
+            .ToList();
     }
 
     /// <summary>

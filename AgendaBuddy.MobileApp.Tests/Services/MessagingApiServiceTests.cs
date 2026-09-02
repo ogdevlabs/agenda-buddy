@@ -26,35 +26,50 @@ public class MessagingApiServiceTests
         return factory.Object;
     }
 
+    private static IUserSessionService CreateSession(string email = "me@example.com")
+    {
+        var session = new Mock<IUserSessionService>();
+        session.SetupGet(s => s.Email).Returns(email);
+        return session.Object;
+    }
+
     // ---------------------------------------------------------------------------
     // GetInboxAsync
     // ---------------------------------------------------------------------------
 
+    // GetInbox (MessageModule.cs) answers a FLAT array of raw MessageEntity objects — one per message, not
+    // one per thread — so GetInboxAsync has to group by threadId itself.
     [Fact]
-    public async Task GetInbox_Returns200_DeserializesThreadList()
+    public async Task GetInbox_Returns200_GroupsFlatMessagesIntoThreads()
     {
         var json = """
             [
-                {"threadId":"t1","otherPartyEmail":"alice@example.com","lastMessageBody":"Hello!","lastMessageAt":"2026-07-31T09:00:00Z","unreadCount":2},
-                {"threadId":"t2","otherPartyEmail":"bob@example.com","lastMessageBody":"See you soon","lastMessageAt":"2026-07-31T08:00:00Z","unreadCount":0}
+                {"id":"m1","threadId":"t1","senderEmail":"alice@example.com","recipientEmail":"me@example.com","body":"Hello!","sentAt":"2026-07-31T09:00:00Z","isRead":false},
+                {"id":"m2","threadId":"t1","senderEmail":"me@example.com","recipientEmail":"alice@example.com","body":"Hi Alice!","sentAt":"2026-07-31T09:05:00Z","isRead":true},
+                {"id":"m3","threadId":"t2","senderEmail":"bob@example.com","recipientEmail":"me@example.com","body":"See you soon","sentAt":"2026-07-31T08:00:00Z","isRead":true}
             ]
             """;
 
-        var sut = new MessagingApiService(CreateFactory(HttpStatusCode.OK, json));
+        var sut = new MessagingApiService(CreateFactory(HttpStatusCode.OK, json), CreateSession());
 
         var result = await sut.GetInboxAsync();
 
         Assert.Equal(2, result.Count);
+        // Ordered by most recent message first.
         Assert.Equal("t1", result[0].ThreadId);
         Assert.Equal("alice@example.com", result[0].OtherPartyEmail);
-        Assert.Equal(2, result[0].UnreadCount);
+        Assert.Equal("Hi Alice!", result[0].LastMessageBody);
+        // Only m1 (unread, addressed to me) counts — m2 was sent by me.
+        Assert.Equal(1, result[0].UnreadCount);
         Assert.Equal("t2", result[1].ThreadId);
+        Assert.Equal("bob@example.com", result[1].OtherPartyEmail);
+        Assert.Equal(0, result[1].UnreadCount);
     }
 
     [Fact]
     public async Task GetInbox_Returns401_ReturnsEmptyList()
     {
-        var sut = new MessagingApiService(CreateFactory(HttpStatusCode.Unauthorized));
+        var sut = new MessagingApiService(CreateFactory(HttpStatusCode.Unauthorized), CreateSession());
 
         var result = await sut.GetInboxAsync();
 
@@ -72,7 +87,7 @@ public class MessagingApiServiceTests
             {"id":"m1","threadId":"t1","senderEmail":"provider@example.com","body":"Hi there!","sentAt":"2026-07-31T10:00:00Z","isRead":false}
             """;
 
-        var sut = new MessagingApiService(CreateFactory(HttpStatusCode.Created, json));
+        var sut = new MessagingApiService(CreateFactory(HttpStatusCode.Created, json), CreateSession());
 
         var result = await sut.SendMessageAsync("alice@example.com", "Hi there!");
 
@@ -86,7 +101,7 @@ public class MessagingApiServiceTests
     [Fact]
     public async Task SendMessage_Returns400_ReturnsNull()
     {
-        var sut = new MessagingApiService(CreateFactory(HttpStatusCode.BadRequest));
+        var sut = new MessagingApiService(CreateFactory(HttpStatusCode.BadRequest), CreateSession());
 
         var result = await sut.SendMessageAsync("bad-email", "body");
 
@@ -104,7 +119,7 @@ public class MessagingApiServiceTests
             {"id":"m1","threadId":"t1","senderEmail":"alice@example.com","body":"Hello!","sentAt":"2026-07-31T09:00:00Z","isRead":true}
             """;
 
-        var sut = new MessagingApiService(CreateFactory(HttpStatusCode.OK, json));
+        var sut = new MessagingApiService(CreateFactory(HttpStatusCode.OK, json), CreateSession());
 
         var result = await sut.MarkReadAsync("m1");
 
@@ -116,7 +131,7 @@ public class MessagingApiServiceTests
     [Fact]
     public async Task MarkRead_Returns404_ReturnsNull()
     {
-        var sut = new MessagingApiService(CreateFactory(HttpStatusCode.NotFound));
+        var sut = new MessagingApiService(CreateFactory(HttpStatusCode.NotFound), CreateSession());
 
         var result = await sut.MarkReadAsync("nonexistent");
 

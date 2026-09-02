@@ -28,7 +28,9 @@ public class MessageThreadViewModelTests
         };
 
         var service = new Mock<IMessagingApiService>();
-        service.Setup(s => s.GetThreadAsync("t1", It.IsAny<CancellationToken>()))
+        // The real route keys on the counterpart's EMAIL, not ThreadId (MessagingRouteBuilder.Thread's
+        // remarks) — LoadThreadAsync calls GetThreadAsync(RecipientEmail), not GetThreadAsync(ThreadId).
+        service.Setup(s => s.GetThreadAsync("alice@example.com", It.IsAny<CancellationToken>()))
                .ReturnsAsync(new List<MessageSummary> { existingMessage });
         service.Setup(s => s.SendMessageAsync("alice@example.com", "Hi there!", It.IsAny<CancellationToken>()))
                .ReturnsAsync(newMessage);

@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:controls="clr-namespace:AgendaBuddy.MobileApp.Controls"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             x:Class="AgendaBuddy.MobileApp.Views.BookAppointmentPage"
+             x:Name="ThisPage"
+             Title="Book Appointment"
+             BackgroundColor="{StaticResource BackgroundPage}"
+             Shell.NavBarIsVisible="False">
+
+    <ContentPage.Resources>
+        <toolkit:InvertedBoolConverter x:Key="InvertedBoolConverter" />
+    </ContentPage.Resources>
+
+    <Grid RowDefinitions="Auto,*">
+
+        <Grid Grid.Row="0" BackgroundColor="{StaticResource Primary}" Padding="24,48,24,24">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <controls:SafeButton Grid.Row="0"
+                    Text="&#x2190; Back"
+                    BackgroundColor="Transparent"
+                    TextColor="#C7D2FE"
+                    FontSize="14"
+                    HorizontalOptions="Start"
+                    Padding="4"
+                    Margin="0,0,0,16"
+                    Clicked="OnBackClicked" />
+            <Label Grid.Row="1"
+                   Text="{Binding CounterpartName}"
+                   FontSize="24"
+                   FontAttributes="Bold"
+                   TextColor="White" />
+        </Grid>
+
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Padding="20" Spacing="14">
+
+                <ActivityIndicator IsRunning="{Binding IsLoading}" IsVisible="{Binding IsLoading}"
+                                   Color="{StaticResource Primary}" HorizontalOptions="Center" />
+
+                <Frame Style="{StaticResource ErrorBannerStyle}" IsVisible="{Binding HasError}">
+                    <Label Text="{Binding ErrorMessage}" TextColor="{StaticResource Error}" FontSize="14" />
+                </Frame>
+
+                <!-- A provider with nothing bookable cannot be booked; say so rather than showing an
+                     empty calendar the customer will poke at. -->
+                <Frame CornerRadius="20" BackgroundColor="White" BorderColor="#E2E8F0" HasShadow="True"
+                       Padding="20" IsVisible="{Binding HasNoServices}">
+                    <VerticalStackLayout Spacing="6" HorizontalOptions="Center">
+                        <Label Text="Nothing bookable yet" FontSize="16" FontAttributes="Bold"
+                               TextColor="{StaticResource TextPrimary}" HorizontalTextAlignment="Center" />
+                        <Label Text="This provider has not published any services you can book."
+                               FontSize="13" TextColor="{StaticResource TextMuted}" HorizontalTextAlignment="Center" />
+                    </VerticalStackLayout>
+                </Frame>
+
+                <!-- STEP 1 — service. Availability depends on its duration, so it is chosen first. -->
+                <Frame CornerRadius="20" BackgroundColor="White" BorderColor="#E2E8F0" HasShadow="True"
+                       Padding="20" IsVisible="{Binding HasServices}">
+                    <VerticalStackLayout Spacing="10">
+                        <Label Text="1 · CHOOSE A SERVICE" FontSize="11" TextColor="{StaticResource TextMuted}"
+                               CharacterSpacing="1.5" />
+
+                        <CollectionView ItemsSource="{Binding Services}" SelectionMode="None"
+                                        AutomationId="ServiceChoiceCollectionView">
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate>
+                                    <Frame CornerRadius="14" BackgroundColor="White" BorderColor="#E2E8F0"
+                                           HasShadow="False" Padding="14" Margin="0,0,0,8"
+                                           AutomationId="ServiceChoice">
+                                        <Frame.GestureRecognizers>
+                                            <TapGestureRecognizer
+                                                Command="{Binding Source={x:Reference ThisPage}, Path=BindingContext.SelectServiceCommand}"
+                                                CommandParameter="{Binding}" />
+                                        </Frame.GestureRecognizers>
+                                        <VerticalStackLayout Spacing="2">
+                                            <Label Text="{Binding Name}" FontSize="15" FontAttributes="Bold"
+                                                   TextColor="{StaticResource TextPrimary}" />
+                                            <Label Text="{Binding Description}" FontSize="13"
+                                                   TextColor="{StaticResource TextSecondary}" />
+                                            <Label Text="{Binding DurationLabel}" FontSize="12"
+                                                   TextColor="{StaticResource TextMuted}" />
+                                            <Label Text="{Binding FeeLabel}" FontSize="12"
+                                                   TextColor="{StaticResource TextMuted}" />
+                                        </VerticalStackLayout>
+                                    </Frame>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+
+                        <Label Text="{Binding SelectedServiceLabel}" FontSize="13" FontAttributes="Bold"
+                               TextColor="{StaticResource Primary}" IsVisible="{Binding HasSelectedService}"
+                               AutomationId="SelectedServiceLabel" />
+                    </VerticalStackLayout>
+                </Frame>
+
+                <ActivityIndicator IsRunning="{Binding IsLoadingAvailability}"
+                                   IsVisible="{Binding IsLoadingAvailability}"
+                                   Color="{StaticResource Primary}" HorizontalOptions="Center" />
+
+                <!-- Fully booked is a normal state, not an error. -->
+                <Frame CornerRadius="20" BackgroundColor="White" BorderColor="#E2E8F0" HasShadow="True"
+                       Padding="20" IsVisible="{Binding IsFullyBooked}">
+                    <VerticalStackLayout Spacing="6" HorizontalOptions="Center">
+                        <Label Text="No availability" FontSize="16" FontAttributes="Bold"
+                               TextColor="{StaticResource TextPrimary}" HorizontalTextAlignment="Center" />
+                        <Label Text="This provider has no free slots for that service in the next 90 days."
+                               FontSize="13" TextColor="{StaticResource TextMuted}" HorizontalTextAlignment="Center" />
+                    </VerticalStackLayout>
+                </Frame>
+
+                <!-- STEP 2 — date. Only dates the provider actually has room on appear at all, so a
+                     full day cannot be selected and then found empty. -->
+                <Frame CornerRadius="20" BackgroundColor="White" BorderColor="#E2E8F0" HasShadow="True"
+                       Padding="20" IsVisible="{Binding HasBookableDates}">
+                    <VerticalStackLayout Spacing="10">
+                        <Label Text="2 · CHOOSE A DATE" FontSize="11" TextColor="{StaticResource TextMuted}"
+                               CharacterSpacing="1.5" />
+
+                        <CollectionView ItemsSource="{Binding BookableDates}" SelectionMode="None"
+                                        HeightRequest="92" AutomationId="DateChoiceCollectionView">
+                            <CollectionView.ItemsLayout>
+                                <LinearItemsLayout Orientation="Horizontal" ItemSpacing="8" />
+                            </CollectionView.ItemsLayout>
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate>
+                                    <Frame CornerRadius="14" BackgroundColor="White" BorderColor="#E2E8F0"
+                                           HasShadow="False" Padding="12,10" WidthRequest="74"
+                                           AutomationId="DateChoice">
+                                        <Frame.GestureRecognizers>
+                                            <TapGestureRecognizer
+                                                Command="{Binding Source={x:Reference ThisPage}, Path=BindingContext.SelectDateCommand}"
+                                                CommandParameter="{Binding}" />
+                                        </Frame.GestureRecognizers>
+                                        <VerticalStackLayout Spacing="2" HorizontalOptions="Center">
+                                            <Label Text="{Binding ., StringFormat='{0:ddd}'}" FontSize="11"
+                                                   TextColor="{StaticResource TextMuted}"
+                                                   HorizontalOptions="Center" TextTransform="Uppercase" />
+                                            <Label Text="{Binding ., StringFormat='{0:dd}'}" FontSize="20"
+                                                   FontAttributes="Bold" TextColor="{StaticResource TextPrimary}"
+                                                   HorizontalOptions="Center" />
+                                            <Label Text="{Binding ., StringFormat='{0:MMM}'}" FontSize="11"
+                                                   TextColor="{StaticResource TextMuted}"
+                                                   HorizontalOptions="Center" />
+                                        </VerticalStackLayout>
+                                    </Frame>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+                    </VerticalStackLayout>
+                </Frame>
+
+                <!-- STEP 3 — time, from that date's real free slots. -->
+                <Frame CornerRadius="20" BackgroundColor="White" BorderColor="#E2E8F0" HasShadow="True"
+                       Padding="20" IsVisible="{Binding HasTimes}">
+                    <VerticalStackLayout Spacing="10">
+                        <Label Text="3 · CHOOSE A TIME" FontSize="11" TextColor="{StaticResource TextMuted}"
+                               CharacterSpacing="1.5" />
+
+                        <FlexLayout Wrap="Wrap" BindableLayout.ItemsSource="{Binding TimesForSelectedDate}">
+                            <BindableLayout.ItemTemplate>
+                                <DataTemplate>
+                                    <Frame CornerRadius="14" BackgroundColor="White" BorderColor="#E2E8F0"
+                                           HasShadow="False" Padding="14,9" Margin="0,0,8,8"
+                                           AutomationId="TimeChoice">
+                                        <Frame.GestureRecognizers>
+                                            <TapGestureRecognizer
+                                                Command="{Binding Source={x:Reference ThisPage}, Path=BindingContext.SelectSlotCommand}"
+                                                CommandParameter="{Binding}" />
+                                        </Frame.GestureRecognizers>
+                                        <Label Text="{Binding Label}" FontSize="14"
+                                               TextColor="{StaticResource TextPrimary}" VerticalOptions="Center" />
+                                    </Frame>
+                                </DataTemplate>
+                            </BindableLayout.ItemTemplate>
+                        </FlexLayout>
+                    </VerticalStackLayout>
+                </Frame>
+
+                <!-- Confirm. The command is disabled until a service AND a slot are chosen, so a
+                     half-made booking is not expressible. -->
+                <Frame CornerRadius="20" BackgroundColor="White" BorderColor="#E2E8F0" HasShadow="True"
+                       Padding="20" IsVisible="{Binding HasSelectedService}">
+                    <VerticalStackLayout Spacing="10">
+                        <Label Text="{Binding SelectedSlotLabel}"
+                               FontSize="14" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}"
+                               IsVisible="{Binding HasSelectedSlot}"
+                               AutomationId="SelectedSlotLabel" />
+                        <Grid>
+                            <controls:SafeButton Text="Confirm Booking"
+                                    Style="{StaticResource PrimaryButton}"
+                                    Command="{Binding BookCommand}"
+                                    IsVisible="{Binding IsBooking, Converter={StaticResource InvertedBoolConverter}}"
+                                    AutomationId="ConfirmBookButton" />
+                            <ActivityIndicator IsRunning="{Binding IsBooking}" IsVisible="{Binding IsBooking}"
+                                               Color="{StaticResource Primary}" HorizontalOptions="Center" />
+                        </Grid>
+                    </VerticalStackLayout>
+                </Frame>
+
+            </VerticalStackLayout>
+        </ScrollView>
+
+    </Grid>
+
+</ContentPage>
