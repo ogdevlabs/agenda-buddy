@@ -62,6 +62,40 @@ public partial class AppointmentDetailViewModel : ObservableObject
     // command's CanExecute below so the action is genuinely unavailable, not merely invisible.
     public bool ShowCompleteButton => _session.IsProvider;
 
+    /// <summary>
+    /// Confirming is the PROVIDER accepting the request. Hidden for a Customer, and hidden rather than
+    /// disabled for the same reason as <see cref="ShowCompleteButton"/>. A customer could previously
+    /// promote their own request straight to Booked, so "Booked" said nothing about whether the provider
+    /// had agreed to it.
+    /// </summary>
+    public bool ShowConfirmButton => _session.IsProvider;
+
+    /// <summary>
+    /// Keeps the notes list out of the layout entirely when there are none. An empty CollectionView still
+    /// claims its default height, which showed as a tall blank card and pushed the add-note field off-screen.
+    /// </summary>
+    public bool HasSessionNotes => Notes.Count > 0;
+
+    /// <summary>Hides the phone line rather than leaving an empty row when no number was ever given.</summary>
+    public bool HasContactPhone => !string.IsNullOrWhiteSpace(Appointment?.ContactPhone);
+
+    /// <summary>
+    /// Start time and how long the session runs, e.g. "10:00 AM · 45 min". The duration used to be the
+    /// literal string "30 min" in XAML, so every appointment claimed 30 minutes however long it was booked
+    /// for — a 45-minute session told both parties it was 30.
+    /// </summary>
+    public string TimeAndDurationLabel
+    {
+        get
+        {
+            if (Appointment is null) return string.Empty;
+            var time = Appointment.ScheduledAt.ToString("h:mm tt");
+            return Appointment.ServiceDurationMinutes is { } minutes
+                ? $"{time} · {minutes} min"
+                : time;
+        }
+    }
+
     // The Complete button itself, replaced by the busy indicator below while the status call is in
     // flight — matching LoginPage's Sign In button/ActivityIndicator overlay, not a new pattern.
     public bool ShowCompleteButtonIdle => ShowCompleteButton && !IsCompleting;
@@ -297,5 +331,12 @@ public partial class AppointmentDetailViewModel : ObservableObject
         OnPropertyChanged(nameof(ShowCompletingIndicator));
     }
 
-    partial void OnAppointmentChanged(AppointmentDetail? value) => OnPropertyChanged(nameof(HasAppointment));
+    partial void OnNotesChanged(List<NoteEntity> value) => OnPropertyChanged(nameof(HasSessionNotes));
+
+    partial void OnAppointmentChanged(AppointmentDetail? value)
+    {
+        OnPropertyChanged(nameof(HasAppointment));
+        OnPropertyChanged(nameof(TimeAndDurationLabel));
+        OnPropertyChanged(nameof(HasContactPhone));
+    }
 }

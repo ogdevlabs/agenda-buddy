@@ -28,6 +28,10 @@ public partial class ServiceItem : ObservableObject
     [ObservableProperty]
     private bool _isEditing;
 
+    /// <summary>Chosen in the booking flow. Display state only — the catalogue itself has no notion of it.</summary>
+    [ObservableProperty]
+    private bool _isSelected;
+
     public string FeeLabel => Fee is null ? "No fee set" : $"{Fee:C} ({FeeType})";
 
     public string DurationLabel => DurationMinutes is null ? "No duration set" : $"{DurationMinutes} min";

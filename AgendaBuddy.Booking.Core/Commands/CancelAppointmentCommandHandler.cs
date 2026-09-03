@@ -12,7 +12,8 @@ public class CancelAppointmentCommandHandler(
     IMediator mediator,
     IProviderService providerService,
     IBookingService bookingService,
-    IEventStore eventStore) : IRequestHandler<CancelAppointmentCommand, Result<AppointmentEntity>>
+    IEventStore eventStore,
+    INotificationService notificationService) : IRequestHandler<CancelAppointmentCommand, Result<AppointmentEntity>>
 {
     public async Task<Result<AppointmentEntity>> Handle(CancelAppointmentCommand request, CancellationToken cancellationToken)
     {
@@ -34,6 +35,14 @@ public class CancelAppointmentCommandHandler(
                     Data = JsonSerializer.Serialize(appointmentEntity)
                 };
                 await eventStore.SaveAsync(successEvent);
+
+                // BOTH parties, because the command does not record who cancelled — either may, and the
+                // one who did not needs to know. Telling the canceller as well leaves them a record rather
+                // than guessing wrong about which side to inform.
+                var body = BuildCancelBody(appointmentEntity);
+                await NotifyAsync(appointmentEntity.EmailCustomer, body, appointmentIdentifier);
+                await NotifyAsync(appointmentEntity.EmailProvider, body, appointmentIdentifier);
+
                 return Result.Ok(appointmentEntity);
             }
 
@@ -83,4 +92,23 @@ public class CancelAppointmentCommandHandler(
 
         return await bookingService.CancelAppointmentAsync(identifier);
     }
+    private static string BuildCancelBody(AppointmentEntity appointment)
+    {
+        var service = string.IsNullOrWhiteSpace(appointment.ServiceName) ? "A session" : appointment.ServiceName;
+        return $"{service} on {appointment.Start.ToLocalTime():dddd d MMMM} at "
+             + $"{appointment.Start.ToLocalTime():h:mm tt} was cancelled.";
+    }
+
+    /// <summary>Never lets a failed notification undo a cancellation that already succeeded.</summary>
+    private async Task NotifyAsync(string recipientEmail, string body, string appointmentIdentifier)
+    {
+        try
+        {
+            await notificationService.SendAsync(new NotificationEntity(
+                recipientEmail, "Appointment cancelled", body,
+                NotificationType.AppointmentCancelled, appointmentIdentifier));
+        }
+        catch (Exception) { /* the cancellation stands regardless */ }
+    }
+
 }

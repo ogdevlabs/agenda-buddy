@@ -13,6 +13,15 @@ public partial class CustomerSummary : ObservableObject
     public bool IsProvider { get; set; }
     public string Availability { get; set; } = string.Empty;
 
+    /// <summary>
+    /// Whether this contact can be messaged. Only a subscribed provider, or a customer the provider is
+    /// subscribed to — the directory is browsable so customers can find someone to book, but browsable must
+    /// not imply messageable. The server enforces the same rule; this only keeps the button off a row where
+    /// tapping it would be refused.
+    /// </summary>
+    [ObservableProperty]
+    private bool _canMessage;
+
     /// <summary>Only meaningful when <see cref="IsProvider"/> — their own selected Professions.</summary>
     public List<string> Professions { get; set; } = new();
 

@@ -46,10 +46,13 @@ public class BookingApiServiceTests
     // AgendaBuddy.MobileApp.Routing.BookingRouteBuilder) — reads compose with ICalendarApiService instead.
     // ---------------------------------------------------------------------------
 
+    // DateTime.Today, not UtcNow.Date: CalendarApiService hands ScheduledAt over already converted to
+    // local time, so the filter is a local-date comparison. Using the UTC date here passed only because
+    // the two agree for most of the day.
     [Fact]
     public async Task GetTodayAppointments_FiltersToTodayOnly()
     {
-        var today = DateTime.UtcNow.Date.AddHours(9);
+        var today = DateTime.Today.AddHours(9);
         var yesterday = today.AddDays(-1);
 
         var calendar = new Mock<ICalendarApiService>();
@@ -312,4 +315,99 @@ public class BookingApiServiceTests
             return Task.FromResult(new HttpResponseMessage(_statusCode) { Content = _content });
         }
     }
+    // ---------------------------------------------------------------------------
+    // GetUpcomingAppointmentsAsync tests
+    //
+    // What a Customer's dashboard leads with. The filter is a LOCAL-time comparison because
+    // CalendarApiService converts ScheduledAt to local on the way in — comparing against UtcNow hid every
+    // session inside the device's UTC offset, so a booking made for later today vanished on creation.
+    // ---------------------------------------------------------------------------
+
+    [Fact]
+    public async Task GetUpcomingAppointments_IncludesASessionLaterToday()
+    {
+        var laterToday = DateTime.Now.AddHours(2);
+
+        var calendar = new Mock<ICalendarApiService>();
+        calendar.Setup(c => c.GetAppointmentsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<AppointmentDetail> { Detail("later", laterToday) });
+
+        var sut = new BookingApiService(new Mock<IHttpClientFactory>().Object, calendar.Object);
+
+        var result = await sut.GetUpcomingAppointmentsAsync();
+
+        Assert.Single(result);
+        Assert.Equal("later", result[0].Id);
+    }
+
+    [Fact]
+    public async Task GetUpcomingAppointments_ExcludesSessionsAlreadyPast()
+    {
+        var calendar = new Mock<ICalendarApiService>();
+        calendar.Setup(c => c.GetAppointmentsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<AppointmentDetail>
+                {
+                    Detail("past", DateTime.Now.AddHours(-2)),
+                    Detail("future", DateTime.Now.AddDays(1))
+                });
+
+        var sut = new BookingApiService(new Mock<IHttpClientFactory>().Object, calendar.Object);
+
+        var result = await sut.GetUpcomingAppointmentsAsync();
+
+        Assert.Single(result);
+        Assert.Equal("future", result[0].Id);
+    }
+
+    // A provider may mark a session complete before its scheduled time, which left a future-dated but
+    // finished session sitting under "Upcoming" reading "Completed".
+    [Fact]
+    public async Task GetUpcomingAppointments_ExcludesCompletedHoweverTheyAreDated()
+    {
+        var completed = Detail("done", DateTime.Now.AddDays(1));
+        completed.Status = AppointmentStatus.Completed;
+
+        var calendar = new Mock<ICalendarApiService>();
+        calendar.Setup(c => c.GetAppointmentsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<AppointmentDetail> { completed });
+
+        var sut = new BookingApiService(new Mock<IHttpClientFactory>().Object, calendar.Object);
+
+        Assert.Empty(await sut.GetUpcomingAppointmentsAsync());
+    }
+
+    [Fact]
+    public async Task GetUpcomingAppointments_ExcludesCancelledHoweverTheyAreDated()
+    {
+        var cancelled = Detail("cancelled", DateTime.Now.AddDays(1));
+        cancelled.Status = AppointmentStatus.Cancelled;
+
+        var calendar = new Mock<ICalendarApiService>();
+        calendar.Setup(c => c.GetAppointmentsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<AppointmentDetail> { cancelled });
+
+        var sut = new BookingApiService(new Mock<IHttpClientFactory>().Object, calendar.Object);
+
+        Assert.Empty(await sut.GetUpcomingAppointmentsAsync());
+    }
+
+    [Fact]
+    public async Task GetUpcomingAppointments_OrdersSoonestFirst()
+    {
+        var calendar = new Mock<ICalendarApiService>();
+        calendar.Setup(c => c.GetAppointmentsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<AppointmentDetail>
+                {
+                    Detail("third", DateTime.Now.AddDays(3)),
+                    Detail("first", DateTime.Now.AddHours(1)),
+                    Detail("second", DateTime.Now.AddDays(1))
+                });
+
+        var sut = new BookingApiService(new Mock<IHttpClientFactory>().Object, calendar.Object);
+
+        var result = await sut.GetUpcomingAppointmentsAsync();
+
+        Assert.Equal(["first", "second", "third"], result.Select(a => a.Id));
+    }
+
 }

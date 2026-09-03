@@ -9,6 +9,13 @@ public interface IBookingApiService
 
     /// <summary>Completed or cancelled sessions, most recent first — a Customer's dashboard history view.</summary>
     Task<List<AppointmentSummary>> GetPastAppointmentsAsync(CancellationToken ct = default);
+
+    /// <summary>
+    /// Sessions still ahead and not cancelled, soonest first. What a Customer's dashboard leads with — the
+    /// question they open the app to answer is "when is my next session", which a completed/cancelled
+    /// history can never answer.
+    /// </summary>
+    Task<List<AppointmentSummary>> GetUpcomingAppointmentsAsync(CancellationToken ct = default);
     Task<AppointmentDetail?> GetAppointmentAsync(string id, CancellationToken ct = default);
 
     /// <summary>

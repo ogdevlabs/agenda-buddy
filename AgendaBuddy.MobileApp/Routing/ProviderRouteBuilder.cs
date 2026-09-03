@@ -29,6 +29,19 @@ public static class ProviderRouteBuilder
     /// </summary>
     public static RouteSpec UpdateProvider(string email) => new(HttpMethod.Put, $"api/v1/providers/{email}");
 
+    /// <summary>
+    /// <c>POST /api/v1/providers</c> — creates the domain profile that registration alone does not.
+    /// </summary>
+    /// <remarks>
+    /// The body is a FLAT ProviderEntity, not <c>{"providerEntity": …}</c> as <c>AddProviderCommand</c>'s
+    /// single property name suggests; the wrapped form is rejected with 400 for missing Email/FirstName/LastName.
+    /// </remarks>
+    public static RouteSpec CreateProvider() => new(HttpMethod.Post, "api/v1/providers");
+
+    public static object BuildCreateProviderPayload(
+        string email, string firstName, string lastName, string? phoneNumber) =>
+        new { email, firstName, lastName, phoneNumber, timeZoneId = TimeZoneInfo.Local.Id };
+
     public static object BuildUpdateProviderPayload(string email, string firstName, string lastName) =>
         new { email, firstName, lastName };
 

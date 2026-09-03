@@ -28,6 +28,13 @@ public partial class MessageThreadViewModel : ObservableObject
     [ObservableProperty]
     private string _errorMessage = string.Empty;
 
+    /// <summary>Set when the thread was opened from a contact row, which knows the name.</summary>
+    [ObservableProperty]
+    private string _counterpartName = string.Empty;
+
+    /// <summary>Who the thread is with — the name when we have one, the address when we do not.</summary>
+    public string Title => string.IsNullOrWhiteSpace(CounterpartName) ? RecipientEmail : CounterpartName;
+
     public bool HasError => !string.IsNullOrEmpty(ErrorMessage);
 
     public MessageThreadViewModel(IMessagingApiService messagingService)
@@ -48,7 +55,16 @@ public partial class MessageThreadViewModel : ObservableObject
 
         try
         {
-            Messages = await _messagingService.GetThreadAsync(RecipientEmail);
+            var messages = await _messagingService.GetThreadAsync(RecipientEmail);
+
+            // Anything NOT from the counterpart is ours. Derived from RecipientEmail rather than the session
+            // because a thread only ever has two participants, so "not them" is exactly "me" — and it saves
+            // this ViewModel a dependency it otherwise has no use for.
+            foreach (var message in messages)
+                message.IsMine = !string.Equals(
+                    message.SenderEmail, RecipientEmail, StringComparison.OrdinalIgnoreCase);
+
+            Messages = messages;
             await MarkIncomingUnreadAsync();
         }
         catch (Exception)
@@ -115,4 +131,7 @@ public partial class MessageThreadViewModel : ObservableObject
     private bool CanSend() => !string.IsNullOrWhiteSpace(NewMessageBody);
 
     partial void OnErrorMessageChanged(string value) => OnPropertyChanged(nameof(HasError));
+    partial void OnCounterpartNameChanged(string value) => OnPropertyChanged(nameof(Title));
+    partial void OnRecipientEmailChanged(string value) => OnPropertyChanged(nameof(Title));
+
 }

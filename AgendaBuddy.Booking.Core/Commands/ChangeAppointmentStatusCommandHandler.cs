@@ -35,7 +35,8 @@ namespace AgendaBuddy.Booking.Core.Commands;
 public class ChangeAppointmentStatusCommandHandler(
     ProviderService providerService,
     BookingService bookingService,
-    IEventStore eventStore) : IRequestHandler<ChangeAppointmentStatusCommand, Result<AppointmentEntity>>
+    IEventStore eventStore,
+    INotificationService notificationService) : IRequestHandler<ChangeAppointmentStatusCommand, Result<AppointmentEntity>>
 {
     public async Task<Result<AppointmentEntity>> Handle(ChangeAppointmentStatusCommand request, CancellationToken cancellationToken)
     {
@@ -70,7 +71,45 @@ public class ChangeAppointmentStatusCommandHandler(
 
         await Audit("Success", request, appointment.AppointmentStatus.ToString());
 
+        // The CUSTOMER is told, because only the provider can move an appointment out of Requested — so
+        // every transition that reaches here is news to the other party. Non-fatal: the status has already
+        // been written, and losing the notification must not undo it.
+        await NotifyAsync(new NotificationEntity(
+            recipientEmail: appointment.EmailCustomer,
+            subject: appointment.AppointmentStatus switch
+            {
+                AppointmentStatus.Booked => "Appointment confirmed",
+                AppointmentStatus.Completed => "Session completed",
+                _ => "Appointment updated"
+            },
+            body: BuildStatusBody(appointment),
+            type: appointment.AppointmentStatus switch
+            {
+                AppointmentStatus.Completed => NotificationType.AppointmentCompleted,
+                _ => NotificationType.AppointmentUpdated
+            },
+            appointmentIdentifier: request.Identifier));
+
         return Result.Ok(updated);
+    }
+
+    private static string BuildStatusBody(AppointmentEntity appointment)
+    {
+        var service = string.IsNullOrWhiteSpace(appointment.ServiceName) ? "Your session" : appointment.ServiceName;
+        var when = $"{appointment.Start.ToLocalTime():dddd d MMMM} at {appointment.Start.ToLocalTime():h:mm tt}";
+        return appointment.AppointmentStatus switch
+        {
+            AppointmentStatus.Booked => $"{appointment.EmailProvider} confirmed {service} on {when}.",
+            AppointmentStatus.Completed => $"{service} on {when} was marked complete.",
+            _ => $"{service} on {when} is now {appointment.AppointmentStatus}."
+        };
+    }
+
+    /// <summary>Never lets a failed notification undo a status change that already succeeded.</summary>
+    private async Task NotifyAsync(NotificationEntity notification)
+    {
+        try { await notificationService.SendAsync(notification); }
+        catch (Exception) { /* the transition stands regardless */ }
     }
 
     private async Task Audit(string status, ChangeAppointmentStatusCommand request, string detail) =>

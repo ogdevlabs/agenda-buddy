@@ -15,6 +15,7 @@ namespace AgendaBuddy.MobileApp.Views;
 [QueryProperty(nameof(ScheduledAtStr), "scheduledAt")]
 [QueryProperty(nameof(StatusStr), "status")]
 [QueryProperty(nameof(ServiceName), "serviceName")]
+[QueryProperty(nameof(ServiceDurationMinutesStr), "serviceDurationMinutes")]
 [QueryProperty(nameof(CustomerNotes), "customerNotes")]
 public partial class AppointmentDetailPage : ContentPage
 {
@@ -29,6 +30,9 @@ public partial class AppointmentDetailPage : ContentPage
     public string ScheduledAtStr { get; set; } = string.Empty;
     public string StatusStr { get; set; } = string.Empty;
     public string ServiceName { get; set; } = string.Empty;
+
+    /// <summary>Carried as a string because Shell query properties are strings; parsed below.</summary>
+    public string ServiceDurationMinutesStr { get; set; } = string.Empty;
     public string CustomerNotes { get; set; } = string.Empty;
 
     public AppointmentDetailPage(AppointmentDetailViewModel viewModel)
@@ -59,6 +63,7 @@ public partial class AppointmentDetailPage : ContentPage
             ScheduledAt = DateTime.TryParse(ScheduledAtStr, out var dt) ? dt : DateTime.Now,
             Status = Enum.TryParse<AppointmentStatus>(StatusStr, out var st) ? st : AppointmentStatus.Requested,
             ServiceName = ServiceName,
+            ServiceDurationMinutes = int.TryParse(ServiceDurationMinutesStr, out var minutes) ? minutes : null,
             CustomerNotes = CustomerNotes
         };
 

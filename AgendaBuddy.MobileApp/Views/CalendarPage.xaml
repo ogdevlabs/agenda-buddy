@@ -157,7 +157,7 @@
                                         <Label Text="{Binding .}"
                                                FontSize="15"
                                                TextColor="{StaticResource iOSLabel}" />
-                                        <Label Text="30 min"
+                                        <Label Text="{Binding DurationLabel}"
                                                FontSize="13"
                                                TextColor="{StaticResource iOSGray}" />
                                     </VerticalStackLayout>

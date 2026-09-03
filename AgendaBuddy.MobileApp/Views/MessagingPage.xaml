@@ -21,11 +21,29 @@
         <!-- Header -->
         <Grid Grid.Row="0"
               BackgroundColor="White"
-              Padding="20,16,20,12">
-            <Label Text="Messages"
+              Padding="20,16,20,12"
+              ColumnDefinitions="*,Auto">
+            <Label Grid.Column="0"
+                   Text="Messages"
                    FontSize="34"
                    FontAttributes="Bold"
-                   TextColor="{StaticResource iOSLabel}" />
+                   TextColor="{StaticResource iOSLabel}"
+                   VerticalOptions="Center" />
+
+            <!-- This tab can only ever list threads that already exist, so without a way out to the
+                 contact list neither side could say anything first. -->
+            <controls:SafeButton Grid.Column="1"
+                    Text="New"
+                    BackgroundColor="#E0F2FE"
+                    TextColor="#0369A1"
+                    CornerRadius="10"
+                    FontSize="15"
+                    FontAttributes="Bold"
+                    HeightRequest="38"
+                    Padding="18,4"
+                    VerticalOptions="Center"
+                    Clicked="OnNewMessageClicked"
+                    AutomationId="NewMessageButton" />
         </Grid>
 
         <!-- Error banner -->
@@ -73,7 +91,7 @@
                    FontAttributes="Bold"
                    TextColor="{StaticResource iOSLabel}"
                    HorizontalOptions="Center" />
-            <Label Text="Your conversations will appear here."
+            <Label Text="Tap New to message someone you have booked with."
                    FontSize="15"
                    TextColor="{StaticResource iOSGray}"
                    HorizontalTextAlignment="Center" />

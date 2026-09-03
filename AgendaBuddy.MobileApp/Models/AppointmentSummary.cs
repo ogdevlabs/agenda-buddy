@@ -16,6 +16,12 @@ public partial class AppointmentSummary : ObservableObject
     public AppointmentStatus Status { get; set; }
     public string ServiceId { get; set; } = string.Empty;
     public string ServiceName { get; set; } = string.Empty;
+
+    /// <summary>Session length as booked. Null for appointments made before services were selectable.</summary>
+    public int? ServiceDurationMinutes { get; set; }
+
+    /// <summary>"45 min", or a dash when the appointment predates service selection.</summary>
+    public string DurationLabel => ServiceDurationMinutes is null ? "—" : $"{ServiceDurationMinutes} min";
     public string CustomerNotes { get; set; } = string.Empty;
 
     [ObservableProperty]

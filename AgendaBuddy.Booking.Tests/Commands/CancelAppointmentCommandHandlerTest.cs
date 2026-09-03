@@ -31,7 +31,7 @@ public class CancelAppointmentCommandHandlerTest
         providers.Setup(p => p.FindProvidersAsync(It.IsAny<BsonDocument>())).ReturnsAsync(providerEntity);
         providers.Setup(p => p.UpdateProviderAsync(providerEntity.Id.ToString(), providerEntity)).ReturnsAsync(true);
         var eventStore = new Mock<IEventStore>();
-        var handler = new CancelAppointmentCommandHandler(Mock.Of<IMediator>(), providers.Object, bookings.Object, eventStore.Object);
+        var handler = new CancelAppointmentCommandHandler(Mock.Of<IMediator>(), providers.Object, bookings.Object, eventStore.Object, Mock.Of<INotificationService>());
 
         var result = await handler.Handle(new CancelAppointmentCommand { Identifier = "abc123" }, CancellationToken.None);
 
@@ -56,7 +56,7 @@ public class CancelAppointmentCommandHandlerTest
         var providers = new Mock<IProviderService>();
         providers.Setup(p => p.FindProvidersAsync(It.IsAny<BsonDocument>())).ReturnsAsync(providerEntity);
         var eventStore = new Mock<IEventStore>();
-        var handler = new CancelAppointmentCommandHandler(Mock.Of<IMediator>(), providers.Object, bookings.Object, eventStore.Object);
+        var handler = new CancelAppointmentCommandHandler(Mock.Of<IMediator>(), providers.Object, bookings.Object, eventStore.Object, Mock.Of<INotificationService>());
 
         var result = await handler.Handle(new CancelAppointmentCommand { Identifier = "abc123" }, CancellationToken.None);
 
@@ -72,7 +72,7 @@ public class CancelAppointmentCommandHandlerTest
         bookings.Setup(b => b.SearchAppointmentAsync("missing")).ReturnsAsync((AppointmentEntity?)null);
         var eventStore = new Mock<IEventStore>();
         var handler = new CancelAppointmentCommandHandler(
-            Mock.Of<IMediator>(), Mock.Of<IProviderService>(), bookings.Object, eventStore.Object);
+            Mock.Of<IMediator>(), Mock.Of<IProviderService>(), bookings.Object, eventStore.Object, Mock.Of<INotificationService>());
 
         var result = await handler.Handle(new CancelAppointmentCommand { Identifier = "missing" }, CancellationToken.None);
 
@@ -84,8 +84,74 @@ public class CancelAppointmentCommandHandlerTest
     public async Task Handle_NullRequest_ThrowsArgumentNullException()
     {
         var handler = new CancelAppointmentCommandHandler(
-            Mock.Of<IMediator>(), Mock.Of<IProviderService>(), Mock.Of<IBookingService>(), Mock.Of<IEventStore>());
+            Mock.Of<IMediator>(), Mock.Of<IProviderService>(), Mock.Of<IBookingService>(), Mock.Of<IEventStore>(), Mock.Of<INotificationService>());
 
         await Assert.ThrowsAsync<ArgumentNullException>(() => handler.Handle(null!, CancellationToken.None));
     }
+    // ── Notifications ─────────────────────────────────────────────────────────────────────────────
+    // The command does not record who cancelled -- either party may -- so both are told rather than
+    // guessing wrong about which side needs to know.
+
+    [Fact]
+    public async Task Handle_Cancelled_NotifiesBothParties()
+    {
+        var appointment = MakeAppointment(status: AppointmentStatus.Booked);
+        var providerEntity = new ProviderEntity
+        {
+            Id = ObjectId.GenerateNewId(),
+            Email = "provider@example.com",
+            AppointmentEntities = [appointment]
+        };
+        var bookings = new Mock<IBookingService>();
+        bookings.Setup(b => b.SearchAppointmentAsync("abc123")).ReturnsAsync(appointment);
+        bookings.Setup(b => b.CancelAppointmentAsync("abc123")).ReturnsAsync(true);
+        var providers = new Mock<IProviderService>();
+        providers.Setup(p => p.FindProvidersAsync(It.IsAny<BsonDocument>())).ReturnsAsync(providerEntity);
+        providers.Setup(p => p.UpdateProviderAsync(providerEntity.Id.ToString(), providerEntity)).ReturnsAsync(true);
+        var notifications = new Mock<INotificationService>();
+
+        var handler = new CancelAppointmentCommandHandler(
+            Mock.Of<IMediator>(), providers.Object, bookings.Object, Mock.Of<IEventStore>(), notifications.Object);
+
+        await handler.Handle(new CancelAppointmentCommand { Identifier = "abc123" }, CancellationToken.None);
+
+        notifications.Verify(n => n.SendAsync(It.Is<NotificationEntity>(notification =>
+            notification.RecipientEmail == "customer@example.com"
+            && notification.Type == NotificationType.AppointmentCancelled)), Times.Once);
+        notifications.Verify(n => n.SendAsync(It.Is<NotificationEntity>(notification =>
+            notification.RecipientEmail == "provider@example.com"
+            && notification.Type == NotificationType.AppointmentCancelled)), Times.Once);
+    }
+
+    // A notification is a courtesy on top of the cancellation, not a precondition for it. The appointment
+    // is already cancelled by the time we try to send, so a failure here must not report failure to cancel.
+    [Fact]
+    public async Task Handle_NotificationThrows_StillSucceeds()
+    {
+        var appointment = MakeAppointment(status: AppointmentStatus.Booked);
+        var providerEntity = new ProviderEntity
+        {
+            Id = ObjectId.GenerateNewId(),
+            Email = "provider@example.com",
+            AppointmentEntities = [appointment]
+        };
+        var bookings = new Mock<IBookingService>();
+        bookings.Setup(b => b.SearchAppointmentAsync("abc123")).ReturnsAsync(appointment);
+        bookings.Setup(b => b.CancelAppointmentAsync("abc123")).ReturnsAsync(true);
+        var providers = new Mock<IProviderService>();
+        providers.Setup(p => p.FindProvidersAsync(It.IsAny<BsonDocument>())).ReturnsAsync(providerEntity);
+        providers.Setup(p => p.UpdateProviderAsync(providerEntity.Id.ToString(), providerEntity)).ReturnsAsync(true);
+        var notifications = new Mock<INotificationService>();
+        notifications.Setup(n => n.SendAsync(It.IsAny<NotificationEntity>()))
+                     .ThrowsAsync(new InvalidOperationException("notification store down"));
+
+        var handler = new CancelAppointmentCommandHandler(
+            Mock.Of<IMediator>(), providers.Object, bookings.Object, Mock.Of<IEventStore>(), notifications.Object);
+
+        var result = await handler.Handle(
+            new CancelAppointmentCommand { Identifier = "abc123" }, CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+    }
+
 }

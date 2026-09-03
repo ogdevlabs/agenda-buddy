@@ -126,13 +126,18 @@ public class BookingModule : ICarterModule
                     var appointment = await bookingService.SearchAppointmentAsync(identifier);
                     if (appointment is null) return TypedResults.NotFound();
 
-                    // Either participant may book; only the provider may complete. A customer marking their own
-                    // session complete is a claim about work delivered, not a scheduling action.
+                    // Only the PROVIDER may move an appointment out of Requested. Booking is the provider
+                    // accepting the request, and completing is a claim about work delivered — neither is
+                    // something the requesting customer can assert about the other party. A customer could
+                    // previously promote their own request straight to Booked, which made "Booked" mean
+                    // nothing: it no longer distinguished an accepted session from a pending one.
+                    //
+                    // Both participants are still asserted first, so a third party gets 403 rather than a
+                    // response that reveals the appointment exists.
                     try
                     {
                         OwnershipGuard.AssertOwnerAny(user, appointment.EmailProvider, appointment.EmailCustomer);
-                        if (target == AppointmentStatus.Completed)
-                            OwnershipGuard.AssertOwner(user, appointment.EmailProvider);
+                        OwnershipGuard.AssertOwner(user, appointment.EmailProvider);
                     }
                     catch (ForbiddenException) { return TypedResults.Forbid(); }
 

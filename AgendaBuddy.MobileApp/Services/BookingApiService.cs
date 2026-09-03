@@ -40,7 +40,10 @@ public class BookingApiService : IBookingApiService
     public async Task<List<AppointmentSummary>> GetTodayAppointmentsAsync(CancellationToken ct = default)
     {
         var appointments = await _calendarApiService.GetAppointmentsAsync(ct);
-        var today = DateTime.UtcNow.Date;
+
+        // DateTime.Today, not UtcNow.Date — ScheduledAt arrives already converted to local time, so a
+        // device behind UTC was matching against tomorrow's date for the last hours of every evening.
+        var today = DateTime.Today;
 
         return appointments
             .Where(a => a.ScheduledAt.Date == today)
@@ -65,6 +68,31 @@ public class BookingApiService : IBookingApiService
             .ToList();
     }
 
+    public async Task<List<AppointmentSummary>> GetUpcomingAppointmentsAsync(CancellationToken ct = default)
+    {
+        var appointments = await _calendarApiService.GetAppointmentsAsync(ct);
+
+        // DateTime.Now, not UtcNow: CalendarApiService converts ScheduledAt to local time on the way in
+        // (see its GetAppointmentsAsync), so every consumer treats it as wall-clock. Comparing it against
+        // UtcNow silently hid every session inside the device's UTC offset — a booking made for later
+        // today vanished from the dashboard the moment it was created.
+        var now = DateTime.Now;
+
+        // Compared against the current instant rather than the date, so a session earlier today has
+        // already dropped off while one later today is still ahead.
+        //
+        // Cancelled AND Completed are both excluded however they are dated: a session that has been dealt
+        // with is not something still to come. A provider can mark a session complete before its scheduled
+        // time, which otherwise left it sitting under "Upcoming" reading "Completed".
+        return appointments
+            .Where(a => a.ScheduledAt >= now
+                        && a.Status != AppointmentStatus.Cancelled
+                        && a.Status != AppointmentStatus.Completed)
+            .OrderBy(a => a.ScheduledAt)
+            .Select(ToSummary)
+            .ToList();
+    }
+
     private static AppointmentSummary ToSummary(AppointmentDetail detail) => new()
     {
         Id = detail.Id,
@@ -75,6 +103,11 @@ public class BookingApiService : IBookingApiService
         Status = detail.Status,
         ServiceId = detail.ServiceId,
         ServiceName = detail.ServiceName,
+        ServiceDurationMinutes = detail.ServiceDurationMinutes,
+        // Carried through so the provider's expanded card can show who to call. Dropping these here left
+        // the Phone row permanently blank however well the directory lookup worked upstream.
+        CustomerName = detail.CustomerName,
+        CustomerPhone = detail.CustomerPhone,
         CustomerNotes = detail.CustomerNotes
     };
 

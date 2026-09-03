@@ -16,6 +16,17 @@ public static class CustomerRouteBuilder
     /// </summary>
     public static RouteSpec UpdateCustomer(string email) => new(HttpMethod.Put, $"api/v1/customers/{email}");
 
+    /// <summary>
+    /// <c>POST /api/v1/customers</c> — creates the domain profile that registration alone does not. Until
+    /// it exists, subscribing to a provider answers 404: the repository never upserts, so a PUT against a
+    /// missing customer has nothing to update.
+    /// </summary>
+    public static RouteSpec CreateCustomer() => new(HttpMethod.Post, "api/v1/customers");
+
+    public static object BuildCreateCustomerPayload(
+        string email, string firstName, string lastName, string? phoneNumber) =>
+        new { email, firstName, lastName, phoneNumber };
+
     public static object BuildUpdateCustomerPayload(string email, string firstName, string lastName) =>
         new { email, firstName, lastName };
 

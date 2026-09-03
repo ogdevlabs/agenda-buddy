@@ -48,14 +48,14 @@ public partial class DashboardViewModel : ObservableObject
     public bool IsProvider => _session.IsProvider;
     public bool IsCustomer => _session.IsCustomer;
 
-    public string SectionTitle => IsCustomer ? "Recent Sessions" : "Appointments";
-    public string PrimaryStatLabel => IsCustomer ? "Completed" : "Today";
+    public string SectionTitle => "Upcoming Sessions";
+    public string PrimaryStatLabel => "Today";
     public string PrimaryStatCaption => IsCustomer ? "" : "Sessions";
-    public string SecondaryStatLabel => IsCustomer ? "Cancelled" : "This Week";
-    public string SecondaryStatCaption => IsCustomer ? "" : "Upcoming";
-    public string EmptyStateTitle => IsCustomer ? "No Sessions Yet" : "No Appointments";
+    public string SecondaryStatLabel => "Upcoming";
+    public string SecondaryStatCaption => "";
+    public string EmptyStateTitle => IsCustomer ? "Nothing Booked Yet" : "No Appointments";
     public string EmptyStateSubtitle => IsCustomer
-        ? "Your completed and cancelled sessions will show up here."
+        ? "Book a session with a provider and it will show up here."
         : "Check your calendar for upcoming sessions.";
 
     public event EventHandler? AppointmentsLoaded;
@@ -98,24 +98,20 @@ public partial class DashboardViewModel : ObservableObject
 
         try
         {
-            var results = IsCustomer
-                ? await _bookingApiService.GetPastAppointmentsAsync()
-                : await _bookingApiService.GetTodayAppointmentsAsync();
+            // Both roles lead with what is still ahead.
+            //
+            // For a Customer this used to fetch past appointments only, so a session booked seconds earlier
+            // could never appear however often it refreshed. For a Provider it fetched today only, which
+            // hid every session from tomorrow onward — a provider had no way to see their own forthcoming
+            // bookings at all, and the "This Week" tile was really just today's count under another name.
+            var results = await _bookingApiService.GetUpcomingAppointmentsAsync();
 
             _allAppointments = results;
             _pageIndex = 0;
             UpdatePage();
 
-            if (IsCustomer)
-            {
-                TodayCount = results.Count(a => a.Status == AgendaBuddy.Library.Entities.AppointmentStatus.Completed);
-                WeekCount = results.Count(a => a.Status == AgendaBuddy.Library.Entities.AppointmentStatus.Cancelled);
-            }
-            else
-            {
-                TodayCount = results.Count(a => a.ScheduledAt.Date == DateTime.Today);
-                WeekCount = results.Count;
-            }
+            TodayCount = results.Count(a => a.ScheduledAt.Date == DateTime.Today);
+            WeekCount = results.Count;
 
             AppointmentsLoaded?.Invoke(this, EventArgs.Empty);
         }
@@ -156,10 +152,23 @@ public partial class DashboardViewModel : ObservableObject
         PageLabel = totalPages > 1 ? $"{_pageIndex + 1} / {totalPages}" : "";
     }
 
+    /// <summary>
+    /// Raised when a card is tapped, so the page can navigate to that appointment's detail screen.
+    /// </summary>
+    /// <remarks>
+    /// Replaces an inline expand/collapse. The cards grew in place to show service, phone and notes, but on
+    /// iOS a <c>CollectionView</c> cell that grows does not shrink back when its content collapses — a
+    /// closed card kept its opened height as dead space, and no amount of re-measuring, rebuilding the
+    /// collection or forcing <c>ItemSizingStrategy="MeasureAllItems"</c> restored it. Every card is now a
+    /// fixed height and the same information lives on the detail page, which already shows all of it and
+    /// carries the actions besides.
+    /// </remarks>
+    public event EventHandler<AppointmentSummary>? AppointmentSelected;
+
     [RelayCommand]
-    private void ToggleAppointment(AppointmentSummary item)
+    private void SelectAppointment(AppointmentSummary? item)
     {
-        item.IsExpanded = !item.IsExpanded;
+        if (item is not null) AppointmentSelected?.Invoke(this, item);
     }
 
     partial void OnErrorMessageChanged(string value)
