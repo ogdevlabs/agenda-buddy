@@ -1,5 +1,6 @@
 #if MOBILE
 using CommunityToolkit.Maui;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using AgendaBuddy.MobileApp.Infrastructure;
 using AgendaBuddy.MobileApp.Services;
@@ -17,6 +18,17 @@ public static class MauiProgram
         builder
             .UseMauiApp<App>()
             .UseMauiCommunityToolkit();
+
+        // Without this, builder.Configuration is empty and ApiBaseUrlResolver's middle priority --
+        // the "ApiBaseUrl" key -- can never match, so every build falls through to the local gateway
+        // fallback. That is why a Release build pointed at localhost and could reach no backend at all.
+        // Read from embedded resources because a packaged app has no working directory for AddJsonFile.
+        AddEmbeddedJson(builder.Configuration, "appsettings.json");
+#if DEBUG
+        // Overlays the deployed URL with the local gateway, so a Debug run needs no environment
+        // variable. A Release build never sees this file's contents.
+        AddEmbeddedJson(builder.Configuration, "appsettings.Development.json");
+#endif
 
 #if DEBUG
         builder.Logging.AddDebug();
@@ -95,6 +107,22 @@ public static class MauiProgram
         builder.Services.AddSingleton<AppShell>();
 
         return builder.Build();
+    }
+
+    /// <summary>
+    /// Adds an embedded JSON configuration file, if it is present.
+    /// </summary>
+    /// <remarks>
+    /// A missing file is not an error: it can only be missing if someone dropped the EmbeddedResource
+    /// entry from the csproj, and failing startup over configuration that has a working fallback would
+    /// be worse than quietly using the fallback.
+    /// </remarks>
+    private static void AddEmbeddedJson(IConfigurationBuilder configuration, string logicalName)
+    {
+        using var stream = typeof(MauiProgram).Assembly.GetManifestResourceStream(logicalName);
+        if (stream is null) return;
+
+        configuration.AddJsonStream(stream);
     }
 }
 #endif
