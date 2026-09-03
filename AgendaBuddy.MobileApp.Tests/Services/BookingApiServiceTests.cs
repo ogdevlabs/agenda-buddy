@@ -359,6 +359,23 @@ public class BookingApiServiceTests
         Assert.Equal("future", result[0].Id);
     }
 
+    // A provider may mark a session complete before its scheduled time, which left a future-dated but
+    // finished session sitting under "Upcoming" reading "Completed".
+    [Fact]
+    public async Task GetUpcomingAppointments_ExcludesCompletedHoweverTheyAreDated()
+    {
+        var completed = Detail("done", DateTime.Now.AddDays(1));
+        completed.Status = AppointmentStatus.Completed;
+
+        var calendar = new Mock<ICalendarApiService>();
+        calendar.Setup(c => c.GetAppointmentsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<AppointmentDetail> { completed });
+
+        var sut = new BookingApiService(new Mock<IHttpClientFactory>().Object, calendar.Object);
+
+        Assert.Empty(await sut.GetUpcomingAppointmentsAsync());
+    }
+
     [Fact]
     public async Task GetUpcomingAppointments_ExcludesCancelledHoweverTheyAreDated()
     {

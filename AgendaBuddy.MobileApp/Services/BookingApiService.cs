@@ -79,10 +79,15 @@ public class BookingApiService : IBookingApiService
         var now = DateTime.Now;
 
         // Compared against the current instant rather than the date, so a session earlier today has
-        // already dropped off while one later today is still ahead. Cancelled sessions are not "upcoming"
-        // however they are dated.
+        // already dropped off while one later today is still ahead.
+        //
+        // Cancelled AND Completed are both excluded however they are dated: a session that has been dealt
+        // with is not something still to come. A provider can mark a session complete before its scheduled
+        // time, which otherwise left it sitting under "Upcoming" reading "Completed".
         return appointments
-            .Where(a => a.ScheduledAt >= now && a.Status != AppointmentStatus.Cancelled)
+            .Where(a => a.ScheduledAt >= now
+                        && a.Status != AppointmentStatus.Cancelled
+                        && a.Status != AppointmentStatus.Completed)
             .OrderBy(a => a.ScheduledAt)
             .Select(ToSummary)
             .ToList();

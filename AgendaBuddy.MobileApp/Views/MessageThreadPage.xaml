@@ -45,23 +45,36 @@
                                Padding="14,10"
                                HasShadow="False"
                                BorderColor="Transparent"
-                               BackgroundColor="{StaticResource Primary}"
-                               HorizontalOptions="End"
+                               BackgroundColor="{Binding IsMine, Converter={toolkit:BoolToObjectConverter TrueObject={StaticResource Primary}, FalseObject=White}}"
+                               HorizontalOptions="Start"
                                MaximumWidthRequest="280">
+                            <Frame.Triggers>
+                                <DataTrigger TargetType="Frame" Binding="{Binding IsMine}" Value="True">
+                                    <Setter Property="HorizontalOptions" Value="End" />
+                                </DataTrigger>
+                            </Frame.Triggers>
                             <VerticalStackLayout Spacing="4">
+                                <!-- Ours reads white-on-accent, theirs dark-on-white: the side of the thread
+                                     a message sits on is reinforced by its colour, not carried by it alone. -->
                                 <Label Text="{Binding Body}"
                                        FontSize="15"
-                                       TextColor="White"
+                                       TextColor="{Binding IsMine, Converter={toolkit:BoolToObjectConverter TrueObject=White, FalseObject={StaticResource TextPrimary}}}"
                                        LineBreakMode="WordWrap" />
                             </VerticalStackLayout>
                         </Frame>
 
-                        <!-- Timestamp -->
+                        <!-- Timestamp, on the same side as its bubble -->
                         <Label Text="{Binding SentAt, StringFormat='{0:h:mm tt}'}"
                                FontSize="10"
                                TextColor="{StaticResource TextMuted}"
-                               HorizontalOptions="End"
-                               Margin="4,0,4,4" />
+                               HorizontalOptions="Start"
+                               Margin="4,0,4,4">
+                            <Label.Triggers>
+                                <DataTrigger TargetType="Label" Binding="{Binding IsMine}" Value="True">
+                                    <Setter Property="HorizontalOptions" Value="End" />
+                                </DataTrigger>
+                            </Label.Triggers>
+                        </Label>
 
                     </VerticalStackLayout>
                 </DataTemplate>

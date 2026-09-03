@@ -32,4 +32,15 @@ public class MessageSummary
     private DateTime _sentAt;
 
     public bool IsRead { get; set; }
+
+    /// <summary>
+    /// True when the signed-in user sent this. Set by the thread ViewModel, which knows who the counterpart
+    /// is — every bubble was previously drawn identically (accent fill, right-aligned), so a conversation
+    /// gave no indication of who had said what.
+    /// </summary>
+    /// <remarks>
+    /// Alignment is derived from this in XAML rather than exposed here as a <c>LayoutOptions</c>: this model
+    /// also compiles into the net10.0 slice the tests run against, which has no MAUI types.
+    /// </remarks>
+    public bool IsMine { get; set; }
 }

@@ -55,7 +55,16 @@ public partial class MessageThreadViewModel : ObservableObject
 
         try
         {
-            Messages = await _messagingService.GetThreadAsync(RecipientEmail);
+            var messages = await _messagingService.GetThreadAsync(RecipientEmail);
+
+            // Anything NOT from the counterpart is ours. Derived from RecipientEmail rather than the session
+            // because a thread only ever has two participants, so "not them" is exactly "me" — and it saves
+            // this ViewModel a dependency it otherwise has no use for.
+            foreach (var message in messages)
+                message.IsMine = !string.Equals(
+                    message.SenderEmail, RecipientEmail, StringComparison.OrdinalIgnoreCase);
+
+            Messages = messages;
             await MarkIncomingUnreadAsync();
         }
         catch (Exception)
