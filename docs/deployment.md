@@ -170,6 +170,29 @@ terraform output client_id            # → GitHub Environment variable AZURE_CL
 terraform output resource_group_name  # informational — azd's own output shows this too
 ```
 
+**2a. Grant yourself data-plane access — before that `apply`, and it is not optional.**
+
+Azure RBAC separates management-plane from data-plane. Subscription **Owner** lets you *create* a Key
+Vault and a storage account but grants **no** access to the secrets or blobs inside them, so the apply
+above fails 403 writing its own secrets without these two grants:
+
+```bash
+MYOID=$(az ad signed-in-user show --query id -o tsv)
+az role assignment create --assignee-object-id "$MYOID" --assignee-principal-type User \
+  --role "Key Vault Secrets Officer" \
+  --scope "/subscriptions/<sub>/resourceGroups/rg-agenda-buddy-<env>/providers/Microsoft.KeyVault/vaults/kv-agbuddy-<env>"
+az role assignment create --assignee-object-id "$MYOID" --assignee-principal-type User \
+  --role "Storage Blob Data Contributor" \
+  --scope "/subscriptions/<sub>/resourceGroups/rg-agenda-buddy-tfstate/providers/Microsoft.Storage/storageAccounts/<state-account>"
+```
+
+RBAC is eventually consistent — wait ~60s before running Terraform.
+
+These are deliberately **not** in the Terraform config. They describe who is *operating* the config, not
+what the environment should contain, and modelling them as resources made the desired state differ by
+caller: with the state file shared between a human's apply and CI's, each run tried to delete the
+other's grant. CI did exactly that once, silently removing a developer's Key Vault access.
+
 That second `apply` creates the Entra app registration, its GitHub OIDC federated credential
 (scoped to this exact GitHub Environment name), the role assignments `azd` needs inside the new
 resource group, and a Key Vault holding the five secret values passed above. From here on,
