@@ -15,8 +15,6 @@ global using AgendaBuddy.Provider.Domain.Commands;
 global using AgendaBuddy.Provider.Domain.Queries;
 global using AgendaBuddy.Provider.Domain.Responses;
 global using AgendaBuddy.Provider.Extensions;
-global using AgendaBuddy.Kafka;
-global using AgendaBuddy.Kafka.Support;
 global using AgendaBuddy.Library.Dtos;
 global using AgendaBuddy.Library.Entities;
 global using AgendaBuddy.Library.Extensions;

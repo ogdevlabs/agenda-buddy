@@ -88,17 +88,15 @@ public class ProviderCreationGuardTest : IClassFixture<ServiceHostFixture<Provid
     {
         // The control. Without it, a guard that refused every POST would satisfy both assertions above.
         //
-        // ⚠️ It asserts "not refused by AUTHORIZATION", not "created". This route actually returns 400 in
-        // the harness, for a reason unrelated to authorization: the handler publishes to
-        // Kafka, there is no broker here, and KafkaClient reports the failure as a validation problem
-        // (Provider/Program.cs's Kafka error branch). Asserting 201 would be asserting that a Kafka broker
-        // exists. Recorded so the weaker assertion reads as deliberate.
+        // Asserts the record is actually created. This used to be able to assert only "not refused by
+        // AUTHORIZATION", because the handler called a message broker that this harness never started
+        // and the resulting failure surfaced as a 400 — so 201 would have been asserting a broker
+        // existed. Creating a provider now reaches no broker.
         using var service = _host.StartService("Production");
 
         var response = await service.Client.SendAsync(
             CreateProvider(forEmail: Caller, callerSubject: Caller, role: TokenFactory.ProviderRole));
 
-        Assert.NotEqual(HttpStatusCode.Forbidden, response.StatusCode);
-        Assert.NotEqual(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
     }
 }

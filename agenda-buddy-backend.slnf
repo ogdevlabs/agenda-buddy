@@ -26,8 +26,6 @@
       "AgendaBuddy.Gateway\\AgendaBuddy.Gateway.csproj",
       "AgendaBuddy.Identity.Tests\\AgendaBuddy.Identity.Tests.csproj",
       "AgendaBuddy.Identity\\AgendaBuddy.Identity.csproj",
-      "AgendaBuddy.Kafka.Tests\\AgendaBuddy.Kafka.Tests.csproj",
-      "AgendaBuddy.Kafka\\AgendaBuddy.Kafka.csproj",
       "AgendaBuddy.Library.ServerAuth\\AgendaBuddy.Library.ServerAuth.csproj",
       "AgendaBuddy.Library.Tests\\AgendaBuddy.Library.Tests.csproj",
       "AgendaBuddy.Library\\AgendaBuddy.Library.csproj",

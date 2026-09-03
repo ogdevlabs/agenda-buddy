@@ -11,7 +11,7 @@ public class CustomerModule : ICarterModule
             .WithOpenApi()
             .AddEndpointFilter<ProblemDetailsServiceEndpointFilter>();
 
-        // Create a Customer, verifying for duplicate record, create a Kafka topic for the customer.
+        // Create a Customer, verifying for duplicate record.
         customers.MapPost("/", async Task<Results<ValidationProblem, Created<DataResponse<CustomerEntity>>>> (
             IMediator mediator,
             CustomerEntity customerEntity,
@@ -20,7 +20,7 @@ public class CustomerModule : ICarterModule
             if (!MiniValidator.TryValidate(customerEntity, out var errors))
                 return TypedResults.ValidationProblem(errors);
 
-            // The duplicate-email check and Kafka topic creation both live in AddCustomerCommandHandler, so
+            // The duplicate-email check lives in AddCustomerCommandHandler, so
             // this route is endpoint/DI wiring only.
             var result = await mediator.Send(new AddCustomerCommand { CustomerEntity = customerEntity }, cancellationToken);
 

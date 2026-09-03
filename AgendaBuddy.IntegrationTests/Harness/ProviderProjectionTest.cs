@@ -48,7 +48,6 @@ public class ProviderProjectionTest : IClassFixture<ServiceHostFixture<ProviderA
             FirstName = "Sarah",
             LastName = "Nakamura",
             Email = Owner,
-            KafkaTopic = "provider-topic-that-must-not-leak",
             ServiceEntities = [new ServiceEntity { Id = ObjectId.GenerateNewId(), Name = "60-min PT session", Fee = 65m }],
             AppointmentEntities =
             [
@@ -83,7 +82,6 @@ public class ProviderProjectionTest : IClassFixture<ServiceHostFixture<ProviderA
         Assert.DoesNotContain(ClientInTheBook, body, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("appointment", body, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("subscribed", body, StringComparison.OrdinalIgnoreCase);
-        Assert.DoesNotContain("kafka", body, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

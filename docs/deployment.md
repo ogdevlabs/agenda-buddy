@@ -43,8 +43,8 @@ scoped to exactly what `azd`/Aspire has no opinion about and cannot bootstrap no
 - **The GitHub Actions deploy identity** — an Entra app registration with a federated (OIDC)
   credential scoped to one GitHub Environment, plus the role assignments `azd` needs to operate
   inside that resource group
-- **A Key Vault** holding that environment's secrets (Atlas connection strings, JWT keypair,
-  Kafka endpoint) — Terraform writes them in, the deploy workflow reads them out at deploy time
+- **A Key Vault** holding that environment's secrets (Atlas connection strings, JWT keypair) —
+  Terraform writes them in, the deploy workflow reads them out at deploy time
 
 Everything inside the resource group that Aspire's own publisher already knows how to build —
 the Container Apps environment, the registry, one container app per service — stays owned by
@@ -59,17 +59,20 @@ The graph is built in one of two shapes, chosen by `AppHostWiring.DeploymentTarg
 | | Local (`dotnet run`) | Cloud (`azd up`) |
 |---|---|---|
 | MongoDB | container + persistent volume, password from user secrets | **connection string parameter** — managed cluster (Atlas) |
-| Kafka | container, no volume (E-10) | **connection string parameter** — managed Kafka |
 | The 7 domain services | processes on dynamic localhost ports | one container app each, internal-only (no external ingress) |
 | The Gateway | process on a dynamic localhost port, `MobileApp`'s only address | one container app, **external HTTP ingress** — the only externally reachable resource |
 | JWT keys | user secrets, masked in the dashboard | `azd` parameters, stored in Key Vault |
-| `WaitFor` gating | yes — mongo and kafka health-gate startup | **no** — a connection string has no lifecycle to wait on |
+| `WaitFor` gating | yes — mongo health-gates startup | **no** — a connection string has no lifecycle to wait on |
 
 **A dev container is not a production database.** The cloud shape deliberately does not lift the
-MongoDB or Kafka containers into the cloud: they exist for a local loop, one has a persistent volume
-whose lifetime is a developer's laptop, and neither has backups, failover or an access log worth the
-name. Cloud MongoDB is a managed cluster whose connection string is supplied at deploy time, so
-**nothing in this repository decides anything about production storage.**
+MongoDB container into the cloud: it exists for a local loop, its persistent volume's lifetime is a
+developer's laptop, and it has no backups, failover or an access log worth the name. Cloud MongoDB is
+a managed cluster whose connection string is supplied at deploy time, so **nothing in this repository
+decides anything about production storage.**
+
+There is no message broker in either shape. Kafka was removed on 2026-09-02 — it had no producers and
+no consumers, and an unreachable broker made provider/customer creation fail, so it could only block
+signup.
 
 Both shapes are asserted by `AgendaBuddy.AppHost.Tests`: the cloud shape provisions no data
 containers, supplies each data service as a connection string under the same resource name as
@@ -100,8 +103,6 @@ Ongoing (every deploy, all automated in CI — nothing here is run by hand):
   installs both for you
 - **A managed MongoDB** reachable from Azure, with its own credential — *not* the credential in
   `docs/issues/ISSUE-002-atlas-credential-rotation.md`, which is compromised
-- **A managed Kafka** (Confluent Cloud, or Event Hubs' Kafka endpoint) — or drop the three Kafka
-  consumers from the deployment until one exists
 - An RSA keypair for JWT signing, **generated for this environment** and not shared with any
   developer's machine
 
@@ -162,7 +163,6 @@ terraform apply \
   -var tenant_id=<tenant-id> \
   -var agenda_buddy_connection_string="mongodb+srv://<user>:<password>@<cluster>/agenda_buddy?retryWrites=true&w=majority" \
   -var identity_db_connection_string="mongodb+srv://<user>:<password>@<cluster>/IdentityDb?retryWrites=true&w=majority" \
-  -var kafka_bootstrap_servers="<bootstrap-host>:9092" \
   -var jwt_public_key="$(cat jwt.pub)" \
   -var jwt_private_key="$(cat jwt.key)"
 
@@ -186,9 +186,10 @@ stages, both non-interactive:
 1. **`terraform apply`** against `infra/terraform/environment`, authenticated via the same GitHub
    OIDC federated credential the bootstrap step created — reconciles the resource group, identity
    and Key Vault against any drift, and outputs this environment's `client_id`/`key_vault_name`.
-2. **`azd provision` + `azd deploy`**, authenticated as that same identity, reading the Atlas/JWT/
-   Kafka values out of the Key Vault Terraform just confirmed — no `AZD_ENV_VARS` secret blob, no
-   `_B64` PEM-encoding workaround.
+2. **`azd provision` + `azd deploy`**, authenticated as that same identity, reading the Atlas/JWT
+   values out of the Key Vault Terraform just confirmed — no `AZD_ENV_VARS` secret blob, no
+   `_B64` PEM-encoding workaround. ⚠️ **`provision` defaults to `false`; an environment's first ever
+   run must be dispatched with it `true`, or `azd deploy` has no infrastructure to deploy to.**
 
 A **smoke test** closes the loop: after `azd deploy`, the workflow curls the gateway's `/health`
 and `/alive` (the only externally-reachable resource — see "Fixed: cloud ingress was backwards
@@ -226,7 +227,7 @@ that `apply` as `-var ...`, and steps 5–6 read its `terraform output`:
    and add at least yourself. This is the one deliberately-human gate left — a manual approval
    click even though the workflow is already dispatch-only, for the environment where a mistake
    costs the most. Skip this for `staging`.
-4. Under **Environment secrets**, click **Add secret** five times, once per row in the table
+4. Under **Environment secrets**, click **Add secret** four times, once per row in the table
    below — name exactly as shown, value is whatever you passed to that environment's bootstrap
    `terraform apply -var ...`:
 
@@ -234,7 +235,6 @@ that `apply` as `-var ...`, and steps 5–6 read its `terraform output`:
    |---|---|---|
    | `ATLAS_AGENDA_BUDDY_CONNECTION_STRING` | `agenda_buddy_connection_string` | your Atlas cluster, `agenda_buddy` database |
    | `ATLAS_IDENTITY_DB_CONNECTION_STRING` | `identity_db_connection_string` | your Atlas cluster, `IdentityDb` database |
-   | `KAFKA_BOOTSTRAP_SERVERS` | `kafka_bootstrap_servers` | your managed Kafka's bootstrap endpoint |
    | `JWT_PUBLIC_KEY` | `jwt_public_key` | `cat jwt.pub` — the environment's own keypair |
    | `JWT_PRIVATE_KEY` | `jwt_private_key` | `cat jwt.key` — the environment's own keypair |
 
@@ -263,12 +263,12 @@ that `apply` as `-var ...`, and steps 5–6 read its `terraform output`:
    | `TF_STATE_CONTAINER` | `container_name` |
 
 7. Repeat this whole procedure for every additional environment (see [Adding another
-   environment](#adding-another-environment)) — each gets its own Environment, its own five
+   environment](#adding-another-environment)) — each gets its own Environment, its own four
    secrets, and its own four `AZURE_*` variables; only the three `TF_STATE_*` variables are
    copied identically across environments.
 
 Once this is done for an environment, running `.github/workflows/deploy.yml` with
-`environment: <that name>` needs no further setup — the preflight step re-checks all 14 of the
+`environment: <that name>` needs no further setup — the preflight step re-checks all 13 of the
 above by name and fails loudly, naming exactly which is missing, before anything is provisioned
 or deployed.
 
@@ -290,12 +290,10 @@ for the new name:
    a leaked credential in one environment must not reach another's data.
 2. **A dedicated RSA keypair for JWT signing**, generated fresh for that environment — never the
    same keypair as another environment or a developer's machine.
-3. **A dedicated managed Kafka target**, or a deliberate decision to drop the three Kafka consumers
-   for that environment.
-4. **The environment's own deploy identity** — step 2 of
+3. **The environment's own deploy identity** — step 2 of
    [One-time subscription bootstrap](#one-time-subscription-bootstrap), run once with the new
    `environment_name` (the state backend from step 1 is shared, not recreated).
-5. **A matching GitHub Environment** ([above](#deployments--github-actions)), named identically,
+4. **A matching GitHub Environment** ([above](#deployments--github-actions)), named identically,
    with its own scoped variables and secrets — so `deploy.yml`'s
    `environment: ${{ inputs.environment }}` resolves to the right, isolated identity for that run.
 

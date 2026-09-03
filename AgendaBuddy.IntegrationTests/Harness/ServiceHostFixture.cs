@@ -110,7 +110,7 @@ public class ServiceHostFixture<TEntryPoint>(CryptoSessionFixture crypto) : IAsy
     /// </param>
     /// <param name="configureServices">
     /// Applied through <c>ConfigureTestServices</c>, so it runs after the service's own
-    /// <c>Program.cs</c> registrations, so a singleton such as <c>IKafkaClient</c>
+    /// <c>Program.cs</c> registrations, so a singleton such as <c>IMongoClient</c>
     /// can be swapped for a recording fake without touching the service itself.
     /// </param>
     public ServiceHost StartService(

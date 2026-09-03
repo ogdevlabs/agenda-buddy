@@ -56,8 +56,7 @@ public class BookingCorrectnessTest(ServiceHostFixture<BookingAnchor> host, Cryp
         await SeedProviderAsync(service);
 
         var response = await service.Client.SendAsync(
-            BookRequest(new DateTime(2026, 9, 1, 11, 0, 0, DateTimeKind.Utc),
-                new DateTime(2026, 9, 1, 10, 0, 0, DateTimeKind.Utc)));
+            BookRequest(FutureSlot.Start(hour: 11), FutureSlot.Start(hour: 10)));
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
@@ -81,8 +80,8 @@ public class BookingCorrectnessTest(ServiceHostFixture<BookingAnchor> host, Cryp
         using var service = host.StartService("Production");
         await SeedProviderAsync(service);
 
-        var start = new DateTime(2026, 9, 2, 10, 0, 0, DateTimeKind.Utc);
-        var end = new DateTime(2026, 9, 2, 11, 0, 0, DateTimeKind.Utc);
+        var start = FutureSlot.Start(daysAhead: 8);
+        var end = start.AddHours(1);
 
         var first = await service.Client.SendAsync(BookRequest(start, end));
         Assert.Equal(HttpStatusCode.Created, first.StatusCode);
@@ -100,8 +99,8 @@ public class BookingCorrectnessTest(ServiceHostFixture<BookingAnchor> host, Cryp
         using var service = host.StartService("Production");
         await SeedProviderAsync(service);
 
-        var start = new DateTime(2026, 9, 3, 10, 0, 0, DateTimeKind.Utc);
-        var end = new DateTime(2026, 9, 3, 11, 0, 0, DateTimeKind.Utc);
+        var start = FutureSlot.Start(daysAhead: 9);
+        var end = start.AddHours(1);
 
         var first = await service.Client.SendAsync(BookRequest(start, end));
         Assert.Equal(HttpStatusCode.Created, first.StatusCode);

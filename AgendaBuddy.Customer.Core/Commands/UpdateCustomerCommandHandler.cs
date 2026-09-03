@@ -32,7 +32,6 @@ public class UpdateCustomerCommandHandler(
         }
 
         request.CustomerEntity.Id = customer.Id;
-        request.CustomerEntity.KafkaTopic = customer.KafkaTopic;
         request.CustomerEntity.SubscribedProviderCollection = customer.SubscribedProviderCollection;
         request.CustomerEntity.AppointmentCollection = customer.AppointmentCollection;
 

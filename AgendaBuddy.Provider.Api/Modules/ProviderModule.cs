@@ -33,8 +33,7 @@ public class ProviderModule : ICarterModule
                 OwnershipGuard.AssertOwner(user, providerEntity.Email);
 
                 // Dispatched through mediator.Send with the request's CancellationToken. The duplicate-name
-                // check and Kafka topic creation both live in AddProviderCommandHandler, so this route is
-                // endpoint/DI wiring only.
+                // check lives in AddProviderCommandHandler, so this route is endpoint/DI wiring only.
                 var result = await mediator.Send(new AddProviderCommand { ProviderEntity = providerEntity }, cancellationToken);
 
                 if (result.IsSuccess)

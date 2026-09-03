@@ -9,9 +9,7 @@ namespace AgendaBuddy.Booking.Core.Commands;
 //
 // Stays on the concrete ProviderService/BookingService, not IProviderService/IBookingService (unlike
 // Update/Cancel's handlers, Party Review): this one calls AppendAppointmentAsync, which isn't on
-// IProviderService, and adding it would be a Library change out of this feature's scope. The
-// constructor's own unused KafkaClient/IKafkaClient parameter -- "reserved for future Kafka
-// publishing" -- was removed here too (Party Review, Neo's YAGNI finding): nothing consumed it.
+// IProviderService, and adding it would be a Library change out of this feature's scope.
 public class BookingAppointmentCommandHandler(
     IMediator mediator,
     ProviderService providerService,

@@ -20,7 +20,7 @@ on:
         required: true
         default: staging
       provision:
-        description: "Run azd provision (infrastructure) as well as deploy"
+        description: "Run azd provision (infrastructure) as well as deploy. REQUIRED on an environment's first ever run — azd deploy has nothing to deploy to until provision has created it."
         type: boolean
         required: false
         default: false
@@ -65,7 +65,7 @@ jobs:
           TF_STATE_CONTAINER: ${{ vars.TF_STATE_CONTAINER }}
           TF_VAR_agenda_buddy_connection_string: ${{ secrets.ATLAS_AGENDA_BUDDY_CONNECTION_STRING }}
           TF_VAR_identity_db_connection_string: ${{ secrets.ATLAS_IDENTITY_DB_CONNECTION_STRING }}
-          TF_VAR_kafka_bootstrap_servers: ${{ secrets.KAFKA_BOOTSTRAP_SERVERS }}
+          TF_VAR_resend_api_key: ${{ secrets.RESEND_API_KEY }}
           TF_VAR_jwt_public_key: ${{ secrets.JWT_PUBLIC_KEY }}
           TF_VAR_jwt_private_key: ${{ secrets.JWT_PRIVATE_KEY }}
         run: |
@@ -75,7 +75,7 @@ jobs:
             [ -n "${!name:-}" ] || missing="$missing $name (repository or environment variable)"
           done
           for name in TF_VAR_agenda_buddy_connection_string TF_VAR_identity_db_connection_string \
-                      TF_VAR_kafka_bootstrap_servers TF_VAR_jwt_public_key TF_VAR_jwt_private_key; do
+                      TF_VAR_jwt_public_key TF_VAR_jwt_private_key; do
             [ -n "${!name:-}" ] || missing="$missing $name (environment secret)"
           done
           if [ -n "$missing" ]; then
@@ -112,7 +112,7 @@ jobs:
           TF_VAR_tenant_id: ${{ vars.AZURE_TENANT_ID }}
           TF_VAR_agenda_buddy_connection_string: ${{ secrets.ATLAS_AGENDA_BUDDY_CONNECTION_STRING }}
           TF_VAR_identity_db_connection_string: ${{ secrets.ATLAS_IDENTITY_DB_CONNECTION_STRING }}
-          TF_VAR_kafka_bootstrap_servers: ${{ secrets.KAFKA_BOOTSTRAP_SERVERS }}
+          TF_VAR_resend_api_key: ${{ secrets.RESEND_API_KEY }}
           TF_VAR_jwt_public_key: ${{ secrets.JWT_PUBLIC_KEY }}
           TF_VAR_jwt_private_key: ${{ secrets.JWT_PRIVATE_KEY }}
         run: terraform apply -input=false -auto-approve
@@ -131,20 +131,32 @@ jobs:
             echo "key_vault_name=$(terraform output -raw key_vault_name)"
           } >> "$GITHUB_OUTPUT"
 
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
+      # Must precede any azd invocation: azd is not present on the runner image, so calling
+      # `azd auth login` before this step fails with command not found.
+      - name: Install azd
+        uses: Azure/setup-azd@v2
+
+      # Two separate credential stores, both needed. `azd auth login` authenticates azd only; the
+      # Key Vault step below shells out to the az CLI, which reads none of azd's state and would
+      # fail unauthenticated without this.
+      - name: az login (federated, this environment's own identity)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ steps.tf.outputs.client_id }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
       - name: azd login (federated, this environment's own identity)
         run: |
           azd auth login \
             --client-id "${{ steps.tf.outputs.client_id }}" \
             --tenant-id "${{ vars.AZURE_TENANT_ID }}" \
             --federated-credential-provider github
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v6
-        with:
-          dotnet-version: 10.0.x
-
-      - name: Install azd
-        uses: Azure/setup-azd@v2
 
       - name: Configure azd environment from Key Vault
         env:
@@ -157,14 +169,14 @@ jobs:
             --no-prompt || azd env select "${{ inputs.environment }}"
 
           # Names on the left are what the AppHost's resource graph declares
-          # (AppHostWiring.cs: agenda-buddy / IdentityDb connection strings, kafka connection
-          # string, jwt-public-key / jwt-private-key parameters) — azd derives the exact
-          # environment-variable names it prompts for from that graph; capture them once from a
-          # `azd provision` dry run if this list ever needs updating.
+          # (AppHostWiring.cs: agenda-buddy / IdentityDb connection strings, jwt-public-key /
+          # jwt-private-key parameters) — azd derives the exact environment-variable names it
+          # prompts for from that graph; capture them once from a `azd provision` dry run if this
+          # list ever needs updating.
           declare -A secret_names=(
             [agenda-buddy-connection]=CONNECTIONSTRING_AGENDA_BUDDY
             [identity-db-connection]=CONNECTIONSTRING_IDENTITYDB
-            [kafka-bootstrap-servers]=CONNECTIONSTRING_KAFKA
+            [resend-api-key]=RESEND_API_KEY
             [jwt-public-key]=JWT_PUBLIC_KEY
             [jwt-private-key]=JWT_PRIVATE_KEY
           )
@@ -181,7 +193,7 @@ jobs:
         run: azd deploy --no-prompt
 
       - name: Smoke test — the gateway reports healthy
-        if: always()
+        if: success()
         run: |
           # Only the gateway has external ingress (AppHostWiring.cs — the 7 domain services
           # are deliberately internal-only in the Cloud shape), so it is the only endpoint this

@@ -16,7 +16,6 @@
     <ItemGroup>
         <ProjectReference Include="..\AgendaBuddy.Customer.Domain\AgendaBuddy.Customer.Domain.csproj" />
         <ProjectReference Include="..\AgendaBuddy.EventAndCommands\AgendaBuddy.EventAndCommands.csproj" />
-        <ProjectReference Include="..\AgendaBuddy.Kafka\AgendaBuddy.Kafka.csproj" />
         <ProjectReference Include="..\AgendaBuddy.Library\AgendaBuddy.Library.csproj" />
     </ItemGroup>
 

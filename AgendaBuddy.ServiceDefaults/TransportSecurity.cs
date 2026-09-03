@@ -68,6 +68,13 @@ public static class SecurityFlags
     public static bool RateLimitingEnabled(IConfiguration configuration) =>
         configuration.GetValue("Security:RateLimiting:Enabled", false);
 
+    /// <summary>
+    /// Whether transactional email delivery is configured. Read from here, like the limiter, so the startup
+    /// audit can name the key without ServiceDefaults depending on Identity.
+    /// </summary>
+    public static bool EmailDeliveryConfigured(IConfiguration configuration) =>
+        !string.IsNullOrWhiteSpace(configuration["Email:ApiKey"]);
+
     /// <summary>Whether this process is running on a developer's machine.</summary>
     public static bool IsLocalRun(IConfiguration configuration, IHostEnvironment environment) =>
         environment.IsDevelopment() || configuration.GetValue(LocalRunKey, false);
@@ -82,10 +89,14 @@ public static class SecurityFlags
     /// <c>true</c> only for Identity. The limiter protects the two routes that spend BCrypt, so warning
     /// about its absence in Booking would be noise about a control Booking never had.
     /// </param>
+    /// <param name="includeEmailDelivery">
+    /// <c>true</c> only for Identity, for the same reason: it is the only service that sends email.
+    /// </param>
     public static IReadOnlyList<string> DisabledControls(
         IConfiguration configuration,
         IHostEnvironment environment,
-        bool includeRateLimiting = false)
+        bool includeRateLimiting = false,
+        bool includeEmailDelivery = false)
     {
         if (IsLocalRun(configuration, environment)) return [];
 
@@ -105,6 +116,14 @@ public static class SecurityFlags
                 "Rate limiting is OFF: set Security:RateLimiting:Enabled=true. login and register each "
                 + "spend ~262 ms of CPU on BCrypt per request, so roughly 4 unauthenticated requests "
                 + "per second pin a core.");
+        }
+
+        if (includeEmailDelivery && !EmailDeliveryConfigured(configuration))
+        {
+            warnings.Add(
+                "Email delivery is OFF: set Email:ApiKey. Nothing sends the email-confirmation or "
+                + "password-reset token, and neither is recoverable any other way, so password reset "
+                + "does not work at all in this deployment.");
         }
 
         return warnings;
@@ -173,13 +192,19 @@ public static class TransportSecurityExtensions
     /// <param name="includeRateLimitingInAudit">
     /// Passed through to <see cref="SecurityFlags.DisabledControls"/>; <c>true</c> only for Identity.
     /// </param>
+    /// <param name="includeEmailDeliveryInAudit">
+    /// Passed through to <see cref="SecurityFlags.DisabledControls"/>; <c>true</c> only for Identity.
+    /// </param>
     public static WebApplication UseAgendaBuddyTransportSecurity(
-        this WebApplication app, bool includeRateLimitingInAudit = false)
+        this WebApplication app,
+        bool includeRateLimitingInAudit = false,
+        bool includeEmailDeliveryInAudit = false)
     {
         ArgumentNullException.ThrowIfNull(app);
 
         foreach (var warning in SecurityFlags.DisabledControls(
-                     app.Configuration, app.Environment, includeRateLimitingInAudit))
+                     app.Configuration, app.Environment, includeRateLimitingInAudit,
+                     includeEmailDeliveryInAudit))
         {
             // Warning, not a throw. A missing flag on a deployment should be loud and fixable, not an
             // outage — and it must not be able to stop a service that is otherwise healthy (D-7).

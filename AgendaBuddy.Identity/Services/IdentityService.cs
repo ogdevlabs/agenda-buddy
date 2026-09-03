@@ -21,7 +21,9 @@ public class IdentityService(
     IOptions<LockoutOptions>? lockoutOptions = null,
     ILogger<IdentityService>? logger = null,
     INotificationService? notificationService = null,
-    ITokenRevocationStore? tokenRevocationStore = null)
+    ITokenRevocationStore? tokenRevocationStore = null,
+    IEmailSender? emailSender = null,
+    IOptions<EmailOptions>? emailOptions = null)
 {
     private const string PrivateKeyEnvVar = "JWT_PRIVATE_KEY";
     private const string Issuer = "agenda-buddy-identity";
@@ -36,6 +38,8 @@ public class IdentityService(
     private readonly LockoutOptions _lockout = lockoutOptions?.Value ?? new LockoutOptions();
 
     private readonly ILogger _log = logger ?? NullLogger<IdentityService>.Instance;
+
+    private readonly EmailOptions _email = emailOptions?.Value ?? new EmailOptions();
 
     private static readonly string DummyHash =
         BCrypt.Net.BCrypt.HashPassword(Guid.Empty.ToString(), workFactor: 12);
@@ -102,11 +106,11 @@ public class IdentityService(
         _log.LogInformation(
             "credential.created ok for {Account} as {Role}", AccountReference(email), role);
 
-        // No email provider is configured (ADR-052) — logged for local development the same way a
-        // password-reset token is, not gated on for login (see EmailVerified's own remarks).
+        // The token itself is never logged. It is a bearer credential for the confirmation route, so a
+        // log sink is a place it can be read by anyone with log access and replayed.
         _log.LogInformation(
-            "credential.email-confirmation-requested for {Account}: token={ConfirmationToken} expires {Expiry:O}",
-            AccountReference(email), verificationOpaque, verificationExpiry);
+            "credential.email-confirmation-requested for {Account}: expires {Expiry:O}",
+            AccountReference(email), verificationExpiry);
 
         if (notificationService is not null)
         {
@@ -116,6 +120,14 @@ public class IdentityService(
                 body: "Welcome to Agenda Buddy. Please confirm you own this email address to finish setting up your account.",
                 type: NotificationType.EmailConfirmationRequested,
                 appointmentIdentifier: string.Empty));
+        }
+
+        // The in-app notification above cannot carry the token — it is only readable once signed in, and it
+        // is stored, which a bearer credential should not be. Email is the one channel that reaches the
+        // address being proven.
+        if (emailSender is not null)
+        {
+            await emailSender.SendAsync(email, "Confirm your email address", BuildConfirmationEmail(verificationOpaque));
         }
 
         return new TokenResponse(accessToken, refreshOpaque, verificationOpaque);
@@ -457,10 +469,11 @@ public class IdentityService(
 
         if (credential is null) return null; // No such account — nothing written, nothing to notify.
 
+        // The token itself is never logged. It grants a password change to whoever holds it, so a log
+        // sink is a place it can be read by anyone with log access and used to take over the account.
         _log.LogInformation(
-            "credential.password-reset-requested for {Account}: token={ResetToken} expires {Expiry:O} "
-            + "(no email provider configured — logged for local development only, see ADR-052)",
-            account, resetOpaque, expiry);
+            "credential.password-reset-requested for {Account}: expires {Expiry:O}",
+            account, expiry);
 
         if (notificationService is not null)
         {
@@ -471,6 +484,13 @@ public class IdentityService(
                       + "you can ignore this — no change takes effect until a new password is confirmed.",
                 type: NotificationType.PasswordResetRequested,
                 appointmentIdentifier: string.Empty));
+        }
+
+        // Email is the only channel that works here: the whole point of a reset is reaching someone who
+        // cannot sign in, so an in-app inbox row is unreachable by definition.
+        if (emailSender is not null)
+        {
+            await emailSender.SendAsync(credential.Email, "Reset your password", BuildResetEmail(resetOpaque));
         }
 
         return resetOpaque;
@@ -640,6 +660,33 @@ public class IdentityService(
 
     private static BsonDocument ResetTokenSubdocument(string hash, DateTime expiry) =>
         new() { { "hash", hash }, { "expiry", expiry } };
+
+    /// <summary>
+    /// Confirmation message. A link when a base URL is configured, otherwise the bare code to paste into the
+    /// app -- the mobile client has no deep-link handler yet (agenda-buddy-20j), so the code has to work on
+    /// its own.
+    /// </summary>
+    private string BuildConfirmationEmail(string token) =>
+        string.IsNullOrWhiteSpace(_email.AppLinkBaseUrl)
+            ? $"Welcome to Agenda Buddy.\n\nConfirm your email address with this code:\n\n{token}\n\n"
+              + "It expires in 24 hours. If you did not create an account, ignore this message."
+            : $"Welcome to Agenda Buddy.\n\nConfirm your email address:\n\n"
+              + $"{_email.AppLinkBaseUrl!.TrimEnd('/')}/confirm-email?token={token}\n\n"
+              + "The link expires in 24 hours. If you did not create an account, ignore this message.";
+
+    /// <summary>
+    /// Reset message. Deliberately does not state whether the address had an account -- the route answers
+    /// 202 either way, and this message is only ever sent when one exists.
+    /// </summary>
+    private string BuildResetEmail(string token) =>
+        string.IsNullOrWhiteSpace(_email.AppLinkBaseUrl)
+            ? $"A password reset was requested for your Agenda Buddy account.\n\nUse this code:\n\n{token}\n\n"
+              + "It expires in 30 minutes. If this wasn't you, ignore this message -- nothing changes until a "
+              + "new password is confirmed."
+            : $"A password reset was requested for your Agenda Buddy account.\n\nReset it here:\n\n"
+              + $"{_email.AppLinkBaseUrl!.TrimEnd('/')}/reset-password?token={token}\n\n"
+              + "The link expires in 30 minutes. If this wasn't you, ignore this message -- nothing changes "
+              + "until a new password is confirmed.";
 
     private (string accessToken, string refreshOpaque, string refreshHash) GenerateTokenPair(
         string email, string role)

@@ -36,6 +36,21 @@ public class MessagingAndNotificationsTest(ServiceHostFixture<CustomerAnchor> ho
         return request;
     }
 
+    /// <summary>
+    /// The subscription that makes <see cref="Caller"/> and <see cref="Counterpart"/> allowed to message
+    /// each other. Sending requires an existing relationship between the two parties, so a thread cannot be
+    /// opened with a stranger; without this a send is refused with 403 before anything is stored.
+    /// </summary>
+    private static Task SeedSubscriptionAsync(ServiceHost service) =>
+        service.Database.GetCollection<CustomerEntity>("customers").InsertOneAsync(new CustomerEntity
+        {
+            Id = ObjectId.GenerateNewId(),
+            FirstName = "Sub",
+            LastName = "Scriber",
+            Email = Caller,
+            SubscribedProviderCollection = [Counterpart]
+        });
+
     /// <summary>Two outsiders' private thread, plus a notification for one of them.</summary>
     private static async Task SeedOtherPeoplesDataAsync(ServiceHost service)
     {
@@ -88,6 +103,7 @@ public class MessagingAndNotificationsTest(ServiceHostFixture<CustomerAnchor> ho
     {
         using var service = host.StartService("Production");
         await SeedOtherPeoplesDataAsync(service);
+        await SeedSubscriptionAsync(service);
 
         var sent = await service.Client.SendAsync(Authorised(
             HttpMethod.Post, "api/v1/messages", Caller,
@@ -158,6 +174,7 @@ public class MessagingAndNotificationsTest(ServiceHostFixture<CustomerAnchor> ho
     public async Task OnlyTheRecipientCanMarkAMessageRead()
     {
         using var service = host.StartService("Production");
+        await SeedSubscriptionAsync(service);
 
         var sent = await service.Client.SendAsync(Authorised(
             HttpMethod.Post, "api/v1/messages", Caller,

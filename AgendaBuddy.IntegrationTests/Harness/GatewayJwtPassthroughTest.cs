@@ -48,8 +48,8 @@ public class GatewayJwtPassthroughTest(ServiceHostFixture<BookingAnchor> host, C
             Identifier = Appointment,
             EmailProvider = Provider,
             EmailCustomer = Customer,
-            Start = new DateTime(2026, 9, 1, 10, 0, 0, DateTimeKind.Utc),
-            End = new DateTime(2026, 9, 1, 11, 0, 0, DateTimeKind.Utc),
+            Start = FutureSlot.Start(),
+            End = FutureSlot.Start(hour: 11),
             AppointmentStatus = AppointmentStatus.Requested
         };
         await backend.Database.GetCollection<AppointmentEntity>("appointments").InsertOneAsync(appointment);
@@ -99,11 +99,11 @@ public class GatewayJwtPassthroughTest(ServiceHostFixture<BookingAnchor> host, C
         using var __ = gatewayFactory;
         using var ___ = gateway;
 
-        // PaymentsAndStatusTest.AC14 proves a direct POST from the Customer role to "Booked" returns 200
+        // PaymentsAndStatusTest.AC14 proves a direct POST from the Provider role to "Booked" returns 200
         // and updates both copies. Same route, same token shape, same expectation — reached the other
-        // way in.
+        // way in. Provider, not Customer: the status route is provider-only.
         var response = await gateway.SendAsync(
-            StatusRequest(_tokens.CreateToken(Customer, TokenFactory.CustomerRole), new { status = "Booked" }));
+            StatusRequest(_tokens.CreateToken(Provider, TokenFactory.ProviderRole), new { status = "Booked" }));
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Equal(AppointmentStatus.Booked, await StoredStatusAsync(backend));

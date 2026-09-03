@@ -15,12 +15,8 @@ namespace AgendaBuddy.IntegrationTests.Persistence;
 /// a real read.
 /// </summary>
 /// <remarks>
-/// <b>Not <c>POST /api/v1/customers</c>.</b> That route only inserts once
-/// <c>KafkaClient.CreateTopicIfNotExist</c> reports success (<c>Customer/Program.cs:155-162</c>), and this
-/// harness starts no Kafka broker — <c>ProviderCreationGuardTest</c> already records the identical
-/// constraint for <c>POST /api/v1/providers</c>. <c>PUT</c> has no such dependency
-/// (<c>UpdateCustomerCommandHandler</c> calls no Kafka client), so a seeded starting document plus a real
-/// <c>PUT</c> is the write this suite can actually exercise end to end.
+/// <b>Not <c>POST /api/v1/customers</c>.</b> A seeded starting document plus a real <c>PUT</c> is what
+/// exercises the update path end to end, including the fields the client never sends.
 /// </remarks>
 [Collection(HarnessCollection.Name)]
 public class CustomerPersistenceTest(ServiceHostFixture<CustomerAnchor> host, CryptoSessionFixture crypto)
@@ -42,7 +38,6 @@ public class CustomerPersistenceTest(ServiceHostFixture<CustomerAnchor> host, Cr
             FirstName = "Before",
             LastName = "Update",
             Email = Email,
-            KafkaTopic = "seeded-customer-topic",
             SubscribedProviderCollection = ["seeded-provider@example.com"],
             AppointmentCollection = ["seeded-appointment-1"],
         });
@@ -78,7 +73,6 @@ public class CustomerPersistenceTest(ServiceHostFixture<CustomerAnchor> host, Cr
 
         // Preserved by UpdateCustomerCommandHandler from the pre-existing document, not from the PUT body —
         // proving the whole-document replace round-trips fields the client never sent, not only the ones it did.
-        Assert.Equal("seeded-customer-topic", read.GetProperty("kafkaTopic").GetString());
         Assert.Equal(["seeded-provider@example.com"], read.GetProperty("subscribedProviderCollection").EnumerateArray().Select(e => e.GetString()));
         Assert.Equal(["seeded-appointment-1"], read.GetProperty("appointmentCollection").EnumerateArray().Select(e => e.GetString()));
     }

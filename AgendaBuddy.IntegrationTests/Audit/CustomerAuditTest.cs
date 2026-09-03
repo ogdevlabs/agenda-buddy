@@ -11,17 +11,15 @@ using MongoDB.Driver;
 namespace AgendaBuddy.IntegrationTests.Audit;
 
 /// <summary>
-/// AC-7. <c>UpdateCustomerCommandHandler</c> (success) and <c>AddCustomerCommandHandler</c>
-/// (failure) both write a <c>CustomerService</c>-side audit event through <see cref="IEventStore"/>.
+/// AC-7. <c>UpdateCustomerCommandHandler</c> and <c>AddCustomerCommandHandler</c> both write a
+/// <c>CustomerService</c>-side audit event through <see cref="IEventStore"/>.
 /// </summary>
 /// <remarks>
 /// <para>
-/// <b>Why two different commands rather than one command's two branches.</b> <c>PUT</c> (update) needs no
-/// Kafka broker and this harness runs none, so it is the reachable SUCCESS path — exactly the reasoning
-/// <c>CustomerPersistenceTest</c> already recorded for the same route. <c>POST</c> (create) always calls
-/// <c>KafkaClient.CreateTopicIfNotExist</c> against an address nothing is listening on
-/// (<c>ProviderCreationGuardTest</c> records the identical constraint for <c>POST /providers</c>), so it is
-/// a reliable, reachable FAILURE path for a different handler in the same service — not a contrived one.
+/// <b>Why two different commands rather than one command's two branches.</b> Each covers a different
+/// handler in the same service, both on their success path. <c>POST</c> (create) used to be reachable
+/// only as a FAILURE here, because it called a message broker that this harness never started;
+/// creating a customer now touches no broker, so the success path is the one that runs.
 /// </para>
 /// <para>
 /// ⚠️ <b>Not <c>UpdateCustomerCommandHandler</c>'s own failure branch.</b> A missing customer causes
@@ -78,7 +76,7 @@ public class CustomerAuditTest(ServiceHostFixture<CustomerAnchor> host, CryptoSe
     }
 
     [Fact]
-    public async Task AC7_ACreateWithNoKafkaBrokerReachable_WritesAFailedAuditEvent()
+    public async Task AC7_ACreate_WritesASuccessAuditEvent()
     {
         using var service = host.StartService("Production");
 
@@ -98,14 +96,14 @@ public class CustomerAuditTest(ServiceHostFixture<CustomerAnchor> host, CryptoSe
         };
 
         var response = await service.Client.SendAsync(request);
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
 
         var audit = await Events(service)
             .Find(Builders<Event>.Filter.Regex(e => e.Type, new BsonRegularExpression("^AddCustomerCommand")))
             .SingleOrDefaultAsync();
 
         Assert.NotNull(audit);
-        Assert.Equal("Failed", audit.Status);
-        Assert.StartsWith("AddCustomerCommand - Exception", audit.Type);
+        Assert.Equal("Success", audit.Status);
+        Assert.Equal("AddCustomerCommand", audit.Type);
     }
 }

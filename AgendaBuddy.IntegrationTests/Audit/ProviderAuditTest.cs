@@ -11,15 +11,13 @@ using MongoDB.Driver;
 namespace AgendaBuddy.IntegrationTests.Audit;
 
 /// <summary>
-/// AC-7. <c>UpdateProviderCommandHandler</c> (success) and <c>AddProviderCommandHandler</c>
-/// (failure) both write an audit event through <see cref="IEventStore"/>.
+/// AC-7. <c>UpdateProviderCommandHandler</c> and <c>AddProviderCommandHandler</c> both write an
+/// audit event through <see cref="IEventStore"/>.
 /// </summary>
 /// <remarks>
-/// Same reasoning as <see cref="CustomerAuditTest"/>: <c>PUT</c> needs no Kafka broker and is this
-/// harness's reachable SUCCESS path (<c>ProviderPersistenceTest</c>'s own remarks), while <c>POST</c>
-/// always fails against the unreachable broker at <c>localhost:9092</c> — <c>ProviderCreationGuardTest</c>
-/// already records exactly this as the route's behaviour here, so this is a reliable, real failure path
-/// rather than a contrived one.
+/// Both are asserted on their success path. <c>POST</c> used to be reachable only as a FAILURE here,
+/// because creating a provider called a message broker that this harness never started; creating one
+/// now touches no broker, so the success path is the one that runs.
 /// </remarks>
 [Collection(HarnessCollection.Name)]
 public class ProviderAuditTest(ServiceHostFixture<ProviderAnchor> host, CryptoSessionFixture crypto)
@@ -68,7 +66,7 @@ public class ProviderAuditTest(ServiceHostFixture<ProviderAnchor> host, CryptoSe
     }
 
     [Fact]
-    public async Task AC7_ACreateWithNoKafkaBrokerReachable_WritesAFailedAuditEvent()
+    public async Task AC7_ACreate_WritesASuccessAuditEvent()
     {
         using var service = host.StartService("Production");
 
@@ -90,14 +88,14 @@ public class ProviderAuditTest(ServiceHostFixture<ProviderAnchor> host, CryptoSe
         };
 
         var response = await service.Client.SendAsync(request);
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
 
         var audit = await Events(service)
             .Find(Builders<Event>.Filter.Regex(e => e.Type, new BsonRegularExpression("^AddProviderCommand")))
             .SingleOrDefaultAsync();
 
         Assert.NotNull(audit);
-        Assert.Equal("Failed", audit.Status);
-        Assert.StartsWith("AddProviderCommand - Exception", audit.Type);
+        Assert.Equal("Success", audit.Status);
+        Assert.Equal("AddProviderCommand", audit.Type);
     }
 }
