@@ -72,8 +72,6 @@ resource "azurerm_role_assignment" "deploy_identity_secrets_officer" {
   principal_id         = azuread_service_principal.deploy.object_id
 }
 
-data "azurerm_client_config" "current" {}
-
 # Terraform's own state. The deploy identity's Contributor grant is scoped to this environment's
 # resource group only (least privilege, and deliberately so), but the state backend is a shared
 # storage account in a DIFFERENT resource group -- so `terraform init` failed 403 in CI before it
@@ -111,40 +109,11 @@ resource "azurerm_role_assignment" "deploy_identity_state_blob" {
   principal_id         = azuread_service_principal.deploy.object_id
 }
 
-# Same reasoning as the Key Vault caller grant: Owner is management-plane and confers no blob data
-# access, so the human running the apply needs this too once the backend uses AAD auth. Skipped when
-# the caller already is the deploy principal.
-resource "azurerm_role_assignment" "terraform_caller_state_blob" {
-  count = data.azurerm_client_config.current.object_id == azuread_service_principal.deploy.object_id ? 0 : 1
-
-  scope                = local.state_storage_account_id
-  role_definition_name = "Storage Blob Data Contributor"
-  principal_id         = data.azurerm_client_config.current.object_id
-}
-
-# The identity running `terraform apply` needs data-plane access as well, and subscription Owner does
-# NOT provide it: with rbac_authorization_enabled the vault's secrets are governed by data-plane roles
-# only, so Owner can create the vault and still get 403 on every secret it writes into it. Without this
-# the first apply of a new environment fails partway -- vault created, all secrets missing.
-#
-# Skipped when the caller already is the deploy principal (every CI run), because a second identical
-# scope/role/principal assignment is a conflict rather than a no-op.
-resource "azurerm_role_assignment" "terraform_caller_secrets_officer" {
-  count = data.azurerm_client_config.current.object_id == azuread_service_principal.deploy.object_id ? 0 : 1
-
-  scope                = azurerm_key_vault.secrets.id
-  role_definition_name = "Key Vault Secrets Officer"
-  principal_id         = data.azurerm_client_config.current.object_id
-}
-
 # Azure RBAC assignments are eventually consistent — writing a secret immediately after the
 # role assignment above can 403 even though `terraform apply` reports it created. A short,
 # explicit wait is cheaper than a flaky first apply per environment.
 resource "time_sleep" "rbac_propagation" {
-  depends_on = [
-    azurerm_role_assignment.deploy_identity_secrets_officer,
-    azurerm_role_assignment.terraform_caller_secrets_officer,
-  ]
+  depends_on      = [azurerm_role_assignment.deploy_identity_secrets_officer]
   create_duration = "60s"
 }
 
