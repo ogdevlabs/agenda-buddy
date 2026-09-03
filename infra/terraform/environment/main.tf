@@ -37,14 +37,29 @@ resource "azuread_application_federated_identity_credential" "github" {
 # publisher deploys; User Access Administrator because ACA's managed identity needs role
 # assignments of its own (e.g. AcrPull) that azd's generated Bicep creates as part of that
 # deploy. Both scoped to this environment's resource group only, never the subscription.
+# SUBSCRIPTION scope, not resource-group scope, and this is forced by azd rather than chosen.
+#
+# Aspire's publisher generates `targetScope = 'subscription'` and declares the resource group as a
+# resource it creates itself (verified with `azd infra synth`). AZURE_RESOURCE_GROUP does not override
+# it. So a resource-group-scoped Contributor cannot even pass deployment validation -- the first real
+# provision failed with AuthorizationFailed on
+# Microsoft.Resources/deployments/validate/action over /subscriptions/<id>.
+#
+# The consequence is real and worth stating plainly: this identity, triggerable from GitHub, holds
+# standing write access to the whole subscription. That is acceptable only because this subscription
+# holds nothing but this application's non-production environments. Do NOT reuse this pattern on a
+# subscription that also holds production -- give production its own subscription instead.
+#
+# User Access Administrator is needed on top of Contributor because the generated Bicep creates role
+# assignments of its own (the container apps' managed identity needs AcrPull).
 resource "azurerm_role_assignment" "contributor" {
-  scope                = azurerm_resource_group.environment.id
+  scope                = "/subscriptions/${var.subscription_id}"
   role_definition_name = "Contributor"
   principal_id         = azuread_service_principal.deploy.object_id
 }
 
 resource "azurerm_role_assignment" "user_access_administrator" {
-  scope                = azurerm_resource_group.environment.id
+  scope                = "/subscriptions/${var.subscription_id}"
   role_definition_name = "User Access Administrator"
   principal_id         = azuread_service_principal.deploy.object_id
 }
