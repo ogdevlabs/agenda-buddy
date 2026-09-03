@@ -8,6 +8,13 @@
 resource "azurerm_resource_group" "environment" {
   name     = "rg-agenda-buddy-${var.environment_name}"
   location = var.location
+
+  # azd's generated template declares this same group (targetScope = 'subscription') and stamps an
+  # azd-env-name tag on it. Without this, the two tools fight: Terraform strips the tag on every apply
+  # and azd restores it on every provision.
+  lifecycle {
+    ignore_changes = [tags]
+  }
 }
 
 # One Entra app registration per environment, never shared (docs/deployment.md's existing

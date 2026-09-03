@@ -165,7 +165,11 @@ jobs:
       - name: Configure azd environment from Key Vault
         env:
           KEY_VAULT_NAME: ${{ steps.tf.outputs.key_vault_name }}
-          AZD_ENV: ${{ inputs.environment }}
+          # azd's generated Bicep hardcodes the group name as rg-<azd env name>, and
+          # AZURE_RESOURCE_GROUP does not override it. Prefixing here keeps the application in
+          # rg-agenda-buddy-<env>, the group Terraform already owns, rather than a separate rg-<env>.
+          # The GITHUB Environment stays unprefixed: its name is baked into the OIDC subject.
+          AZD_ENV: agenda-buddy-${{ inputs.environment }}
         run: |
           set -eu
           azd env new "$AZD_ENV" \
