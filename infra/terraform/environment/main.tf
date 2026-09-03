@@ -81,13 +81,32 @@ data "azurerm_client_config" "current" {}
 #
 # Granted a blob DATA role rather than key access, and the backend authenticates via AAD
 # (see backend.tf), so no storage account key is ever issued to anyone.
-data "azurerm_storage_account" "state" {
-  name                = var.state_storage_account_name
-  resource_group_name = var.state_resource_group_name
+locals {
+  # Constructed, not looked up. A data source would need Microsoft.Storage/storageAccounts/read, which
+  # is management-plane and which the deploy identity deliberately does not have on this shared
+  # resource group -- the first CI apply failed 403 on exactly that read. The ID format is stable.
+  state_storage_account_id = join("", [
+    "/subscriptions/", var.subscription_id,
+    "/resourceGroups/", var.state_resource_group_name,
+    "/providers/Microsoft.Storage/storageAccounts/", var.state_storage_account_name,
+  ])
+}
+
+# Reader on the state resource group, so the deploy identity can READ the two role assignments below
+# that this config declares. Terraform refreshes what it manages on every run, and without this the
+# refresh itself 403s even when nothing has changed. Reader grants no write and no data access -- the
+# blob access comes from the data-plane role, and state contents are still unreadable without it.
+resource "azurerm_role_assignment" "deploy_identity_state_reader" {
+  scope = join("", [
+    "/subscriptions/", var.subscription_id,
+    "/resourceGroups/", var.state_resource_group_name,
+  ])
+  role_definition_name = "Reader"
+  principal_id         = azuread_service_principal.deploy.object_id
 }
 
 resource "azurerm_role_assignment" "deploy_identity_state_blob" {
-  scope                = data.azurerm_storage_account.state.id
+  scope                = local.state_storage_account_id
   role_definition_name = "Storage Blob Data Contributor"
   principal_id         = azuread_service_principal.deploy.object_id
 }
@@ -98,7 +117,7 @@ resource "azurerm_role_assignment" "deploy_identity_state_blob" {
 resource "azurerm_role_assignment" "terraform_caller_state_blob" {
   count = data.azurerm_client_config.current.object_id == azuread_service_principal.deploy.object_id ? 0 : 1
 
-  scope                = data.azurerm_storage_account.state.id
+  scope                = local.state_storage_account_id
   role_definition_name = "Storage Blob Data Contributor"
   principal_id         = data.azurerm_client_config.current.object_id
 }
