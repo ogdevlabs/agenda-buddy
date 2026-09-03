@@ -172,17 +172,21 @@ jobs:
             --subscription "${{ vars.AZURE_SUBSCRIPTION_ID }}" \
             --no-prompt || azd env select "${{ inputs.environment }}"
 
-          # Names on the left are what the AppHost's resource graph declares
-          # (AppHostWiring.cs: agenda-buddy / IdentityDb connection strings, jwt-public-key /
-          # jwt-private-key parameters) — azd derives the exact environment-variable names it
-          # prompts for from that graph; capture them once from a `azd provision` dry run if this
-          # list ever needs updating.
+          # Key Vault secret name -> the environment variable azd actually reads. These are NOT
+          # free choices and NOT derivable by eye: azd prefixes every Aspire parameter with AZURE_,
+          # upper-cases it, and splits camelCase, so the parameter `IdentityDb` becomes
+          # AZURE_IDENTITY_DB rather than AZURE_IDENTITYDB. Read them off the tool rather than
+          # guessing:
+          #
+          #   azd provision --preview --no-prompt
+          #
+          # which lists every unsatisfied parameter with its exact "Environment variable:" name.
           declare -A secret_names=(
-            [agenda-buddy-connection]=CONNECTIONSTRING_AGENDA_BUDDY
-            [identity-db-connection]=CONNECTIONSTRING_IDENTITYDB
-            [resend-api-key]=RESEND_API_KEY
-            [jwt-public-key]=JWT_PUBLIC_KEY
-            [jwt-private-key]=JWT_PRIVATE_KEY
+            [agenda-buddy-connection]=AZURE_AGENDA_BUDDY
+            [identity-db-connection]=AZURE_IDENTITY_DB
+            [resend-api-key]=AZURE_RESEND_API_KEY
+            [jwt-public-key]=AZURE_JWT_PUBLIC_KEY
+            [jwt-private-key]=AZURE_JWT_PRIVATE_KEY
           )
           # resend-api-key is absent when the environment has no mail provider (see
           # infra/terraform/environment/main.tf). An absent secret is skipped rather than fatal; the
