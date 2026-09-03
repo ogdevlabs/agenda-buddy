@@ -74,6 +74,35 @@ resource "azurerm_role_assignment" "deploy_identity_secrets_officer" {
 
 data "azurerm_client_config" "current" {}
 
+# Terraform's own state. The deploy identity's Contributor grant is scoped to this environment's
+# resource group only (least privilege, and deliberately so), but the state backend is a shared
+# storage account in a DIFFERENT resource group -- so `terraform init` failed 403 in CI before it
+# could read state at all, while succeeding locally purely because a human runs it as Owner.
+#
+# Granted a blob DATA role rather than key access, and the backend authenticates via AAD
+# (see backend.tf), so no storage account key is ever issued to anyone.
+data "azurerm_storage_account" "state" {
+  name                = var.state_storage_account_name
+  resource_group_name = var.state_resource_group_name
+}
+
+resource "azurerm_role_assignment" "deploy_identity_state_blob" {
+  scope                = data.azurerm_storage_account.state.id
+  role_definition_name = "Storage Blob Data Contributor"
+  principal_id         = azuread_service_principal.deploy.object_id
+}
+
+# Same reasoning as the Key Vault caller grant: Owner is management-plane and confers no blob data
+# access, so the human running the apply needs this too once the backend uses AAD auth. Skipped when
+# the caller already is the deploy principal.
+resource "azurerm_role_assignment" "terraform_caller_state_blob" {
+  count = data.azurerm_client_config.current.object_id == azuread_service_principal.deploy.object_id ? 0 : 1
+
+  scope                = data.azurerm_storage_account.state.id
+  role_definition_name = "Storage Blob Data Contributor"
+  principal_id         = data.azurerm_client_config.current.object_id
+}
+
 # The identity running `terraform apply` needs data-plane access as well, and subscription Owner does
 # NOT provide it: with rbac_authorization_enabled the vault's secrets are governed by data-plane roles
 # only, so Owner can create the vault and still get 403 on every secret it writes into it. Without this
