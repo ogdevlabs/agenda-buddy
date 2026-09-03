@@ -50,7 +50,11 @@ public class MessageModule : ICarterModule
             .RequireAuthorization();
 
         messages.MapPost("/", async Task<Results<Created<MessageEntity>, ForbidHttpResult, BadRequest<string>>> (
-                MessageRequest request, ClaimsPrincipal user, IMessageService service) =>
+                MessageRequest request,
+                ClaimsPrincipal user,
+                IMessageService service,
+                ICustomerService customerService,
+                INotificationService notificationService) =>
             {
                 if (request is null || string.IsNullOrWhiteSpace(request.RecipientEmail)
                                     || string.IsNullOrWhiteSpace(request.Body))
@@ -58,6 +62,20 @@ public class MessageModule : ICarterModule
 
                 var caller = user.FindFirstValue(ClaimTypes.NameIdentifier);
                 if (caller is null) return TypedResults.Forbid();
+
+                if (string.Equals(caller, request.RecipientEmail, StringComparison.OrdinalIgnoreCase))
+                    return TypedResults.BadRequest("You cannot message yourself.");
+
+                // A subscription is required in BOTH directions. The provider directory is browsable by
+                // design so customers can find someone to book, but browsable must not imply messageable —
+                // otherwise every provider's inbox becomes a cold-outreach target and the directory becomes
+                // a spam surface. Enforced here rather than only hidden in the client, because a
+                // client-side-only restriction is not a restriction.
+                //
+                // The subscription is the relationship either way round: subscribing is what a customer
+                // does to a provider, so whichever of the two is the customer is the one holding the list.
+                if (!await AreRelatedAsync(customerService, caller, request.RecipientEmail))
+                    return TypedResults.Forbid();
 
                 // The sender is the caller. MessageRequest has no sender field, which is the cheapest guarantee that
                 // no future refactor trusts one from the body.
@@ -69,6 +87,22 @@ public class MessageModule : ICarterModule
                 };
 
                 await service.SendMessageAsync(message);
+
+                // The recipient is told there is something to read — an inbox nobody is pointed at is an
+                // inbox nobody opens. Non-fatal: the message is already stored, and failing the send
+                // because the notification could not be written would lose the message itself.
+                try
+                {
+                    var preview = request.Body.Length <= 120 ? request.Body : request.Body[..117] + "...";
+                    await notificationService.SendAsync(new NotificationEntity(
+                        recipientEmail: request.RecipientEmail,
+                        subject: $"New message from {caller}",
+                        body: preview,
+                        type: NotificationType.MessageReceived,
+                        appointmentIdentifier: string.Empty));
+                }
+                catch (Exception) { /* the message stands regardless */ }
+
                 return TypedResults.Created($"/api/v1/messages/{message.Id}", message);
             })
             .WithName("SendMessage")
@@ -93,4 +127,23 @@ public class MessageModule : ICarterModule
             .WithName("MarkMessageRead")
             .RequireAuthorization();
     }
+    /// <summary>
+    /// True when these two addresses are on either side of a subscription. Whichever of the pair is the
+    /// customer holds the list, so this looks both up and checks each in turn — the caller may be the
+    /// customer or the provider, and the rule is the same relationship either way.
+    /// </summary>
+    private static async Task<bool> AreRelatedAsync(ICustomerService customerService, string caller, string other)
+    {
+        return await SubscribesToAsync(customerService, caller, other)
+            || await SubscribesToAsync(customerService, other, caller);
+    }
+
+    private static async Task<bool> SubscribesToAsync(
+        ICustomerService customerService, string customerEmail, string providerEmail)
+    {
+        var customer = await customerService.FindCustomerAsync(SupportTools<CustomerEntity>.FilterByEmail(customerEmail));
+        return customer?.SubscribedProviderCollection?
+            .Any(email => string.Equals(email, providerEmail, StringComparison.OrdinalIgnoreCase)) == true;
+    }
+
 }

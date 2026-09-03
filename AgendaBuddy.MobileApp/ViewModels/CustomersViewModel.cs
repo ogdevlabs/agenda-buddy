@@ -76,6 +76,8 @@ public partial class CustomersViewModel : ObservableObject
 
     public event EventHandler<BookRequestedEventArgs>? BookRequested;
 
+    public event EventHandler<CustomerSummary>? MessageRequested;
+
     public CustomersViewModel(ICustomerApiService customerApiService, IProviderApiService providerApiService, IUserSessionService session)
     {
         _customerApiService = customerApiService;
@@ -162,7 +164,13 @@ public partial class CustomersViewModel : ObservableObject
                 var providers = await _providerApiService.GetProvidersAsync();
                 var subscriptions = await _customerApiService.GetSubscriptionsAsync(_session.Email);
                 foreach (var provider in providers)
+                {
                     provider.IsSubscribed = subscriptions.Contains(provider.Email, StringComparer.OrdinalIgnoreCase);
+
+                    // Subscribing is what opens the channel, so the button appears on the same condition
+                    // the server enforces — no Message button on a provider you have only browsed past.
+                    provider.CanMessage = provider.IsSubscribed;
+                }
 
                 _allContacts = providers;
 
@@ -183,7 +191,14 @@ public partial class CustomersViewModel : ObservableObject
             }
             else
             {
-                _allContacts = await _customerApiService.GetCustomersAsync();
+                var customers = await _customerApiService.GetCustomersAsync();
+
+                // A provider's own contact list is already the customers subscribed to them, so every row
+                // here is reachable — GET /api/v1/customers is what the subscription populates.
+                foreach (var customer in customers)
+                    customer.CanMessage = true;
+
+                _allContacts = customers;
                 AvailableProfessions = [];
                 SelectedProfession = null;
             }
@@ -225,6 +240,7 @@ public partial class CustomersViewModel : ObservableObject
             if (succeeded)
             {
                 provider.IsSubscribed = !provider.IsSubscribed;
+                provider.CanMessage = provider.IsSubscribed;
                 await Infrastructure.ToastNotifier.ShowAsync(provider.IsSubscribed ? "Subscribed." : "Unsubscribed.");
             }
             else
@@ -245,6 +261,11 @@ public partial class CustomersViewModel : ObservableObject
             provider.IsBusy = false;
         }
     }
+
+    /// <summary>Opens the thread with this contact, whether or not anything has been said yet.</summary>
+    [RelayCommand]
+    private void Message(CustomerSummary contact) =>
+        MessageRequested?.Invoke(this, contact);
 
     [RelayCommand]
     private void Book(CustomerSummary contact) =>

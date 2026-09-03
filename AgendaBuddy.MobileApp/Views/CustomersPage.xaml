@@ -316,6 +316,18 @@
                                             Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.ToggleSubscriptionCommand}"
                                             CommandParameter="{Binding .}"
                                             AutomationId="SubscribeToggleButton" />
+                                    <controls:SafeButton Text="Message"
+                                            BackgroundColor="#E0F2FE"
+                                            TextColor="#0369A1"
+                                            CornerRadius="10"
+                                            FontSize="14"
+                                            FontAttributes="Bold"
+                                            HeightRequest="38"
+                                            Padding="18,4"
+                                            IsVisible="{Binding CanMessage}"
+                                            Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.MessageCommand}"
+                                            CommandParameter="{Binding .}"
+                                            AutomationId="MessageContactButton" />
                                 </HorizontalStackLayout>
 
                                 <!-- Customer actions (provider's own contact list — book a session with a known customer) -->
@@ -332,6 +344,18 @@
                                             Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.BookCommand}"
                                             CommandParameter="{Binding .}"
                                             AutomationId="BookCustomerButton" />
+                                    <controls:SafeButton Text="Message"
+                                            BackgroundColor="#E0F2FE"
+                                            TextColor="#0369A1"
+                                            CornerRadius="10"
+                                            FontSize="14"
+                                            FontAttributes="Bold"
+                                            HeightRequest="38"
+                                            Padding="18,4"
+                                            IsVisible="{Binding CanMessage}"
+                                            Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.MessageCommand}"
+                                            CommandParameter="{Binding .}"
+                                            AutomationId="MessageContactButton" />
                                 </HorizontalStackLayout>
 
                                 <!-- Customer-specific -->

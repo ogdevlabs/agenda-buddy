@@ -17,7 +17,8 @@ public class BookingAppointmentCommandHandler(
     ProviderService providerService,
     BookingService bookingService,
     IEventStore eventStore,
-    IDateTimeProvider dateTimeProvider)
+    IDateTimeProvider dateTimeProvider,
+    INotificationService notificationService)
     : IRequestHandler<BookAppointmentCommand, Result<AppointmentEntity>>
 {
     public async Task<Result<AppointmentEntity>> Handle(BookAppointmentCommand request, CancellationToken cancellationToken)
@@ -71,6 +72,17 @@ public class BookingAppointmentCommandHandler(
                 Data = JsonSerializer.Serialize(appointmentEntity)
             };
             await eventStore.SaveAsync(successEvent);
+
+            // Tell the provider someone is waiting on them. A request nobody is told about is a request
+            // that sits until the customer chases it. Non-fatal: the appointment is already persisted, and
+            // failing the booking because the notification could not be written would be the wrong trade.
+            await NotifyAsync(new NotificationEntity(
+                recipientEmail: appointmentEntity.EmailProvider,
+                subject: "New appointment request",
+                body: BuildRequestBody(appointmentEntity),
+                type: NotificationType.AppointmentRequested,
+                appointmentIdentifier: appointmentEntity.Identifier));
+
             return Result.Ok(appointmentEntity);
         }
 
@@ -84,6 +96,24 @@ public class BookingAppointmentCommandHandler(
         };
         await eventStore.SaveAsync(failEvent);
         return Result.Fail<AppointmentEntity>($"No provider found for {appointmentEntity.EmailProvider}");
+    }
+
+    private static string BuildRequestBody(AppointmentEntity appointment)
+    {
+        var service = string.IsNullOrWhiteSpace(appointment.ServiceName) ? "a session" : appointment.ServiceName;
+        return $"{appointment.EmailCustomer} requested {service} on "
+             + $"{appointment.Start.ToLocalTime():dddd d MMMM} at {appointment.Start.ToLocalTime():h:mm tt}.";
+    }
+
+    /// <summary>
+    /// Writes a notification without letting its failure fail the operation that caused it. The appointment
+    /// (or status change) is the thing that had to succeed; a missing notification is a degraded experience,
+    /// not a lost booking.
+    /// </summary>
+    private async Task NotifyAsync(NotificationEntity notification)
+    {
+        try { await notificationService.SendAsync(notification); }
+        catch (Exception) { /* the appointment stands regardless */ }
     }
 
     /// <remarks>

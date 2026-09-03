@@ -28,6 +28,13 @@ public partial class MessageThreadViewModel : ObservableObject
     [ObservableProperty]
     private string _errorMessage = string.Empty;
 
+    /// <summary>Set when the thread was opened from a contact row, which knows the name.</summary>
+    [ObservableProperty]
+    private string _counterpartName = string.Empty;
+
+    /// <summary>Who the thread is with — the name when we have one, the address when we do not.</summary>
+    public string Title => string.IsNullOrWhiteSpace(CounterpartName) ? RecipientEmail : CounterpartName;
+
     public bool HasError => !string.IsNullOrEmpty(ErrorMessage);
 
     public MessageThreadViewModel(IMessagingApiService messagingService)
@@ -115,4 +122,7 @@ public partial class MessageThreadViewModel : ObservableObject
     private bool CanSend() => !string.IsNullOrWhiteSpace(NewMessageBody);
 
     partial void OnErrorMessageChanged(string value) => OnPropertyChanged(nameof(HasError));
+    partial void OnCounterpartNameChanged(string value) => OnPropertyChanged(nameof(Title));
+    partial void OnRecipientEmailChanged(string value) => OnPropertyChanged(nameof(Title));
+
 }

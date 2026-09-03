@@ -6,6 +6,7 @@ namespace AgendaBuddy.MobileApp.Views;
 
 [QueryProperty(nameof(ThreadId), "threadId")]
 [QueryProperty(nameof(RecipientEmail), "recipientEmail")]
+[QueryProperty(nameof(CounterpartName), "counterpartName")]
 public partial class MessageThreadPage : ContentPage
 {
     private readonly MessageThreadViewModel _vm;
@@ -23,6 +24,15 @@ public partial class MessageThreadPage : ContentPage
         set
         {
             _vm.RecipientEmail = value;
+        }
+    }
+
+    /// <summary>Optional: the counterpart's real name, so the header is not a raw email address.</summary>
+    public string CounterpartName
+    {
+        set
+        {
+            _vm.CounterpartName = value;
         }
     }
 

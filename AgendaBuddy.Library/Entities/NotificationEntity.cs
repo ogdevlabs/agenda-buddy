@@ -53,5 +53,14 @@ public enum NotificationType
     AppointmentCancelled,
     AppointmentCompleted,
     PasswordResetRequested,
-    EmailConfirmationRequested
+    EmailConfirmationRequested,
+
+    // Appended, never reordered: the value is persisted as its integer, so inserting anything above would
+    // silently reinterpret every notification already stored.
+
+    /// <summary>A customer has asked for a slot and the provider has not accepted it yet.</summary>
+    AppointmentRequested,
+
+    /// <summary>The other party sent a message.</summary>
+    MessageReceived
 }

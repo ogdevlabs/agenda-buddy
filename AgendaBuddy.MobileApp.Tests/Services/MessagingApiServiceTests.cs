@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text;
+using AgendaBuddy.MobileApp.Models;
 using AgendaBuddy.MobileApp.Services;
 using Moq;
 using Xunit;
@@ -159,4 +160,28 @@ public class MessagingApiServiceTests
             return Task.FromResult(new HttpResponseMessage(_statusCode) { Content = _content });
         }
     }
+    // SentAt is persisted UTC but consumed as wall-clock (the thread formats it {0:h:mm tt}, TimeAgo
+    // subtracts it from DateTime.Now). Left in UTC, a message sent seconds ago showed the wrong hour and a
+    // negative "ago".
+    [Fact]
+    public void MessageSummary_SentAt_IsConvertedToLocalTime()
+    {
+        var utc = new DateTime(2026, 9, 3, 1, 23, 0, DateTimeKind.Utc);
+
+        var summary = new MessageSummary { SentAt = utc };
+
+        Assert.Equal(utc.ToLocalTime(), summary.SentAt);
+        Assert.NotEqual(DateTimeKind.Utc, summary.SentAt.Kind);
+    }
+
+    [Fact]
+    public void MessageSummary_SentAt_LeavesANonUtcValueAlone()
+    {
+        var local = new DateTime(2026, 9, 3, 19, 23, 0, DateTimeKind.Local);
+
+        var summary = new MessageSummary { SentAt = local };
+
+        Assert.Equal(local, summary.SentAt);
+    }
+
 }

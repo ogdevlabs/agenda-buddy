@@ -8,7 +8,7 @@ public class ChangeAppointmentStatusCommandHandlerTest
     [Fact]
     public async Task Handle_NullRequest_ThrowsArgumentNullException()
     {
-        var handler = new ChangeAppointmentStatusCommandHandler(null!, null!, Mock.Of<IEventStore>());
+        var handler = new ChangeAppointmentStatusCommandHandler(null!, null!, Mock.Of<IEventStore>(), Mock.Of<INotificationService>());
 
         await Assert.ThrowsAsync<ArgumentNullException>(() => handler.Handle(null!, CancellationToken.None));
     }

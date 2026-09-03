@@ -19,6 +19,14 @@ public partial class MessagingPage : ContentPage
         _vm.ThreadOpenRequested += OnThreadOpenRequested;
     }
 
+    /// <summary>
+    /// Sends the user to their contact list, which is where a conversation can actually be started: it is
+    /// the only place that knows who they are allowed to message. <c>//customers</c> is the shared route —
+    /// that tab is titled Providers for a Customer and Customers for a Provider.
+    /// </summary>
+    private async void OnNewMessageClicked(object? sender, EventArgs e) =>
+        await Shell.Current.GoToAsync("//customers");
+
     private async void OnThreadOpenRequested(object? sender, MessageThreadStub thread)
     {
         var nav = new Dictionary<string, object>

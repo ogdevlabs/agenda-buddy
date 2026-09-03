@@ -101,7 +101,9 @@ public class ServiceCollectionMongoResolutionTest
 
         // Includes NoteEntity and PaymentEntity -- both had never been persisted because nothing
         // registered a repository for them, so this count is asserted rather than left to drift.
-        Assert.Equal(5, repositories.Count);
+        // NotificationEntity is the sixth: Booking is where appointments are requested, accepted and
+        // cancelled, so it is where the other party has to be told.
+        Assert.Equal(6, repositories.Count);
         Assert.All(repositories, descriptor => Assert.Equal(ServiceLifetime.Scoped, descriptor.Lifetime));
     }
 }
