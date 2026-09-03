@@ -216,7 +216,15 @@ jobs:
                   print(f"::warning::{secret} is not set in {vault} - continuing without it.")
                   continue
               # az strips no trailing newline of its own, but tsv output appends one.
-              parameters[param] = result.stdout.rstrip("\n")
+              value = result.stdout.rstrip("\n")
+
+              # azd writes each parameter into a per-service main.bicepparam as a single-line
+              # string literal, and Bicep rejects a raw newline inside one ("BCP004: The string at
+              # this location is not terminated"). The two PEM keys are the only multiline values.
+              # Escaped here and un-escaped by the services that read them: both
+              # AuthenticationExtensions and IdentityService.ReadPrivateKeyPem already call
+              # .Replace("\\n", "\n") for exactly this case.
+              parameters[param] = value.replace("\n", "\\n")
 
           path = pathlib.Path(".azure") / env_name / "config.json"
           config = json.loads(path.read_text()) if path.exists() and path.stat().st_size else {}
