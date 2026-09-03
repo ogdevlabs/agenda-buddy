@@ -213,6 +213,68 @@ public class AppHostWiringTest
         Assert.True(parameter.Secret, $"{parameterName} must be declared secret.");
     }
 
+    // The mail-provider key is a Cloud-only parameter, and that asymmetry is the point: an unset
+    // secret parameter resolves to ValueMissing, which parks every resource referencing it in Waiting
+    // with nothing logged (ISSUE-001). Declaring it locally would break the graph for any developer
+    // without a Resend account, to enable a feature no local run needs.
+    [Fact]
+    public void LocalTargetDoesNotDeclareTheMailProviderKey()
+    {
+        Assert.DoesNotContain(
+            "resend-api-key",
+            BuildModel(DeploymentTarget.Local).Resources.Select(resource => resource.Name));
+    }
+
+    [Fact]
+    public void CloudTargetDeclaresTheMailProviderKeyAsASecret()
+    {
+        var parameter = Assert.IsAssignableFrom<ParameterResource>(
+            Resource(BuildModel(DeploymentTarget.Cloud), "resend-api-key"));
+
+        Assert.True(parameter.Secret, "resend-api-key must be declared secret.");
+    }
+
+    // Identity is the only service that sends email, and only in the Cloud shape. Without this the
+    // deployment has no working password reset -- the token has nowhere to go but a log, which is
+    // exactly what it was doing before.
+    [Fact]
+    public async Task CloudTargetGivesIdentityTheMailProviderKey()
+    {
+        var variables = await PublishEnvironmentOf(BuildModel(DeploymentTarget.Cloud), "identity");
+
+        Assert.Contains("Email__ApiKey", variables.Keys);
+    }
+
+    [Fact]
+    public async Task NoServiceOtherThanIdentityReceivesTheMailProviderKey()
+    {
+        var builder = BuildModel(DeploymentTarget.Cloud);
+
+        foreach (var name in ExpectedServices.Where(service => service != "identity"))
+        {
+            Assert.DoesNotContain("Email__ApiKey", (await PublishEnvironmentOf(builder, name)).Keys);
+        }
+    }
+
+    /// <summary>
+    /// Environment variables this resource would be PUBLISHED with. Distinct from the Run-mode helper
+    /// below: resolving a secret parameter in Run mode materialises its value and throws when it has
+    /// none, and the Cloud-only parameters deliberately have no local value.
+    /// </summary>
+    private static async Task<IDictionary<string, object>> PublishEnvironmentOf(
+        IDistributedApplicationBuilder builder, string name)
+    {
+        var context = new EnvironmentCallbackContext(
+            new DistributedApplicationExecutionContext(DistributedApplicationOperation.Publish));
+
+        foreach (var annotation in Resource(builder, name).Annotations.OfType<EnvironmentCallbackAnnotation>())
+        {
+            await annotation.Callback(context);
+        }
+
+        return context.EnvironmentVariables;
+    }
+
     // AC-2.3 / ISSUE-001: WithReference injects ConnectionStrings__<resource name>, which is
     // agenda-buddy or IdentityDb — not the ConnectionStrings:mongodb that MongoConnectionResolver
     // actually reads. Profession resolves its client eagerly and crashed on startup; the other six

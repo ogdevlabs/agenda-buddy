@@ -96,6 +96,14 @@ resource "azurerm_key_vault_secret" "identity_db_connection" {
   depends_on = [time_sleep.rbac_propagation]
 }
 
+resource "azurerm_key_vault_secret" "resend_api_key" {
+  name         = "resend-api-key"
+  value        = var.resend_api_key
+  key_vault_id = azurerm_key_vault.secrets.id
+
+  depends_on = [time_sleep.rbac_propagation]
+}
+
 resource "azurerm_key_vault_secret" "jwt_public_key" {
   name         = "jwt-public-key"
   value        = var.jwt_public_key

@@ -65,6 +65,7 @@ jobs:
           TF_STATE_CONTAINER: ${{ vars.TF_STATE_CONTAINER }}
           TF_VAR_agenda_buddy_connection_string: ${{ secrets.ATLAS_AGENDA_BUDDY_CONNECTION_STRING }}
           TF_VAR_identity_db_connection_string: ${{ secrets.ATLAS_IDENTITY_DB_CONNECTION_STRING }}
+          TF_VAR_resend_api_key: ${{ secrets.RESEND_API_KEY }}
           TF_VAR_jwt_public_key: ${{ secrets.JWT_PUBLIC_KEY }}
           TF_VAR_jwt_private_key: ${{ secrets.JWT_PRIVATE_KEY }}
         run: |
@@ -111,6 +112,7 @@ jobs:
           TF_VAR_tenant_id: ${{ vars.AZURE_TENANT_ID }}
           TF_VAR_agenda_buddy_connection_string: ${{ secrets.ATLAS_AGENDA_BUDDY_CONNECTION_STRING }}
           TF_VAR_identity_db_connection_string: ${{ secrets.ATLAS_IDENTITY_DB_CONNECTION_STRING }}
+          TF_VAR_resend_api_key: ${{ secrets.RESEND_API_KEY }}
           TF_VAR_jwt_public_key: ${{ secrets.JWT_PUBLIC_KEY }}
           TF_VAR_jwt_private_key: ${{ secrets.JWT_PRIVATE_KEY }}
         run: terraform apply -input=false -auto-approve
@@ -174,6 +176,7 @@ jobs:
           declare -A secret_names=(
             [agenda-buddy-connection]=CONNECTIONSTRING_AGENDA_BUDDY
             [identity-db-connection]=CONNECTIONSTRING_IDENTITYDB
+            [resend-api-key]=RESEND_API_KEY
             [jwt-public-key]=JWT_PUBLIC_KEY
             [jwt-private-key]=JWT_PRIVATE_KEY
           )

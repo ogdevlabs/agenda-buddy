@@ -54,6 +54,13 @@ internal static class AppHostWiring
         var jwtPublicKey = builder.AddParameter("jwt-public-key", secret: true);
         var jwtPrivateKey = builder.AddParameter("jwt-private-key", secret: true);
 
+        // Declared in the Cloud shape only, deliberately. An unset secret parameter resolves to
+        // ValueMissing, which parks every resource that references it in Waiting with nothing logged
+        // (ISSUE-001) -- so requiring a mail-provider key locally would break the whole graph for
+        // anyone who has not got one. Locally, email delivery is simply off and Identity warns at
+        // startup naming the key.
+        IResourceBuilder<ParameterResource>? resendApiKey = null;
+
         // Two logical databases, matching what the services already expect: the six domain services
         // share agenda_buddy, Identity owns IdentityDb. The resource name is hyphenated because
         // ASPIRE006 rejects underscores; the second argument keeps the physical name.
@@ -97,12 +104,17 @@ internal static class AppHostWiring
             // both shapes.
             agendaDb = builder.AddConnectionString("agenda-buddy");
             identityDb = builder.AddConnectionString("IdentityDb");
+
+            // Without this a deployed environment has no email delivery, which means no working
+            // password reset -- the token has nowhere to go.
+            resendApiKey = builder.AddParameter("resend-api-key", secret: true);
         }
 
         // spendsBcrypt: Identity's login and register are the only routes in the system that hash a
         // password — 262 ms of CPU each, measured — so it is the only service the per-IP limiter applies
         // to (ARCHITECTURE.md D-4).
-        var identity = AddApi<Projects.AgendaBuddy_Identity>("identity", identityDb, needsPrivateKey: true, spendsBcrypt: true);
+        var identity = AddApi<Projects.AgendaBuddy_Identity>(
+            "identity", identityDb, needsPrivateKey: true, spendsBcrypt: true, needsEmailDelivery: true);
         var booking = AddApi<Projects.AgendaBuddy_Booking_Api>("booking", agendaDb);
         var customer = AddApi<Projects.AgendaBuddy_Customer_Api>("customer", agendaDb);
         var provider = AddApi<Projects.AgendaBuddy_Provider_Api>("provider", agendaDb);
@@ -151,7 +163,8 @@ internal static class AppHostWiring
             string name,
             IResourceBuilder<IResourceWithConnectionString> database,
             bool needsPrivateKey = false,
-            bool spendsBcrypt = false)
+            bool spendsBcrypt = false,
+            bool needsEmailDelivery = false)
             where TProject : IProjectMetadata, new()
         {
             // launchProfileName: null keeps Aspire from adopting the launch profile's
@@ -208,6 +221,11 @@ internal static class AppHostWiring
             // Only Identity signs tokens; the rest merely validate them, so only Identity needs
             // the private key.
             if (needsPrivateKey) service.WithEnvironment("JWT_PRIVATE_KEY", jwtPrivateKey);
+
+            // Identity is the only service that sends email. Null in the Local shape, so nothing is
+            // injected and ResendEmailSender degrades to a logged no-op.
+            if (needsEmailDelivery && resendApiKey is not null)
+                service.WithEnvironment("Email__ApiKey", resendApiKey);
 
             if (mongoToWaitFor is not null) service.WaitFor(mongoToWaitFor);
 

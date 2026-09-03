@@ -41,6 +41,12 @@ builder.Services.AddSingleton<IDateTimeProvider, SystemDateTimeProvider>();
 builder.Services.AddScoped<IdentityService>();
 builder.Services.AddScoped<IDeviceTokenService, DeviceTokenService>();
 
+// Email delivery for the two messages that carry a token the recipient cannot obtain any other way:
+// email confirmation and password reset. With no Email:ApiKey configured this is a logged no-op, so a
+// local run needs no mail provider — but a deployed environment without it has no working password
+// reset, which is why the startup warning below names the key.
+builder.Services.AddEmailDelivery(builder.Configuration);
+
 // Lockout thresholds. No enable flag — with the defaults an account locks only after 10
 // consecutive wrong passwords and unlocks itself 15 minutes later, so there is nothing a local run
 // needs switched off, and a third flag would only be a third way for a control to go missing.
@@ -155,7 +161,7 @@ if (app.Environment.IsDevelopment())
 // redirect is a no-op wherever no HTTPS port is configured.
 // `includeRateLimitingInAudit` is true for Identity alone: it owns the only two routes that spend
 // BCrypt, so it is the only service where a missing limiter flag is worth a startup warning.
-app.UseAgendaBuddyTransportSecurity(includeRateLimitingInAudit: true);
+app.UseAgendaBuddyTransportSecurity(includeRateLimitingInAudit: true, includeEmailDeliveryInAudit: true);
 
 app.UseAuthentication();
 app.UseAuthorization();

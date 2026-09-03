@@ -41,6 +41,13 @@ variable "identity_db_connection_string" {
   sensitive   = true
 }
 
+variable "resend_api_key" {
+  description = "Resend API key for transactional email. Optional so a first deployment is not blocked on having one: empty means Identity logs a startup warning naming the key and password reset does not work, rather than the deploy failing. Set it and redeploy to switch delivery on."
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
 variable "jwt_public_key" {
   description = "RSA public key (PEM) for JWT verification, generated fresh for this environment."
   type        = string
