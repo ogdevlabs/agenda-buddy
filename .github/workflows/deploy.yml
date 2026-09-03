@@ -242,33 +242,43 @@ jobs:
 
       - name: Smoke test — the gateway reports healthy
         if: success()
+        env:
+          RESOURCE_GROUP: ${{ steps.tf.outputs.resource_group_name }}
         run: |
-          # Only the gateway has external ingress (AppHostWiring.cs — the 7 domain services
-          # are deliberately internal-only in the Cloud shape), so it is the only endpoint this
-          # runner can reach at all; a service being unreachable from here is expected, not a
-          # failure.
-          azd show --output json | tee "$RUNNER_TEMP/azd-show.json"
-          python3 - "$RUNNER_TEMP/azd-show.json" <<'PY'
-          import json, sys, urllib.request
+          set -eu
 
-          with open(sys.argv[1]) as f:
-              data = json.load(f)
+          # Asked of Azure directly, not of `azd show`. azd show --output json reports each service as
+          # {project, target:{resourceIds:[]}} with no endpoint field at all, so the previous version of
+          # this step could never have passed -- it failed with "azd show reported no endpoint for the
+          # gateway service" on the first deploy that actually got this far.
+          #
+          # Only the gateway has external ingress (AppHostWiring.cs keeps the seven domain services
+          # internal-only), so it is the one endpoint a runner can reach; a service being unreachable
+          # from here is the design, not a fault.
+          fqdn=$(az containerapp show --name gateway --resource-group "$RESOURCE_GROUP" \
+                   --query "properties.configuration.ingress.fqdn" -o tsv)
 
-          endpoint = (data.get("services", {}).get("gateway", {}).get("endpoint") or "").rstrip("/")
-          if not endpoint:
-              print("::error::azd show reported no endpoint for the gateway service.")
-              sys.exit(1)
+          if [ -z "$fqdn" ]; then
+            echo "::error::gateway has no external ingress FQDN in $RESOURCE_GROUP."
+            exit 1
+          fi
+          echo "gateway: https://$fqdn"
 
-          for probe in ("/health", "/alive"):
-              url = f"{endpoint}{probe}"
-              try:
-                  with urllib.request.urlopen(url, timeout=15) as response:
-                      if response.status != 200:
-                          print(f"::error::{url} -> HTTP {response.status}")
-                          sys.exit(1)
-              except Exception as exc:
-                  print(f"::error::{url} -> {exc}")
-                  sys.exit(1)
+          # A just-deployed revision can take a few seconds to start serving, so each probe is retried
+          # rather than failing the whole deploy on a cold start.
+          for probe in /health /alive; do
+            ok=""
+            for attempt in 1 2 3 4 5 6; do
+              code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 20 "https://$fqdn$probe" || echo 000)
+              if [ "$code" = "200" ]; then
+                echo "  $probe -> 200"
+                ok=1
+                break
+              fi
+              echo "  $probe -> $code (attempt $attempt/6)"
+              sleep 10
+            done
+            [ -n "$ok" ] || { echo "::error::https://$fqdn$probe never returned 200."; exit 1; }
+          done
 
-          print(f"Gateway healthy: {endpoint}/health and /alive both returned 200.")
-          PY
+          echo "Gateway healthy: both /health and /alive returned 200 over HTTPS."
