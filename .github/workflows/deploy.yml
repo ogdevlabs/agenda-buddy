@@ -108,6 +108,10 @@ jobs:
         env:
           TF_VAR_environment_name: ${{ inputs.environment }}
           TF_VAR_location: ${{ vars.AZURE_LOCATION }}
+          # The state account is also a variable, not only backend config: the config grants the deploy
+          # identity a blob role on it, and a role assignment cannot reference backend settings.
+          TF_VAR_state_resource_group_name: ${{ vars.TF_STATE_RESOURCE_GROUP }}
+          TF_VAR_state_storage_account_name: ${{ vars.TF_STATE_STORAGE_ACCOUNT }}
           TF_VAR_subscription_id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
           TF_VAR_tenant_id: ${{ vars.AZURE_TENANT_ID }}
           TF_VAR_agenda_buddy_connection_string: ${{ secrets.ATLAS_AGENDA_BUDDY_CONNECTION_STRING }}
