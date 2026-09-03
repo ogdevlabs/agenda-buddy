@@ -180,8 +180,24 @@ jobs:
             [jwt-public-key]=JWT_PUBLIC_KEY
             [jwt-private-key]=JWT_PRIVATE_KEY
           )
+          # resend-api-key is absent when the environment has no mail provider (see
+          # infra/terraform/environment/main.tf). An absent secret is skipped rather than fatal; the
+          # service then logs a startup warning naming the key.
+          optional=" resend-api-key "
           for secret in "${!secret_names[@]}"; do
-            value=$(az keyvault secret show --vault-name "$KEY_VAULT_NAME" --name "$secret" --query value -o tsv)
+            if ! value=$(az keyvault secret show --vault-name "$KEY_VAULT_NAME" --name "$secret" \
+                           --query value -o tsv 2>/dev/null); then
+              case "$optional" in
+                *" $secret "*)
+                  echo "::warning::$secret is not set in $KEY_VAULT_NAME — continuing without it."
+                  continue
+                  ;;
+                *)
+                  echo "::error::$secret is missing from $KEY_VAULT_NAME."
+                  exit 1
+                  ;;
+              esac
+            fi
             azd env set "${secret_names[$secret]}" "$value"
           done
 
