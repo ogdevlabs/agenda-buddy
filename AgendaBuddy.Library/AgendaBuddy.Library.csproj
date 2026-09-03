@@ -14,10 +14,10 @@
         <!-- IHttpClientFactory + IOptions, for ResendEmailSender. Abstractions only: nothing here
              builds a host, so the DI registration lives in the service that owns it. -->
         <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.0" />
-        <PackageReference Include="Microsoft.Extensions.Options" Version="10.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Options" Version="10.0.11" />
         <PackageReference Include="Stripe.net" Version="45.0.0" />
-        <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="10.0.0" />
-        <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="10.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="10.0.11" />
+        <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="10.0.11" />
         <PackageReference Include="MongoDB.Bson" Version="2.25.0" />
         <PackageReference Include="MongoDB.Driver" Version="2.25.0" />
     </ItemGroup>
