@@ -12,5 +12,11 @@
 #     -backend-config="container_name=<bootstrap output: container_name>" \
 #     -backend-config="key=agenda-buddy-<environment_name>.tfstate"
 terraform {
-  backend "azurerm" {}
+  backend "azurerm" {
+    # Authenticate to the state blob with the caller's own AAD identity instead of a storage account
+    # key. The deploy identity is granted Storage Blob Data Contributor on this account (see main.tf);
+    # a key-based backend would instead need storageAccounts/listKeys, which its resource-group-scoped
+    # Contributor does not include -- that failed `terraform init` with a 403 on the first CI run.
+    use_azuread_auth = true
+  }
 }

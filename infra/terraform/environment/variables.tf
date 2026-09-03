@@ -29,6 +29,20 @@ variable "github_repository" {
 # config automates is *where they end up* (this environment's own Key Vault, RBAC-scoped to
 # this environment's deploy identity only) rather than a human running `azd env set` by hand.
 
+# The Terraform state backend lives in its own resource group, shared by every environment (see
+# infra/terraform/bootstrap). The deploy identity is scoped to THIS environment's resource group, so it
+# has no access there by default -- which is why it must be granted some, explicitly, below.
+variable "state_resource_group_name" {
+  description = "Resource group holding the shared Terraform state storage account (bootstrap output: resource_group_name)."
+  type        = string
+  default     = "rg-agenda-buddy-tfstate"
+}
+
+variable "state_storage_account_name" {
+  description = "Shared Terraform state storage account (bootstrap output: storage_account_name). Globally unique, so it has no sensible default."
+  type        = string
+}
+
 variable "agenda_buddy_connection_string" {
   description = "MongoDB Atlas connection string for the agenda_buddy database (6 domain services)."
   type        = string
