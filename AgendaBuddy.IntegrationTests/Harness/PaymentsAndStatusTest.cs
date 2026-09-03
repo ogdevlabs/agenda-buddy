@@ -142,9 +142,11 @@ public class PaymentsAndStatusTest(ServiceHostFixture<BookingAnchor> host, Crypt
     {
         using var service = await StartWithAnAppointmentAsync();
 
+        // The provider confirms, not the customer: every transition on this route is provider-only, so a
+        // customer self-confirming their own request is refused (see BookingModule's ownership guards).
         var booked = await service.Client.SendAsync(Authorised(
             HttpMethod.Post, $"api/v1/booking/appointments/{Appointment}/status",
-            Customer, TokenFactory.CustomerRole, new { status = "Booked" }));
+            Provider, TokenFactory.ProviderRole, new { status = "Booked" }));
 
         Assert.Equal(HttpStatusCode.OK, booked.StatusCode);
         Assert.Equal(AppointmentStatus.Booked, (await StoredAsync(service)).AppointmentStatus);

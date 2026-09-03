@@ -102,11 +102,11 @@ public class IdentityService(
         _log.LogInformation(
             "credential.created ok for {Account} as {Role}", AccountReference(email), role);
 
-        // No email provider is configured (ADR-052) — logged for local development the same way a
-        // password-reset token is, not gated on for login (see EmailVerified's own remarks).
+        // The token itself is never logged. It is a bearer credential for the confirmation route, so a
+        // log sink is a place it can be read by anyone with log access and replayed.
         _log.LogInformation(
-            "credential.email-confirmation-requested for {Account}: token={ConfirmationToken} expires {Expiry:O}",
-            AccountReference(email), verificationOpaque, verificationExpiry);
+            "credential.email-confirmation-requested for {Account}: expires {Expiry:O}",
+            AccountReference(email), verificationExpiry);
 
         if (notificationService is not null)
         {
@@ -457,10 +457,11 @@ public class IdentityService(
 
         if (credential is null) return null; // No such account — nothing written, nothing to notify.
 
+        // The token itself is never logged. It grants a password change to whoever holds it, so a log
+        // sink is a place it can be read by anyone with log access and used to take over the account.
         _log.LogInformation(
-            "credential.password-reset-requested for {Account}: token={ResetToken} expires {Expiry:O} "
-            + "(no email provider configured — logged for local development only, see ADR-052)",
-            account, resetOpaque, expiry);
+            "credential.password-reset-requested for {Account}: expires {Expiry:O}",
+            account, expiry);
 
         if (notificationService is not null)
         {

@@ -6,7 +6,6 @@ global using System.Security.Claims;
 global using System.Threading;
 global using System.Threading.Tasks;
 global using JetBrains.Annotations;
-global using AgendaBuddy.Kafka;
 global using AgendaBuddy.Provider.Configurations;
 global using AgendaBuddy.Provider.Core.Commands;
 global using AgendaBuddy.Provider.Core.Queries;

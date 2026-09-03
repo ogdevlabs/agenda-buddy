@@ -41,12 +41,6 @@ variable "identity_db_connection_string" {
   sensitive   = true
 }
 
-variable "kafka_bootstrap_servers" {
-  description = "Managed Kafka bootstrap endpoint (Confluent Cloud or Event Hubs' Kafka endpoint)."
-  type        = string
-  sensitive   = true
-}
-
 variable "jwt_public_key" {
   description = "RSA public key (PEM) for JWT verification, generated fresh for this environment."
   type        = string
@@ -57,4 +51,10 @@ variable "jwt_private_key" {
   description = "RSA private key (PEM) for JWT signing, generated fresh for this environment."
   type        = string
   sensitive   = true
+}
+
+variable "key_vault_purge_protection" {
+  description = "Whether this environment's Key Vault blocks purging after deletion. Leave true for anything holding real data; set false for a throwaway environment, where an un-purgeable globally-unique name blocks destroy/re-apply for the whole retention window."
+  type        = bool
+  default     = true
 }

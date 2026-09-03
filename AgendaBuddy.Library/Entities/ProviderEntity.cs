@@ -3,16 +3,19 @@
 namespace AgendaBuddy.Library.Entities;
 
 [ExcludeFromCodeCoverage]
+// Documents written before the Kafka topic-per-provider mechanism was removed still carry a
+// kafka_topic element. There is no property for it any more, and the driver throws on an unmapped
+// element unless told otherwise, so ignoring extras is what keeps those documents readable.
+[BsonIgnoreExtraElements]
 public class ProviderEntity
 {
-    public ProviderEntity(string firstName, string lastName, string email, string? kafkaTopic,
+    public ProviderEntity(string firstName, string lastName, string email,
         List<ServiceEntity> serviceEntities, List<AppointmentEntity> appointmentEntities,
         List<string> subscribedCustomerCollection)
     {
         FirstName = firstName;
         LastName = lastName;
         Email = email;
-        KafkaTopic = kafkaTopic;
         ServiceEntities = serviceEntities;
         AppointmentEntities = appointmentEntities;
         SubscribedCustomerCollection = subscribedCustomerCollection;
@@ -42,7 +45,6 @@ public class ProviderEntity
     [BsonIgnoreIfNull]
     public string? PhoneNumber { get; set; }
 
-    [BsonElement("kafka_topic")] public string? KafkaTopic { get; set; }
 
     [BsonElement("services")] public List<ServiceEntity> ServiceEntities { get; set; } = [];
 

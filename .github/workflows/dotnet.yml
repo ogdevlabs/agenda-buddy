@@ -64,8 +64,8 @@ jobs:
           # match all of `AgendaBuddy.Library/**`, `AgendaBuddy.Booking.Api/**`, … at once.
           #
           # Two real bugs came from that misunderstanding, both fixed below:
-          #   1. Markdown inside a code directory built the whole backend. `AgendaBuddy.Kafka/readme.md`
-          #      matches `AgendaBuddy.Kafka/**`, so editing it ran the full build + test. `docs/**` and root-level `*.md`
+          #   1. Markdown inside a code directory built the whole backend. `AgendaBuddy.Library/readme.md`
+          #      matches `AgendaBuddy.Library/**`, so editing it ran the full build + test. `docs/**` and root-level `*.md`
           #      were always fine; markdown nested under a service was not.
           #   2. `- '!AgendaBuddy.MobileApp.Tests/**'` never excluded anything. `*.Tests/**` matches
           #      `AgendaBuddy.MobileApp.Tests/**`, so a mobile-test-only change ran the backend job.
@@ -140,7 +140,6 @@ jobs:
               - 'AgendaBuddy.Profession.Domain/**'
               - 'AgendaBuddy.Profession.Infrastructure/**'
               - 'AgendaBuddy.Identity/**'
-              - 'AgendaBuddy.Kafka/**'
               - 'AgendaBuddy.AppHost/**'
               - 'AgendaBuddy.ServiceDefaults/**'
               # The 12 backend test projects, named explicitly. AgendaBuddy.MobileApp.Tests is absent on
@@ -153,7 +152,6 @@ jobs:
               - 'AgendaBuddy.Profession.Tests/**'
               - 'AgendaBuddy.Identity.Tests/**'
               - 'AgendaBuddy.Library.Tests/**'
-              - 'AgendaBuddy.Kafka.Tests/**'
               - 'AgendaBuddy.EventsAndCommands.Tests/**'
               - 'AgendaBuddy.AppHost.Tests/**'
               - 'AgendaBuddy.ServiceDefaults.Tests/**'
@@ -177,7 +175,7 @@ jobs:
               # these jobs, so a deployment-pipeline edit no longer rebuilds the entire backend.
               - '.github/workflows/dotnet.yml'
             # F-017-T06: the docker-build-and-scan matrix's own trigger — deliberately NARROWER than
-            # `api` above. `api` also fires on AgendaBuddy.Library/AgendaBuddy.EventAndCommands/AgendaBuddy.Kafka/test-project changes,
+            # `api` above. `api` also fires on AgendaBuddy.Library/AgendaBuddy.EventAndCommands/test-project changes,
             # which would run 7 parallel container publishes for a change that touches no service's
             # own container output. Scoped to exactly PRD Requirement 9's list: the 7 service dirs
             # (their .csproj files are inside these globs already), and docker-compose*.yml.
@@ -875,7 +873,7 @@ jobs:
               echo
               echo "> ⚠️ **Build jobs were skipped because no code-relevant file changed**, even though"
               echo "> an area filter matched. This is expected for documentation inside a code directory"
-              echo "> (for example \`AgendaBuddy.Kafka/readme.md\`)."
+              echo "> (for example \`AgendaBuddy.Library/readme.md\`)."
               echo ">"
               echo "> If this change *did* touch build-relevant files, the \`code\` filter is missing an"
               echo "> extension — add it in the \`changes\` job and re-run."

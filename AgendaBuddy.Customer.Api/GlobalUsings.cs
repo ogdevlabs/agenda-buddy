@@ -14,8 +14,6 @@ global using AgendaBuddy.Customer.Domain.Queries;
 global using AgendaBuddy.Customer.Domain.Responses;
 global using AgendaBuddy.Customer.Extensions;
 global using AgendaBuddy.Customer.Requests;
-global using AgendaBuddy.Kafka;
-global using AgendaBuddy.Kafka.Support;
 global using AgendaBuddy.Library.Dtos;   // PageRequest / PagedResponse<T>
 global using AgendaBuddy.Library.Entities;
 global using AgendaBuddy.Library.Extensions;

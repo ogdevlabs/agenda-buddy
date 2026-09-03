@@ -55,8 +55,8 @@ public class MobileBookingRouteResolutionTest(ServiceHostFixture<BookingAnchor> 
                 Identifier = Appointment,
                 EmailProvider = Provider,
                 EmailCustomer = Customer,
-                Start = new DateTime(2026, 9, 1, 10, 0, 0, DateTimeKind.Utc),
-                End = new DateTime(2026, 9, 1, 11, 0, 0, DateTimeKind.Utc)
+                Start = FutureSlot.Start(),
+                End = FutureSlot.Start(hour: 11)
             });
         return service;
     }
@@ -68,8 +68,10 @@ public class MobileBookingRouteResolutionTest(ServiceHostFixture<BookingAnchor> 
         var route = BookingRouteBuilder.UpdateAppointmentStatus(Appointment);
         var payload = BookingRouteBuilder.BuildUpdateStatusPayload(AppointmentStatus.Booked);
 
+        // A provider token: the status route is provider-only, so the client's own route builder has to
+        // resolve for the party actually allowed to use it.
         var response = await service.Client.SendAsync(MobileRouteRequests.Build(
-            route, _tokens.CreateToken(Customer, TokenFactory.CustomerRole), payload));
+            route, _tokens.CreateToken(Provider, TokenFactory.ProviderRole), payload));
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
@@ -237,6 +239,18 @@ public class MobileCustomerMessagingRouteResolutionTest(
     public async Task SendMessage_InboxThreadAndMarkRead_AllResolve()
     {
         using var service = host.StartService("Production");
+
+        // Sending requires an existing relationship between the two parties, so a thread cannot be opened
+        // with a stranger. Without this subscription the send is refused with 403 and nothing downstream in
+        // this test has a message to resolve against.
+        await service.Database.GetCollection<CustomerEntity>("customers").InsertOneAsync(new CustomerEntity
+        {
+            Id = ObjectId.GenerateNewId(),
+            FirstName = "Route",
+            LastName = "Check",
+            Email = Caller,
+            SubscribedProviderCollection = [Counterpart]
+        });
 
         var sent = await service.Client.SendAsync(MobileRouteRequests.Build(
             MessagingRouteBuilder.SendMessage(),

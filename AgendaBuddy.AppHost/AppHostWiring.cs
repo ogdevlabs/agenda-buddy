@@ -8,7 +8,7 @@ namespace AgendaBuddy.AppHost;
 internal enum DeploymentTarget
 {
     /// <summary>
-    /// Local development. MongoDB and Kafka run as containers the AppHost provisions itself.
+    /// Local development. MongoDB runs as a container the AppHost provisions itself.
     /// </summary>
     Local,
 
@@ -59,12 +59,10 @@ internal static class AppHostWiring
         // ASPIRE006 rejects underscores; the second argument keeps the physical name.
         IResourceBuilder<IResourceWithConnectionString> agendaDb;
         IResourceBuilder<IResourceWithConnectionString> identityDb;
-        IResourceBuilder<IResourceWithConnectionString> kafka;
 
         // Only a resource the AppHost provisions itself can be waited on — a connection string to a
         // managed service has no lifecycle to observe, so E-6's gating is local-only.
         IResourceBuilder<IResource>? mongoToWaitFor = null;
-        IResourceBuilder<IResource>? kafkaToWaitFor = null;
 
         if (deployTarget == DeploymentTarget.Local)
         {
@@ -83,14 +81,7 @@ internal static class AppHostWiring
             agendaDb = mongo.AddDatabase("agenda-buddy", "agenda_buddy");
             identityDb = mongo.AddDatabase("IdentityDb");
 
-            // No data volume, deliberately (edge case E-10): CreateTopicIfNotExist treats an
-            // existing topic as a failure, so persisting topics would break re-registration on
-            // every restart after the first.
-            var kafkaServer = builder.AddKafka("kafka");
-
-            kafka = kafkaServer;
             mongoToWaitFor = mongo;
-            kafkaToWaitFor = kafkaServer;
         }
         else
         {
@@ -100,22 +91,21 @@ internal static class AppHostWiring
             // infrastructure stable across deployments.
             builder.AddAzureContainerAppEnvironment("agenda-buddy-env");
 
-            // The data services are external and managed: MongoDB Atlas and a hosted Kafka. Their
-            // connection strings are supplied at deploy time, so nothing about production storage
-            // is decided in this file. Names match the local resources, so the environment
-            // variables the services receive are identical in both shapes.
+            // MongoDB is external and managed: its connection strings are supplied at deploy
+            // time, so nothing about production storage is decided in this file. Names match the
+            // local resources, so the environment variables the services receive are identical in
+            // both shapes.
             agendaDb = builder.AddConnectionString("agenda-buddy");
             identityDb = builder.AddConnectionString("IdentityDb");
-            kafka = builder.AddConnectionString("kafka");
         }
 
         // spendsBcrypt: Identity's login and register are the only routes in the system that hash a
         // password — 262 ms of CPU each, measured — so it is the only service the per-IP limiter applies
         // to (ARCHITECTURE.md D-4).
         var identity = AddApi<Projects.AgendaBuddy_Identity>("identity", identityDb, needsPrivateKey: true, spendsBcrypt: true);
-        var booking = AddApi<Projects.AgendaBuddy_Booking_Api>("booking", agendaDb, needsKafka: true);
-        var customer = AddApi<Projects.AgendaBuddy_Customer_Api>("customer", agendaDb, needsKafka: true);
-        var provider = AddApi<Projects.AgendaBuddy_Provider_Api>("provider", agendaDb, needsKafka: true);
+        var booking = AddApi<Projects.AgendaBuddy_Booking_Api>("booking", agendaDb);
+        var customer = AddApi<Projects.AgendaBuddy_Customer_Api>("customer", agendaDb);
+        var provider = AddApi<Projects.AgendaBuddy_Provider_Api>("provider", agendaDb);
         var calendar = AddApi<Projects.AgendaBuddy_Calendar_Api>("calendar", agendaDb);
         var services = AddApi<Projects.AgendaBuddy_Services_Api>("services", agendaDb);
         var profession = AddApi<Projects.AgendaBuddy_Profession_Api>("profession", agendaDb);
@@ -129,7 +119,7 @@ internal static class AppHostWiring
         // fronts every WithReference-injected address with its own stable local proxy port, so it never
         // goes stale across a destination's restart). WaitFor on all seven means the gateway only reports
         // healthy once every destination it could route to is also healthy, mirroring how every service
-        // above waits on mongodb/kafka before it is considered up.
+        // above waits on mongodb before it is considered up.
         // Explicit, because Gateway has no appsettings.json for Aspire to derive one from (unlike
         // the seven services above) — without this, the resource has zero EndpointAnnotations at
         // all, so nothing is here for WithExternalHttpEndpoints() below to mark external, and the
@@ -160,7 +150,6 @@ internal static class AppHostWiring
         IResourceBuilder<ProjectResource> AddApi<TProject>(
             string name,
             IResourceBuilder<IResourceWithConnectionString> database,
-            bool needsKafka = false,
             bool needsPrivateKey = false,
             bool spendsBcrypt = false)
             where TProject : IProjectMetadata, new()
@@ -220,11 +209,7 @@ internal static class AppHostWiring
             // the private key.
             if (needsPrivateKey) service.WithEnvironment("JWT_PRIVATE_KEY", jwtPrivateKey);
 
-            // Only the three services that produce per-provider topics (A-3).
-            if (needsKafka) service.WithReference(kafka);
-
             if (mongoToWaitFor is not null) service.WaitFor(mongoToWaitFor);
-            if (needsKafka && kafkaToWaitFor is not null) service.WaitFor(kafkaToWaitFor);
 
             return service;
         }

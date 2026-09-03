@@ -15,9 +15,8 @@ namespace AgendaBuddy.IntegrationTests.Persistence;
 /// <c>[BsonElement]</c> mapping round-trips, including its embedded <see cref="ServiceEntity"/> list.
 /// </summary>
 /// <remarks>
-/// Not <c>POST /api/v1/providers</c>: <c>ProviderCreationGuardTest</c> already records that route as
-/// Kafka-gated with no broker in this harness. <c>UpdateProviderCommandHandler</c> calls no Kafka client, so
-/// a seeded starting document plus a real <c>PUT</c> is the write this suite can exercise end to end.
+/// Not <c>POST /api/v1/providers</c> — <c>ProviderCreationGuardTest</c> covers that route. A seeded
+/// starting document plus a real <c>PUT</c> exercises the update path end to end.
 /// </remarks>
 [Collection(HarnessCollection.Name)]
 public class ProviderPersistenceTest(ServiceHostFixture<ProviderAnchor> host, CryptoSessionFixture crypto)
@@ -49,7 +48,6 @@ public class ProviderPersistenceTest(ServiceHostFixture<ProviderAnchor> host, Cr
                 FirstName = "After",
                 LastName = "Update",
                 Email,
-                KafkaTopic = "provider-round-trip-topic",
                 ServiceEntities = new[]
                 {
                     new { Name = "60-min session", Description = "a real service", Fee = 65m },
@@ -84,7 +82,6 @@ public class ProviderPersistenceTest(ServiceHostFixture<ProviderAnchor> host, Cr
         Assert.Equal("After", read.GetProperty("firstName").GetString());
         Assert.Equal("Update", read.GetProperty("lastName").GetString());
         Assert.Equal(Email, read.GetProperty("email").GetString());
-        Assert.Equal("provider-round-trip-topic", read.GetProperty("kafkaTopic").GetString());
         Assert.Equal([SubscribedCustomer], read.GetProperty("subscribedCustomerCollection").EnumerateArray().Select(e => e.GetString()));
         Assert.True(read.GetProperty("isActive").GetBoolean());
 

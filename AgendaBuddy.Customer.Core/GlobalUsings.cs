@@ -4,8 +4,6 @@ global using AgendaBuddy.Customer.Domain.Commands;
 global using AgendaBuddy.Customer.Domain.Queries;
 global using AgendaBuddy.EventAndCommands.Events.Customer;
 global using AgendaBuddy.EventAndCommands.Persistence;
-global using AgendaBuddy.Kafka;
-global using AgendaBuddy.Kafka.Support;
 global using FluentResults;
 global using GuardClauses;
 global using AgendaBuddy.Library.Dtos;

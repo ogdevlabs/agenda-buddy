@@ -59,7 +59,11 @@ resource "azurerm_key_vault" "secrets" {
   tenant_id                  = var.tenant_id
   sku_name                   = "standard"
   rbac_authorization_enabled = true
-  purge_protection_enabled   = true
+
+  # Purge protection makes a deleted vault un-purgeable for the soft-delete retention window. Vault
+  # names are globally unique, so on a throwaway environment that turns a destroy/re-apply cycle into
+  # a name collision that cannot be cleared for weeks. Production environments should set this true.
+  purge_protection_enabled = var.key_vault_purge_protection
 }
 
 resource "azurerm_role_assignment" "deploy_identity_secrets_officer" {
@@ -87,14 +91,6 @@ resource "azurerm_key_vault_secret" "agenda_buddy_connection" {
 resource "azurerm_key_vault_secret" "identity_db_connection" {
   name         = "identity-db-connection"
   value        = var.identity_db_connection_string
-  key_vault_id = azurerm_key_vault.secrets.id
-
-  depends_on = [time_sleep.rbac_propagation]
-}
-
-resource "azurerm_key_vault_secret" "kafka_bootstrap" {
-  name         = "kafka-bootstrap-servers"
-  value        = var.kafka_bootstrap_servers
   key_vault_id = azurerm_key_vault.secrets.id
 
   depends_on = [time_sleep.rbac_propagation]

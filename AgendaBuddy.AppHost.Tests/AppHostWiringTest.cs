@@ -56,7 +56,6 @@ public class AppHostWiringTest
         }
 
         Assert.IsAssignableFrom<MongoDBServerResource>(Resource(builder, "mongodb"));
-        Assert.IsAssignableFrom<KafkaServerResource>(Resource(builder, "kafka"));
     }
 
     // AC-1.5: a MAUI head has no place in a server orchestration graph.
@@ -97,36 +96,26 @@ public class AppHostWiringTest
             mount => mount.Type == ContainerMountType.Volume);
     }
 
-    // Edge case E-10: CreateTopicIfNotExist treats an existing topic as a failure, so a persisted
-    // Kafka volume would break topic re-registration on every restart after the first.
+    // Nothing in the graph produces or consumes messages, so no service may acquire a broker
+    // reference. A broker used to be provisioned here for topics that were never read, and an
+    // unreachable one made provider and customer creation fail -- i.e. it could only block signup.
     [Fact]
-    public void KafkaHasNoDataVolume()
-    {
-        var builder = BuildModel();
+    public void LocalTargetReferencesNoMessageBroker() => AssertNoMessageBroker(DeploymentTarget.Local);
 
-        Assert.DoesNotContain(
-            Resource(builder, "kafka").Annotations.OfType<ContainerMountAnnotation>(),
-            mount => mount.Type == ContainerMountType.Volume);
-    }
+    [Fact]
+    public void CloudTargetReferencesNoMessageBroker() => AssertNoMessageBroker(DeploymentTarget.Cloud);
 
-    // A-3: only the three services that produce per-provider topics get Kafka.
-    [Theory]
-    [InlineData("booking")]
-    [InlineData("customer")]
-    [InlineData("provider")]
-    public void KafkaIsReferencedBy(string serviceName)
+    // DeploymentTarget is internal, so it cannot be an InlineData argument on a public Theory.
+    private static void AssertNoMessageBroker(DeploymentTarget target)
     {
-        Assert.Contains("kafka", References(BuildModel(), serviceName));
-    }
+        var builder = BuildModel(target);
 
-    [Theory]
-    [InlineData("calendar")]
-    [InlineData("services")]
-    [InlineData("profession")]
-    [InlineData("identity")]
-    public void KafkaIsNotReferencedBy(string serviceName)
-    {
-        Assert.DoesNotContain("kafka", References(BuildModel(), serviceName));
+        Assert.DoesNotContain("kafka", builder.Resources.Select(resource => resource.Name));
+
+        foreach (var name in ExpectedServices)
+        {
+            Assert.DoesNotContain("kafka", References(builder, name));
+        }
     }
 
     // Identity owns its own database; the six domain services share agenda_buddy.
@@ -385,27 +374,16 @@ public class AppHostWiringTest
         }
     }
 
-    // Kafka is only waited on where it is actually used.
-    [Theory]
-    [InlineData("booking")]
-    [InlineData("customer")]
-    [InlineData("provider")]
-    public void KafkaConsumersWaitForKafka(string serviceName)
-    {
-        Assert.Contains("kafka", Waits(BuildModel(), serviceName));
-    }
-
     // --- Cloud publish shape (docs/deployment.md) ------------------------------------------------
 
     // A dev container on a persistent volume is not a production database. Publishing must hand the
-    // services connection strings to managed MongoDB and Kafka instead of provisioning containers.
+    // services a connection string to managed MongoDB instead of provisioning a container.
     [Fact]
     public void CloudTargetProvisionsNoDataContainers()
     {
         var builder = BuildModel(DeploymentTarget.Cloud);
 
         Assert.Empty(builder.Resources.OfType<MongoDBServerResource>());
-        Assert.Empty(builder.Resources.OfType<KafkaServerResource>());
         Assert.DoesNotContain("mongodb-password", builder.Resources.Select(resource => resource.Name));
     }
 
@@ -414,7 +392,6 @@ public class AppHostWiringTest
     [Theory]
     [InlineData("agenda-buddy")]
     [InlineData("IdentityDb")]
-    [InlineData("kafka")]
     public void CloudTargetSuppliesTheDataServiceAsAConnectionString(string resourceName)
     {
         var resource = Resource(BuildModel(DeploymentTarget.Cloud), resourceName);
@@ -510,7 +487,7 @@ public class AppHostWiringTest
     // ── The eighth resource — the gateway ──────────────────────────────────────────────
     //
     // This is pure AppHost composition: the gateway resource exists and is wired to every one of the seven
-    // services it could route to, mirroring how the file already wires dependents to mongodb/kafka.
+    // services it could route to, mirroring how the file already wires dependents to mongodb.
 
     [Fact]
     public void GatewayIsRegistered()

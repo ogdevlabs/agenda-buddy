@@ -411,8 +411,9 @@
             "type": "string",
             "format": "email"
           },
-          "kafkaTopic": {
+          "phoneNumber": {
             "type": "string",
+            "format": "tel",
             "nullable": true
           },
           "serviceEntities": {

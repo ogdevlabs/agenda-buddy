@@ -15,7 +15,7 @@ namespace AgendaBuddy.Library.Dtos;
 /// </para>
 /// <para>
 /// <b>Deliberately absent:</b> <c>AppointmentEntities</c>, <c>SubscribedCustomerCollection</c>,
-/// <c>KafkaTopic</c>, <c>Id</c>. Absence is by construction — this type has no field to populate — rather
+/// <c>Id</c>. Absence is by construction — this type has no field to populate — rather
 /// than by a filtering step someone could forget.
 /// </para>
 /// <para>

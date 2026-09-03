@@ -55,8 +55,8 @@ public class BookingAuditTest(ServiceHostFixture<BookingAnchor> host, CryptoSess
             {
                 EmailProvider = ProviderEmail,
                 EmailCustomer = CustomerEmail,
-                Start = new DateTime(2026, 9, 1, 10, 0, 0, DateTimeKind.Utc),
-                End = new DateTime(2026, 9, 1, 11, 0, 0, DateTimeKind.Utc),
+                Start = FutureSlot.Start(),
+                End = FutureSlot.Start(hour: 11),
                 DayOff = false,
             }),
             Headers =
@@ -91,8 +91,8 @@ public class BookingAuditTest(ServiceHostFixture<BookingAnchor> host, CryptoSess
             {
                 EmailProvider = MissingProviderEmail,
                 EmailCustomer = CustomerEmail,
-                Start = new DateTime(2026, 9, 1, 10, 0, 0, DateTimeKind.Utc),
-                End = new DateTime(2026, 9, 1, 11, 0, 0, DateTimeKind.Utc),
+                Start = FutureSlot.Start(),
+                End = FutureSlot.Start(hour: 11),
                 DayOff = false,
             }),
             Headers =

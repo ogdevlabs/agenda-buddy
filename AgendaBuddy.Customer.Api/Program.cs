@@ -46,7 +46,6 @@ builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.Converters.Add(new ObjectIdJsonConverter()));
 
 // Register Singleton instances
-builder.Services.AddSingleton<IKafkaClient, KafkaClient>();
 
 // Enable & configure JSON Problem Details error responses
 // ADR-022: ForbiddenException -> 403 centrally, so an endpoint that omits a local

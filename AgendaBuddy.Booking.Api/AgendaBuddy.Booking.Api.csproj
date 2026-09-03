@@ -29,7 +29,6 @@
         <ProjectReference Include="..\AgendaBuddy.Booking.Domain\AgendaBuddy.Booking.Domain.csproj" />
         <ProjectReference Include="..\AgendaBuddy.Booking.Infrastructure\AgendaBuddy.Booking.Infrastructure.csproj" />
         <ProjectReference Include="..\AgendaBuddy.EventAndCommands\AgendaBuddy.EventAndCommands.csproj" />
-        <ProjectReference Include="..\AgendaBuddy.Kafka\AgendaBuddy.Kafka.csproj" />
         <ProjectReference Include="..\AgendaBuddy.Library\AgendaBuddy.Library.csproj" />
         <ProjectReference Include="..\AgendaBuddy.Library.ServerAuth\AgendaBuddy.Library.ServerAuth.csproj" />
         <ProjectReference Include="..\AgendaBuddy.ServiceDefaults\AgendaBuddy.ServiceDefaults.csproj" />

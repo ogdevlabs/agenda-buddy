@@ -10,8 +10,6 @@ global using AgendaBuddy.EventAndCommands.Events.Customer;
 global using AgendaBuddy.EventAndCommands.Events.Provider;
 global using AgendaBuddy.EventAndCommands.Events.Services;
 global using AgendaBuddy.EventAndCommands.Persistence;
-global using AgendaBuddy.Kafka;
-global using AgendaBuddy.Kafka.Support;
 global using AgendaBuddy.Library.Entities;
 global using AgendaBuddy.Library.Services;
 global using AgendaBuddy.Library.Tools;

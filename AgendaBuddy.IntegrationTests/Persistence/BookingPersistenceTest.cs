@@ -45,8 +45,8 @@ public class BookingPersistenceTest(ServiceHostFixture<BookingAnchor> host, Cryp
         using var service = host.StartService("Production");
         await SeedProviderAsync(service);
 
-        var start = new DateTime(2026, 9, 1, 10, 0, 0, DateTimeKind.Utc);
-        var end = new DateTime(2026, 9, 1, 11, 0, 0, DateTimeKind.Utc);
+        var start = FutureSlot.Start();
+        var end = start.AddHours(1);
 
         var request = new HttpRequestMessage(HttpMethod.Post, "api/v1/booking/appointments")
         {
