@@ -165,51 +165,61 @@ jobs:
       - name: Configure azd environment from Key Vault
         env:
           KEY_VAULT_NAME: ${{ steps.tf.outputs.key_vault_name }}
+          AZD_ENV: ${{ inputs.environment }}
         run: |
           set -eu
-          azd env new "${{ inputs.environment }}" \
+          azd env new "$AZD_ENV" \
             --location "${{ vars.AZURE_LOCATION }}" \
             --subscription "${{ vars.AZURE_SUBSCRIPTION_ID }}" \
-            --no-prompt || azd env select "${{ inputs.environment }}"
+            --no-prompt || azd env select "$AZD_ENV"
 
-          # Key Vault secret name -> the environment variable azd actually reads. These are NOT
-          # free choices and NOT derivable by eye: azd prefixes every Aspire parameter with AZURE_,
-          # upper-cases it, and splits camelCase, so the parameter `IdentityDb` becomes
-          # AZURE_IDENTITY_DB rather than AZURE_IDENTITYDB. Read them off the tool rather than
-          # guessing:
+          # Written straight into azd's own config file rather than through `azd env set` or
+          # `azd env config set`. Both of those mangle a multiline value: `env set` stores the PEM
+          # unescaped and azd then fails with "invalid character '\n' in string literal" building the
+          # Bicep parameters file, while `config set` silently stores nothing at all. Writing the JSON
+          # ourselves escapes newlines correctly, which matters because two of these five values are
+          # PEM keys.
           #
-          #   azd provision --preview --no-prompt
-          #
-          # which lists every unsatisfied parameter with its exact "Environment variable:" name.
-          declare -A secret_names=(
-            [agenda-buddy-connection]=AZURE_AGENDA_BUDDY
-            [identity-db-connection]=AZURE_IDENTITY_DB
-            [resend-api-key]=AZURE_RESEND_API_KEY
-            [jwt-public-key]=AZURE_JWT_PUBLIC_KEY
-            [jwt-private-key]=AZURE_JWT_PRIVATE_KEY
-          )
-          # resend-api-key is absent when the environment has no mail provider (see
-          # infra/terraform/environment/main.tf). An absent secret is skipped rather than fatal; the
-          # service then logs a startup warning naming the key.
-          optional=" resend-api-key "
-          for secret in "${!secret_names[@]}"; do
-            if ! value=$(az keyvault secret show --vault-name "$KEY_VAULT_NAME" --name "$secret" \
-                           --query value -o tsv 2>/dev/null); then
-              case "$optional" in
-                *" $secret "*)
-                  echo "::warning::$secret is not set in $KEY_VAULT_NAME — continuing without it."
+          # Key names are the Aspire parameter names, NOT the AZURE_-prefixed environment-variable
+          # form, and they keep their original casing (IdentityDb, not identity_db). Read them off
+          # `azd provision --preview --no-prompt`, which lists every parameter with both spellings.
+          python3 - <<'PY'
+          import json, os, pathlib, subprocess, sys
+
+          vault = os.environ["KEY_VAULT_NAME"]
+          env_name = os.environ["AZD_ENV"]
+
+          # Key Vault secret name -> azd parameter name. resend-api-key is absent when the
+          # environment has no mail provider, which is supported: the service warns at startup.
+          wanted = {
+              "agenda-buddy-connection": ("agenda_buddy", True),
+              "identity-db-connection": ("IdentityDb", True),
+              "jwt-public-key": ("jwt_public_key", True),
+              "jwt-private-key": ("jwt_private_key", True),
+              "resend-api-key": ("resend_api_key", False),
+          }
+
+          parameters = {}
+          for secret, (param, required) in wanted.items():
+              result = subprocess.run(
+                  ["az", "keyvault", "secret", "show", "--vault-name", vault,
+                   "--name", secret, "--query", "value", "-o", "tsv"],
+                  capture_output=True, text=True)
+              if result.returncode != 0:
+                  if required:
+                      print(f"::error::{secret} is missing from {vault}.")
+                      sys.exit(1)
+                  print(f"::warning::{secret} is not set in {vault} - continuing without it.")
                   continue
-                  ;;
-                *)
-                  echo "::error::$secret is missing from $KEY_VAULT_NAME."
-                  exit 1
-                  ;;
-              esac
-            fi
-            # `--` terminates flag parsing. A PEM value begins "-----BEGIN ...", which azd otherwise
-            # reads as flags and rejects with "failed to parse global flags: bad flag syntax".
-            azd env set -- "${secret_names[$secret]}" "$value"
-          done
+              # az strips no trailing newline of its own, but tsv output appends one.
+              parameters[param] = result.stdout.rstrip("\n")
+
+          path = pathlib.Path(".azure") / env_name / "config.json"
+          config = json.loads(path.read_text()) if path.exists() and path.stat().st_size else {}
+          config.setdefault("infra", {}).setdefault("parameters", {}).update(parameters)
+          path.write_text(json.dumps(config, indent=2))
+          print(f"wrote {len(parameters)} parameters to {path}: {sorted(parameters)}")
+          PY
 
       - name: azd provision
         if: ${{ inputs.provision }}
