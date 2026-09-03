@@ -463,3 +463,12 @@ MigrationBackup/
 *.tfplan
 crash.log
 crash.*.log
+
+# Variable files. Every sensitive Terraform variable in infra/terraform/environment (Atlas
+# connection strings, the JWT keypair, the mail-provider key) is supplied by value, so this is the
+# conventional place for them to land -- and *.auto.tfvars is loaded automatically, which makes it the
+# likeliest file to be created without thinking about it. Ignored so a real credential cannot be
+# committed by a plain `git add -A`. Example files are opted back in below.
+*.tfvars
+*.tfvars.json
+!*.tfvars.example

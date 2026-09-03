@@ -72,12 +72,32 @@ resource "azurerm_role_assignment" "deploy_identity_secrets_officer" {
   principal_id         = azuread_service_principal.deploy.object_id
 }
 
+data "azurerm_client_config" "current" {}
+
+# The identity running `terraform apply` needs data-plane access as well, and subscription Owner does
+# NOT provide it: with rbac_authorization_enabled the vault's secrets are governed by data-plane roles
+# only, so Owner can create the vault and still get 403 on every secret it writes into it. Without this
+# the first apply of a new environment fails partway -- vault created, all secrets missing.
+#
+# Skipped when the caller already is the deploy principal (every CI run), because a second identical
+# scope/role/principal assignment is a conflict rather than a no-op.
+resource "azurerm_role_assignment" "terraform_caller_secrets_officer" {
+  count = data.azurerm_client_config.current.object_id == azuread_service_principal.deploy.object_id ? 0 : 1
+
+  scope                = azurerm_key_vault.secrets.id
+  role_definition_name = "Key Vault Secrets Officer"
+  principal_id         = data.azurerm_client_config.current.object_id
+}
+
 # Azure RBAC assignments are eventually consistent — writing a secret immediately after the
 # role assignment above can 403 even though `terraform apply` reports it created. A short,
 # explicit wait is cheaper than a flaky first apply per environment.
 resource "time_sleep" "rbac_propagation" {
-  depends_on      = [azurerm_role_assignment.deploy_identity_secrets_officer]
-  create_duration = "30s"
+  depends_on = [
+    azurerm_role_assignment.deploy_identity_secrets_officer,
+    azurerm_role_assignment.terraform_caller_secrets_officer,
+  ]
+  create_duration = "60s"
 }
 
 resource "azurerm_key_vault_secret" "agenda_buddy_connection" {
@@ -96,7 +116,13 @@ resource "azurerm_key_vault_secret" "identity_db_connection" {
   depends_on = [time_sleep.rbac_propagation]
 }
 
+# Created only when a key was supplied. Key Vault rejects an empty secret value, so storing the
+# variable's own "not configured" default would fail the apply -- and an absent secret is the more
+# honest representation of "this environment has no mail provider" anyway. The deploy workflow treats
+# it as optional when reading.
 resource "azurerm_key_vault_secret" "resend_api_key" {
+  count = var.resend_api_key == "" ? 0 : 1
+
   name         = "resend-api-key"
   value        = var.resend_api_key
   key_vault_id = azurerm_key_vault.secrets.id
