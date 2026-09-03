@@ -202,7 +202,9 @@ jobs:
                   ;;
               esac
             fi
-            azd env set "${secret_names[$secret]}" "$value"
+            # `--` terminates flag parsing. A PEM value begins "-----BEGIN ...", which azd otherwise
+            # reads as flags and rejects with "failed to parse global flags: bad flag syntax".
+            azd env set -- "${secret_names[$secret]}" "$value"
           done
 
       - name: azd provision
