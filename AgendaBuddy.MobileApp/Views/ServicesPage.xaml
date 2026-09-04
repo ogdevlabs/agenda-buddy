@@ -17,9 +17,13 @@
 
         <controls:BrandHeader Grid.Row="0" />
 
-        <Grid Grid.Row="1" RowDefinitions="Auto,*">
+        <!--
+            The list gets the star row and scrolls inside it; the Add action is pinned below. Creating a
+            service lives on its own page, so it can never be pushed off this one by a long list.
+        -->
+        <Grid Grid.Row="1" RowDefinitions="Auto,Auto,*,Auto" Padding="20,12,20,16" RowSpacing="12">
 
-            <Grid Grid.Row="0" ColumnDefinitions="Auto,*" Padding="20,12,20,4">
+            <Grid Grid.Row="0" ColumnDefinitions="Auto,*">
                 <controls:SafeButton Grid.Column="0" Text="&#x2190; Back" BackgroundColor="Transparent"
                         TextColor="{StaticResource Primary}" FontSize="14" HorizontalOptions="Start"
                         Padding="4" Clicked="OnBackClicked" />
@@ -27,139 +31,96 @@
                        TextColor="{StaticResource TextPrimary}" VerticalOptions="Center" Margin="8,0,0,0" />
             </Grid>
 
-            <ScrollView Grid.Row="1">
-                <VerticalStackLayout Padding="20" Spacing="14">
+            <VerticalStackLayout Grid.Row="1" Spacing="12">
 
-                    <Frame Style="{StaticResource ErrorBannerStyle}" IsVisible="{Binding HasError}">
-                        <Grid ColumnDefinitions="*,Auto">
-                            <Label Grid.Column="0" Text="{Binding ErrorMessage}" TextColor="{StaticResource Error}" FontSize="14" />
-                            <controls:SafeButton Grid.Column="1" Text="Retry" Command="{Binding LoadCommand}"
-                                    BackgroundColor="{StaticResource Error}" TextColor="White" CornerRadius="16"
-                                    FontSize="13" Padding="12,6" HeightRequest="36" />
-                        </Grid>
-                    </Frame>
+                <Frame Style="{StaticResource ErrorBannerStyle}" IsVisible="{Binding HasError}">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <Label Grid.Column="0" Text="{Binding ErrorMessage}" TextColor="{StaticResource Error}" FontSize="14" />
+                        <controls:SafeButton Grid.Column="1" Text="Retry" Command="{Binding LoadCommand}"
+                                BackgroundColor="{StaticResource Error}" TextColor="White" CornerRadius="16"
+                                FontSize="13" Padding="12,6" HeightRequest="36" />
+                    </Grid>
+                </Frame>
 
-                    <ActivityIndicator IsRunning="{Binding IsLoading}" IsVisible="{Binding IsLoading}"
-                                       Color="{StaticResource Primary}" HorizontalOptions="Center" />
+                <ActivityIndicator IsRunning="{Binding IsLoading}" IsVisible="{Binding IsLoading}"
+                                   Color="{StaticResource Primary}" HorizontalOptions="Center" />
 
-                    <VerticalStackLayout IsVisible="{Binding IsEmpty}" HorizontalOptions="Center" Spacing="6" Padding="40">
-                        <Label Text="No services yet" FontSize="18" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" />
-                        <Label Text="Add your first service below." FontSize="14" TextColor="{StaticResource TextMuted}" />
-                    </VerticalStackLayout>
+            </VerticalStackLayout>
 
-                    <CollectionView ItemsSource="{Binding Services}" SelectionMode="None"
-                                    IsVisible="{Binding IsEmpty, Converter={StaticResource InvertedBoolConverter}}"
-                                    AutomationId="ServicesCollectionView">
-                        <CollectionView.ItemTemplate>
-                            <DataTemplate>
-                                <Frame CornerRadius="16" BackgroundColor="White" BorderColor="#E2E8F0" HasShadow="True" Padding="16" Margin="0,0,0,10">
-                                    <VerticalStackLayout Spacing="8">
-                                        <Grid ColumnDefinitions="*,Auto">
-                                            <VerticalStackLayout Grid.Column="0" Spacing="2" IsVisible="{Binding IsEditing, Converter={StaticResource InvertedBoolConverter}}">
-                                                <Label Text="{Binding Name}" FontSize="16" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}"
-                                                       TextDecorations="{Binding IsActive, Converter={toolkit:BoolToObjectConverter TrueObject=None, FalseObject=Strikethrough}}" />
-                                                <Label Text="{Binding Description}" FontSize="13" TextColor="{StaticResource TextSecondary}" />
-                                                <Label Text="{Binding FeeLabel}" FontSize="13" TextColor="{StaticResource TextMuted}" />
-                                                <Label Text="{Binding DurationLabel}" FontSize="13" TextColor="{StaticResource TextMuted}" />
-                                                <Label Text="Inactive" FontSize="12" FontAttributes="Bold" TextColor="{StaticResource Error}"
-                                                       IsVisible="{Binding IsActive, Converter={StaticResource InvertedBoolConverter}}" />
-                                            </VerticalStackLayout>
-                                            <HorizontalStackLayout Grid.Column="1" Spacing="4">
-                                                <controls:SafeButton Text="{Binding IsEditing, Converter={toolkit:BoolToObjectConverter TrueObject='Cancel', FalseObject='Edit'}}"
-                                                        BackgroundColor="Transparent"
-                                                        TextColor="{StaticResource Primary}"
-                                                        FontSize="13"
-                                                        Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.ToggleEditCommand}"
-                                                        CommandParameter="{Binding .}" />
-                                                <controls:SafeButton Text="Remove"
-                                                        BackgroundColor="Transparent"
-                                                        TextColor="{StaticResource Error}"
-                                                        FontSize="13"
-                                                        Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.RequestRemoveCommand}"
-                                                        CommandParameter="{Binding .}"
-                                                        AutomationId="RemoveServiceButton" />
-                                            </HorizontalStackLayout>
-                                        </Grid>
+            <VerticalStackLayout Grid.Row="2" IsVisible="{Binding IsEmpty}" HorizontalOptions="Center"
+                                 VerticalOptions="Start" Spacing="6" Padding="40">
+                <Label Text="No services yet" FontSize="18" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" />
+                <Label Text="Tap Add a Service to create your first one." FontSize="14" TextColor="{StaticResource TextMuted}"
+                       HorizontalTextAlignment="Center" />
+            </VerticalStackLayout>
 
-                                        <VerticalStackLayout Spacing="8" IsVisible="{Binding IsEditing}">
-                                            <Frame Style="{StaticResource InputFrame}" Margin="0">
-                                                <Entry Text="{Binding Description}" Placeholder="Description" Style="{StaticResource InputStyle}" />
-                                            </Frame>
-                                            <Frame Style="{StaticResource InputFrame}" Margin="0">
-                                                <Entry Text="{Binding Fee}" Placeholder="Fee" Keyboard="Numeric" Style="{StaticResource InputStyle}" />
-                                            </Frame>
-                                            <Frame Style="{StaticResource InputFrame}" Margin="0">
-                                                <Entry Text="{Binding DurationMinutes}" Placeholder="Duration (minutes)" Keyboard="Numeric" Style="{StaticResource InputStyle}" />
-                                            </Frame>
-                                            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
-                                                <Switch Grid.Column="0" IsToggled="{Binding IsActive}" />
-                                                <Label Grid.Column="1" Text="Active (visible to customers)" FontSize="13" VerticalOptions="Center" TextColor="{StaticResource TextSecondary}" />
-                                            </Grid>
-                                            <controls:SafeButton Text="Save"
-                                                    Style="{StaticResource PrimaryButton}"
-                                                    FontSize="13"
-                                                    HeightRequest="40"
-                                                    Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.SaveServiceCommand}"
-                                                    CommandParameter="{Binding .}" />
-                                        </VerticalStackLayout>
+            <CollectionView Grid.Row="2" ItemsSource="{Binding Services}" SelectionMode="None"
+                            IsVisible="{Binding IsEmpty, Converter={StaticResource InvertedBoolConverter}}"
+                            AutomationId="ServicesCollectionView">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Frame CornerRadius="16" BackgroundColor="White" BorderColor="{StaticResource BorderLight}" HasShadow="True" Padding="16" Margin="0,0,0,10">
+                            <VerticalStackLayout Spacing="8">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <VerticalStackLayout Grid.Column="0" Spacing="2" IsVisible="{Binding IsEditing, Converter={StaticResource InvertedBoolConverter}}">
+                                        <Label Text="{Binding Name}" FontSize="16" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}"
+                                               TextDecorations="{Binding IsActive, Converter={toolkit:BoolToObjectConverter TrueObject=None, FalseObject=Strikethrough}}" />
+                                        <Label Text="{Binding Description}" FontSize="13" TextColor="{StaticResource TextSecondary}" />
+                                        <Label Text="{Binding FeeLabel}" FontSize="13" TextColor="{StaticResource TextMuted}" />
+                                        <Label Text="{Binding DurationLabel}" FontSize="13" TextColor="{StaticResource TextMuted}" />
+                                        <Label Text="Inactive" FontSize="12" FontAttributes="Bold" TextColor="{StaticResource Error}"
+                                               IsVisible="{Binding IsActive, Converter={StaticResource InvertedBoolConverter}}" />
                                     </VerticalStackLayout>
-                                </Frame>
-                            </DataTemplate>
-                        </CollectionView.ItemTemplate>
-                    </CollectionView>
+                                    <HorizontalStackLayout Grid.Column="1" Spacing="4">
+                                        <controls:SafeButton Text="{Binding IsEditing, Converter={toolkit:BoolToObjectConverter TrueObject='Cancel', FalseObject='Edit'}}"
+                                                BackgroundColor="Transparent"
+                                                TextColor="{StaticResource Primary}"
+                                                FontSize="13"
+                                                Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.ToggleEditCommand}"
+                                                CommandParameter="{Binding .}" />
+                                        <controls:SafeButton Text="Remove"
+                                                BackgroundColor="Transparent"
+                                                TextColor="{StaticResource Error}"
+                                                FontSize="13"
+                                                Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.RequestRemoveCommand}"
+                                                CommandParameter="{Binding .}"
+                                                AutomationId="RemoveServiceButton" />
+                                    </HorizontalStackLayout>
+                                </Grid>
 
-                    <!-- No professions yet — a service must belong to one -->
-                    <Frame CornerRadius="16" BackgroundColor="White" BorderColor="#E2E8F0" HasShadow="True" Padding="16"
-                           IsVisible="{Binding HasNoProfessions}">
-                        <VerticalStackLayout Spacing="8" HorizontalOptions="Center">
-                            <Label Text="Add a profession first" FontSize="16" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" HorizontalTextAlignment="Center" />
-                            <Label Text="A service must be offered under one of your professions." FontSize="13" TextColor="{StaticResource TextMuted}" HorizontalTextAlignment="Center" />
-                            <controls:SafeButton Text="Choose a Profession"
-                                    Style="{StaticResource SecondaryButton}"
-                                    HeightRequest="44"
-                                    Clicked="OnProfessionsClicked"
-                                    AutomationId="GoToProfessionsButton" />
-                        </VerticalStackLayout>
-                    </Frame>
+                                <VerticalStackLayout Spacing="8" IsVisible="{Binding IsEditing}">
+                                    <Frame Style="{StaticResource InputFrame}" Margin="0">
+                                        <Entry Text="{Binding Description}" Placeholder="Description" Style="{StaticResource InputStyle}" />
+                                    </Frame>
+                                    <Frame Style="{StaticResource InputFrame}" Margin="0">
+                                        <Entry Text="{Binding Fee}" Placeholder="Fee" Keyboard="Numeric" Style="{StaticResource InputStyle}" />
+                                    </Frame>
+                                    <Frame Style="{StaticResource InputFrame}" Margin="0">
+                                        <Entry Text="{Binding DurationMinutes}" Placeholder="Duration (minutes)" Keyboard="Numeric" Style="{StaticResource InputStyle}" />
+                                    </Frame>
+                                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
+                                        <Switch Grid.Column="0" IsToggled="{Binding IsActive}" />
+                                        <Label Grid.Column="1" Text="Active (visible to customers)" FontSize="13" VerticalOptions="Center" TextColor="{StaticResource TextSecondary}" />
+                                    </Grid>
+                                    <controls:SafeButton Text="Save"
+                                            Style="{StaticResource PrimaryButton}"
+                                            FontSize="13"
+                                            HeightRequest="40"
+                                            Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.SaveServiceCommand}"
+                                            CommandParameter="{Binding .}" />
+                                </VerticalStackLayout>
+                            </VerticalStackLayout>
+                        </Frame>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
 
-                    <!-- Add new service -->
-                    <Frame CornerRadius="16" BackgroundColor="White" BorderColor="#E2E8F0" HasShadow="True" Padding="16"
-                           IsVisible="{Binding HasNoProfessions, Converter={StaticResource InvertedBoolConverter}}">
-                        <VerticalStackLayout Spacing="10">
-                            <Label Text="ADD A SERVICE" FontSize="11" TextColor="{StaticResource TextMuted}" TextTransform="Uppercase" CharacterSpacing="1.5" />
-                            <Frame Style="{StaticResource InputFrame}" Margin="0">
-                                <Picker ItemsSource="{Binding AvailableProfessions}"
-                                        SelectedItem="{Binding NewServiceProfessionName}"
-                                        Title="Profession"
-                                        TextColor="{StaticResource TextPrimary}"
-                                        AutomationId="NewServiceProfessionPicker" />
-                            </Frame>
-                            <Frame Style="{StaticResource InputFrame}" Margin="0">
-                                <Entry Text="{Binding NewServiceName}" Placeholder="Service name" Style="{StaticResource InputStyle}" AutomationId="NewServiceNameEntry" />
-                            </Frame>
-                            <Frame Style="{StaticResource InputFrame}" Margin="0">
-                                <Entry Text="{Binding NewServiceDescription}" Placeholder="Description" Style="{StaticResource InputStyle}" AutomationId="NewServiceDescriptionEntry" />
-                            </Frame>
-                            <Frame Style="{StaticResource InputFrame}" Margin="0">
-                                <Entry Text="{Binding NewServiceFee}" Placeholder="Fee (optional)" Keyboard="Numeric" Style="{StaticResource InputStyle}" AutomationId="NewServiceFeeEntry" />
-                            </Frame>
-                            <Frame Style="{StaticResource InputFrame}" Margin="0">
-                                <Entry Text="{Binding NewServiceDuration}" Placeholder="Duration in minutes (optional)" Keyboard="Numeric" Style="{StaticResource InputStyle}" AutomationId="NewServiceDurationEntry" />
-                            </Frame>
-                            <Grid>
-                                <controls:SafeButton Text="Add Service"
-                                        Style="{StaticResource PrimaryButton}"
-                                        Command="{Binding AddServiceCommand}"
-                                        IsVisible="{Binding IsSaving, Converter={StaticResource InvertedBoolConverter}}"
-                                        AutomationId="AddServiceButton" />
-                                <ActivityIndicator IsRunning="{Binding IsSaving}" IsVisible="{Binding IsSaving}"
-                                                   Color="{StaticResource Primary}" HorizontalOptions="Center" />
-                            </Grid>
-                        </VerticalStackLayout>
-                    </Frame>
-
-                </VerticalStackLayout>
-            </ScrollView>
+            <controls:SafeButton Grid.Row="3"
+                    Text="Add a Service"
+                    Style="{StaticResource PrimaryButton}"
+                    HeightRequest="48"
+                    Clicked="OnAddServiceClicked"
+                    AutomationId="GoToAddServiceButton" />
 
         </Grid>
 

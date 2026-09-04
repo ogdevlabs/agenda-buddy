@@ -39,9 +39,10 @@ public partial class ServicesPage : ContentPage
         await Shell.Current.GoToAsync("..");
     }
 
-    private async void OnProfessionsClicked(object? sender, EventArgs e)
+    private async void OnAddServiceClicked(object? sender, EventArgs e)
     {
-        await Shell.Current.GoToAsync("professions");
+        // Returning from the Add page re-triggers OnAppearing, so the new service is already in the list.
+        await Shell.Current.GoToAsync("addService");
     }
 }
 #endif

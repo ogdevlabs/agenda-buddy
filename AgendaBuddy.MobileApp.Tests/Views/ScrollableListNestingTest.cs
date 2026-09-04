@@ -26,7 +26,6 @@ public class ScrollableListNestingTest
         "BookAppointmentPage.xaml",
         "CalendarPage.xaml",
         "DashboardPage.xaml",
-        "ServicesPage.xaml",
     ];
 
     [Fact]

@@ -82,6 +82,7 @@ public static class MauiProgram
         builder.Services.AddTransient<PaymentViewModel>();
         builder.Services.AddTransient<BookAppointmentViewModel>();
         builder.Services.AddTransient<ServicesViewModel>();
+        builder.Services.AddTransient<AddServiceViewModel>();
         builder.Services.AddTransient<ProfessionsViewModel>();
         builder.Services.AddTransient<AccountViewModel>();
         builder.Services.AddTransient<ForgotPasswordViewModel>();
@@ -101,6 +102,7 @@ public static class MauiProgram
         builder.Services.AddTransient<PaymentPage>();
         builder.Services.AddTransient<BookAppointmentPage>();
         builder.Services.AddTransient<ServicesPage>();
+        builder.Services.AddTransient<AddServicePage>();
         builder.Services.AddTransient<ProfessionsPage>();
         builder.Services.AddTransient<AccountPage>();
         builder.Services.AddTransient<ForgotPasswordPage>();

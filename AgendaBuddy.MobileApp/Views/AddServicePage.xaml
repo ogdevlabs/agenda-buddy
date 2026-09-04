@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:controls="clr-namespace:AgendaBuddy.MobileApp.Controls"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             x:Class="AgendaBuddy.MobileApp.Views.AddServicePage"
+             Title="Add a Service"
+             BackgroundColor="{StaticResource BackgroundPage}"
+             Shell.NavBarIsVisible="False"
+             NavigationPage.HasNavigationBar="False">
+
+    <ContentPage.Resources>
+        <toolkit:InvertedBoolConverter x:Key="InvertedBoolConverter" />
+    </ContentPage.Resources>
+
+    <Grid RowDefinitions="Auto,*">
+
+        <controls:BrandHeader Grid.Row="0" />
+
+        <!--
+            The fields scroll in the star row; the submit sits in its own fixed row below it. That is what
+            keeps Add Service reachable with the keyboard raised, whatever the field count.
+        -->
+        <Grid Grid.Row="1" RowDefinitions="Auto,Auto,*,Auto" Padding="20,12,20,16" RowSpacing="12">
+
+            <Grid Grid.Row="0" ColumnDefinitions="Auto,*">
+                <controls:SafeButton Grid.Column="0" Text="&#x2190; Back" BackgroundColor="Transparent"
+                        TextColor="{StaticResource Primary}" FontSize="14" HorizontalOptions="Start"
+                        Padding="4" Clicked="OnBackClicked" />
+                <Label Grid.Column="1" Text="Add a Service" FontSize="22" FontAttributes="Bold"
+                       TextColor="{StaticResource TextPrimary}" VerticalOptions="Center" Margin="8,0,0,0" />
+            </Grid>
+
+            <VerticalStackLayout Grid.Row="1" Spacing="12">
+
+                <Frame Style="{StaticResource ErrorBannerStyle}" IsVisible="{Binding HasError}">
+                    <Label Text="{Binding ErrorMessage}" TextColor="{StaticResource Error}" FontSize="14" />
+                </Frame>
+
+                <ActivityIndicator IsRunning="{Binding IsLoading}" IsVisible="{Binding IsLoading}"
+                                   Color="{StaticResource Primary}" HorizontalOptions="Center" />
+
+            </VerticalStackLayout>
+
+            <!-- No professions yet — a service must belong to one -->
+            <Frame Grid.Row="2" CornerRadius="16" BackgroundColor="White" BorderColor="{StaticResource BorderLight}"
+                   HasShadow="True" Padding="16" VerticalOptions="Start"
+                   IsVisible="{Binding HasNoProfessions}">
+                <VerticalStackLayout Spacing="8" HorizontalOptions="Center">
+                    <Label Text="Add a profession first" FontSize="16" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" HorizontalTextAlignment="Center" />
+                    <Label Text="A service must be offered under one of your professions." FontSize="13" TextColor="{StaticResource TextMuted}" HorizontalTextAlignment="Center" />
+                    <controls:SafeButton Text="Choose a Profession"
+                            Style="{StaticResource SecondaryButton}"
+                            HeightRequest="44"
+                            Clicked="OnProfessionsClicked"
+                            AutomationId="GoToProfessionsButton" />
+                </VerticalStackLayout>
+            </Frame>
+
+            <ScrollView Grid.Row="2" IsVisible="{Binding HasNoProfessions, Converter={StaticResource InvertedBoolConverter}}">
+                <VerticalStackLayout Spacing="10">
+                    <Frame Style="{StaticResource InputFrame}" Margin="0">
+                        <Picker ItemsSource="{Binding AvailableProfessions}"
+                                SelectedItem="{Binding ProfessionName}"
+                                Title="Profession"
+                                TextColor="{StaticResource TextPrimary}"
+                                AutomationId="NewServiceProfessionPicker" />
+                    </Frame>
+                    <Frame Style="{StaticResource InputFrame}" Margin="0">
+                        <Entry Text="{Binding ServiceName}" Placeholder="Service name" Style="{StaticResource InputStyle}" AutomationId="NewServiceNameEntry" />
+                    </Frame>
+                    <Frame Style="{StaticResource InputFrame}" Margin="0">
+                        <Entry Text="{Binding Description}" Placeholder="Description" Style="{StaticResource InputStyle}" AutomationId="NewServiceDescriptionEntry" />
+                    </Frame>
+                    <Frame Style="{StaticResource InputFrame}" Margin="0">
+                        <Entry Text="{Binding Fee}" Placeholder="Fee (optional)" Keyboard="Numeric" Style="{StaticResource InputStyle}" AutomationId="NewServiceFeeEntry" />
+                    </Frame>
+                    <Frame Style="{StaticResource InputFrame}" Margin="0">
+                        <Entry Text="{Binding DurationMinutes}" Placeholder="Duration in minutes (optional)" Keyboard="Numeric" Style="{StaticResource InputStyle}" AutomationId="NewServiceDurationEntry" />
+                    </Frame>
+                </VerticalStackLayout>
+            </ScrollView>
+
+            <Grid Grid.Row="3" IsVisible="{Binding HasNoProfessions, Converter={StaticResource InvertedBoolConverter}}">
+                <controls:SafeButton Text="Add Service"
+                        Style="{StaticResource PrimaryButton}"
+                        HeightRequest="48"
+                        Command="{Binding AddServiceCommand}"
+                        IsVisible="{Binding IsSaving, Converter={StaticResource InvertedBoolConverter}}"
+                        AutomationId="AddServiceButton" />
+                <ActivityIndicator IsRunning="{Binding IsSaving}" IsVisible="{Binding IsSaving}"
+                                   Color="{StaticResource Primary}" HorizontalOptions="Center" />
+            </Grid>
+
+        </Grid>
+
+    </Grid>
+
+</ContentPage>

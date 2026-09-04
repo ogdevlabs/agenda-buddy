@@ -55,7 +55,7 @@ public partial class MessageThreadPage : ContentPage
     private async void OnUnauthorizedAccess(object? sender, EventArgs e)
     {
         _vm.ErrorMessage = "Your session expired. Your in-progress message was not sent — please sign in again.";
-        await Shell.Current.GoToAsync("//LoginPage");
+        await Shell.Current.GoToAsync("//login");
     }
 }
 #endif
