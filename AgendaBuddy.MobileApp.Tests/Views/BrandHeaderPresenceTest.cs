@@ -90,6 +90,43 @@ public class BrandHeaderPresenceTest
         Assert.Equal("AgendaMe", AppBrand.Name);
     }
 
+    /// <summary>
+    /// The name under the app icon is an MSBuild property, so it is the one place the brand cannot come from
+    /// <see cref="AppBrand"/> and the one most likely to be left behind by a rename.
+    /// </summary>
+    [Fact]
+    public void ThePackagedAppNameMatchesTheBrand()
+    {
+        var csproj = File.ReadAllText(Path.Combine(
+            RepoRoot(), "AgendaBuddy.MobileApp", "AgendaBuddy.MobileApp.csproj"));
+
+        Assert.Contains($"<ApplicationTitle>{AppBrand.Name}</ApplicationTitle>", csproj);
+    }
+
+    /// <summary>
+    /// Catches the previous name surviving anywhere a user can see it — a view, a code-behind, or the app
+    /// manifest. Scoped to the mobile client; the solution, namespaces and repo keep the AgendaBuddy name.
+    /// </summary>
+    [Fact]
+    public void ThePreviousBrandNameIsGoneFromTheClient()
+    {
+        var root = Path.Combine(RepoRoot(), "AgendaBuddy.MobileApp");
+
+        var offenders = Directory
+            .EnumerateFiles(root, "*.*", SearchOption.AllDirectories)
+            .Where(f => f.EndsWith(".xaml", StringComparison.Ordinal)
+                        || f.EndsWith(".cs", StringComparison.Ordinal)
+                        || f.EndsWith(".csproj", StringComparison.Ordinal))
+            // Build output restates every string in the project; only sources are the source of truth.
+            .Where(f => !f.Split(Path.DirectorySeparatorChar).Any(s => s is "obj" or "bin"))
+            .Where(f => File.ReadAllText(f).Contains("Agenda Buddy", StringComparison.OrdinalIgnoreCase))
+            .Select(f => Path.GetRelativePath(root, f))
+            .ToList();
+
+        Assert.True(offenders.Count == 0,
+            $"The app is called {AppBrand.Name}. These still say the old name: {string.Join(", ", offenders)}");
+    }
+
     private static IEnumerable<string> ViewFiles() =>
         Directory.EnumerateFiles(Path.Combine(RepoRoot(), "AgendaBuddy.MobileApp", "Views"), "*.xaml")
             .OrderBy(f => f, StringComparer.Ordinal);

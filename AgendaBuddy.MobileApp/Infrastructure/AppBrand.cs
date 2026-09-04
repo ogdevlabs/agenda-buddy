@@ -12,4 +12,10 @@ public static class AppBrand
 {
     /// <summary>Camel-cased: <c>AgendaMe</c>, not <c>Agendame</c>.</summary>
     public const string Name = "AgendaMe";
+
+    /// <summary>
+    /// The initials shown in the square mark on the auth screens, where the wordmark is already spelled out
+    /// beside it.
+    /// </summary>
+    public const string Monogram = "AM";
 }
