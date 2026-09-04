@@ -72,4 +72,26 @@ public class ProviderEntity
     [BsonElement("time_zone_id")]
     [BsonIgnoreIfNull]
     public string? TimeZoneId { get; set; }
+
+    /// <summary>
+    /// First bookable hour of the provider's working day, on their own clock (see <see cref="TimeZoneId"/>).
+    /// </summary>
+    /// <remarks>
+    /// Additive and nullable: a document written before this field existed reads back as <c>null</c>, which
+    /// <see cref="Tools.AvailabilityCalculator"/> resolves to its own default. Whole hours only — the slot
+    /// grid steps by the hour, so a half-past start has nowhere to land.
+    /// </remarks>
+    [BsonElement("work_day_start_hour")]
+    [BsonIgnoreIfNull]
+    [Range(0, 23, ErrorMessage = "Work day start hour must be between 0 and 23.")]
+    public int? WorkDayStartHour { get; set; }
+
+    /// <summary>
+    /// The hour by which a session must have ENDED, on the provider's own clock — an exclusive bound, so 17
+    /// means the last session finishes at 17:00.
+    /// </summary>
+    [BsonElement("work_day_end_hour")]
+    [BsonIgnoreIfNull]
+    [Range(1, 24, ErrorMessage = "Work day end hour must be between 1 and 24.")]
+    public int? WorkDayEndHour { get; set; }
 }

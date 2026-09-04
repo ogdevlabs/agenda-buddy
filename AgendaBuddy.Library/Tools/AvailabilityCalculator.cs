@@ -26,16 +26,21 @@ namespace AgendaBuddy.Library.Tools;
 /// </item>
 /// </list>
 /// <para>
-/// <b>Business hours are 09:00–19:00 in the PROVIDER'S OWN timezone</b>
-/// (<see cref="ProviderEntity.TimeZoneId"/>), converted to UTC instants on the way out. Generating them
+/// <b>Business hours are the provider's own</b> — <see cref="ProviderEntity.WorkDayStartHour"/> to
+/// <see cref="ProviderEntity.WorkDayEndHour"/>, on their own clock
+/// (<see cref="ProviderEntity.TimeZoneId"/>) — converted to UTC instants on the way out. Generating them
 /// in UTC for everyone — which is what this did until 2026-08-29 — offered a provider at UTC-6 slots from
 /// 03:00 to 13:00 local, i.e. in the middle of the night. A provider with no zone recorded is treated as
 /// UTC, which is precisely the behaviour they had before the field existed.
 /// </para>
 /// <para>
-/// ⚠️ <b>The 09:00–19:00 window itself is still fixed</b>, and every weekday is treated alike: there is
-/// nowhere to store per-weekday hours (the remaining half of the F-005 gap, <c>05-data-model.md</c>).
-/// The zone is now the provider's; the hours are not yet.
+/// A provider who has not set their hours gets <see cref="DefaultOpeningHour"/>–<see cref="DefaultClosingHour"/>.
+/// A stored pair that does not describe a usable window (out of range, or start at or after end) is ignored
+/// in favour of that default rather than yielding an empty calendar.
+/// </para>
+/// <para>
+/// ⚠️ <b>Every weekday is still treated alike:</b> the window is one pair of hours per provider, not one
+/// per day of the week (the remaining half of the F-005 gap, <c>05-data-model.md</c>).
 /// </para>
 /// <para>
 /// DST is handled rather than ignored: a local start that does not exist (the spring-forward gap) is
@@ -45,11 +50,14 @@ namespace AgendaBuddy.Library.Tools;
 /// </remarks>
 public static class AvailabilityCalculator
 {
-    /// <summary>First bookable hour, in the provider's own timezone.</summary>
-    public const int OpeningHour = 9;
+    /// <summary>First bookable hour for a provider who has not set their own, in their own timezone.</summary>
+    public const int DefaultOpeningHour = 8;
 
-    /// <summary>The hour by which a session must have ENDED, in the provider's own timezone.</summary>
-    public const int ClosingHour = 19;
+    /// <summary>
+    /// The hour by which a session must have ENDED, for a provider who has not set their own. Exclusive:
+    /// 17 means the last session finishes at 17:00.
+    /// </summary>
+    public const int DefaultClosingHour = 17;
 
     /// <summary>Used when a provider has no timezone recorded — their behaviour before the field existed.</summary>
     public const string FallbackTimeZoneId = "UTC";
@@ -108,6 +116,7 @@ public static class AvailabilityCalculator
             .ToList();
 
         var zone = ResolveZone(provider.TimeZoneId);
+        var (openingHour, closingHour) = ResolveHours(provider);
 
         var slots = new List<DateTime>();
 
@@ -120,7 +129,7 @@ public static class AvailabilityCalculator
         {
             var localDate = firstLocalDate.AddDays(offset);
 
-            for (var hour = OpeningHour; hour < ClosingHour; hour++)
+            for (var hour = openingHour; hour < closingHour; hour++)
             {
                 var localStart = new DateTime(
                     localDate.Year, localDate.Month, localDate.Day, hour, 0, 0, DateTimeKind.Unspecified);
@@ -128,7 +137,7 @@ public static class AvailabilityCalculator
                 // A session must finish by closing time, measured on the same local clock -- so a DST
                 // shift cannot silently stretch or shorten the working day.
                 if (localStart.AddMinutes(durationMinutes > 0 ? durationMinutes : DefaultDurationMinutes)
-                    > localDate.AddHours(ClosingHour))
+                    > localDate.AddHours(closingHour))
                     continue;
 
                 if (!TryToUtc(localStart, zone, out var slot)) continue;
@@ -145,6 +154,30 @@ public static class AvailabilityCalculator
         }
 
         return slots;
+    }
+
+    /// <summary>
+    /// The provider's working window, or <see cref="DefaultOpeningHour"/>–<see cref="DefaultClosingHour"/>
+    /// when they have not set one.
+    /// </summary>
+    /// <remarks>
+    /// A stored pair that cannot describe a usable window falls back to the default rather than producing
+    /// no slots at all: a provider silently unbookable is worse than one bookable on standard hours, and
+    /// the API rejects such a pair on the way in, so reaching here means the data predates that check or
+    /// was written around it.
+    /// </remarks>
+    internal static (int OpeningHour, int ClosingHour) ResolveHours(ProviderEntity provider)
+    {
+        var start = provider.WorkDayStartHour;
+        var end = provider.WorkDayEndHour;
+
+        var usable = start is >= 0 and <= 23
+            && end is >= 1 and <= 24
+            && start < end;
+
+        return usable
+            ? (start!.Value, end!.Value)
+            : (DefaultOpeningHour, DefaultClosingHour);
     }
 
     /// <summary>

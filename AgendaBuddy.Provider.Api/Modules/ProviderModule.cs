@@ -172,6 +172,44 @@ public class ProviderModule : ICarterModule
         .WithName("UpdateProvider")
         .RequireAuthorization();
 
+        // The provider's own working-day bounds — the window AvailabilityCalculator generates bookable slots
+        // in. A dedicated route rather than a field on PUT /{email}: that route replaces the whole document,
+        // so saving hours through it would carry every unrelated defect of a whole-document write with it.
+        // This one is a targeted $set.
+        providers.MapPut("/{email}/work-hours", async Task<Results<ValidationProblem, ForbidHttpResult, NotFound, Ok<DataResponse<ProviderEntity>>>> (
+            string email,
+            ClaimsPrincipal user,
+            IMediator mediator,
+            WorkHoursRequest request,
+            IDistributedCache cache,
+            CancellationToken cancellationToken) =>
+        {
+            if (!MiniValidator.TryValidate(request, out var errors))
+                return TypedResults.ValidationProblem(errors);
+
+            try { OwnershipGuard.AssertOwner(user, email); }
+            catch (ForbiddenException) { return TypedResults.Forbid(); }
+
+            var result = await mediator.Send(
+                new SetProviderWorkHoursCommand
+                {
+                    Email = email,
+                    StartHour = request.StartHour,
+                    EndHour = request.EndHour
+                },
+                cancellationToken);
+
+            if (!result.IsSuccess)
+                return TypedResults.NotFound();
+
+            // Same reason as the PUT above: the cache-aside read of GET /{email} is not invalidated on
+            // write, so without this the provider would not see their own new hours for up to 5 minutes.
+            await cache.RemoveAsync($"providers-{email}", cancellationToken);
+            return TypedResults.Ok(DataResponse<ProviderEntity>.Ok(result.Value));
+        })
+        .WithName("SetProviderWorkHours")
+        .RequireAuthorization();
+
         // ── Reporting and deactivation ────────────────────────────────────────────────────────────────
 
         // A provider's own metrics. {email} is in the path for symmetry with the other provider routes, NOT as a

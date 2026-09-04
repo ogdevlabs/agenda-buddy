@@ -20,6 +20,7 @@ public class PinnedActionTest
         { "ServicesPage.xaml", "GoToAddServiceButton" },
         { "ProfessionsPage.xaml", "SaveProfessionsButton" },
         { "ProfessionsPage.xaml", "ContinueToServicesButton" },
+        { "CalendarSettingsPage.xaml", "SaveCalendarHoursButton" },
     };
 
     [Theory]

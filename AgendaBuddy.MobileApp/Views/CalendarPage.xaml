@@ -46,8 +46,18 @@
                                FontSize="13"
                                TextColor="{StaticResource iOSGray}" />
                     </VerticalStackLayout>
-                    <!-- Nav arrows -->
+                    <!-- Nav arrows, plus the provider's own calendar-hours settings -->
                     <HorizontalStackLayout Grid.Column="1" Spacing="4" VerticalOptions="Center">
+                        <controls:SafeButton Text="&#x2699;"
+                                Clicked="OnCalendarSettingsClicked"
+                                IsVisible="{Binding IsProvider}"
+                                BackgroundColor="Transparent"
+                                TextColor="{StaticResource iOSBlue}"
+                                FontSize="18"
+                                WidthRequest="40"
+                                HeightRequest="40"
+                                Padding="2"
+                                AutomationId="CalendarSettingsButton" />
                         <controls:SafeButton Text="&#x276E;"
                                 Command="{Binding PreviousPageCommand}"
                                 IsEnabled="{Binding CanGoBack}"

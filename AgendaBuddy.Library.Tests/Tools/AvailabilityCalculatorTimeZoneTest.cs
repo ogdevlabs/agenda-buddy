@@ -54,8 +54,8 @@ public class AvailabilityCalculatorTimeZoneTest
         Assert.NotEmpty(slots);
         Assert.All(slots, slot => Assert.InRange(
             LocalHour(slot, zoneId),
-            AvailabilityCalculator.OpeningHour,
-            AvailabilityCalculator.ClosingHour - 1));
+            AvailabilityCalculator.DefaultOpeningHour,
+            AvailabilityCalculator.DefaultClosingHour - 1));
     }
 
     // The concrete regression: at UTC-6 the old UTC-based generation produced 03:00 local starts.
@@ -68,8 +68,8 @@ public class AvailabilityCalculatorTimeZoneTest
         var slots = AvailabilityCalculator.GetAvailability(
             Provider(zone), new DateTime(2026, 6, 1, 0, 0, 0, DateTimeKind.Utc), days: 5);
 
-        Assert.DoesNotContain(slots, slot => LocalHour(slot, zone) < AvailabilityCalculator.OpeningHour);
-        Assert.Contains(slots, slot => LocalHour(slot, zone) == AvailabilityCalculator.OpeningHour);
+        Assert.DoesNotContain(slots, slot => LocalHour(slot, zone) < AvailabilityCalculator.DefaultOpeningHour);
+        Assert.Contains(slots, slot => LocalHour(slot, zone) == AvailabilityCalculator.DefaultOpeningHour);
     }
 
     // A provider ahead of UTC has their working day cross the UTC date boundary; the window must still be
@@ -105,7 +105,7 @@ public class AvailabilityCalculatorTimeZoneTest
 
         Assert.Equal(withUtc, withNothing);
         Assert.All(withNothing, slot => Assert.InRange(
-            slot.Hour, AvailabilityCalculator.OpeningHour, AvailabilityCalculator.ClosingHour - 1));
+            slot.Hour, AvailabilityCalculator.DefaultOpeningHour, AvailabilityCalculator.DefaultClosingHour - 1));
     }
 
     // A zone this host cannot resolve must not take the whole calendar down — the provider stays bookable
@@ -136,7 +136,7 @@ public class AvailabilityCalculatorTimeZoneTest
 
         Assert.Equal(slots.Count, slots.Distinct().Count());
         Assert.All(slots, slot => Assert.InRange(
-            LocalHour(slot, zone), AvailabilityCalculator.OpeningHour, AvailabilityCalculator.ClosingHour - 1));
+            LocalHour(slot, zone), AvailabilityCalculator.DefaultOpeningHour, AvailabilityCalculator.DefaultClosingHour - 1));
     }
 
     // Autumn back: an hour repeats. Each local start must map to exactly ONE instant, or a date shows the
@@ -173,7 +173,7 @@ public class AvailabilityCalculatorTimeZoneTest
             Provider(zone), new DateTime(2026, 6, 1, 0, 0, 0, DateTimeKind.Utc), days: 5, durationMinutes: 120);
 
         Assert.All(slots, slot => Assert.True(
-            LocalHour(slot, zone) <= AvailabilityCalculator.ClosingHour - 2,
+            LocalHour(slot, zone) <= AvailabilityCalculator.DefaultClosingHour - 2,
             $"{slot:O} starts too late for a 2-hour session"));
     }
 

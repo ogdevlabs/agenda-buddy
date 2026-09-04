@@ -32,4 +32,17 @@ public interface IProviderApiService
     /// server holds. Silent, and a no-op when already correct.
     /// </summary>
     Task<bool> SyncTimeZoneAsync(string email, CancellationToken ct = default);
+
+    /// <summary>
+    /// The provider's working-day bounds. Falls back to <see cref="WorkHours.Default"/> when they have
+    /// never set them, so the caller always has a window to show.
+    /// </summary>
+    /// <returns><c>null</c> only when the provider could not be read at all.</returns>
+    Task<WorkHours?> GetWorkHoursAsync(string email, CancellationToken ct = default);
+
+    /// <summary>
+    /// <c>PUT /api/v1/providers/{email}/work-hours</c>. The server rejects a window that opens at or after
+    /// it closes, so a <c>false</c> return can mean invalid as well as unreachable.
+    /// </summary>
+    Task<bool> UpdateWorkHoursAsync(string email, WorkHours hours, CancellationToken ct = default);
 }

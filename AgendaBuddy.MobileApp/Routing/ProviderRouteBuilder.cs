@@ -55,4 +55,16 @@ public static class ProviderRouteBuilder
     /// <summary>A provider deactivating themselves — no administrative bypass exists.</summary>
     public static RouteSpec Deactivate(string email) =>
         new(HttpMethod.Post, $"api/v1/providers/{email}/deactivate");
+
+    /// <summary>
+    /// <c>PUT /api/v1/providers/{email}/work-hours</c> — the provider's own working-day bounds. A dedicated
+    /// route, not a field on <see cref="UpdateProvider"/>, because that one replaces the whole document.
+    /// <c>{email}</c> must be the caller's own claim.
+    /// </summary>
+    public static RouteSpec WorkHours(string email) =>
+        new(HttpMethod.Put, $"api/v1/providers/{email}/work-hours");
+
+    /// <summary><c>endHour</c> is exclusive: 8–17 means the last session finishes at 17:00.</summary>
+    public static object BuildWorkHoursPayload(int startHour, int endHour) =>
+        new { startHour, endHour };
 }
