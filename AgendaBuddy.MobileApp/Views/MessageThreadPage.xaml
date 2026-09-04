@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:controls="clr-namespace:AgendaBuddy.MobileApp.Controls"
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
              x:Class="AgendaBuddy.MobileApp.Views.MessageThreadPage"
              Title="{Binding Title}"
@@ -10,124 +11,130 @@
         <toolkit:InvertedBoolConverter x:Key="InvertedBoolConverter" />
     </ContentPage.Resources>
 
-    <Grid RowDefinitions="Auto,*,Auto">
+    <Grid RowDefinitions="Auto,*">
 
-        <!-- Error banner -->
-        <Frame Grid.Row="0"
-               Style="{StaticResource ErrorBannerStyle}"
-               IsVisible="{Binding HasError}"
-               Margin="16,8">
-            <Label Text="{Binding ErrorMessage}"
-                   TextColor="{StaticResource Error}"
-                   FontSize="14" />
-        </Frame>
+        <controls:BrandHeader Grid.Row="0" />
 
-        <!-- Loading indicator -->
-        <ActivityIndicator Grid.Row="1"
-                           IsRunning="{Binding IsLoading}"
-                           IsVisible="{Binding IsLoading}"
-                           Color="{StaticResource Primary}"
-                           HorizontalOptions="Center"
-                           VerticalOptions="Center" />
+        <Grid Grid.Row="1" RowDefinitions="Auto,*,Auto">
 
-        <!-- Messages list (chat bubbles) -->
-        <CollectionView Grid.Row="1"
-                        ItemsSource="{Binding Messages}"
-                        IsVisible="{Binding IsLoading, Converter={StaticResource InvertedBoolConverter}}"
-                        SelectionMode="None"
-                        Margin="16,8">
-            <CollectionView.ItemTemplate>
-                <DataTemplate>
-                    <VerticalStackLayout Padding="0,4" Spacing="2">
+            <!-- Error banner -->
+            <Frame Grid.Row="0"
+                   Style="{StaticResource ErrorBannerStyle}"
+                   IsVisible="{Binding HasError}"
+                   Margin="16,8">
+                <Label Text="{Binding ErrorMessage}"
+                       TextColor="{StaticResource Error}"
+                       FontSize="14" />
+            </Frame>
 
-                        <!-- Message bubble -->
-                        <Frame CornerRadius="18"
-                               Padding="14,10"
-                               HasShadow="False"
-                               BorderColor="Transparent"
-                               BackgroundColor="{Binding IsMine, Converter={toolkit:BoolToObjectConverter TrueObject={StaticResource Primary}, FalseObject=White}}"
-                               HorizontalOptions="Start"
-                               MaximumWidthRequest="280">
-                            <Frame.Triggers>
-                                <DataTrigger TargetType="Frame" Binding="{Binding IsMine}" Value="True">
-                                    <Setter Property="HorizontalOptions" Value="End" />
-                                </DataTrigger>
-                            </Frame.Triggers>
-                            <VerticalStackLayout Spacing="4">
-                                <!-- Ours reads white-on-accent, theirs dark-on-white: the side of the thread
-                                     a message sits on is reinforced by its colour, not carried by it alone. -->
-                                <Label Text="{Binding Body}"
-                                       FontSize="15"
-                                       TextColor="{Binding IsMine, Converter={toolkit:BoolToObjectConverter TrueObject=White, FalseObject={StaticResource TextPrimary}}}"
-                                       LineBreakMode="WordWrap" />
-                            </VerticalStackLayout>
-                        </Frame>
+            <!-- Loading indicator -->
+            <ActivityIndicator Grid.Row="1"
+                               IsRunning="{Binding IsLoading}"
+                               IsVisible="{Binding IsLoading}"
+                               Color="{StaticResource Primary}"
+                               HorizontalOptions="Center"
+                               VerticalOptions="Center" />
 
-                        <!-- Timestamp, on the same side as its bubble -->
-                        <Label Text="{Binding SentAt, StringFormat='{0:h:mm tt}'}"
-                               FontSize="10"
-                               TextColor="{StaticResource TextMuted}"
-                               HorizontalOptions="Start"
-                               Margin="4,0,4,4">
-                            <Label.Triggers>
-                                <DataTrigger TargetType="Label" Binding="{Binding IsMine}" Value="True">
-                                    <Setter Property="HorizontalOptions" Value="End" />
-                                </DataTrigger>
-                            </Label.Triggers>
-                        </Label>
+            <!-- Messages list (chat bubbles) -->
+            <CollectionView Grid.Row="1"
+                            ItemsSource="{Binding Messages}"
+                            IsVisible="{Binding IsLoading, Converter={StaticResource InvertedBoolConverter}}"
+                            SelectionMode="None"
+                            Margin="16,8">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <VerticalStackLayout Padding="0,4" Spacing="2">
 
-                    </VerticalStackLayout>
-                </DataTemplate>
-            </CollectionView.ItemTemplate>
-        </CollectionView>
+                            <!-- Message bubble -->
+                            <Frame CornerRadius="18"
+                                   Padding="14,10"
+                                   HasShadow="False"
+                                   BorderColor="Transparent"
+                                   BackgroundColor="{Binding IsMine, Converter={toolkit:BoolToObjectConverter TrueObject={StaticResource Primary}, FalseObject=White}}"
+                                   HorizontalOptions="Start"
+                                   MaximumWidthRequest="280">
+                                <Frame.Triggers>
+                                    <DataTrigger TargetType="Frame" Binding="{Binding IsMine}" Value="True">
+                                        <Setter Property="HorizontalOptions" Value="End" />
+                                    </DataTrigger>
+                                </Frame.Triggers>
+                                <VerticalStackLayout Spacing="4">
+                                    <!-- Ours reads white-on-accent, theirs dark-on-white: the side of the thread
+                                         a message sits on is reinforced by its colour, not carried by it alone. -->
+                                    <Label Text="{Binding Body}"
+                                           FontSize="15"
+                                           TextColor="{Binding IsMine, Converter={toolkit:BoolToObjectConverter TrueObject=White, FalseObject={StaticResource TextPrimary}}}"
+                                           LineBreakMode="WordWrap" />
+                                </VerticalStackLayout>
+                            </Frame>
 
-        <!-- Compose bar -->
-        <Frame Grid.Row="2"
-               BackgroundColor="{StaticResource BackgroundCard}"
-               CornerRadius="0"
-               BorderColor="{StaticResource BorderLight}"
-               HasShadow="True"
-               Padding="12,8">
-            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
-                <!-- Message input -->
-                <Frame Grid.Column="0"
-                       BackgroundColor="#F1F5F9"
-                       CornerRadius="20"
-                       BorderColor="Transparent"
-                       Padding="16,4"
-                       HasShadow="False">
-                    <Entry Placeholder="Type a message..."
-                           Text="{Binding NewMessageBody}"
-                           ReturnType="Send"
-                           ReturnCommand="{Binding SendCommand}"
-                           Style="{StaticResource InputStyle}"
-                           FontSize="15"
-                           BackgroundColor="Transparent"
-                           AutomationId="MessageEntry" />
-                </Frame>
+                            <!-- Timestamp, on the same side as its bubble -->
+                            <Label Text="{Binding SentAt, StringFormat='{0:h:mm tt}'}"
+                                   FontSize="10"
+                                   TextColor="{StaticResource TextMuted}"
+                                   HorizontalOptions="Start"
+                                   Margin="4,0,4,4">
+                                <Label.Triggers>
+                                    <DataTrigger TargetType="Label" Binding="{Binding IsMine}" Value="True">
+                                        <Setter Property="HorizontalOptions" Value="End" />
+                                    </DataTrigger>
+                                </Label.Triggers>
+                            </Label>
 
-                <!-- Send button -->
-                <Frame Grid.Column="1"
-                       BackgroundColor="{StaticResource Primary}"
-                       CornerRadius="20"
-                       WidthRequest="40"
-                       HeightRequest="40"
-                       Padding="0"
-                       HasShadow="False"
-                       BorderColor="Transparent"
-                       VerticalOptions="Center">
-                    <Frame.GestureRecognizers>
-                        <TapGestureRecognizer Command="{Binding SendCommand}" />
-                    </Frame.GestureRecognizers>
-                    <Label Text="&#x2191;"
-                           FontSize="20"
-                           FontAttributes="Bold"
-                           TextColor="White"
-                           HorizontalOptions="Center"
-                           VerticalOptions="Center" />
-                </Frame>
-            </Grid>
-        </Frame>
+                        </VerticalStackLayout>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+            <!-- Compose bar -->
+            <Frame Grid.Row="2"
+                   BackgroundColor="{StaticResource BackgroundCard}"
+                   CornerRadius="0"
+                   BorderColor="{StaticResource BorderLight}"
+                   HasShadow="True"
+                   Padding="12,8">
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                    <!-- Message input -->
+                    <Frame Grid.Column="0"
+                           BackgroundColor="#F1F5F9"
+                           CornerRadius="20"
+                           BorderColor="Transparent"
+                           Padding="16,4"
+                           HasShadow="False">
+                        <Entry Placeholder="Type a message..."
+                               Text="{Binding NewMessageBody}"
+                               ReturnType="Send"
+                               ReturnCommand="{Binding SendCommand}"
+                               Style="{StaticResource InputStyle}"
+                               FontSize="15"
+                               BackgroundColor="Transparent"
+                               AutomationId="MessageEntry" />
+                    </Frame>
+
+                    <!-- Send button -->
+                    <Frame Grid.Column="1"
+                           BackgroundColor="{StaticResource Primary}"
+                           CornerRadius="20"
+                           WidthRequest="40"
+                           HeightRequest="40"
+                           Padding="0"
+                           HasShadow="False"
+                           BorderColor="Transparent"
+                           VerticalOptions="Center">
+                        <Frame.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding SendCommand}" />
+                        </Frame.GestureRecognizers>
+                        <Label Text="&#x2191;"
+                               FontSize="20"
+                               FontAttributes="Bold"
+                               TextColor="White"
+                               HorizontalOptions="Center"
+                               VerticalOptions="Center" />
+                    </Frame>
+                </Grid>
+            </Frame>
+
+        </Grid>
 
     </Grid>
 

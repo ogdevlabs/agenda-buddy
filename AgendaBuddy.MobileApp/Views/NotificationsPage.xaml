@@ -17,170 +17,176 @@
         <Color x:Key="iOSLabel">#000000</Color>
     </ContentPage.Resources>
 
-    <Grid RowDefinitions="Auto,Auto,Auto,*">
+    <Grid RowDefinitions="Auto,*">
 
-        <!-- Header -->
-        <Grid Grid.Row="0"
-              BackgroundColor="White"
-              Padding="20,16,20,12">
-            <Grid ColumnDefinitions="*,Auto">
-                <Label Grid.Column="0"
-                       Text="Notifications"
-                       FontSize="34"
-                       FontAttributes="Bold"
-                       TextColor="{StaticResource iOSLabel}" />
-                <Label Grid.Column="1"
-                       Text="{Binding UnreadCount, StringFormat='{0} unread'}"
-                       FontSize="13"
+        <controls:BrandHeader Grid.Row="0" />
+
+        <Grid Grid.Row="1" RowDefinitions="Auto,Auto,Auto,*">
+
+            <!-- Header -->
+            <Grid Grid.Row="0"
+                  BackgroundColor="White"
+                  Padding="20,16,20,12">
+                <Grid ColumnDefinitions="*,Auto">
+                    <Label Grid.Column="0"
+                           Text="Notifications"
+                           FontSize="34"
+                           FontAttributes="Bold"
+                           TextColor="{StaticResource iOSLabel}" />
+                    <Label Grid.Column="1"
+                           Text="{Binding UnreadCount, StringFormat='{0} unread'}"
+                           FontSize="13"
+                           TextColor="{StaticResource iOSGray}"
+                           VerticalOptions="End"
+                           Margin="0,0,0,4"
+                           IsVisible="{Binding UnreadCount}" />
+                </Grid>
+            </Grid>
+
+            <!-- Loading indicator -->
+            <ActivityIndicator Grid.Row="1"
+                               IsRunning="{Binding IsLoading}"
+                               IsVisible="{Binding IsLoading}"
+                               Color="{StaticResource iOSGray}"
+                               HorizontalOptions="Center"
+                               Margin="0,24" />
+
+            <!-- Error banner -->
+            <Frame Grid.Row="2"
+                   BackgroundColor="#FFF2F2"
+                   CornerRadius="10"
+                   BorderColor="#FFD6D6"
+                   Padding="14,10"
+                   HasShadow="False"
+                   IsVisible="{Binding HasError}"
+                   Margin="16,8">
+                <Grid ColumnDefinitions="*,Auto">
+                    <Label Grid.Column="0"
+                           Text="{Binding ErrorMessage}"
+                           TextColor="#FF3B30"
+                           FontSize="14"
+                           VerticalOptions="Center" />
+                    <controls:SafeButton Grid.Column="1"
+                            Text="Retry"
+                            Command="{Binding LoadCommand}"
+                            BackgroundColor="Transparent"
+                            TextColor="{StaticResource iOSBlue}"
+                            FontAttributes="Bold"
+                            FontSize="14" />
+                </Grid>
+            </Frame>
+
+            <!-- Empty state -->
+            <VerticalStackLayout Grid.Row="3"
+                                 IsVisible="{Binding IsEmpty}"
+                                 VerticalOptions="Center"
+                                 HorizontalOptions="Center"
+                                 Spacing="8"
+                                 Padding="40">
+                <Label Text="{Binding EmptyStateMessage}"
+                       FontSize="16"
                        TextColor="{StaticResource iOSGray}"
-                       VerticalOptions="End"
-                       Margin="0,0,0,4"
-                       IsVisible="{Binding UnreadCount}" />
-            </Grid>
-        </Grid>
+                       HorizontalTextAlignment="Center"
+                       AutomationId="EmptyStateLabel" />
+            </VerticalStackLayout>
 
-        <!-- Loading indicator -->
-        <ActivityIndicator Grid.Row="1"
-                           IsRunning="{Binding IsLoading}"
-                           IsVisible="{Binding IsLoading}"
-                           Color="{StaticResource iOSGray}"
-                           HorizontalOptions="Center"
-                           Margin="0,24" />
+            <!-- Notifications list (iOS Notification Center style) -->
+            <CollectionView Grid.Row="3"
+                            ItemsSource="{Binding Notifications}"
+                            IsVisible="{Binding IsEmpty, Converter={StaticResource InvertedBoolConverter}}"
+                            SelectionMode="None"
+                            Margin="16,8,16,16">
+                <CollectionView.ItemsLayout>
+                    <LinearItemsLayout Orientation="Vertical" ItemSpacing="8" />
+                </CollectionView.ItemsLayout>
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <!-- Notification card (grouped card style like iOS) -->
+                        <Frame BackgroundColor="White"
+                               CornerRadius="14"
+                               Padding="0"
+                               HasShadow="False"
+                               BorderColor="Transparent">
+                            <Frame.GestureRecognizers>
+                                <TapGestureRecognizer
+                                    Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.ToggleNotificationCommand}"
+                                    CommandParameter="{Binding .}" />
+                            </Frame.GestureRecognizers>
 
-        <!-- Error banner -->
-        <Frame Grid.Row="2"
-               BackgroundColor="#FFF2F2"
-               CornerRadius="10"
-               BorderColor="#FFD6D6"
-               Padding="14,10"
-               HasShadow="False"
-               IsVisible="{Binding HasError}"
-               Margin="16,8">
-            <Grid ColumnDefinitions="*,Auto">
-                <Label Grid.Column="0"
-                       Text="{Binding ErrorMessage}"
-                       TextColor="#FF3B30"
-                       FontSize="14"
-                       VerticalOptions="Center" />
-                <controls:SafeButton Grid.Column="1"
-                        Text="Retry"
-                        Command="{Binding LoadCommand}"
-                        BackgroundColor="Transparent"
-                        TextColor="{StaticResource iOSBlue}"
-                        FontAttributes="Bold"
-                        FontSize="14" />
-            </Grid>
-        </Frame>
+                            <VerticalStackLayout Spacing="0">
 
-        <!-- Empty state -->
-        <VerticalStackLayout Grid.Row="3"
-                             IsVisible="{Binding IsEmpty}"
-                             VerticalOptions="Center"
-                             HorizontalOptions="Center"
-                             Spacing="8"
-                             Padding="40">
-            <Label Text="{Binding EmptyStateMessage}"
-                   FontSize="16"
-                   TextColor="{StaticResource iOSGray}"
-                   HorizontalTextAlignment="Center"
-                   AutomationId="EmptyStateLabel" />
-        </VerticalStackLayout>
-
-        <!-- Notifications list (iOS Notification Center style) -->
-        <CollectionView Grid.Row="3"
-                        ItemsSource="{Binding Notifications}"
-                        IsVisible="{Binding IsEmpty, Converter={StaticResource InvertedBoolConverter}}"
-                        SelectionMode="None"
-                        Margin="16,8,16,16">
-            <CollectionView.ItemsLayout>
-                <LinearItemsLayout Orientation="Vertical" ItemSpacing="8" />
-            </CollectionView.ItemsLayout>
-            <CollectionView.ItemTemplate>
-                <DataTemplate>
-                    <!-- Notification card (grouped card style like iOS) -->
-                    <Frame BackgroundColor="White"
-                           CornerRadius="14"
-                           Padding="0"
-                           HasShadow="False"
-                           BorderColor="Transparent">
-                        <Frame.GestureRecognizers>
-                            <TapGestureRecognizer
-                                Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.ToggleNotificationCommand}"
-                                CommandParameter="{Binding .}" />
-                        </Frame.GestureRecognizers>
-
-                        <VerticalStackLayout Spacing="0">
-
-                            <!-- Header row: app icon + label + time -->
-                            <Grid ColumnDefinitions="Auto,*,Auto"
-                                  Padding="14,10,14,0"
-                                  ColumnSpacing="8">
-                                <!-- Small app icon -->
-                                <Grid Grid.Column="0"
-                                      WidthRequest="20"
-                                      HeightRequest="20"
-                                      VerticalOptions="Center">
-                                    <BoxView CornerRadius="5"
-                                             WidthRequest="20"
-                                             HeightRequest="20"
-                                             Color="{StaticResource iOSRed}" />
-                                    <Label Text="A"
-                                           FontSize="11"
-                                           FontAttributes="Bold"
-                                           TextColor="White"
-                                           HorizontalOptions="Center"
+                                <!-- Header row: app icon + label + time -->
+                                <Grid ColumnDefinitions="Auto,*,Auto"
+                                      Padding="14,10,14,0"
+                                      ColumnSpacing="8">
+                                    <!-- Small app icon -->
+                                    <Grid Grid.Column="0"
+                                          WidthRequest="20"
+                                          HeightRequest="20"
+                                          VerticalOptions="Center">
+                                        <BoxView CornerRadius="5"
+                                                 WidthRequest="20"
+                                                 HeightRequest="20"
+                                                 Color="{StaticResource iOSRed}" />
+                                        <Label Text="A"
+                                               FontSize="11"
+                                               FontAttributes="Bold"
+                                               TextColor="White"
+                                               HorizontalOptions="Center"
+                                               VerticalOptions="Center" />
+                                    </Grid>
+                                    <Label Grid.Column="1"
+                                           Text="AGENDA BUDDY"
+                                           FontSize="12"
+                                           TextColor="{StaticResource iOSGray}"
+                                           VerticalOptions="Center"
+                                           CharacterSpacing="0.5" />
+                                    <Label Grid.Column="2"
+                                           Text="{Binding TimeAgo}"
+                                           FontSize="12"
+                                           TextColor="{StaticResource iOSGray}"
                                            VerticalOptions="Center" />
                                 </Grid>
-                                <Label Grid.Column="1"
-                                       Text="AGENDA BUDDY"
-                                       FontSize="12"
-                                       TextColor="{StaticResource iOSGray}"
-                                       VerticalOptions="Center"
-                                       CharacterSpacing="0.5" />
-                                <Label Grid.Column="2"
-                                       Text="{Binding TimeAgo}"
-                                       FontSize="12"
-                                       TextColor="{StaticResource iOSGray}"
-                                       VerticalOptions="Center" />
-                            </Grid>
 
-                            <!-- Content -->
-                            <VerticalStackLayout Padding="14,6,14,14" Spacing="3">
-                                <Label Text="{Binding TypeLabel}"
-                                       FontSize="15"
-                                       FontAttributes="Bold"
-                                       TextColor="{StaticResource iOSLabel}" />
-                                <Label Text="{Binding Message}"
-                                       FontSize="14"
-                                       TextColor="{StaticResource iOSGray}"
-                                       LineBreakMode="TailTruncation"
-                                       MaxLines="{Binding IsExpanded, Converter={toolkit:BoolToObjectConverter TrueObject=10, FalseObject=2}}" />
+                                <!-- Content -->
+                                <VerticalStackLayout Padding="14,6,14,14" Spacing="3">
+                                    <Label Text="{Binding TypeLabel}"
+                                           FontSize="15"
+                                           FontAttributes="Bold"
+                                           TextColor="{StaticResource iOSLabel}" />
+                                    <Label Text="{Binding Message}"
+                                           FontSize="14"
+                                           TextColor="{StaticResource iOSGray}"
+                                           LineBreakMode="TailTruncation"
+                                           MaxLines="{Binding IsExpanded, Converter={toolkit:BoolToObjectConverter TrueObject=10, FalseObject=2}}" />
+                                </VerticalStackLayout>
+
+                                <!-- Expanded details -->
+                                <VerticalStackLayout Spacing="4"
+                                                     Margin="14,0,14,14"
+                                                     IsVisible="{Binding IsExpanded}">
+                                    <BoxView HeightRequest="0.5" Color="{StaticResource iOSGray5}" />
+                                    <Label Text="{Binding CreatedAt, StringFormat='{0:MMMM d, yyyy · h:mm tt}'}"
+                                           FontSize="13"
+                                           TextColor="{StaticResource iOSGray}"
+                                           Margin="0,4,0,0" />
+                                </VerticalStackLayout>
+
+                                <!-- Unread indicator line at bottom -->
+                                <BoxView HeightRequest="3"
+                                         CornerRadius="1.5"
+                                         Color="{Binding IsRead, Converter={toolkit:BoolToObjectConverter TrueObject=Transparent, FalseObject={StaticResource iOSBlue}}}"
+                                         Margin="14,0,14,8"
+                                         HorizontalOptions="Start"
+                                         WidthRequest="40" />
+
                             </VerticalStackLayout>
+                        </Frame>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
 
-                            <!-- Expanded details -->
-                            <VerticalStackLayout Spacing="4"
-                                                 Margin="14,0,14,14"
-                                                 IsVisible="{Binding IsExpanded}">
-                                <BoxView HeightRequest="0.5" Color="{StaticResource iOSGray5}" />
-                                <Label Text="{Binding CreatedAt, StringFormat='{0:MMMM d, yyyy · h:mm tt}'}"
-                                       FontSize="13"
-                                       TextColor="{StaticResource iOSGray}"
-                                       Margin="0,4,0,0" />
-                            </VerticalStackLayout>
-
-                            <!-- Unread indicator line at bottom -->
-                            <BoxView HeightRequest="3"
-                                     CornerRadius="1.5"
-                                     Color="{Binding IsRead, Converter={toolkit:BoolToObjectConverter TrueObject=Transparent, FalseObject={StaticResource iOSBlue}}}"
-                                     Margin="14,0,14,8"
-                                     HorizontalOptions="Start"
-                                     WidthRequest="40" />
-
-                        </VerticalStackLayout>
-                    </Frame>
-                </DataTemplate>
-            </CollectionView.ItemTemplate>
-        </CollectionView>
+        </Grid>
 
     </Grid>
 

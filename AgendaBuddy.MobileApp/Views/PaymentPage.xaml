@@ -14,131 +14,137 @@
 
     <Grid RowDefinitions="Auto,*">
 
-        <!-- Header -->
-        <Grid Grid.Row="0"
-              BackgroundColor="{StaticResource Primary}"
-              Padding="24,48,24,24">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-            </Grid.RowDefinitions>
-            <controls:SafeButton Grid.Row="0"
-                    Text="&#x2190; Back"
-                    BackgroundColor="Transparent"
-                    TextColor="#C7D2FE"
-                    FontSize="14"
-                    HorizontalOptions="Start"
-                    Padding="4"
-                    Margin="0,0,0,16"
-                    Clicked="OnBackClicked" />
-            <Label Grid.Row="1"
-                   Text="Payment"
-                   FontSize="24"
-                   FontAttributes="Bold"
-                   TextColor="White" />
-        </Grid>
+        <controls:BrandHeader Grid.Row="0" />
 
-        <!-- Error banner -->
-        <Frame Grid.Row="1"
-               Style="{StaticResource ErrorBannerStyle}"
-               IsVisible="{Binding HasError}"
-               Margin="24,12"
-               VerticalOptions="Start">
-            <Grid ColumnDefinitions="*,Auto">
-                <Label Grid.Column="0"
-                       Text="{Binding ErrorMessage}"
-                       TextColor="{StaticResource Error}"
-                       FontSize="14"
-                       VerticalOptions="Center"
-                       AutomationId="ErrorBanner" />
-                <controls:SafeButton Grid.Column="1"
-                        Text="Retry"
-                        Command="{Binding LoadCommand}"
-                        BackgroundColor="{StaticResource Error}"
-                        TextColor="White"
-                        CornerRadius="16"
-                        FontSize="13"
-                        Padding="12,6"
-                        HeightRequest="36"
-                        AutomationId="TryAgainButton" />
+        <Grid Grid.Row="1" RowDefinitions="Auto,*">
+
+            <!-- Header -->
+            <Grid Grid.Row="0"
+                  BackgroundColor="{StaticResource Primary}"
+                  Padding="24,16,24,24">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <controls:SafeButton Grid.Row="0"
+                        Text="&#x2190; Back"
+                        BackgroundColor="Transparent"
+                        TextColor="#C7D2FE"
+                        FontSize="14"
+                        HorizontalOptions="Start"
+                        Padding="4"
+                        Margin="0,0,0,16"
+                        Clicked="OnBackClicked" />
+                <Label Grid.Row="1"
+                       Text="Payment"
+                       FontSize="24"
+                       FontAttributes="Bold"
+                       TextColor="White" />
             </Grid>
-        </Frame>
 
-        <!-- Loading -->
-        <ActivityIndicator Grid.Row="1"
-                           IsRunning="{Binding IsLoading}"
-                           IsVisible="{Binding IsLoading}"
-                           Color="{StaticResource Primary}"
-                           HorizontalOptions="Center"
-                           VerticalOptions="Center" />
+            <!-- Error banner -->
+            <Frame Grid.Row="1"
+                   Style="{StaticResource ErrorBannerStyle}"
+                   IsVisible="{Binding HasError}"
+                   Margin="24,12"
+                   VerticalOptions="Start">
+                <Grid ColumnDefinitions="*,Auto">
+                    <Label Grid.Column="0"
+                           Text="{Binding ErrorMessage}"
+                           TextColor="{StaticResource Error}"
+                           FontSize="14"
+                           VerticalOptions="Center"
+                           AutomationId="ErrorBanner" />
+                    <controls:SafeButton Grid.Column="1"
+                            Text="Retry"
+                            Command="{Binding LoadCommand}"
+                            BackgroundColor="{StaticResource Error}"
+                            TextColor="White"
+                            CornerRadius="16"
+                            FontSize="13"
+                            Padding="12,6"
+                            HeightRequest="36"
+                            AutomationId="TryAgainButton" />
+                </Grid>
+            </Frame>
 
-        <!-- Payment -->
-        <ScrollView Grid.Row="1" IsVisible="{Binding HasPayment}">
-            <VerticalStackLayout Padding="24" Spacing="14">
+            <!-- Loading -->
+            <ActivityIndicator Grid.Row="1"
+                               IsRunning="{Binding IsLoading}"
+                               IsVisible="{Binding IsLoading}"
+                               Color="{StaticResource Primary}"
+                               HorizontalOptions="Center"
+                               VerticalOptions="Center" />
 
-                <Frame CornerRadius="20"
-                       BackgroundColor="White"
-                       BorderColor="#E2E8F0"
-                       HasShadow="True"
-                       Padding="20">
-                    <VerticalStackLayout Spacing="10">
-                        <Label Text="{Binding Payment.Amount, StringFormat='{0:C}'}"
-                               FontSize="28"
-                               FontAttributes="Bold"
-                               TextColor="{StaticResource TextPrimary}" />
+            <!-- Payment -->
+            <ScrollView Grid.Row="1" IsVisible="{Binding HasPayment}">
+                <VerticalStackLayout Padding="24" Spacing="14">
 
-                        <!-- ux-review.md finding 1 / AC13: never "Paid" for a local_-prefixed
-                             (non-charging) payment — the exact copy for that state. -->
-                        <Label Text="{Binding StatusMessage}"
-                               FontSize="15"
-                               TextColor="{StaticResource TextSecondary}"
-                               AutomationId="PaymentStatusLabel" />
-                    </VerticalStackLayout>
-                </Frame>
+                    <Frame CornerRadius="20"
+                           BackgroundColor="White"
+                           BorderColor="#E2E8F0"
+                           HasShadow="True"
+                           Padding="20">
+                        <VerticalStackLayout Spacing="10">
+                            <Label Text="{Binding Payment.Amount, StringFormat='{0:C}'}"
+                                   FontSize="28"
+                                   FontAttributes="Bold"
+                                   TextColor="{StaticResource TextPrimary}" />
 
-            </VerticalStackLayout>
-        </ScrollView>
+                            <!-- ux-review.md finding 1 / AC13: never "Paid" for a local_-prefixed
+                                 (non-charging) payment — the exact copy for that state. -->
+                            <Label Text="{Binding StatusMessage}"
+                                   FontSize="15"
+                                   TextColor="{StaticResource TextSecondary}"
+                                   AutomationId="PaymentStatusLabel" />
+                        </VerticalStackLayout>
+                    </Frame>
 
-        <!-- No payment recorded yet — offer to record one (POST .../payment) -->
-        <ScrollView Grid.Row="1" IsVisible="{Binding ShowPayForm}">
-            <VerticalStackLayout Padding="24" Spacing="14">
-                <Frame CornerRadius="20"
-                       BackgroundColor="White"
-                       BorderColor="#E2E8F0"
-                       HasShadow="True"
-                       Padding="20">
-                    <VerticalStackLayout Spacing="12">
-                        <Label Text="No payment recorded yet" FontSize="16" FontAttributes="Bold"
-                               TextColor="{StaticResource TextPrimary}" />
-                        <Label Text="AgendaBuddy has no live payment gateway configured — recording a payment here does not move real money."
-                               FontSize="13" TextColor="{StaticResource TextMuted}" />
+                </VerticalStackLayout>
+            </ScrollView>
 
-                        <Label Text="Amount" Style="{StaticResource Caption}" FontAttributes="Bold" />
-                        <Frame Style="{StaticResource InputFrame}">
-                            <Entry Text="{Binding PayAmountInput}"
-                                   Placeholder="0.00"
-                                   Keyboard="Numeric"
-                                   Style="{StaticResource InputStyle}"
-                                   AutomationId="PayAmountEntry" />
-                        </Frame>
+            <!-- No payment recorded yet — offer to record one (POST .../payment) -->
+            <ScrollView Grid.Row="1" IsVisible="{Binding ShowPayForm}">
+                <VerticalStackLayout Padding="24" Spacing="14">
+                    <Frame CornerRadius="20"
+                           BackgroundColor="White"
+                           BorderColor="#E2E8F0"
+                           HasShadow="True"
+                           Padding="20">
+                        <VerticalStackLayout Spacing="12">
+                            <Label Text="No payment recorded yet" FontSize="16" FontAttributes="Bold"
+                                   TextColor="{StaticResource TextPrimary}" />
+                            <Label Text="AgendaBuddy has no live payment gateway configured — recording a payment here does not move real money."
+                                   FontSize="13" TextColor="{StaticResource TextMuted}" />
 
-                        <Frame Style="{StaticResource ErrorBannerStyle}" IsVisible="{Binding HasPayError}">
-                            <Label Text="{Binding PayErrorMessage}" TextColor="{StaticResource Error}" FontSize="14" />
-                        </Frame>
+                            <Label Text="Amount" Style="{StaticResource Caption}" FontAttributes="Bold" />
+                            <Frame Style="{StaticResource InputFrame}">
+                                <Entry Text="{Binding PayAmountInput}"
+                                       Placeholder="0.00"
+                                       Keyboard="Numeric"
+                                       Style="{StaticResource InputStyle}"
+                                       AutomationId="PayAmountEntry" />
+                            </Frame>
 
-                        <Grid>
-                            <controls:SafeButton Text="Record Payment"
-                                    Style="{StaticResource PrimaryButton}"
-                                    Command="{Binding PayCommand}"
-                                    IsVisible="{Binding IsPaying, Converter={StaticResource InvertedBoolConverter}}"
-                                    AutomationId="RecordPaymentButton" />
-                            <ActivityIndicator IsRunning="{Binding IsPaying}" IsVisible="{Binding IsPaying}"
-                                               Color="{StaticResource Primary}" HorizontalOptions="Center" />
-                        </Grid>
-                    </VerticalStackLayout>
-                </Frame>
-            </VerticalStackLayout>
-        </ScrollView>
+                            <Frame Style="{StaticResource ErrorBannerStyle}" IsVisible="{Binding HasPayError}">
+                                <Label Text="{Binding PayErrorMessage}" TextColor="{StaticResource Error}" FontSize="14" />
+                            </Frame>
+
+                            <Grid>
+                                <controls:SafeButton Text="Record Payment"
+                                        Style="{StaticResource PrimaryButton}"
+                                        Command="{Binding PayCommand}"
+                                        IsVisible="{Binding IsPaying, Converter={StaticResource InvertedBoolConverter}}"
+                                        AutomationId="RecordPaymentButton" />
+                                <ActivityIndicator IsRunning="{Binding IsPaying}" IsVisible="{Binding IsPaying}"
+                                                   Color="{StaticResource Primary}" HorizontalOptions="Center" />
+                            </Grid>
+                        </VerticalStackLayout>
+                    </Frame>
+                </VerticalStackLayout>
+            </ScrollView>
+
+        </Grid>
 
     </Grid>
 
