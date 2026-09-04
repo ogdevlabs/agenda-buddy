@@ -121,8 +121,14 @@ jobs:
           set -euo pipefail
           # BuildNumber comes from the run number: App Store Connect permanently refuses a build number
           # it has already accepted, so a fixed value makes the second upload fail.
+          # MobilePlatform=ios is required, not a shortcut. Restore evaluates every entry in
+          # TargetFrameworks regardless of -f, so without it the runner is asked for the android
+          # workload as well and fails NETSDK1147 -- only maui-ios is installed here, deliberately.
+          # The property collapses TargetFrameworks to net10.0-ios alone (verified with
+          # `dotnet msbuild -getProperty:TargetFrameworks`).
           dotnet publish AgendaBuddy.MobileApp/AgendaBuddy.MobileApp.csproj \
             -c Release -f net10.0-ios \
+            -p:MobilePlatform=ios \
             -p:IosSigned=true \
             -p:BuildNumber="${{ github.run_number }}" \
             -p:CodesignKey="$CODESIGN_KEY" \
