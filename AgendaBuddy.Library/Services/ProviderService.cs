@@ -153,6 +153,17 @@ public class ProviderService(IRepository<ProviderEntity> providerRepository) : I
             new BsonDocument("$pull", new BsonDocument("professions", professionName)));
     }
 
+    public async Task<ProviderEntity?> SetWorkHoursAsync(string providerEmail, int startHour, int endHour)
+    {
+        return await providerRepository.FindOneAndUpdateAsync(
+            new BsonDocument("email", providerEmail),
+            new BsonDocument("$set", new BsonDocument
+            {
+                { "work_day_start_hour", startHour },
+                { "work_day_end_hour", endHour }
+            }));
+    }
+
     /// <summary>
     /// Writes a new status onto one appointment inside a provider's embedded list.
     /// </summary>

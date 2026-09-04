@@ -211,9 +211,9 @@ public class ProviderApiService : IProviderApiService
     /// </summary>
     /// <remarks>
     /// <para>
-    /// The provider's zone is what availability's 09:00–19:00 window is generated in, so a wrong or absent
-    /// one offers slots at the wrong hours — a provider at UTC-6 with no zone recorded was offered
-    /// 03:00–13:00 local. Taking it from the device means it is never asked for and follows a move.
+    /// The provider's zone is the clock their working-hours window is generated on, so a wrong or absent one
+    /// offers slots at the wrong hours — a provider at UTC-6 with no zone recorded was offered 03:00–13:00
+    /// local. Taking it from the device means it is never asked for and follows a move.
     /// </para>
     /// <para>
     /// Silent by design: it is a background correction, not something to interrupt anyone about, and a
@@ -246,6 +246,45 @@ public class ProviderApiService : IProviderApiService
         var route = ProviderRouteBuilder.UpdateProvider(email);
         var response = await client.PutAsync(route.Path,
             new StringContent(entity.ToJsonString(), Encoding.UTF8, "application/json"), ct);
+        return response.IsSuccessStatusCode;
+    }
+
+    public async Task<WorkHours?> GetWorkHoursAsync(string email, CancellationToken ct = default)
+    {
+        var client = _httpClientFactory.CreateClient("AgendaBuddyApi");
+
+        var response = await client.GetAsync(ProviderRouteBuilder.GetProvider(email).Path, ct);
+        if (!response.IsSuccessStatusCode)
+            return null;
+
+        using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync(ct));
+        if (doc.RootElement.ValueKind != JsonValueKind.Object || !doc.RootElement.TryGetProperty("data", out var data))
+            return null;
+
+        // Both fields are additive and absent on every provider who predates them, so a missing or
+        // unusable pair reads as the default window rather than as a failure.
+        var start = ReadHour(data, "workDayStartHour");
+        var end = ReadHour(data, "workDayEndHour");
+
+        return start is null || end is null || start >= end
+            ? WorkHours.Default
+            : new WorkHours(start.Value, end.Value);
+    }
+
+    private static int? ReadHour(JsonElement data, string propertyName) =>
+        data.TryGetProperty(propertyName, out var value) && value.ValueKind == JsonValueKind.Number
+            ? value.GetInt32()
+            : null;
+
+    public async Task<bool> UpdateWorkHoursAsync(string email, WorkHours hours, CancellationToken ct = default)
+    {
+        var client = _httpClientFactory.CreateClient("AgendaBuddyApi");
+        var route = ProviderRouteBuilder.WorkHours(email);
+        var body = JsonSerializer.Serialize(
+            ProviderRouteBuilder.BuildWorkHoursPayload(hours.StartHour, hours.EndHour));
+
+        var response = await client.PutAsync(route.Path,
+            new StringContent(body, Encoding.UTF8, "application/json"), ct);
         return response.IsSuccessStatusCode;
     }
 

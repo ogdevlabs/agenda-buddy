@@ -19,7 +19,7 @@ public class EmailOptions
     public string FromAddress { get; set; } = "onboarding@resend.dev";
 
     /// <summary>Display name on the From header.</summary>
-    public string FromName { get; set; } = "Agenda Buddy";
+    public string FromName { get; set; } = "AgendaMe";
 
     /// <summary>
     /// Base URL the confirmation and reset links point at. Empty means the message quotes the raw token

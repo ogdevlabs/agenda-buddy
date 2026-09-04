@@ -37,6 +37,8 @@
             <Color x:Key="TextMuted">#94A3B8</Color>
             <Color x:Key="TextOnDark">#F8FAFC</Color>
             <Color x:Key="TextOnPrimary">#FFFFFF</Color>
+            <!-- Secondary text on a Primary-filled surface: readable, but subordinate to TextOnPrimary. -->
+            <Color x:Key="TextOnPrimaryMuted">#C7D2FE</Color>
 
             <Color x:Key="BackgroundPage">#F8FAFC</Color>
             <Color x:Key="BackgroundCard">#FFFFFF</Color>

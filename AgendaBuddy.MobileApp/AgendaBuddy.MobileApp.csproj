@@ -32,7 +32,7 @@
         <DefineConstants Condition="'$(TargetFramework)' == 'net10.0-android'">$(DefineConstants);FIREBASE</DefineConstants>
         <!-- Suppress MA002: explicit package refs are managed via Directory.Build.props overrides -->
         <SkipValidateMauiImplicitPackageReferences>true</SkipValidateMauiImplicitPackageReferences>
-        <ApplicationTitle>Agenda Buddy</ApplicationTitle>
+        <ApplicationTitle>AgendaMe</ApplicationTitle>
         <ApplicationId>com.fererelabs.agendabuddy</ApplicationId>
         <!-- App Store Connect refuses a second upload at a build number it has already seen, so CI
              overrides this with its run number. 1 is only the local default. -->

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:infrastructure="clr-namespace:AgendaBuddy.MobileApp.Infrastructure"
+             x:Class="AgendaBuddy.MobileApp.Controls.BrandHeader">
+
+    <Grid BackgroundColor="{StaticResource Primary}" Padding="20,8" RowDefinitions="Auto,Auto" RowSpacing="1">
+
+        <Label Grid.Row="0"
+               Text="{x:Static infrastructure:AppBrand.Name}"
+               FontSize="20"
+               FontAttributes="Bold"
+               TextColor="{StaticResource TextOnPrimary}"
+               AutomationId="BrandHeaderName" />
+
+        <HorizontalStackLayout Grid.Row="1" Spacing="6" IsVisible="{Binding HasUser}">
+            <Label Text="{Binding DisplayName}"
+                   FontSize="13"
+                   TextColor="{StaticResource TextOnPrimaryMuted}"
+                   LineBreakMode="TailTruncation"
+                   AutomationId="BrandHeaderUserName" />
+            <Label Text="&#x00B7;"
+                   FontSize="13"
+                   TextColor="{StaticResource TextOnPrimaryMuted}"
+                   IsVisible="{Binding HasRole}" />
+            <Label Text="{Binding RoleLabel}"
+                   FontSize="13"
+                   TextColor="{StaticResource TextOnPrimaryMuted}"
+                   IsVisible="{Binding HasRole}"
+                   AutomationId="BrandHeaderUserRole" />
+        </HorizontalStackLayout>
+
+    </Grid>
+
+</ContentView>

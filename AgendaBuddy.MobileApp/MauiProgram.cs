@@ -66,11 +66,15 @@ public static class MauiProgram
         builder.Services.AddSingleton<PushNotificationService>();
 
         // ViewModels
+        // Singleton: the brand header is on every page, so the signed-in user's name is resolved once
+        // per account rather than once per navigation.
+        builder.Services.AddSingleton<BrandHeaderViewModel>();
         builder.Services.AddTransient<LoginViewModel>();
         builder.Services.AddTransient<RegisterViewModel>();
         builder.Services.AddTransient<DashboardViewModel>();
         builder.Services.AddTransient<AppointmentDetailViewModel>();
         builder.Services.AddTransient<CalendarViewModel>();
+        builder.Services.AddTransient<CalendarSettingsViewModel>();
         builder.Services.AddTransient<CustomersViewModel>();
         builder.Services.AddTransient<MessagingViewModel>();
         builder.Services.AddTransient<MessageThreadViewModel>();
@@ -79,6 +83,7 @@ public static class MauiProgram
         builder.Services.AddTransient<PaymentViewModel>();
         builder.Services.AddTransient<BookAppointmentViewModel>();
         builder.Services.AddTransient<ServicesViewModel>();
+        builder.Services.AddTransient<AddServiceViewModel>();
         builder.Services.AddTransient<ProfessionsViewModel>();
         builder.Services.AddTransient<AccountViewModel>();
         builder.Services.AddTransient<ForgotPasswordViewModel>();
@@ -89,6 +94,7 @@ public static class MauiProgram
         builder.Services.AddTransient<RegisterPage>();
         builder.Services.AddTransient<DashboardPage>();
         builder.Services.AddTransient<CalendarPage>();
+        builder.Services.AddTransient<CalendarSettingsPage>();
         builder.Services.AddTransient<CustomersPage>();
         builder.Services.AddTransient<MessagingPage>();
         builder.Services.AddTransient<MessageThreadPage>();
@@ -98,6 +104,7 @@ public static class MauiProgram
         builder.Services.AddTransient<PaymentPage>();
         builder.Services.AddTransient<BookAppointmentPage>();
         builder.Services.AddTransient<ServicesPage>();
+        builder.Services.AddTransient<AddServicePage>();
         builder.Services.AddTransient<ProfessionsPage>();
         builder.Services.AddTransient<AccountPage>();
         builder.Services.AddTransient<ForgotPasswordPage>();

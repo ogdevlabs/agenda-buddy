@@ -19,5 +19,11 @@ public partial class CalendarPage : ContentPage
         base.OnAppearing();
         _viewModel.LoadCommand.Execute(null);
     }
+
+    private async void OnCalendarSettingsClicked(object? sender, EventArgs e)
+    {
+        // Returning re-triggers OnAppearing, so the calendar reloads against the saved window.
+        await Shell.Current.GoToAsync("calendarSettings");
+    }
 }
 #endif

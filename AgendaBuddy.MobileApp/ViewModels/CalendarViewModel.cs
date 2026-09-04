@@ -41,6 +41,10 @@ public partial class CalendarViewModel : ObservableObject
     private CalendarDaySummary? _selectedDay;
 
     public bool HasError => !string.IsNullOrEmpty(ErrorMessage);
+
+    /// <summary>Only a provider has working hours to configure, so only they see the settings affordance.</summary>
+    public bool IsProvider => _session.IsProvider;
+
     public bool HasSelectedDay => SelectedDay is not null;
     public bool HasAvailableSlots => SelectedDay?.AvailableSlots.Count > 0;
     public bool SelectedDayIsEmpty => SelectedDay is not null
@@ -59,6 +63,7 @@ public partial class CalendarViewModel : ObservableObject
         IsLoading = true;
         ErrorMessage = string.Empty;
         await _session.RefreshAsync();
+        OnPropertyChanged(nameof(IsProvider));
 
         try
         {

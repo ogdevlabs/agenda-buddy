@@ -398,6 +398,20 @@
           "timeZoneId": {
             "type": "string",
             "nullable": true
+          },
+          "workDayStartHour": {
+            "maximum": 23,
+            "minimum": 0,
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "workDayEndHour": {
+            "maximum": 24,
+            "minimum": 1,
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
           }
         },
         "additionalProperties": false

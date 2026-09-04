@@ -75,4 +75,11 @@ public interface IProviderService
 
     /// <summary>Removes one profession from the provider's list via a targeted <c>$pull</c>.</summary>
     Task<ProviderEntity?> RemoveProfessionAsync(string providerEmail, string professionName);
+
+    /// <summary>
+    /// Sets the provider's working-day bounds via a targeted <c>$set</c> (ADR-032) rather than replacing
+    /// the document, so saving hours cannot disturb their services or appointments.
+    /// </summary>
+    /// <returns><c>null</c> when no provider matched, which also serves as the existence check.</returns>
+    Task<ProviderEntity?> SetWorkHoursAsync(string providerEmail, int startHour, int endHour);
 }

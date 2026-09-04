@@ -13,6 +13,7 @@ global using AgendaBuddy.Provider.Core.Commands;
 global using AgendaBuddy.Provider.Core.Queries;
 global using AgendaBuddy.Provider.Domain.Commands;
 global using AgendaBuddy.Provider.Domain.Queries;
+global using AgendaBuddy.Provider.Domain.Requests;
 global using AgendaBuddy.Provider.Domain.Responses;
 global using AgendaBuddy.Provider.Extensions;
 global using AgendaBuddy.Library.Dtos;

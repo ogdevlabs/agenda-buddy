@@ -1,0 +1,38 @@
+meta {
+  name: 5 Set work hours
+  type: http
+  seq: 6
+}
+put {
+  url: {{gatewayUrl}}/api/v1/providers/{{providerEmail}}/work-hours
+  body: json
+}
+body:json {
+  {
+    "startHour": 8,
+    "endHour": 17
+  }
+}
+docs {
+  The provider's own calendar day — the window `AvailabilityCalculator` generates bookable slots in. Whole
+  hours on the provider's own clock (`timeZoneId`), and `endHour` is **exclusive**: 8–17 means the last
+  session finishes at 17:00.
+
+  A dedicated route rather than two more fields on `PUT /api/v1/providers/{email}`, because that one
+  replaces the whole stored document. This one is a targeted `$set`, so saving hours cannot disturb the
+  provider's services or appointments.
+
+  A provider who has never called this is treated as 08:00–17:00.
+
+  Answers:
+  - `200` with the updated provider on success.
+  - `400` when the window does not open before it closes (`startHour >= endHour`), or when either hour is
+    out of range — `startHour` 0–23, `endHour` 1–24. Rejected, never clamped: a silently corrected window
+    would leave the provider looking at hours they did not choose.
+  - `403` for another provider's email. Ownership-guarded, and validation runs **before** the guard, so an
+    invalid body gives `400` and never reaches it.
+  - `404` when no provider has that email.
+
+  Verify with `2 Get provider by email` — `workDayStartHour`/`workDayEndHour` come back on the entity, and
+  the read's 5-minute cache is invalidated by this write.
+}

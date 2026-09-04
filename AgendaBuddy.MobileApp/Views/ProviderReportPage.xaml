@@ -9,105 +9,111 @@
 
     <Grid RowDefinitions="Auto,*">
 
-        <!-- Header -->
-        <Grid Grid.Row="0"
-              BackgroundColor="{StaticResource Primary}"
-              Padding="24,48,24,24">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-            </Grid.RowDefinitions>
-            <controls:SafeButton Grid.Row="0"
-                    Text="&#x2190; Back"
-                    BackgroundColor="Transparent"
-                    TextColor="#C7D2FE"
-                    FontSize="14"
-                    HorizontalOptions="Start"
-                    Padding="4"
-                    Margin="0,0,0,16"
-                    Clicked="OnBackClicked" />
-            <Label Grid.Row="1"
-                   Text="Your Report"
-                   FontSize="24"
-                   FontAttributes="Bold"
-                   TextColor="White" />
-        </Grid>
+        <controls:BrandHeader Grid.Row="0" />
 
-        <!-- Error banner -->
-        <Frame Grid.Row="1"
-               Style="{StaticResource ErrorBannerStyle}"
-               IsVisible="{Binding HasError}"
-               Margin="24,12"
-               VerticalOptions="Start">
-            <Grid ColumnDefinitions="*,Auto">
-                <Label Grid.Column="0"
-                       Text="{Binding ErrorMessage}"
-                       TextColor="{StaticResource Error}"
-                       FontSize="14"
-                       VerticalOptions="Center"
-                       AutomationId="ErrorBanner" />
-                <controls:SafeButton Grid.Column="1"
-                        Text="Retry"
-                        Command="{Binding LoadCommand}"
-                        BackgroundColor="{StaticResource Error}"
-                        TextColor="White"
-                        CornerRadius="16"
-                        FontSize="13"
-                        Padding="12,6"
-                        HeightRequest="36"
-                        AutomationId="TryAgainButton" />
+        <Grid Grid.Row="1" RowDefinitions="Auto,*">
+
+            <!-- Header -->
+            <Grid Grid.Row="0"
+                  BackgroundColor="{StaticResource Primary}"
+                  Padding="24,16,24,24">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <controls:SafeButton Grid.Row="0"
+                        Text="&#x2190; Back"
+                        BackgroundColor="Transparent"
+                        TextColor="#C7D2FE"
+                        FontSize="14"
+                        HorizontalOptions="Start"
+                        Padding="4"
+                        Margin="0,0,0,16"
+                        Clicked="OnBackClicked" />
+                <Label Grid.Row="1"
+                       Text="Your Report"
+                       FontSize="24"
+                       FontAttributes="Bold"
+                       TextColor="White" />
             </Grid>
-        </Frame>
 
-        <!-- Loading -->
-        <ActivityIndicator Grid.Row="1"
-                           IsRunning="{Binding IsLoading}"
-                           IsVisible="{Binding IsLoading}"
-                           Color="{StaticResource Primary}"
-                           HorizontalOptions="Center"
-                           VerticalOptions="Center" />
+            <!-- Error banner -->
+            <Frame Grid.Row="1"
+                   Style="{StaticResource ErrorBannerStyle}"
+                   IsVisible="{Binding HasError}"
+                   Margin="24,12"
+                   VerticalOptions="Start">
+                <Grid ColumnDefinitions="*,Auto">
+                    <Label Grid.Column="0"
+                           Text="{Binding ErrorMessage}"
+                           TextColor="{StaticResource Error}"
+                           FontSize="14"
+                           VerticalOptions="Center"
+                           AutomationId="ErrorBanner" />
+                    <controls:SafeButton Grid.Column="1"
+                            Text="Retry"
+                            Command="{Binding LoadCommand}"
+                            BackgroundColor="{StaticResource Error}"
+                            TextColor="White"
+                            CornerRadius="16"
+                            FontSize="13"
+                            Padding="12,6"
+                            HeightRequest="36"
+                            AutomationId="TryAgainButton" />
+                </Grid>
+            </Frame>
 
-        <!-- Report -->
-        <ScrollView Grid.Row="1" IsVisible="{Binding HasReport}">
-            <VerticalStackLayout Padding="24" Spacing="14">
+            <!-- Loading -->
+            <ActivityIndicator Grid.Row="1"
+                               IsRunning="{Binding IsLoading}"
+                               IsVisible="{Binding IsLoading}"
+                               Color="{StaticResource Primary}"
+                               HorizontalOptions="Center"
+                               VerticalOptions="Center" />
 
-                <Frame CornerRadius="20"
-                       BackgroundColor="White"
-                       BorderColor="#E2E8F0"
-                       HasShadow="True"
-                       Padding="20">
-                    <VerticalStackLayout Spacing="10">
-                        <Label Text="{Binding Report.TotalBookings, StringFormat='Total bookings: {0}'}"
+            <!-- Report -->
+            <ScrollView Grid.Row="1" IsVisible="{Binding HasReport}">
+                <VerticalStackLayout Padding="24" Spacing="14">
+
+                    <Frame CornerRadius="20"
+                           BackgroundColor="White"
+                           BorderColor="#E2E8F0"
+                           HasShadow="True"
+                           Padding="20">
+                        <VerticalStackLayout Spacing="10">
+                            <Label Text="{Binding Report.TotalBookings, StringFormat='Total bookings: {0}'}"
+                                   FontSize="15"
+                                   TextColor="{StaticResource TextPrimary}" />
+                            <Label Text="{Binding Report.CompletedAppointments, StringFormat='Completed: {0}'}"
+                                   FontSize="15"
+                                   TextColor="{StaticResource TextPrimary}" />
+                            <Label Text="{Binding Report.CancelledAppointments, StringFormat='Cancelled: {0}'}"
+                                   FontSize="15"
+                                   TextColor="{StaticResource TextPrimary}" />
+                            <Label Text="{Binding Report.UniqueCustomers, StringFormat='Unique customers: {0}'}"
+                                   FontSize="15"
+                                   TextColor="{StaticResource TextPrimary}" />
+                        </VerticalStackLayout>
+                    </Frame>
+
+                    <!-- Revenue — ux-review.md finding 1 / AC13: the exact copy when revenue isn't
+                         computable, never a number or a blank field. -->
+                    <Frame CornerRadius="20"
+                           BackgroundColor="White"
+                           BorderColor="#E2E8F0"
+                           HasShadow="True"
+                           Padding="20">
+                        <Label Text="{Binding RevenueMessage}"
                                FontSize="15"
-                               TextColor="{StaticResource TextPrimary}" />
-                        <Label Text="{Binding Report.CompletedAppointments, StringFormat='Completed: {0}'}"
-                               FontSize="15"
-                               TextColor="{StaticResource TextPrimary}" />
-                        <Label Text="{Binding Report.CancelledAppointments, StringFormat='Cancelled: {0}'}"
-                               FontSize="15"
-                               TextColor="{StaticResource TextPrimary}" />
-                        <Label Text="{Binding Report.UniqueCustomers, StringFormat='Unique customers: {0}'}"
-                               FontSize="15"
-                               TextColor="{StaticResource TextPrimary}" />
-                    </VerticalStackLayout>
-                </Frame>
+                               TextColor="{StaticResource TextSecondary}"
+                               LineBreakMode="WordWrap"
+                               AutomationId="RevenueMessageLabel" />
+                    </Frame>
 
-                <!-- Revenue — ux-review.md finding 1 / AC13: the exact copy when revenue isn't
-                     computable, never a number or a blank field. -->
-                <Frame CornerRadius="20"
-                       BackgroundColor="White"
-                       BorderColor="#E2E8F0"
-                       HasShadow="True"
-                       Padding="20">
-                    <Label Text="{Binding RevenueMessage}"
-                           FontSize="15"
-                           TextColor="{StaticResource TextSecondary}"
-                           LineBreakMode="WordWrap"
-                           AutomationId="RevenueMessageLabel" />
-                </Frame>
+                </VerticalStackLayout>
+            </ScrollView>
 
-            </VerticalStackLayout>
-        </ScrollView>
+        </Grid>
 
     </Grid>
 

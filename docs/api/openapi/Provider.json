@@ -173,6 +173,59 @@
         }
       }
     },
+    "/api/v1/providers/{email}/work-hours": {
+      "put": {
+        "tags": [
+          "ProviderAPI"
+        ],
+        "operationId": "SetProviderWorkHours",
+        "parameters": [
+          {
+            "name": "email",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkHoursRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProviderEntityDataResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/providers/{email}/report": {
       "get": {
         "tags": [
@@ -450,6 +503,20 @@
           "timeZoneId": {
             "type": "string",
             "nullable": true
+          },
+          "workDayStartHour": {
+            "maximum": 23,
+            "minimum": 0,
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "workDayEndHour": {
+            "maximum": 24,
+            "minimum": 1,
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -656,6 +723,24 @@
           "professionName": {
             "type": "string",
             "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "WorkHoursRequest": {
+        "type": "object",
+        "properties": {
+          "startHour": {
+            "maximum": 23,
+            "minimum": 0,
+            "type": "integer",
+            "format": "int32"
+          },
+          "endHour": {
+            "maximum": 24,
+            "minimum": 1,
+            "type": "integer",
+            "format": "int32"
           }
         },
         "additionalProperties": false

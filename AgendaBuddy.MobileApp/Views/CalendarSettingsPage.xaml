@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:controls="clr-namespace:AgendaBuddy.MobileApp.Controls"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             x:Class="AgendaBuddy.MobileApp.Views.CalendarSettingsPage"
+             Title="Calendar Settings"
+             BackgroundColor="{StaticResource BackgroundPage}"
+             Shell.NavBarIsVisible="False"
+             NavigationPage.HasNavigationBar="False">
+
+    <ContentPage.Resources>
+        <toolkit:InvertedBoolConverter x:Key="InvertedBoolConverter" />
+    </ContentPage.Resources>
+
+    <Grid RowDefinitions="Auto,*">
+
+        <controls:BrandHeader Grid.Row="0" />
+
+        <Grid Grid.Row="1" RowDefinitions="Auto,Auto,*,Auto" Padding="20,12,20,16" RowSpacing="12">
+
+            <Grid Grid.Row="0" ColumnDefinitions="Auto,*">
+                <controls:SafeButton Grid.Column="0" Text="&#x2190; Back" BackgroundColor="Transparent"
+                        TextColor="{StaticResource Primary}" FontSize="14" HorizontalOptions="Start"
+                        Padding="4" Clicked="OnBackClicked" />
+                <Label Grid.Column="1" Text="Calendar Settings" FontSize="22" FontAttributes="Bold"
+                       TextColor="{StaticResource TextPrimary}" VerticalOptions="Center" Margin="8,0,0,0" />
+            </Grid>
+
+            <VerticalStackLayout Grid.Row="1" Spacing="12">
+
+                <Frame Style="{StaticResource ErrorBannerStyle}" IsVisible="{Binding HasError}">
+                    <Label Text="{Binding ErrorMessage}" TextColor="{StaticResource Error}" FontSize="14" />
+                </Frame>
+
+                <ActivityIndicator IsRunning="{Binding IsLoading}" IsVisible="{Binding IsLoading}"
+                                   Color="{StaticResource Primary}" HorizontalOptions="Center" />
+
+            </VerticalStackLayout>
+
+            <ScrollView Grid.Row="2">
+                <VerticalStackLayout Spacing="14">
+
+                    <Frame CornerRadius="16" BackgroundColor="White" BorderColor="{StaticResource BorderLight}"
+                           HasShadow="True" Padding="16">
+                        <VerticalStackLayout Spacing="12">
+                            <Label Text="YOUR CALENDAR DAY" FontSize="11" TextColor="{StaticResource TextMuted}"
+                                   TextTransform="Uppercase" CharacterSpacing="1.5" />
+                            <Label Text="Customers can only book inside this window. Times are on your own device's clock."
+                                   FontSize="13" TextColor="{StaticResource TextSecondary}" />
+
+                            <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                                <VerticalStackLayout Grid.Column="0" Spacing="4">
+                                    <Label Text="Day starts" FontSize="13" TextColor="{StaticResource TextMuted}" />
+                                    <Frame Style="{StaticResource InputFrame}" Margin="0">
+                                        <Picker ItemsSource="{Binding StartHourOptions}"
+                                                SelectedIndex="{Binding StartHourIndex}"
+                                                Title="Start"
+                                                TextColor="{StaticResource TextPrimary}"
+                                                AutomationId="CalendarStartHourPicker" />
+                                    </Frame>
+                                </VerticalStackLayout>
+                                <VerticalStackLayout Grid.Column="1" Spacing="4">
+                                    <Label Text="Day ends" FontSize="13" TextColor="{StaticResource TextMuted}" />
+                                    <Frame Style="{StaticResource InputFrame}" Margin="0">
+                                        <Picker ItemsSource="{Binding EndHourOptions}"
+                                                SelectedIndex="{Binding EndHourIndex}"
+                                                Title="End"
+                                                TextColor="{StaticResource TextPrimary}"
+                                                AutomationId="CalendarEndHourPicker" />
+                                    </Frame>
+                                </VerticalStackLayout>
+                            </Grid>
+
+                            <Label Text="{Binding WindowSummary}" FontSize="13"
+                                   TextColor="{Binding IsWindowValid, Converter={toolkit:BoolToObjectConverter TrueObject={StaticResource TextSecondary}, FalseObject={StaticResource Error}}}"
+                                   AutomationId="CalendarWindowSummary" />
+                        </VerticalStackLayout>
+                    </Frame>
+
+                </VerticalStackLayout>
+            </ScrollView>
+
+            <Grid Grid.Row="3">
+                <controls:SafeButton Text="Save Calendar Hours"
+                        Style="{StaticResource PrimaryButton}"
+                        HeightRequest="48"
+                        Command="{Binding SaveCommand}"
+                        IsVisible="{Binding IsSaving, Converter={StaticResource InvertedBoolConverter}}"
+                        AutomationId="SaveCalendarHoursButton" />
+                <ActivityIndicator IsRunning="{Binding IsSaving}" IsVisible="{Binding IsSaving}"
+                                   Color="{StaticResource Primary}" HorizontalOptions="Center" />
+            </Grid>
+
+        </Grid>
+
+    </Grid>
+
+</ContentPage>

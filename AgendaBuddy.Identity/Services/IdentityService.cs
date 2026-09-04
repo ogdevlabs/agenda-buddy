@@ -117,7 +117,7 @@ public class IdentityService(
             await notificationService.SendAsync(new NotificationEntity(
                 recipientEmail: email,
                 subject: "Confirm your email address",
-                body: "Welcome to Agenda Buddy. Please confirm you own this email address to finish setting up your account.",
+                body: "Welcome to AgendaMe. Please confirm you own this email address to finish setting up your account.",
                 type: NotificationType.EmailConfirmationRequested,
                 appointmentIdentifier: string.Empty));
         }
@@ -668,9 +668,9 @@ public class IdentityService(
     /// </summary>
     private string BuildConfirmationEmail(string token) =>
         string.IsNullOrWhiteSpace(_email.AppLinkBaseUrl)
-            ? $"Welcome to Agenda Buddy.\n\nConfirm your email address with this code:\n\n{token}\n\n"
+            ? $"Welcome to AgendaMe.\n\nConfirm your email address with this code:\n\n{token}\n\n"
               + "It expires in 24 hours. If you did not create an account, ignore this message."
-            : $"Welcome to Agenda Buddy.\n\nConfirm your email address:\n\n"
+            : $"Welcome to AgendaMe.\n\nConfirm your email address:\n\n"
               + $"{_email.AppLinkBaseUrl!.TrimEnd('/')}/confirm-email?token={token}\n\n"
               + "The link expires in 24 hours. If you did not create an account, ignore this message.";
 
@@ -680,10 +680,10 @@ public class IdentityService(
     /// </summary>
     private string BuildResetEmail(string token) =>
         string.IsNullOrWhiteSpace(_email.AppLinkBaseUrl)
-            ? $"A password reset was requested for your Agenda Buddy account.\n\nUse this code:\n\n{token}\n\n"
+            ? $"A password reset was requested for your AgendaMe account.\n\nUse this code:\n\n{token}\n\n"
               + "It expires in 30 minutes. If this wasn't you, ignore this message -- nothing changes until a "
               + "new password is confirmed."
-            : $"A password reset was requested for your Agenda Buddy account.\n\nReset it here:\n\n"
+            : $"A password reset was requested for your AgendaMe account.\n\nReset it here:\n\n"
               + $"{_email.AppLinkBaseUrl!.TrimEnd('/')}/reset-password?token={token}\n\n"
               + "The link expires in 30 minutes. If this wasn't you, ignore this message -- nothing changes "
               + "until a new password is confirmed.";

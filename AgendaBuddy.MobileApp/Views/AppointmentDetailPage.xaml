@@ -8,272 +8,278 @@
              BackgroundColor="{StaticResource BackgroundPage}"
              Shell.NavBarIsVisible="False">
 
-    <Grid RowDefinitions="Auto,*,Auto">
+    <Grid RowDefinitions="Auto,*">
 
-        <!-- Header: the SERVICE is the title — it is what the appointment actually is. The counterpart's
-             name, the date and the time all moved into the single card below, replacing an avatar
-             monogram, a name label and two coloured pills. -->
-        <Grid Grid.Row="0"
-              BackgroundColor="{StaticResource Primary}"
-              Padding="24,48,24,28"
-              RowDefinitions="Auto,Auto,Auto">
+        <controls:BrandHeader Grid.Row="0" />
 
-            <controls:SafeButton Grid.Row="0"
-                    Text="&#x2190; Back"
-                    BackgroundColor="Transparent"
-                    TextColor="#C7D2FE"
-                    FontSize="14"
-                    HorizontalOptions="Start"
-                    Padding="4"
-                    Margin="0,0,0,12"
-                    Clicked="OnBackClicked" />
+        <Grid Grid.Row="1" RowDefinitions="Auto,*,Auto">
 
-            <Label Grid.Row="1"
-                   Text="{Binding Appointment.ServiceName}"
-                   FontSize="28"
-                   FontAttributes="Bold"
-                   TextColor="White"
-                   LineBreakMode="WordWrap" />
+            <!-- Header: the SERVICE is the title — it is what the appointment actually is. The counterpart's
+                 name, the date and the time all moved into the single card below, replacing an avatar
+                 monogram, a name label and two coloured pills. -->
+            <Grid Grid.Row="0"
+                  BackgroundColor="{StaticResource Primary}"
+                  Padding="24,16,24,28"
+                  RowDefinitions="Auto,Auto,Auto">
 
-            <!-- Status as plain text rather than a pill. The pill was #FFFFFF25, which MAUI reads as
-                 #AARRGGBB — opaque (255,255,37), i.e. yellow, not translucent white. -->
-            <Label Grid.Row="2"
-                   Text="{Binding Appointment.Status}"
-                   FontSize="12"
-                   FontAttributes="Bold"
-                   TextColor="#C7D2FE"
-                   TextTransform="Uppercase"
-                   CharacterSpacing="1.5"
-                   Margin="0,6,0,0"
-                   AutomationId="StatusLabel" />
-        </Grid>
+                <controls:SafeButton Grid.Row="0"
+                        Text="&#x2190; Back"
+                        BackgroundColor="Transparent"
+                        TextColor="#C7D2FE"
+                        FontSize="14"
+                        HorizontalOptions="Start"
+                        Padding="4"
+                        Margin="0,0,0,12"
+                        Clicked="OnBackClicked" />
 
-        <!-- Error banner -->
-        <Frame Grid.Row="1"
-               Style="{StaticResource ErrorBannerStyle}"
-               IsVisible="{Binding HasError}"
-               Margin="24,12"
-               VerticalOptions="Start">
-            <Grid ColumnDefinitions="*,Auto">
-                <Label Grid.Column="0"
-                       Text="{Binding ErrorMessage}"
-                       TextColor="{StaticResource Error}"
-                       FontSize="14"
-                       VerticalOptions="Center"
-                       AutomationId="ErrorBanner" />
-                <controls:SafeButton Grid.Column="1"
-                        Text="Retry"
-                        Command="{Binding LoadCommand}"
-                        BackgroundColor="{StaticResource Error}"
-                        TextColor="White"
-                        CornerRadius="16"
-                        FontSize="13"
-                        Padding="12,6"
-                        HeightRequest="36"
-                        AutomationId="TryAgainButton" />
+                <Label Grid.Row="1"
+                       Text="{Binding Appointment.ServiceName}"
+                       FontSize="28"
+                       FontAttributes="Bold"
+                       TextColor="White"
+                       LineBreakMode="WordWrap" />
+
+                <!-- Status as plain text rather than a pill. The pill was #FFFFFF25, which MAUI reads as
+                     #AARRGGBB — opaque (255,255,37), i.e. yellow, not translucent white. -->
+                <Label Grid.Row="2"
+                       Text="{Binding Appointment.Status}"
+                       FontSize="12"
+                       FontAttributes="Bold"
+                       TextColor="#C7D2FE"
+                       TextTransform="Uppercase"
+                       CharacterSpacing="1.5"
+                       Margin="0,6,0,0"
+                       AutomationId="StatusLabel" />
             </Grid>
-        </Frame>
 
-        <!-- Loading -->
-        <ActivityIndicator Grid.Row="1"
-                           IsRunning="{Binding IsLoading}"
-                           IsVisible="{Binding IsLoading}"
-                           Color="{StaticResource Primary}"
-                           HorizontalOptions="Center"
-                           VerticalOptions="Center" />
+            <!-- Error banner -->
+            <Frame Grid.Row="1"
+                   Style="{StaticResource ErrorBannerStyle}"
+                   IsVisible="{Binding HasError}"
+                   Margin="24,12"
+                   VerticalOptions="Start">
+                <Grid ColumnDefinitions="*,Auto">
+                    <Label Grid.Column="0"
+                           Text="{Binding ErrorMessage}"
+                           TextColor="{StaticResource Error}"
+                           FontSize="14"
+                           VerticalOptions="Center"
+                           AutomationId="ErrorBanner" />
+                    <controls:SafeButton Grid.Column="1"
+                            Text="Retry"
+                            Command="{Binding LoadCommand}"
+                            BackgroundColor="{StaticResource Error}"
+                            TextColor="White"
+                            CornerRadius="16"
+                            FontSize="13"
+                            Padding="12,6"
+                            HeightRequest="36"
+                            AutomationId="TryAgainButton" />
+                </Grid>
+            </Frame>
 
-        <!-- Detail cards -->
-        <ScrollView Grid.Row="1"
-                    IsVisible="{Binding HasAppointment}"
-                    Margin="0,-16,0,0">
-            <VerticalStackLayout Padding="20,0,20,24" Spacing="14">
-
-                <!-- ONE card: who it is with, when, and how to reach them. Previously two cards plus a
-                     date tile and two icon chips; the information is the same, with four fewer components. -->
-                <Frame CornerRadius="20"
-                       BackgroundColor="White"
-                       BorderColor="#E2E8F0"
-                       HasShadow="True"
-                       Padding="20">
-                    <VerticalStackLayout Spacing="14">
-
-                        <!-- Counterpart: the provider when a customer is looking, the customer when a
-                             provider is. -->
-                        <Label Text="{Binding Appointment.DisplayName}"
-                               FontSize="20"
-                               FontAttributes="Bold"
-                               TextColor="{StaticResource TextPrimary}" />
-
-                        <!-- Date and time on one line each, no tile. -->
-                        <VerticalStackLayout Spacing="2">
-                            <Label Text="{Binding Appointment.ScheduledAt, StringFormat='{0:dddd d MMMM}'}"
-                                   FontSize="16"
-                                   TextColor="{StaticResource TextPrimary}" />
-                            <Label Text="{Binding TimeAndDurationLabel}"
-                                   FontSize="16"
-                                   FontAttributes="Bold"
-                                   TextColor="{StaticResource Primary}" />
-                        </VerticalStackLayout>
-
-                        <BoxView HeightRequest="1" Color="#EEF1F6" />
-
-                        <VerticalStackLayout Spacing="4">
-                            <Label Text="{Binding Appointment.ContactEmail}"
-                                   FontSize="14"
-                                   TextColor="{StaticResource TextSecondary}" />
-                            <Label Text="{Binding Appointment.ContactPhone}"
-                                   FontSize="14"
-                                   TextColor="{StaticResource TextSecondary}"
-                                   IsVisible="{Binding HasContactPhone}" />
-                        </VerticalStackLayout>
-                    </VerticalStackLayout>
-                </Frame>
-
-                <!-- Customer notes, only when there are some. Was an amber card with an emoji; the note is
-                     information, not a warning, so it reads in the same neutral treatment as everything else. -->
-                <Frame CornerRadius="20"
-                       BackgroundColor="White"
-                       BorderColor="#E2E8F0"
-                       HasShadow="True"
-                       Padding="20"
-                       IsVisible="{Binding Appointment.HasNotes}">
-                    <VerticalStackLayout Spacing="8">
-                        <Label Text="NOTES FROM CUSTOMER"
-                               FontSize="11"
-                               TextColor="{StaticResource TextMuted}"
-                               TextTransform="Uppercase"
-                               CharacterSpacing="1.5" />
-                        <Label Text="{Binding Appointment.CustomerNotes}"
-                               FontSize="15"
-                               TextColor="{StaticResource TextPrimary}"
-                               LineBreakMode="WordWrap" />
-                    </VerticalStackLayout>
-                </Frame>
-
-                <!-- Payment entry point (F-014's payment route, never surfaced before F-015-T11) -->
-                <Frame CornerRadius="20"
-                       BackgroundColor="White"
-                       BorderColor="#E2E8F0"
-                       HasShadow="True"
-                       Padding="20">
-                    <Grid ColumnDefinitions="*,Auto">
-                        <Label Grid.Column="0"
-                               Text="Payment"
-                               FontSize="15"
-                               FontAttributes="Bold"
-                               TextColor="{StaticResource TextPrimary}"
+            <!-- Loading -->
+            <ActivityIndicator Grid.Row="1"
+                               IsRunning="{Binding IsLoading}"
+                               IsVisible="{Binding IsLoading}"
+                               Color="{StaticResource Primary}"
+                               HorizontalOptions="Center"
                                VerticalOptions="Center" />
-                        <controls:SafeButton Grid.Column="1"
-                                Text="View"
-                                Style="{StaticResource PrimaryButton}"
-                                FontSize="13"
-                                Padding="14,8"
-                                Clicked="OnViewPaymentClicked"
-                                AutomationId="ViewPaymentButton" />
-                    </Grid>
-                </Frame>
 
-                <!-- Session notes (Provider-only — the backend routes are role-gated) -->
-                <Frame CornerRadius="20"
-                       BackgroundColor="White"
-                       BorderColor="#E2E8F0"
-                       HasShadow="True"
-                       Padding="20"
-                       IsVisible="{Binding ShowNotesSection}">
-                    <VerticalStackLayout Spacing="10">
-                        <Label Text="SESSION NOTES"
-                               FontSize="11"
-                               TextColor="{StaticResource TextMuted}"
-                               TextTransform="Uppercase"
-                               CharacterSpacing="1.5" />
+            <!-- Detail cards -->
+            <ScrollView Grid.Row="1"
+                        IsVisible="{Binding HasAppointment}"
+                        Margin="0,-16,0,0">
+                <VerticalStackLayout Padding="20,0,20,24" Spacing="14">
 
-                        <Frame Style="{StaticResource ErrorBannerStyle}" IsVisible="{Binding HasNotesError}">
-                            <Label Text="{Binding NotesErrorMessage}" TextColor="{StaticResource Error}" FontSize="13" />
-                        </Frame>
+                    <!-- ONE card: who it is with, when, and how to reach them. Previously two cards plus a
+                         date tile and two icon chips; the information is the same, with four fewer components. -->
+                    <Frame CornerRadius="20"
+                           BackgroundColor="White"
+                           BorderColor="#E2E8F0"
+                           HasShadow="True"
+                           Padding="20">
+                        <VerticalStackLayout Spacing="14">
 
-                        <ActivityIndicator IsRunning="{Binding IsLoadingNotes}" IsVisible="{Binding IsLoadingNotes}"
-                                           Color="{StaticResource Primary}" HorizontalOptions="Center" />
+                            <!-- Counterpart: the provider when a customer is looking, the customer when a
+                                 provider is. -->
+                            <Label Text="{Binding Appointment.DisplayName}"
+                                   FontSize="20"
+                                   FontAttributes="Bold"
+                                   TextColor="{StaticResource TextPrimary}" />
 
-                        <CollectionView ItemsSource="{Binding Notes}" SelectionMode="None"
-                                        IsVisible="{Binding HasSessionNotes}"
-                                        AutomationId="NotesCollectionView">
-                            <CollectionView.ItemTemplate>
-                                <DataTemplate>
-                                    <VerticalStackLayout Spacing="2" Margin="0,4">
-                                        <Label Text="{Binding Content}" FontSize="14" TextColor="{StaticResource TextPrimary}" />
-                                        <BoxView HeightRequest="0.5" Color="#F1F5F9" Margin="0,6,0,0" />
-                                    </VerticalStackLayout>
-                                </DataTemplate>
-                            </CollectionView.ItemTemplate>
-                        </CollectionView>
+                            <!-- Date and time on one line each, no tile. -->
+                            <VerticalStackLayout Spacing="2">
+                                <Label Text="{Binding Appointment.ScheduledAt, StringFormat='{0:dddd d MMMM}'}"
+                                       FontSize="16"
+                                       TextColor="{StaticResource TextPrimary}" />
+                                <Label Text="{Binding TimeAndDurationLabel}"
+                                       FontSize="16"
+                                       FontAttributes="Bold"
+                                       TextColor="{StaticResource Primary}" />
+                            </VerticalStackLayout>
 
-                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" Margin="0,4,0,0">
-                            <Frame Grid.Column="0" Style="{StaticResource InputFrame}" Margin="0">
-                                <Entry Text="{Binding NewNoteContent}"
-                                       Placeholder="Add a note..."
-                                       Style="{StaticResource InputStyle}"
-                                       AutomationId="NewNoteEntry" />
-                            </Frame>
+                            <BoxView HeightRequest="1" Color="#EEF1F6" />
+
+                            <VerticalStackLayout Spacing="4">
+                                <Label Text="{Binding Appointment.ContactEmail}"
+                                       FontSize="14"
+                                       TextColor="{StaticResource TextSecondary}" />
+                                <Label Text="{Binding Appointment.ContactPhone}"
+                                       FontSize="14"
+                                       TextColor="{StaticResource TextSecondary}"
+                                       IsVisible="{Binding HasContactPhone}" />
+                            </VerticalStackLayout>
+                        </VerticalStackLayout>
+                    </Frame>
+
+                    <!-- Customer notes, only when there are some. Was an amber card with an emoji; the note is
+                         information, not a warning, so it reads in the same neutral treatment as everything else. -->
+                    <Frame CornerRadius="20"
+                           BackgroundColor="White"
+                           BorderColor="#E2E8F0"
+                           HasShadow="True"
+                           Padding="20"
+                           IsVisible="{Binding Appointment.HasNotes}">
+                        <VerticalStackLayout Spacing="8">
+                            <Label Text="NOTES FROM CUSTOMER"
+                                   FontSize="11"
+                                   TextColor="{StaticResource TextMuted}"
+                                   TextTransform="Uppercase"
+                                   CharacterSpacing="1.5" />
+                            <Label Text="{Binding Appointment.CustomerNotes}"
+                                   FontSize="15"
+                                   TextColor="{StaticResource TextPrimary}"
+                                   LineBreakMode="WordWrap" />
+                        </VerticalStackLayout>
+                    </Frame>
+
+                    <!-- Payment entry point (F-014's payment route, never surfaced before F-015-T11) -->
+                    <Frame CornerRadius="20"
+                           BackgroundColor="White"
+                           BorderColor="#E2E8F0"
+                           HasShadow="True"
+                           Padding="20">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <Label Grid.Column="0"
+                                   Text="Payment"
+                                   FontSize="15"
+                                   FontAttributes="Bold"
+                                   TextColor="{StaticResource TextPrimary}"
+                                   VerticalOptions="Center" />
                             <controls:SafeButton Grid.Column="1"
-                                    Text="Add"
+                                    Text="View"
                                     Style="{StaticResource PrimaryButton}"
                                     FontSize="13"
-                                    Padding="16,8"
-                                    HeightRequest="44"
-                                    Command="{Binding AddNoteCommand}"
-                                    AutomationId="AddNoteButton" />
+                                    Padding="14,8"
+                                    Clicked="OnViewPaymentClicked"
+                                    AutomationId="ViewPaymentButton" />
                         </Grid>
-                    </VerticalStackLayout>
-                </Frame>
+                    </Frame>
 
-            </VerticalStackLayout>
-        </ScrollView>
+                    <!-- Session notes (Provider-only — the backend routes are role-gated) -->
+                    <Frame CornerRadius="20"
+                           BackgroundColor="White"
+                           BorderColor="#E2E8F0"
+                           HasShadow="True"
+                           Padding="20"
+                           IsVisible="{Binding ShowNotesSection}">
+                        <VerticalStackLayout Spacing="10">
+                            <Label Text="SESSION NOTES"
+                                   FontSize="11"
+                                   TextColor="{StaticResource TextMuted}"
+                                   TextTransform="Uppercase"
+                                   CharacterSpacing="1.5" />
 
-        <!-- Action buttons -->
-        <Frame Grid.Row="2"
-               BackgroundColor="White"
-               CornerRadius="0"
-               BorderColor="#E2E8F0"
-               HasShadow="True"
-               Padding="20,16">
-            <Grid ColumnDefinitions="*,*,*" ColumnSpacing="10">
+                            <Frame Style="{StaticResource ErrorBannerStyle}" IsVisible="{Binding HasNotesError}">
+                                <Label Text="{Binding NotesErrorMessage}" TextColor="{StaticResource Error}" FontSize="13" />
+                            </Frame>
 
-                <controls:SafeButton Grid.Column="0"
-                        Text="Confirm"
-                        Style="{StaticResource SuccessButton}"
-                        Command="{Binding ConfirmCommand}"
-                        IsEnabled="{Binding IsNotLoading}"
-                        IsVisible="{Binding ShowConfirmButton}"
-                        AutomationId="ConfirmButton" />
+                            <ActivityIndicator IsRunning="{Binding IsLoadingNotes}" IsVisible="{Binding IsLoadingNotes}"
+                                               Color="{StaticResource Primary}" HorizontalOptions="Center" />
 
-                <controls:SafeButton Grid.Column="1"
-                        Text="Cancel"
-                        Style="{StaticResource DangerButton}"
-                        Command="{Binding CancelCommand}"
-                        IsEnabled="{Binding IsNotLoading}"
-                        AutomationId="CancelButton" />
+                            <CollectionView ItemsSource="{Binding Notes}" SelectionMode="None"
+                                            IsVisible="{Binding HasSessionNotes}"
+                                            AutomationId="NotesCollectionView">
+                                <CollectionView.ItemTemplate>
+                                    <DataTemplate>
+                                        <VerticalStackLayout Spacing="2" Margin="0,4">
+                                            <Label Text="{Binding Content}" FontSize="14" TextColor="{StaticResource TextPrimary}" />
+                                            <BoxView HeightRequest="0.5" Color="#F1F5F9" Margin="0,6,0,0" />
+                                        </VerticalStackLayout>
+                                    </DataTemplate>
+                                </CollectionView.ItemTemplate>
+                            </CollectionView>
 
-                <!-- Complete button + activity indicator (ux-review.md 8-state spot-check, finding
-                     P3), matching the Sign In button/ActivityIndicator overlay pattern on LoginPage. -->
-                <Grid Grid.Column="2">
-                    <controls:SafeButton Text="Complete"
-                            Style="{StaticResource PrimaryButton}"
-                            FontSize="14"
-                            Padding="12,14"
-                            Command="{Binding CompleteCommand}"
+                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" Margin="0,4,0,0">
+                                <Frame Grid.Column="0" Style="{StaticResource InputFrame}" Margin="0">
+                                    <Entry Text="{Binding NewNoteContent}"
+                                           Placeholder="Add a note..."
+                                           Style="{StaticResource InputStyle}"
+                                           AutomationId="NewNoteEntry" />
+                                </Frame>
+                                <controls:SafeButton Grid.Column="1"
+                                        Text="Add"
+                                        Style="{StaticResource PrimaryButton}"
+                                        FontSize="13"
+                                        Padding="16,8"
+                                        HeightRequest="44"
+                                        Command="{Binding AddNoteCommand}"
+                                        AutomationId="AddNoteButton" />
+                            </Grid>
+                        </VerticalStackLayout>
+                    </Frame>
+
+                </VerticalStackLayout>
+            </ScrollView>
+
+            <!-- Action buttons -->
+            <Frame Grid.Row="2"
+                   BackgroundColor="White"
+                   CornerRadius="0"
+                   BorderColor="#E2E8F0"
+                   HasShadow="True"
+                   Padding="20,16">
+                <Grid ColumnDefinitions="*,*,*" ColumnSpacing="10">
+
+                    <controls:SafeButton Grid.Column="0"
+                            Text="Confirm"
+                            Style="{StaticResource SuccessButton}"
+                            Command="{Binding ConfirmCommand}"
                             IsEnabled="{Binding IsNotLoading}"
-                            IsVisible="{Binding ShowCompleteButtonIdle}"
-                            AutomationId="CompleteButton" />
-                    <ActivityIndicator IsRunning="{Binding ShowCompletingIndicator}"
-                                       IsVisible="{Binding ShowCompletingIndicator}"
-                                       Color="{StaticResource Primary}"
-                                       HorizontalOptions="Center"
-                                       VerticalOptions="Center"
-                                       AutomationId="CompleteButtonBusyIndicator" />
-                </Grid>
+                            IsVisible="{Binding ShowConfirmButton}"
+                            AutomationId="ConfirmButton" />
 
-            </Grid>
-        </Frame>
+                    <controls:SafeButton Grid.Column="1"
+                            Text="Cancel"
+                            Style="{StaticResource DangerButton}"
+                            Command="{Binding CancelCommand}"
+                            IsEnabled="{Binding IsNotLoading}"
+                            AutomationId="CancelButton" />
+
+                    <!-- Complete button + activity indicator (ux-review.md 8-state spot-check, finding
+                         P3), matching the Sign In button/ActivityIndicator overlay pattern on LoginPage. -->
+                    <Grid Grid.Column="2">
+                        <controls:SafeButton Text="Complete"
+                                Style="{StaticResource PrimaryButton}"
+                                FontSize="14"
+                                Padding="12,14"
+                                Command="{Binding CompleteCommand}"
+                                IsEnabled="{Binding IsNotLoading}"
+                                IsVisible="{Binding ShowCompleteButtonIdle}"
+                                AutomationId="CompleteButton" />
+                        <ActivityIndicator IsRunning="{Binding ShowCompletingIndicator}"
+                                           IsVisible="{Binding ShowCompletingIndicator}"
+                                           Color="{StaticResource Primary}"
+                                           HorizontalOptions="Center"
+                                           VerticalOptions="Center"
+                                           AutomationId="CompleteButtonBusyIndicator" />
+                    </Grid>
+
+                </Grid>
+            </Frame>
+
+        </Grid>
 
     </Grid>
 
