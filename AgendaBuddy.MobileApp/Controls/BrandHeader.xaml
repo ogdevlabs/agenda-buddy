@@ -4,13 +4,32 @@
              xmlns:infrastructure="clr-namespace:AgendaBuddy.MobileApp.Infrastructure"
              x:Class="AgendaBuddy.MobileApp.Controls.BrandHeader">
 
-    <Grid BackgroundColor="{StaticResource Primary}" Padding="20,10" RowSpacing="1">
-        <Label Text="{x:Static infrastructure:AppBrand.Name}"
+    <Grid BackgroundColor="{StaticResource Primary}" Padding="20,8" RowDefinitions="Auto,Auto" RowSpacing="1">
+
+        <Label Grid.Row="0"
+               Text="{x:Static infrastructure:AppBrand.Name}"
                FontSize="20"
                FontAttributes="Bold"
                TextColor="{StaticResource TextOnPrimary}"
-               VerticalOptions="Center"
                AutomationId="BrandHeaderName" />
+
+        <HorizontalStackLayout Grid.Row="1" Spacing="6" IsVisible="{Binding HasUser}">
+            <Label Text="{Binding DisplayName}"
+                   FontSize="13"
+                   TextColor="{StaticResource TextOnPrimaryMuted}"
+                   LineBreakMode="TailTruncation"
+                   AutomationId="BrandHeaderUserName" />
+            <Label Text="&#x00B7;"
+                   FontSize="13"
+                   TextColor="{StaticResource TextOnPrimaryMuted}"
+                   IsVisible="{Binding HasRole}" />
+            <Label Text="{Binding RoleLabel}"
+                   FontSize="13"
+                   TextColor="{StaticResource TextOnPrimaryMuted}"
+                   IsVisible="{Binding HasRole}"
+                   AutomationId="BrandHeaderUserRole" />
+        </HorizontalStackLayout>
+
     </Grid>
 
 </ContentView>

@@ -66,6 +66,9 @@ public static class MauiProgram
         builder.Services.AddSingleton<PushNotificationService>();
 
         // ViewModels
+        // Singleton: the brand header is on every page, so the signed-in user's name is resolved once
+        // per account rather than once per navigation.
+        builder.Services.AddSingleton<BrandHeaderViewModel>();
         builder.Services.AddTransient<LoginViewModel>();
         builder.Services.AddTransient<RegisterViewModel>();
         builder.Services.AddTransient<DashboardViewModel>();
