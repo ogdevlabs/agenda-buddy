@@ -34,12 +34,33 @@
         <SkipValidateMauiImplicitPackageReferences>true</SkipValidateMauiImplicitPackageReferences>
         <ApplicationTitle>Agenda Buddy</ApplicationTitle>
         <ApplicationId>com.fererelabs.agendabuddy</ApplicationId>
-        <ApplicationVersion>1</ApplicationVersion>
+        <!-- App Store Connect refuses a second upload at a build number it has already seen, so CI
+             overrides this with its run number. 1 is only the local default. -->
+        <ApplicationVersion Condition="'$(BuildNumber)' == ''">1</ApplicationVersion>
+        <ApplicationVersion Condition="'$(BuildNumber)' != ''">$(BuildNumber)</ApplicationVersion>
         <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
         <SupportedOSPlatformVersion Condition="'$(TargetFramework)' == 'net10.0-ios'">18.0</SupportedOSPlatformVersion>
         <SupportedOSPlatformVersion Condition="'$(TargetFramework)' == 'net10.0-android'">21.0</SupportedOSPlatformVersion>
         <!-- Allow minor Xcode version mismatches (e.g. 26.5 vs required 26.4) — forward-compatible -->
         <ValidateXcodeVersion>false</ValidateXcodeVersion>
+    </PropertyGroup>
+
+    <!-- Apple Developer team (Individual enrolment). Not a secret: it appears in build output and in
+         every provisioning profile. Needed for signing, harmless when not signing. -->
+    <PropertyGroup Condition="'$(TargetFramework)' == 'net10.0-ios'">
+        <ApplePlatformTeamId>AZY7HXWA5A</ApplePlatformTeamId>
+    </PropertyGroup>
+
+    <!-- App Store signing, opt-in via IosSigned. Deliberately NOT tied to Release: the existing
+         "Mobile — iOS Build" CI job builds Release on a runner with no certificate and no profile, and
+         it should keep doing so. Signing is what an upload needs, not what proves the app compiles.
+         CodesignKey and CodesignProvision are supplied by the upload workflow from repository secrets,
+         so no certificate identity is named in the repo. -->
+    <PropertyGroup Condition="'$(TargetFramework)' == 'net10.0-ios' AND '$(IosSigned)' == 'true'">
+        <RuntimeIdentifier>ios-arm64</RuntimeIdentifier>
+        <ArchiveOnBuild>true</ArchiveOnBuild>
+        <CodesignKey>$(IosCodesignKey)</CodesignKey>
+        <CodesignProvision>$(IosCodesignProvision)</CodesignProvision>
     </PropertyGroup>
 
     <ItemGroup>
