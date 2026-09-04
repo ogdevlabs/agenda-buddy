@@ -1,0 +1,119 @@
+name: Dev environment power (reusable)
+
+# Starts or stops a deployed environment's container apps by moving minReplicas between 1 and 0.
+#
+# Why minReplicas and not something that sounds more like "stop":
+#   * --max-replicas 0 is rejected outright: the API requires 1..1000.
+#   * `az containerapp revision deactivate` genuinely stops a revision, but `revision activate` answers
+#     405 Method Not Allowed while the app is in Single revision mode, which these are. Deactivating is
+#     therefore a one-way door and unusable as half of a start/stop pair (found the hard way).
+# minReplicas is symmetric, instant, and changes nothing else about the app -- in particular it leaves
+# ingress and the gateway's public FQDN alone, which matters because AgendaBuddy.MobileApp has that
+# hostname baked into appsettings.json.
+#
+# With minReplicas 0 and no traffic, ACA terminates the replicas and consumption billing stops. A public
+# HTTPS endpoint does attract scanners, so the gateway may briefly wake; that costs seconds of compute,
+# not hours.
+
+on:
+  workflow_call:
+    inputs:
+      action:
+        description: "start or stop"
+        required: true
+        type: string
+      environment:
+        description: "Environment name (matches the GitHub Environment and the resource group suffix)"
+        required: false
+        default: dev
+        type: string
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  power:
+    runs-on: ubuntu-24.04
+    environment: ${{ inputs.environment }}
+
+    steps:
+      - name: Validate the requested action
+        run: |
+          case "${{ inputs.action }}" in
+            start|stop) echo "action=${{ inputs.action }}" ;;
+            *) echo "::error::action must be 'start' or 'stop', got '${{ inputs.action }}'." ; exit 1 ;;
+          esac
+
+      - name: Azure login (this environment's own federated identity)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: ${{ inputs.action == 'start' && 'Start' || 'Stop' }} the container apps
+        env:
+          ACTION: ${{ inputs.action }}
+          RESOURCE_GROUP: rg-agenda-buddy-${{ inputs.environment }}
+        run: |
+          set -euo pipefail
+
+          if [ "$ACTION" = "start" ]; then MIN=1; else MIN=0; fi
+
+          # Discovered rather than hardcoded, so adding a service to the AppHost does not silently leave
+          # it running overnight.
+          mapfile -t apps < <(az containerapp list --resource-group "$RESOURCE_GROUP" \
+                                --query "sort_by([].name, &@)" -o tsv)
+
+          if [ "${#apps[@]}" -eq 0 ]; then
+            echo "::error::No container apps found in $RESOURCE_GROUP. Has the environment been deployed?"
+            exit 1
+          fi
+          echo "Found ${#apps[@]} container apps in $RESOURCE_GROUP; setting minReplicas=$MIN"
+
+          for app in "${apps[@]}"; do
+            current=$(az containerapp show --name "$app" --resource-group "$RESOURCE_GROUP" \
+                        --query "properties.template.scale.minReplicas" -o tsv)
+            if [ "$current" = "$MIN" ]; then
+              echo "  $app already at minReplicas=$MIN"
+              continue
+            fi
+            az containerapp update --name "$app" --resource-group "$RESOURCE_GROUP" \
+              --min-replicas "$MIN" --only-show-errors -o none
+            echo "  $app minReplicas $current -> $MIN"
+          done
+
+      - name: Report the resulting state
+        env:
+          RESOURCE_GROUP: rg-agenda-buddy-${{ inputs.environment }}
+        run: |
+          {
+            echo "### Dev environment: ${{ inputs.action }}"
+            echo
+            echo "| app | minReplicas | replicas |"
+            echo "|---|---|---|"
+            az containerapp list --resource-group "$RESOURCE_GROUP" \
+              --query "sort_by([].{n:name,m:properties.template.scale.minReplicas}, &n)" -o tsv \
+              | while read -r name min; do echo "| $name | $min | |"; done
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # Only on the way up, and only as information: a cold start takes a few seconds, so a single
+      # probe would report a false failure. This never fails the run -- the apps have been told to
+      # start, and a slow first request is not a fault worth a red badge on a scheduled job.
+      - name: Confirm the gateway answers (informational)
+        if: ${{ inputs.action == 'start' }}
+        env:
+          RESOURCE_GROUP: rg-agenda-buddy-${{ inputs.environment }}
+        continue-on-error: true
+        run: |
+          set -uo pipefail
+          fqdn=$(az containerapp show --name gateway --resource-group "$RESOURCE_GROUP" \
+                   --query "properties.configuration.ingress.fqdn" -o tsv)
+          for attempt in 1 2 3 4 5 6 7 8; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 20 "https://$fqdn/health" || echo 000)
+            echo "attempt $attempt: /health -> $code"
+            [ "$code" = "200" ] && { echo "Gateway healthy: https://$fqdn" >> "$GITHUB_STEP_SUMMARY"; exit 0; }
+            sleep 15
+          done
+          echo "Gateway not yet answering 200; it may still be starting." >> "$GITHUB_STEP_SUMMARY"

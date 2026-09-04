@@ -129,6 +129,7 @@ See [docs/pdlc/design/api-refactor-rollout/ARCHITECTURE.md](docs/pdlc/design/api
 - `scripts/verify-gitleaks-canary.sh` + `scripts/verify-trivy-severity-gate.sh` + `scripts/verify-container-reaping.sh` — CI-wired self-tests proving the security-scan-adjacent tooling actually works
 - `scripts/trivy-severity-gate.sh` — the actual severity gate for `docker-build-and-scan`'s Trivy step: fails on HIGH/CRITICAL under an `app/*.deps.json` Trivy report target, warns (does not fail) on anything else
 - `.github/dependabot.yml` — weekly NuGet + GitHub Actions dependency-update PRs
+- `.github/workflows/dev-env-{schedule,start,stop,power}.yml` — the dev environment is **scheduled off outside 09:00–17:00 America/Mexico_City on weekdays** to stop paying for eight `minReplicas: 1` container apps around the clock. Start/stop move `minReplicas` between 1 and 0, which is symmetric and leaves the gateway's public FQDN alone. ⚠️ Do **not** reach for `az containerapp revision deactivate` instead: it stops a revision, but `revision activate` is **405 Method Not Allowed** in Single revision mode (all eight apps), so it is a one-way door. Stopping is not destroying — nothing is deleted. Mexico City has had **no DST since 2022**, so one fixed UTC cron pair is correct year-round
 
 ### Security controls that default OFF
 
