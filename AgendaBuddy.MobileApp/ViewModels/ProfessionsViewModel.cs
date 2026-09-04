@@ -15,8 +15,19 @@ public partial class ProfessionsViewModel : ObservableObject
 
     private List<ProfessionItem> _catalog = new();
 
+    /// <summary>
+    /// Letters the provider has opened. Everything starts closed, so the catalog reads as about two dozen
+    /// letters rather than ~120 professions. Search expansion deliberately does not touch this set, so
+    /// clearing the search returns the catalog to whatever was actually open.
+    /// </summary>
+    private readonly HashSet<string> _expandedLetters = new(StringComparer.Ordinal);
+
     [ObservableProperty]
     private List<ProfessionItem> _filteredCatalog = new();
+
+    /// <summary>The catalog as rendered: letter headers, plus the professions under the open ones.</summary>
+    [ObservableProperty]
+    private List<ProfessionCatalogRow> _catalogRows = new();
 
     [ObservableProperty]
     private List<string> _currentProfessions = new();
@@ -83,6 +94,10 @@ public partial class ProfessionsViewModel : ObservableObject
     [RelayCommand]
     private void ToggleSelect(ProfessionItem item)
     {
+        // One catalog list serves both roles, so a customer's tap reaches here too. Only a provider selects.
+        if (!IsProvider)
+            return;
+
         item.IsSelected = !item.IsSelected;
         NotifySelectionChanged();
     }
@@ -165,11 +180,69 @@ public partial class ProfessionsViewModel : ObservableObject
         SaveSelectionCommand.NotifyCanExecuteChanged();
     }
 
+    /// <summary>
+    /// Opens or closes one letter. A no-op while a search is running, since search decides what is open.
+    /// </summary>
+    [RelayCommand]
+    private void ToggleGroup(string letter)
+    {
+        if (string.IsNullOrEmpty(letter) || IsSearching)
+            return;
+
+        if (!_expandedLetters.Remove(letter))
+            _expandedLetters.Add(letter);
+
+        RebuildCatalogRows();
+    }
+
+    private bool IsSearching => !string.IsNullOrWhiteSpace(SearchText);
+
     private void ApplyFilter()
     {
         FilteredCatalog = string.IsNullOrWhiteSpace(SearchText)
             ? _catalog
             : _catalog.Where(p => p.Name.Contains(SearchText, StringComparison.OrdinalIgnoreCase)).ToList();
+
+        RebuildCatalogRows();
+    }
+
+    private void RebuildCatalogRows()
+    {
+        // While searching, every letter holding a match is open — a collapsed section hiding the thing you
+        // just typed is worse than no grouping at all.
+        var searching = IsSearching;
+        var rows = new List<ProfessionCatalogRow>();
+
+        var groups = FilteredCatalog
+            .GroupBy(LetterOf, StringComparer.Ordinal)
+            .OrderBy(g => g.Key, StringComparer.Ordinal);
+
+        foreach (var group in groups)
+        {
+            var expanded = searching || _expandedLetters.Contains(group.Key);
+            var members = group.OrderBy(p => p.Name, StringComparer.CurrentCultureIgnoreCase).ToList();
+
+            rows.Add(ProfessionCatalogRow.ForHeader(group.Key, members.Count, expanded));
+
+            if (expanded)
+                rows.AddRange(members.Select(p => ProfessionCatalogRow.ForProfession(group.Key, p)));
+        }
+
+        CatalogRows = rows;
+    }
+
+    /// <summary>
+    /// Groups by first letter. Anything not starting with a letter collects under one bucket rather than
+    /// getting a section per punctuation mark.
+    /// </summary>
+    private static string LetterOf(ProfessionItem item)
+    {
+        var name = item.Name;
+        if (string.IsNullOrEmpty(name))
+            return "#";
+
+        var first = char.ToUpperInvariant(name[0]);
+        return char.IsLetter(first) ? first.ToString() : "#";
     }
 
     partial void OnSearchTextChanged(string value) => ApplyFilter();

@@ -80,36 +80,54 @@
             <Label Grid.Row="1" Text="No professions found." IsVisible="{Binding IsEmpty}"
                    TextColor="{StaticResource TextMuted}" HorizontalOptions="Center" VerticalOptions="Start" Margin="0,40" />
 
-            <!-- Provider: selectable catalog -->
-            <CollectionView Grid.Row="1" ItemsSource="{Binding FilteredCatalog}" SelectionMode="None"
-                             IsVisible="{Binding IsProvider}" AutomationId="ProfessionsCatalogCollectionView">
+            <!--
+                One list for both roles: a provider gets the selection glyph, a customer gets the same rows
+                read-only. Rows are letter headers plus the professions under the open ones, so a ~120-item
+                catalog reads as about two dozen lines until something is opened.
+            -->
+            <CollectionView Grid.Row="1" ItemsSource="{Binding CatalogRows}" SelectionMode="None"
+                             AutomationId="ProfessionsCatalogCollectionView">
                 <CollectionView.ItemTemplate>
                     <DataTemplate>
-                        <Frame CornerRadius="14" BackgroundColor="White" BorderColor="{StaticResource BorderLight}" HasShadow="False" Padding="16" Margin="0,0,0,8">
-                            <Frame.GestureRecognizers>
-                                <TapGestureRecognizer
-                                    Command="{Binding Source={x:Reference ThisPage}, Path=BindingContext.ToggleSelectCommand}"
-                                    CommandParameter="{Binding}" />
-                            </Frame.GestureRecognizers>
-                            <Grid ColumnDefinitions="Auto,*">
-                                <Label Grid.Column="0" Text="{Binding IsSelected, Converter={toolkit:BoolToObjectConverter TrueObject='&#x2713;', FalseObject='&#x25CB;'}}"
-                                       TextColor="{StaticResource Primary}" FontSize="16" WidthRequest="24" />
-                                <Label Grid.Column="1" Text="{Binding Name}" FontSize="15" TextColor="{StaticResource TextPrimary}" />
-                            </Grid>
-                        </Frame>
-                    </DataTemplate>
-                </CollectionView.ItemTemplate>
-            </CollectionView>
+                        <Grid>
 
-            <!-- Customer: read-only browse -->
-            <CollectionView Grid.Row="1" ItemsSource="{Binding FilteredCatalog}" SelectionMode="None"
-                             IsVisible="{Binding IsProvider, Converter={StaticResource InvertedBoolConverter}}"
-                             AutomationId="ProfessionsBrowseCollectionView">
-                <CollectionView.ItemTemplate>
-                    <DataTemplate>
-                        <Frame CornerRadius="14" BackgroundColor="White" BorderColor="{StaticResource BorderLight}" HasShadow="False" Padding="16" Margin="0,0,0,8">
-                            <Label Text="{Binding Name}" FontSize="15" TextColor="{StaticResource TextPrimary}" />
-                        </Frame>
+                            <!-- Letter header — tap to open or close -->
+                            <Frame IsVisible="{Binding IsHeader}" CornerRadius="10" Padding="12,10" Margin="0,0,0,6"
+                                   BackgroundColor="{StaticResource PrimarySubtle}" BorderColor="Transparent" HasShadow="False">
+                                <Frame.GestureRecognizers>
+                                    <TapGestureRecognizer
+                                        Command="{Binding Source={x:Reference ThisPage}, Path=BindingContext.ToggleGroupCommand}"
+                                        CommandParameter="{Binding Letter}" />
+                                </Frame.GestureRecognizers>
+                                <Grid ColumnDefinitions="20,*,Auto" ColumnSpacing="4">
+                                    <Label Grid.Column="0" Text="{Binding Chevron}" FontSize="13"
+                                           TextColor="{StaticResource Primary}" VerticalOptions="Center" />
+                                    <Label Grid.Column="1" Text="{Binding Letter}" FontSize="15" FontAttributes="Bold"
+                                           TextColor="{StaticResource TextPrimary}" VerticalOptions="Center"
+                                           AutomationId="ProfessionGroupHeader" />
+                                    <Label Grid.Column="2" Text="{Binding MemberCount}" FontSize="13"
+                                           TextColor="{StaticResource TextMuted}" VerticalOptions="Center" />
+                                </Grid>
+                            </Frame>
+
+                            <!-- A profession under an open letter -->
+                            <Frame IsVisible="{Binding IsProfession}" CornerRadius="14" BackgroundColor="White"
+                                   BorderColor="{StaticResource BorderLight}" HasShadow="False"
+                                   Padding="16" Margin="12,0,0,8">
+                                <Frame.GestureRecognizers>
+                                    <TapGestureRecognizer
+                                        Command="{Binding Source={x:Reference ThisPage}, Path=BindingContext.ToggleSelectCommand}"
+                                        CommandParameter="{Binding Profession}" />
+                                </Frame.GestureRecognizers>
+                                <Grid ColumnDefinitions="Auto,*">
+                                    <Label Grid.Column="0" Text="{Binding Profession.IsSelected, Converter={toolkit:BoolToObjectConverter TrueObject='&#x2713;', FalseObject='&#x25CB;'}}"
+                                           TextColor="{StaticResource Primary}" FontSize="16" WidthRequest="24"
+                                           IsVisible="{Binding Source={x:Reference ThisPage}, Path=BindingContext.IsProvider}" />
+                                    <Label Grid.Column="1" Text="{Binding Profession.Name}" FontSize="15" TextColor="{StaticResource TextPrimary}" />
+                                </Grid>
+                            </Frame>
+
+                        </Grid>
                     </DataTemplate>
                 </CollectionView.ItemTemplate>
             </CollectionView>
