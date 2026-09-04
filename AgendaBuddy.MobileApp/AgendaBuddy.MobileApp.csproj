@@ -47,6 +47,7 @@
         <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
         <PackageReference Include="Plugin.Firebase.CloudMessaging" Version="3.0.0" Condition="'$(UseMaui)' == 'true' AND '$(TargetFramework)' != 'net10.0-ios'" />
         <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.0" />
         <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.0" Condition="'$(Configuration)' == 'Debug'" />
     </ItemGroup>
 
@@ -71,6 +72,16 @@
          UseMaui=false, so the plain SDK glob would otherwise pull in Android/iOS-only code. -->
     <ItemGroup Condition="'$(UseMaui)' != 'true'">
         <Compile Remove="Platforms\**\*.cs" />
+    </ItemGroup>
+
+
+    <!-- Read at startup by MauiProgram. Embedded rather than copied, because a packaged app has no
+         working directory to read a loose file from on device, so AddJsonFile would silently find
+         nothing. That is precisely why ApiBaseUrl went unread and every Release build fell back to
+         localhost. appsettings.Development.json is embedded too, but only applied in DEBUG. -->
+    <ItemGroup>
+        <EmbeddedResource Include="appsettings.json" LogicalName="appsettings.json" />
+        <EmbeddedResource Include="appsettings.Development.json" LogicalName="appsettings.Development.json" />
     </ItemGroup>
 
 </Project>
