@@ -1,0 +1,31 @@
+name: Dev environment — stop
+
+# On demand, for finishing early. Scales every container app to zero replicas so consumption billing
+# stops.
+#
+# This STOPS the environment; it does not destroy it. Nothing is deleted: the container apps, their
+# revisions and images, the Container Apps environment, the registry, the Key Vault and its secrets all
+# remain, and "Dev environment — start" brings the same deployment back with the same gateway URL. A real
+# teardown would be `terraform destroy` plus deleting the resource group, which is deliberately not
+# wired to a button.
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Environment to stop"
+        required: true
+        default: dev
+        type: string
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  stop:
+    uses: ./.github/workflows/dev-env-power.yml
+    with:
+      action: stop
+      environment: ${{ inputs.environment }}
+    secrets: inherit

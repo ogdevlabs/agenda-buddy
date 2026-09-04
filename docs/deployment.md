@@ -351,6 +351,51 @@ specific:
    pick up the new values) — the *mechanism* exists, but nothing schedules or reminds anyone to do
    it, and each service still restarts with the new pair rather than rotating without downtime.
 
+## Cost control: the dev environment is scheduled off outside working hours
+
+The eight container apps are deployed with `minReplicas: 1`, so they bill continuously whether or not
+anyone is using them. Four workflows exist to stop paying for an idle environment:
+
+| Workflow | Trigger | Effect |
+|---|---|---|
+| `dev-env-schedule.yml` | cron, weekdays | start 09:00, stop 17:00 America/Mexico_City |
+| `dev-env-start.yml` | manual | start now |
+| `dev-env-stop.yml` | manual | stop now |
+| `dev-env-power.yml` | `workflow_call` | the shared logic the other three use |
+
+**Start and stop mean `minReplicas` 1 and 0.** That choice is not arbitrary — the two more obvious
+mechanisms do not work:
+
+- `--max-replicas 0` is rejected by the API, which requires `1..1000`.
+- `az containerapp revision deactivate` really does stop a revision (`replicas: 0`, `Stopped`), but
+  `revision activate` answers **405 Method Not Allowed** while an app is in **Single** revision mode,
+  which all eight are. Deactivating is therefore a one-way door, and unusable as half of a start/stop
+  pair. Recovering an app deactivated that way means forcing a new revision with
+  `az containerapp update --revision-suffix ...`.
+
+`minReplicas` is symmetric, immediate, and leaves everything else untouched — importantly it does not
+change ingress, so the gateway keeps the same public FQDN. That matters because
+`AgendaBuddy.MobileApp/appsettings.json` has that hostname compiled in.
+
+**Timezone.** GitHub cron is UTC only, and **Mexico City is UTC-6 all year**: Mexico abolished daylight
+saving in October 2022, so there is no summer/winter split to handle and one fixed pair of UTC times is
+correct in January and July alike. `09:00` local is `15:00Z`; `17:00` local is `23:00Z`. If Mexico ever
+reinstates DST, `dev-env-schedule.yml` needs two more crons and nothing else does.
+
+**Weekends are off**, on the reasoning that a dev environment running through Saturday is pure cost. Use
+the manual start workflow when that is wrong; it does not conflict with the schedule, because the next
+scheduled action is Monday's start and every action is idempotent.
+
+**Stopping is not destroying.** Nothing is deleted: container apps, revisions, images, the Container Apps
+environment, the registry, and the Key Vault with its secrets all survive, and starting returns the same
+deployment on the same URL. A real teardown is `terraform destroy` plus deleting the resource group, and
+is deliberately not behind a button.
+
+**What this does and does not save.** Container Apps consumption is the only scheduled cost. MongoDB
+Atlas is an M0 free cluster, so there is nothing to schedule. The Log Analytics workspace bills for
+ingestion, which drops when nothing is running but is not switched off. A public HTTPS endpoint attracts
+scanners, so a stopped gateway may briefly wake to serve one — seconds of compute, not hours.
+
 ## Rollback
 
 `azd` deploys container app revisions, so the fastest rollback is to shift traffic back to the

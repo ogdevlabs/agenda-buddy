@@ -1,0 +1,25 @@
+name: Dev environment — start
+
+# On demand, for working outside the scheduled window (see dev-env-schedule.yml). Safe to run at any
+# time and safe to run twice: it sets minReplicas to 1 and skips any app already there.
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Environment to start"
+        required: true
+        default: dev
+        type: string
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  start:
+    uses: ./.github/workflows/dev-env-power.yml
+    with:
+      action: start
+      environment: ${{ inputs.environment }}
+    secrets: inherit

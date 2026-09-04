@@ -1,0 +1,40 @@
+name: Dev environment schedule (09:00–17:00 Mexico City, weekdays)
+
+# Cost control for the dev environment. Its eight container apps were deployed with minReplicas 1, so
+# without this they bill continuously, 24/7, for an environment nobody is using at 3am.
+#
+# TIMEZONE. GitHub cron is UTC only, and Mexico City is UTC-6 ALL YEAR: Mexico abolished daylight saving
+# in October 2022, so unlike most of North America there is no summer/winter split to handle and one
+# fixed pair of UTC times is correct in January and July alike. Verified against the tz database rather
+# than assumed.
+#
+#   09:00 America/Mexico_City = 15:00 UTC
+#   17:00 America/Mexico_City = 23:00 UTC
+#
+# If Mexico ever reinstates DST, this file needs two more crons and a guard; nothing else does.
+#
+# WEEKDAYS ONLY (1-5, Monday to Friday). A dev environment running through the weekend is pure cost.
+# Need it on a Saturday? Run "Dev environment — start" by hand; it does not fight the schedule, because
+# the next scheduled action is Monday's start, which is idempotent.
+#
+# GitHub does not guarantee cron punctuality and can delay a scheduled run under load, so treat these as
+# "shortly after" rather than "at". Nothing here is time-critical.
+
+on:
+  schedule:
+    - cron: "0 15 * * 1-5"   # 09:00 Mexico City — start
+    - cron: "0 23 * * 1-5"   # 17:00 Mexico City — stop
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  power:
+    # The two crons share one job; which one fired is the only difference, and github.event.schedule
+    # carries the exact expression that triggered the run.
+    uses: ./.github/workflows/dev-env-power.yml
+    with:
+      action: ${{ github.event.schedule == '0 15 * * 1-5' && 'start' || 'stop' }}
+      environment: dev
+    secrets: inherit
