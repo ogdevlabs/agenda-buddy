@@ -12,10 +12,20 @@ namespace AgendaBuddy.MobileApp.Services;
 /// Registers this device for push and routes a tapped notification to the appointment it is about.
 /// </summary>
 /// <remarks>
-/// ⚠️ <b>Android only.</b> <c>FIREBASE</c> is defined for <c>net10.0-android</c> only, because
-/// <c>Plugin.Firebase.CloudMessaging</c> is excluded for iOS in the csproj — iOS needs a
-/// <c>GoogleService-Info.plist</c>, an APNs key uploaded to Firebase and a push entitlement, none of which can
-/// be provisioned from the repository. On iOS every method here returns without doing anything.
+/// <c>FIREBASE</c> is defined for both mobile TFMs, so this is live on Android and iOS alike.
+/// <para>
+/// <b>The two platforms ask for permission differently.</b> Android needs the <c>POST_NOTIFICATIONS</c>
+/// runtime permission, requested through MAUI. iOS has no equivalent MAUI permission — authorization is
+/// requested by Firebase itself inside <c>CheckIfValidAsync</c>, which calls
+/// <c>UNUserNotificationCenter.RequestAuthorization</c>. So the iOS prompt appears during
+/// <see cref="RegisterTokenAsync"/> rather than before it.
+/// </para>
+/// <para>
+/// iOS additionally needs the <c>aps-environment</c> entitlement and
+/// <c>UIBackgroundModes: remote-notification</c> — the first to receive anything at all, the second so a
+/// data-carrying push reaches the app rather than only drawing a banner. Both are in the repo; the entitlement
+/// is applied at codesign time only.
+/// </para>
 /// <para>
 /// The send side is real: <c>FcmPushSender</c> speaks FCM HTTP v1 as soon as <c>Push:FirebaseProjectId</c> and
 /// <c>Push:ServiceAccountJson</c> are configured, and its data payload key matches
@@ -54,17 +64,23 @@ public class PushNotificationService
     }
 
     /// <summary>
-    /// Asks for permission to display notifications.
+    /// Asks for permission to display notifications. Android only.
     /// </summary>
     /// <remarks>
     /// Required from Android 13 (API 33). Without a granted <c>POST_NOTIFICATIONS</c> the token registers
     /// normally and the OS drops every notification silently, which is the hardest version of this bug to
     /// diagnose: the server reports a successful send and nothing appears. A refusal is not treated as an
     /// error — a token is still worth registering, because the user may grant it later in system settings.
+    /// <para>
+    /// Scoped to <c>#if ANDROID</c> rather than <c>#if FIREBASE</c>: MAUI's <c>PostNotifications</c> permission
+    /// is an Android concept, and on iOS authorization is requested by Firebase inside
+    /// <c>CheckIfValidAsync</c>. Calling it here on iOS would rely on it throwing, which is not a contract
+    /// worth depending on.
+    /// </para>
     /// </remarks>
     internal static async Task RequestDisplayPermissionAsync()
     {
-#if FIREBASE
+#if ANDROID
         try
         {
             if (await Permissions.CheckStatusAsync<Permissions.PostNotifications>() != PermissionStatus.Granted)
@@ -72,7 +88,7 @@ public class PushNotificationService
         }
         catch (Exception)
         {
-            // Not supported on this platform/version. Older Android grants it at install time.
+            // Not supported on this Android version. Pre-13 grants it at install time.
         }
 #else
         await Task.CompletedTask;
@@ -127,6 +143,9 @@ public class PushNotificationService
     internal async Task RegisterTokenAsync()
     {
         string? token = null;
+
+        // Overwritten from DeviceInfo below on every path that actually produces a token; the initial value
+        // only matters because the compiler cannot see that.
         string platform = "android";
 
 #if FIREBASE
