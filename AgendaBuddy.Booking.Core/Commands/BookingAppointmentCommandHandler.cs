@@ -16,7 +16,7 @@ public class BookingAppointmentCommandHandler(
     BookingService bookingService,
     IEventStore eventStore,
     IDateTimeProvider dateTimeProvider,
-    INotificationService notificationService)
+    INotificationDispatcher notificationDispatcher)
     : IRequestHandler<BookAppointmentCommand, Result<AppointmentEntity>>
 {
     public async Task<Result<AppointmentEntity>> Handle(BookAppointmentCommand request, CancellationToken cancellationToken)
@@ -71,15 +71,16 @@ public class BookingAppointmentCommandHandler(
             };
             await eventStore.SaveAsync(successEvent);
 
-            // Tell the provider someone is waiting on them. A request nobody is told about is a request
-            // that sits until the customer chases it. Non-fatal: the appointment is already persisted, and
-            // failing the booking because the notification could not be written would be the wrong trade.
+            // Tell the provider someone is waiting on them, on every channel — a request that only lands in
+            // the in-app inbox is a request that sits until the provider happens to open it. Non-fatal: the
+            // appointment is already persisted, and failing the booking because a notification could not be
+            // delivered would be the wrong trade.
             await NotifyAsync(new NotificationEntity(
                 recipientEmail: appointmentEntity.EmailProvider,
                 subject: "New appointment request",
                 body: BuildRequestBody(appointmentEntity),
                 type: NotificationType.AppointmentRequested,
-                appointmentIdentifier: appointmentEntity.Identifier));
+                appointmentIdentifier: appointmentEntity.Identifier), cancellationToken);
 
             return Result.Ok(appointmentEntity);
         }
@@ -96,22 +97,27 @@ public class BookingAppointmentCommandHandler(
         return Result.Fail<AppointmentEntity>($"No provider found for {appointmentEntity.EmailProvider}");
     }
 
+    /// <summary>
+    /// Delivers a notification without letting its failure fail the operation that caused it. The appointment
+    /// is the thing that had to succeed; an undelivered notification is a degraded experience, not a lost
+    /// booking.
+    /// </summary>
+    /// <remarks>
+    /// Belt and braces: <see cref="INotificationDispatcher"/> already absorbs a per-channel failure, but that
+    /// is a promise made by an implementation this handler does not own, and the invariant being protected
+    /// here is the appointment.
+    /// </remarks>
+    private async Task NotifyAsync(NotificationEntity notification, CancellationToken cancellationToken)
+    {
+        try { await notificationDispatcher.DispatchAsync(notification, cancellationToken); }
+        catch (Exception) { /* the appointment stands regardless */ }
+    }
+
     private static string BuildRequestBody(AppointmentEntity appointment)
     {
         var service = string.IsNullOrWhiteSpace(appointment.ServiceName) ? "a session" : appointment.ServiceName;
         return $"{appointment.EmailCustomer} requested {service} on "
              + $"{appointment.Start.ToLocalTime():dddd d MMMM} at {appointment.Start.ToLocalTime():h:mm tt}.";
-    }
-
-    /// <summary>
-    /// Writes a notification without letting its failure fail the operation that caused it. The appointment
-    /// (or status change) is the thing that had to succeed; a missing notification is a degraded experience,
-    /// not a lost booking.
-    /// </summary>
-    private async Task NotifyAsync(NotificationEntity notification)
-    {
-        try { await notificationService.SendAsync(notification); }
-        catch (Exception) { /* the appointment stands regardless */ }
     }
 
     /// <remarks>

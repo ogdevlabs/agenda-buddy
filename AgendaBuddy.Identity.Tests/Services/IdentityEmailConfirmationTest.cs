@@ -127,9 +127,16 @@ public class IdentityEmailConfirmationTest : IDisposable
             return Task.CompletedTask;
         }
 
-        public Task<IEnumerable<NotificationEntity>> GetForRecipientAsync(string recipientEmail) =>
+        // Identity only ever sends. The read side is answered emptily rather than left unimplemented so a
+        // test that starts reading gets an honest empty inbox, not an exception from the double.
+        public Task<IEnumerable<NotificationEntity>> GetForRecipientAsync(
+            string recipientEmail, int limit = NotificationService.DefaultPageSize, bool unreadOnly = false) =>
             Task.FromResult<IEnumerable<NotificationEntity>>([]);
 
+        public Task<long> CountUnreadAsync(string recipientEmail) => Task.FromResult(0L);
+
         public Task MarkReadAsync(string notificationId) => Task.CompletedTask;
+
+        public Task<long> MarkAllReadAsync(string recipientEmail) => Task.FromResult(0L);
     }
 }

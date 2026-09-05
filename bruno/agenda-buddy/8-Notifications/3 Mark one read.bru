@@ -1,0 +1,18 @@
+meta {
+  name: 3 Mark one read
+  type: http
+  seq: 3
+}
+post {
+  url: {{gatewayUrl}}/api/v1/notifications/{{notificationId}}/read
+  body: none
+}
+docs {
+  `204 No Content`, no body. Owner-only: `403` for anyone but the recipient, which is also the answer
+  for an id that does not exist — so this cannot be used to probe which ids are real.
+
+  Idempotent. `is_read: false` is part of the write's filter, so marking an already-read notification
+  writes nothing rather than replacing the document.
+
+  Set `notificationId` from a `1 List notifications` response first.
+}

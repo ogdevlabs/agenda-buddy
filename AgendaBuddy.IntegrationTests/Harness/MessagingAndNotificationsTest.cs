@@ -274,9 +274,9 @@ public class MessagingAndNotificationsTest(ServiceHostFixture<CustomerAnchor> ho
     [Fact]
     public async Task AnEmptyNotificationListIsTheNormalState_NotAnError()
     {
-        // Nothing writes a notification yet: no domain event calls SendAsync (requirement 19 — storage without
-        // delivery, and for now without production either). A client must render this as "nothing new", and
-        // this test exists so the emptiness is a recorded expectation rather than a mystery.
+        // A brand-new account has an empty inbox, and a client must render that as "nothing new" rather than as
+        // a failure. (Notifications ARE produced now — five call sites across Booking, Customer and Identity —
+        // so this is about a fresh account, not about the feature being unwired.)
         using var service = host.StartService("Production");
 
         var response = await service.Client.SendAsync(Authorised(HttpMethod.Get, "api/v1/notifications", Caller));
@@ -311,6 +311,160 @@ public class MessagingAndNotificationsTest(ServiceHostFixture<CustomerAnchor> ho
             .Find(Builders<NotificationEntity>.Filter.Eq(n => n.Id, notification.Id)).SingleAsync();
         Assert.True(stored.IsRead);
     }
+
+    /// <summary>
+    /// Newest first, in the database. Natural order happens to be insertion order until something deletes a
+    /// document, which is exactly the kind of accident that holds until it does not.
+    /// </summary>
+    [Fact]
+    public async Task TheNotificationListIsNewestFirst()
+    {
+        using var service = host.StartService("Production");
+        var collection = service.Database.GetCollection<NotificationEntity>("notifications");
+
+        // Inserted oldest-last on purpose, so insertion order and the required order disagree.
+        await collection.InsertManyAsync(
+        [
+            Planted("Middle", new DateTime(2026, 9, 2, 12, 0, 0, DateTimeKind.Utc)),
+            Planted("Oldest", new DateTime(2026, 9, 1, 12, 0, 0, DateTimeKind.Utc)),
+            Planted("Newest", new DateTime(2026, 9, 3, 12, 0, 0, DateTimeKind.Utc))
+        ]);
+
+        var response = await service.Client.SendAsync(Authorised(HttpMethod.Get, "api/v1/notifications", Caller));
+        var notifications = await response.Content.ReadFromJsonAsync<List<NotificationEntity>>(HarnessJson.Options);
+
+        Assert.Equal(["Newest", "Middle", "Oldest"], notifications!.Select(n => n.Subject));
+    }
+
+    /// <summary>
+    /// The cap is a security control, so it is applied to the untrusted value where it arrives — clamped rather
+    /// than rejected (ADR-023), because an out-of-range page size is a client bug that must not cost the user
+    /// their inbox.
+    /// </summary>
+    [Theory]
+    [InlineData("?limit=2", 2)]
+    [InlineData("?limit=0", 3)]
+    [InlineData("?limit=-1", 3)]
+    [InlineData("?limit=100000", 3)]
+    public async Task TheNotificationListClampsTheCallersLimitRatherThanRejectingIt(string query, int expected)
+    {
+        using var service = host.StartService("Production");
+        await service.Database.GetCollection<NotificationEntity>("notifications").InsertManyAsync(
+        [
+            Planted("One", new DateTime(2026, 9, 1, 12, 0, 0, DateTimeKind.Utc)),
+            Planted("Two", new DateTime(2026, 9, 2, 12, 0, 0, DateTimeKind.Utc)),
+            Planted("Three", new DateTime(2026, 9, 3, 12, 0, 0, DateTimeKind.Utc))
+        ]);
+
+        var response = await service.Client.SendAsync(
+            Authorised(HttpMethod.Get, $"api/v1/notifications{query}", Caller));
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var notifications = await response.Content.ReadFromJsonAsync<List<NotificationEntity>>(HarnessJson.Options);
+        Assert.Equal(expected, notifications!.Count);
+    }
+
+    [Fact]
+    public async Task TheNotificationListCanBeFilteredToUnreadOnly()
+    {
+        using var service = host.StartService("Production");
+        await service.Database.GetCollection<NotificationEntity>("notifications").InsertManyAsync(
+        [
+            Planted("Unread", new DateTime(2026, 9, 2, 12, 0, 0, DateTimeKind.Utc)),
+            Planted("Read", new DateTime(2026, 9, 1, 12, 0, 0, DateTimeKind.Utc), isRead: true)
+        ]);
+
+        var response = await service.Client.SendAsync(
+            Authorised(HttpMethod.Get, "api/v1/notifications?unreadOnly=true", Caller));
+        var notifications = await response.Content.ReadFromJsonAsync<List<NotificationEntity>>(HarnessJson.Options);
+
+        Assert.Equal("Unread", Assert.Single(notifications!).Subject);
+    }
+
+    /// <summary>
+    /// Counted for the caller alone, so a badge cannot leak the size of somebody else's inbox.
+    /// </summary>
+    [Fact]
+    public async Task TheUnreadCountIsScopedToTheCaller()
+    {
+        using var service = host.StartService("Production");
+        await service.Database.GetCollection<NotificationEntity>("notifications").InsertManyAsync(
+        [
+            Planted("Mine unread", new DateTime(2026, 9, 2, 12, 0, 0, DateTimeKind.Utc)),
+            Planted("Mine read", new DateTime(2026, 9, 1, 12, 0, 0, DateTimeKind.Utc), isRead: true),
+            Planted("Theirs", new DateTime(2026, 9, 2, 12, 0, 0, DateTimeKind.Utc), recipient: Outsider)
+        ]);
+
+        var response = await service.Client.SendAsync(
+            Authorised(HttpMethod.Get, "api/v1/notifications/unread-count", Caller));
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var payload = await response.Content.ReadFromJsonAsync<UnreadCountBody>(HarnessJson.Options);
+        Assert.Equal(1, payload!.UnreadCount);
+    }
+
+    /// <summary>
+    /// Scoped by the caller's own claim, with no address anywhere in the request — so there is nothing for a
+    /// caller to substitute in order to clear somebody else's inbox.
+    /// </summary>
+    [Fact]
+    public async Task MarkAllReadClearsOnlyTheCallersOwnNotifications()
+    {
+        using var service = host.StartService("Production");
+        var collection = service.Database.GetCollection<NotificationEntity>("notifications");
+        await collection.InsertManyAsync(
+        [
+            Planted("Mine A", new DateTime(2026, 9, 2, 12, 0, 0, DateTimeKind.Utc)),
+            Planted("Mine B", new DateTime(2026, 9, 1, 12, 0, 0, DateTimeKind.Utc)),
+            Planted("Theirs", new DateTime(2026, 9, 2, 12, 0, 0, DateTimeKind.Utc), recipient: Outsider)
+        ]);
+
+        var response = await service.Client.SendAsync(
+            Authorised(HttpMethod.Post, "api/v1/notifications/read-all", Caller));
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var payload = await response.Content.ReadFromJsonAsync<MarkAllReadBody>(HarnessJson.Options);
+        Assert.Equal(2, payload!.MarkedRead);
+
+        Assert.Equal(0, await collection.CountDocumentsAsync(
+            Builders<NotificationEntity>.Filter.Eq(n => n.RecipientEmail, Caller)
+            & Builders<NotificationEntity>.Filter.Eq(n => n.IsRead, false)));
+
+        // The outsider's is untouched.
+        var theirs = await collection.Find(
+            Builders<NotificationEntity>.Filter.Eq(n => n.RecipientEmail, Outsider)).SingleAsync();
+        Assert.False(theirs.IsRead);
+    }
+
+    // Zero changed is a success, not a 404: a client that taps it twice must not see an error the second time.
+    [Fact]
+    public async Task MarkAllReadWithNothingUnreadSucceedsWithZero()
+    {
+        using var service = host.StartService("Production");
+
+        var response = await service.Client.SendAsync(
+            Authorised(HttpMethod.Post, "api/v1/notifications/read-all", Caller));
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var payload = await response.Content.ReadFromJsonAsync<MarkAllReadBody>(HarnessJson.Options);
+        Assert.Equal(0, payload!.MarkedRead);
+    }
+
+    private static NotificationEntity Planted(
+        string subject, DateTime createdAtUtc, bool isRead = false, string? recipient = null) =>
+        new()
+        {
+            Id = ObjectId.GenerateNewId(),
+            RecipientEmail = recipient ?? Caller,
+            Subject = subject,
+            Body = subject,
+            CreatedAt = createdAtUtc,
+            IsRead = isRead
+        };
+
+    private sealed record UnreadCountBody(long UnreadCount);
+
+    private sealed record MarkAllReadBody(long MarkedRead);
 
     [Fact]
     public async Task AMessageWithNoRecipientOrNoBodyIsRejected()

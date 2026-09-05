@@ -1,0 +1,13 @@
+meta {
+  name: 2 Unread count
+  type: http
+  seq: 2
+}
+get {
+  url: {{gatewayUrl}}/api/v1/notifications/unread-count
+  body: none
+}
+docs {
+  `{ "unreadCount": <n> }` for the caller alone. Counted in the database, so a badge does not have to
+  fetch the whole inbox to learn there is nothing in it.
+}

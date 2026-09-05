@@ -149,11 +149,19 @@ public class MongoDbRepositoryTest
     }
 
     [Fact]
-    public void IRepository_HasExactlyOnePartialUpdatePrimitive()
+    public void IRepository_HasExactlyTwoPartialUpdatePrimitives_OneSingleDocumentAndOneMulti()
     {
         // PRD requirement 3 forbids this growing into a query-builder abstraction. The cheapest
         // enforcement is a count: the next person who adds FindOneAndUpdateAsync(filter, update,
-        // options) or an UpdateManyAsync has to come here and argue for it.
+        // options) or a second multi-document primitive has to come here and argue for it.
+        //
+        // UpdateManyAsync was the first such argument, and it was accepted. Marking every unread
+        // notification read is one logical operation over N documents; the alternative available here was a
+        // read of N followed by N whole-document ReplaceOneAsync calls, which is precisely the
+        // read-modify-write shape ADR-032 exists to remove — so refusing it would have pushed a caller into
+        // the failure mode this interface is shaped to prevent. It takes the same BsonDocument filter and
+        // BsonDocument update as its single-document sibling, so it adds no new abstraction style, and like
+        // that sibling it never upserts.
         var partialUpdateMembers = typeof(IRepository<>)
             .GetMethods()
             .Where(method => method.Name.Contains("Update", StringComparison.Ordinal))
@@ -162,8 +170,31 @@ public class MongoDbRepositoryTest
             .ToArray();
 
         Assert.Equal(
-            new[] { "FindOneAndUpdateAsync", "UpdateAsync", "UpdateByIdentifierAsync" },
+            new[] { "FindOneAndUpdateAsync", "UpdateAsync", "UpdateByIdentifierAsync", "UpdateManyAsync" },
             partialUpdateMembers);
+    }
+
+    /// <summary>
+    /// The multi-document primitive takes the same filter/update pair as
+    /// <see cref="IRepository{TEntity}.FindOneAndUpdateAsync"/> and returns a count, not documents.
+    /// </summary>
+    /// <remarks>
+    /// The count rather than the post-images is deliberate: returning N documents would make a bulk write as
+    /// expensive as the read it replaces, and no caller so far needs them. A caller that does can read.
+    /// </remarks>
+    [Fact]
+    public void UpdateManyAsync_TakesAFilterAndAnUpdate_AndReturnsHowManyChanged()
+    {
+        var method = typeof(IRepository<>).GetMethod("UpdateManyAsync");
+
+        Assert.NotNull(method);
+        Assert.Equal(
+            new[] { typeof(BsonDocument), typeof(BsonDocument) },
+            method!.GetParameters().Select(parameter => parameter.ParameterType).ToArray());
+        Assert.Equal(
+            new[] { "filter", "update" },
+            method.GetParameters().Select(parameter => parameter.Name).ToArray());
+        Assert.Equal(typeof(Task<long>), method.ReturnType);
     }
 
     [Fact]

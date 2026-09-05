@@ -13,7 +13,7 @@ public class CancelAppointmentCommandHandler(
     IProviderService providerService,
     IBookingService bookingService,
     IEventStore eventStore,
-    INotificationService notificationService) : IRequestHandler<CancelAppointmentCommand, Result<AppointmentEntity>>
+    INotificationDispatcher notificationDispatcher) : IRequestHandler<CancelAppointmentCommand, Result<AppointmentEntity>>
 {
     public async Task<Result<AppointmentEntity>> Handle(CancelAppointmentCommand request, CancellationToken cancellationToken)
     {
@@ -39,9 +39,20 @@ public class CancelAppointmentCommandHandler(
                 // BOTH parties, because the command does not record who cancelled — either may, and the
                 // one who did not needs to know. Telling the canceller as well leaves them a record rather
                 // than guessing wrong about which side to inform.
-                var body = BuildCancelBody(appointmentEntity);
-                await NotifyAsync(appointmentEntity.EmailCustomer, body, appointmentIdentifier);
-                await NotifyAsync(appointmentEntity.EmailProvider, body, appointmentIdentifier);
+                //
+                // A body each, naming the OTHER party. One shared body left both sides unable to tell which
+                // of their appointments it was about; neither body claims who cancelled, because the command
+                // genuinely does not carry that, and inventing it would be worse than omitting it.
+                await NotifyAsync(
+                    appointmentEntity.EmailCustomer,
+                    BuildCancelBody(appointmentEntity, counterparty: appointmentEntity.EmailProvider),
+                    appointmentIdentifier,
+                    cancellationToken);
+                await NotifyAsync(
+                    appointmentEntity.EmailProvider,
+                    BuildCancelBody(appointmentEntity, counterparty: appointmentEntity.EmailCustomer),
+                    appointmentIdentifier,
+                    cancellationToken);
 
                 return Result.Ok(appointmentEntity);
             }
@@ -92,23 +103,29 @@ public class CancelAppointmentCommandHandler(
 
         return await bookingService.CancelAppointmentAsync(identifier);
     }
-    private static string BuildCancelBody(AppointmentEntity appointment)
+    private static string BuildCancelBody(AppointmentEntity appointment, string counterparty)
     {
         var service = string.IsNullOrWhiteSpace(appointment.ServiceName) ? "A session" : appointment.ServiceName;
-        return $"{service} on {appointment.Start.ToLocalTime():dddd d MMMM} at "
+        return $"{service} with {counterparty} on {appointment.Start.ToLocalTime():dddd d MMMM} at "
              + $"{appointment.Start.ToLocalTime():h:mm tt} was cancelled.";
     }
 
-    /// <summary>Never lets a failed notification undo a cancellation that already succeeded.</summary>
-    private async Task NotifyAsync(string recipientEmail, string body, string appointmentIdentifier)
+    /// <summary>
+    /// Never lets an undelivered notification undo a cancellation that already succeeded. Belt and braces over
+    /// <see cref="INotificationDispatcher"/>'s own per-channel absorption — the invariant protected here is the
+    /// cancellation.
+    /// </summary>
+    private async Task NotifyAsync(
+        string recipientEmail, string body, string appointmentIdentifier, CancellationToken cancellationToken)
     {
         try
         {
-            await notificationService.SendAsync(new NotificationEntity(
-                recipientEmail, "Appointment cancelled", body,
-                NotificationType.AppointmentCancelled, appointmentIdentifier));
+            await notificationDispatcher.DispatchAsync(
+                new NotificationEntity(
+                    recipientEmail, "Appointment cancelled", body,
+                    NotificationType.AppointmentCancelled, appointmentIdentifier),
+                cancellationToken);
         }
         catch (Exception) { /* the cancellation stands regardless */ }
     }
-
 }

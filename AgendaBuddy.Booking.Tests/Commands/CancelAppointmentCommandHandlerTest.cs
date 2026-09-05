@@ -31,7 +31,7 @@ public class CancelAppointmentCommandHandlerTest
         providers.Setup(p => p.FindProvidersAsync(It.IsAny<BsonDocument>())).ReturnsAsync(providerEntity);
         providers.Setup(p => p.UpdateProviderAsync(providerEntity.Id.ToString(), providerEntity)).ReturnsAsync(true);
         var eventStore = new Mock<IEventStore>();
-        var handler = new CancelAppointmentCommandHandler(Mock.Of<IMediator>(), providers.Object, bookings.Object, eventStore.Object, Mock.Of<INotificationService>());
+        var handler = new CancelAppointmentCommandHandler(Mock.Of<IMediator>(), providers.Object, bookings.Object, eventStore.Object, Mock.Of<INotificationDispatcher>());
 
         var result = await handler.Handle(new CancelAppointmentCommand { Identifier = "abc123" }, CancellationToken.None);
 
@@ -56,7 +56,7 @@ public class CancelAppointmentCommandHandlerTest
         var providers = new Mock<IProviderService>();
         providers.Setup(p => p.FindProvidersAsync(It.IsAny<BsonDocument>())).ReturnsAsync(providerEntity);
         var eventStore = new Mock<IEventStore>();
-        var handler = new CancelAppointmentCommandHandler(Mock.Of<IMediator>(), providers.Object, bookings.Object, eventStore.Object, Mock.Of<INotificationService>());
+        var handler = new CancelAppointmentCommandHandler(Mock.Of<IMediator>(), providers.Object, bookings.Object, eventStore.Object, Mock.Of<INotificationDispatcher>());
 
         var result = await handler.Handle(new CancelAppointmentCommand { Identifier = "abc123" }, CancellationToken.None);
 
@@ -72,7 +72,7 @@ public class CancelAppointmentCommandHandlerTest
         bookings.Setup(b => b.SearchAppointmentAsync("missing")).ReturnsAsync((AppointmentEntity?)null);
         var eventStore = new Mock<IEventStore>();
         var handler = new CancelAppointmentCommandHandler(
-            Mock.Of<IMediator>(), Mock.Of<IProviderService>(), bookings.Object, eventStore.Object, Mock.Of<INotificationService>());
+            Mock.Of<IMediator>(), Mock.Of<IProviderService>(), bookings.Object, eventStore.Object, Mock.Of<INotificationDispatcher>());
 
         var result = await handler.Handle(new CancelAppointmentCommand { Identifier = "missing" }, CancellationToken.None);
 
@@ -84,13 +84,15 @@ public class CancelAppointmentCommandHandlerTest
     public async Task Handle_NullRequest_ThrowsArgumentNullException()
     {
         var handler = new CancelAppointmentCommandHandler(
-            Mock.Of<IMediator>(), Mock.Of<IProviderService>(), Mock.Of<IBookingService>(), Mock.Of<IEventStore>(), Mock.Of<INotificationService>());
+            Mock.Of<IMediator>(), Mock.Of<IProviderService>(), Mock.Of<IBookingService>(), Mock.Of<IEventStore>(), Mock.Of<INotificationDispatcher>());
 
         await Assert.ThrowsAsync<ArgumentNullException>(() => handler.Handle(null!, CancellationToken.None));
     }
     // ── Notifications ─────────────────────────────────────────────────────────────────────────────
     // The command does not record who cancelled -- either party may -- so both are told rather than
-    // guessing wrong about which side needs to know.
+    // guessing wrong about which side needs to know. Each is told through INotificationDispatcher, which
+    // fans out to email and push as well as the in-app inbox: a cancellation that only lands in an inbox
+    // behind a login reaches whichever party is not currently in the app not at all.
 
     [Fact]
     public async Task Handle_Cancelled_NotifiesBothParties()
@@ -108,19 +110,23 @@ public class CancelAppointmentCommandHandlerTest
         var providers = new Mock<IProviderService>();
         providers.Setup(p => p.FindProvidersAsync(It.IsAny<BsonDocument>())).ReturnsAsync(providerEntity);
         providers.Setup(p => p.UpdateProviderAsync(providerEntity.Id.ToString(), providerEntity)).ReturnsAsync(true);
-        var notifications = new Mock<INotificationService>();
+        var notifications = new Mock<INotificationDispatcher>();
 
         var handler = new CancelAppointmentCommandHandler(
             Mock.Of<IMediator>(), providers.Object, bookings.Object, Mock.Of<IEventStore>(), notifications.Object);
 
         await handler.Handle(new CancelAppointmentCommand { Identifier = "abc123" }, CancellationToken.None);
 
-        notifications.Verify(n => n.SendAsync(It.Is<NotificationEntity>(notification =>
+        // A body each, naming the OTHER party: one shared body left neither side able to tell which of their
+        // appointments it was about.
+        notifications.Verify(n => n.DispatchAsync(It.Is<NotificationEntity>(notification =>
             notification.RecipientEmail == "customer@example.com"
-            && notification.Type == NotificationType.AppointmentCancelled)), Times.Once);
-        notifications.Verify(n => n.SendAsync(It.Is<NotificationEntity>(notification =>
+            && notification.Type == NotificationType.AppointmentCancelled
+            && notification.Body.Contains("provider@example.com")), It.IsAny<CancellationToken>()), Times.Once);
+        notifications.Verify(n => n.DispatchAsync(It.Is<NotificationEntity>(notification =>
             notification.RecipientEmail == "provider@example.com"
-            && notification.Type == NotificationType.AppointmentCancelled)), Times.Once);
+            && notification.Type == NotificationType.AppointmentCancelled
+            && notification.Body.Contains("customer@example.com")), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     // A notification is a courtesy on top of the cancellation, not a precondition for it. The appointment
@@ -141,8 +147,10 @@ public class CancelAppointmentCommandHandlerTest
         var providers = new Mock<IProviderService>();
         providers.Setup(p => p.FindProvidersAsync(It.IsAny<BsonDocument>())).ReturnsAsync(providerEntity);
         providers.Setup(p => p.UpdateProviderAsync(providerEntity.Id.ToString(), providerEntity)).ReturnsAsync(true);
-        var notifications = new Mock<INotificationService>();
-        notifications.Setup(n => n.SendAsync(It.IsAny<NotificationEntity>()))
+        // The dispatcher is contracted never to throw, but this asserts the handler does not DEPEND on that:
+        // the invariant being protected is the cancellation, and it is not the dispatcher's to keep.
+        var notifications = new Mock<INotificationDispatcher>();
+        notifications.Setup(n => n.DispatchAsync(It.IsAny<NotificationEntity>(), It.IsAny<CancellationToken>()))
                      .ThrowsAsync(new InvalidOperationException("notification store down"));
 
         var handler = new CancelAppointmentCommandHandler(

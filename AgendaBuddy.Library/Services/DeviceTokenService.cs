@@ -27,9 +27,12 @@ public class DeviceTokenService(IRepository<DeviceTokenEntity> repository) : IDe
         await repository.InsertAsync(entity);
     }
 
+    /// <remarks>
+    /// Matched in the database. This used to read the whole collection and filter in memory, which was
+    /// survivable only while nothing called it — it is now on the path of every notification that goes out.
+    /// </remarks>
     public async Task<DeviceTokenEntity?> GetByEmailAsync(string userEmail)
     {
-        var all = await repository.GetAllAsync();
-        return all.FirstOrDefault(x => x.UserEmail == userEmail);
+        return await repository.FindOneAsync(new BsonDocument("user_email", userEmail));
     }
 }

@@ -36,7 +36,7 @@ public class ChangeAppointmentStatusCommandHandler(
     ProviderService providerService,
     BookingService bookingService,
     IEventStore eventStore,
-    INotificationService notificationService) : IRequestHandler<ChangeAppointmentStatusCommand, Result<AppointmentEntity>>
+    INotificationDispatcher notificationDispatcher) : IRequestHandler<ChangeAppointmentStatusCommand, Result<AppointmentEntity>>
 {
     public async Task<Result<AppointmentEntity>> Handle(ChangeAppointmentStatusCommand request, CancellationToken cancellationToken)
     {
@@ -88,7 +88,7 @@ public class ChangeAppointmentStatusCommandHandler(
                 AppointmentStatus.Completed => NotificationType.AppointmentCompleted,
                 _ => NotificationType.AppointmentUpdated
             },
-            appointmentIdentifier: request.Identifier));
+            appointmentIdentifier: request.Identifier), cancellationToken);
 
         return Result.Ok(updated);
     }
@@ -105,10 +105,14 @@ public class ChangeAppointmentStatusCommandHandler(
         };
     }
 
-    /// <summary>Never lets a failed notification undo a status change that already succeeded.</summary>
-    private async Task NotifyAsync(NotificationEntity notification)
+    /// <summary>
+    /// Never lets an undelivered notification undo a status change that already succeeded. Belt and braces
+    /// over <see cref="INotificationDispatcher"/>'s own per-channel absorption — the invariant protected here
+    /// is the transition.
+    /// </summary>
+    private async Task NotifyAsync(NotificationEntity notification, CancellationToken cancellationToken)
     {
-        try { await notificationService.SendAsync(notification); }
+        try { await notificationDispatcher.DispatchAsync(notification, cancellationToken); }
         catch (Exception) { /* the transition stands regardless */ }
     }
 

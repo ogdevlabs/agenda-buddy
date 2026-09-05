@@ -1,0 +1,27 @@
+meta {
+  name: 1 List notifications
+  type: http
+  seq: 1
+}
+get {
+  url: {{gatewayUrl}}/api/v1/notifications?limit=50&unreadOnly=false
+  body: none
+}
+params:query {
+  limit: 50
+  unreadOnly: false
+}
+docs {
+  The caller's own inbox, **newest first**, scoped to the `NameIdentifier` claim — there is no address
+  in the request, so nothing here can be pointed at somebody else's list.
+
+  `limit` is **clamped, never rejected** (ADR-023): 1–200, defaulting to 50. `limit=0` or a negative
+  value gets the default; `limit=100000` gets 200. `unreadOnly=true` drops read rows in the database
+  rather than in the client.
+
+  The body is a `NotificationEntity` array — `id`, `recipientEmail`, `subject`, `body`, `type`,
+  `appointmentIdentifier`, `createdAt`, `isRead`. ⚠️ `type` is the **integer** of
+  `NotificationType`: 0 Booked · 1 Updated · 2 Cancelled · 3 Completed · 4 PasswordResetRequested ·
+  5 EmailConfirmationRequested · 6 Requested · 7 MessageReceived. The enum is append-only because the
+  integer is what is persisted.
+}

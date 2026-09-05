@@ -401,6 +401,23 @@
           "NotificationAPI"
         ],
         "operationId": "GetNotifications",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "unreadOnly",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK",
@@ -418,11 +435,32 @@
         }
       }
     },
+    "/api/v1/notifications/unread-count": {
+      "get": {
+        "tags": [
+          "NotificationAPI"
+        ],
+        "operationId": "GetUnreadNotificationCount",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnreadCountResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/notifications/{id}/read": {
       "post": {
         "tags": [
           "NotificationAPI"
         ],
+        "summary": "Marks one notification read. Idempotent: already-read writes nothing.",
         "operationId": "MarkNotificationRead",
         "parameters": [
           {
@@ -437,6 +475,27 @@
         "responses": {
           "204": {
             "description": "No Content"
+          }
+        }
+      }
+    },
+    "/api/v1/notifications/read-all": {
+      "post": {
+        "tags": [
+          "NotificationAPI"
+        ],
+        "summary": "Marks every unread notification read. Returns how many changed; zero is a success.",
+        "operationId": "MarkAllNotificationsRead",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarkAllReadResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -591,6 +650,16 @@
           }
         },
         "additionalProperties": { }
+      },
+      "MarkAllReadResponse": {
+        "type": "object",
+        "properties": {
+          "markedRead": {
+            "type": "integer",
+            "format": "int64"
+          }
+        },
+        "additionalProperties": false
       },
       "MessageEntity": {
         "required": [
@@ -752,6 +821,16 @@
           "success": {
             "type": "boolean",
             "readOnly": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "UnreadCountResponse": {
+        "type": "object",
+        "properties": {
+          "unreadCount": {
+            "type": "integer",
+            "format": "int64"
           }
         },
         "additionalProperties": false

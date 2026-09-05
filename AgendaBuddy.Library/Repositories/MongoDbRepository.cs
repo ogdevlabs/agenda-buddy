@@ -87,6 +87,19 @@ public class MongoDbRepository<TEntity> : IRepository<TEntity> where TEntity : c
     }
 
     /// <inheritdoc />
+    public async Task<IEnumerable<TEntity>> FindAllAsync(BsonDocument filter, BsonDocument sort, int limit)
+    {
+        return await _collection.Find(filter).Sort(sort).Limit(Math.Max(1, limit)).ToListAsync();
+    }
+
+    /// <inheritdoc />
+    public async Task<long> UpdateManyAsync(BsonDocument filter, BsonDocument update)
+    {
+        var result = await _collection.UpdateManyAsync(filter, update);
+        return result.IsAcknowledged ? result.ModifiedCount : 0;
+    }
+
+    /// <inheritdoc />
     /// <remarks>
     /// <c>IsUpsert</c> is left at its default of <c>false</c> and no option sets it — AC-9 depends
     /// on that, and it is stated here because the next person to add an overload will be tempted.

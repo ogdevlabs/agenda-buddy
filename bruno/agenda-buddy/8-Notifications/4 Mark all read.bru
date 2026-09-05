@@ -1,0 +1,16 @@
+meta {
+  name: 4 Mark all read
+  type: http
+  seq: 4
+}
+post {
+  url: {{gatewayUrl}}/api/v1/notifications/read-all
+  body: none
+}
+docs {
+  `{ "markedRead": <n> }`. One multi-document `$set` scoped by the caller's own claim — there is no
+  address in the request to substitute, so it cannot clear anyone else's inbox.
+
+  `read-all`, not `read`, so it can never collide with `{id}/read`. Zero changed is a **success**, not
+  a `404`: tapping it twice must not surface an error the second time.
+}
