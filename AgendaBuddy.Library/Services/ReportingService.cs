@@ -62,9 +62,9 @@ public class ReportingService(IRepository<ProviderEntity> providerRepository) : 
             TotalBookings = appointments.Count,
             CompletedAppointments = completed,
 
-            // Whatever is left once the three live states are accounted for. Cancellation currently
-            // hard-deletes rather than setting AppointmentStatus.Cancelled, so in practice this is 0 — it is
-            // computed rather than hardcoded so it starts working if cancellation ever becomes a soft delete.
+            // Whatever is left once the three live states are accounted for. This now reports real
+            // cancellations: cancellation sets AppointmentStatus.Cancelled on the embedded copy instead of
+            // removing it, so a cancelled appointment is still counted in TotalBookings and shows up here.
             CancelledAppointments = appointments.Count - completed - booked - requested,
 
             UniqueCustomers = customerEmails.Count,

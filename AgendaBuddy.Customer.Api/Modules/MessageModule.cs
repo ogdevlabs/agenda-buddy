@@ -54,7 +54,7 @@ public class MessageModule : ICarterModule
                 ClaimsPrincipal user,
                 IMessageService service,
                 ICustomerService customerService,
-                INotificationService notificationService) =>
+                INotificationDispatcher notificationDispatcher) =>
             {
                 if (request is null || string.IsNullOrWhiteSpace(request.RecipientEmail)
                                     || string.IsNullOrWhiteSpace(request.Body))
@@ -89,12 +89,15 @@ public class MessageModule : ICarterModule
                 await service.SendMessageAsync(message);
 
                 // The recipient is told there is something to read — an inbox nobody is pointed at is an
-                // inbox nobody opens. Non-fatal: the message is already stored, and failing the send
-                // because the notification could not be written would lose the message itself.
+                // inbox nobody opens. The dispatcher decides the channels: in-app and push, deliberately not
+                // email, because a conversation that emails every line is what makes people mute a product.
+                // Non-fatal: the message is already stored, and answering 500 because the notification could
+                // not be delivered would lose the message itself. The dispatcher already absorbs a
+                // per-channel failure; this catch protects the invariant the dispatcher does not own.
                 try
                 {
                     var preview = request.Body.Length <= 120 ? request.Body : request.Body[..117] + "...";
-                    await notificationService.SendAsync(new NotificationEntity(
+                    await notificationDispatcher.DispatchAsync(new NotificationEntity(
                         recipientEmail: request.RecipientEmail,
                         subject: $"New message from {caller}",
                         body: preview,

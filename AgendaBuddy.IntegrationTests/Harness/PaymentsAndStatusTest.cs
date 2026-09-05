@@ -207,8 +207,9 @@ public class PaymentsAndStatusTest(ServiceHostFixture<BookingAnchor> host, Crypt
         Assert.Equal(AppointmentStatus.Requested, (await StoredAsync(service)).AppointmentStatus);
     }
 
+    // Cancelled is NOT in this list. It is a legal transition target now that cancellation is a soft delete --
+    // but only through DELETE /appointments/, not through this status route, which is covered below.
     [Theory]
-    [InlineData("Cancelled")]
     [InlineData("Confirmed")]
     [InlineData("Requested")]
     [InlineData("not-a-status")]
@@ -245,8 +246,21 @@ public class PaymentsAndStatusTest(ServiceHostFixture<BookingAnchor> host, Crypt
             }));
 
         Assert.Equal(HttpStatusCode.NoContent, cancelBooked.StatusCode);
-        Assert.Equal(0, await booked.Database.GetCollection<AppointmentEntity>("appointments")
-            .CountDocumentsAsync(Builders<AppointmentEntity>.Filter.Eq(a => a.Identifier, Appointment)));
+
+        // A SOFT delete: the document survives, carrying Cancelled. It used to be removed outright, which left
+        // no record that the slot had ever been booked -- so reporting could not count a cancellation and a
+        // cancellation notification named an appointment nothing could fetch.
+        var storedAfterCancel = await booked.Database.GetCollection<AppointmentEntity>("appointments")
+            .Find(Builders<AppointmentEntity>.Filter.Eq(a => a.Identifier, Appointment)).SingleAsync();
+        Assert.Equal(AppointmentStatus.Cancelled, storedAfterCancel.AppointmentStatus);
+
+        // The provider's embedded copy is updated in place, not removed -- ReportingService counts from there,
+        // so the two stores disagreeing would make the dashboard report the old status indefinitely.
+        var providerAfterCancel = await booked.Database.GetCollection<ProviderEntity>("providers")
+            .Find(Builders<ProviderEntity>.Filter.Eq(p => p.Email, Provider)).SingleAsync();
+        var embedded = Assert.Single(
+            providerAfterCancel.AppointmentEntities.Where(a => a.Identifier == Appointment));
+        Assert.Equal(AppointmentStatus.Cancelled, embedded.AppointmentStatus);
 
         using var completed = await StartWithAnAppointmentAsync(AppointmentStatus.Completed);
 
@@ -262,8 +276,52 @@ public class PaymentsAndStatusTest(ServiceHostFixture<BookingAnchor> host, Crypt
             }));
 
         Assert.NotEqual(HttpStatusCode.NoContent, cancelCompleted.StatusCode);
-        Assert.Equal(1, await completed.Database.GetCollection<AppointmentEntity>("appointments")
-            .CountDocumentsAsync(Builders<AppointmentEntity>.Filter.Eq(a => a.Identifier, Appointment)));
+
+        // Untouched, and still Completed: "cancel" is not a thing you can do to work already delivered. The
+        // rule is in the update's own filter, so a caller that read Booked before it completed cannot win a
+        // race against it.
+        var storedCompleted = await completed.Database.GetCollection<AppointmentEntity>("appointments")
+            .Find(Builders<AppointmentEntity>.Filter.Eq(a => a.Identifier, Appointment)).SingleAsync();
+        Assert.Equal(AppointmentStatus.Completed, storedCompleted.AppointmentStatus);
+    }
+
+    /// <summary>
+    /// A cancelled appointment frees its slot. This is the half of the soft delete that would be easiest to get
+    /// wrong: keeping the record and still treating it as busy would permanently shrink a provider's bookable
+    /// calendar every time anyone called a session off.
+    /// </summary>
+    [Fact]
+    public async Task ACancelledAppointmentNoLongerBlocksItsSlot()
+    {
+        using var service = await StartWithAnAppointmentAsync(AppointmentStatus.Booked);
+
+        var cancel = await service.Client.SendAsync(Authorised(
+            HttpMethod.Delete, "api/v1/booking/appointments/", Customer, TokenFactory.CustomerRole,
+            new
+            {
+                identifier = Appointment,
+                emailProvider = Provider,
+                emailCustomer = Customer,
+                start = "2026-09-01T10:00:00Z",
+                end = "2026-09-01T11:00:00Z"
+            }));
+        Assert.Equal(HttpStatusCode.NoContent, cancel.StatusCode);
+
+        // Rebooking the same window must now succeed. Before the status clause was added to the overlap filter,
+        // this answered 409: the slot looked free on the calendar and every attempt to take it was refused.
+        var rebook = await service.Client.SendAsync(Authorised(
+            HttpMethod.Post, "api/v1/booking/appointments", Customer, TokenFactory.CustomerRole,
+            new
+            {
+                identifier = Guid.NewGuid().ToString(),
+                emailProvider = Provider,
+                emailCustomer = Customer,
+                start = "2026-09-01T10:00:00Z",
+                end = "2026-09-01T11:00:00Z",
+                dayOff = false
+            }));
+
+        Assert.NotEqual(HttpStatusCode.Conflict, rebook.StatusCode);
     }
 
     // ── Payments ────────────────────────────────────────────────────────────────────────────────────

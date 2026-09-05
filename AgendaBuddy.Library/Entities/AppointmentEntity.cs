@@ -88,6 +88,25 @@ public class AppointmentEntity
     }
 
     /// <summary>
+    /// Moves a requested or booked appointment to <see cref="AppointmentStatus.Cancelled"/>.
+    /// </summary>
+    /// <remarks>
+    /// Either party may cancel, and both <c>Requested</c> and <c>Booked</c> are cancellable — a customer
+    /// withdrawing a request and a provider calling off a confirmed session are the same operation as far as
+    /// the record goes. <c>Completed</c> is not: it is history, and "cancel" is not a thing you can do to work
+    /// that was already delivered. That guard already existed in the cancel handler; it lives here now, with
+    /// the other two transitions.
+    /// </remarks>
+    public void Cancel()
+    {
+        if (AppointmentStatus is AppointmentStatus.Requested or AppointmentStatus.Booked)
+            AppointmentStatus = AppointmentStatus.Cancelled;
+        else
+            throw new InvalidOperationException(
+                "Only requested or booked appointments can be cancelled.");
+    }
+
+    /// <summary>
     /// Moves this appointment to <paramref name="target"/> through the transition rules, and refreshes the
     /// human-readable description to match.
     /// </summary>
@@ -110,10 +129,14 @@ public class AppointmentEntity
     /// method is unreachable by construction rather than silently permitted.
     /// </para>
     /// <para>
-    /// <c>Confirmed</c> and <c>Cancelled</c> are deliberately not reachable. <c>Confirmed</c> is only ever
-    /// produced on a Calendar projection, and <c>Cancelled</c> is never persisted because cancellation
-    /// deletes the document. Adding them is a product question about what those states mean, not a wiring
-    /// gap — see `api-contracts.md` §3.
+    /// <c>Confirmed</c> remains deliberately unreachable: it is only ever produced on a Calendar projection,
+    /// never persisted.
+    /// </para>
+    /// <para>
+    /// <c>Cancelled</c> IS reachable now. Cancellation used to hard-delete the appointment document and drop it
+    /// from the provider's embedded list, which meant the state existed in the enum and was never written —
+    /// and that a cancelled appointment left no record that the slot had ever been booked. It is now a soft
+    /// delete through <see cref="Cancel"/>.
     /// </para>
     /// </remarks>
     public void TransitionTo(AppointmentStatus target)
@@ -126,10 +149,13 @@ public class AppointmentEntity
             case AppointmentStatus.Completed:
                 Complete();
                 break;
+            case AppointmentStatus.Cancelled:
+                Cancel();
+                break;
             default:
                 throw new InvalidOperationException(
                     $"'{target}' is not a state an appointment can be transitioned to. Legal targets are "
-                    + "Booked and Completed.");
+                    + "Booked, Completed and Cancelled.");
         }
 
         AppointmentDescription = EnumHelper<AppointmentStatus>.GetEnumDescription(AppointmentStatus);

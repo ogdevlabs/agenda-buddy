@@ -34,8 +34,28 @@
                                    WidthRequest="22" HeightRequest="22" VerticalOptions="Center" />
                             <Label Grid.Column="1" Text="Notifications" FontSize="16"
                                    TextColor="{StaticResource TextPrimary}" VerticalOptions="Center" />
-                            <Label Grid.Column="2" Text="&#x276F;" FontSize="14"
-                                   TextColor="{StaticResource TextMuted}" VerticalOptions="Center" />
+                            <!--
+                                The unread badge. This row is the only route to Notifications now that it is
+                                not a tab, so without a count here nothing anywhere tells a signed-in user
+                                they have something waiting.
+                            -->
+                            <Grid Grid.Column="2" ColumnDefinitions="Auto,Auto" ColumnSpacing="10">
+                                <Border Grid.Column="0"
+                                        IsVisible="{Binding HasUnread}"
+                                        AutomationId="MoreNotificationsBadge"
+                                        BackgroundColor="#FF3B30"
+                                        StrokeThickness="0"
+                                        Padding="7,2"
+                                        VerticalOptions="Center">
+                                    <Border.StrokeShape>
+                                        <RoundRectangle CornerRadius="10" />
+                                    </Border.StrokeShape>
+                                    <Label Text="{Binding BadgeText}" FontSize="12" FontAttributes="Bold"
+                                           TextColor="White" HorizontalOptions="Center" />
+                                </Border>
+                                <Label Grid.Column="1" Text="&#x276F;" FontSize="14"
+                                       TextColor="{StaticResource TextMuted}" VerticalOptions="Center" />
+                            </Grid>
                         </Grid>
 
                         <BoxView HeightRequest="0.5" Color="{StaticResource BorderLight}" Margin="16,0" />

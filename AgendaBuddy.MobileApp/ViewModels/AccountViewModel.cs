@@ -12,6 +12,12 @@ public partial class AccountViewModel : ObservableObject
     private readonly IAuthService _authService;
     private readonly IUserSessionService _session;
 
+    /// <summary>
+    /// The shared unread badge, cleared on sign-out so the next account on this device does not inherit the
+    /// previous one's count. Optional so the many tests that construct this view model directly need no change.
+    /// </summary>
+    private readonly NotificationBadgeViewModel? _notificationBadge;
+
     [ObservableProperty]
     private string _email = string.Empty;
 
@@ -56,12 +62,14 @@ public partial class AccountViewModel : ObservableObject
         IProviderApiService providerApiService,
         ICustomerApiService customerApiService,
         IAuthService authService,
-        IUserSessionService session)
+        IUserSessionService session,
+        NotificationBadgeViewModel? notificationBadge = null)
     {
         _providerApiService = providerApiService;
         _customerApiService = customerApiService;
         _authService = authService;
         _session = session;
+        _notificationBadge = notificationBadge;
     }
 
     [RelayCommand]
@@ -181,6 +189,11 @@ public partial class AccountViewModel : ObservableObject
     private async Task LogoutAsync()
     {
         await _authService.LogoutAsync();
+
+        // Before the navigation, not after: the badge is a singleton, so a count left standing here is the
+        // previous account's count shown to whoever signs in next.
+        _notificationBadge?.Clear();
+
         LoggedOut?.Invoke(this, EventArgs.Empty);
     }
 

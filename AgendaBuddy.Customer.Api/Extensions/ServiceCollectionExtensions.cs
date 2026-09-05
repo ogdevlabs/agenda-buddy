@@ -34,17 +34,11 @@ public static class ServiceCollectionExtensions
         // Messages and notifications entities have NEVER been persisted, because nothing registered a
         // repository for them. MongoDB creates each collection on first write, so there is no migration.
         var messagesCollection = MongoConnectionResolver.ResolveSetting(configuration, "MessagesCollection", "messages");
-        var notificationsCollection = MongoConnectionResolver.ResolveSetting(configuration, "NotificationsCollection", "notifications");
 
         serviceCollection.AddScoped<IRepository<MessageEntity>>(serviceProvider =>
             new MongoDbRepository<MessageEntity>(
                 serviceProvider.GetRequiredService<IMongoClient>().GetDatabase(databaseName),
                 messagesCollection));
-
-        serviceCollection.AddScoped<IRepository<NotificationEntity>>(serviceProvider =>
-            new MongoDbRepository<NotificationEntity>(
-                serviceProvider.GetRequiredService<IMongoClient>().GetDatabase(databaseName),
-                notificationsCollection));
 
         serviceCollection.AddScoped<ProviderService>();
         serviceCollection.AddScoped<CustomerService>();
@@ -62,7 +56,10 @@ public static class ServiceCollectionExtensions
         serviceCollection.AddScoped<IProviderService>(sp => sp.GetRequiredService<ProviderService>());
 
         serviceCollection.AddScoped<IMessageService, MessageService>();
-        serviceCollection.AddScoped<INotificationService, NotificationService>();
+
+        // Customer owns the read side of the inbox and also produces one notification of its own (a new
+        // message), so it needs the whole delivery set, not just INotificationService.
+        serviceCollection.AddNotificationDelivery(configuration);
 
         return serviceCollection;
     }

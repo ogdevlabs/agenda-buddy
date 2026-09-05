@@ -53,8 +53,19 @@ public partial class BrandHeader : ContentView
 
         BindingContext = viewModel;
 
-        // RefreshAsync does not throw and is a no-op once the name is known for this account.
+        // RefreshAsync does not throw and is a no-op once the name is known for this account. It also brings
+        // the unread badge up to date, which is why the count is current on every screen and not only on the
+        // two that fetch notifications themselves.
         _ = viewModel.RefreshAsync();
+    }
+
+    /// <summary>
+    /// The badge is the only notification affordance on most screens, so it has to be the way in as well as
+    /// the signal. The route is registered globally, so this works from wherever the header is.
+    /// </summary>
+    private async void OnNotificationsTapped(object? sender, TappedEventArgs e)
+    {
+        await Shell.Current.GoToAsync("notifications");
     }
 }
 #endif

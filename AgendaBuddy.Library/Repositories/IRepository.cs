@@ -15,6 +15,39 @@ public interface IRepository<TEntity> where TEntity : class
     Task<IEnumerable<TEntity>> FindAllAsync(BsonDocument filter);
 
     /// <summary>
+    /// The newest <paramref name="limit"/> documents matching <paramref name="filter"/>, in
+    /// <paramref name="sort"/> order.
+    /// </summary>
+    /// <param name="sort">A MongoDB sort document, e.g. <c>{ created_at: -1 }</c>.</param>
+    /// <param name="limit">Maximum documents to return. Values below one are treated as one.</param>
+    /// <remarks>
+    /// The sorted, bounded sibling of <see cref="FindAllAsync(BsonDocument)"/>, which returns every match in
+    /// the database's natural order — so a caller that wants newest-first gets it by accident until something
+    /// deletes a document, and an account's whole history on every read. Both the order and the bound have to
+    /// happen in the database: sorting a full read in memory reintroduces the unbounded load.
+    /// <para>
+    /// Deliberately not a page: an inbox reads the newest N, it does not walk backwards through history, and
+    /// <see cref="GetPagedAsync(BsonDocument,int,int)"/> already covers the case that does. Clamping the
+    /// caller's <paramref name="limit"/> is the endpoint's job (ADR-023: clamp, never reject), as it is there.
+    /// </para>
+    /// </remarks>
+    Task<IEnumerable<TEntity>> FindAllAsync(BsonDocument filter, BsonDocument sort, int limit);
+
+    /// <summary>
+    /// Applies <paramref name="update"/> to every document matching <paramref name="filter"/>, and returns
+    /// how many it changed.
+    /// </summary>
+    /// <param name="update">A MongoDB update document. Never a whole replacement document.</param>
+    /// <returns>The number of documents actually modified — zero when the filter matched nothing.</returns>
+    /// <remarks>
+    /// The many-document sibling of <see cref="FindOneAndUpdateAsync"/>, and like it, <b>it never upserts</b>.
+    /// It exists so a bulk state change (mark every unread notification read) is one round trip and one
+    /// atomic write per document, instead of a read of N followed by N replacements — the shape ADR-032 exists
+    /// to remove. There is no post-image: a caller that needs the documents can read them.
+    /// </remarks>
+    Task<long> UpdateManyAsync(BsonDocument filter, BsonDocument update);
+
+    /// <summary>
     /// One page of the collection, plus the total number of documents in it.
     /// </summary>
     /// <param name="skip">Documents to skip. Negative values are treated as zero.</param>

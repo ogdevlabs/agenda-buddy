@@ -66,6 +66,19 @@ public class InMemoryCredentialRepository : IRepository<CredentialEntity>
         Task.FromResult<IEnumerable<CredentialEntity>>(_store.Where(e =>
             MatchesFilter(e, filter)).ToList());
 
+    // Unimplemented rather than approximated, matching this double's stance everywhere else: no credential
+    // path sorts or bulk-updates, so a plausible-looking stub would only be able to mislead. Implement it
+    // here the day one does.
+    public Task<IEnumerable<CredentialEntity>> FindAllAsync(BsonDocument filter, BsonDocument sort, int limit) =>
+        throw new NotSupportedException(
+            "InMemoryCredentialRepository does not implement sorted, bounded reads. No credential path uses " +
+            "them; implement it here rather than letting a test pass on an order it never applied.");
+
+    public Task<long> UpdateManyAsync(BsonDocument filter, BsonDocument update) =>
+        throw new NotSupportedException(
+            "InMemoryCredentialRepository does not implement multi-document updates. No credential path uses " +
+            "them; implement it here rather than letting a test pass on a write it never applied.");
+
     // ADR-023's repository half. Negatives are normalised to zero to match
     // MongoDbRepository, where Skip(-1) throws rather than being the no-op LINQ makes it.
     public Task<(IEnumerable<CredentialEntity> Items, long TotalCount)> GetPagedAsync(int skip, int take) =>

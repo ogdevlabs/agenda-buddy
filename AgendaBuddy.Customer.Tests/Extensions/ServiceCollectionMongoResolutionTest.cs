@@ -98,7 +98,10 @@ public class ServiceCollectionMongoResolutionTest
 
         // Includes MessageEntity and NotificationEntity, neither of which had ever been persisted
         // because nothing registered a repository for them.
-        Assert.Equal(4, repositories.Count);
+        // DeviceTokenEntity is the fifth, added by AddNotificationDelivery: a new-message notification goes out
+        // by push as well as into the inbox, which means reading the recipient's device token. Bound to
+        // Identity's database because that is where POST /device-token writes it. Read-only from here.
+        Assert.Equal(5, repositories.Count);
         Assert.All(repositories, descriptor => Assert.Equal(ServiceLifetime.Scoped, descriptor.Lifetime));
     }
 }

@@ -28,14 +28,19 @@ public class AvailabilityCalculatorTest
         AppointmentEntities = appointments.ToList()
     };
 
-    private static AppointmentEntity Appt(DateTime startUtc, int minutes, bool dayOff = false) => new()
-    {
-        EmailProvider = "coach@example.com",
-        EmailCustomer = "customer@example.com",
-        Start = startUtc,
-        End = startUtc.AddMinutes(minutes),
-        DayOff = dayOff
-    };
+    private static AppointmentEntity Appt(
+        DateTime startUtc,
+        int minutes,
+        bool dayOff = false,
+        AppointmentStatus status = AppointmentStatus.Booked) => new()
+        {
+            EmailProvider = "coach@example.com",
+            EmailCustomer = "customer@example.com",
+            Start = startUtc,
+            End = startUtc.AddMinutes(minutes),
+            DayOff = dayOff,
+            AppointmentStatus = status
+        };
 
     private static DateTime At(int dayOffset, int hour) =>
         new DateTime(2026, 9, 7, 0, 0, 0, DateTimeKind.Utc).AddDays(dayOffset).AddHours(hour);
@@ -66,6 +71,58 @@ public class AvailabilityCalculatorTest
         Assert.DoesNotContain(At(1, 15), day);
         Assert.Contains(At(1, 12), day);
         Assert.Contains(At(1, 16), day);       // ends exactly as the appointment ends
+    }
+
+    /// <summary>
+    /// A CANCELLED appointment frees its slot.
+    /// </summary>
+    /// <remarks>
+    /// Load-bearing since cancellation became a soft delete: the row stays in the provider's embedded list, so
+    /// without the status filter a cancelled session would keep its slot blocked forever and every cancellation
+    /// would permanently shrink the provider's bookable calendar.
+    /// </remarks>
+    [Fact]
+    public void ACancelledAppointmentDoesNotBlockItsSlot()
+    {
+        var provider = Provider(Appt(At(1, 13), minutes: 180, status: AppointmentStatus.Cancelled));
+
+        var day = AvailabilityCalculator.GetAvailability(provider, NowUtc, days: 2)
+            .Where(s => s.Date == At(1, 0).Date)
+            .ToList();
+
+        Assert.Contains(At(1, 13), day);
+        Assert.Contains(At(1, 14), day);
+        Assert.Contains(At(1, 15), day);
+    }
+
+    [Theory]
+    [InlineData(AppointmentStatus.Requested)]
+    [InlineData(AppointmentStatus.Booked)]
+    [InlineData(AppointmentStatus.Completed)]
+    public void EveryNonCancelledAppointmentStillBlocksItsSlot(AppointmentStatus status)
+    {
+        // A pending request holds the slot too -- offering it to somebody else while the provider decides is
+        // how two people end up booked into one hour.
+        var provider = Provider(Appt(At(1, 13), minutes: 60, status: status));
+
+        var day = AvailabilityCalculator.GetAvailability(provider, NowUtc, days: 2)
+            .Where(s => s.Date == At(1, 0).Date)
+            .ToList();
+
+        Assert.DoesNotContain(At(1, 13), day);
+    }
+
+    // A day off is a day off regardless of status -- a cancelled DAY OFF is not a thing anyone sets, and
+    // treating one as bookable would reopen a day the provider closed.
+    [Fact]
+    public void ADayOffStillBlocksItsWholeDateEvenIfMarkedCancelled()
+    {
+        var provider = Provider(
+            Appt(At(2, 9), minutes: 60, dayOff: true, status: AppointmentStatus.Cancelled));
+
+        var slots = AvailabilityCalculator.GetAvailability(provider, NowUtc, days: 4);
+
+        Assert.DoesNotContain(At(2, 0).Date, slots.Select(s => s.Date));
     }
 
     // A requested duration must not be allowed to run INTO an existing appointment either.

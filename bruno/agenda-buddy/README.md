@@ -5,6 +5,12 @@ Gateway (`api/v1/{service}/**`) the same way `MobileApp` reaches them — plus o
 talks to each service directly, since `/health`/`/alive` are deliberately outside the Gateway's allowlist
 (T-302).
 
+`8-Notifications` is hosted by the **Customer** service but sits at its own top-level `/api/v1/notifications`
+group (ADR-036), not under `/api/v1/customers/**`, which is why it is its own folder rather than more requests
+in `2-Customer`. There is deliberately **no request that creates a notification**: none exists, because a
+create route would let any authenticated caller write a convincing "Your appointment was cancelled" into
+somebody else's list (threat T-208). They are produced by domain events in Booking, Customer and Identity.
+
 This file is for browsing the repo. Bruno's own in-app "Docs" tab on the collection root (`collection.bru`)
 has the same content and is what you'll actually see while working — open the collection in Bruno and click
 the collection name to read it there.
@@ -48,10 +54,26 @@ under the AppHost at all (see the note in `collection.bru`'s docs).
 
 ## Regenerating the OpenAPI specs
 
+⚠️ **`./scripts/generate-openapi.sh` does not produce the committed baselines**, and running it rewrites all
+seven with the wrong bytes. It scrapes each live `/swagger/v1/swagger.json` and reformats with
+`python3 -m json.tool` (4-space), while `docs/api/openapi/*.json` is `OpenApiJsonWriter` output (2-space) —
+so a run fails `OpenApiSpecDriftTest` for every service at once, invisibly, because the integration suite is
+a separate command the unit gate never runs.
+
+To regenerate the baselines:
+
+```bash
+REGENERATE_OPENAPI_BASELINES=1 dotnet test AgendaBuddy.IntegrationTests \
+  /p:MobileWorkloads=false --filter FullyQualifiedName~OpenApiSpecBaselineWriter
+```
+
+The script is still the right tool for **reading** a live spec, or for refreshing `index.md`, which nothing
+else owns:
+
 ```bash
 ./scripts/generate-openapi.sh              # all seven
 ./scripts/generate-openapi.sh Provider     # just one
 ```
 
-Writes `docs/api/openapi/<Service>.json` plus a browsable `index.md`. Safe to run any time — it uses a
-throwaway keypair and a disposable Mongo container, and touches no real data.
+It uses a throwaway keypair and a disposable Mongo container, and touches no real data — but it will leave
+the committed baselines dirty, so revert `docs/api/openapi/*.json` afterwards if you only wanted `index.md`.

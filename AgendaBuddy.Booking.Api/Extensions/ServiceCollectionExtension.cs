@@ -54,17 +54,10 @@ public static class ServiceCollectionExtension
                 paymentsCollection));
 
         // Booking is where appointments are requested, accepted, completed and cancelled, so it is where
-        // the other party has to be told. The collection name matches Customer's, which owns the read side
-        // (GET /api/v1/notifications) — both point at the same documents deliberately.
-        var notificationsCollection =
-            MongoConnectionResolver.ResolveSetting(configuration, "NotificationsCollection", "notifications");
-
-        serviceCollection.AddScoped<IRepository<NotificationEntity>>(serviceProvider =>
-            new MongoDbRepository<NotificationEntity>(
-                serviceProvider.GetRequiredService<IMongoClient>().GetDatabase(databaseName),
-                notificationsCollection));
-
-        serviceCollection.AddScoped<INotificationService, NotificationService>();
+        // the other party has to be told — by email and push as well as in the inbox, because the inbox only
+        // reaches somebody who is already in the app. The notifications collection name matches Customer's,
+        // which owns the read side (GET /api/v1/notifications) — both point at the same documents deliberately.
+        serviceCollection.AddNotificationDelivery(configuration);
 
         serviceCollection.AddScoped<ProviderService>();
         serviceCollection.AddScoped<BookingService>();

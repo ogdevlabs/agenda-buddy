@@ -103,7 +103,10 @@ public class ServiceCollectionMongoResolutionTest
         // registered a repository for them, so this count is asserted rather than left to drift.
         // NotificationEntity is the sixth: Booking is where appointments are requested, accepted and
         // cancelled, so it is where the other party has to be told.
-        Assert.Equal(6, repositories.Count);
+        // DeviceTokenEntity is the seventh, added by AddNotificationDelivery: telling the other party by push
+        // means reading their device token, and it is bound to Identity's database because that is where
+        // POST /device-token writes it. Read-only from here.
+        Assert.Equal(7, repositories.Count);
         Assert.All(repositories, descriptor => Assert.Equal(ServiceLifetime.Scoped, descriptor.Lifetime));
     }
 }

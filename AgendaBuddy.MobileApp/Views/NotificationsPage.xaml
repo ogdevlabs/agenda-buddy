@@ -22,7 +22,7 @@
 
         <controls:BrandHeader Grid.Row="0" />
 
-        <Grid Grid.Row="1" RowDefinitions="Auto,Auto,Auto,*">
+        <Grid Grid.Row="1" RowDefinitions="Auto,Auto,Auto,Auto,*">
 
             <!-- Header -->
             <Grid Grid.Row="0"
@@ -40,12 +40,40 @@
                            TextColor="{StaticResource iOSGray}"
                            VerticalOptions="End"
                            Margin="0,0,0,4"
-                           IsVisible="{Binding UnreadCount}" />
+                           AutomationId="UnreadCountLabel"
+                           IsVisible="{Binding HasUnread}" />
                 </Grid>
             </Grid>
 
+            <!--
+                Filter and bulk-read, pinned above the list rather than inside it: an action that operates on
+                the whole list must not scroll away with the list.
+            -->
+            <Grid Grid.Row="1"
+                  BackgroundColor="White"
+                  Padding="20,0,20,12"
+                  ColumnDefinitions="Auto,*,Auto">
+                <controls:SafeButton Grid.Column="0"
+                        Text="{Binding UnreadFilterLabel}"
+                        Command="{Binding ToggleUnreadFilterCommand}"
+                        AutomationId="UnreadFilterButton"
+                        BackgroundColor="Transparent"
+                        Padding="0"
+                        TextColor="{StaticResource iOSBlue}"
+                        FontSize="14" />
+                <controls:SafeButton Grid.Column="2"
+                        Text="Mark all read"
+                        Command="{Binding MarkAllReadCommand}"
+                        IsEnabled="{Binding CanMarkAllRead}"
+                        AutomationId="MarkAllReadButton"
+                        BackgroundColor="Transparent"
+                        Padding="0"
+                        TextColor="{StaticResource iOSBlue}"
+                        FontSize="14" />
+            </Grid>
+
             <!-- Loading indicator -->
-            <ActivityIndicator Grid.Row="1"
+            <ActivityIndicator Grid.Row="2"
                                IsRunning="{Binding IsLoading}"
                                IsVisible="{Binding IsLoading}"
                                Color="{StaticResource iOSGray}"
@@ -53,7 +81,7 @@
                                Margin="0,24" />
 
             <!-- Error banner -->
-            <Frame Grid.Row="2"
+            <Frame Grid.Row="3"
                    BackgroundColor="#FFF2F2"
                    CornerRadius="10"
                    BorderColor="#FFD6D6"
@@ -78,7 +106,7 @@
             </Frame>
 
             <!-- Empty state -->
-            <VerticalStackLayout Grid.Row="3"
+            <VerticalStackLayout Grid.Row="4"
                                  IsVisible="{Binding IsEmpty}"
                                  VerticalOptions="Center"
                                  HorizontalOptions="Center"
@@ -92,7 +120,7 @@
             </VerticalStackLayout>
 
             <!-- Notifications list (iOS Notification Center style) -->
-            <CollectionView Grid.Row="3"
+            <CollectionView Grid.Row="4"
                             ItemsSource="{Binding Notifications}"
                             IsVisible="{Binding IsEmpty, Converter={StaticResource InvertedBoolConverter}}"
                             SelectionMode="None"
@@ -116,8 +144,8 @@
 
                             <VerticalStackLayout Spacing="0">
 
-                                <!-- Header row: app icon + label + time -->
-                                <Grid ColumnDefinitions="Auto,*,Auto"
+                                <!-- Header row: app icon + label + category + time -->
+                                <Grid ColumnDefinitions="Auto,*,Auto,Auto"
                                       Padding="14,10,14,0"
                                       ColumnSpacing="8">
                                     <!-- Small app icon -->
@@ -129,8 +157,8 @@
                                                  WidthRequest="20"
                                                  HeightRequest="20"
                                                  Color="{StaticResource iOSRed}" />
-                                        <Label Text="A"
-                                               FontSize="11"
+                                        <Label Text="{x:Static infrastructure:AppBrand.Monogram}"
+                                               FontSize="9"
                                                FontAttributes="Bold"
                                                TextColor="White"
                                                HorizontalOptions="Center"
@@ -143,16 +171,25 @@
                                            TextColor="{StaticResource iOSGray}"
                                            VerticalOptions="Center"
                                            CharacterSpacing="0.5" />
+                                    <!-- The category, which used to be the headline. It is a tag, not the news. -->
                                     <Label Grid.Column="2"
+                                           Text="{Binding TypeLabel}"
+                                           TextTransform="Uppercase"
+                                           FontSize="10"
+                                           FontAttributes="Bold"
+                                           TextColor="{StaticResource iOSGray}"
+                                           VerticalOptions="Center"
+                                           CharacterSpacing="0.5" />
+                                    <Label Grid.Column="3"
                                            Text="{Binding TimeAgo}"
                                            FontSize="12"
                                            TextColor="{StaticResource iOSGray}"
                                            VerticalOptions="Center" />
                                 </Grid>
 
-                                <!-- Content -->
+                                <!-- Content: the producer's own subject and body, not a category word and a blank -->
                                 <VerticalStackLayout Padding="14,6,14,14" Spacing="3">
-                                    <Label Text="{Binding TypeLabel}"
+                                    <Label Text="{Binding Title}"
                                            FontSize="15"
                                            FontAttributes="Bold"
                                            TextColor="{StaticResource iOSLabel}" />
@@ -172,6 +209,23 @@
                                            FontSize="13"
                                            TextColor="{StaticResource iOSGray}"
                                            Margin="0,4,0,0" />
+                                    <!--
+                                        The way out of the notification. Only where there is an appointment
+                                        that can still be opened: a message notification carries no identifier,
+                                        and a cancellation names one that has been deleted. A button that
+                                        navigates nowhere is worse than no button.
+                                    -->
+                                    <controls:SafeButton Text="View appointment"
+                                            Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.ViewAppointmentCommand}"
+                                            CommandParameter="{Binding .}"
+                                            IsVisible="{Binding CanOpenAppointment}"
+                                            AutomationId="ViewAppointmentButton"
+                                            BackgroundColor="Transparent"
+                                            Padding="0"
+                                            HorizontalOptions="Start"
+                                            TextColor="{StaticResource iOSBlue}"
+                                            FontAttributes="Bold"
+                                            FontSize="14" />
                                 </VerticalStackLayout>
 
                                 <!-- Unread indicator line at bottom -->

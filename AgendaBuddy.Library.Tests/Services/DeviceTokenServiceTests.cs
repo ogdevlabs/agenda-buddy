@@ -1,7 +1,7 @@
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using AgendaBuddy.Library.Entities;
 using AgendaBuddy.Library.Services;
+using MongoDB.Bson;
 using Moq;
 using Xunit;
 
@@ -21,8 +21,8 @@ public class DeviceTokenServiceTests
     [Fact]
     public async Task UpsertAsync_NewUser_CreatesToken()
     {
-        _repoMock.Setup(r => r.GetAllAsync())
-            .ReturnsAsync(new List<DeviceTokenEntity>());
+        _repoMock.Setup(r => r.FindOneAsync(It.IsAny<BsonDocument>()))
+            .ReturnsAsync((DeviceTokenEntity?)null);
         _repoMock.Setup(r => r.InsertAsync(It.IsAny<DeviceTokenEntity>()))
             .Returns(Task.CompletedTask);
 
@@ -45,8 +45,8 @@ public class DeviceTokenServiceTests
             Token = "old-token",
             Platform = "android"
         };
-        _repoMock.Setup(r => r.GetAllAsync())
-            .ReturnsAsync(new List<DeviceTokenEntity> { existing });
+        _repoMock.Setup(r => r.FindOneAsync(It.IsAny<BsonDocument>()))
+            .ReturnsAsync(existing);
         _repoMock.Setup(r => r.UpdateAsync(It.IsAny<string>(), It.IsAny<DeviceTokenEntity>()))
             .ReturnsAsync(true);
 
@@ -69,21 +69,28 @@ public class DeviceTokenServiceTests
             Token = "tok",
             Platform = "ios"
         };
-        _repoMock.Setup(r => r.GetAllAsync())
-            .ReturnsAsync(new List<DeviceTokenEntity> { entity });
+        BsonDocument? filter = null;
+        _repoMock.Setup(r => r.FindOneAsync(It.IsAny<BsonDocument>()))
+            .Callback<BsonDocument>(f => filter = f)
+            .ReturnsAsync(entity);
 
         var result = await _svc.GetByEmailAsync("found@example.com");
 
         Assert.NotNull(result);
         Assert.Equal("found@example.com", result!.UserEmail);
         Assert.Equal("tok", result.Token);
+
+        // Matched in the database, not by reading the whole collection and filtering in memory. Survivable
+        // while nothing called this; it is now on the path of every notification that goes out.
+        Assert.Equal("found@example.com", filter!["user_email"].AsString);
+        _repoMock.Verify(r => r.GetAllAsync(), Times.Never);
     }
 
     [Fact]
     public async Task GetByEmailAsync_NotFound_ReturnsNull()
     {
-        _repoMock.Setup(r => r.GetAllAsync())
-            .ReturnsAsync(new List<DeviceTokenEntity>());
+        _repoMock.Setup(r => r.FindOneAsync(It.IsAny<BsonDocument>()))
+            .ReturnsAsync((DeviceTokenEntity?)null);
 
         var result = await _svc.GetByEmailAsync("missing@example.com");
 

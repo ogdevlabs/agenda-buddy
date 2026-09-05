@@ -69,6 +69,10 @@ public static class MauiProgram
         // Singleton: the brand header is on every page, so the signed-in user's name is resolved once
         // per account rather than once per navigation.
         builder.Services.AddSingleton<BrandHeaderViewModel>();
+
+        // Singleton for the same reason BrandHeaderViewModel is one: the unread count is shown on more than
+        // one surface, and two copies of it drift the moment one of them is cleared.
+        builder.Services.AddSingleton<NotificationBadgeViewModel>();
         builder.Services.AddTransient<LoginViewModel>();
         builder.Services.AddTransient<RegisterViewModel>();
         builder.Services.AddTransient<DashboardViewModel>();
