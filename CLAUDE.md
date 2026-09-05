@@ -153,8 +153,13 @@ present in configuration** — deliberately unlike `resend-api-key`, which is Cl
 testable against a local emulator so it cannot be Cloud-only, but an unconditional `AddParameter` with no
 user secret resolves to `ValueMissing` and parks every dependent service in `Waiting` with nothing logged
 (ISSUE-001). Injected into **Booking and Customer only** — the two services that produce notifications.
-Firebase project: `agendame-12147`; sender `agendame-push-sender@…` holds `roles/firebasemessaging.admin`
-only, not the broad `firebase-adminsdk` role. `google-services.json` lives at
+Firebase project: `agendame-12147`; sender `agendame-push-sender@…` is a dedicated least-privilege account,
+not the broad `firebase-adminsdk` one. ⚠️ **The IAM role for FCM send is `roles/firebasenotifications.admin`**,
+whose *title* is "Firebase Cloud Messaging Admin" — the id is legacy and does not match the title.
+`roles/firebasemessaging.admin`, the name that reads correctly, **does not exist as a project-grantable role**
+and fails with `INVALID_ARGUMENT: Role ... is not supported for this resource`. Find the real list with
+`gcloud iam list-grantable-roles //cloudresourcemanager.googleapis.com/projects/<id> --filter="name~firebase"`.
+`fcm.googleapis.com` must also be enabled, or every send returns `403 SERVICE_DISABLED`. `google-services.json` lives at
 `AgendaBuddy.MobileApp/Platforms/Android/` and is consumed via a `GoogleServicesJson` item — the Android
 build ignores it otherwise. `CrossFirebase.Initialize` runs on the Android activity's `OnCreate`; **without
 it `CrossFirebaseCloudMessaging.Current` throws and `PushNotificationService` catches, so a missing
