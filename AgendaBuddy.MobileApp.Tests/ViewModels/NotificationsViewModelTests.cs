@@ -344,12 +344,12 @@ public class NotificationsViewModelTests
     }
 
     /// <summary>
-    /// A cancellation names an appointment that has been hard-deleted, so the detail page can fetch nothing and
-    /// would render whatever the navigation supplied — an appointment dated now and marked Requested. No button
-    /// beats a button that invents an appointment.
+    /// A cancellation CAN be opened, now that cancelling is a soft delete — the appointment survives with
+    /// <c>Cancelled</c> status, so the detail page can fetch it and show what was called off. While cancelling
+    /// hard-deleted the document this was suppressed, because the button led to a page that could fetch nothing.
     /// </summary>
     [Fact]
-    public async Task ViewAppointment_OnACancellation_IsNotOfferedAndDoesNothing()
+    public async Task ViewAppointment_OnACancellation_OpensTheCancelledAppointment()
     {
         var rows = new List<NotificationSummary>
         {
@@ -363,31 +363,44 @@ public class NotificationsViewModelTests
             }
         };
         var service = CreateService(rows);
+        service.Setup(s => s.MarkReadAsync("n1", It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
         var vm = new RecordingNotificationsViewModel(
             service.Object, CreateMockSession().Object, new NotificationBadgeViewModel(service.Object));
         await vm.LoadCommand.ExecuteAsync(null);
 
-        // It still names an appointment -- it just cannot be opened.
-        Assert.True(vm.Notifications[0].HasAppointment);
-        Assert.False(vm.Notifications[0].CanOpenAppointment);
+        Assert.True(vm.Notifications[0].CanOpenAppointment);
 
         await vm.ViewAppointmentCommand.ExecuteAsync(vm.Notifications[0]);
 
-        Assert.Null(vm.NavigatedTo);
+        Assert.Equal("appt-42", vm.NavigatedTo);
     }
 
+    /// <summary>
+    /// Every appointment notification can be opened. Kept as a property distinct from
+    /// <c>HasAppointment</c> because "names an appointment" and "can be opened" are different questions, and the
+    /// next state that cannot be opened belongs there rather than in the view.
+    /// </summary>
     [Theory]
-    [InlineData(NotificationType.AppointmentRequested, true)]
-    [InlineData(NotificationType.AppointmentBooked, true)]
-    [InlineData(NotificationType.AppointmentUpdated, true)]
-    [InlineData(NotificationType.AppointmentCompleted, true)]
-    [InlineData(NotificationType.AppointmentCancelled, false)]
-    public void CanOpenAppointment_IsFalseOnlyForACancellation(NotificationType type, bool expected)
+    [InlineData(NotificationType.AppointmentRequested)]
+    [InlineData(NotificationType.AppointmentBooked)]
+    [InlineData(NotificationType.AppointmentUpdated)]
+    [InlineData(NotificationType.AppointmentCompleted)]
+    [InlineData(NotificationType.AppointmentCancelled)]
+    public void CanOpenAppointment_IsTrueForEveryAppointmentNotification(NotificationType type)
     {
-        var row = new NotificationSummary { Type = type, AppointmentIdentifier = "appt-1" };
+        Assert.True(new NotificationSummary { Type = type, AppointmentIdentifier = "appt-1" }.CanOpenAppointment);
+    }
 
-        Assert.Equal(expected, row.CanOpenAppointment);
+    // A message notification carries no identifier, so there is nothing to open.
+    [Fact]
+    public void CanOpenAppointment_IsFalseWithoutAnIdentifier()
+    {
+        Assert.False(new NotificationSummary
+        {
+            Type = NotificationType.MessageReceived,
+            AppointmentIdentifier = string.Empty
+        }.CanOpenAppointment);
     }
 
     /// <summary>

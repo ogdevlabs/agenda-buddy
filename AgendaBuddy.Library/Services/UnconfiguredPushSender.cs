@@ -14,11 +14,9 @@ namespace AgendaBuddy.Library.Services;
 /// need no null check, and honest about having delivered nothing rather than reporting success.
 /// </para>
 /// <para>
-/// <b>This is the whole push path today.</b> Nothing in this solution talks to FCM or APNs. The seam, the
-/// device-token read and every call site are real and exercised; the provider call behind them is not
-/// written, because FCM HTTP v1 needs a service-account credential and APNs needs an Apple push certificate,
-/// and neither can be provisioned from here. Swapping this for an FCM implementation is a change to one
-/// registration.
+/// The real sender is <see cref="FcmPushSender"/>, and <c>AddPushDelivery</c> picks it the moment
+/// <c>Push:FirebaseProjectId</c> and <c>Push:ServiceAccountJson</c> are both present. This class is what runs
+/// on a laptop with no Firebase project, which is the common case and must not be a failure.
 /// </para>
 /// </remarks>
 public class UnconfiguredPushSender(

@@ -92,6 +92,38 @@
 
         </Grid>
 
+        <!--
+            The unread badge, pinned to the right edge of the same row as the centred lockup so the lockup
+            stays centred. Shown ONLY when something is unread: Notifications is not a tab, so without this the
+            count lived on the two screens that already knew about it, and a provider on any other screen was
+            told nothing. A zero-state bell would add chrome to every view for no information.
+        -->
+        <Border Grid.Row="0"
+                IsVisible="{Binding Notifications.HasUnread}"
+                AutomationId="BrandHeaderNotificationBadge"
+                HorizontalOptions="End"
+                VerticalOptions="Center"
+                Margin="0,0,16,0"
+                BackgroundColor="{StaticResource BrandAccent}"
+                Stroke="Transparent"
+                StrokeThickness="0"
+                Padding="9,4">
+            <Border.StrokeShape>
+                <RoundRectangle CornerRadius="12" />
+            </Border.StrokeShape>
+            <Border.GestureRecognizers>
+                <TapGestureRecognizer Tapped="OnNotificationsTapped" />
+            </Border.GestureRecognizers>
+            <HorizontalStackLayout Spacing="5">
+                <Label Text="&#x1F514;" FontSize="12" VerticalOptions="Center" />
+                <Label Text="{Binding Notifications.BadgeText}"
+                       FontSize="12.5"
+                       FontAttributes="Bold"
+                       TextColor="{StaticResource TextPrimary}"
+                       VerticalOptions="Center" />
+            </HorizontalStackLayout>
+        </Border>
+
         <!-- Signature: the one amber line every screen shares, and what keeps the header from bleeding into
              a banner underneath it. -->
         <BoxView Grid.Row="1" Color="{StaticResource BrandAccent}" />

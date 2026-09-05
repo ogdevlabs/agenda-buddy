@@ -12,9 +12,54 @@ public class BookingService(IRepository<AppointmentEntity> appointmentRepository
         return await appointmentRepository.UpdateByIdentifierAsync(identifier, appointmentEntity);
     }
 
+    /// <summary>
+    /// Marks an appointment <see cref="AppointmentStatus.Cancelled"/>, keeping the document.
+    /// </summary>
+    /// <returns><c>false</c> when no cancellable appointment has that identifier.</returns>
+    /// <remarks>
+    /// <para>
+    /// A <b>soft</b> delete. This used to be <c>DeleteByIdentifierAsync</c>, which cost three things: a
+    /// cancelled appointment left no record that the slot had ever been booked (so no-show and revenue
+    /// reporting could not see it), <c>ReportingService.CancelledAppointments</c> could only ever be zero, and
+    /// a cancellation notification named an appointment that could not be fetched.
+    /// </para>
+    /// <para>
+    /// The <c>appointment_status</c> clause in the filter is the concurrency guard and the business rule at
+    /// once: only a <c>Requested</c> or <c>Booked</c> appointment is cancellable, and putting that in the
+    /// filter rather than in a preceding read means two concurrent cancellations cannot both succeed, and a
+    /// completed appointment cannot be cancelled by a caller that read it before it completed. It mirrors
+    /// <see cref="AppointmentEntity.Cancel"/>, which enforces the same rule in memory.
+    /// </para>
+    /// <para>
+    /// The status is written as its integer because that is how the driver serialises the enum, and the
+    /// description alongside it so the stored pair cannot disagree — the same two fields
+    /// <see cref="ChangeStatusAsync"/> writes.
+    /// </para>
+    /// </remarks>
     public async Task<bool> CancelAppointmentAsync(string identifier)
     {
-        return await appointmentRepository.DeleteByIdentifierAsync(identifier);
+        var filter = new BsonDocument
+        {
+            { "identifier", identifier },
+            {
+                "appointment_status", new BsonDocument("$in", new BsonArray
+                {
+                    (int)AppointmentStatus.Requested,
+                    (int)AppointmentStatus.Booked
+                })
+            }
+        };
+
+        var update = new BsonDocument("$set", new BsonDocument
+        {
+            { "appointment_status", (int)AppointmentStatus.Cancelled },
+            {
+                "appointment_description",
+                EnumHelper<AppointmentStatus>.GetEnumDescription(AppointmentStatus.Cancelled)
+            }
+        });
+
+        return await appointmentRepository.FindOneAndUpdateAsync(filter, update) is not null;
     }
 
     public async Task<AppointmentEntity> SearchAppointmentAsync(string identifier)
@@ -40,7 +85,12 @@ public class BookingService(IRepository<AppointmentEntity> appointmentRepository
         {
             { "email_provider", emailProvider },
             { "start", new BsonDocument("$lt", end) },
-            { "end", new BsonDocument("$gt", start) }
+            { "end", new BsonDocument("$gt", start) },
+
+            // A cancelled appointment does not occupy its slot. This clause became load-bearing the moment
+            // cancellation stopped deleting the document: without it, cancelling would free the slot in the
+            // calendar and still refuse every attempt to rebook it.
+            { "appointment_status", new BsonDocument("$ne", (int)AppointmentStatus.Cancelled) }
         };
         return await appointmentRepository.FindAllAsync(filter);
     }

@@ -82,4 +82,21 @@ public interface IProviderService
     /// </summary>
     /// <returns><c>null</c> when no provider matched, which also serves as the existence check.</returns>
     Task<ProviderEntity?> SetWorkHoursAsync(string providerEmail, int startHour, int endHour);
+
+    /// <summary>
+    /// Writes a new status onto one appointment inside a provider's embedded list, via the positional
+    /// <c>$</c> operator so only the matched element changes.
+    /// </summary>
+    /// <returns>
+    /// The updated provider, or <c>null</c> when the provider does not exist or holds no appointment with that
+    /// identifier.
+    /// </returns>
+    /// <remarks>
+    /// On the interface (not just the concrete service) because cancellation needs it: cancelling is a soft
+    /// delete, so it updates the embedded copy's status where it used to remove the element and replace the
+    /// whole provider document. <c>ReportingService</c> counts statuses from the embedded list, so a status
+    /// written to only the <c>appointments</c> collection would leave the dashboard reporting the old value.
+    /// </remarks>
+    Task<ProviderEntity?> ChangeEmbeddedAppointmentStatusAsync(
+        string providerEmail, string identifier, AppointmentStatus status, string description);
 }

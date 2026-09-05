@@ -29,10 +29,52 @@ public class BrandHeaderViewModelTests
     private static BrandHeaderViewModel Build(
         Mock<IUserSessionService> session,
         Mock<IProviderApiService>? providerApi = null,
-        Mock<ICustomerApiService>? customerApi = null) =>
+        Mock<ICustomerApiService>? customerApi = null,
+        Mock<INotificationApiService>? notificationApi = null) =>
         new(session.Object,
             (providerApi ?? new Mock<IProviderApiService>()).Object,
-            (customerApi ?? new Mock<ICustomerApiService>()).Object);
+            (customerApi ?? new Mock<ICustomerApiService>()).Object,
+            new NotificationBadgeViewModel((notificationApi ?? new Mock<INotificationApiService>()).Object));
+
+    /// <summary>
+    /// The header carries the unread badge, because it is the one element every view outside the auth flow
+    /// renders — so refreshing the header is what keeps the count current everywhere.
+    /// </summary>
+    [Fact]
+    public async Task RefreshAlsoBringsTheUnreadBadgeUpToDate()
+    {
+        var providerApi = new Mock<IProviderApiService>();
+        providerApi.Setup(p => p.GetProfileAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                   .ReturnsAsync(new ProfileInfo { Email = ProviderEmail, FirstName = "Sarah", LastName = "Mitchell" });
+
+        var notificationApi = new Mock<INotificationApiService>();
+        notificationApi.Setup(n => n.GetUnreadCountAsync(It.IsAny<CancellationToken>())).ReturnsAsync(4);
+
+        var viewModel = Build(Session(ProviderEmail, "Provider"), providerApi, notificationApi: notificationApi);
+        await viewModel.RefreshAsync();
+
+        Assert.Equal(4, viewModel.Notifications.UnreadCount);
+        Assert.True(viewModel.Notifications.HasUnread);
+        Assert.Equal("4", viewModel.Notifications.BadgeText);
+    }
+
+    // A signed-out header must not keep showing the previous account's unread count.
+    [Fact]
+    public async Task ASignedOutSessionClearsTheUnreadBadgeToo()
+    {
+        var notificationApi = new Mock<INotificationApiService>();
+        notificationApi.Setup(n => n.GetUnreadCountAsync(It.IsAny<CancellationToken>())).ReturnsAsync(4);
+
+        var session = Session(ProviderEmail, "Provider");
+        var viewModel = Build(session, notificationApi: notificationApi);
+        await viewModel.RefreshAsync();
+
+        session.SetupGet(s => s.Email).Returns(string.Empty);
+        await viewModel.RefreshAsync();
+
+        Assert.Equal(0, viewModel.Notifications.UnreadCount);
+        Assert.False(viewModel.Notifications.HasUnread);
+    }
 
     [Fact]
     public async Task ProviderWithAProfileShowsTheirName()

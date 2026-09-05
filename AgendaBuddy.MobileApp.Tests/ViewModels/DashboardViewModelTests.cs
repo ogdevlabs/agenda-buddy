@@ -28,7 +28,8 @@ public class DashboardViewModelTests
                        .ReturnsAsync(profile);
         }
 
-        return new BrandHeaderViewModel(session.Object, providerApi.Object, customerApi.Object);
+        return new BrandHeaderViewModel(session.Object, providerApi.Object, customerApi.Object,
+            new NotificationBadgeViewModel(new Mock<INotificationApiService>().Object));
     }
 
     private static Mock<IUserSessionService> CreateMockSession(string email = "sarah.mitchell@agendabuddy.dev", string role = "Provider")
@@ -164,7 +165,8 @@ public class DashboardGreetingNameTests
         return new DashboardViewModel(
             booking.Object,
             session.Object,
-            new BrandHeaderViewModel(session.Object, providerApi.Object, new Mock<ICustomerApiService>().Object));
+            new BrandHeaderViewModel(session.Object, providerApi.Object, new Mock<ICustomerApiService>().Object,
+                new NotificationBadgeViewModel(new Mock<INotificationApiService>().Object)));
     }
 
     [Fact]

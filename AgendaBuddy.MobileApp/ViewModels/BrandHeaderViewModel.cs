@@ -27,6 +27,21 @@ public partial class BrandHeaderViewModel : ObservableObject
     private readonly IProviderApiService _providerApiService;
     private readonly ICustomerApiService _customerApiService;
 
+    /// <summary>
+    /// The unread notification count, exposed so the header can carry the badge.
+    /// </summary>
+    /// <remarks>
+    /// Composition rather than a second BindingContext: the header already binds to this view model, and the
+    /// badge belongs here because the header is the one element every view outside the auth flow carries.
+    /// Notifications is not a tab (a sixth makes Shell generate its own overflow list), so before this the
+    /// count existed only on the two screens that already knew about it — a provider sitting on Dashboard with
+    /// pending booking requests was told nothing.
+    /// <para>
+    /// Both are singletons, so this is one shared object, not a per-header copy.
+    /// </para>
+    /// </remarks>
+    public NotificationBadgeViewModel Notifications { get; }
+
     /// <summary>The account <see cref="DisplayName"/> was successfully resolved for, so it is not refetched.</summary>
     private string _resolvedFor = string.Empty;
 
@@ -43,11 +58,13 @@ public partial class BrandHeaderViewModel : ObservableObject
     public BrandHeaderViewModel(
         IUserSessionService session,
         IProviderApiService providerApiService,
-        ICustomerApiService customerApiService)
+        ICustomerApiService customerApiService,
+        NotificationBadgeViewModel notifications)
     {
         _session = session;
         _providerApiService = providerApiService;
         _customerApiService = customerApiService;
+        Notifications = notifications;
     }
 
     /// <summary>
@@ -68,6 +85,11 @@ public partial class BrandHeaderViewModel : ObservableObject
             Clear();
             return;
         }
+
+        // Refreshed alongside the header, so the badge is current on whatever screen the reader lands on
+        // rather than only on the two that already knew about notifications. One small count query per
+        // navigation, and it never throws.
+        await Notifications.RefreshAsync(ct);
 
         RoleLabel = FormatRole(_session.Role);
 
@@ -91,6 +113,9 @@ public partial class BrandHeaderViewModel : ObservableObject
         _resolvedFor = string.Empty;
         DisplayName = string.Empty;
         RoleLabel = string.Empty;
+
+        // A signed-out header must not keep showing the previous account's unread count.
+        Notifications.Clear();
     }
 
     private async Task<bool> TryRefreshSessionAsync()

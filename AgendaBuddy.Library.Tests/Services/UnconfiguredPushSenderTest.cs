@@ -49,12 +49,12 @@ public class UnconfiguredPushSenderTest
     }
 
     /// <summary>
-    /// Even fully configured, this implementation still sends nothing — it is the seam, not the provider.
-    /// Replacing it with a real FCM sender is a change to one registration in
-    /// <c>NotificationDeliveryExtensions.AddPushDelivery</c>.
+    /// This implementation sends nothing even when handed credentials — it is the not-configured branch, and
+    /// <c>AddPushDelivery</c> is what makes sure it is only reached when there are none. A test asserting
+    /// otherwise would be asserting that the wrong sender got registered.
     /// </summary>
     [Fact]
-    public async Task EvenWithCredentials_ThisImplementationStillSendsNothing()
+    public async Task ThisImplementationSendsNothingRegardlessOfWhatItIsHanded()
     {
         var sender = Create(new PushOptions
         {

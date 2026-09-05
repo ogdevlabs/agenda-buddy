@@ -74,34 +74,42 @@ public class CancelAppointmentCommandHandler(
             $"Error when trying to cancel appointment identifier: {appointmentIdentifier}");
     }
 
+    /// <summary>
+    /// Cancels the appointment in both places it is stored: the <c>appointments</c> collection and the
+    /// provider's embedded copy.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// A <b>soft</b> delete on both sides now. This used to delete the document and remove the array element,
+    /// which left no record that the slot had ever been booked and made a cancellation notification name an
+    /// appointment nothing could fetch.
+    /// </para>
+    /// <para>
+    /// The embedded side is a positional <c>$set</c> rather than the read-mutate-replace it was: replacing the
+    /// whole provider document to change one appointment's status is the lost-update shape ADR D-9 removed from
+    /// booking, and it would silently discard a concurrent edit to the provider's services or hours.
+    /// </para>
+    /// <para>
+    /// The "is it cancellable" rule is no longer checked here. It lives in
+    /// <c>BookingService.CancelAppointmentAsync</c>'s filter, so the check and the write are one atomic
+    /// operation — a preceding read could see <c>Booked</c>, be overtaken by a completion, and then cancel work
+    /// that had already been delivered. Requested and Booked are both cancellable; Completed is not.
+    /// </para>
+    /// </remarks>
     private async Task<bool> SearchAndCancelAppointment(string identifier)
     {
         var appointment = await bookingService.SearchAppointmentAsync(identifier);
-        var filter = SupportTools<ProviderEntity>.FilterByEmail(appointment.EmailProvider);
-        var provider = await providerService.FindProvidersAsync(filter);
-        if (provider == null) return false;
-        var appointmentToRemove = provider.AppointmentEntities.SingleOrDefault(ap => ap.Identifier == identifier);
-        if (appointmentToRemove == null) return false;
-        var cancelAppointment = await CancelAppointment(identifier);
-        if (!cancelAppointment) return false;
-        provider.AppointmentEntities.Remove(appointmentToRemove);
-        return await providerService.UpdateProviderAsync(provider.Id.ToString(), provider);
-    }
+        if (appointment is null) return false;
 
-    private async Task<bool> CancelAppointment(string identifier)
-    {
-        var appointment = await bookingService.SearchAppointmentAsync(identifier);
+        if (!await bookingService.CancelAppointmentAsync(identifier)) return false;
 
-        // This used to refuse a BOOKED appointment as well as a
-        // completed one, which is backwards: a booked appointment is exactly what a customer needs to be able
-        // to cancel, while a completed one is history. The bug was invisible because nothing in production
-        // ever set Booked — the status transitions were unenforced, so every appointment sat
-        // in Requested forever and cancellation happened to work. Making transitions real activates this,
-        // which is why both are fixed together: shipped separately, the status fix would have
-        // looked like the cause of "customers can no longer cancel their appointments".
-        if (appointment.AppointmentStatus == AppointmentStatus.Completed) return false;
+        await providerService.ChangeEmbeddedAppointmentStatusAsync(
+            appointment.EmailProvider,
+            identifier,
+            AppointmentStatus.Cancelled,
+            EnumHelper<AppointmentStatus>.GetEnumDescription(AppointmentStatus.Cancelled));
 
-        return await bookingService.CancelAppointmentAsync(identifier);
+        return true;
     }
     private static string BuildCancelBody(AppointmentEntity appointment, string counterparty)
     {

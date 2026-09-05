@@ -55,14 +55,14 @@ public partial class NotificationSummary : ObservableObject
     /// Whether the appointment can still be opened.
     /// </summary>
     /// <remarks>
-    /// A cancellation names an appointment that <b>no longer exists</b>: cancelling hard-deletes the document
-    /// (<c>BookingService.CancelAppointmentAsync</c> → <c>DeleteByIdentifierAsync</c>) and removes it from the
-    /// provider's embedded list, which is what the calendar reads. Offering "View appointment" on one sent the
-    /// reader to a detail page that could fetch nothing — and would then render whatever the navigation
-    /// happened to supply, i.e. an appointment dated now and marked Requested. Better to offer no button than
-    /// a button that invents an appointment.
+    /// Every notification that names an appointment can now open it, cancellations included: cancelling is a
+    /// soft delete, so the appointment survives with <c>Cancelled</c> status and the detail page can fetch it.
+    /// This was briefly narrower than <see cref="HasAppointment"/> — cancellation used to hard-delete the
+    /// document, so the button led to a page that could fetch nothing. Kept as a distinct property because
+    /// "names an appointment" and "can be opened" are different questions, and the next state that cannot be
+    /// opened belongs here rather than in the view.
     /// </remarks>
-    public bool CanOpenAppointment => HasAppointment && Type != NotificationType.AppointmentCancelled;
+    public bool CanOpenAppointment => HasAppointment;
 
     /// <summary>
     /// A short category word. Every <see cref="NotificationType"/> is named: falling through to "Info" for

@@ -29,7 +29,9 @@ public class CancelAppointmentCommandHandlerTest
         bookings.Setup(b => b.CancelAppointmentAsync("abc123")).ReturnsAsync(true);
         var providers = new Mock<IProviderService>();
         providers.Setup(p => p.FindProvidersAsync(It.IsAny<BsonDocument>())).ReturnsAsync(providerEntity);
-        providers.Setup(p => p.UpdateProviderAsync(providerEntity.Id.ToString(), providerEntity)).ReturnsAsync(true);
+        providers.Setup(p => p.ChangeEmbeddedAppointmentStatusAsync(
+                       providerEntity.Email, "abc123", AppointmentStatus.Cancelled, It.IsAny<string>()))
+                 .ReturnsAsync(providerEntity);
         var eventStore = new Mock<IEventStore>();
         var handler = new CancelAppointmentCommandHandler(Mock.Of<IMediator>(), providers.Object, bookings.Object, eventStore.Object, Mock.Of<INotificationDispatcher>());
 
@@ -42,27 +44,30 @@ public class CancelAppointmentCommandHandlerTest
     [Fact]
     public async Task Handle_CompletedAppointment_RefusesToCancel_ReturnsFail()
     {
-        // A completed appointment is history, not
-        // cancellable -- the opposite of the original (backwards) rule this codebase used to have.
+        // A completed appointment is history, not cancellable -- the opposite of the original (backwards) rule
+        // this codebase used to have.
+        //
+        // The rule now lives in BookingService.CancelAppointmentAsync's FILTER, not in a check here, so that
+        // the check and the write are one atomic operation: a preceding read could see Booked, be overtaken by
+        // a completion, and then cancel work that had already been delivered. So the handler DOES call the
+        // service, the service matches nothing, and the command fails -- which is what this asserts. The filter
+        // itself is covered by BookingServiceTest.
         var appointment = MakeAppointment(status: AppointmentStatus.Completed);
-        var providerEntity = new ProviderEntity
-        {
-            Id = ObjectId.GenerateNewId(),
-            Email = "provider@example.com",
-            AppointmentEntities = [appointment]
-        };
         var bookings = new Mock<IBookingService>();
         bookings.Setup(b => b.SearchAppointmentAsync("abc123")).ReturnsAsync(appointment);
+        bookings.Setup(b => b.CancelAppointmentAsync("abc123")).ReturnsAsync(false);
         var providers = new Mock<IProviderService>();
-        providers.Setup(p => p.FindProvidersAsync(It.IsAny<BsonDocument>())).ReturnsAsync(providerEntity);
         var eventStore = new Mock<IEventStore>();
         var handler = new CancelAppointmentCommandHandler(Mock.Of<IMediator>(), providers.Object, bookings.Object, eventStore.Object, Mock.Of<INotificationDispatcher>());
 
         var result = await handler.Handle(new CancelAppointmentCommand { Identifier = "abc123" }, CancellationToken.None);
 
         Assert.True(result.IsFailed);
-        bookings.Verify(b => b.CancelAppointmentAsync(It.IsAny<string>()), Times.Never);
         eventStore.Verify(e => e.SaveAsync(It.Is<Event>(ev => ev.Status == "Failed")), Times.Once);
+
+        // Nothing was written to the embedded copy either, so the two stores cannot disagree.
+        providers.Verify(p => p.ChangeEmbeddedAppointmentStatusAsync(
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<AppointmentStatus>(), It.IsAny<string>()), Times.Never);
     }
 
     [Fact]
@@ -109,7 +114,9 @@ public class CancelAppointmentCommandHandlerTest
         bookings.Setup(b => b.CancelAppointmentAsync("abc123")).ReturnsAsync(true);
         var providers = new Mock<IProviderService>();
         providers.Setup(p => p.FindProvidersAsync(It.IsAny<BsonDocument>())).ReturnsAsync(providerEntity);
-        providers.Setup(p => p.UpdateProviderAsync(providerEntity.Id.ToString(), providerEntity)).ReturnsAsync(true);
+        providers.Setup(p => p.ChangeEmbeddedAppointmentStatusAsync(
+                       providerEntity.Email, "abc123", AppointmentStatus.Cancelled, It.IsAny<string>()))
+                 .ReturnsAsync(providerEntity);
         var notifications = new Mock<INotificationDispatcher>();
 
         var handler = new CancelAppointmentCommandHandler(
@@ -146,7 +153,9 @@ public class CancelAppointmentCommandHandlerTest
         bookings.Setup(b => b.CancelAppointmentAsync("abc123")).ReturnsAsync(true);
         var providers = new Mock<IProviderService>();
         providers.Setup(p => p.FindProvidersAsync(It.IsAny<BsonDocument>())).ReturnsAsync(providerEntity);
-        providers.Setup(p => p.UpdateProviderAsync(providerEntity.Id.ToString(), providerEntity)).ReturnsAsync(true);
+        providers.Setup(p => p.ChangeEmbeddedAppointmentStatusAsync(
+                       providerEntity.Email, "abc123", AppointmentStatus.Cancelled, It.IsAny<string>()))
+                 .ReturnsAsync(providerEntity);
         // The dispatcher is contracted never to throw, but this asserts the handler does not DEPEND on that:
         // the invariant being protected is the cancellation, and it is not the dispatcher's to keep.
         var notifications = new Mock<INotificationDispatcher>();

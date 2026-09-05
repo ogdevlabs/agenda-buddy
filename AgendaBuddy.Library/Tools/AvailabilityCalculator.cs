@@ -104,8 +104,13 @@ public static class AvailabilityCalculator
             .Select(appointment => appointment.Start.ToUniversalTime().Date)
             .ToHashSet();
 
+        // A CANCELLED appointment is not busy time. Cancellation is a soft delete, so the row stays in the
+        // provider's embedded list — without this clause a cancelled session would keep its slot blocked
+        // forever, which is the opposite of what cancelling means and would silently shrink a provider's
+        // bookable calendar every time anyone called one off.
         var busy = appointments
-            .Where(appointment => !appointment.DayOff)
+            .Where(appointment => !appointment.DayOff
+                                  && appointment.AppointmentStatus != AppointmentStatus.Cancelled)
             .Select(appointment =>
             {
                 var start = appointment.Start.ToUniversalTime();

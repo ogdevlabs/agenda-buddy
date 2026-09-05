@@ -153,10 +153,11 @@ public partial class AppointmentDetailViewModel : ObservableObject
 
             // Fetched nothing and had nothing to fall back on. The page hides its whole body on
             // HasAppointment, so without a message this renders as a brand header over a blank screen — the
-            // reader is told neither what happened nor what to do. Reached by a notification or push tap,
-            // where the id is all that travels: most often a cancellation, whose appointment is hard-deleted.
+            // reader is told neither what happened nor what to do. Reached by a notification or push tap, where
+            // the id is all that travels. Not a cancellation: cancelling is a soft delete, so a cancelled
+            // appointment still loads and shows its Cancelled status.
             if (Appointment is null)
-                ErrorMessage = "This appointment is no longer available — it may have been cancelled.";
+                ErrorMessage = "This appointment could not be found. It may have been removed.";
         }
         catch (HttpRequestException)
         {
