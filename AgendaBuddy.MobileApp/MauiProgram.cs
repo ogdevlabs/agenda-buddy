@@ -28,8 +28,22 @@ public static class MauiProgram
         // dead push path rather than a visible failure. Hooked to the Android activity's OnCreate because the
         // Android SDK needs a Context, which does not exist yet at this point in the builder.
         builder.ConfigureLifecycleEvents(events =>
+        {
+#if ANDROID
+            // Hooked to the Android activity's OnCreate because the Android SDK needs a Context, which does
+            // not exist yet at this point in the builder.
             events.AddAndroid(android => android.OnCreate((activity, _) =>
-                Plugin.Firebase.Core.Platforms.Android.CrossFirebase.Initialize(activity))));
+                Plugin.Firebase.Core.Platforms.Android.CrossFirebase.Initialize(activity)));
+#elif IOS
+            // WillFinishLaunching, not FinishedLaunching: FirebaseApp.Configure has to run before anything
+            // touches a Firebase API, and returning false here leaves the default launch handling intact.
+            events.AddiOS(ios => ios.WillFinishLaunching((_, _) =>
+            {
+                Plugin.Firebase.Core.Platforms.iOS.CrossFirebase.Initialize();
+                return false;
+            }));
+#endif
+        });
 #endif
 
         // Without this, builder.Configuration is empty and ApiBaseUrlResolver's middle priority --

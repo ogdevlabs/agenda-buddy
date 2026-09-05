@@ -29,7 +29,9 @@
         <SingleProject Condition="'$(MobileWorkloads)' == 'true'">true</SingleProject>
         <!-- MOBILE is true only for the actual mobile TFMs, not the net10.0 fallback slice -->
         <DefineConstants Condition="'$(TargetFramework)' == 'net10.0-android' OR '$(TargetFramework)' == 'net10.0-ios'">$(DefineConstants);MOBILE</DefineConstants>
-        <DefineConstants Condition="'$(TargetFramework)' == 'net10.0-android'">$(DefineConstants);FIREBASE</DefineConstants>
+        <!-- Both mobile TFMs now: iOS gained Firebase once a GoogleService-Info.plist and an APNs key
+             existed. It was android-only before because neither could be provisioned from the repo. -->
+        <DefineConstants Condition="'$(TargetFramework)' == 'net10.0-android' OR '$(TargetFramework)' == 'net10.0-ios'">$(DefineConstants);FIREBASE</DefineConstants>
         <!-- Suppress MA002: explicit package refs are managed via Directory.Build.props overrides -->
         <SkipValidateMauiImplicitPackageReferences>true</SkipValidateMauiImplicitPackageReferences>
         <ApplicationTitle>AgendaMe</ApplicationTitle>
@@ -61,16 +63,20 @@
         <ArchiveOnBuild>true</ArchiveOnBuild>
         <CodesignKey>$(IosCodesignKey)</CodesignKey>
         <CodesignProvision>$(IosCodesignProvision)</CodesignProvision>
+        <!-- Kept OUT of Platforms/iOS/Entitlements.plist on purpose: the iOS SDK auto-detects that exact
+             path and then requires signing for EVERY build, including the unsigned Release build the
+             "Mobile - iOS Build" CI job performs. See the file's own comment. -->
+        <CodesignEntitlements>Signing\PushEntitlements.plist</CodesignEntitlements>
     </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="CommunityToolkit.Maui" Version="9.1.1" Condition="'$(UseMaui)' == 'true'" />
         <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
-        <PackageReference Include="Plugin.Firebase.CloudMessaging" Version="3.0.0" Condition="'$(UseMaui)' == 'true' AND '$(TargetFramework)' != 'net10.0-ios'" />
+        <PackageReference Include="Plugin.Firebase.CloudMessaging" Version="3.0.0" Condition="'$(UseMaui)' == 'true'" />
         <!-- CrossFirebase.Initialize lives here. Without it CrossFirebaseCloudMessaging.Current throws, and
              PushNotificationService catches that - so a missing initialisation is a silently dead push path
              rather than a crash. Same TFM condition as CloudMessaging above. -->
-        <PackageReference Include="Plugin.Firebase.Core" Version="3.0.0" Condition="'$(UseMaui)' == 'true' AND '$(TargetFramework)' != 'net10.0-ios'" />
+        <PackageReference Include="Plugin.Firebase.Core" Version="3.0.0" Condition="'$(UseMaui)' == 'true'" />
         <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.0" />
         <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.0" />
         <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.0" Condition="'$(Configuration)' == 'Debug'" />
@@ -115,5 +121,19 @@
     <ItemGroup Condition="'$(TargetFramework)' == 'net10.0-android'">
         <GoogleServicesJson Include="Platforms\Android\google-services.json" />
     </ItemGroup>
+
+    <!-- The iOS equivalent. BundleResource, not Content: the Firebase SDK reads it from the app bundle root
+         at startup, and Content would place it under a subdirectory where FirebaseApp.Configure cannot find
+         it. NOT a secret - it ships inside every .ipa and carries no private key. -->
+    <ItemGroup Condition="'$(TargetFramework)' == 'net10.0-ios'">
+        <BundleResource Include="Platforms\iOS\GoogleService-Info.plist" LogicalName="GoogleService-Info.plist" />
+    </ItemGroup>
+
+    <!-- Belt and braces over the path choice above: explicitly no entitlements on an unsigned build, so
+         someone adding a conventionally-named Platforms/iOS/Entitlements.plist later cannot silently break
+         the unsigned CI job the way it broke once already. -->
+    <PropertyGroup Condition="'$(TargetFramework)' == 'net10.0-ios' AND '$(IosSigned)' != 'true'">
+        <CodesignEntitlements></CodesignEntitlements>
+    </PropertyGroup>
 
 </Project>
