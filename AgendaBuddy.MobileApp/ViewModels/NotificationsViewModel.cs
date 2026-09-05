@@ -17,6 +17,17 @@ public partial class NotificationsViewModel : ObservableObject
     /// </summary>
     private static readonly TimeSpan MarkReadDelay = TimeSpan.FromSeconds(2);
 
+    /// <summary>
+    /// How many rows to ask for.
+    /// </summary>
+    /// <remarks>
+    /// Sent explicitly rather than left to the route's default. The screen is what knows how many rows it can
+    /// usefully render, and an unstated page size is a coupling to a server constant the client cannot see —
+    /// the same invisible-agreement shape that let the wire contract and the client model drift apart. The
+    /// route clamps it (1–200), so this is a request, not a trusted bound.
+    /// </remarks>
+    public const int PageSize = 50;
+
     [ObservableProperty]
     private List<NotificationSummary> _notifications = new();
 
@@ -76,7 +87,7 @@ public partial class NotificationsViewModel : ObservableObject
 
         try
         {
-            var results = await _notificationApiService.GetNotificationsAsync(unreadOnly: ShowUnreadOnly);
+            var results = await _notificationApiService.GetNotificationsAsync(PageSize, ShowUnreadOnly);
             Notifications = results;
 
             // The unread count comes from the server, not from counting this page: with a filter on or a
@@ -158,7 +169,9 @@ public partial class NotificationsViewModel : ObservableObject
     [RelayCommand]
     private async Task ViewAppointmentAsync(NotificationSummary? notification)
     {
-        if (notification is null || !notification.HasAppointment) return;
+        // CanOpenAppointment, not HasAppointment: a cancellation names an appointment that has been deleted.
+        // Checked here as well as bound to the button's visibility, because a hidden control is not a guard.
+        if (notification is null || !notification.CanOpenAppointment) return;
 
         // Reading it is implied by acting on it, so the row does not stay unread behind an opened appointment.
         if (!notification.IsRead)

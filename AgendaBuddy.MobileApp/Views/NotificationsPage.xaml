@@ -210,14 +210,15 @@
                                            TextColor="{StaticResource iOSGray}"
                                            Margin="0,4,0,0" />
                                     <!--
-                                        The way out of the notification. Only where there is an appointment to
-                                        open: a message notification carries no identifier, and a button that
+                                        The way out of the notification. Only where there is an appointment
+                                        that can still be opened: a message notification carries no identifier,
+                                        and a cancellation names one that has been deleted. A button that
                                         navigates nowhere is worse than no button.
                                     -->
                                     <controls:SafeButton Text="View appointment"
                                             Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.ViewAppointmentCommand}"
                                             CommandParameter="{Binding .}"
-                                            IsVisible="{Binding HasAppointment}"
+                                            IsVisible="{Binding CanOpenAppointment}"
                                             AutomationId="ViewAppointmentButton"
                                             BackgroundColor="Transparent"
                                             Padding="0"

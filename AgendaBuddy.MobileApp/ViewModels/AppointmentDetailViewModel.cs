@@ -150,10 +150,22 @@ public partial class AppointmentDetailViewModel : ObservableObject
         {
             var result = await _bookingApiService.GetAppointmentAsync(AppointmentId);
             Appointment = result ?? fallback;
+
+            // Fetched nothing and had nothing to fall back on. The page hides its whole body on
+            // HasAppointment, so without a message this renders as a brand header over a blank screen — the
+            // reader is told neither what happened nor what to do. Reached by a notification or push tap,
+            // where the id is all that travels: most often a cancellation, whose appointment is hard-deleted.
+            if (Appointment is null)
+                ErrorMessage = "This appointment is no longer available — it may have been cancelled.";
         }
         catch (HttpRequestException)
         {
             Appointment = fallback;
+
+            // A failed request is a different statement from "no longer available", and saying the wrong one
+            // sends the reader to check the wrong thing.
+            if (Appointment is null)
+                ErrorMessage = "Could not load this appointment. Check your connection and try again.";
         }
         finally
         {

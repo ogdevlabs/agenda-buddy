@@ -50,7 +50,26 @@ public partial class AppointmentDetailPage : ContentPage
         base.OnAppearing();
         _viewModel.AppointmentId = AppointmentId;
 
-        var fallback = new AppointmentDetail
+        // Only build a fallback when the navigation actually carried appointment data. A notification tap and a
+        // push tap arrive with the id ALONE, and a fallback built from empty query properties is not a fallback
+        // — it is a fabricated appointment scheduled for "now" and marked Requested, which is what the reader
+        // would then be shown for something that had been cancelled. No fallback means a failed fetch surfaces
+        // as a failed fetch.
+        var fallback = HasNavigationPayload ? BuildFallback() : null;
+
+        _viewModel.LoadWithFallbackCommand.Execute(fallback);
+        _viewModel.LoadNotesCommand.Execute(null);
+    }
+
+    /// <summary>
+    /// Whether the caller supplied enough to render without a fetch. <c>scheduledAt</c> is the tell: every
+    /// caller that has the appointment in hand passes it, and no caller that only has an identifier can.
+    /// </summary>
+    private bool HasNavigationPayload => !string.IsNullOrWhiteSpace(ScheduledAtStr);
+
+    private AppointmentDetail BuildFallback()
+    {
+        return new AppointmentDetail
         {
             Id = AppointmentId,
             CustomerEmail = CustomerEmail,
@@ -66,9 +85,6 @@ public partial class AppointmentDetailPage : ContentPage
             ServiceDurationMinutes = int.TryParse(ServiceDurationMinutesStr, out var minutes) ? minutes : null,
             CustomerNotes = CustomerNotes
         };
-
-        _viewModel.LoadWithFallbackCommand.Execute(fallback);
-        _viewModel.LoadNotesCommand.Execute(null);
     }
 
     private async void OnActionRequested(object? sender, AppointmentActionEventArgs e)

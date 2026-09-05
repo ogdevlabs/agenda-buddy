@@ -48,8 +48,21 @@ public partial class NotificationSummary : ObservableObject
     /// <summary>The grey second line.</summary>
     public string Message => Body;
 
-    /// <summary>Whether tapping through to the appointment is possible at all.</summary>
+    /// <summary>Whether this notification names an appointment at all.</summary>
     public bool HasAppointment => !string.IsNullOrWhiteSpace(AppointmentIdentifier);
+
+    /// <summary>
+    /// Whether the appointment can still be opened.
+    /// </summary>
+    /// <remarks>
+    /// A cancellation names an appointment that <b>no longer exists</b>: cancelling hard-deletes the document
+    /// (<c>BookingService.CancelAppointmentAsync</c> → <c>DeleteByIdentifierAsync</c>) and removes it from the
+    /// provider's embedded list, which is what the calendar reads. Offering "View appointment" on one sent the
+    /// reader to a detail page that could fetch nothing — and would then render whatever the navigation
+    /// happened to supply, i.e. an appointment dated now and marked Requested. Better to offer no button than
+    /// a button that invents an appointment.
+    /// </remarks>
+    public bool CanOpenAppointment => HasAppointment && Type != NotificationType.AppointmentCancelled;
 
     /// <summary>
     /// A short category word. Every <see cref="NotificationType"/> is named: falling through to "Info" for

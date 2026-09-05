@@ -344,6 +344,69 @@ public class NotificationsViewModelTests
     }
 
     /// <summary>
+    /// A cancellation names an appointment that has been hard-deleted, so the detail page can fetch nothing and
+    /// would render whatever the navigation supplied — an appointment dated now and marked Requested. No button
+    /// beats a button that invents an appointment.
+    /// </summary>
+    [Fact]
+    public async Task ViewAppointment_OnACancellation_IsNotOfferedAndDoesNothing()
+    {
+        var rows = new List<NotificationSummary>
+        {
+            new()
+            {
+                Id = "n1",
+                Type = NotificationType.AppointmentCancelled,
+                Subject = "Appointment cancelled",
+                AppointmentIdentifier = "appt-42",
+                IsRead = false
+            }
+        };
+        var service = CreateService(rows);
+
+        var vm = new RecordingNotificationsViewModel(
+            service.Object, CreateMockSession().Object, new NotificationBadgeViewModel(service.Object));
+        await vm.LoadCommand.ExecuteAsync(null);
+
+        // It still names an appointment -- it just cannot be opened.
+        Assert.True(vm.Notifications[0].HasAppointment);
+        Assert.False(vm.Notifications[0].CanOpenAppointment);
+
+        await vm.ViewAppointmentCommand.ExecuteAsync(vm.Notifications[0]);
+
+        Assert.Null(vm.NavigatedTo);
+    }
+
+    [Theory]
+    [InlineData(NotificationType.AppointmentRequested, true)]
+    [InlineData(NotificationType.AppointmentBooked, true)]
+    [InlineData(NotificationType.AppointmentUpdated, true)]
+    [InlineData(NotificationType.AppointmentCompleted, true)]
+    [InlineData(NotificationType.AppointmentCancelled, false)]
+    public void CanOpenAppointment_IsFalseOnlyForACancellation(NotificationType type, bool expected)
+    {
+        var row = new NotificationSummary { Type = type, AppointmentIdentifier = "appt-1" };
+
+        Assert.Equal(expected, row.CanOpenAppointment);
+    }
+
+    /// <summary>
+    /// The page size is sent explicitly. An unstated one is a coupling to a server constant the client cannot
+    /// see — the same invisible agreement that let the wire contract and the client model drift apart.
+    /// </summary>
+    [Fact]
+    public async Task LoadAsync_SendsAnExplicitPageSize()
+    {
+        var service = CreateService(ThreeRows());
+        var vm = CreateViewModel(service, out _);
+
+        await vm.LoadCommand.ExecuteAsync(null);
+
+        service.Verify(s => s.GetNotificationsAsync(
+            NotificationsViewModel.PageSize, false, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    /// <summary>
     /// Captures the navigation instead of performing it — <c>Shell.Current</c> does not exist on the
     /// <c>net10.0</c> test slice.
     /// </summary>
