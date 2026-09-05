@@ -52,15 +52,24 @@ public static class MauiProgram
 
         // HTTP client with named client and JWT delegating handler
         builder.Services.AddTransient<JwtDelegatingHandler>();
+
+        // Resolved once, so the two clients cannot end up pointed at different addresses.
+        var apiBaseUrl = ApiBaseUrlResolver.Resolve(builder.Configuration, Environment.GetEnvironmentVariable);
+#if ANDROID
+        // The emulator is a separate device: localhost inside it is the emulator, not this machine. Only a
+        // loopback address is rewritten, so a deployed https host is untouched.
+        apiBaseUrl = ApiBaseUrlResolver.RemapLoopbackForAndroidEmulator(apiBaseUrl);
+#endif
+
         builder.Services.AddHttpClient("AgendaBuddyApi", client =>
         {
-            client.BaseAddress = new Uri(ApiBaseUrlResolver.Resolve(builder.Configuration, Environment.GetEnvironmentVariable));
+            client.BaseAddress = new Uri(apiBaseUrl);
         }).AddHttpMessageHandler<JwtDelegatingHandler>();
 
         // No-auth client for login (no JWT handler — token doesn't exist yet)
         builder.Services.AddHttpClient("AgendaBuddyApiNoAuth", client =>
         {
-            client.BaseAddress = new Uri(ApiBaseUrlResolver.Resolve(builder.Configuration, Environment.GetEnvironmentVariable));
+            client.BaseAddress = new Uri(apiBaseUrl);
         });
 
         // User session (singleton — decoded JWT cached across pages)

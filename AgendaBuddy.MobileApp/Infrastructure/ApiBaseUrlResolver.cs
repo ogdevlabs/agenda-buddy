@@ -28,8 +28,43 @@ public static class ApiBaseUrlResolver
     /// </summary>
     public static readonly string DefaultBaseUrl = LocalGatewayAddress.BaseUrl;
 
+    /// <summary>
+    /// The address the Android emulator reaches the HOST machine on. <c>localhost</c> inside the emulator is
+    /// the emulator itself.
+    /// </summary>
+    internal const string AndroidEmulatorHostAlias = "10.0.2.2";
+
     public static string Resolve(IConfiguration configuration, Func<string, string?> getEnvironmentVariable) =>
         getEnvironmentVariable("MAUI_API_BASE_URL")
             ?? configuration["ApiBaseUrl"]
             ?? DefaultBaseUrl;
+
+    /// <summary>
+    /// Rewrites a loopback host to the alias the Android emulator reaches the host machine on.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Applied on Android only, and only to a loopback address. An emulator is a separate device: pointing it
+    /// at <c>localhost:6080</c> makes it dial itself, where nothing listens, and every request fails in a way
+    /// that looks like a dead backend. The iOS simulator shares the host's network stack and needs no
+    /// rewriting, which is why this cannot live in <see cref="Resolve"/> for every platform.
+    /// </para>
+    /// <para>
+    /// A deployed address is returned untouched — the test for that is the point, because a rewrite that fired
+    /// on a real hostname would silently redirect a production build at a private address.
+    /// </para>
+    /// </remarks>
+    public static string RemapLoopbackForAndroidEmulator(string baseUrl)
+    {
+        if (string.IsNullOrWhiteSpace(baseUrl)) return baseUrl;
+
+        if (!Uri.TryCreate(baseUrl, UriKind.Absolute, out var uri)) return baseUrl;
+
+        var isLoopback = uri.IsLoopback
+            || string.Equals(uri.Host, "localhost", StringComparison.OrdinalIgnoreCase);
+
+        if (!isLoopback) return baseUrl;
+
+        return new UriBuilder(uri) { Host = AndroidEmulatorHostAlias }.Uri.ToString();
+    }
 }
