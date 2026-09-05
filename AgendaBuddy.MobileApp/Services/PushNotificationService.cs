@@ -49,7 +49,34 @@ public class PushNotificationService
     public async Task InitializeAsync()
     {
         SubscribeToTaps();
+        await RequestDisplayPermissionAsync();
         await RegisterTokenAsync();
+    }
+
+    /// <summary>
+    /// Asks for permission to display notifications.
+    /// </summary>
+    /// <remarks>
+    /// Required from Android 13 (API 33). Without a granted <c>POST_NOTIFICATIONS</c> the token registers
+    /// normally and the OS drops every notification silently, which is the hardest version of this bug to
+    /// diagnose: the server reports a successful send and nothing appears. A refusal is not treated as an
+    /// error — a token is still worth registering, because the user may grant it later in system settings.
+    /// </remarks>
+    internal static async Task RequestDisplayPermissionAsync()
+    {
+#if FIREBASE
+        try
+        {
+            if (await Permissions.CheckStatusAsync<Permissions.PostNotifications>() != PermissionStatus.Granted)
+                await Permissions.RequestAsync<Permissions.PostNotifications>();
+        }
+        catch (Exception)
+        {
+            // Not supported on this platform/version. Older Android grants it at install time.
+        }
+#else
+        await Task.CompletedTask;
+#endif
     }
 
     /// <summary>

@@ -67,6 +67,10 @@
         <PackageReference Include="CommunityToolkit.Maui" Version="9.1.1" Condition="'$(UseMaui)' == 'true'" />
         <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
         <PackageReference Include="Plugin.Firebase.CloudMessaging" Version="3.0.0" Condition="'$(UseMaui)' == 'true' AND '$(TargetFramework)' != 'net10.0-ios'" />
+        <!-- CrossFirebase.Initialize lives here. Without it CrossFirebaseCloudMessaging.Current throws, and
+             PushNotificationService catches that - so a missing initialisation is a silently dead push path
+             rather than a crash. Same TFM condition as CloudMessaging above. -->
+        <PackageReference Include="Plugin.Firebase.Core" Version="3.0.0" Condition="'$(UseMaui)' == 'true' AND '$(TargetFramework)' != 'net10.0-ios'" />
         <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.0" />
         <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.0" />
         <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.0" Condition="'$(Configuration)' == 'Debug'" />
@@ -103,6 +107,13 @@
     <ItemGroup>
         <EmbeddedResource Include="appsettings.json" LogicalName="appsettings.json" />
         <EmbeddedResource Include="appsettings.Development.json" LogicalName="appsettings.Development.json" />
+    </ItemGroup>
+
+    <!-- The Android build does not pick this up by file name; the Firebase bindings' targets consume the
+         GoogleServicesJson item. Without it the app has no Firebase config baked in and token registration
+         fails at runtime. NOT a secret: it ships inside every APK, and carries no private key. -->
+    <ItemGroup Condition="'$(TargetFramework)' == 'net10.0-android'">
+        <GoogleServicesJson Include="Platforms\Android\google-services.json" />
     </ItemGroup>
 
 </Project>

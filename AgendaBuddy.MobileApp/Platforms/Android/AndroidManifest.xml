@@ -3,4 +3,8 @@
 	<application android:allowBackup="true" android:icon="@mipmap/appicon" android:roundIcon="@mipmap/appicon_round" android:supportsRtl="true"></application>
 	<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 	<uses-permission android:name="android.permission.INTERNET" />
+	<!-- Required from API 33 to DISPLAY a notification at all; granting it is a runtime prompt, which
+	     PushNotificationService asks for before registering a token. Without this the token registers
+	     and every notification is dropped silently by the OS. -->
+	<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 </manifest>
