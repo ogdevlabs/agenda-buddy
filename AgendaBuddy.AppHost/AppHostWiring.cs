@@ -61,6 +61,27 @@ internal static class AppHostWiring
         // startup naming the key.
         IResourceBuilder<ParameterResource>? resendApiKey = null;
 
+        // Push delivery, declared in BOTH shapes but only when a value actually exists — which is why this
+        // does not follow resendApiKey's cloud-only pattern. Push has to be testable on a local emulator, so
+        // it cannot be cloud-only; but an unconditional AddParameter with no user secret resolves to
+        // ValueMissing and parks every service that references it in Waiting with nothing logged (ISSUE-001).
+        // Reading configuration first is what lets a machine with credentials get push and a machine without
+        // get a working graph. Without them, AddPushDelivery resolves UnconfiguredPushSender, which logs and
+        // names the missing key.
+        //
+        // Both are required together: a project id with no credential cannot mint a token, and a credential
+        // with no project id has no URL to send to. Declaring only one would produce a service that looks
+        // configured and fails at send time.
+        IResourceBuilder<ParameterResource>? pushProjectId = null;
+        IResourceBuilder<ParameterResource>? pushServiceAccountJson = null;
+
+        if (!string.IsNullOrWhiteSpace(builder.Configuration["Parameters:push-firebase-project-id"])
+            && !string.IsNullOrWhiteSpace(builder.Configuration["Parameters:push-service-account-json"]))
+        {
+            pushProjectId = builder.AddParameter("push-firebase-project-id");
+            pushServiceAccountJson = builder.AddParameter("push-service-account-json", secret: true);
+        }
+
         // Two logical databases, matching what the services already expect: the six domain services
         // share agenda_buddy, Identity owns IdentityDb. The resource name is hyphenated because
         // ASPIRE006 rejects underscores; the second argument keeps the physical name.
@@ -115,8 +136,8 @@ internal static class AppHostWiring
         // to (ARCHITECTURE.md D-4).
         var identity = AddApi<Projects.AgendaBuddy_Identity>(
             "identity", identityDb, needsPrivateKey: true, spendsBcrypt: true, needsEmailDelivery: true);
-        var booking = AddApi<Projects.AgendaBuddy_Booking_Api>("booking", agendaDb);
-        var customer = AddApi<Projects.AgendaBuddy_Customer_Api>("customer", agendaDb);
+        var booking = AddApi<Projects.AgendaBuddy_Booking_Api>("booking", agendaDb, needsPushDelivery: true);
+        var customer = AddApi<Projects.AgendaBuddy_Customer_Api>("customer", agendaDb, needsPushDelivery: true);
         var provider = AddApi<Projects.AgendaBuddy_Provider_Api>("provider", agendaDb);
         var calendar = AddApi<Projects.AgendaBuddy_Calendar_Api>("calendar", agendaDb);
         var services = AddApi<Projects.AgendaBuddy_Services_Api>("services", agendaDb);
@@ -164,7 +185,8 @@ internal static class AppHostWiring
             IResourceBuilder<IResourceWithConnectionString> database,
             bool needsPrivateKey = false,
             bool spendsBcrypt = false,
-            bool needsEmailDelivery = false)
+            bool needsEmailDelivery = false,
+            bool needsPushDelivery = false)
             where TProject : IProjectMetadata, new()
         {
             // launchProfileName: null keeps Aspire from adopting the launch profile's
@@ -226,6 +248,15 @@ internal static class AppHostWiring
             // injected and ResendEmailSender degrades to a logged no-op.
             if (needsEmailDelivery && resendApiKey is not null)
                 service.WithEnvironment("Email__ApiKey", resendApiKey);
+
+            // Booking and Customer are the two services that PRODUCE notifications, so they are the two that
+            // need to reach FCM. Null when no credentials are configured, so nothing is injected and
+            // AddPushDelivery falls back to UnconfiguredPushSender.
+            if (needsPushDelivery && pushProjectId is not null && pushServiceAccountJson is not null)
+            {
+                service.WithEnvironment("Push__FirebaseProjectId", pushProjectId);
+                service.WithEnvironment("Push__ServiceAccountJson", pushServiceAccountJson);
+            }
 
             if (mongoToWaitFor is not null) service.WaitFor(mongoToWaitFor);
 

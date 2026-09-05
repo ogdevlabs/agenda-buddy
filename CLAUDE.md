@@ -12,7 +12,7 @@ Agenda Buddy is a scheduling and appointment management platform for independent
 - **Result/validation:** FluentResults (`Result`/`Result<T>` returned by every Booking/Calendar/Customer/Provider/Services/Profession command/query handler, replacing a string-sniffed `"exception"`-prefix convention), Validot (declarative `Specification<T>` DSL — partially migrated, only 3 of Booking's 10 routes use it), GuardClauses (package id `GuardClauses`, not Ardalis — `GuardClause.ArgumentIsNotNull`). Mapster is ADR-049-approved for this line but has no call sites yet
 - **Caching:** IDistributedCache (cache-aside pattern, 5-min TTL)
 - **Observability:** OpenTelemetry traces/metrics/logs via ServiceDefaults, exported to the Aspire dashboard
-- **Testing:** xUnit — **1447 tests total** (measured 2026-09-05), in **three separate suites** that no single command runs: **726** across backend test projects (`agenda-buddy-backend.slnf`; the slnf also carries `AgendaBuddy.Gateway` itself, a non-test project), **345** in `AgendaBuddy.IntegrationTests` (real services — including the Gateway — over HTTP against a MongoDB Testcontainer — needs a container runtime), and **376** in `AgendaBuddy.MobileApp.Tests` (369 passing, 7 skipped — the skip is deliberate: `AuthAcceptanceTests` needs a live Identity service reachable at `IDENTITY_BASE_URL`/`localhost:6036` and gracefully `Skip.If`s when nothing's listening, not a bug)
+- **Testing:** xUnit — **1455 tests total** (measured 2026-09-05), in **three separate suites** that no single command runs: **734** across backend test projects (`agenda-buddy-backend.slnf`; the slnf also carries `AgendaBuddy.Gateway` itself, a non-test project), **345** in `AgendaBuddy.IntegrationTests` (real services — including the Gateway — over HTTP against a MongoDB Testcontainer — needs a container runtime), and **376** in `AgendaBuddy.MobileApp.Tests` (369 passing, 7 skipped — the skip is deliberate: `AuthAcceptanceTests` needs a live Identity service reachable at `IDENTITY_BASE_URL`/`localhost:6036` and gracefully `Skip.If`s when nothing's listening, not a bug)
 - **Infrastructure:** Aspire AppHost (primary local) · Docker + Docker Compose (legacy fallback) · GitHub Actions CI
 - **Security scanning (F-017):** every PR runs `dotnet list package --vulnerable` (dependency audit) and `gitleaks` (secret scan, full PR diff history) unconditionally — see `.gitleaks.toml` and the `security-scan` CI job. Every PR touching a service/`.csproj`/Compose file also builds and Trivy-scans a container image for each of the 7 remaining services via `docker-build-and-scan` — no Dockerfile involved, see the caveat below
 
@@ -42,7 +42,7 @@ Agenda Buddy is a scheduling and appointment management platform for independent
 - **Dev server (primary):** `dotnet run --project AgendaBuddy.AppHost` — starts MongoDB, all 7 services, and the Gateway — 8 processes total
 - **Dev server (legacy):** `docker compose -f docker-compose.yml -f docker-compose.override.yml up -d`
 - **Build:** `dotnet build --no-restore` (or `dotnet build agenda-buddy.sln` for the full solution, including `AgendaBuddy.MobileApp`/`AgendaBuddy.IntegrationTests` which the backend slnf excludes)
-- **Test (backend, 726 tests):** `dotnet test agenda-buddy-backend.slnf --collect:"XPlat Code Coverage"` — use the solution filter, not the full solution
+- **Test (backend, 734 tests):** `dotnet test agenda-buddy-backend.slnf --collect:"XPlat Code Coverage"` — use the solution filter, not the full solution
 - **Test (integration, 345 tests):** `dotnet test AgendaBuddy.IntegrationTests/AgendaBuddy.IntegrationTests.csproj` — ⚠️ a **separate command**. `AgendaBuddy.IntegrationTests` is deliberately excluded from the slnf (ADR-031) so the unit gate stays Docker-free, which means the backend command above **does not run it**. Needs a container runtime; `export PATH="$HOME/.rd/bin:$PATH"` first under Rancher Desktop. It has a `ProjectReference` to `AgendaBuddy.MobileApp.csproj` (F-015, for `MobileClientRouteResolutionTest`) — always restore/build with `/p:MobileWorkloads=false`, or it pulls in MobileApp's default android/ios TargetFrameworks and fails with `NETSDK1147` on a machine with no MAUI workloads
 - **Test (mobile, 376 tests):** `dotnet test AgendaBuddy.MobileApp.Tests/AgendaBuddy.MobileApp.Tests.csproj /p:MobileWorkloads=false` (369 passing, 7 skipped)
 - ⚠️ **`/p:MobileWorkloads=false` compiles only the `net10.0` slice, so nothing under `#if FIREBASE` or `#if MOBILE` is built by the local gate.** A type error in `PushNotificationService`'s Firebase code passed all three local suites and failed CI's `Mobile — Android Build`. The android TFM **does** build locally on a machine with the workload (`android-36` platform present): `dotnet build AgendaBuddy.MobileApp/AgendaBuddy.MobileApp.csproj -f net10.0-android`. Run it after touching anything inside those guards.
@@ -144,6 +144,22 @@ See [docs/pdlc/design/api-refactor-rollout/ARCHITECTURE.md](docs/pdlc/design/api
 - `scripts/trivy-severity-gate.sh` — the actual severity gate for `docker-build-and-scan`'s Trivy step: fails on HIGH/CRITICAL under an `app/*.deps.json` Trivy report target, warns (does not fail) on anything else
 - `.github/dependabot.yml` — weekly NuGet + GitHub Actions dependency-update PRs
 - `.github/workflows/dev-env-{schedule,start,stop,power}.yml` — the dev environment is **scheduled off outside 09:00–17:00 America/Mexico_City on weekdays** to stop paying for eight `minReplicas: 1` container apps around the clock. Start/stop move `minReplicas` between 1 and 0, which is symmetric and leaves the gateway's public FQDN alone. ⚠️ Do **not** reach for `az containerapp revision deactivate` instead: it stops a revision, but `revision activate` is **405 Method Not Allowed** in Single revision mode (all eight apps), so it is a one-way door. Stopping is not destroying — nothing is deleted. Mexico City has had **no DST since 2022**, so one fixed UTC cron pair is correct year-round
+
+### Push notifications (Android)
+
+`Push:FirebaseProjectId` + `Push:ServiceAccountJson` enable `FcmPushSender`; absent, `AddPushDelivery`
+resolves `UnconfiguredPushSender`. The AppHost declares both parameters **only when a value is already
+present in configuration** — deliberately unlike `resend-api-key`, which is Cloud-shape-only. Push has to be
+testable against a local emulator so it cannot be Cloud-only, but an unconditional `AddParameter` with no
+user secret resolves to `ValueMissing` and parks every dependent service in `Waiting` with nothing logged
+(ISSUE-001). Injected into **Booking and Customer only** — the two services that produce notifications.
+Firebase project: `agendame-12147`; sender `agendame-push-sender@…` holds `roles/firebasemessaging.admin`
+only, not the broad `firebase-adminsdk` role. `google-services.json` lives at
+`AgendaBuddy.MobileApp/Platforms/Android/` and is consumed via a `GoogleServicesJson` item — the Android
+build ignores it otherwise. `CrossFirebase.Initialize` runs on the Android activity's `OnCreate`; **without
+it `CrossFirebaseCloudMessaging.Current` throws and `PushNotificationService` catches, so a missing
+initialisation is a silently dead push path**. `POST_NOTIFICATIONS` is in the manifest and requested at
+runtime — without it the token registers and the OS drops every notification. iOS remains unwired.
 
 ### Security controls that default OFF
 
