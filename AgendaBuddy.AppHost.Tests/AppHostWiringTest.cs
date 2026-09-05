@@ -23,6 +23,24 @@ public class AppHostWiringTest
         return builder;
     }
 
+    /// <summary>
+    /// The same graph, with parameter values supplied as command-line configuration.
+    /// </summary>
+    /// <remarks>
+    /// Needed because the push parameters are declared only when a value is already present — so the
+    /// configured and unconfigured graphs are genuinely different shapes, and both need covering.
+    /// </remarks>
+    private static IDistributedApplicationBuilder BuildModelWithPushCredentials(
+        DeploymentTarget target = DeploymentTarget.Local)
+    {
+        var builder = DistributedApplication.CreateBuilder([
+            "--Parameters:push-firebase-project-id=agendame-test",
+            "--Parameters:push-service-account-json={\"type\":\"service_account\"}"
+        ]);
+        AppHostWiring.Configure(builder, target);
+        return builder;
+    }
+
     private static IResource Resource(IDistributedApplicationBuilder builder, string name) =>
         Assert.Single(builder.Resources.Where(resource => resource.Name == name));
 
@@ -243,6 +261,77 @@ public class AppHostWiringTest
         var variables = await PublishEnvironmentOf(BuildModel(DeploymentTarget.Cloud), "identity");
 
         Assert.Contains("Email__ApiKey", variables.Keys);
+    }
+
+    // ── Push delivery ───────────────────────────────────────────────────────────────────────────────
+    // Push parameters are presence-gated rather than shape-gated, unlike resend-api-key: push has to be
+    // testable against a local emulator, so it cannot be Cloud-only, but declaring it unconditionally would
+    // resolve to ValueMissing on any machine without credentials and park every dependent service in Waiting
+    // with nothing logged (ISSUE-001).
+
+    [Theory]
+    [InlineData("push-firebase-project-id")]
+    [InlineData("push-service-account-json")]
+    public void WithNoCredentialsConfigured_ThePushParametersAreNotDeclaredAtAll(string parameterName)
+    {
+        Assert.DoesNotContain(
+            parameterName,
+            BuildModel(DeploymentTarget.Local).Resources.Select(resource => resource.Name));
+    }
+
+    [Fact]
+    public void WithCredentialsConfigured_TheServiceAccountJsonIsDeclaredSecret()
+    {
+        var builder = BuildModelWithPushCredentials();
+
+        var credential = Assert.IsAssignableFrom<ParameterResource>(
+            Resource(builder, "push-service-account-json"));
+        Assert.True(credential.Secret, "push-service-account-json must be declared secret.");
+
+        // The project id is not a secret -- it appears in the send URL and in google-services.json, which
+        // ships inside every APK. Marking it secret would only mask it in the dashboard for no gain.
+        var projectId = Assert.IsAssignableFrom<ParameterResource>(
+            Resource(builder, "push-firebase-project-id"));
+        Assert.False(projectId.Secret, "push-firebase-project-id is not a secret.");
+    }
+
+    /// <summary>
+    /// Booking and Customer are the two services that produce notifications, so they are the two that need to
+    /// reach FCM. Both variables or neither: a project id with no credential cannot mint a token, and a
+    /// credential with no project id has no URL to send to.
+    /// </summary>
+    [Theory]
+    [InlineData("booking")]
+    [InlineData("customer")]
+    public async Task WithCredentialsConfigured_TheNotificationProducersReceiveBothPushVariables(string service)
+    {
+        var variables = await EnvironmentOf(BuildModelWithPushCredentials(), service);
+
+        Assert.Contains("Push__FirebaseProjectId", variables.Keys);
+        Assert.Contains("Push__ServiceAccountJson", variables.Keys);
+    }
+
+    [Fact]
+    public async Task NoServiceOtherThanTheNotificationProducersReceivesThePushCredential()
+    {
+        var builder = BuildModelWithPushCredentials();
+
+        foreach (var name in ExpectedServices.Where(s => s is not ("booking" or "customer")))
+        {
+            Assert.DoesNotContain("Push__ServiceAccountJson", (await EnvironmentOf(builder, name)).Keys);
+        }
+    }
+
+    // Without credentials nothing is injected, so AddPushDelivery resolves UnconfiguredPushSender.
+    [Theory]
+    [InlineData("booking")]
+    [InlineData("customer")]
+    public async Task WithNoCredentialsConfigured_NoPushVariablesAreInjected(string service)
+    {
+        var variables = await EnvironmentOf(BuildModel(DeploymentTarget.Local), service);
+
+        Assert.DoesNotContain("Push__FirebaseProjectId", variables.Keys);
+        Assert.DoesNotContain("Push__ServiceAccountJson", variables.Keys);
     }
 
     [Fact]
