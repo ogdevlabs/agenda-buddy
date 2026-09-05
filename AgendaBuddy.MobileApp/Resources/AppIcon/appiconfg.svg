@@ -1,3 +1,28 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
-  <text x="64" y="80" font-family="sans-serif" font-size="56" font-weight="bold" fill="#FFFFFF" text-anchor="middle">AB</text>
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Icon foreground: the same calendar-with-your-day mark as Resources/Images/brand_mark.svg, inverted for the
+  indigo background — white frame, indigo page, amber day. Replaces the template's "AB" text, which named
+  the wrong product.
+  The platforms inset and mask this, so the mark sits well inside the safe area rather than filling the tile.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <g transform="translate(32 32) scale(1.0)">
+    <!-- Binding tabs -->
+    <rect x="17" y="3" width="6" height="11" rx="3" fill="#FFFFFF"/>
+    <rect x="41" y="3" width="6" height="11" rx="3" fill="#FFFFFF"/>
+
+    <!-- Calendar body -->
+    <rect x="6" y="9" width="52" height="49" rx="9" fill="#FFFFFF"/>
+
+    <!-- Page interior, matching the icon background -->
+    <rect x="11" y="26" width="42" height="27" rx="4" fill="#4F46E5"/>
+
+    <!-- Days, with the amber one larger: your day -->
+    <circle cx="19" cy="34" r="2.6" fill="#FFFFFF"/>
+    <circle cx="28" cy="34" r="2.6" fill="#FFFFFF"/>
+    <circle cx="37" cy="34" r="2.6" fill="#FFFFFF"/>
+    <circle cx="46.5" cy="34" r="4.2" fill="#F59E0B"/>
+    <circle cx="19" cy="45" r="2.6" fill="#FFFFFF"/>
+    <circle cx="28" cy="45" r="2.6" fill="#FFFFFF"/>
+  </g>
 </svg>

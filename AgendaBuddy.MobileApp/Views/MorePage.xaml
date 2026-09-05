@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:controls="clr-namespace:AgendaBuddy.MobileApp.Controls"
+             x:Class="AgendaBuddy.MobileApp.Views.MorePage"
+             Title="More"
+             BackgroundColor="{StaticResource BackgroundPage}"
+             Shell.NavBarIsVisible="False">
+
+    <!--
+        A real page rather than the tab bar's automatic overflow list. Shell generates that list itself when
+        a TabBar has more than five tabs, which means it carries none of the app's own chrome — no brand
+        header, no styling. Folding the two overflow tabs into this one page brings the TabBar back to five
+        so nothing is auto-generated.
+    -->
+    <Grid RowDefinitions="Auto,*">
+
+        <controls:BrandHeader Grid.Row="0" />
+
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Padding="20,16,20,24" Spacing="16">
+
+                <Label Text="More" FontSize="22" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" />
+
+                <Frame Style="{StaticResource CardCompact}" Padding="0" Margin="0">
+                    <VerticalStackLayout Spacing="0">
+
+                        <Grid ColumnDefinitions="Auto,*,Auto" Padding="16,14" ColumnSpacing="14"
+                              AutomationId="MoreNotificationsRow">
+                            <Grid.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnNotificationsClicked" />
+                            </Grid.GestureRecognizers>
+                            <Image Grid.Column="0" Source="notifications_icon.png"
+                                   WidthRequest="22" HeightRequest="22" VerticalOptions="Center" />
+                            <Label Grid.Column="1" Text="Notifications" FontSize="16"
+                                   TextColor="{StaticResource TextPrimary}" VerticalOptions="Center" />
+                            <Label Grid.Column="2" Text="&#x276F;" FontSize="14"
+                                   TextColor="{StaticResource TextMuted}" VerticalOptions="Center" />
+                        </Grid>
+
+                        <BoxView HeightRequest="0.5" Color="{StaticResource BorderLight}" Margin="16,0" />
+
+                        <Grid ColumnDefinitions="Auto,*,Auto" Padding="16,14" ColumnSpacing="14"
+                              AutomationId="MoreAccountRow">
+                            <Grid.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnAccountClicked" />
+                            </Grid.GestureRecognizers>
+                            <Image Grid.Column="0" Source="customers_icon.png"
+                                   WidthRequest="22" HeightRequest="22" VerticalOptions="Center" />
+                            <Label Grid.Column="1" Text="Account" FontSize="16"
+                                   TextColor="{StaticResource TextPrimary}" VerticalOptions="Center" />
+                            <Label Grid.Column="2" Text="&#x276F;" FontSize="14"
+                                   TextColor="{StaticResource TextMuted}" VerticalOptions="Center" />
+                        </Grid>
+
+                    </VerticalStackLayout>
+                </Frame>
+
+            </VerticalStackLayout>
+        </ScrollView>
+
+    </Grid>
+
+</ContentPage>
