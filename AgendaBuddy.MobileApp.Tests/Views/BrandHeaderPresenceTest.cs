@@ -1,3 +1,4 @@
+using System.Xml.Linq;
 using AgendaBuddy.MobileApp.Infrastructure;
 using Xunit;
 
@@ -91,6 +92,18 @@ public class BrandHeaderPresenceTest
     }
 
     /// <summary>
+    /// The wordmark is drawn as two differently-coloured halves, so those halves have to still spell the
+    /// name — a rename that touched only one of them would ship a misspelt brand.
+    /// </summary>
+    [Fact]
+    public void TheTwoToneWordmarkHalvesSpellTheBrandName()
+    {
+        Assert.Equal(AppBrand.Name, AppBrand.NameStem + AppBrand.NameAccent);
+        Assert.NotEmpty(AppBrand.NameStem);
+        Assert.NotEmpty(AppBrand.NameAccent);
+    }
+
+    /// <summary>
     /// The name under the app icon is an MSBuild property, so it is the one place the brand cannot come from
     /// <see cref="AppBrand"/> and the one most likely to be left behind by a rename.
     /// </summary>
@@ -125,6 +138,26 @@ public class BrandHeaderPresenceTest
 
         Assert.True(offenders.Count == 0,
             $"The app is called {AppBrand.Name}. These still say the old name: {string.Join(", ", offenders)}");
+    }
+
+    /// <summary>
+    /// A sixth tab makes Shell generate its own overflow "More" list, which carries no brand header and no
+    /// styling at all — and nothing else here can catch that, because the offending screen has no XAML of
+    /// ours to inspect.
+    /// </summary>
+    [Fact]
+    public void TheTabBarStaysAtFiveTabsSoShellGeneratesNoOverflowList()
+    {
+        var shell = XDocument.Load(Path.Combine(RepoRoot(), "AgendaBuddy.MobileApp", "AppShell.xaml"));
+
+        var tabs = shell.Descendants()
+            .Where(e => e.Name.LocalName == "Tab")
+            .Select(e => e.Attribute("Title")?.Value ?? "(untitled)")
+            .ToList();
+
+        Assert.True(tabs.Count <= 5,
+            "iOS folds every tab past the fifth into an overflow list Shell builds itself, with none of the "
+            + $"app's chrome. Move one into MorePage instead. Current tabs: {string.Join(", ", tabs)}");
     }
 
     private static IEnumerable<string> ViewFiles() =>

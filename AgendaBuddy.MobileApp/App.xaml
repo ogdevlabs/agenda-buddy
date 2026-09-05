@@ -39,6 +39,19 @@
             <Color x:Key="TextOnPrimary">#FFFFFF</Color>
             <!-- Secondary text on a Primary-filled surface: readable, but subordinate to TextOnPrimary. -->
             <Color x:Key="TextOnPrimaryMuted">#C7D2FE</Color>
+            <!-- Brand accent: the "Me" half of the wordmark, and the user's own name wherever a screen
+                 greets them. Warm against the indigo, so it reads as the thing that is about YOU. -->
+            <Color x:Key="BrandAccent">#FDE68A</Color>
+            <!-- The header's two identity facts read as different KINDS of information, so they do not share
+                 a colour: who you are (plain white, the one you scan for) vs what you are (cool, secondary). -->
+            <Color x:Key="BrandHeaderUserRole">#A5B4FC</Color>
+            <!-- The wordmark's backdrop. Three stops with real distance between them, so it reads as depth
+                 rather than the single muddy purple two near-identical indigos gave. -->
+            <Color x:Key="BrandGradientStart">#3730A3</Color>
+            <Color x:Key="BrandGradientMid">#6D28D9</Color>
+            <Color x:Key="BrandGradientEnd">#9333EA</Color>
+            <!-- The badge the mark sits on: solid white, the same treatment the auth screens already use. -->
+            <Color x:Key="BrandBadgeFill">#FFFFFF</Color>
 
             <Color x:Key="BackgroundPage">#F8FAFC</Color>
             <Color x:Key="BackgroundCard">#FFFFFF</Color>
@@ -48,6 +61,14 @@
             <Color x:Key="BorderLight">#E2E8F0</Color>
             <Color x:Key="BorderMedium">#CBD5E1</Color>
             <Color x:Key="Divider">#F1F5F9</Color>
+
+            <!-- Left-to-right rather than diagonal: two stacked elements using a diagonal ramp meet at
+                 mismatched colours and show a seam. -->
+            <LinearGradientBrush x:Key="BrandGradient" StartPoint="0,0" EndPoint="1,0">
+                <GradientStop Color="{StaticResource BrandGradientStart}" Offset="0.0" />
+                <GradientStop Color="{StaticResource BrandGradientMid}" Offset="0.55" />
+                <GradientStop Color="{StaticResource BrandGradientEnd}" Offset="1.0" />
+            </LinearGradientBrush>
 
             <!-- ============================================ -->
             <!-- TYPOGRAPHY STYLES                            -->

@@ -47,15 +47,12 @@
                 Route="messages"
                 ContentTemplate="{DataTemplate views:MessagingPage}" />
         </Tab>
-        <Tab Title="Notifications" Icon="notifications_icon.png">
+        <!-- Five tabs, deliberately: a sixth makes Shell generate its own overflow "More" list, which
+             carries none of the app's chrome. MorePage pushes Notifications and Account instead. -->
+        <Tab Title="More">
             <ShellContent
-                Route="notifications"
-                ContentTemplate="{DataTemplate views:NotificationsPage}" />
-        </Tab>
-        <Tab Title="Account">
-            <ShellContent
-                Route="account"
-                ContentTemplate="{DataTemplate views:AccountPage}" />
+                Route="more"
+                ContentTemplate="{DataTemplate views:MorePage}" />
         </Tab>
     </TabBar>
 

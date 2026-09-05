@@ -9,6 +9,7 @@ public partial class DashboardViewModel : ObservableObject
 {
     private readonly IBookingApiService _bookingApiService;
     private readonly IUserSessionService _session;
+    private readonly BrandHeaderViewModel _signedInUser;
     private List<AppointmentSummary> _allAppointments = new();
     private int _pageIndex;
     private const int PageSize = 4;
@@ -30,6 +31,20 @@ public partial class DashboardViewModel : ObservableObject
 
     [ObservableProperty]
     private string _greeting = string.Empty;
+
+    /// <summary>
+    /// The user's own name, shown beside <see cref="Greeting"/>. Empty until it resolves, and empty for an
+    /// account with no profile, in which case the greeting simply stands alone.
+    /// </summary>
+    public string UserDisplayName => _signedInUser.DisplayName;
+
+    public bool HasUserDisplayName => !string.IsNullOrEmpty(UserDisplayName);
+
+    /// <summary>
+    /// <see cref="UserDisplayName"/> ready to append to the greeting. The comma lives here rather than in a
+    /// XAML <c>StringFormat</c>, which would render a trailing ", " while the name is still unresolved.
+    /// </summary>
+    public string GreetingNameSuffix => HasUserDisplayName ? $", {UserDisplayName}" : string.Empty;
 
     [ObservableProperty]
     private bool _canGoBack;
@@ -60,10 +75,19 @@ public partial class DashboardViewModel : ObservableObject
 
     public event EventHandler? AppointmentsLoaded;
 
-    public DashboardViewModel(IBookingApiService bookingApiService, IUserSessionService session)
+    /// <remarks>
+    /// Takes <see cref="BrandHeaderViewModel"/> because it is the singleton that already resolves and caches
+    /// the signed-in user's name — the JWT does not carry one, so it costs a profile call. Fetching it again
+    /// here would mean a second round trip per dashboard load for the same string.
+    /// </remarks>
+    public DashboardViewModel(
+        IBookingApiService bookingApiService,
+        IUserSessionService session,
+        BrandHeaderViewModel signedInUser)
     {
         _bookingApiService = bookingApiService;
         _session = session;
+        _signedInUser = signedInUser;
         Greeting = DateTime.Now.Hour switch
         {
             < 12 => "Good morning",
@@ -95,6 +119,12 @@ public partial class DashboardViewModel : ObservableObject
             < 17 => "Good afternoon",
             _ => "Good evening"
         };
+
+        // Idempotent and cached per account, so this is a no-op once the name is known.
+        await _signedInUser.RefreshAsync();
+        OnPropertyChanged(nameof(UserDisplayName));
+        OnPropertyChanged(nameof(HasUserDisplayName));
+        OnPropertyChanged(nameof(GreetingNameSuffix));
 
         try
         {

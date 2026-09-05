@@ -16,6 +16,20 @@ namespace AgendaBuddy.MobileApp.Controls;
 /// </remarks>
 public partial class BrandHeader : ContentView
 {
+    /// <summary>
+    /// Whether to show the signed-in user under the brand. Off for a view that already puts the user
+    /// somewhere better of its own — the dashboard names them in the greeting, so repeating it here would
+    /// say the same thing twice in one screenful.
+    /// </summary>
+    public static readonly BindableProperty ShowUserProperty =
+        BindableProperty.Create(nameof(ShowUser), typeof(bool), typeof(BrandHeader), defaultValue: true);
+
+    public bool ShowUser
+    {
+        get => (bool)GetValue(ShowUserProperty);
+        set => SetValue(ShowUserProperty, value);
+    }
+
     public BrandHeader()
     {
         InitializeComponent();

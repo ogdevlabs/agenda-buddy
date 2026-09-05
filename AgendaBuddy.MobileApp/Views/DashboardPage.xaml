@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             xmlns:infrastructure="clr-namespace:AgendaBuddy.MobileApp.Infrastructure"
              xmlns:controls="clr-namespace:AgendaBuddy.MobileApp.Controls"
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
              xmlns:System="clr-namespace:System;assembly=netstandard"
@@ -27,7 +26,8 @@
 
     <Grid RowDefinitions="Auto,*">
 
-        <controls:BrandHeader Grid.Row="0" />
+        <!-- Brand only: the greeting below names the user, so the header does not repeat it. -->
+        <controls:BrandHeader Grid.Row="0" ShowUser="False" />
 
         <Grid Grid.Row="1" RowDefinitions="*,Auto">
 
@@ -40,19 +40,17 @@
                     <VerticalStackLayout Padding="0" Spacing="0">
 
                         <!-- Immersive gradient header -->
-                        <Grid BackgroundColor="{StaticResource Primary}" Padding="0">
-                            <BoxView BackgroundColor="{StaticResource Primary}" />
+                        <Grid BackgroundColor="{StaticResource BrandGradientMid}" Padding="0">
                             <VerticalStackLayout Padding="24,24,24,28" Spacing="6">
-                                <Label Text="{x:Static infrastructure:AppBrand.Name}"
-                                       TextTransform="Uppercase"
-                                       FontSize="12"
-                                       FontAttributes="Bold"
-                                       CharacterSpacing="1.5"
-                                       TextColor="#C7D2FE" />
-                                <Label Text="{Binding Greeting}"
-                                       FontSize="30"
-                                       FontAttributes="Bold"
-                                       TextColor="White" />
+                                <Label FontSize="30" FontAttributes="Bold" TextColor="White">
+                                    <Label.FormattedText>
+                                        <FormattedString>
+                                            <Span Text="{Binding Greeting}" />
+                                            <Span Text="{Binding GreetingNameSuffix}"
+                                                  TextColor="{StaticResource BrandAccent}" />
+                                        </FormattedString>
+                                    </Label.FormattedText>
+                                </Label>
                                 <Label Text="{Binding Source={x:Static System:DateTime.Now}, StringFormat='{0:dddd, MMMM d}'}"
                                        FontSize="15"
                                        TextColor="#AEAEB2" />
