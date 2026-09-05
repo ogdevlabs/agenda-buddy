@@ -2,6 +2,9 @@
 using CommunityToolkit.Maui;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+#if FIREBASE
+using Microsoft.Maui.LifecycleEvents;
+#endif
 using AgendaBuddy.MobileApp.Infrastructure;
 using AgendaBuddy.MobileApp.Services;
 using AgendaBuddy.MobileApp.ViewModels;
@@ -18,6 +21,16 @@ public static class MauiProgram
         builder
             .UseMauiApp<App>()
             .UseMauiCommunityToolkit();
+
+#if FIREBASE
+        // Firebase has to be initialised before CrossFirebaseCloudMessaging.Current is touched, or that
+        // property throws -- and PushNotificationService catches, so a missing initialisation is a silently
+        // dead push path rather than a visible failure. Hooked to the Android activity's OnCreate because the
+        // Android SDK needs a Context, which does not exist yet at this point in the builder.
+        builder.ConfigureLifecycleEvents(events =>
+            events.AddAndroid(android => android.OnCreate((activity, _) =>
+                Plugin.Firebase.Core.Platforms.Android.CrossFirebase.Initialize(activity))));
+#endif
 
         // Without this, builder.Configuration is empty and ApiBaseUrlResolver's middle priority --
         // the "ApiBaseUrl" key -- can never match, so every build falls through to the local gateway

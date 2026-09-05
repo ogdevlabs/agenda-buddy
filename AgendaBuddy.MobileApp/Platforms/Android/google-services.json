@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "144864078671",
+    "project_id": "agendame-12147",
+    "storage_bucket": "agendame-12147.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:144864078671:android:e8a3ee84b0437d88f9333a",
+        "android_client_info": {
+          "package_name": "com.fererelabs.agendabuddy"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDEx34epdO3rNpAJfL9w3Ufqu76kJ2xExU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
