@@ -12,18 +12,22 @@ namespace AgendaBuddy.MobileApp.Services;
 /// Registers this device for push and routes a tapped notification to the appointment it is about.
 /// </summary>
 /// <remarks>
-/// ⚠️ <b>Android only, and the server end is not built.</b> Two independent gaps, both outside what code alone
-/// can close:
-/// <list type="bullet">
-/// <item><c>FIREBASE</c> is defined for <c>net10.0-android</c> only, because
+/// ⚠️ <b>Android only.</b> <c>FIREBASE</c> is defined for <c>net10.0-android</c> only, because
 /// <c>Plugin.Firebase.CloudMessaging</c> is excluded for iOS in the csproj — iOS needs a
 /// <c>GoogleService-Info.plist</c>, an APNs key uploaded to Firebase and a push entitlement, none of which can
-/// be provisioned from the repository. On iOS every method here returns without doing anything.</item>
-/// <item>Nothing in the backend sends a push. <c>IPushSender</c> resolves to
-/// <c>UnconfiguredPushSender</c> until FCM credentials exist, so a token registered here is stored and read but
-/// never messaged.</item>
-/// </list>
-/// The token round trip and the tap handler are real and wired, so both gaps are credentials rather than code.
+/// be provisioned from the repository. On iOS every method here returns without doing anything.
+/// <para>
+/// The send side is real: <c>FcmPushSender</c> speaks FCM HTTP v1 as soon as <c>Push:FirebaseProjectId</c> and
+/// <c>Push:ServiceAccountJson</c> are configured, and its data payload key matches
+/// <see cref="AppointmentIdentifierKey"/> — that pairing is what makes a tapped push open the appointment
+/// rather than just the app.
+/// </para>
+/// <para>
+/// ⚠️ <b>Nothing under <c>#if FIREBASE</c> is compiled by the local test gate.</b>
+/// <c>/p:MobileWorkloads=false</c> builds only the <c>net10.0</c> slice, so a type error in here reaches CI
+/// untouched. Build it on purpose:
+/// <c>dotnet build AgendaBuddy.MobileApp/AgendaBuddy.MobileApp.csproj -f net10.0-android</c>.
+/// </para>
 /// </remarks>
 public class PushNotificationService
 {
@@ -57,7 +61,13 @@ public class PushNotificationService
 #if FIREBASE
         try
         {
-            CrossFirebaseCloudMessaging.Current.NotificationTapped += OnNotificationTapped;
+            // A lambda rather than a named handler method, so the event-args type never has to be spelled out.
+            // Naming it (FCMNotificationTappedEventArgs, in Plugin.Firebase.CloudMessaging.EventArgs) both
+            // needs a second using and puts the identifier `EventArgs` in scope as a namespace, which shadows
+            // System.EventArgs. Inferring it from the event's own delegate avoids both, and cannot break if the
+            // package moves the type.
+            CrossFirebaseCloudMessaging.Current.NotificationTapped += (_, e) =>
+                OnNotificationTapped(e.Notification?.Data);
         }
         catch (Exception)
         {
@@ -66,17 +76,26 @@ public class PushNotificationService
 #endif
     }
 
-#if FIREBASE
-    private void OnNotificationTapped(object? sender, FCMNotificationTappedEventArgs e)
+    /// <summary>
+    /// Routes a tapped notification to the appointment its payload names.
+    /// </summary>
+    /// <remarks>
+    /// Takes the payload rather than the platform event args, so the behaviour is reachable from the
+    /// <c>net10.0</c> test slice — where the Firebase types do not exist at all. <c>FCMNotification.Data</c> is
+    /// <c>IDictionary&lt;string, string&gt;</c>; FCM data payloads are string-to-string by protocol, which is
+    /// also why <c>NotificationDispatcher</c> sends them that way.
+    /// </remarks>
+    internal void OnNotificationTapped(IDictionary<string, string>? data)
     {
-        if (e.Notification.Data is not null
-            && e.Notification.Data.TryGetValue(AppointmentIdentifierKey, out var appointmentId)
-            && !string.IsNullOrWhiteSpace(appointmentId))
+        if (data is null
+            || !data.TryGetValue(AppointmentIdentifierKey, out var appointmentId)
+            || string.IsNullOrWhiteSpace(appointmentId))
         {
-            HandleNotificationTap(appointmentId);
+            return;
         }
+
+        HandleNotificationTap(appointmentId);
     }
-#endif
 
     internal async Task RegisterTokenAsync()
     {
@@ -123,7 +142,8 @@ public class PushNotificationService
         }
     }
 
-    public void HandleNotificationTap(string appointmentId)
+    /// <summary>Virtual so a test can capture the navigation — Shell.Current has no test double.</summary>
+    public virtual void HandleNotificationTap(string appointmentId)
     {
 #if MOBILE
         _ = AppShell.NavigateToAppointmentAsync(appointmentId);
