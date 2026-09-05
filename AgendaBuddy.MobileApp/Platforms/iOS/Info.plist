@@ -4,9 +4,6 @@
 <dict>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
-	<!-- iPhone only. Declaring iPad support makes iPad screenshots mandatory for review and puts every
-	     layout on a second device class, none of which has been designed or tested for. Add 2 back
-	     alongside the iPad screenshots and an iPad layout pass, not before. -->
 	<key>UIDeviceFamily</key>
 	<array>
 		<integer>1</integer>
@@ -15,28 +12,17 @@
 	<array>
 		<string>arm64</string>
 	</array>
-	<!-- Portrait only, because that is the only orientation the UI was built for. Landscape was
-	     previously advertised while no layout accounted for it, and reviewers do rotate the device. -->
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
 	</array>
 	<key>XSAppIconAssets</key>
 	<string>Assets.xcassets/appicon.appiconset</string>
-	<!-- Declares that the app uses no non-exempt encryption, which is what stops every upload prompting
-	     the export-compliance question. True for this app: it uses HTTPS via the platform TLS stack and
-	     the iOS keychain via SecureStorage, both exempt. Revisit if the app ever implements its own
-	     cryptography rather than calling the platform's. -->
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
-	<!--
-	  There is deliberately no NSAppTransportSecurity block.
-
-	  This file previously carried an NSExceptionDomains entry allowing insecure HTTP to localhost. That
-	  was for talking to a local backend, and it has no place in a shipped build: App Transport Security
-	  is what guarantees every request to the deployed gateway goes over TLS. The gateway is HTTPS-only,
-	  so nothing needs an exception. Do not add one back to make a local run work — point the app at the
-	  local gateway through configuration instead (appsettings.Development.json).
-	-->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
 </dict>
 </plist>

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!--
+        APNs environment. `production` is correct for BOTH TestFlight and the App Store; `development` is
+        only for a debug build signed with a development profile. Getting this wrong is silent: APNs accepts
+        the registration and drops every message, because a token minted in one environment is not valid in
+        the other.
+
+        ⚠️ This file is deliberately NOT at Platforms/iOS/Entitlements.plist. The .NET iOS SDK auto-detects
+        that exact path and, once it exists, REQUIRES code signing for every build - including the unsigned
+        Release build the "Mobile - iOS Build" CI job performs, which has no certificate and no profile.
+        Gating CodesignEntitlements on IosSigned does not help, because it is the file's presence at the
+        conventional path that triggers it, not the property. Verified by bisecting a build failure:
+        "No valid iOS code signing keys found in keychain."
+
+        Referenced explicitly from the csproj, only when IosSigned=true.
+    -->
+    <key>aps-environment</key>
+    <string>production</string>
+</dict>
+</plist>
