@@ -1593,3 +1593,36 @@ exposure reliably visible, which is how T-002 came to be found.
 **Alternatives rejected.** Leaving the defaults and treating delayed/silent delivery as acceptable — rejected,
 it defeats the purpose of the channel. Setting them per call site — rejected, the transport is the right place
 for a transport concern, and per-producer settings would drift.
+
+## ADR-063 — The default email sender is the product's own domain; Resend's sandbox address is never a default (F-029)
+
+**Date:** 2026-09-06 · **Status:** Accepted
+
+**Context.** `EmailOptions.FromAddress` defaulted to `onboarding@resend.dev`, Resend's sandbox sender. It needs
+no verified domain, which is why it was convenient during development — but it delivers **only** to the Resend
+account owner's own address. Every other recipient's mail was accepted by Resend and dropped. Nothing overrode
+it anywhere: no `appsettings` `Email` section, no Terraform variable, no deploy-workflow environment variable.
+The default was therefore the effective value in every environment, including the deployed one — so email
+confirmation and password reset silently went nowhere for every real user, while the send reported success.
+
+**Decision.** Default to `AgendaMe@fererelabs.com`, the product's own domain, and pin it with a test
+(`ResendEmailSenderTest.TheDefaultSenderIsTheProductsOwnDomain`) asserting what a deployment configured with
+nothing but an API key actually sends as.
+
+**Why a test rather than a comment.** This is silent in *both* directions and neither surfaces at runtime. The
+sandbox address swallows mail while reporting success. An unverified sending domain is rejected by Resend, and
+`ResendEmailSender` absorbs delivery failures by contract — deliberately, because a mail outage must not fail
+the operation that triggered it, and on the reset path a 500 would confirm to an attacker that an address has an
+account (see that class's own remarks). So there is no runtime signal for either failure, and the only place the
+correct value can be defended is a test.
+
+**Consequences.** ⚠️ **`fererelabs.com` must be verified in the Resend dashboard — domain, DKIM and SPF
+records — or every send is rejected**, silently, for the reason above. That is a human action outside this
+repository, and it is a hard prerequisite for email working at all in any environment. Development against a
+Resend account whose owner address was the test recipient no longer works by accident; a developer wanting that
+sets `Email:FromAddress` explicitly, which is now a visible, deliberate override rather than the default.
+
+**Alternatives rejected.** Keeping the sandbox default and overriding per environment — rejected: it puts the
+broken value on the path of least resistance, which is exactly how it reached a deployment. Making the send
+throw when the domain is unverified — rejected, it contradicts the deliberate swallow-on-failure contract that
+protects the reset path from being an account-existence oracle.
