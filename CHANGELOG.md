@@ -4,6 +4,19 @@ All notable changes to this project are documented in this file, in [Keep a Chan
 
 ## [Unreleased]
 
+### Fixed
+
+- **F-029**: transactional email is sent from `AgendaMe@fererelabs.com` rather than
+  `onboarding@resend.dev`, Resend's sandbox sender. The sandbox address needs no verified domain but delivers
+  **only** to the Resend account owner's own address — every other recipient's mail was accepted and dropped, so
+  email confirmation and password reset silently went nowhere for every real user while the send reported
+  success. Nothing overrode the default anywhere (no `appsettings` `Email` section, no Terraform variable, no
+  deploy-workflow env var), so it was the effective value in every environment including the deployed one.
+  Pinned by a test, because the failure is silent in both directions: the sandbox address swallows mail, and an
+  unverified sending domain is rejected by Resend and absorbed by `ResendEmailSender`'s deliberate
+  swallow-on-failure contract (ADR-063). ⚠️ **`fererelabs.com` must be verified in the Resend dashboard —
+  domain, DKIM and SPF — or every send is rejected**, silently, for that same reason.
+
 ## [0.16.0] - 2026-09-06
 
 ### Security
