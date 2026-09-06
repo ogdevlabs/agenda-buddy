@@ -50,6 +50,31 @@ public class ResendEmailSenderTest
         Assert.Contains(Token, handler.LastBody);
     }
 
+    /// <summary>
+    /// The default sender is the product's own verified domain, not Resend's sandbox address.
+    /// </summary>
+    /// <remarks>
+    /// Worth pinning because nothing else does, and getting it wrong is silent in both directions.
+    /// <c>onboarding@resend.dev</c> — the previous default — is accepted by Resend with no verified domain but
+    /// delivers <b>only</b> to the Resend account owner, so a real customer's password reset went nowhere and
+    /// the send still reported success. A sending domain that is not verified is rejected outright, and
+    /// <see cref="ResendEmailSender"/> absorbs that by contract, so that failure is equally quiet.
+    /// </remarks>
+    [Fact]
+    public async Task TheDefaultSenderIsTheProductsOwnDomain()
+    {
+        var handler = new RecordingHandler(HttpStatusCode.OK);
+
+        // No FromAddress/FromName set: this is what a deployment with only an API key configured sends as.
+        await Sut(new EmailOptions { ApiKey = "re_test" }, handler)
+            .SendAsync("someone@example.com", "Confirm your email address", Token);
+
+        // The address only: the angle brackets around it are JSON-escaped in the body, so matching the whole
+        // "Name <address>" header here would be asserting the encoder's behaviour rather than the sender's.
+        Assert.Contains("AgendaMe@fererelabs.com", handler.LastBody);
+        Assert.DoesNotContain("resend.dev", handler.LastBody);
+    }
+
     // A provider outage must not fail the operation that triggered the send. On the reset path in
     // particular, a 500 would confirm to an attacker that the address has an account.
     [Fact]
