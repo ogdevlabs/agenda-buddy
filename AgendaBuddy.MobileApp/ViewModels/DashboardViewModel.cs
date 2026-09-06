@@ -20,6 +20,16 @@ public partial class DashboardViewModel : ObservableObject
     [ObservableProperty]
     private bool _isLoading;
 
+    /// <summary>
+    /// Drives the pull-to-refresh control, and nothing else does.
+    /// </summary>
+    /// <remarks>
+    /// Separate from <see cref="IsLoading"/> on purpose — see <see cref="RefreshAsync"/> for the blank band
+    /// that sharing one flag produced.
+    /// </remarks>
+    [ObservableProperty]
+    private bool _isRefreshing;
+
     [ObservableProperty]
     private string _errorMessage = string.Empty;
 
@@ -96,6 +106,24 @@ public partial class DashboardViewModel : ObservableObject
         };
     }
 
+    /// <summary>
+    /// Pull-to-refresh. The same load, but this is the only thing that may drive the refresh control.
+    /// </summary>
+    /// <remarks>
+    /// <c>RefreshView.IsRefreshing</c> used to be bound straight to <see cref="IsLoading"/>, and
+    /// <c>OnAppearing</c> fires <c>LoadCommand</c> — so simply arriving on the page started a refresh nobody
+    /// asked for. On iOS that begins a <c>UIRefreshControl</c> animation and inserts its content inset; the
+    /// inset was left behind when <see cref="IsLoading"/> went false before the control finished animating in,
+    /// which is the **blank white band under the brand header that disappeared after a manual pull** (the pull
+    /// resets the control). Splitting the flags means a programmatic load never touches it.
+    /// </remarks>
+    [RelayCommand]
+    private async Task RefreshAsync()
+    {
+        IsRefreshing = true;
+        await LoadAsync();
+    }
+
     [RelayCommand]
     private async Task LoadAsync()
     {
@@ -154,6 +182,7 @@ public partial class DashboardViewModel : ObservableObject
         finally
         {
             IsLoading = false;
+            IsRefreshing = false;
         }
     }
 

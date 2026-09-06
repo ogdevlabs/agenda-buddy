@@ -90,7 +90,9 @@ public class ProviderApiService : IProviderApiService
                 TotalSessions = serviceNames.Count,
                 LastSession = serviceNames.Count > 0 ? string.Join(", ", serviceNames) : "No services listed yet",
                 Availability = "Contact the provider to check availability",
-                Professions = professions
+                Professions = professions,
+                // As in CustomerApiService: absent for a pre-avatar account, and AvatarAsset falls back.
+                AvatarId = GetString(element, "avatarId")
             });
         }
 

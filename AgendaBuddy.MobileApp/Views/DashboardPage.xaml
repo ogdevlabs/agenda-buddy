@@ -32,9 +32,12 @@
         <Grid Grid.Row="1" RowDefinitions="*,Auto">
 
             <!-- Scrollable content -->
+            <!-- IsRefreshing binds to IsRefreshing, never to IsLoading: OnAppearing fires LoadCommand, so
+                 sharing the flag started a UIRefreshControl nobody asked for and left its content inset
+                 behind — the blank white band under the header that a manual pull cleared. -->
             <RefreshView Grid.Row="0"
-                         Command="{Binding LoadCommand}"
-                         IsRefreshing="{Binding IsLoading}">
+                         Command="{Binding RefreshCommand}"
+                         IsRefreshing="{Binding IsRefreshing}">
 
                 <ScrollView>
                     <VerticalStackLayout Padding="0" Spacing="0">

@@ -20,6 +20,11 @@ public class AddCustomerCommandHandler(
         if (existingCustomer is not null)
             return Result.Fail<CustomerEntity>($"Existing record found for Email:{customerEntity.Email}");
 
+        // Assigned once, at creation, and only when the caller supplied nothing — a later update must not
+        // reshuffle somebody's avatar, and a client that does send one has chosen it deliberately.
+        if (!AvatarCatalog.IsKnown(customerEntity.AvatarId))
+            customerEntity.AvatarId = AvatarCatalog.Random();
+
         await mediator.Publish(new AddCustomerEvent { CustomerEntity = customerEntity }, cancellationToken);
 
         await customerService.AddCustomerAsync(customerEntity);

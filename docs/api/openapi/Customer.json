@@ -532,6 +532,10 @@
             "format": "tel",
             "nullable": true
           },
+          "avatarId": {
+            "type": "string",
+            "nullable": true
+          },
           "subscribedProviderCollection": {
             "type": "array",
             "items": {

@@ -395,6 +395,10 @@
             },
             "nullable": true
           },
+          "avatarId": {
+            "type": "string",
+            "nullable": true
+          },
           "timeZoneId": {
             "type": "string",
             "nullable": true

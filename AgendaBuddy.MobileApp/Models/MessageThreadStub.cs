@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using AgendaBuddy.Library.Avatars;
 
 namespace AgendaBuddy.MobileApp.Models;
 
@@ -14,7 +15,15 @@ public partial class MessageThreadStub : ObservableObject
     private bool _isExpanded;
 
     public string SenderName => OtherPartyEmail.Split('@')[0].Replace(".", " ");
-    public string Initial => string.IsNullOrEmpty(OtherPartyEmail) ? "?" : OtherPartyEmail[0].ToString().ToUpper();
+    /// <summary>
+    /// The image to draw for the other party.
+    /// </summary>
+    /// <remarks>
+    /// Derived from their address, not looked up: a thread stub is built from messages and never carries the
+    /// counterparty's profile, so there is no assigned avatar to read. The derivation is stable, which is what
+    /// makes the same person show the same mark here and in the contacts list.
+    /// </remarks>
+    public string AvatarAsset => $"{AvatarCatalog.Deterministic(OtherPartyEmail)}.png";
     public string TimeAgo => FormatTimeAgo(LastMessageAt);
     public bool HasUnread => UnreadCount > 0;
 

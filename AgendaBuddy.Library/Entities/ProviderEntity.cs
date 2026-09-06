@@ -69,6 +69,17 @@ public class ProviderEntity
     /// slots in the middle of the night. IANA rather than a Windows id because .NET resolves IANA ids on
     /// every platform this runs on, and the mobile client reports the device zone in that form.
     /// </remarks>
+    /// <summary>
+    /// Which avatar this account is drawn with. Assigned at creation from <see cref="AvatarCatalog"/>.
+    /// </summary>
+    /// <remarks>
+    /// Empty on every account that predates avatar assignment, and on any whose profile creation failed —
+    /// <c>AvatarCatalog.Resolve</c> falls back to a stable choice from the email, so no migration is needed and
+    /// nobody renders as a blank circle.
+    /// </remarks>
+    [BsonElement("avatar_id")]
+    public string AvatarId { get; set; } = string.Empty;
+
     [BsonElement("time_zone_id")]
     [BsonIgnoreIfNull]
     public string? TimeZoneId { get; set; }

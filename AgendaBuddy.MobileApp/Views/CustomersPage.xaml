@@ -203,22 +203,30 @@
                                       Padding="14,14,14,14"
                                       ColumnSpacing="12">
 
-                                    <!-- Colored avatar -->
-                                    <Grid Grid.Column="0"
-                                          WidthRequest="46"
-                                          HeightRequest="46"
-                                          VerticalOptions="Center">
-                                        <BoxView CornerRadius="23"
-                                                 WidthRequest="46"
-                                                 HeightRequest="46"
-                                                 Color="{Binding IsProvider, Converter={toolkit:BoolToObjectConverter TrueObject=#EDE9FE, FalseObject=#DBEAFE}}" />
-                                        <Label Text="{Binding Initial}"
-                                               FontSize="19"
-                                               FontAttributes="Bold"
-                                               TextColor="{Binding IsProvider, Converter={toolkit:BoolToObjectConverter TrueObject={StaticResource iOSPurple}, FalseObject={StaticResource iOSBlue}}}"
-                                               HorizontalOptions="Center"
-                                               VerticalOptions="Center" />
-                                    </Grid>
+                                    <!--
+                                        The account's assigned avatar. This was an initial in a tinted circle,
+                                        which is the name again, smaller — and made every contact sharing a
+                                        first letter look identical down a list. Clipped to a circle by the
+                                        Border's StrokeShape rather than drawn over a BoxView, so there is one
+                                        element and no chance of the letter and the disc disagreeing on size.
+                                    -->
+                                    <Border Grid.Column="0"
+                                            WidthRequest="46"
+                                            HeightRequest="46"
+                                            VerticalOptions="Center"
+                                            Padding="0"
+                                            StrokeThickness="0"
+                                            Stroke="Transparent"
+                                            BackgroundColor="{StaticResource Divider}">
+                                        <Border.StrokeShape>
+                                            <RoundRectangle CornerRadius="23" />
+                                        </Border.StrokeShape>
+                                        <Image Source="{Binding AvatarAsset}"
+                                               Aspect="AspectFill"
+                                               WidthRequest="46"
+                                               HeightRequest="46"
+                                               AutomationId="ContactAvatar" />
+                                    </Border>
 
                                     <!-- Name + subtitle -->
                                     <VerticalStackLayout Grid.Column="1"

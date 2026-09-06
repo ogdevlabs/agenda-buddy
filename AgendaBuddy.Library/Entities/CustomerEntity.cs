@@ -41,6 +41,17 @@ public class CustomerEntity
     public string? PhoneNumber { get; set; }
 
 
+    /// <summary>
+    /// Which avatar this account is drawn with. Assigned at creation from <see cref="AvatarCatalog"/>.
+    /// </summary>
+    /// <remarks>
+    /// Empty on every account that predates avatar assignment, and on any whose profile creation failed —
+    /// <c>AvatarCatalog.Resolve</c> falls back to a stable choice from the email, so no migration is needed and
+    /// nobody renders as a blank circle.
+    /// </remarks>
+    [BsonElement("avatar_id")]
+    public string AvatarId { get; set; } = string.Empty;
+
     [BsonElement("subscribed_provider_collection")]
     public List<string>? SubscribedProviderCollection { get; set; } = [];
 

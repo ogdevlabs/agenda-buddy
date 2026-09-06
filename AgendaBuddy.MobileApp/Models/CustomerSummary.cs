@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using AgendaBuddy.Library.Avatars;
 
 namespace AgendaBuddy.MobileApp.Models;
 
@@ -35,6 +36,19 @@ public partial class CustomerSummary : ObservableObject
     [ObservableProperty]
     private bool _isBusy;
 
-    public string Initial => string.IsNullOrEmpty(FullName) ? "?" : FullName[0].ToString();
+    /// <summary>Whatever the server assigned this account, empty when it has none.</summary>
+    public string AvatarId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// The image to draw for this contact.
+    /// </summary>
+    /// <remarks>
+    /// Replaces an initial in a coloured circle, which was the name again, smaller — and made every contact
+    /// sharing a first letter look identical down a list. Keyed on the email rather than the name when the
+    /// server assigned nothing, so it is stable across devices and does not change when somebody edits their
+    /// profile. <c>.png</c> because MAUI rasterises the committed <c>.svg</c> at build time and the asset is
+    /// referenced by its raster name.
+    /// </remarks>
+    public string AvatarAsset => $"{AvatarCatalog.Resolve(AvatarId, Email)}.png";
     public string SessionsLabel => IsProvider ? $"{TotalSessions} services" : $"{TotalSessions} sessions";
 }

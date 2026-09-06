@@ -7,6 +7,7 @@ global using AgendaBuddy.EventAndCommands.Persistence;
 global using FluentResults;
 global using GuardClauses;
 global using AgendaBuddy.Library.Dtos;
+global using AgendaBuddy.Library.Avatars;
 global using AgendaBuddy.Library.Entities;
 global using AgendaBuddy.Library.Services;
 global using AgendaBuddy.Library.Tools;

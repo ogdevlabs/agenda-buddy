@@ -1626,3 +1626,51 @@ sets `Email:FromAddress` explicitly, which is now a visible, deliberate override
 broken value on the path of least resistance, which is exactly how it reached a deployment. Making the send
 throw when the domain is unverified — rejected, it contradicts the deliberate swallow-on-failure contract that
 protects the reset path from being an account-existence oracle.
+
+---
+
+## ADR-064 — Avatars are assigned abstract marks with a deterministic fallback, not initials and not illustrated faces (F-030)
+
+**Date:** 2026-09-06 · **Status:** Accepted
+
+**Context.** Every contact surface drew a letter in a tinted circle — `CustomerSummary.Initial`,
+`MessageThreadStub.Initial`. That is the name again, smaller: it adds no information the row does not already
+carry, and it makes every contact sharing a first letter look identical down a list. For this product the list
+in question is a provider's own client list, so "J" three times in a row is the opposite of what the screen is
+for.
+
+**Decision.** A fixed catalogue of 24 avatars (`AvatarCatalog`, in `AgendaBuddy.Library` so the server that
+assigns and the client that draws cannot disagree). One is assigned at random when a Provider or Customer
+profile is created. Where a row has none, the avatar is derived deterministically from the account's email.
+
+**Why abstract marks rather than illustrated characters.** An illustrated avatar assigned at random puts a face
+on a real person that is not theirs, and implies a gender, an age and an ethnicity nobody chose — for a product
+whose users are named individuals with a professional relationship, that is worse than no picture. A geometric
+mark is unmistakably a placeholder while still being distinct at 40px, which is the whole job, and it is the
+convention a user already recognises from Notion, Linear and Google.
+
+**Why a deterministic fallback rather than a migration.** Every account that predates this — and any whose
+profile creation failed, which `agenda-buddy-fg5` says is currently all of them via registration — has no
+stored assignment. A backfill would need a migration runner this project does not have, against a cluster whose
+credential is still unrotated. Deriving from the email instead is stable across processes and devices, so those
+accounts get a distinct mark that does not change, and the feature ships with no data migration at all.
+`MessageThreadStub` uses the same derivation permanently: a thread stub is built from messages and never
+carries the counterparty's profile, so there is no assignment to read, and the shared derivation is what makes
+the same person show the same mark in messaging and in contacts.
+
+**Consequences.** `AvatarCatalog.Deterministic` hashes with **SHA-256, and that is load-bearing** — .NET
+randomises `string.GetHashCode()` per process, so a hash-code-derived avatar would change on every app launch
+and every service restart, which is the one thing an identity mark must not do. The catalogue size is a C#
+constant while the assets come from `scripts/generate-avatars.py`, so the two can drift; `AvatarCatalogTest`
+asserts every id has a committed asset and that there are no orphans, because a missing asset renders as an
+empty circle rather than as any kind of error. An unknown stored id (a row written by a future build with a
+larger catalogue) is treated as absent rather than honoured, for the same reason. There is deliberately **no
+way for a user to choose their own avatar yet** — that is a profile-editing feature, and the assignment being
+overwritable-by-the-caller at creation is the hook for it.
+
+**Alternatives rejected.** Keeping initials and only improving the colour derivation — rejected, the problem is
+that a letter is not identifying, not that the colours were wrong. Gravatar or a hosted identicon service —
+rejected: it leaks every user's email hash to a third party for decoration, and puts a network dependency on a
+list that must render offline. Deriving the avatar from the email *only*, with nothing stored — rejected, it
+would mean two accounts belonging to the same person always match and a user could never be given a choice
+later without changing what everyone already sees.
