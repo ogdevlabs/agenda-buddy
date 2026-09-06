@@ -1,0 +1,23 @@
+meta {
+  name: 6 Unregister device token
+  type: http
+  seq: 6
+}
+delete {
+  url: {{gatewayUrl}}/device-token
+  body: none
+}
+docs {
+  Releases this device's push registration. Same root path as **5 Register device token** — `/device-token`,
+  not under `/api/v1/auth/` — with the verb doing the work. Requires a JWT.
+
+  **No body, deliberately.** The account comes from the caller's own claim, so there is nothing here for a
+  caller to substitute — the same reasoning as `POST /api/v1/notifications/read-all`.
+
+  **Answers 204 whether or not a registration existed.** "This device is not addressable for this account" is
+  the requested state either way, and a 404 would tell a caller whether a device was registered.
+
+  This is what the app calls on sign-out. Without it the signed-out account stayed addressable and kept
+  receiving push — subject and body included — on a device it no longer controlled. The server also evicts a
+  token from any other account on `POST /device-token`, which covers the user who never signs out at all.
+}

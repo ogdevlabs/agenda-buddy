@@ -26,6 +26,17 @@
             "description": "OK"
           }
         }
+      },
+      "delete": {
+        "tags": [
+          "AgendaBuddy.Identity"
+        ],
+        "operationId": "UnregisterDeviceToken",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
       }
     },
     "/api/v1/auth/register": {

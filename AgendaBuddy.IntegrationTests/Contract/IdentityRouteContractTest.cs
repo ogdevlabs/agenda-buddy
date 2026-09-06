@@ -44,4 +44,29 @@ public class IdentityRouteContractTest(Harness.ServiceHostFixture<IdentityAnchor
 
         Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
     }
+
+    /// <summary>
+    /// <c>DELETE /device-token</c> is mapped and requires a token.
+    /// </summary>
+    /// <remarks>
+    /// Both halves matter, and one assertion covers them: an <b>unmapped</b> path answers 404, so a 401 proves
+    /// the route exists <i>and</i> that it is behind <c>RequireAuthorization</c>. The account comes from the
+    /// caller's own claim and there is no body, so an unauthenticated caller has nothing to substitute — this is
+    /// the whole authorisation model of the route, and the reason it can release a device registration without
+    /// naming an address.
+    /// <para>
+    /// Reachable through the Gateway because its <c>/device-token</c> allowlist entry matches on path with no
+    /// <c>Methods</c> restriction, so every verb on that path forwards. Path-only matching is asserted by the
+    /// Gateway's own tests; this asserts the service half.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public async Task DeleteDeviceToken_WithNoToken_Returns401_NotFound()
+    {
+        using var service = host.StartService();
+
+        var response = await service.Client.DeleteAsync("device-token");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
 }

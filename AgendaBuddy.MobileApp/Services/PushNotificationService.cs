@@ -310,6 +310,39 @@ public class PushNotificationService
 #pragma warning restore CS0162
     }
 
+    /// <summary>
+    /// Tells the server to stop pushing to this device for the signed-in account.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Called on sign-out, and it has to run <b>before</b> the JWT is cleared — the route authorises off the
+    /// caller's own token, and there is no other way to say which account is giving the device up.
+    /// </para>
+    /// <para>
+    /// Best-effort, like every other call here: a failed unregistration must not stop the user signing out. The
+    /// server's own eviction on the next <c>UpsertAsync</c> is the backstop for that case, which is why both
+    /// halves exist.
+    /// </para>
+    /// </remarks>
+    internal virtual async Task UnregisterTokenAsync()
+    {
+        try
+        {
+            var client = _httpClientFactory.CreateClient("AgendaBuddyApi");
+            await client.DeleteAsync("device-token");
+        }
+        catch (Exception)
+        {
+            // Signing out must not fail because of this. See the remarks above.
+        }
+        finally
+        {
+            // Forgotten unconditionally: the next sign-in on this device has to re-register, and remembering a
+            // token whose server row may or may not still exist would suppress exactly that.
+            _registeredToken = null;
+        }
+    }
+
     internal async Task PostTokenAsync(string token, string platform)
     {
         try

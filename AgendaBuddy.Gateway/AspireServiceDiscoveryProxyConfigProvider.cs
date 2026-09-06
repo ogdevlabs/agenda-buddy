@@ -54,9 +54,15 @@ public sealed class AspireServiceDiscoveryProxyConfigProvider : IProxyConfigProv
     /// logical/Aspire resource name — <c>customer</c>, <c>provider</c> and <c>profession</c> map to the
     /// *plural* route groups (<c>customers</c>, <c>providers</c>, <c>professions</c>) each service
     /// actually registers. Identity is the only service with two entries: its own
-    /// <c>api/v1/auth/**</c> group, plus the one route in the whole solution mapped outside the
-    /// <c>api/v1/</c> convention — <c>POST /device-token</c>, registered on the app root
-    /// (<c>AgendaBuddy.Identity/Program.cs:154</c>), not under the <c>auth</c> group.
+    /// <c>api/v1/auth/**</c> group, plus the one path in the whole solution mapped outside the
+    /// <c>api/v1/</c> convention — <c>/device-token</c>, registered on the app root
+    /// (<c>AgendaBuddy.Identity/Modules/DeviceTokenModule.cs</c>), not under the <c>auth</c> group.
+    /// <para>
+    /// These entries match on <b>path only</b>: <see cref="RouteMatch.Methods"/> is deliberately left unset, so
+    /// every verb on a listed path is forwarded. That is what makes <c>DELETE /device-token</c> (sign-out
+    /// releasing a device's push registration) reachable without a second entry — and it is also why adding a
+    /// verb to an existing path needs no change here, while adding a <i>path</i> still does.
+    /// </para>
     /// </remarks>
     private static readonly (string ServiceName, string RouteId, string PathPattern)[] _routeSpecs =
     [

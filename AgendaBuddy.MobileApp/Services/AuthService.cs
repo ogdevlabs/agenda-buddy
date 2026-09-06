@@ -86,8 +86,19 @@ public class AuthService : IAuthService
     /// swallowed: like <see cref="LoginAsync"/> and <see cref="RegisterAsync"/> above, this method
     /// does not catch a network exception, so it propagates to the caller after the clear.
     /// </summary>
+    /// <remarks>
+    /// It also gives up this device's push registration, and that call has to come <b>first</b>: the route
+    /// authorises off the JWT this method is about to delete, and there is no other way to say which account is
+    /// releasing the device. Without it the signed-out account stayed addressable — every notification for it,
+    /// subject and body included, kept arriving on a device it no longer controlled.
+    /// </remarks>
     public async Task LogoutAsync()
     {
+        // Before anything clears the JWT, and outside the try below so a push-unregistration failure cannot be
+        // mistaken for a logout failure. UnregisterTokenAsync absorbs its own errors by contract.
+        if (_pushNotificationService is not null)
+            await _pushNotificationService.UnregisterTokenAsync();
+
         try
         {
             var refreshToken = await _secureStorage.GetAsync(RefreshTokenKey);
