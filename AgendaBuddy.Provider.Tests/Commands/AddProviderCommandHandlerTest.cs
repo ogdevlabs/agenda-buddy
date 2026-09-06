@@ -73,4 +73,57 @@ public class AddProviderCommandHandlerTest
 
         await Assert.ThrowsAsync<ArgumentNullException>(() => handler.Handle(null!, CancellationToken.None));
     }
+
+    // ── Avatar assignment ───────────────────────────────────────────────────────────────────────────
+    // Assigned here, at creation, because it has to be stable for the life of the account. The client falls
+    // back to a derivation from the email when this is empty, so a missing assignment is invisible rather than
+    // broken -- which is exactly why it needs a test.
+
+    [Fact]
+    public async Task Handle_AssignsAnAvatarFromTheCatalog()
+    {
+        var provider = Provider();
+        var providerService = new Mock<IProviderService>();
+        providerService.Setup(c => c.FindProvidersAsync(It.IsAny<BsonDocument>())).ReturnsAsync((ProviderEntity)null!);
+        var handler = new AddProviderCommandHandler(
+            Mock.Of<IMediator>(), providerService.Object, Mock.Of<IEventStore>());
+
+        await handler.Handle(new AddProviderCommand { ProviderEntity = provider }, CancellationToken.None);
+
+        Assert.Contains(provider.AvatarId, AvatarCatalog.Ids);
+    }
+
+    // A caller that chose one has chosen deliberately; creation must not overwrite it.
+    [Fact]
+    public async Task Handle_KeepsAnAvatarTheCallerAlreadyChose()
+    {
+        var provider = Provider();
+        provider.AvatarId = "avatar_11";
+        var providerService = new Mock<IProviderService>();
+        providerService.Setup(c => c.FindProvidersAsync(It.IsAny<BsonDocument>())).ReturnsAsync((ProviderEntity)null!);
+        var handler = new AddProviderCommandHandler(
+            Mock.Of<IMediator>(), providerService.Object, Mock.Of<IEventStore>());
+
+        await handler.Handle(new AddProviderCommand { ProviderEntity = provider }, CancellationToken.None);
+
+        Assert.Equal("avatar_11", provider.AvatarId);
+    }
+
+    // An id this build does not ship is replaced rather than stored, so the client is never asked for a
+    // missing asset.
+    [Fact]
+    public async Task Handle_ReplacesAnAvatarIdItDoesNotRecognise()
+    {
+        var provider = Provider();
+        provider.AvatarId = "avatar_99";
+        var providerService = new Mock<IProviderService>();
+        providerService.Setup(c => c.FindProvidersAsync(It.IsAny<BsonDocument>())).ReturnsAsync((ProviderEntity)null!);
+        var handler = new AddProviderCommandHandler(
+            Mock.Of<IMediator>(), providerService.Object, Mock.Of<IEventStore>());
+
+        await handler.Handle(new AddProviderCommand { ProviderEntity = provider }, CancellationToken.None);
+
+        Assert.NotEqual("avatar_99", provider.AvatarId);
+        Assert.Contains(provider.AvatarId, AvatarCatalog.Ids);
+    }
 }

@@ -73,4 +73,57 @@ public class AddCustomerCommandHandlerTest
 
         await Assert.ThrowsAsync<ArgumentNullException>(() => handler.Handle(null!, CancellationToken.None));
     }
+
+    // ── Avatar assignment ───────────────────────────────────────────────────────────────────────────
+    // Assigned here, at creation, because it has to be stable for the life of the account. The client falls
+    // back to a derivation from the email when this is empty, so a missing assignment is invisible rather than
+    // broken -- which is exactly why it needs a test.
+
+    [Fact]
+    public async Task Handle_AssignsAnAvatarFromTheCatalog()
+    {
+        var customer = Customer();
+        var customerService = new Mock<ICustomerService>();
+        customerService.Setup(c => c.FindCustomerAsync(It.IsAny<BsonDocument>())).ReturnsAsync((CustomerEntity)null!);
+        var handler = new AddCustomerCommandHandler(
+            Mock.Of<IMediator>(), customerService.Object, Mock.Of<IEventStore>());
+
+        await handler.Handle(new AddCustomerCommand { CustomerEntity = customer }, CancellationToken.None);
+
+        Assert.Contains(customer.AvatarId, AvatarCatalog.Ids);
+    }
+
+    // A caller that chose one has chosen deliberately; creation must not overwrite it.
+    [Fact]
+    public async Task Handle_KeepsAnAvatarTheCallerAlreadyChose()
+    {
+        var customer = Customer();
+        customer.AvatarId = "avatar_11";
+        var customerService = new Mock<ICustomerService>();
+        customerService.Setup(c => c.FindCustomerAsync(It.IsAny<BsonDocument>())).ReturnsAsync((CustomerEntity)null!);
+        var handler = new AddCustomerCommandHandler(
+            Mock.Of<IMediator>(), customerService.Object, Mock.Of<IEventStore>());
+
+        await handler.Handle(new AddCustomerCommand { CustomerEntity = customer }, CancellationToken.None);
+
+        Assert.Equal("avatar_11", customer.AvatarId);
+    }
+
+    // An id this build does not ship is replaced rather than stored, so the client is never asked for a
+    // missing asset.
+    [Fact]
+    public async Task Handle_ReplacesAnAvatarIdItDoesNotRecognise()
+    {
+        var customer = Customer();
+        customer.AvatarId = "avatar_99";
+        var customerService = new Mock<ICustomerService>();
+        customerService.Setup(c => c.FindCustomerAsync(It.IsAny<BsonDocument>())).ReturnsAsync((CustomerEntity)null!);
+        var handler = new AddCustomerCommandHandler(
+            Mock.Of<IMediator>(), customerService.Object, Mock.Of<IEventStore>());
+
+        await handler.Handle(new AddCustomerCommand { CustomerEntity = customer }, CancellationToken.None);
+
+        Assert.NotEqual("avatar_99", customer.AvatarId);
+        Assert.Contains(customer.AvatarId, AvatarCatalog.Ids);
+    }
 }

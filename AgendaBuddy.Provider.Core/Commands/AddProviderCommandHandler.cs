@@ -20,6 +20,11 @@ public class AddProviderCommandHandler(
         if (existingProvider is not null)
             return Result.Fail<ProviderEntity>($"Existing record found for Email:{providerEntity.Email}");
 
+        // Assigned once, at creation, and only when the caller supplied nothing — a later update must not
+        // reshuffle somebody's avatar, and a client that does send one has chosen it deliberately.
+        if (!AvatarCatalog.IsKnown(providerEntity.AvatarId))
+            providerEntity.AvatarId = AvatarCatalog.Random();
+
         await mediator.Publish(new AddProviderEvent { ProviderName = providerEntity.Email }, cancellationToken);
 
         await providerService.AddProviderAsync(providerEntity);

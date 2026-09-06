@@ -175,7 +175,10 @@ public class CustomerApiService : ICustomerApiService
                 Id = GetString(element, "id"),
                 Email = GetString(element, "email"),
                 FullName = string.Join(' ', new[] { firstName, lastName }.Where(s => !string.IsNullOrWhiteSpace(s))),
-                Phone = GetString(element, "phoneNumber")
+                Phone = GetString(element, "phoneNumber"),
+                // Absent on every account created before avatars existed; AvatarAsset falls back to a stable
+                // derivation from the email, so an unmapped or missing value is never a blank circle.
+                AvatarId = GetString(element, "avatarId")
             });
         }
 

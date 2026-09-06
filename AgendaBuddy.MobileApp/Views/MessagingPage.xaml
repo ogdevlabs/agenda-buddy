@@ -121,22 +121,29 @@
                                       Padding="16,12,16,12"
                                       ColumnSpacing="12">
 
-                                    <!-- Avatar -->
-                                    <Grid Grid.Column="0"
-                                          WidthRequest="48"
-                                          HeightRequest="48"
-                                          VerticalOptions="Start">
-                                        <BoxView CornerRadius="24"
-                                                 WidthRequest="48"
-                                                 HeightRequest="48"
-                                                 Color="#E5E5EA" />
-                                        <Label Text="{Binding Initial}"
-                                               FontSize="20"
-                                               FontAttributes="Bold"
-                                               TextColor="{StaticResource iOSGray}"
-                                               HorizontalOptions="Center"
-                                               VerticalOptions="Center" />
-                                    </Grid>
+                                    <!--
+                                        Derived from the other party's address: a thread stub is built from
+                                        messages and carries no profile, so there is no assigned avatar to read.
+                                        The derivation is stable, which is what makes the same person show the
+                                        same mark here and in the contacts list.
+                                    -->
+                                    <Border Grid.Column="0"
+                                            WidthRequest="48"
+                                            HeightRequest="48"
+                                            VerticalOptions="Start"
+                                            Padding="0"
+                                            StrokeThickness="0"
+                                            Stroke="Transparent"
+                                            BackgroundColor="{StaticResource Divider}">
+                                        <Border.StrokeShape>
+                                            <RoundRectangle CornerRadius="24" />
+                                        </Border.StrokeShape>
+                                        <Image Source="{Binding AvatarAsset}"
+                                               Aspect="AspectFill"
+                                               WidthRequest="48"
+                                               HeightRequest="48"
+                                               AutomationId="ThreadAvatar" />
+                                    </Border>
 
                                     <!-- Name + preview -->
                                     <VerticalStackLayout Grid.Column="1"
