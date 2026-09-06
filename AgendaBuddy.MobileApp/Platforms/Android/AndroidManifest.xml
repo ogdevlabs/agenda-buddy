@@ -4,7 +4,13 @@
 	     reachable from the emulator. See Resources/xml/network_security_config.xml for why this is not
 	     usesCleartextTraffic="true". A Release build ships the same config; every non-loopback host stays
 	     HTTPS-only, so this is not a downgrade for a real user. -->
-	<application android:allowBackup="true" android:icon="@mipmap/appicon" android:roundIcon="@mipmap/appicon_round" android:supportsRtl="true" android:networkSecurityConfig="@xml/network_security_config"></application>
+	<application android:allowBackup="true" android:icon="@mipmap/appicon" android:roundIcon="@mipmap/appicon_round" android:supportsRtl="true" android:networkSecurityConfig="@xml/network_security_config">
+		<!-- The channel every push is posted on. Without this metadata a message that names no channel lands
+		     on the one the Firebase SDK auto-creates, labelled "Miscellaneous" — a name the user cannot
+		     recognise and an importance nothing here chose. The value must equal PushChannel.Id, which is
+		     what MainActivity creates; a mismatch is silent, and leaves the declared channel empty. -->
+		<meta-data android:name="com.google.firebase.messaging.default_notification_channel_id" android:value="agendame_notifications" />
+	</application>
 	<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 	<uses-permission android:name="android.permission.INTERNET" />
 	<!-- Required from API 33 to DISPLAY a notification at all; granting it is a runtime prompt, which

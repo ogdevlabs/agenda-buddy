@@ -135,6 +135,95 @@ public class AuthServiceTests
     }
 
     // ---------------------------------------------------------------------------
+    // Releasing the device's push registration
+    // ---------------------------------------------------------------------------
+    // Signing out has to tell the server to stop pushing to this device. Without it the signed-out account
+    // stayed addressable: every notification for it — subject and body included — kept arriving on a phone it
+    // no longer controlled, until some other account happened to sign in on the same device.
+
+    /// <summary>
+    /// And it has to happen <b>before</b> the JWT is cleared: the route authorises off that token, so a
+    /// unregistration issued after the clear is unauthenticated and silently does nothing.
+    /// </summary>
+    [Fact]
+    public async Task LogoutAsync_ReleasesThePushRegistrationBeforeClearingTheJwt()
+    {
+        var order = new List<string>();
+
+        var storage = new Mock<ISecureStorageService>();
+        storage.Setup(s => s.GetAsync(AuthService.RefreshTokenKey)).ReturnsAsync("stored-refresh-token");
+        storage.Setup(s => s.Remove(JwtDelegatingHandler.JwtKey)).Callback(() => order.Add("clear-jwt"));
+
+        var deviceTokenHandler = new FakeHttpMessageHandler(HttpStatusCode.NoContent);
+        var authHandler = new FakeHttpMessageHandler(HttpStatusCode.NoContent);
+
+        var factory = new Mock<IHttpClientFactory>();
+        factory.Setup(f => f.CreateClient("AgendaBuddyApi"))
+            .Returns(() => new HttpClient(deviceTokenHandler) { BaseAddress = new Uri("https://localhost/") });
+        factory.Setup(f => f.CreateClient("AgendaBuddyApiNoAuth"))
+            .Returns(() => new HttpClient(authHandler) { BaseAddress = new Uri("https://localhost/") });
+
+        var push = new RecordingPushNotificationService(factory.Object, storage.Object, order);
+
+        await new AuthService(factory.Object, storage.Object, push).LogoutAsync();
+
+        var request = Assert.Single(deviceTokenHandler.Requests);
+        Assert.Equal(HttpMethod.Delete, request.Method);
+        Assert.Equal("device-token", request.RequestUri!.AbsolutePath.TrimStart('/'));
+
+        Assert.Equal(["unregister", "clear-jwt"], order);
+    }
+
+    /// <summary>
+    /// A failed unregistration must not stop the user signing out, and must not be mistaken for a logout
+    /// failure. The server's own eviction on the next sign-in is the backstop for this case.
+    /// </summary>
+    [Fact]
+    public async Task LogoutAsync_WhenReleasingThePushRegistrationFails_StillLogsOut()
+    {
+        var storage = new Mock<ISecureStorageService>();
+        storage.Setup(s => s.GetAsync(AuthService.RefreshTokenKey)).ReturnsAsync("stored-refresh-token");
+
+        var factory = new Mock<IHttpClientFactory>();
+        factory.Setup(f => f.CreateClient("AgendaBuddyApi"))
+            .Returns(() => new HttpClient(new ThrowingHttpMessageHandler(new HttpRequestException("no network")))
+            {
+                BaseAddress = new Uri("https://localhost/")
+            });
+        factory.Setup(f => f.CreateClient("AgendaBuddyApiNoAuth"))
+            .Returns(() => new HttpClient(new FakeHttpMessageHandler(HttpStatusCode.NoContent))
+            {
+                BaseAddress = new Uri("https://localhost/")
+            });
+
+        var push = new PushNotificationService(factory.Object, storage.Object);
+
+        var ex = await Record.ExceptionAsync(
+            () => new AuthService(factory.Object, storage.Object, push).LogoutAsync());
+
+        Assert.Null(ex);
+        storage.Verify(s => s.Remove(JwtDelegatingHandler.JwtKey), Times.Once);
+        storage.Verify(s => s.Remove(AuthService.RefreshTokenKey), Times.Once);
+    }
+
+    /// <summary>
+    /// Records when the unregistration ran, so its ordering against the local clear is observable. It still
+    /// performs the real request — the point is the sequence, not a stubbed-out call.
+    /// </summary>
+    private sealed class RecordingPushNotificationService(
+        IHttpClientFactory httpClientFactory,
+        ISecureStorageService secureStorage,
+        List<string> order)
+        : PushNotificationService(httpClientFactory, secureStorage)
+    {
+        internal override async Task UnregisterTokenAsync()
+        {
+            order.Add("unregister");
+            await base.UnregisterTokenAsync();
+        }
+    }
+
+    // ---------------------------------------------------------------------------
     // Minimal fake handlers — avoids a dependency on MockHttp or similar packages
     // ---------------------------------------------------------------------------
     private sealed class FakeHttpMessageHandler : HttpMessageHandler

@@ -99,6 +99,11 @@ public static class MauiProgram
         builder.Services.AddTransient<IProviderApiService, ProviderApiService>();
         builder.Services.AddTransient<IServicesApiService, ServicesApiService>();
         builder.Services.AddTransient<IProfessionApiService, ProfessionApiService>();
+
+        // The in-app banner. Registered before PushNotificationService only for readability -- what matters is
+        // that it exists at all: neither platform draws a notification banner while the app is in the
+        // foreground, so without this an arriving notification is completely silent.
+        builder.Services.AddSingleton<IInAppAlertService, InAppAlertService>();
         builder.Services.AddSingleton<PushNotificationService>();
 
         // ViewModels

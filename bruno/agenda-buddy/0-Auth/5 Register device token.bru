@@ -10,10 +10,17 @@ post {
 body:json {
   {
     "token": "fake-device-token-for-local-testing",
-    "platform": "Android"
+    "platform": "android"
   }
 }
 docs {
   ⚠️ Note the path: **`/device-token` at the root**, not under `/api/v1/auth/`. It is mapped on `app`
   directly rather than on the `api/v1/auth` group. Requires a JWT.
+
+  ⚠️ **`platform` is matched case-sensitively** against `"android"` and `"ios"` — `"Android"` is a 400.
+  This request said `"Android"` until 2026-09-06, so it had never actually registered anything.
+
+  Registering also **takes this token away from any other account holding it**: a device token addresses one
+  device, so at most one account may be reachable through it. See **6 Unregister device token** for the
+  sign-out half.
 }

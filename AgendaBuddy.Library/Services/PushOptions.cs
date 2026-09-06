@@ -19,4 +19,15 @@ public class PushOptions
     /// credential is the only way in.
     /// </summary>
     public string? ServiceAccountJson { get; set; }
+
+    /// <summary>
+    /// The Android notification channel every message names.
+    /// </summary>
+    /// <remarks>
+    /// A constant, not a setting: it has to equal the channel the client creates and declares in its manifest
+    /// (<c>AgendaBuddy.MobileApp/Infrastructure/PushChannel.cs</c>, which reads this), and the two are shipped
+    /// together. Naming a channel the app has not created is silent — Android posts to the one the Firebase SDK
+    /// auto-creates instead, so every notification still arrives and the app's own channel settings do nothing.
+    /// </remarks>
+    public const string AndroidChannelId = "agendame_notifications";
 }

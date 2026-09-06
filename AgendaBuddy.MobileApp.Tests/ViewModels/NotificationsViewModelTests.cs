@@ -38,10 +38,30 @@ public class NotificationsViewModelTests
     }
 
     private static NotificationsViewModel CreateViewModel(
-        Mock<INotificationApiService> service, out NotificationBadgeViewModel badge)
+        Mock<INotificationApiService> service,
+        out NotificationBadgeViewModel badge,
+        IInAppAlertService? alerts = null)
     {
         badge = new NotificationBadgeViewModel(service.Object);
-        return new NotificationsViewModel(service.Object, CreateMockSession().Object, badge);
+        return new NotificationsViewModel(service.Object, CreateMockSession().Object, badge, alerts);
+    }
+
+    /// <summary>Captures what the screen told the user, instead of drawing a toast there is no presenter for.</summary>
+    private sealed class RecordingAlertService : IInAppAlertService
+    {
+        public List<string> Messages { get; } = new();
+
+        public Task ShowAsync(string message)
+        {
+            Messages.Add(message);
+            return Task.CompletedTask;
+        }
+
+        public Task ShowAsync(string message, string actionLabel, Func<Task> action)
+        {
+            Messages.Add(message);
+            return Task.CompletedTask;
+        }
     }
 
     private static List<NotificationSummary> ThreeRows() =>
@@ -268,6 +288,215 @@ public class NotificationsViewModelTests
         await vm.MarkAllReadCommand.ExecuteAsync(null);
 
         service.Verify(s => s.MarkAllReadAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    /// <summary>
+    /// A bulk action that reports nothing is indistinguishable from one that did nothing. This used to be
+    /// silent on success, on refusal and on a dropped connection alike — the only feedback was a number that
+    /// sometimes changed.
+    /// </summary>
+    [Fact]
+    public async Task MarkAllRead_Success_ReportsHowManyItMarked()
+    {
+        var service = CreateService(ThreeRows());
+        service.Setup(s => s.MarkAllReadAsync(It.IsAny<CancellationToken>())).ReturnsAsync(2);
+
+        var alerts = new RecordingAlertService();
+        var vm = CreateViewModel(service, out _, alerts);
+        await vm.LoadCommand.ExecuteAsync(null);
+
+        await vm.MarkAllReadCommand.ExecuteAsync(null);
+
+        Assert.Equal("2 notifications marked as read", Assert.Single(alerts.Messages));
+        Assert.False(vm.HasError);
+    }
+
+    // "1 notification", not "1 notifications".
+    [Fact]
+    public async Task MarkAllRead_OfOne_ReportsItInTheSingular()
+    {
+        Assert.Equal("1 notification marked as read", NotificationsViewModel.MarkAllReadConfirmation(1));
+        await Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// A failed request must change nothing locally: clearing the rows would show a state the next reload
+    /// contradicts, so the reader would believe the inbox was cleared when it was not.
+    /// </summary>
+    [Fact]
+    public async Task MarkAllRead_WhenTheRequestFails_SaysSoAndLeavesEveryRowUnread()
+    {
+        var service = CreateService(ThreeRows());
+        service.Setup(s => s.MarkAllReadAsync(It.IsAny<CancellationToken>())).ReturnsAsync((long?)null);
+
+        var vm = CreateViewModel(service, out var badge);
+        await vm.LoadCommand.ExecuteAsync(null);
+
+        await vm.MarkAllReadCommand.ExecuteAsync(null);
+
+        Assert.True(vm.HasError);
+        Assert.Equal(NotificationsViewModel.MarkAllReadFailureMessage, vm.ErrorMessage);
+        Assert.Equal(2, vm.UnreadCount);
+        Assert.Equal(2, badge.UnreadCount);
+        Assert.False(vm.Notifications.First(n => n.Id == "n1").IsRead);
+    }
+
+    // A thrown request is the same outcome as a refused one, and must not escape the command unobserved.
+    [Fact]
+    public async Task MarkAllRead_WhenTheRequestThrows_SaysSoRatherThanFailingSilently()
+    {
+        var service = CreateService(ThreeRows());
+        service.Setup(s => s.MarkAllReadAsync(It.IsAny<CancellationToken>()))
+               .ThrowsAsync(new HttpRequestException("Network error"));
+
+        var vm = CreateViewModel(service, out _);
+        await vm.LoadCommand.ExecuteAsync(null);
+
+        var ex = await Record.ExceptionAsync(() => vm.MarkAllReadCommand.ExecuteAsync(null));
+
+        Assert.Null(ex);
+        Assert.Equal(NotificationsViewModel.MarkAllReadFailureMessage, vm.ErrorMessage);
+        Assert.Equal(2, vm.UnreadCount);
+    }
+
+    /// <summary>
+    /// The server having nothing unread is not a failure — it means this client's count was stale (read on
+    /// another device, most likely). Reconcile and say so, rather than reporting an error that did not happen.
+    /// </summary>
+    [Fact]
+    public async Task MarkAllRead_WhenTheServerHadNothingUnread_ReconcilesInsteadOfReportingAFailure()
+    {
+        var service = CreateService(ThreeRows(), unreadCount: 2);
+        service.Setup(s => s.MarkAllReadAsync(It.IsAny<CancellationToken>())).ReturnsAsync(0L);
+
+        var alerts = new RecordingAlertService();
+        var vm = CreateViewModel(service, out _, alerts);
+        await vm.LoadCommand.ExecuteAsync(null);
+        Assert.Equal(2, vm.UnreadCount);
+
+        // What the server now reports, after the no-op.
+        service.Setup(s => s.GetUnreadCountAsync(It.IsAny<CancellationToken>())).ReturnsAsync(0L);
+
+        await vm.MarkAllReadCommand.ExecuteAsync(null);
+
+        Assert.False(vm.HasError);
+        Assert.Equal(0, vm.UnreadCount);
+        Assert.Equal(NotificationsViewModel.NothingToMarkMessage, Assert.Single(alerts.Messages));
+    }
+
+    // ── Pull to refresh ─────────────────────────────────────────────────────────────────────────────
+    // The gesture people try first on any list they suspect is stale. There was none: the only way to re-read
+    // the inbox was to navigate away and back so OnAppearing fired.
+
+    [Fact]
+    public async Task Refresh_ReloadsAndClearsItsOwnSpinner()
+    {
+        var service = CreateService(ThreeRows());
+        var vm = CreateViewModel(service, out _);
+
+        await vm.RefreshCommand.ExecuteAsync(null);
+
+        service.Verify(s => s.GetNotificationsAsync(
+            NotificationsViewModel.PageSize, false, It.IsAny<CancellationToken>()), Times.Once);
+        Assert.False(vm.IsRefreshing);
+        Assert.Equal(3, vm.Notifications.Count);
+    }
+
+    /// <summary>
+    /// A pull-to-refresh draws its own spinner, so the centred one must stay hidden — two spinners at once read
+    /// as two separate things loading.
+    /// </summary>
+    [Fact]
+    public void TheCentredSpinnerIsSuppressedWhileTheRefreshGestureOwnsTheScreen()
+    {
+        var vm = CreateViewModel(CreateService(), out _);
+
+        vm.IsLoading = true;
+        Assert.True(vm.ShowsLoadingIndicator);
+
+        vm.IsRefreshing = true;
+        Assert.False(vm.ShowsLoadingIndicator);
+    }
+
+    // ── Date banding ────────────────────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// The header is stamped on the first row of each band and cleared on the rest, so a flat list can draw
+    /// "Today"/"Yesterday" headers without a grouped CollectionView.
+    /// </summary>
+    [Fact]
+    public async Task LoadAsync_StampsADateHeaderOnTheFirstRowOfEachBandOnly()
+    {
+        var now = DateTime.UtcNow;
+        var rows = new List<NotificationSummary>
+        {
+            new() { Id = "a", CreatedAt = now.AddHours(-1) },
+            new() { Id = "b", CreatedAt = now.AddHours(-2) },
+            new() { Id = "c", CreatedAt = now.AddDays(-1) },
+            new() { Id = "d", CreatedAt = now.AddDays(-1).AddHours(-1) }
+        };
+
+        var vm = CreateViewModel(CreateService(rows), out _);
+        await vm.LoadCommand.ExecuteAsync(null);
+
+        Assert.Equal("Today", vm.Notifications[0].SectionHeader);
+        Assert.True(vm.Notifications[0].StartsSection);
+
+        Assert.Equal(string.Empty, vm.Notifications[1].SectionHeader);
+        Assert.False(vm.Notifications[1].StartsSection);
+
+        Assert.Equal("Yesterday", vm.Notifications[2].SectionHeader);
+        Assert.Equal(string.Empty, vm.Notifications[3].SectionHeader);
+    }
+
+    /// <summary>
+    /// Banded on <b>local</b> dates. The server stores UTC instants, and banding on those files a 01:00Z
+    /// notification under the wrong day for every reader behind UTC — the same defect ProviderAvailability had.
+    /// </summary>
+    [Fact]
+    public void TheBandingUsesTheReadersOwnClock()
+    {
+        var utc = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Utc);
+        var rows = new List<NotificationSummary> { new() { Id = "a", CreatedAt = utc } };
+
+        NotificationsViewModel.ApplySections(rows);
+
+        Assert.Equal(
+            AgendaBuddy.MobileApp.Infrastructure.NotificationVisuals.Section(utc.ToLocalTime(), DateTime.Now),
+            rows[0].SectionHeader);
+    }
+
+    // ── Row chrome ──────────────────────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Unread is what the list has to make obvious, so it is a property the row's own chrome binds to rather
+    /// than IsRead inverted at four separate places in the template.
+    /// </summary>
+    [Fact]
+    public void MarkingARowReadFlipsWhatTheRowChromeBindsTo()
+    {
+        var row = new NotificationSummary { Id = "n1", IsRead = false };
+        var raised = new List<string?>();
+        row.PropertyChanged += (_, e) => raised.Add(e.PropertyName);
+
+        Assert.True(row.IsUnread);
+        row.IsRead = true;
+
+        Assert.False(row.IsUnread);
+        Assert.Contains(nameof(NotificationSummary.IsUnread), raised);
+    }
+
+    /// <summary>
+    /// The expanded row's timestamp is on the reader's clock. It used to format the raw UTC instant, so it read
+    /// hours off for anyone not on UTC while the "3h ago" line directly above it was right.
+    /// </summary>
+    [Fact]
+    public void TheExpandedTimestampIsLocalNotUtc()
+    {
+        var utc = new DateTime(2026, 9, 6, 12, 0, 0, DateTimeKind.Utc);
+        var row = new NotificationSummary { CreatedAt = utc };
+
+        Assert.Equal(utc.ToLocalTime(), row.LocalCreatedAt);
     }
 
     // ── Filter ──────────────────────────────────────────────────────────────────────────────────────

@@ -38,14 +38,34 @@ public partial class NotificationBadgeViewModel : ObservableObject
     /// </summary>
     public string BadgeText => UnreadCount > 99 ? "99+" : UnreadCount.ToString();
 
-    /// <summary>Re-reads the count from the server. Never throws — a badge must not break the screen it is on.</summary>
+    /// <summary>
+    /// Re-reads the count from the server. Never throws — a badge must not break the screen it is on.
+    /// </summary>
+    /// <remarks>
+    /// A count the server could not supply leaves the previous value alone rather than overwriting it with
+    /// zero. The old behaviour meant one failed request cleared a badge that had unread notifications behind
+    /// it, and this method is called on every navigation, so a single blip anywhere silenced the only signal
+    /// most screens carry.
+    /// </remarks>
     public async Task RefreshAsync(CancellationToken ct = default)
     {
-        UnreadCount = await _notificationApiService.GetUnreadCountAsync(ct);
+        var count = await _notificationApiService.GetUnreadCountAsync(ct);
+        if (count.HasValue)
+            UnreadCount = Math.Max(0, count.Value);
     }
 
     /// <summary>Applies a known-good local change without a round trip. Floors at zero.</summary>
     public void Decrement(long by = 1) => UnreadCount = Math.Max(0, UnreadCount - by);
+
+    /// <summary>
+    /// Counts an arrival the client learnt about directly, before any request confirms it.
+    /// </summary>
+    /// <remarks>
+    /// A push arriving *is* the authoritative news that there is one more unread, so the badge moves
+    /// immediately — waiting for a round trip would leave the count behind the banner that just announced it.
+    /// The next <see cref="RefreshAsync"/> reconciles.
+    /// </remarks>
+    public void Increment(long by = 1) => UnreadCount += Math.Max(0, by);
 
     /// <summary>Sets the count directly, for a caller that has just learnt it authoritatively.</summary>
     public void Set(long count) => UnreadCount = Math.Max(0, count);

@@ -123,6 +123,87 @@ public class FcmPushSenderTest
             .GetProperty("message").GetProperty("data").GetProperty("appointmentIdentifier").GetString());
     }
 
+    // ── Delivery instructions ───────────────────────────────────────────────────────────────────────
+    // FCM's defaults are wrong for this product in three ways that all present as "push does not work": a
+    // normal-priority message can sit in Doze for hours, a soundless notification is drawn silently, and a
+    // message naming no Android channel lands on the SDK's own "Miscellaneous" one.
+
+    /// <summary>
+    /// High priority on both platforms. <c>apns-priority: 10</c> is valid here precisely because every message
+    /// carries a visible alert — a background-only push would have to use 5, and 10 with no alert is rejected.
+    /// </summary>
+    [Fact]
+    public async Task Send_AsksForImmediateDeliveryOnBothPlatforms()
+    {
+        var handler = new RecordingHandler();
+        var sender = Create(handler);
+
+        await sender.SendAsync("device-token", "New appointment request", "Friday at 2pm");
+
+        using var document = JsonDocument.Parse(handler.Requests[1].Body);
+        var message = document.RootElement.GetProperty("message");
+
+        Assert.Equal("high", message.GetProperty("android").GetProperty("priority").GetString());
+        Assert.Equal("10", message
+            .GetProperty("apns").GetProperty("headers").GetProperty("apns-priority").GetString());
+    }
+
+    // A notification with no sound is indistinguishable from one that never arrived, unless the screen is watched.
+    [Fact]
+    public async Task Send_AsksForASoundOnBothPlatforms()
+    {
+        var handler = new RecordingHandler();
+        var sender = Create(handler);
+
+        await sender.SendAsync("device-token", "Title", "Body");
+
+        using var document = JsonDocument.Parse(handler.Requests[1].Body);
+        var message = document.RootElement.GetProperty("message");
+
+        Assert.True(message
+            .GetProperty("android").GetProperty("notification").GetProperty("default_sound").GetBoolean());
+        Assert.Equal("default", message
+            .GetProperty("apns").GetProperty("payload").GetProperty("aps").GetProperty("sound").GetString());
+    }
+
+    /// <summary>
+    /// The channel has to be the one the client creates and declares in its manifest. Naming a channel the app
+    /// has not created is silent: Android posts to the SDK's auto-created channel instead, every notification
+    /// still arrives, and the app's own channel settings do nothing.
+    /// </summary>
+    [Fact]
+    public async Task Send_NamesTheAndroidChannelTheClientDeclares()
+    {
+        var handler = new RecordingHandler();
+        var sender = Create(handler);
+
+        await sender.SendAsync("device-token", "Title", "Body");
+
+        using var document = JsonDocument.Parse(handler.Requests[1].Body);
+
+        Assert.Equal(PushOptions.AndroidChannelId, document.RootElement
+            .GetProperty("message").GetProperty("android").GetProperty("notification")
+            .GetProperty("channel_id").GetString());
+    }
+
+    /// <summary>
+    /// The field names are FCM's own, and the serializer must not rewrite them: the send would answer 400 for an
+    /// unknown field, and the delivery instructions above would be silently absent from a message that still
+    /// arrives.
+    /// </summary>
+    [Fact]
+    public async Task Send_KeepsFcmsOwnFieldNamesRatherThanRecasingThem()
+    {
+        var handler = new RecordingHandler();
+        var sender = Create(handler);
+
+        await sender.SendAsync("device-token", "Title", "Body");
+
+        Assert.Contains("\"channel_id\"", handler.Requests[1].Body);
+        Assert.Contains("\"default_sound\"", handler.Requests[1].Body);
+        Assert.Contains("\"apns-priority\"", handler.Requests[1].Body);
+    }
+
     // FCM rejects `data: null`, so a notification with no appointment must omit the key entirely.
     [Fact]
     public async Task Send_OmitsTheDataKeyEntirelyWhenThereIsNoPayload()

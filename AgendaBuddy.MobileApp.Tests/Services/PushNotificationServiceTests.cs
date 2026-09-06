@@ -1,8 +1,11 @@
 using System.Net;
 using System.Net.Http;
 using System.Text.Json;
+using AgendaBuddy.Library.Services;
 using AgendaBuddy.MobileApp.Infrastructure;
+using AgendaBuddy.MobileApp.Models;
 using AgendaBuddy.MobileApp.Services;
+using AgendaBuddy.MobileApp.ViewModels;
 using Moq;
 using Xunit;
 
@@ -149,8 +152,311 @@ public class PushNotificationServiceTests
         Assert.Empty(navigated);
     }
 
+    // ── Foreground arrival ──────────────────────────────────────────────────────────────────────────
+    // Neither platform's OS draws a banner for a push that arrives while the app is on screen: Android hands
+    // the message to the app instead of the tray, iOS asks the app what to present and shows nothing by
+    // default. So a notification landing while somebody is USING the app was completely silent -- the badge did
+    // not move and nothing appeared. These cover the half of that which is reachable on the net10.0 slice.
+
+    [Fact]
+    public void OnNotificationReceived_AnnouncesTheArrivalAndMovesTheBadge()
+    {
+        var service = ArrivalRecorder(out var badge, out var announced);
+
+        service.OnNotificationReceived("New appointment request", "a@b.dev requested Friday 2:00 PM", null);
+
+        var arrival = Assert.Single(announced);
+        Assert.Equal("New appointment request", arrival.Title);
+        Assert.Equal("a@b.dev requested Friday 2:00 PM", arrival.Body);
+        Assert.Equal(1, badge.UnreadCount);
+    }
+
+    /// <summary>
+    /// FCM's shape for a message that carries only state is a data payload with no notification block. Drawing
+    /// an empty banner for one is worse than drawing nothing, and counting it would inflate the badge against a
+    /// row the inbox does not have.
+    /// </summary>
+    [Fact]
+    public void OnNotificationReceived_WithNoTitleAndNoBody_AnnouncesNothingAndLeavesTheBadgeAlone()
+    {
+        var service = ArrivalRecorder(out var badge, out var announced);
+
+        service.OnNotificationReceived(null, "   ", new Dictionary<string, string> { ["state"] = "x" });
+
+        Assert.Empty(announced);
+        Assert.Equal(0, badge.UnreadCount);
+    }
+
+    [Fact]
+    public void OnNotificationReceived_CarriesTheAppointmentIdentifierThroughToTheBanner()
+    {
+        var service = ArrivalRecorder(out _, out var announced);
+
+        service.OnNotificationReceived(
+            "Appointment cancelled",
+            "Friday 2:00 PM is off",
+            new Dictionary<string, string> { [PushNotificationService.AppointmentIdentifierKey] = "appt-42" });
+
+        Assert.Equal("appt-42", Assert.Single(announced).AppointmentIdentifier);
+    }
+
+    /// <summary>
+    /// The banner has to lead somewhere. An appointment notification goes to the appointment; a message
+    /// notification names none, and must fall back to the inbox rather than shipping a banner whose only
+    /// affordance is dismissing it.
+    /// </summary>
+    [Fact]
+    public async Task Announce_WithAnAppointment_OffersAWayIntoIt()
+    {
+        var alerts = new CapturingAlertService();
+        var navigated = new List<string>();
+        var service = new RecordingPushNotificationService(
+            Mock.Of<IHttpClientFactory>(), Mock.Of<ISecureStorageService>(), navigated, alerts);
+
+        await service.AnnounceAsync(new InAppNotification("Appointment cancelled", "Friday is off", "appt-42"));
+
+        Assert.Equal(PushNotificationService.ViewActionLabel, alerts.LastActionLabel);
+        await alerts.InvokeLastActionAsync();
+
+        Assert.Equal("appt-42", Assert.Single(navigated));
+        Assert.Equal(0, service.InboxOpened);
+    }
+
+    [Fact]
+    public async Task Announce_WithNoAppointment_OffersTheInboxInstead()
+    {
+        var alerts = new CapturingAlertService();
+        var navigated = new List<string>();
+        var service = new RecordingPushNotificationService(
+            Mock.Of<IHttpClientFactory>(), Mock.Of<ISecureStorageService>(), navigated, alerts);
+
+        await service.AnnounceAsync(new InAppNotification("New message from a@b.dev", "See you then", string.Empty));
+
+        Assert.Equal(PushNotificationService.ViewActionLabel, alerts.LastActionLabel);
+        await alerts.InvokeLastActionAsync();
+
+        Assert.Empty(navigated);
+        Assert.Equal(1, service.InboxOpened);
+    }
+
+    /// <summary>
+    /// The banner has one text slot, so the subject leads and truncation costs the detail rather than the point.
+    /// </summary>
+    [Fact]
+    public void TheBannerReadsAsSubjectThenDetail()
+    {
+        Assert.Equal(
+            "New appointment request — a@b.dev requested Friday",
+            new InAppNotification("New appointment request", "a@b.dev requested Friday", string.Empty)
+                .BannerText);
+    }
+
+    // A body-only push is promoted to the banner's first line rather than rendering a blank one above it.
+    [Fact]
+    public void ABodyWithNoSubjectBecomesTheBannerLine()
+    {
+        var arrival = From(null, "a@b.dev requested Friday", null);
+
+        Assert.NotNull(arrival);
+        Assert.Equal("a@b.dev requested Friday", arrival!.Title);
+        Assert.Equal("a@b.dev requested Friday", arrival.BannerText);
+    }
+
+    // ── Token rotation ──────────────────────────────────────────────────────────────────────────────
+    // The app only ever registered the token it held at sign-in. FCM rotates tokens, and after a rotation
+    // every send answered 404 against the stored one -- push was dead for the rest of the session with nothing
+    // reporting it.
+
+    [Fact]
+    public async Task OnTokenChanged_RegistersTheNewToken()
+    {
+        var handler = new TestableHttpMessageHandler(HttpStatusCode.OK);
+        var sut = ServiceWith(handler);
+
+        await sut.OnTokenChangedAsync("rotated-token");
+
+        Assert.NotNull(handler.LastRequestBody);
+        using var doc = JsonDocument.Parse(handler.LastRequestBody!);
+        Assert.Equal("rotated-token", doc.RootElement.GetProperty("token").GetString());
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task OnTokenChanged_WithNothingUsable_PostsNothing(string? token)
+    {
+        var handler = new TestableHttpMessageHandler(HttpStatusCode.OK);
+        var sut = ServiceWith(handler);
+
+        await sut.OnTokenChangedAsync(token);
+
+        Assert.Null(handler.LastRequest);
+    }
+
+    /// <summary>
+    /// A rotation event that resolves to the token already registered is not worth a request. Only an accepted
+    /// registration counts as registered, so a rejected one is retried rather than suppressed as already-done.
+    /// </summary>
+    [Fact]
+    public async Task OnTokenChanged_RepeatingAnAcceptedToken_PostsOnlyOnce()
+    {
+        var handler = new CountingHttpMessageHandler(HttpStatusCode.OK);
+        var sut = ServiceWith(handler);
+
+        await sut.OnTokenChangedAsync("same-token");
+        await sut.OnTokenChangedAsync("same-token");
+
+        Assert.Equal(1, handler.Requests);
+    }
+
+    [Fact]
+    public async Task OnTokenChanged_AfterARejectedRegistration_TriesAgain()
+    {
+        var handler = new CountingHttpMessageHandler(HttpStatusCode.InternalServerError);
+        var sut = ServiceWith(handler);
+
+        await sut.OnTokenChangedAsync("same-token");
+        await sut.OnTokenChangedAsync("same-token");
+
+        Assert.Equal(2, handler.Requests);
+    }
+
+    // ── The in-app banner shows the detail the OS was not allowed to ────────────────────────────────
+    // notification.title/body are deliberately generic, because the OS draws them on an unauthenticated lock
+    // screen (threat T-002). The producer's real text travels in `data`, which the OS hands to the app instead
+    // of drawing — so the in-app banner, which is behind authentication, is the one surface that may show it.
+
+    [Fact]
+    public void TheBannerPrefersTheDataPayloadOverTheLockScreenSafeText()
+    {
+        var arrival = From(
+            "Appointment request",
+            "Someone has requested an appointment. Open the app for details.",
+            new Dictionary<string, string>
+            {
+                [PushPayloadKeys.Subject] = "New appointment request",
+                [PushPayloadKeys.Body] = "a@b.dev requested Deep Tissue on Friday at 2:00 PM"
+            });
+
+        Assert.NotNull(arrival);
+        Assert.Equal("New appointment request", arrival!.Title);
+        Assert.Equal("a@b.dev requested Deep Tissue on Friday at 2:00 PM", arrival.Body);
+    }
+
+    /// <summary>
+    /// A push from a server that predates the <c>data</c> detail — or one whose detail was dropped — still draws
+    /// a banner from what the notification block carries, rather than nothing at all.
+    /// </summary>
+    [Fact]
+    public void WithNoDetailInTheDataPayload_TheBannerFallsBackToTheDisplayedText()
+    {
+        var arrival = From("Appointment request", "Open the app for details.", null);
+
+        Assert.NotNull(arrival);
+        Assert.Equal("Appointment request", arrival!.Title);
+        Assert.Equal("Open the app for details.", arrival.Body);
+    }
+
+    // The keys are one definition shared with the sender, not a matching pair of literals across the network.
+    [Fact]
+    public void ThePayloadKeysComeFromTheSameDefinitionTheServerWritesAgainst()
+    {
+        Assert.Equal(PushPayloadKeys.AppointmentIdentifier, PushNotificationService.AppointmentIdentifierKey);
+        Assert.Equal("appointmentIdentifier", PushPayloadKeys.AppointmentIdentifier);
+        Assert.Equal("subject", PushPayloadKeys.Subject);
+        Assert.Equal("body", PushPayloadKeys.Body);
+    }
+
+    private static InAppNotification? From(
+        string? title, string? body, IDictionary<string, string>? data) =>
+        InAppNotification.From(
+            title,
+            body,
+            data,
+            PushNotificationService.AppointmentIdentifierKey,
+            PushPayloadKeys.Subject,
+            PushPayloadKeys.Body);
+
+    private static PushNotificationService ServiceWith(HttpMessageHandler handler)
+    {
+        var httpClient = new HttpClient(handler) { BaseAddress = new Uri("https://localhost/") };
+        var factory = new Mock<IHttpClientFactory>();
+        factory.Setup(f => f.CreateClient("AgendaBuddyApi")).Returns(httpClient);
+
+        return new PushNotificationService(factory.Object, Mock.Of<ISecureStorageService>());
+    }
+
+    private static ArrivalRecordingPushNotificationService ArrivalRecorder(
+        out NotificationBadgeViewModel badge, out List<InAppNotification> announced)
+    {
+        var api = new Mock<INotificationApiService>();
+        // The badge reconciles against the server after an arrival; "unknown" leaves the local increment alone,
+        // which is what these assertions are reading.
+        api.Setup(a => a.GetUnreadCountAsync(It.IsAny<CancellationToken>())).ReturnsAsync((long?)null);
+
+        badge = new NotificationBadgeViewModel(api.Object);
+        announced = new List<InAppNotification>();
+
+        return new ArrivalRecordingPushNotificationService(
+            Mock.Of<IHttpClientFactory>(), Mock.Of<ISecureStorageService>(), badge, announced);
+    }
+
     private static RecordingPushNotificationService Recording(List<string> navigated) =>
         new(Mock.Of<IHttpClientFactory>(), Mock.Of<ISecureStorageService>(), navigated);
+
+    /// <summary>Captures the arrival instead of presenting it — there is no MAUI presenter on this slice.</summary>
+    private sealed class ArrivalRecordingPushNotificationService(
+        IHttpClientFactory httpClientFactory,
+        ISecureStorageService secureStorage,
+        NotificationBadgeViewModel badge,
+        List<InAppNotification> announced)
+        : PushNotificationService(httpClientFactory, secureStorage, badge)
+    {
+        protected internal override Task AnnounceAsync(InAppNotification arrival)
+        {
+            announced.Add(arrival);
+            return Task.CompletedTask;
+        }
+    }
+
+    /// <summary>Holds on to the last banner so a test can fire its action and see where it leads.</summary>
+    private sealed class CapturingAlertService : IInAppAlertService
+    {
+        public string? LastMessage { get; private set; }
+        public string? LastActionLabel { get; private set; }
+        private Func<Task>? _lastAction;
+
+        public Task ShowAsync(string message)
+        {
+            LastMessage = message;
+            LastActionLabel = null;
+            _lastAction = null;
+            return Task.CompletedTask;
+        }
+
+        public Task ShowAsync(string message, string actionLabel, Func<Task> action)
+        {
+            LastMessage = message;
+            LastActionLabel = actionLabel;
+            _lastAction = action;
+            return Task.CompletedTask;
+        }
+
+        public Task InvokeLastActionAsync() => _lastAction?.Invoke() ?? Task.CompletedTask;
+    }
+
+    private sealed class CountingHttpMessageHandler(HttpStatusCode statusCode) : HttpMessageHandler
+    {
+        public int Requests { get; private set; }
+
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            Requests++;
+            return Task.FromResult(new HttpResponseMessage(statusCode));
+        }
+    }
 
     /// <summary>
     /// Captures the navigation instead of performing it — <c>Shell.Current</c> does not exist on the
@@ -159,10 +465,15 @@ public class PushNotificationServiceTests
     private sealed class RecordingPushNotificationService(
         IHttpClientFactory httpClientFactory,
         ISecureStorageService secureStorage,
-        List<string> navigated)
-        : PushNotificationService(httpClientFactory, secureStorage)
+        List<string> navigated,
+        IInAppAlertService? alerts = null)
+        : PushNotificationService(httpClientFactory, secureStorage, badge: null, alerts: alerts)
     {
+        public int InboxOpened { get; private set; }
+
         public override void HandleNotificationTap(string appointmentId) => navigated.Add(appointmentId);
+
+        public override void HandleOpenInbox() => InboxOpened++;
     }
 
     private sealed class ThrowingHandler : HttpMessageHandler
