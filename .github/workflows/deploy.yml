@@ -149,7 +149,7 @@ jobs:
       # Key Vault step below shells out to the az CLI, which reads none of azd's state and would
       # fail unauthenticated without this.
       - name: az login (federated, this environment's own identity)
-        uses: azure/login@v2
+        uses: azure/login@v3
         with:
           client-id: ${{ steps.tf.outputs.client_id }}
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
