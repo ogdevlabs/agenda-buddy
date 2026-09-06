@@ -202,9 +202,9 @@ for this environment.
 
 ## Deployments — GitHub Actions
 
-`.github/workflows/deploy.yml`, **manual dispatch only** (see the comment at the top of that file
-for why push-triggering waits on the rest of the "Before this is production" list). It has two
-stages, both non-interactive:
+`.github/workflows/deploy.yml`, **manual dispatch, plus one automated caller that is off by default**
+(see "Automatic dev deploys on merge to main" below, and ADR-065). It has two stages, both
+non-interactive:
 
 1. **`terraform apply`** against `infra/terraform/environment`, authenticated via the same GitHub
    OIDC federated credential the bootstrap step created — reconciles the resource group, identity
@@ -323,6 +323,41 @@ for the new name:
 None of this requires a code or workflow change — the replication is entirely a matter of
 repeating the above with a new name and genuinely distinct credentials per environment, not
 shared ones.
+
+## Automatic dev deploys on merge to main
+
+`.github/workflows/main-deploy-dev.yml` keeps the **dev** environment in step with `main`. It is **off
+until the repository variable `AUTO_DEPLOY_DEV` is set to the string `true`** (Settings → Secrets and
+variables → Actions → Variables), because item 1 of "Before this is production" below — rotating the
+Atlas credential — is still open. Merging the workflow changed nothing; enabling it is a deliberate act.
+
+Once enabled, it runs on **".NET CI" completing successfully on `main`** — not on the push. A push
+trigger would deploy a merge result whose build and tests have not finished, which on a project with one
+shared Atlas cluster is exactly the foot-gun `deploy.yml`'s header warns about. Three stages:
+
+1. **stop** — `dev-env-power` with `action: stop`, so no window has an old and a new revision live
+   against the same database at once.
+2. **deploy** — `deploy.yml` itself, reused via `workflow_call` (there is one implementation of
+   "deploy" in this repository), with `provision: false`: application code changing is not a reason to
+   re-apply infrastructure. An infra change still goes through the manual dispatch with `provision: true`.
+3. **restore** — back to whatever `dev-env-schedule` would have chosen right now: started inside
+   09:00–17:00 America/Mexico_City on a weekday, **left stopped outside it**.
+
+⚠️ **Stage 3 is not optional, and this is the part that surprises people.** `dev-env-stop` sets
+`minReplicas=0`; `azd deploy` creates new revisions with the new image but does **not** reset the scale
+rule — only `azd provision` re-applies replica settings, and it is off here. So a stop→deploy with no
+restore leaves the new code sitting at zero replicas: ACA still cold-starts it on an inbound request, so
+it is not *down*, but it is not started either, and nothing corrects it until the next weekday 09:00. The
+run summary says explicitly which of the two end states it left behind.
+
+It deploys only when a **deployed backend service** changed. The path list lives in the workflow and
+excludes test projects and `AgendaBuddy.MobileApp` — neither changes deployed behaviour, and the mobile
+client ships through TestFlight. ⚠️ **A service missing from that list silently stops being deployed**,
+with no error anywhere, which is why `AgendaBuddy.AppHost.Tests/AutoDeployPathFilterTest.cs` derives the
+expected entries from the AppHost's own `Projects.AgendaBuddy_*` symbols and fails if one is absent.
+
+Concurrency shares `deploy.yml`'s `deploy-dev` group with `cancel-in-progress: false`, so a manual
+dispatch and an automatic run cannot overlap and a half-applied run is never cancelled.
 
 ## Before this is production
 
