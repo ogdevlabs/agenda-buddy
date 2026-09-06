@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http;
 using System.Text.Json;
+using AgendaBuddy.Library.Services;
 using AgendaBuddy.MobileApp.Infrastructure;
 using AgendaBuddy.MobileApp.Models;
 using AgendaBuddy.MobileApp.Services;
@@ -254,8 +255,7 @@ public class PushNotificationServiceTests
     [Fact]
     public void ABodyWithNoSubjectBecomesTheBannerLine()
     {
-        var arrival = InAppNotification.From(
-            null, "a@b.dev requested Friday", null, PushNotificationService.AppointmentIdentifierKey);
+        var arrival = From(null, "a@b.dev requested Friday", null);
 
         Assert.NotNull(arrival);
         Assert.Equal("a@b.dev requested Friday", arrival!.Title);
@@ -321,6 +321,62 @@ public class PushNotificationServiceTests
 
         Assert.Equal(2, handler.Requests);
     }
+
+    // ── The in-app banner shows the detail the OS was not allowed to ────────────────────────────────
+    // notification.title/body are deliberately generic, because the OS draws them on an unauthenticated lock
+    // screen (threat T-002). The producer's real text travels in `data`, which the OS hands to the app instead
+    // of drawing — so the in-app banner, which is behind authentication, is the one surface that may show it.
+
+    [Fact]
+    public void TheBannerPrefersTheDataPayloadOverTheLockScreenSafeText()
+    {
+        var arrival = From(
+            "Appointment request",
+            "Someone has requested an appointment. Open the app for details.",
+            new Dictionary<string, string>
+            {
+                [PushPayloadKeys.Subject] = "New appointment request",
+                [PushPayloadKeys.Body] = "a@b.dev requested Deep Tissue on Friday at 2:00 PM"
+            });
+
+        Assert.NotNull(arrival);
+        Assert.Equal("New appointment request", arrival!.Title);
+        Assert.Equal("a@b.dev requested Deep Tissue on Friday at 2:00 PM", arrival.Body);
+    }
+
+    /// <summary>
+    /// A push from a server that predates the <c>data</c> detail — or one whose detail was dropped — still draws
+    /// a banner from what the notification block carries, rather than nothing at all.
+    /// </summary>
+    [Fact]
+    public void WithNoDetailInTheDataPayload_TheBannerFallsBackToTheDisplayedText()
+    {
+        var arrival = From("Appointment request", "Open the app for details.", null);
+
+        Assert.NotNull(arrival);
+        Assert.Equal("Appointment request", arrival!.Title);
+        Assert.Equal("Open the app for details.", arrival.Body);
+    }
+
+    // The keys are one definition shared with the sender, not a matching pair of literals across the network.
+    [Fact]
+    public void ThePayloadKeysComeFromTheSameDefinitionTheServerWritesAgainst()
+    {
+        Assert.Equal(PushPayloadKeys.AppointmentIdentifier, PushNotificationService.AppointmentIdentifierKey);
+        Assert.Equal("appointmentIdentifier", PushPayloadKeys.AppointmentIdentifier);
+        Assert.Equal("subject", PushPayloadKeys.Subject);
+        Assert.Equal("body", PushPayloadKeys.Body);
+    }
+
+    private static InAppNotification? From(
+        string? title, string? body, IDictionary<string, string>? data) =>
+        InAppNotification.From(
+            title,
+            body,
+            data,
+            PushNotificationService.AppointmentIdentifierKey,
+            PushPayloadKeys.Subject,
+            PushPayloadKeys.Body);
 
     private static PushNotificationService ServiceWith(HttpMessageHandler handler)
     {

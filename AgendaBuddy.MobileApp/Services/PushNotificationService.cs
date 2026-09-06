@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using AgendaBuddy.Library.Services;
 using AgendaBuddy.MobileApp.Infrastructure;
 using AgendaBuddy.MobileApp.Models;
 using AgendaBuddy.MobileApp.ViewModels;
@@ -59,10 +60,15 @@ public class PushNotificationService
     private readonly IInAppAlertService? _alerts;
 
     /// <summary>
-    /// The key the server puts the appointment identifier under. Must match
-    /// <c>NotificationDispatcher</c>'s payload key, or a tapped notification opens the app and stops there.
+    /// The key the server puts the appointment identifier under.
     /// </summary>
-    internal const string AppointmentIdentifierKey = "appointmentIdentifier";
+    /// <remarks>
+    /// Taken from <see cref="PushPayloadKeys"/> rather than restated, so the client and
+    /// <c>NotificationDispatcher</c> cannot drift: nothing else couples them, and a literal on each side meant a
+    /// rename on either left the payload arriving intact while the client read a key that was not in it — a
+    /// tapped notification that opened the app and stopped there, with nothing reporting why.
+    /// </remarks>
+    internal const string AppointmentIdentifierKey = PushPayloadKeys.AppointmentIdentifier;
 
     /// <summary>The banner's action. Opens the appointment when there is one, the inbox when there is not.</summary>
     internal const string ViewActionLabel = "View";
@@ -205,7 +211,8 @@ public class PushNotificationService
     /// </remarks>
     internal void OnNotificationReceived(string? title, string? body, IDictionary<string, string>? data)
     {
-        var arrival = InAppNotification.From(title, body, data, AppointmentIdentifierKey);
+        var arrival = InAppNotification.From(
+            title, body, data, AppointmentIdentifierKey, PushPayloadKeys.Subject, PushPayloadKeys.Body);
         if (arrival is null) return;
 
         _badge?.Increment();

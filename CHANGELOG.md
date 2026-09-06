@@ -4,6 +4,70 @@ All notable changes to this project are documented in this file, in [Keep a Chan
 
 ## [Unreleased]
 
+## [0.16.0] - 2026-09-06
+
+### Security
+
+- **F-028 notification-delivery-and-inbox-ux**: the push notification body no longer carries the
+  notification's content. Threat **T-002** (mobile-app threat model, "PII Exposed in Push Notification
+  Lock-Screen Payload", recommended *Mitigate now*) **had never been implemented** — the dispatcher passed each
+  producer's own subject and body straight through, so an unauthenticated lock screen displayed the customer's
+  email address, service name and appointment time for bookings, and for messaging the *sender's address in the
+  title* plus a 120-character preview of the private message. The OS-displayed title/body are now derived from
+  `NotificationType` alone (`NotificationDispatcher.DisplayText`) and say a category, never content; the real
+  text moves to the FCM `data` payload, which the OS delivers to the app rather than drawing, and is rendered
+  only in-app behind authentication — T-002's own prescribed mechanism (ADR-060). The in-app inbox and email
+  are deliberately unchanged. Enforced by `NotificationDispatcherTest`'s T-002 section over every
+  `NotificationType`, which is the mitigation's only enforcement: the exposure is invisible from the code and
+  indistinguishable from a working notification.
+- **F-028**: a signed-out account no longer stays addressable through its device token (T-NEW-1). `LogoutAsync`
+  removed nothing server-side and `DeviceTokenService` keys on email, so signing out as A and in as B on one
+  device left both rows holding the same token and A's notifications still arriving on it — indefinitely if
+  nobody else ever signed in. Enforced on both writes: `UpsertAsync` evicts the token from every other account,
+  and a new `DELETE /device-token` releases it at sign-out, called before the local JWT clear because the route
+  authorises off that token (ADR-061, `agenda-buddy-5of`).
+
+### Added
+
+- **F-028**: a push arriving while the app is in the foreground now draws an in-app banner. Neither platform's
+  OS presents one — Android hands a foreground message to the app instead of the tray, iOS asks and defaults to
+  nothing — and the client subscribed only to `NotificationTapped`, so such a notification was completely
+  silent. `SubscribeToEvents` now handles `NotificationReceived` (snackbar with a "View" action via a new
+  `IInAppAlertService`, plus an immediate badge increment reconciled against the server) and `TokenChanged`,
+  without which push died silently for the rest of the session on every FCM token rotation (ADR-059).
+- **F-028**: every FCM message states its priority, sound and Android notification channel. FCM's defaults are
+  wrong here in three ways that all present as "push does not work" — a normal-priority message can sit in Doze
+  for hours, a soundless one is indistinguishable from none, and a channel-less one lands on the SDK's
+  auto-created "Miscellaneous" at an importance nothing chose. The channel is declared in the manifest and
+  created at `High` importance (ADR-062).
+- **F-028**: pull-to-refresh, Today/Yesterday/weekday date bands (local dates), a per-type glyph and accent, and
+  an explicit per-row "Mark as read" on the notification inbox. New `NotificationVisuals` (MAUI-free, so the
+  mapping is covered by the `net10.0` test slice) with `HexColorConverter` as the XAML adapter.
+
+### Changed
+
+- **F-028**: `INotificationApiService.GetUnreadCountAsync` and `MarkAllReadAsync` return `long?`, where `null`
+  means "could not read" rather than zero. The unread count returned `0` on any failure and `RefreshAsync` runs
+  on every navigation, so a single network blip overwrote a real count with zero and silenced the app's only
+  cross-screen signal; and a caller could not word "the server was not reached" and "there was nothing left to
+  mark" differently when both arrived as `0`.
+- **F-028**: "Mark all read" reports its outcome on all three paths (marked N / nothing left to mark / could not
+  reach the server) — it was silent on every one, so a success, a refusal and a dropped connection were
+  indistinguishable. It now hides rather than greys when nothing is unread.
+- **F-028**: unread is signalled once at the leading edge of each row in the notification type's own colour; it
+  was a 3px bar 40px wide at the *bottom* of the card. Each row's chrome no longer repeats the app monogram and
+  brand name.
+- **F-028**: `PushPayloadKeys` (`AgendaBuddy.Library`, read by the client) is now the single definition of the
+  FCM `data` contract. Nothing else coupled `NotificationDispatcher` to `PushNotificationService`, so a rename
+  on either side was silent — the payload still arrived and the client read a key that was not in it.
+
+### Fixed
+
+- **F-028**: the notification inbox's expanded row showed the stored UTC instant rather than local time, so it
+  disagreed with the "3h ago" line directly above it for every reader not on UTC.
+- **F-028**: `bruno/agenda-buddy/0-Auth/5 Register device token` sent `"platform": "Android"` against a
+  case-sensitive check, so that request had never registered anything.
+
 ## [0.15.0] - 2026-08-27
 
 ### Added

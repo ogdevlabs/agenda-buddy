@@ -128,6 +128,69 @@
 
 ---
 
+## Mitigation Status — verified against code 2026-09-06 (F-028)
+
+### T-002 — was NOT implemented, and shipped that way for two features
+
+The mitigation above was recommended *Mitigate now* and recorded as a Plan-phase task, and the push dispatcher
+was then built (and shipped, twice — Android push in F-028's predecessors, then iOS) **without it**.
+`NotificationDispatcher` passed the producer's own `Subject`/`Body` straight into
+`IPushSender.SendAsync`, so what reached the lock screen was:
+
+| Producer | On the lock screen, unauthenticated |
+|---|---|
+| `BookingAppointmentCommandHandler` | the customer's email address, the service name and the appointment time |
+| `ChangeAppointmentStatusCommandHandler`, `CancelAppointmentCommandHandler` | the same, for the changed appointment |
+| `MessageModule` | **the sender's email address in the title**, and a 120-character preview of the private message in the body |
+
+The third case is worse than this threat model anticipated: T-002 was written about *appointment* metadata, and
+the messaging feature (added later) put conversation content on the same path. A private message on a locked
+screen is a larger disclosure than "your 2pm with coach@example.com".
+
+**Why it stayed invisible.** Nothing about the code looks wrong — the dispatcher forwards the strings it was
+given, and the result is a notification that arrives, reads well, and does exactly what a reader expects. There
+was no test asserting the payload's *content*, only that a push was sent. Two separate features reviewed this
+path without catching it.
+
+**Made temporarily worse by F-028 before being found.** ADR-062 added `default_sound` and high priority to every
+message. That converted an exposure a user might never notice into one that reliably wakes and lights a locked
+screen — which is how the omission surfaced.
+
+**Now mitigated** per **ADR-060**: the OS-displayed `title`/`body` are derived from `NotificationType` alone
+(`NotificationDispatcher.DisplayText`) and carry a category, never content; the producer's real text moves to
+the FCM `data` payload, which the OS hands to the app rather than drawing, and is rendered only by the in-app
+banner and inbox — both behind authentication. That is precisely the mechanism this threat's own
+recommendation named. Enforced by `NotificationDispatcherTest`'s T-002 section
+(`ThePushedTitleAndBodyNeverCarryTheProducersText`, over every `NotificationType`), which is the mitigation's
+**only** enforcement.
+
+### T-NEW-1 — a signed-out account stayed addressable through its device token
+
+Not in the original model, found during F-028. `POST /identity/device-token` is listed above as new attack
+surface, but the model considered only its *own* authorisation, not the lifetime of what it writes.
+
+- **STRIDE category:** Information Disclosure · **Trust boundary:** TB-1 / TB-4 · **Severity:** MEDIUM
+- **Attack vector:** `DeviceTokenService` keys its row on the account's email and `LogoutAsync` removed nothing
+  server-side, so the registration outlived the session. Sign out as A and sign in as B on the same device and
+  two rows held one token — every notification for A continued to be pushed to a device A had given up. With
+  nobody signing in afterwards, indefinitely. Compounds T-002: the content pushed to that device was, until
+  ADR-060, the full unredacted body.
+- **Mitigation status:** Mitigated — **ADR-061**. Enforced on both writes: `UpsertAsync` evicts the token from
+  every other account, and `DELETE /device-token` releases it on sign-out. Neither alone suffices — eviction
+  only fires if somebody else signs in, and sign-out is a path a user can skip by quitting or handing the phone
+  over.
+
+### Still open
+
+- **T-001** — unverified here; unchanged by F-028.
+- **T-003** — accepted with a test condition; unchanged by F-028.
+- **T-NL-1** (no rate limit on `POST /device-token`) — still noted, not prioritized. `DELETE /device-token` is
+  added on the same terms: authenticated, own-account only, no cross-account impact.
+- ⚠️ **None of the above is verified on a physical iOS device** (`agenda-buddy-lq5`). An iOS simulator cannot
+  obtain a real FCM token, so no push arrives on one at all.
+
+---
+
 ## Revision History
 
 | Date | Author | Change |

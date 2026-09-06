@@ -1440,3 +1440,156 @@ and "One-time subscription bootstrap" sections for the full mechanism.
 Aspire's own publisher entirely in favor of hand-written Terraform for the container apps
 themselves — rejected outright: it would abandon the officially-supported Aspire→azd path this
 project otherwise follows, for infrastructure Aspire already knows how to generate correctly.
+
+---
+
+## ADR-059 — The in-app banner is the app's own responsibility; the OS never presents a foreground push (F-028)
+
+**Date:** 2026-09-06 · **Status:** Accepted
+
+**Context.** Push was wired end-to-end and verified on Android, yet a notification arriving while the app was
+open produced nothing at all: no banner, no sound, no badge movement. The cause is not a defect in this
+codebase's wiring — it is the documented behaviour of both platforms. Android's FCM SDK hands a foreground
+message to the application instead of posting it to the notification tray; iOS asks the app what to present
+via `UNUserNotificationCenterDelegate.willPresentNotification` and presents nothing unless told otherwise.
+`PushNotificationService` subscribed only to `NotificationTapped`, so the arrival had no handler at all, and
+the only trace of a notification was a row in a list the user had to go and open.
+
+**Decision.** Subscribe `NotificationReceived` and present the arrival **in-app**, as a CommunityToolkit
+`Snackbar` with a "View" action, via a new `IInAppAlertService`. The badge is incremented immediately (the
+arrival is itself authoritative that there is one more unread) and then reconciled against the server.
+
+**Why not make the OS present it.** Two alternatives were rejected. (a) Relying on
+`Plugin.Firebase.CloudMessaging`'s own foreground presentation — its Android implementation has a
+`ShowLocalNotificationAction`/`TryHandleShowLocalNotificationIfNeeded` path and its iOS implementation
+resolves `UNNotificationPresentationOptions` from an `IsSilentInForeground` flag, but neither is a documented,
+version-stable contract, and depending on plugin internals for the *only* signal a foreground user gets means
+a package bump can silently restore the original silence. (b) Suppressing the OS banner and relying solely on
+the in-app one — rejected because it makes the in-app path load-bearing for the backgrounded case too, which
+it cannot serve.
+
+**Consequences.** On iOS the plugin may *also* present its own banner while the app is foregrounded, giving a
+brief double banner. That is accepted: a cosmetic duplicate is strictly better than the silence it replaces,
+and the alternative is depending on internals. It cannot be verified without a physical device
+(`agenda-buddy-lq5`) — an iOS simulator cannot obtain a real FCM token, so no push of any kind arrives on one.
+The banner's decision logic lives in `InAppNotification.From`, deliberately free of MAUI and Firebase types,
+so it is covered by the `net10.0` test slice that `/p:MobileWorkloads=false` builds.
+
+**Alternatives rejected.** Polling the inbox on a timer while the app is open — rejected: it spends battery
+and requests to approximate an event the platform already delivers, and does nothing when the app is closed.
+
+---
+
+## ADR-060 — Nothing the operating system displays may carry a notification's content (F-028, threat T-002)
+
+**Date:** 2026-09-06 · **Status:** Accepted
+
+**Context.** The mobile-app threat model's **T-002** ("PII Exposed in Push Notification Lock-Screen Payload",
+severity MEDIUM, party recommendation *Mitigate now*) requires the push body to be a generic status string,
+because a lock screen renders `notification.title`/`notification.body` with no authentication in front of
+anyone holding or standing near the device. **It was never implemented.** `NotificationDispatcher` passed the
+producer's own strings straight through, so what actually went to the lock screen was: the counterparty's email
+address, the service name and the appointment time (booking bodies), and — worse than T-002 anticipated —
+`MessageModule` put the *sender's email address in the title* and a 120-character preview of the private
+message in the body. Work on F-028 amplified this before catching it: adding `default_sound` and high priority
+(ADR-062) turned an exposure that might go unnoticed into one that reliably lights up a locked screen.
+
+**Decision.** The OS-displayed `title`/`body` are derived from `NotificationType` **alone**, by
+`NotificationDispatcher.DisplayText` — a category and never content ("Appointment request" / "Someone has
+requested an appointment. Open the app for details."). The producer's real subject and body are carried in the
+FCM `data` payload, which the OS delivers to the application rather than drawing, and are rendered by the
+in-app banner and inbox — both behind authentication. This is T-002's own prescribed mechanism, which
+explicitly notes the `data` field is safe because it is not displayed on the lock screen.
+
+**Why derived from the type rather than chosen by the producer.** A producer-supplied "safe" string is a rule
+every future producer has to know about, and the failure mode is silent — the notification looks and behaves
+correctly while leaking. Deriving from the type means a new producer inherits the safe default without knowing
+the rule exists, and the unknown-type fallback says nothing about content either.
+
+**Consequences.** The in-app inbox and email are deliberately unchanged: T-002 is about what an *operating
+system* displays without authentication, an inbox row is behind a sign-in, and an email is addressed to its
+recipient rather than broadcast to a screen — genericising those would lose real information for no security
+gain. The lock-screen preview is now less informative by design; the reader learns the category and opens the
+app. `PushPayloadKeys` is a single shared definition (`AgendaBuddy.Library`, read by the client) so the two
+sides of the payload contract cannot drift. Enforced by `NotificationDispatcherTest`'s T-002 section, which is
+the mitigation's **only** enforcement — the exposure is invisible from the code and indistinguishable from a
+working notification.
+
+**Alternatives rejected.** A per-notification "sensitive" flag the producer sets — rejected for the
+"every future producer must know" reason above. Truncating or redacting the producer's body — rejected: an
+appointment time and a service name are not made safe by shortening them, and a redactor that has to
+understand every producer's phrasing is a parser, not a control.
+
+---
+
+## ADR-061 — A device token addresses exactly one account, enforced on both the claim and the release (F-028)
+
+**Date:** 2026-09-06 · **Status:** Accepted
+
+**Context.** `DeviceTokenService` keys its row on the account's email, and `AuthService.LogoutAsync` cleared
+local tokens and invalidated the refresh token but removed nothing server-side. So the row written by
+`POST /device-token` outlived the session that created it: sign out as A and sign in as B on the same device,
+and two rows held the same token — every notification for A, subject and body included, kept being pushed to
+a device A no longer controlled. With nobody signing in afterwards, A kept receiving indefinitely.
+
+**Decision.** Enforce the invariant on both writes. `UpsertAsync` evicts the token from every *other* account
+after claiming it for this one. `DELETE /device-token` (Identity, `RequireAuthorization`, no body — the account
+comes from the caller's own claim) releases the signing-out account's registration, called from
+`AuthService.LogoutAsync` **before** the local JWT clear, because the route authorises off that token.
+
+**Why both halves.** Neither is sufficient alone. Eviction only fires when somebody else signs in on that
+device, which may be never. Sign-out is a path the user can simply not take — by quitting the app, or handing
+the phone over. The two cover disjoint cases.
+
+**Consequences.** Eviction is ordered *after* this account's own write, so a fault between the two leaves the
+previous holder addressable rather than leaving nobody addressable — the safer of the two failure modes for a
+notification channel. `DELETE` answers `204` whether or not a registration existed: that is the requested state
+either way, and `404` would report whether a device was registered. The unregistration is best-effort and
+cannot block a sign-out. The Gateway needed no new allowlist entry — its `/device-token` route matches on path
+with `Methods` unset, so every verb already forwards; that is now documented in
+`AspireServiceDiscoveryProxyConfigProvider` rather than left to be rediscovered. Multi-device support remains a
+pre-existing limitation (one row per account), untouched by this: a second device's sign-in already overwrote
+the first's token.
+
+**Alternatives rejected.** Logout-only revocation — rejected, it misses the user who never signs out, which is
+the more likely case for a shared or handed-over device. A unique index on `token` — rejected: it makes the
+second account's registration *fail* rather than displace the first, so the new owner of the device silently
+gets no notifications. Deleting by token supplied in the request body — rejected, it lets a caller name a token
+it does not hold; scoping by the caller's own claim has nothing to substitute.
+
+---
+
+## ADR-062 — Per-platform delivery instructions are stated on every push, not left to FCM's defaults (F-028)
+
+**Date:** 2026-09-06 · **Status:** Accepted
+
+**Context.** `FcmPushSender` sent the minimum valid HTTP v1 message: `token`, `notification`, `data`. FCM's
+defaults for everything else are wrong for an appointment product in three ways that all present identically to
+a user as "push does not work": a v1 message defaults to *normal* priority, which Android may hold until the
+device leaves Doze (minutes to hours — an appointment request delivered tomorrow morning is not a
+notification); a notification with no sound is drawn silently, which is indistinguishable from never arriving
+unless the screen happens to be watched; and Android 8+ posts on a channel, so a message naming none lands on
+the one the Firebase SDK auto-creates, labelled "Miscellaneous", at an importance nothing here chose, leaving
+the app's own channel settings inert.
+
+**Decision.** Every message carries `android.priority: high` + `android.notification.default_sound` +
+`android.notification.channel_id`, and `apns-priority: 10` + `apns.payload.aps.sound: default`. The channel
+(`PushOptions.AndroidChannelId`, created by `MainActivity` at `NotificationImportance.High` and declared in the
+manifest as `default_notification_channel_id`) is a constant shared with the client rather than configuration.
+
+**Why not configuration.** A per-environment sound or priority has no use case here — every notification this
+product sends is a time-sensitive appointment or message event, and there is no second class of push to tune
+differently. Configuration would add a way for the values to be wrong in a deployment without anything
+reporting it.
+
+**Consequences.** `apns-priority: 10` is valid *only* because every message carries a visible alert; a
+background-only push would have to use 5, so a future silent-data push cannot reuse this path unchanged. The
+channel id must match in three places that cannot see each other (sender constant, client constant, manifest
+metadata) — two are bound by reading `PushOptions.AndroidChannelId`, and `PushConfigurationTest` holds the
+manifest leg, because a mismatch is silent: Android falls back to the auto-created channel, every notification
+still arrives, and the declared channel stays empty. Note that priority and sound made ADR-060's unmitigated
+exposure reliably visible, which is how T-002 came to be found.
+
+**Alternatives rejected.** Leaving the defaults and treating delayed/silent delivery as acceptable — rejected,
+it defeats the purpose of the channel. Setting them per call site — rejected, the transport is the right place
+for a transport concern, and per-producer settings would drift.
