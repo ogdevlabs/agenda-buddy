@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using AgendaBuddy.Library.Entities;
+using AgendaBuddy.MobileApp.Infrastructure;
 
 namespace AgendaBuddy.MobileApp.Models;
 
@@ -42,8 +43,42 @@ public partial class NotificationSummary : ObservableObject
     [ObservableProperty]
     private bool _isExpanded;
 
+    /// <summary>
+    /// The date band this row is filed under ("Today", "Yesterday", a weekday, a date), set on the first row
+    /// of each band and left empty on the rest.
+    /// </summary>
+    /// <remarks>
+    /// Assigned by the view model rather than computed here, because whether a row *starts* a band depends on
+    /// the row before it — which the row itself cannot see. A flat list with a header on the boundary rows,
+    /// not a grouped <c>CollectionView</c>: same reason the professions catalog is built that way.
+    /// </remarks>
+    [ObservableProperty]
+    private string _sectionHeader = string.Empty;
+
+    /// <summary>Whether this row opens a date band, and so draws the header above its card.</summary>
+    public bool StartsSection => !string.IsNullOrEmpty(SectionHeader);
+
     /// <summary>The bold first line. Falls back to the type when a producer wrote no subject.</summary>
     public string Title => string.IsNullOrWhiteSpace(Subject) ? TypeLabel : Subject;
+
+    /// <summary>
+    /// The inverse of <see cref="IsRead"/>, as a property the view can bind.
+    /// </summary>
+    /// <remarks>
+    /// Unread is the state the list has to make obvious, so it is what the row's own chrome is driven from —
+    /// binding <c>IsRead</c> through an inverting converter at four separate places in the template is the
+    /// same information said four times, and one of them will eventually be forgotten.
+    /// </remarks>
+    public bool IsUnread => !IsRead;
+
+    /// <summary>The strong accent for this notification's kind. See <see cref="NotificationVisuals"/>.</summary>
+    public string AccentHex => NotificationVisuals.Accent(Type);
+
+    /// <summary>The soft fill the <see cref="Glyph"/> sits on.</summary>
+    public string TintHex => NotificationVisuals.Tint(Type);
+
+    /// <summary>The glyph for this notification's kind, beside (never instead of) <see cref="TypeLabel"/>.</summary>
+    public string Glyph => NotificationVisuals.Glyph(Type);
 
     /// <summary>The grey second line.</summary>
     public string Message => Body;
@@ -87,7 +122,21 @@ public partial class NotificationSummary : ObservableObject
     /// comparing it against <c>DateTime.Now</c> without converting reports a fresh notification as hours old
     /// for anyone west of UTC and negative for anyone east.
     /// </summary>
-    public string TimeAgo => FormatTimeAgo(CreatedAt.ToLocalTime());
+    public string TimeAgo => FormatTimeAgo(LocalCreatedAt);
+
+    /// <summary>
+    /// <see cref="CreatedAt"/> on the reader's own clock, for anything that renders an actual time.
+    /// </summary>
+    /// <remarks>
+    /// The expanded row used to format <see cref="CreatedAt"/> directly, so it printed the UTC instant the
+    /// server stored — hours off for every reader not on UTC, and disagreeing with the <see cref="TimeAgo"/>
+    /// line directly above it, which did convert.
+    /// </remarks>
+    public DateTime LocalCreatedAt => CreatedAt.ToLocalTime();
+
+    partial void OnIsReadChanged(bool value) => OnPropertyChanged(nameof(IsUnread));
+
+    partial void OnSectionHeaderChanged(string value) => OnPropertyChanged(nameof(StartsSection));
 
     private static string FormatTimeAgo(DateTime localTime)
     {

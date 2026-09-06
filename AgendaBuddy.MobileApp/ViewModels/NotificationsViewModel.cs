@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using AgendaBuddy.MobileApp.Infrastructure;
 using AgendaBuddy.MobileApp.Models;
 using AgendaBuddy.MobileApp.Services;
 
@@ -10,6 +11,7 @@ public partial class NotificationsViewModel : ObservableObject
     private readonly INotificationApiService _notificationApiService;
     private readonly IUserSessionService _session;
     private readonly NotificationBadgeViewModel _badge;
+    private readonly IInAppAlertService? _alerts;
 
     /// <summary>
     /// How long an expanded notification has to stay open before it counts as read. Long enough that a
@@ -37,6 +39,17 @@ public partial class NotificationsViewModel : ObservableObject
     [ObservableProperty]
     private bool _isLoading;
 
+    /// <summary>
+    /// Drives the pull-to-refresh spinner, separately from <see cref="IsLoading"/>.
+    /// </summary>
+    /// <remarks>
+    /// Two flags because they mean different things to the view: a first load shows the centred activity
+    /// indicator over an empty page, a pull-to-refresh shows the gesture's own spinner and must leave the rows
+    /// the reader is looking at in place. Sharing one flag makes a refresh blank the list it is refreshing.
+    /// </remarks>
+    [ObservableProperty]
+    private bool _isRefreshing;
+
     [ObservableProperty]
     private bool _showUnreadOnly;
 
@@ -46,6 +59,12 @@ public partial class NotificationsViewModel : ObservableObject
     public bool HasError => !string.IsNullOrEmpty(ErrorMessage);
 
     public bool IsEmpty => !IsLoading && Notifications.Count == 0 && !HasError;
+
+    /// <summary>
+    /// Whether to draw the centred activity indicator. A pull-to-refresh draws its own spinner, so showing
+    /// this one at the same time reads as two separate things loading.
+    /// </summary>
+    public bool ShowsLoadingIndicator => IsLoading && !IsRefreshing;
 
     /// <summary>
     /// An empty list is a normal state, not an error — acknowledgement plus what the surface is for. Worded
@@ -65,17 +84,25 @@ public partial class NotificationsViewModel : ObservableObject
     /// <summary>Bulk mark-read is pointless with nothing unread, and a button that does nothing is worse than no button.</summary>
     public bool CanMarkAllRead => UnreadCount > 0 && !IsLoading;
 
+    /// <summary>
+    /// The unread count as a phrase, so the header reads as a sentence rather than as a number and a noun that
+    /// disagree with it ("1 unread" is right, "1 unread notifications" is not).
+    /// </summary>
+    public string UnreadSummary => UnreadCount == 1 ? "1 unread" : $"{UnreadCount} unread";
+
     /// <summary>Label for the filter toggle, naming what tapping it will do rather than the state it is in.</summary>
     public string UnreadFilterLabel => ShowUnreadOnly ? "Show all" : "Unread only";
 
     public NotificationsViewModel(
         INotificationApiService notificationApiService,
         IUserSessionService session,
-        NotificationBadgeViewModel badge)
+        NotificationBadgeViewModel badge,
+        IInAppAlertService? alerts = null)
     {
         _notificationApiService = notificationApiService;
         _session = session;
         _badge = badge;
+        _alerts = alerts;
     }
 
     [RelayCommand]
@@ -88,7 +115,7 @@ public partial class NotificationsViewModel : ObservableObject
         try
         {
             var results = await _notificationApiService.GetNotificationsAsync(PageSize, ShowUnreadOnly);
-            Notifications = results;
+            Notifications = ApplySections(results);
 
             // The unread count comes from the server, not from counting this page: with a filter on or a
             // limit applied, the page is not the whole inbox, so counting it would under-report.
@@ -104,7 +131,22 @@ public partial class NotificationsViewModel : ObservableObject
         finally
         {
             IsLoading = false;
+            IsRefreshing = false;
         }
+    }
+
+    /// <summary>
+    /// Pull-to-refresh. The same load, without blanking the rows already on screen.
+    /// </summary>
+    /// <remarks>
+    /// Pull-to-refresh is the gesture people try first on any list they suspect is stale, and there was none
+    /// here: the only way to re-read the inbox was to navigate away and back so <c>OnAppearing</c> fired.
+    /// </remarks>
+    [RelayCommand]
+    private async Task RefreshAsync()
+    {
+        IsRefreshing = true;
+        await LoadAsync();
     }
 
     [RelayCommand]
@@ -127,16 +169,64 @@ public partial class NotificationsViewModel : ObservableObject
         if (!await _notificationApiService.MarkReadAsync(notification.Id))
             return;
 
+        // Deliberately not reloading under the unread filter: the row has just been read *because the reader
+        // opened it*, and dropping it out of the list while they are reading it is worse than briefly showing
+        // a read row in an unread-only view. The next load files it correctly.
         ApplyRead(notification);
     }
 
+    /// <summary>
+    /// Marks the whole inbox read, and says so.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// It reports its outcome, on all three paths. Before, it was silent on every one of them: a success looked
+    /// identical to a no-op, and a server refusal or a dropped connection looked identical to both — a bulk
+    /// action whose only feedback was a number that sometimes changed.
+    /// </para>
+    /// <para>
+    /// The exception handler is not defensive padding: <c>MarkAllReadAsync</c> reaches the network, this is
+    /// invoked as a command, and an unhandled exception out of an async command handler is unobserved rather
+    /// than reported — the button would appear to do nothing at all.
+    /// </para>
+    /// </remarks>
     [RelayCommand]
     private async Task MarkAllReadAsync()
     {
         if (UnreadCount == 0) return;
 
-        var marked = await _notificationApiService.MarkAllReadAsync();
-        if (marked == 0) return;
+        long? marked;
+        try
+        {
+            marked = await _notificationApiService.MarkAllReadAsync();
+        }
+        catch (Exception)
+        {
+            marked = null;
+        }
+
+        if (marked is null)
+        {
+            // The request failed, so nothing local changes: clearing the rows would show a state the next
+            // reload contradicts, and the reader would believe the inbox was cleared when it was not.
+            ErrorMessage = MarkAllReadFailureMessage;
+            return;
+        }
+
+        ErrorMessage = string.Empty;
+
+        if (marked == 0)
+        {
+            // The server had nothing unread for this account — the local count was stale (read on another
+            // device, most likely). Reconcile instead of reporting a failure that did not happen.
+            await _badge.RefreshAsync();
+            UnreadCount = (int)Math.Min(int.MaxValue, _badge.UnreadCount);
+
+            if (_alerts is not null)
+                await _alerts.ShowAsync(NothingToMarkMessage);
+
+            return;
+        }
 
         foreach (var notification in Notifications)
             notification.IsRead = true;
@@ -144,10 +234,22 @@ public partial class NotificationsViewModel : ObservableObject
         UnreadCount = 0;
         _badge.Set(0);
 
+        if (_alerts is not null)
+            await _alerts.ShowAsync(MarkAllReadConfirmation(marked.Value));
+
         // With the unread filter on, everything just left the filtered set.
         if (ShowUnreadOnly)
             await LoadAsync();
     }
+
+    /// <summary>What the bulk action reports back. Names the count, because "done" is not the same as "12 done".</summary>
+    internal static string MarkAllReadConfirmation(long marked) =>
+        marked == 1 ? "1 notification marked as read" : $"{marked} notifications marked as read";
+
+    internal const string MarkAllReadFailureMessage =
+        "Could not mark your notifications read. Check your connection and try again.";
+
+    internal const string NothingToMarkMessage = "Nothing left to mark as read.";
 
     /// <summary>
     /// Expands or collapses a row. Expanding an unread one starts the read timer — reading is what marking
@@ -207,6 +309,35 @@ public partial class NotificationsViewModel : ObservableObject
         await MarkReadAsync(notification);
     }
 
+    /// <summary>
+    /// Stamps the date band on the first row of each band and clears it on the rest, so the list can draw
+    /// "Today"/"Yesterday" headers from a flat list.
+    /// </summary>
+    /// <remarks>
+    /// A flat list with headers on the boundary rows rather than a grouped <c>CollectionView</c> — the same
+    /// choice the professions catalog made, and for a related reason: grouping buys nothing here (nothing
+    /// collapses) and costs a second template plus MAUI's own grouped-header rendering quirks.
+    /// <para>
+    /// Banded on <b>local</b> dates. The server stores UTC instants, and banding on those files a 01:00Z
+    /// notification under the wrong day for every reader behind UTC — the same defect
+    /// <c>ProviderAvailability</c> had.
+    /// </para>
+    /// </remarks>
+    internal static List<NotificationSummary> ApplySections(List<NotificationSummary> rows)
+    {
+        var now = DateTime.Now;
+        var previous = string.Empty;
+
+        foreach (var row in rows)
+        {
+            var section = NotificationVisuals.Section(row.CreatedAt.ToLocalTime(), now);
+            row.SectionHeader = section == previous ? string.Empty : section;
+            previous = section;
+        }
+
+        return rows;
+    }
+
     private void ApplyRead(NotificationSummary notification)
     {
         notification.IsRead = true;
@@ -224,7 +355,10 @@ public partial class NotificationsViewModel : ObservableObject
     {
         OnPropertyChanged(nameof(IsEmpty));
         OnPropertyChanged(nameof(CanMarkAllRead));
+        OnPropertyChanged(nameof(ShowsLoadingIndicator));
     }
+
+    partial void OnIsRefreshingChanged(bool value) => OnPropertyChanged(nameof(ShowsLoadingIndicator));
 
     partial void OnNotificationsChanged(List<NotificationSummary> value) => OnPropertyChanged(nameof(IsEmpty));
 
@@ -238,5 +372,6 @@ public partial class NotificationsViewModel : ObservableObject
     {
         OnPropertyChanged(nameof(HasUnread));
         OnPropertyChanged(nameof(CanMarkAllRead));
+        OnPropertyChanged(nameof(UnreadSummary));
     }
 }

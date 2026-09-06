@@ -6,241 +6,323 @@
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
              x:Class="AgendaBuddy.MobileApp.Views.NotificationsPage"
              Title="Notifications"
-             BackgroundColor="#F2F2F7"
+             BackgroundColor="{StaticResource BackgroundPage}"
              Shell.NavBarIsVisible="False">
 
     <ContentPage.Resources>
-        <toolkit:InvertedBoolConverter x:Key="InvertedBoolConverter" />
-        <Color x:Key="iOSBlue">#007AFF</Color>
-        <Color x:Key="iOSRed">#FF3B30</Color>
-        <Color x:Key="iOSGray">#8E8E93</Color>
-        <Color x:Key="iOSGray5">#E5E5EA</Color>
-        <Color x:Key="iOSLabel">#000000</Color>
+        <!-- Turns NotificationVisuals' hex strings into Colors. The mapping itself stays testable because it
+             never mentions a MAUI type; this is the adapter at the XAML boundary. -->
+        <infrastructure:HexColorConverter x:Key="HexColor" />
     </ContentPage.Resources>
 
     <Grid RowDefinitions="Auto,*">
 
         <controls:BrandHeader Grid.Row="0" />
 
-        <Grid Grid.Row="1" RowDefinitions="Auto,Auto,Auto,Auto,*">
+        <!--
+            Title, toolbar and error banner each own a fixed row; only the list scrolls. The bulk action in
+            particular must never scroll away with the rows it operates on.
+        -->
+        <Grid Grid.Row="1" RowDefinitions="Auto,Auto,Auto,*">
 
-            <!-- Header -->
             <Grid Grid.Row="0"
-                  BackgroundColor="White"
-                  Padding="20,16,20,12">
-                <Grid ColumnDefinitions="*,Auto">
-                    <Label Grid.Column="0"
-                           Text="Notifications"
-                           FontSize="34"
+                  Padding="20,16,20,10"
+                  ColumnDefinitions="*,Auto">
+                <Label Grid.Column="0"
+                       Text="Notifications"
+                       FontSize="26"
+                       FontAttributes="Bold"
+                       TextColor="{StaticResource TextPrimary}"
+                       VerticalOptions="Center" />
+                <!-- The count reads as a phrase, not a bare number: "3 unread" says what the number is. -->
+                <Border Grid.Column="1"
+                        IsVisible="{Binding HasUnread}"
+                        BackgroundColor="{StaticResource Primary}"
+                        Stroke="Transparent"
+                        StrokeThickness="0"
+                        Padding="10,4"
+                        VerticalOptions="Center">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="11" />
+                    </Border.StrokeShape>
+                    <Label Text="{Binding UnreadSummary}"
+                           FontSize="12"
                            FontAttributes="Bold"
-                           TextColor="{StaticResource iOSLabel}" />
-                    <Label Grid.Column="1"
-                           Text="{Binding UnreadCount, StringFormat='{0} unread'}"
-                           FontSize="13"
-                           TextColor="{StaticResource iOSGray}"
-                           VerticalOptions="End"
-                           Margin="0,0,0,4"
-                           AutomationId="UnreadCountLabel"
-                           IsVisible="{Binding HasUnread}" />
-                </Grid>
+                           TextColor="{StaticResource TextOnPrimary}"
+                           AutomationId="UnreadCountLabel" />
+                </Border>
             </Grid>
 
             <!--
-                Filter and bulk-read, pinned above the list rather than inside it: an action that operates on
-                the whole list must not scroll away with the list.
+                Filter and bulk-read. "Mark all read" is hidden outright when nothing is unread rather than
+                left visible and disabled — a blue button that does nothing when tapped reads as broken, not
+                as unavailable. It stays enabled-bound as well, so it cannot be fired mid-load.
             -->
             <Grid Grid.Row="1"
-                  BackgroundColor="White"
                   Padding="20,0,20,12"
-                  ColumnDefinitions="Auto,*,Auto">
+                  ColumnDefinitions="Auto,*,Auto"
+                  ColumnSpacing="10">
                 <controls:SafeButton Grid.Column="0"
                         Text="{Binding UnreadFilterLabel}"
                         Command="{Binding ToggleUnreadFilterCommand}"
                         AutomationId="UnreadFilterButton"
                         BackgroundColor="Transparent"
-                        Padding="0"
-                        TextColor="{StaticResource iOSBlue}"
-                        FontSize="14" />
+                        BorderColor="{StaticResource BorderMedium}"
+                        BorderWidth="1"
+                        CornerRadius="16"
+                        HeightRequest="32"
+                        Padding="14,0"
+                        TextColor="{StaticResource Primary}"
+                        FontSize="13"
+                        FontAttributes="Bold" />
                 <controls:SafeButton Grid.Column="2"
                         Text="Mark all read"
                         Command="{Binding MarkAllReadCommand}"
+                        IsVisible="{Binding HasUnread}"
                         IsEnabled="{Binding CanMarkAllRead}"
                         AutomationId="MarkAllReadButton"
-                        BackgroundColor="Transparent"
-                        Padding="0"
-                        TextColor="{StaticResource iOSBlue}"
-                        FontSize="14" />
+                        BackgroundColor="{StaticResource PrimarySubtle}"
+                        BorderColor="Transparent"
+                        BorderWidth="0"
+                        CornerRadius="16"
+                        HeightRequest="32"
+                        Padding="14,0"
+                        TextColor="{StaticResource Primary}"
+                        FontSize="13"
+                        FontAttributes="Bold" />
             </Grid>
 
-            <!-- Loading indicator -->
-            <ActivityIndicator Grid.Row="2"
-                               IsRunning="{Binding IsLoading}"
-                               IsVisible="{Binding IsLoading}"
-                               Color="{StaticResource iOSGray}"
-                               HorizontalOptions="Center"
-                               Margin="0,24" />
-
-            <!-- Error banner -->
-            <Frame Grid.Row="3"
-                   BackgroundColor="#FFF2F2"
-                   CornerRadius="10"
-                   BorderColor="#FFD6D6"
-                   Padding="14,10"
-                   HasShadow="False"
-                   IsVisible="{Binding HasError}"
-                   Margin="16,8">
-                <Grid ColumnDefinitions="*,Auto">
+            <Border Grid.Row="2"
+                    BackgroundColor="{StaticResource ErrorLight}"
+                    Stroke="{StaticResource Error}"
+                    StrokeThickness="1"
+                    Padding="14,10"
+                    IsVisible="{Binding HasError}"
+                    Margin="20,0,20,10">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="12" />
+                </Border.StrokeShape>
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
                     <Label Grid.Column="0"
                            Text="{Binding ErrorMessage}"
-                           TextColor="#FF3B30"
-                           FontSize="14"
+                           TextColor="{StaticResource Error}"
+                           FontSize="13.5"
                            VerticalOptions="Center" />
                     <controls:SafeButton Grid.Column="1"
                             Text="Retry"
                             Command="{Binding LoadCommand}"
                             BackgroundColor="Transparent"
-                            TextColor="{StaticResource iOSBlue}"
+                            BorderWidth="0"
+                            Padding="0"
+                            HeightRequest="28"
+                            TextColor="{StaticResource Primary}"
                             FontAttributes="Bold"
-                            FontSize="14" />
+                            FontSize="13.5" />
                 </Grid>
-            </Frame>
+            </Border>
 
-            <!-- Empty state -->
-            <VerticalStackLayout Grid.Row="4"
+            <!--
+                RefreshView stays mounted even with nothing in the list, so the pull gesture works on an empty
+                inbox too; the empty state sits over it as an InputTransparent overlay rather than replacing it.
+                RefreshView is not a ScrollView, so this is not the nesting ScrollableListNestingTest guards.
+            -->
+            <RefreshView Grid.Row="3"
+                         IsRefreshing="{Binding IsRefreshing}"
+                         Command="{Binding RefreshCommand}"
+                         RefreshColor="{StaticResource Primary}">
+                <CollectionView ItemsSource="{Binding Notifications}"
+                                SelectionMode="None"
+                                Margin="16,0,16,16">
+                    <CollectionView.ItemsLayout>
+                        <LinearItemsLayout Orientation="Vertical" ItemSpacing="8" />
+                    </CollectionView.ItemsLayout>
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <Grid RowDefinitions="Auto,Auto">
+
+                                <!--
+                                    The date band. Drawn on the first row of each band only, from a flat list —
+                                    the view model stamps it. Grouping the CollectionView instead would buy
+                                    nothing here (nothing collapses) and cost a second template.
+                                -->
+                                <Label Grid.Row="0"
+                                       Text="{Binding SectionHeader}"
+                                       IsVisible="{Binding StartsSection}"
+                                       Style="{StaticResource Overline}"
+                                       Margin="4,12,0,6" />
+
+                                <Border Grid.Row="1"
+                                        BackgroundColor="{StaticResource BackgroundCard}"
+                                        Stroke="{StaticResource BorderLight}"
+                                        StrokeThickness="1"
+                                        Padding="0">
+                                    <Border.StrokeShape>
+                                        <RoundRectangle CornerRadius="14" />
+                                    </Border.StrokeShape>
+                                    <Border.GestureRecognizers>
+                                        <TapGestureRecognizer
+                                            Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.ToggleNotificationCommand}"
+                                            CommandParameter="{Binding .}" />
+                                    </Border.GestureRecognizers>
+
+                                    <!-- Column 0 is a fixed width, not Auto: the unread dot inside it collapses
+                                         when it is hidden, and an Auto column would shift every read row's
+                                         content left of every unread one. -->
+                                    <Grid ColumnDefinitions="18,Auto,*,Auto">
+
+                                        <!--
+                                            Unread, said once, in the type's own colour, at the leading edge
+                                            where a list is actually scanned. The previous signal was a 3px bar
+                                            40px wide at the BOTTOM of the card, which is past where anyone
+                                            looks. The margin centres it against the glyph beside it.
+                                        -->
+                                        <Ellipse Grid.Column="0"
+                                                 WidthRequest="8"
+                                                 HeightRequest="8"
+                                                 Margin="0,27,0,0"
+                                                 VerticalOptions="Start"
+                                                 HorizontalOptions="Center"
+                                                 IsVisible="{Binding IsUnread}"
+                                                 Fill="{Binding AccentHex, Converter={StaticResource HexColor}}" />
+
+                                        <!--
+                                            The kind of notification, as a glyph on its own tint. This replaces
+                                            an app monogram and the word AGENDAME repeated on every single row —
+                                            chrome that took up the most prominent line of each card to say the
+                                            one thing the reader already knew.
+                                        -->
+                                        <Border Grid.Column="1"
+                                                WidthRequest="34"
+                                                HeightRequest="34"
+                                                Margin="0,14,0,14"
+                                                VerticalOptions="Start"
+                                                BackgroundColor="{Binding TintHex, Converter={StaticResource HexColor}}"
+                                                Stroke="Transparent"
+                                                StrokeThickness="0"
+                                                Padding="0">
+                                            <Border.StrokeShape>
+                                                <RoundRectangle CornerRadius="17" />
+                                            </Border.StrokeShape>
+                                            <Label Text="{Binding Glyph}"
+                                                   FontSize="15"
+                                                   HorizontalOptions="Center"
+                                                   VerticalOptions="Center" />
+                                        </Border>
+
+                                        <VerticalStackLayout Grid.Column="2"
+                                                             Padding="12,13,8,14"
+                                                             Spacing="3">
+                                            <Label Text="{Binding TypeLabel}"
+                                                   TextTransform="Uppercase"
+                                                   FontSize="10"
+                                                   FontAttributes="Bold"
+                                                   CharacterSpacing="0.7"
+                                                   TextColor="{Binding AccentHex, Converter={StaticResource HexColor}}" />
+                                            <!-- The producer's own subject and body, not a category word and a blank. -->
+                                            <Label Text="{Binding Title}"
+                                                   FontSize="15"
+                                                   FontAttributes="Bold"
+                                                   TextColor="{StaticResource TextPrimary}" />
+                                            <Label Text="{Binding Message}"
+                                                   FontSize="13.5"
+                                                   TextColor="{StaticResource TextSecondary}"
+                                                   LineBreakMode="TailTruncation"
+                                                   MaxLines="{Binding IsExpanded, Converter={toolkit:BoolToObjectConverter TrueObject=10, FalseObject=2}}" />
+
+                                            <VerticalStackLayout Spacing="8"
+                                                                 Margin="0,7,0,0"
+                                                                 IsVisible="{Binding IsExpanded}">
+                                                <BoxView HeightRequest="0.5" Color="{StaticResource BorderLight}" />
+                                                <!-- Local, not the UTC instant the server stored: this line used to
+                                                     read hours off for anyone not on UTC, while TimeAgo above it
+                                                     was right. -->
+                                                <Label Text="{Binding LocalCreatedAt, StringFormat='{0:MMMM d, yyyy · h:mm tt}'}"
+                                                       Style="{StaticResource Caption}" />
+                                                <HorizontalStackLayout Spacing="18">
+                                                    <!--
+                                                        The way out of the notification, where there is an
+                                                        appointment to go to. A message notification carries no
+                                                        identifier, and a button that navigates nowhere is worse
+                                                        than no button.
+                                                    -->
+                                                    <controls:SafeButton Text="View appointment"
+                                                            Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.ViewAppointmentCommand}"
+                                                            CommandParameter="{Binding .}"
+                                                            IsVisible="{Binding CanOpenAppointment}"
+                                                            AutomationId="ViewAppointmentButton"
+                                                            BackgroundColor="Transparent"
+                                                            BorderWidth="0"
+                                                            Padding="0"
+                                                            HeightRequest="26"
+                                                            HorizontalOptions="Start"
+                                                            TextColor="{StaticResource Primary}"
+                                                            FontAttributes="Bold"
+                                                            FontSize="13.5" />
+                                                    <!--
+                                                        Marking read explicitly, rather than only as a side effect
+                                                        of leaving a row expanded for two seconds. Without it the
+                                                        only way to clear one row was to wait, and the only
+                                                        deliberate control was the all-or-nothing bulk action.
+                                                    -->
+                                                    <controls:SafeButton Text="Mark as read"
+                                                            Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.MarkReadCommand}"
+                                                            CommandParameter="{Binding .}"
+                                                            IsVisible="{Binding IsUnread}"
+                                                            AutomationId="MarkNotificationReadButton"
+                                                            BackgroundColor="Transparent"
+                                                            BorderWidth="0"
+                                                            Padding="0"
+                                                            HeightRequest="26"
+                                                            HorizontalOptions="Start"
+                                                            TextColor="{StaticResource TextSecondary}"
+                                                            FontAttributes="Bold"
+                                                            FontSize="13.5" />
+                                                </HorizontalStackLayout>
+                                            </VerticalStackLayout>
+                                        </VerticalStackLayout>
+
+                                        <Label Grid.Column="3"
+                                               Text="{Binding TimeAgo}"
+                                               Margin="0,14,12,0"
+                                               VerticalOptions="Start"
+                                               FontSize="11.5"
+                                               TextColor="{StaticResource TextMuted}"
+                                               HorizontalTextAlignment="End" />
+
+                                    </Grid>
+                                </Border>
+
+                            </Grid>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+            </RefreshView>
+
+            <!-- An empty list is a normal state, not an error. InputTransparent so it cannot swallow the
+                 pull-to-refresh gesture on the RefreshView underneath it. -->
+            <VerticalStackLayout Grid.Row="3"
                                  IsVisible="{Binding IsEmpty}"
+                                 InputTransparent="True"
                                  VerticalOptions="Center"
                                  HorizontalOptions="Center"
                                  Spacing="8"
                                  Padding="40">
                 <Label Text="{Binding EmptyStateMessage}"
-                       FontSize="16"
-                       TextColor="{StaticResource iOSGray}"
+                       FontSize="15"
+                       TextColor="{StaticResource TextSecondary}"
                        HorizontalTextAlignment="Center"
                        AutomationId="EmptyStateLabel" />
             </VerticalStackLayout>
 
-            <!-- Notifications list (iOS Notification Center style) -->
-            <CollectionView Grid.Row="4"
-                            ItemsSource="{Binding Notifications}"
-                            IsVisible="{Binding IsEmpty, Converter={StaticResource InvertedBoolConverter}}"
-                            SelectionMode="None"
-                            Margin="16,8,16,16">
-                <CollectionView.ItemsLayout>
-                    <LinearItemsLayout Orientation="Vertical" ItemSpacing="8" />
-                </CollectionView.ItemsLayout>
-                <CollectionView.ItemTemplate>
-                    <DataTemplate>
-                        <!-- Notification card (grouped card style like iOS) -->
-                        <Frame BackgroundColor="White"
-                               CornerRadius="14"
-                               Padding="0"
-                               HasShadow="False"
-                               BorderColor="Transparent">
-                            <Frame.GestureRecognizers>
-                                <TapGestureRecognizer
-                                    Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.ToggleNotificationCommand}"
-                                    CommandParameter="{Binding .}" />
-                            </Frame.GestureRecognizers>
-
-                            <VerticalStackLayout Spacing="0">
-
-                                <!-- Header row: app icon + label + category + time -->
-                                <Grid ColumnDefinitions="Auto,*,Auto,Auto"
-                                      Padding="14,10,14,0"
-                                      ColumnSpacing="8">
-                                    <!-- Small app icon -->
-                                    <Grid Grid.Column="0"
-                                          WidthRequest="20"
-                                          HeightRequest="20"
-                                          VerticalOptions="Center">
-                                        <BoxView CornerRadius="5"
-                                                 WidthRequest="20"
-                                                 HeightRequest="20"
-                                                 Color="{StaticResource iOSRed}" />
-                                        <Label Text="{x:Static infrastructure:AppBrand.Monogram}"
-                                               FontSize="9"
-                                               FontAttributes="Bold"
-                                               TextColor="White"
-                                               HorizontalOptions="Center"
-                                               VerticalOptions="Center" />
-                                    </Grid>
-                                    <Label Grid.Column="1"
-                                           Text="{x:Static infrastructure:AppBrand.Name}"
-                                           TextTransform="Uppercase"
-                                           FontSize="12"
-                                           TextColor="{StaticResource iOSGray}"
-                                           VerticalOptions="Center"
-                                           CharacterSpacing="0.5" />
-                                    <!-- The category, which used to be the headline. It is a tag, not the news. -->
-                                    <Label Grid.Column="2"
-                                           Text="{Binding TypeLabel}"
-                                           TextTransform="Uppercase"
-                                           FontSize="10"
-                                           FontAttributes="Bold"
-                                           TextColor="{StaticResource iOSGray}"
-                                           VerticalOptions="Center"
-                                           CharacterSpacing="0.5" />
-                                    <Label Grid.Column="3"
-                                           Text="{Binding TimeAgo}"
-                                           FontSize="12"
-                                           TextColor="{StaticResource iOSGray}"
-                                           VerticalOptions="Center" />
-                                </Grid>
-
-                                <!-- Content: the producer's own subject and body, not a category word and a blank -->
-                                <VerticalStackLayout Padding="14,6,14,14" Spacing="3">
-                                    <Label Text="{Binding Title}"
-                                           FontSize="15"
-                                           FontAttributes="Bold"
-                                           TextColor="{StaticResource iOSLabel}" />
-                                    <Label Text="{Binding Message}"
-                                           FontSize="14"
-                                           TextColor="{StaticResource iOSGray}"
-                                           LineBreakMode="TailTruncation"
-                                           MaxLines="{Binding IsExpanded, Converter={toolkit:BoolToObjectConverter TrueObject=10, FalseObject=2}}" />
-                                </VerticalStackLayout>
-
-                                <!-- Expanded details -->
-                                <VerticalStackLayout Spacing="4"
-                                                     Margin="14,0,14,14"
-                                                     IsVisible="{Binding IsExpanded}">
-                                    <BoxView HeightRequest="0.5" Color="{StaticResource iOSGray5}" />
-                                    <Label Text="{Binding CreatedAt, StringFormat='{0:MMMM d, yyyy · h:mm tt}'}"
-                                           FontSize="13"
-                                           TextColor="{StaticResource iOSGray}"
-                                           Margin="0,4,0,0" />
-                                    <!--
-                                        The way out of the notification. Only where there is an appointment
-                                        that can still be opened: a message notification carries no identifier,
-                                        and a cancellation names one that has been deleted. A button that
-                                        navigates nowhere is worse than no button.
-                                    -->
-                                    <controls:SafeButton Text="View appointment"
-                                            Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.ViewAppointmentCommand}"
-                                            CommandParameter="{Binding .}"
-                                            IsVisible="{Binding CanOpenAppointment}"
-                                            AutomationId="ViewAppointmentButton"
-                                            BackgroundColor="Transparent"
-                                            Padding="0"
-                                            HorizontalOptions="Start"
-                                            TextColor="{StaticResource iOSBlue}"
-                                            FontAttributes="Bold"
-                                            FontSize="14" />
-                                </VerticalStackLayout>
-
-                                <!-- Unread indicator line at bottom -->
-                                <BoxView HeightRequest="3"
-                                         CornerRadius="1.5"
-                                         Color="{Binding IsRead, Converter={toolkit:BoolToObjectConverter TrueObject=Transparent, FalseObject={StaticResource iOSBlue}}}"
-                                         Margin="14,0,14,8"
-                                         HorizontalOptions="Start"
-                                         WidthRequest="40" />
-
-                            </VerticalStackLayout>
-                        </Frame>
-                    </DataTemplate>
-                </CollectionView.ItemTemplate>
-            </CollectionView>
+            <!-- Only for a load the reader is waiting on. A pull-to-refresh already draws its own spinner,
+                 and stacking a second one under it reads as two things loading. -->
+            <ActivityIndicator Grid.Row="3"
+                               IsRunning="{Binding ShowsLoadingIndicator}"
+                               IsVisible="{Binding ShowsLoadingIndicator}"
+                               Color="{StaticResource Primary}"
+                               HorizontalOptions="Center"
+                               VerticalOptions="Start"
+                               Margin="0,24" />
 
         </Grid>
 

@@ -186,11 +186,24 @@ public class NotificationApiServiceTests
         Assert.EndsWith("/api/v1/notifications/unread-count", _lastHandler.LastRequestUri!.AbsolutePath);
     }
 
-    // A badge is decoration. It must never be the reason a screen shows an error.
+    /// <summary>
+    /// A badge is decoration, so a failure is absorbed rather than thrown — but it is reported as
+    /// <c>null</c>, not zero. Zero is a claim that there is nothing unread, and answering it to a request that
+    /// never reached the server is how a network blip used to clear a badge with real notifications behind it.
+    /// </summary>
     [Fact]
-    public async Task GetUnreadCount_OnFailure_ReportsZeroRatherThanThrowing()
+    public async Task GetUnreadCount_OnFailure_ReportsUnknownRatherThanZeroOrThrowing()
     {
         var sut = new NotificationApiService(CreateFactory(HttpStatusCode.InternalServerError));
+
+        Assert.Null(await sut.GetUnreadCountAsync());
+    }
+
+    // A real zero from the server is still a real zero, and has to stay distinguishable from the failure above.
+    [Fact]
+    public async Task GetUnreadCount_WhenNothingIsUnread_ReportsZero()
+    {
+        var sut = new NotificationApiService(CreateFactory(HttpStatusCode.OK, """{"unreadCount":0}"""));
 
         Assert.Equal(0, await sut.GetUnreadCountAsync());
     }
@@ -231,10 +244,22 @@ public class NotificationApiServiceTests
         Assert.EndsWith("/api/v1/notifications/read-all", _lastHandler.LastRequestUri!.AbsolutePath);
     }
 
+    /// <summary>
+    /// A failed request is <c>null</c>, not zero. The caller has to say different things for "we could not
+    /// reach the server" and "there was nothing left to mark", and it cannot if both arrive as the same number.
+    /// </summary>
     [Fact]
-    public async Task MarkAllRead_OnFailure_ReportsZero()
+    public async Task MarkAllRead_OnFailure_ReportsUnknownRatherThanZero()
     {
         var sut = new NotificationApiService(CreateFactory(HttpStatusCode.InternalServerError));
+
+        Assert.Null(await sut.MarkAllReadAsync());
+    }
+
+    [Fact]
+    public async Task MarkAllRead_WhenTheServerChangedNothing_ReportsZeroNotFailure()
+    {
+        var sut = new NotificationApiService(CreateFactory(HttpStatusCode.OK, """{"markedRead":0}"""));
 
         Assert.Equal(0, await sut.MarkAllReadAsync());
     }

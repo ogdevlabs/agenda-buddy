@@ -21,6 +21,9 @@ public class PinnedActionTest
         { "ProfessionsPage.xaml", "SaveProfessionsButton" },
         { "ProfessionsPage.xaml", "ContinueToServicesButton" },
         { "CalendarSettingsPage.xaml", "SaveCalendarHoursButton" },
+        // An action that operates on the whole list must not scroll away with the list.
+        { "NotificationsPage.xaml", "MarkAllReadButton" },
+        { "NotificationsPage.xaml", "UnreadFilterButton" },
     };
 
     [Theory]

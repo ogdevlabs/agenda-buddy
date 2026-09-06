@@ -1,4 +1,5 @@
 using System.Xml.Linq;
+using AgendaBuddy.MobileApp.Infrastructure;
 using Xunit;
 
 namespace AgendaBuddy.MobileApp.Tests.Infrastructure;
@@ -174,6 +175,41 @@ public class PushConfigurationTest
             Path.Combine(MobileApp(), "Platforms", "Android", "AndroidManifest.xml"));
 
         Assert.Contains("android.permission.POST_NOTIFICATIONS", manifest);
+    }
+
+    /// <summary>
+    /// The channel the manifest names has to be the one <c>MainActivity</c> creates.
+    /// </summary>
+    /// <remarks>
+    /// A mismatch is silent in the worst way: Android falls back to the channel the Firebase SDK auto-creates
+    /// (labelled "Miscellaneous", at an importance nothing here chose), the declared channel stays empty, and
+    /// every notification still arrives — so nothing looks broken while the app's own channel settings do
+    /// nothing at all.
+    /// </remarks>
+    [Fact]
+    public void TheAndroidManifestNamesTheChannelTheAppActuallyCreates()
+    {
+        var manifest = XDocument.Load(
+            Path.Combine(MobileApp(), "Platforms", "Android", "AndroidManifest.xml"));
+        var android = XNamespace.Get("http://schemas.android.com/apk/res/android");
+
+        var declared = manifest.Root!
+            .Element("application")!
+            .Elements("meta-data")
+            .SingleOrDefault(m =>
+                m.Attribute(android + "name")?.Value
+                == "com.google.firebase.messaging.default_notification_channel_id");
+
+        Assert.NotNull(declared);
+        Assert.Equal(PushChannel.Id, declared!.Attribute(android + "value")?.Value);
+    }
+
+    // A channel with no user-facing name is one nobody can find in settings to turn back on.
+    [Fact]
+    public void TheChannelHasAUserFacingNameAndDescription()
+    {
+        Assert.False(string.IsNullOrWhiteSpace(PushChannel.Name));
+        Assert.False(string.IsNullOrWhiteSpace(PushChannel.Description));
     }
 
     /// <summary>

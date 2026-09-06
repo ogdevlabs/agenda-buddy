@@ -38,7 +38,7 @@ public class NotificationApiService : INotificationApiService
         return JsonSerializer.Deserialize<List<NotificationSummary>>(json, JsonOptions) ?? [];
     }
 
-    public async Task<long> GetUnreadCountAsync(CancellationToken ct = default)
+    public async Task<long?> GetUnreadCountAsync(CancellationToken ct = default)
     {
         try
         {
@@ -46,16 +46,17 @@ public class NotificationApiService : INotificationApiService
             var route = NotificationRouteBuilder.UnreadCount();
             var response = await client.GetAsync(route.Path, ct);
 
-            if (!response.IsSuccessStatusCode) return 0;
+            if (!response.IsSuccessStatusCode) return null;
 
             var json = await response.Content.ReadAsStringAsync(ct);
-            return JsonSerializer.Deserialize<UnreadCountPayload>(json, JsonOptions)?.UnreadCount ?? 0;
+            return JsonSerializer.Deserialize<UnreadCountPayload>(json, JsonOptions)?.UnreadCount;
         }
         catch (Exception)
         {
             // A badge is decoration. It must never be the reason a screen shows an error, so unlike the list
-            // this one absorbs its own failure and reports nothing unread.
-            return 0;
+            // this one absorbs its own failure — but it reports "unknown", not "nothing unread". Zero here used
+            // to clear the badge on any network blip, which is the badge lying about the one thing it is for.
+            return null;
         }
     }
 
@@ -70,13 +71,15 @@ public class NotificationApiService : INotificationApiService
         return response.IsSuccessStatusCode;
     }
 
-    public async Task<long> MarkAllReadAsync(CancellationToken ct = default)
+    public async Task<long?> MarkAllReadAsync(CancellationToken ct = default)
     {
         var client = _httpClientFactory.CreateClient("AgendaBuddyApi");
         var route = NotificationRouteBuilder.MarkAllRead();
         var response = await client.PostAsync(route.Path, null, ct);
 
-        if (!response.IsSuccessStatusCode) return 0;
+        // Null, not zero: "the request failed" and "there was nothing left to mark" need different words on
+        // screen, and collapsing them here leaves the caller unable to choose.
+        if (!response.IsSuccessStatusCode) return null;
 
         var json = await response.Content.ReadAsStringAsync(ct);
         return JsonSerializer.Deserialize<MarkAllReadPayload>(json, JsonOptions)?.MarkedRead ?? 0;

@@ -26,6 +26,17 @@ namespace AgendaBuddy.Library.Services;
 /// not configured" — reaching it means it is.
 /// </para>
 /// <para>
+/// <b>Every message states its priority, its sound and its Android channel, because FCM's defaults are wrong
+/// for this product in three ways that all present as "push does not work".</b> A v1 message defaults to
+/// <i>normal</i> priority, which Android may hold until the device leaves Doze — minutes to hours, and an
+/// appointment request delivered tomorrow morning is not a notification; <c>apns-priority: 10</c> is the iOS
+/// equivalent, and is valid here precisely because every message carries a visible alert (a background-only
+/// push would have to use 5). A notification with no sound is drawn silently, which is indistinguishable from
+/// not arriving at all unless the screen happens to be watched. And Android 8+ posts on a channel, so a message
+/// naming none lands on the one the Firebase SDK auto-creates — labelled "Miscellaneous", at an importance
+/// nothing here chose, leaving the app's own channel settings inert.
+/// </para>
+/// <para>
 /// Like <see cref="ResendEmailSender"/>, it never throws on a delivery failure and never logs the message body
 /// or the device token: the body names an appointment and the token identifies a device, which is what
 /// <c>PiiRedactingProcessor</c> exists to keep out of exported telemetry.
@@ -86,7 +97,25 @@ public class FcmPushSender : IPushSender
                     token = deviceToken,
                     notification = new { title, body },
                     // Every value must be a string -- FCM rejects a data payload with non-string values.
-                    data = data?.ToDictionary(pair => pair.Key, pair => pair.Value)
+                    data = data?.ToDictionary(pair => pair.Key, pair => pair.Value),
+                    // Per-platform delivery instructions. FCM's defaults are wrong for this product in two ways
+                    // that both look like "push does not work" -- see the remarks below on priority and sound.
+                    // The field names are FCM's own snake_case, which the camelCase policy leaves untouched
+                    // because their first character is already lowercase.
+                    android = new
+                    {
+                        priority = "high",
+                        notification = new
+                        {
+                            channel_id = PushOptions.AndroidChannelId,
+                            default_sound = true
+                        }
+                    },
+                    apns = new
+                    {
+                        headers = new Dictionary<string, string> { ["apns-priority"] = "10" },
+                        payload = new { aps = new { sound = "default" } }
+                    }
                 }
             };
 
@@ -245,6 +274,7 @@ public class FcmPushSender : IPushSender
     // which FCM rejects.
     private static readonly JsonSerializerOptions SendJsonOptions =
         new(JsonSerializerDefaults.Web) { DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull };
+
 
     private sealed record ServiceAccount(string ClientEmail, string PrivateKey, string TokenUri);
 
