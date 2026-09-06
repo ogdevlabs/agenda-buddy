@@ -6,6 +6,21 @@ All notable changes to this project are documented in this file, in [Keep a Chan
 
 ### Added
 
+- **F-031 auto-deploy-dev**: `.github/workflows/main-deploy-dev.yml` keeps the dev environment in step with
+  `main` — stop → deploy → restore, on a merge that touched a deployed backend service. **Off unless the
+  repository variable `AUTO_DEPLOY_DEV` is `true`**, because `deploy.yml` is manual "deliberately" until
+  `docs/deployment.md`'s "Before this is production" list is done and item 1 (rotate the Atlas credential,
+  `agenda-buddy-41s`) is still open — so merging this changes nothing until somebody opts in. Triggered by
+  **".NET CI" completing successfully on `main`**, not by the push: a push trigger deploys a merge result whose
+  build and tests have not finished. The third stage is not optional — `dev-env-stop` sets `minReplicas=0` and
+  `azd deploy` does not reset the scale rule (only `azd provision` does, and it is deliberately off for an
+  application-code deploy), so a bare stop→deploy would leave the new code at zero replicas until the next
+  weekday 09:00; the restore returns the environment to whatever `dev-env-schedule` would have chosen, which
+  means **deliberately leaving it stopped outside 09:00–17:00 Mexico City**. `deploy.yml` gained a
+  `workflow_call` trigger so there is one implementation of "deploy". ⚠️ A service missing from the workflow's
+  path list silently stops being deployed, so `AutoDeployPathFilterTest` derives the expected entries from the
+  AppHost's own `Projects.AgendaBuddy_*` symbols and fails if one is absent (ADR-065).
+
 - **F-030 contact-avatars**: `AvatarCatalog` (`AgendaBuddy.Library`) names 24 avatars, assigned at random when a
   Provider or Customer profile is created (`avatar_id` on both entities) and derived deterministically from the
   email where a row has none — so this ships with no data migration and no account renders as a blank circle.

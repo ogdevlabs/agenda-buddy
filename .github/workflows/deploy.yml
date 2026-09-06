@@ -24,6 +24,18 @@ on:
         type: boolean
         required: false
         default: false
+  # Callable so `main-deploy-dev.yml` can reuse this exact job rather than restating 200 lines of
+  # Terraform + azd wiring. The inputs are identical to the dispatch ones, so `inputs.*` below resolves
+  # the same way on either trigger and there is one implementation of "deploy" in this repository.
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+      provision:
+        type: boolean
+        required: false
+        default: false
 
 # Federated credentials, not a stored client secret: id-token lets both terraform and azd
 # exchange a GitHub OIDC token for an Azure one, so there is no long-lived credential in this

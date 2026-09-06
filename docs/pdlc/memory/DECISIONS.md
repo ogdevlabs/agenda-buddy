@@ -1674,3 +1674,63 @@ rejected: it leaks every user's email hash to a third party for decoration, and 
 list that must render offline. Deriving the avatar from the email *only*, with nothing stored — rejected, it
 would mean two accounts belonging to the same person always match and a user could never be given a choice
 later without changing what everyone already sees.
+
+---
+
+## ADR-065 — The dev environment auto-deploys on merge to main, gated on an explicit opt-in variable (F-031)
+
+**Date:** 2026-09-06 · **Status:** Accepted
+
+**Context.** The deployed dev environment had drifted three days and several features behind `main`, and the
+consequence was not a stale demo — it was three bug reports against behaviour that had already been fixed
+(notification ordering, the unread-only filter, and push, all reported broken while `main` was correct). A
+deployed environment that is only ever updated by somebody remembering to dispatch a workflow will drift again,
+and the cost of the drift falls on whoever is testing.
+
+`deploy.yml`'s own header says it is manual **deliberately**: "A push-triggered deploy on a project with one
+shared Atlas cluster and no staging/production split is a foot-gun; wire this to `push: branches: [main]` once
+docs/deployment.md's 'Before this is production' list is actually done." Item 1 on that list — rotate the Atlas
+credential (`agenda-buddy-41s`, P0) — is **still open**.
+
+**Decision.** Wire the automation, and gate it on a repository variable that is absent by default.
+`main-deploy-dev.yml` runs stop → deploy → restore against `dev` only, and does nothing at all unless
+`AUTO_DEPLOY_DEV` equals `true`. Merging the workflow therefore changes no behaviour; enabling it is a separate,
+deliberate act, taken when whoever owns that decision judges the precondition met.
+
+**Why `workflow_run` on ".NET CI" rather than `push: branches: [main]`.** A push trigger deploys a commit whose
+build and tests have not finished. On this project that means deploying against a shared production-data Atlas
+cluster on the strength of a PR check that passed on a *different* tree — the pre-merge branch, not the merge
+result. Hanging off ".NET CI" completing with `conclusion == 'success'` means `main` is deployed only after
+`main` itself is green. The `completed` type fires on failure too, so the conclusion is checked explicitly.
+
+**Why there is a third stage, and why stop→deploy alone would have been a defect.** `dev-env-stop` sets
+`minReplicas=0` through `az containerapp update`. `azd deploy` then creates a new revision per app carrying the
+new image but does **not** reset the scale rule — only `azd provision` re-applies the template's replica
+settings, and provision is deliberately `false` here because application code changing is not a reason to
+re-apply infrastructure. So a bare stop→deploy leaves the new code at zero replicas: not truly down, because ACA
+cold-starts on an inbound request, but not started either, and `dev-env-schedule` would not correct it until the
+next weekday 09:00. The third stage returns the environment to the state the schedule would have chosen — it
+starts the apps inside 09:00–17:00 America/Mexico_City on a weekday and deliberately leaves them stopped
+outside it, because starting them would defeat the cost control that schedule exists for.
+
+**Why stop first at all.** It is not technically required: the apps are in Single revision mode, so a deploy
+replaces the running revision regardless. It is honoured because it was asked for, and it does buy one real
+thing — no window in which an old and a new revision are both live against the one shared database.
+
+**Consequences.** The deployable-path list is maintained by hand, and getting it wrong fails in the silent
+direction: a renamed or newly added service that the list misses simply stops triggering deploys, with no error
+anywhere. `AutoDeployPathFilterTest` derives the expected entries from the AppHost's own
+`Projects.AgendaBuddy_*` symbols and fails if any is absent, which is the only reason this is safe to maintain
+by hand — CLAUDE.md already records that every path filter in `dotnet.yml` needed updating for each of F-020's
+12 project renames. Test projects and `AgendaBuddy.MobileApp` are excluded and asserted excluded: neither changes
+deployed behaviour, and the mobile client ships through TestFlight. Concurrency shares `deploy.yml`'s own
+`deploy-dev` group with `cancel-in-progress: false`, so a manual dispatch and an automatic run cannot overlap and
+a half-applied Terraform/azd run is never cancelled. `deploy.yml` gained a `workflow_call` trigger so there
+remains exactly one implementation of "deploy" in this repository.
+
+**Alternatives rejected.** `push: branches: [main]` — rejected above, it deploys untested merge results.
+Deploying on every merge regardless of what changed — rejected: a docs-only or mobile-only merge would spend a
+full Terraform+azd run and a container build per service for no change in deployed behaviour. Removing the stop
+stage — rejected, it was explicitly asked for and the concurrent-revisions argument for it is real. Restoring
+the environment unconditionally after deploying — rejected, it would silently defeat the out-of-hours cost
+control; the schedule's window is respected instead.

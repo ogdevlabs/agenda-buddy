@@ -1,0 +1,252 @@
+name: Dev environment — auto-deploy on merge to main
+
+# Keeps the dev environment in step with main. On a merge to main that touched a deployed backend
+# service, this stops the environment, deploys, and then returns it to whatever the schedule says its
+# state should be right now.
+#
+# ─────────────────────────────────────────────────────────────────────────────────────────────────
+# WHY THE THIRD STEP EXISTS, AND WHY STOP→DEPLOY ALONE IS WRONG
+#
+# `dev-env-stop` sets minReplicas=0 via `az containerapp update`. `azd deploy` then creates a new
+# revision per app with the new image, but it does NOT reset the scale rule — only `azd provision`
+# re-applies the template's replica settings, and provision is opt-in (`provision: false` here, because
+# the infrastructure has not changed). So a bare stop→deploy leaves the environment carrying the new
+# code at minReplicas=0: not truly down (ACA cold-starts it on an inbound request) but not started
+# either, and the schedule will not correct it until the next 09:00 Mexico City weekday start.
+#
+# So this restores the state the schedule would have chosen. Inside the window it starts the apps;
+# outside it, it deliberately leaves them stopped, because starting them would defeat the cost control
+# that is the entire reason dev-env-schedule.yml exists.
+#
+# WHY STOP FIRST AT ALL. It is not required — ACA is in Single revision mode, so a deploy replaces the
+# running revision anyway. It is honoured here because it was asked for, and it does buy one thing: no
+# window in which an old and a new revision are both live against the one shared Atlas database.
+#
+# ─────────────────────────────────────────────────────────────────────────────────────────────────
+# WHY workflow_run RATHER THAN `push: branches: [main]`
+#
+# A push trigger would deploy a commit whose build and tests have not finished, and on this repository
+# that means deploying against a shared Atlas cluster on the strength of a PR check that passed on a
+# different tree. Hanging off ".NET CI" completing successfully means main is deployed only after main
+# itself is green.
+#
+# ⚠️ For a `workflow_run` event, `actions/checkout` resolves to the DEFAULT BRANCH TIP, not to
+# `workflow_run.head_sha`. That is deliberate and correct here: the job's purpose is "make dev match
+# main", so if two merges land in quick succession the second run deploying main's tip (containing both)
+# is the right outcome. `concurrency` below serialises them.
+#
+# ─────────────────────────────────────────────────────────────────────────────────────────────────
+# ⚠️ OFF BY DEFAULT, AND ON PURPOSE
+#
+# deploy.yml's own header says it is manual "deliberately... wire this to `push: branches: [main]` once
+# docs/deployment.md's 'Before this is production' list is actually done", and item 1 on that list —
+# rotate the Atlas credential (`agenda-buddy-41s`, P0, still open) — is not done. So this workflow does
+# nothing until the repository variable AUTO_DEPLOY_DEV is set to the string `true`. Merging the
+# workflow therefore does not start deploying anything; enabling it is a separate, deliberate act.
+#
+# To turn it on:  Settings → Secrets and variables → Actions → Variables → AUTO_DEPLOY_DEV = true
+# To turn it off: delete that variable, or set it to anything other than `true`.
+
+on:
+  workflow_run:
+    workflows: [".NET CI"]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  id-token: write
+  contents: read
+
+# Shares deploy.yml's group so a manual dispatch and an automatic run can never overlap. Never
+# cancel-in-progress: a half-applied Terraform/azd run is worse than a queued one.
+concurrency:
+  group: deploy-dev
+  cancel-in-progress: false
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Should this deploy at all?
+  # ---------------------------------------------------------------------------
+  decide:
+    runs-on: ubuntu-24.04
+    outputs:
+      deploy: ${{ steps.gate.outputs.deploy }}
+      start_after: ${{ steps.window.outputs.start_after }}
+    steps:
+      - name: Require a green CI run
+        if: ${{ github.event.workflow_run.conclusion != 'success' }}
+        run: |
+          echo "::notice::.NET CI concluded '${{ github.event.workflow_run.conclusion }}'; not deploying."
+          echo "SKIP=ci" >> "$GITHUB_ENV"
+
+      - uses: actions/checkout@v7
+        with:
+          # Two commits is all the diff below needs, and a merge commit's first parent is main's
+          # previous tip — which is exactly the "what did this merge bring in" boundary.
+          fetch-depth: 2
+
+      # The deployable-path list. Its counterpart is dotnet.yml's `api` filter, and the two are held
+      # together by AutoDeployPathFilterTest -- which asserts every service the AppHost declares appears
+      # here, because a renamed or newly added service that this list misses would silently stop being
+      # deployed with nothing reporting it. CLAUDE.md records that every path filter in dotnet.yml had to
+      # be updated for each of F-020's 12 project renames; this is the same trap with a quieter failure.
+      #
+      # Test projects are deliberately absent: they change no deployed behaviour, and deploying for them
+      # is pure cost. So is AgendaBuddy.MobileApp -- it ships through TestFlight, not through azd.
+      - name: Did this merge touch a deployed backend service?
+        id: changed
+        run: |
+          set -euo pipefail
+          paths='
+          AgendaBuddy.Booking.Api/ AgendaBuddy.Booking.Core/ AgendaBuddy.Booking.Domain/ AgendaBuddy.Booking.Infrastructure/
+          AgendaBuddy.Calendar.Api/ AgendaBuddy.Calendar.Core/ AgendaBuddy.Calendar.Domain/ AgendaBuddy.Calendar.Infrastructure/
+          AgendaBuddy.Customer.Api/ AgendaBuddy.Customer.Core/ AgendaBuddy.Customer.Domain/ AgendaBuddy.Customer.Infrastructure/
+          AgendaBuddy.Provider.Api/ AgendaBuddy.Provider.Core/ AgendaBuddy.Provider.Domain/ AgendaBuddy.Provider.Infrastructure/
+          AgendaBuddy.Services.Api/ AgendaBuddy.Services.Core/ AgendaBuddy.Services.Domain/ AgendaBuddy.Services.Infrastructure/
+          AgendaBuddy.Profession.Api/ AgendaBuddy.Profession.Core/ AgendaBuddy.Profession.Domain/ AgendaBuddy.Profession.Infrastructure/
+          AgendaBuddy.Identity/
+          AgendaBuddy.Gateway/
+          AgendaBuddy.Library/ AgendaBuddy.Library.ServerAuth/ AgendaBuddy.EventAndCommands/
+          AgendaBuddy.ServiceDefaults/ AgendaBuddy.AppHost/
+          Directory.Build.props azure.yaml infra/terraform/
+          '
+          # HEAD^ is main's previous tip on a merge commit and the previous commit on a direct push, so
+          # this is the right boundary either way. A first-ever commit has no parent; treat that as
+          # "everything changed" rather than failing.
+          if git rev-parse --verify -q HEAD^ >/dev/null; then
+            git diff --name-only HEAD^ HEAD > /tmp/changed.txt
+          else
+            git ls-files > /tmp/changed.txt
+          fi
+
+          echo "changed files:"; sed 's/^/  /' /tmp/changed.txt
+
+          hit=false
+          for p in $paths; do
+            if grep -q "^${p}" /tmp/changed.txt; then echo "matched: $p"; hit=true; fi
+          done
+
+          # A .md under a service directory is not a deployable change. Checked after the prefix match
+          # rather than by excluding it from the list, because dorny/paths-filter's OR semantics make
+          # negations a silent no-op -- dotnet.yml documents that at length, and this avoids the
+          # question entirely by not using patterns.
+          if [ "$hit" = true ] && ! grep -qvE '\.md$' /tmp/changed.txt; then
+            echo "only markdown changed under a matched path"
+            hit=false
+          fi
+
+          echo "backend=$hit" >> "$GITHUB_OUTPUT"
+
+      - name: Gate
+        id: gate
+        env:
+          ENABLED: ${{ vars.AUTO_DEPLOY_DEV }}
+          BACKEND: ${{ steps.changed.outputs.backend }}
+          CI: ${{ github.event.workflow_run.conclusion }}
+        run: |
+          set -euo pipefail
+
+          # Plain ifs rather than an `A && B || C` chain: under `set -e` those chains are where the
+          # subtle bugs live, and the first check that fails is the one worth reporting.
+          reason=""
+          if [ "$CI" != "success" ]; then
+            reason="CI concluded '$CI'"
+          elif [ "${ENABLED:-}" != "true" ]; then
+            reason="AUTO_DEPLOY_DEV is not set to 'true' (currently '${ENABLED:-unset}')"
+          elif [ "$BACKEND" != "true" ]; then
+            reason="no deployed backend service changed"
+          fi
+
+          if [ -n "$reason" ]; then
+            echo "deploy=false" >> "$GITHUB_OUTPUT"
+            {
+              echo "### Not deploying"
+              echo
+              echo "$reason."
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "deploy=true" >> "$GITHUB_OUTPUT"
+            {
+              echo "### Deploying dev"
+              echo
+              echo "A deployed backend service changed and CI is green."
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      # Whether the schedule would have this environment running at this moment. Mexico City is UTC-6
+      # ALL YEAR (Mexico abolished DST in 2022), which is why one fixed offset is correct in January and
+      # July alike -- the same reasoning, and the same window, as dev-env-schedule.yml. If Mexico ever
+      # reinstates DST, that file and this step both need revisiting.
+      - name: Would the schedule have this running right now?
+        id: window
+        run: |
+          set -euo pipefail
+          now_utc_h=$(date -u +%-H)
+          dow=$(date -u +%u)          # 1..7, Monday..Sunday, in UTC
+          local_h=$(( (now_utc_h - 6 + 24) % 24 ))
+          # A UTC hour before 06:00 is the previous local day, which can move a Monday back to Sunday.
+          local_dow=$dow
+          if [ "$now_utc_h" -lt 6 ]; then local_dow=$(( (dow + 5) % 7 + 1 )); fi
+
+          if [ "$local_dow" -le 5 ] && [ "$local_h" -ge 9 ] && [ "$local_h" -lt 17 ]; then
+            echo "start_after=true" >> "$GITHUB_OUTPUT"
+            echo "Local Mexico City time is ${local_h}:xx on day ${local_dow} — inside the window, will start after deploying."
+          else
+            echo "start_after=false" >> "$GITHUB_OUTPUT"
+            echo "Local Mexico City time is ${local_h}:xx on day ${local_dow} — outside the window, leaving stopped."
+          fi
+
+  # ---------------------------------------------------------------------------
+  # stop → deploy → restore
+  # ---------------------------------------------------------------------------
+  stop:
+    needs: decide
+    if: ${{ needs.decide.outputs.deploy == 'true' }}
+    uses: ./.github/workflows/dev-env-power.yml
+    with:
+      action: stop
+      environment: dev
+    secrets: inherit
+
+  deploy:
+    needs: stop
+    # provision stays false: this fires on application code changes, and re-running provision on every
+    # merge would re-apply infrastructure for no reason. An infra change still goes through the manual
+    # dispatch with provision: true, which is where that decision belongs.
+    uses: ./.github/workflows/deploy.yml
+    with:
+      environment: dev
+      provision: false
+    secrets: inherit
+
+  restore:
+    needs: [decide, deploy]
+    # Only inside the schedule's own window. Outside it the environment stays stopped, which is both the
+    # correct end state and the reason the schedule exists.
+    if: ${{ needs.decide.outputs.start_after == 'true' }}
+    uses: ./.github/workflows/dev-env-power.yml
+    with:
+      action: start
+      environment: dev
+    secrets: inherit
+
+  # Reports the end state explicitly, including the case that surprises people: a successful deploy
+  # that deliberately left the environment stopped because it ran outside working hours.
+  report:
+    needs: [decide, deploy, restore]
+    if: ${{ always() && needs.decide.outputs.deploy == 'true' }}
+    runs-on: ubuntu-24.04
+    steps:
+      - run: |
+          {
+            echo "### Dev environment after this merge"
+            echo
+            echo "- deploy: ${{ needs.deploy.result }}"
+            if [ "${{ needs.decide.outputs.start_after }}" = "true" ]; then
+              echo "- restarted: ${{ needs.restore.result }} (inside 09:00–17:00 Mexico City, weekday)"
+            else
+              echo "- **left stopped on purpose** — outside 09:00–17:00 Mexico City on a weekday."
+              echo "  The new code is deployed. Run \"Dev environment — start\" to bring it up now,"
+              echo "  or the schedule will at the next weekday 09:00."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
