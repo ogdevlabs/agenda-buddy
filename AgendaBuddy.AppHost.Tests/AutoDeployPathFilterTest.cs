@@ -147,6 +147,34 @@ public class AutoDeployPathFilterTest
     }
 
     /// <summary>
+    /// ⚠️ The deploy machinery triggers a deploy, because a change to it can only be verified by running one.
+    /// </summary>
+    /// <remarks>
+    /// These were excluded, so the fix for CI 358 — a concurrency self-deadlock and a stripped OIDC
+    /// permission, both of which failed the job before it started and produced no log — merged to <c>main</c>
+    /// without the deploy path ever running once. The defects had reached <c>main</c> by the same route. A
+    /// change to how deploying works now proves itself on the merge that makes it.
+    /// </remarks>
+    [Theory]
+    [InlineData("'.github/workflows/deploy.yml'")]
+    [InlineData("'.github/workflows/dev-redeploy.yml'")]
+    [InlineData("'.github/workflows/dev-env-power.yml'")]
+    public void TheDeployMachineryIsInTheDeployableFilter(string entry)
+    {
+        Assert.Contains(entry, DeployableFilter(), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// <c>dotnet.yml</c> is deliberately absent: the stage inside it is a handful of <c>if:</c>/<c>needs:</c>
+    /// lines guarded by this very suite, and including the file would make every CI edit of any kind deploy.
+    /// </summary>
+    [Fact]
+    public void TheCiWorkflowItselfDoesNotTriggerADeploy()
+    {
+        Assert.DoesNotContain("'.github/workflows/dotnet.yml'", DeployableFilter(), StringComparison.Ordinal);
+    }
+
+    /// <summary>
     /// Test projects and the mobile client must NOT trigger a deploy. Neither changes deployed behaviour,
     /// and a deploy is a full Terraform + azd run plus eight container builds — the mobile client ships
     /// through TestFlight, not through azd.

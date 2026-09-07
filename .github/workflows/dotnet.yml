@@ -280,6 +280,24 @@ jobs:
               - 'Directory.Build.props'
               - 'azure.yaml'
               - 'infra/terraform/**'
+              # ⚠️ The deploy machinery itself, and this is the least obvious entry here.
+              #
+              # A change to the deploy path can only be verified by running a deploy, and these were
+              # excluded — so the fix for CI 358 (a concurrency self-deadlock and a stripped OIDC
+              # permission, both of which failed the job before it started) merged to main without the
+              # deploy path ever running once. The defects had reached main the same way.
+              #
+              # Included so a change to how deploying works proves itself on the merge that makes it,
+              # rather than days later on whatever unrelated backend change happens to trigger a deploy
+              # next. The cost is real and accepted: a comment-only edit to one of these three files
+              # spends a full Terraform + azd run and eight container builds.
+              #
+              # `dotnet.yml` is deliberately NOT here. The stage that lives in it is ~20 lines of
+              # `if:`/`needs:`/`uses:` guarded by AutoDeployPathFilterTest, and including this file would
+              # make every CI edit of any kind deploy.
+              - '.github/workflows/deploy.yml'
+              - '.github/workflows/dev-redeploy.yml'
+              - '.github/workflows/dev-env-power.yml'
 
   # ---------------------------------------------------------------------------
   # API services — build + test (runs when backend or shared library changes)

@@ -4,6 +4,20 @@ All notable changes to this project are documented in this file, in [Keep a Chan
 
 ## [Unreleased]
 
+### Changed
+
+- **F-031**: a change to the **deploy machinery itself** now triggers a dev deploy —
+  `.github/workflows/{deploy,dev-redeploy,dev-env-power}.yml` are in the `deployable` filter. They were not,
+  which is why the CI 358 fix (a concurrency self-deadlock and a stripped OIDC permission, both of which failed
+  the job before it started and produced no log) merged to `main` **without the deploy path running once** — and
+  why the defects reached `main` by the same route. A change to how deploying works now proves itself on the
+  merge that makes it, rather than days later on whatever unrelated backend change happens to deploy next. The
+  cost is accepted: a comment-only edit to one of those three files spends a full Terraform + azd run and eight
+  container builds. `dotnet.yml` is deliberately excluded — the stage inside it is a handful of
+  `if:`/`needs:`/`uses:` lines guarded by `AutoDeployPathFilterTest`, and including it would make every CI edit
+  of any kind deploy.
+
+
 ### Fixed
 
 - **F-031**: the `deploy-dev` stage failed on its first ever run (CI 358 on `main`), and did so in a way that
