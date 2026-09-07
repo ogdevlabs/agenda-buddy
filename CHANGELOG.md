@@ -48,6 +48,29 @@ All notable changes to this project are documented in this file, in [Keep a Chan
 
 ### Fixed
 
+- **F-032**: a half-created account was unrecoverable from inside the app, and registration actively told users
+  to do the one thing that could not work. On a failed profile write it says "add them from Account to finish
+  setting up", but `AccountViewModel.SaveProfileAsync` called `UpdateProfileAsync` only — which reads the profile
+  before writing and gives up when the read 404s, against a route that answers `NotFound` because
+  `FindOneAndUpdateAsync` never upserts (ADR-032, deliberate and load-bearing elsewhere). So every Save answered
+  "try again", and trying again could not help: credential valid, role claim correct, sign-in working, no profile,
+  no route to one. Save now falls back to creating the profile when the update fails — update is still attempted
+  first, because that is the common case and creating first would hit the create handlers' name-based duplicate
+  check on every ordinary edit. This also makes every account created before profile creation was wired at all
+  repairable (`agenda-buddy-1hk.4`).
+- **F-032**: a provider's timezone is now recorded at registration, not only when they happen to open Account.
+  A provider's availability window is generated in *their* zone, so one who never opened that screen kept UTC
+  hours and every slot offered to their customers was wrong by their offset (part of `agenda-buddy-9v6`).
+
+### Added
+
+- **F-032**: `RegisterViewModelTests` — the P0 that registration created an Identity credential and no domain
+  profile (`agenda-buddy-fg5`) was fixed on 2026-09-02 and shipped with **no regression coverage at all**. 21
+  tests now pin it: both roles create the right profile and never the other, the role string sent to Identity is
+  exact, a failed credential creation attempts no profile, names are trimmed, an omitted phone is `null` rather
+  than `""`, the pre-flight guards create nothing, and a failed timezone sync cannot fail registration.
+  `AccountProfileRecoveryTests` (9) covers the recovery above.
+
 - **F-030**: the Dashboard drew a blank white band under the brand header that only disappeared after a manual
   pull-to-refresh. `RefreshView.IsRefreshing` was bound straight to `IsLoading` and `OnAppearing` fires
   `LoadCommand`, so arriving on the page started a refresh nobody asked for; on iOS that begins a

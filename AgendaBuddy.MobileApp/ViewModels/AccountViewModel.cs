@@ -117,6 +117,31 @@ public partial class AccountViewModel : ObservableObject
     [RelayCommand]
     private void ToggleEditProfile() => IsEditingProfile = !IsEditingProfile;
 
+    /// <summary>
+    /// Saves the profile, <b>creating it when there is none</b>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The fallback is the whole point, and without it this screen could not do what registration tells
+    /// people it can. <c>UpdateProfileAsync</c> reads the profile before writing and gives up if the read
+    /// 404s, and the route behind it answers <c>NotFound</c> for a profile that does not exist — because
+    /// <c>FindOneAndUpdateAsync</c> never upserts (ADR-032), which is deliberate and load-bearing
+    /// elsewhere. So for an account whose profile was never created, every Save failed with "try again",
+    /// and trying again could not possibly help.
+    /// </para>
+    /// <para>
+    /// That is the account-stranding hole: registration creates an Identity credential and then a domain
+    /// profile, and if the second call fails the user is told to "add them from Account to finish setting
+    /// up" — a screen that could only ever update. The credential existed, sign-in worked, and nothing in
+    /// the app could repair it. Every account created before profile creation was wired at all is in the
+    /// same state.
+    /// </para>
+    /// <para>
+    /// Update is still attempted first: it is the overwhelmingly common case, and creating first would mean
+    /// a duplicate-name rejection for every ordinary edit (the create handlers match existing records by
+    /// first and last name).
+    /// </para>
+    /// </remarks>
     [RelayCommand(CanExecute = nameof(CanSaveProfile))]
     private async Task SaveProfileAsync()
     {
@@ -128,6 +153,15 @@ public partial class AccountViewModel : ObservableObject
             var succeeded = IsProvider
                 ? await _providerApiService.UpdateProfileAsync(Email, FirstName, LastName, PhoneNumber)
                 : await _customerApiService.UpdateProfileAsync(Email, FirstName, LastName, PhoneNumber);
+
+            if (!succeeded)
+            {
+                var phone = string.IsNullOrWhiteSpace(PhoneNumber) ? null : PhoneNumber.Trim();
+
+                succeeded = IsProvider
+                    ? await _providerApiService.CreateProfileAsync(Email, FirstName.Trim(), LastName.Trim(), phone)
+                    : await _customerApiService.CreateProfileAsync(Email, FirstName.Trim(), LastName.Trim(), phone);
+            }
 
             if (succeeded)
             {

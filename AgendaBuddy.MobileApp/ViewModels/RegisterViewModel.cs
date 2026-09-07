@@ -97,6 +97,20 @@ public partial class RegisterViewModel : ObservableObject
                 ? await _providerApiService.CreateProfileAsync(Email, FirstName.Trim(), LastName.Trim(), phone)
                 : await _customerApiService.CreateProfileAsync(Email, FirstName.Trim(), LastName.Trim(), phone);
 
+            // A provider's availability window is generated in their own zone, and until now that zone was
+            // only ever recorded when they happened to open Account — so a provider who never did kept UTC
+            // hours, and every slot offered to their customers was wrong by their offset. Recorded here
+            // instead, at the one moment we know a provider profile has just come into existence.
+            //
+            // Its own try/catch and never awaited for correctness: the profile is the thing that had to be
+            // created, and a zone that can be re-synced on the next Account load must not be the reason
+            // registration reports a failure.
+            if (profileCreated && IsProvider)
+            {
+                try { await _providerApiService.SyncTimeZoneAsync(Email); }
+                catch (Exception) { /* re-synced on the next Account load */ }
+            }
+
             if (!profileCreated)
             {
                 // The account exists and the caller is signed in, so this is recoverable rather than fatal
