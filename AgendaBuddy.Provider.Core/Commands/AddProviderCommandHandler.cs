@@ -1,6 +1,6 @@
 namespace AgendaBuddy.Provider.Core.Commands;
 
-// The duplicate-name check lives here, not in AgendaBuddy.Provider.Api, so the Api project stays
+// The duplicate check lives here, not in AgendaBuddy.Provider.Api, so the Api project stays
 // endpoint/DI wiring only, per the architecture doc.
 public class AddProviderCommandHandler(
     IMediator mediator,
@@ -14,9 +14,13 @@ public class AddProviderCommandHandler(
 
         var providerEntity = request.ProviderEntity;
 
-        // Matches by NAME, not by email, and runs before anything is persisted or published.
+        // The email is the identity — it is what OwnershipGuard authorises off, what a message thread is
+        // keyed on and what a subscription names. A person may hold several addresses and any number of
+        // people share a name, so matching on first+last name locked every second "John Smith" out of ever
+        // having a profile, and reported it as a conflict on an email address that was not in use.
+        // Runs before anything is persisted or published.
         var existingProvider = await providerService.FindProvidersAsync(
-            SupportTools<ProviderEntity>.FilterByNameAndLastName(providerEntity.FirstName, providerEntity.LastName));
+            SupportTools<ProviderEntity>.FilterByEmail(providerEntity.Email));
         if (existingProvider is not null)
             return Result.Fail<ProviderEntity>($"Existing record found for Email:{providerEntity.Email}");
 

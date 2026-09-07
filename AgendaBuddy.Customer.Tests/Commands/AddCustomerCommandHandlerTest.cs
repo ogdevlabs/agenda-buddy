@@ -46,7 +46,7 @@ public class AddCustomerCommandHandlerTest
     }
 
     [Fact]
-    public async Task Handle_DuplicateNameFound_ReturnsFailWithNoPublishAndNoAuditWrite()
+    public async Task Handle_DuplicateEmailFound_ReturnsFailWithNoPublishAndNoAuditWrite()
     {
         // The duplicate check runs BEFORE mediator.Publish or any event store write -- a duplicate
         // never touches either.
@@ -63,6 +63,47 @@ public class AddCustomerCommandHandlerTest
         customerService.Verify(c => c.AddCustomerAsync(It.IsAny<CustomerEntity>()), Times.Never);
         mediator.Verify(m => m.Publish(It.IsAny<INotification>(), It.IsAny<CancellationToken>()), Times.Never);
         eventStore.Verify(e => e.SaveAsync(It.IsAny<Event>()), Times.Never);
+    }
+
+    // ── The email is the identity; a name is not ────────────────────────────────────────────────────
+
+    // Uniqueness is on the EMAIL and nothing else — the same rule AddProviderCommandHandler follows.
+    [Fact]
+    public async Task Handle_ChecksForADuplicateByEmailAndNotByName()
+    {
+        BsonDocument? filter = null;
+        var customerService = new Mock<ICustomerService>();
+        customerService.Setup(c => c.FindCustomerAsync(It.IsAny<BsonDocument>()))
+                       .Callback<BsonDocument>(f => filter = f)
+                       .ReturnsAsync((CustomerEntity)null!);
+        var handler = new AddCustomerCommandHandler(
+            Mock.Of<IMediator>(), customerService.Object, Mock.Of<IEventStore>());
+
+        await handler.Handle(
+            new AddCustomerCommand { CustomerEntity = Customer(email: "ada@example.com") },
+            CancellationToken.None);
+
+        Assert.NotNull(filter);
+        Assert.Equal("ada@example.com", filter!["email"].AsString);
+        Assert.False(filter.Contains("first_name"));
+        Assert.False(filter.Contains("last_name"));
+    }
+
+    // A person holds several addresses and any number of people share a name.
+    [Fact]
+    public async Task Handle_SameNameDifferentEmail_IsCreated()
+    {
+        var customerService = new Mock<ICustomerService>();
+        customerService.Setup(c => c.FindCustomerAsync(It.Is<BsonDocument>(f => f["email"] == "ada.second@example.com")))
+                       .ReturnsAsync((CustomerEntity)null!);
+        var handler = new AddCustomerCommandHandler(
+            Mock.Of<IMediator>(), customerService.Object, Mock.Of<IEventStore>());
+
+        var second = Customer(firstName: "Ada", lastName: "Lovelace", email: "ada.second@example.com");
+        var result = await handler.Handle(new AddCustomerCommand { CustomerEntity = second }, CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        customerService.Verify(c => c.AddCustomerAsync(second), Times.Once);
     }
 
     [Fact]
