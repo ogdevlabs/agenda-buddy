@@ -26,6 +26,16 @@ public partial class CustomerSummary : ObservableObject
     /// <summary>Only meaningful when <see cref="IsProvider"/> — their own selected Professions.</summary>
     public List<string> Professions { get; set; } = new();
 
+    /// <summary>
+    /// Only meaningful when this row is a CUSTOMER — the providers they subscribe to.
+    /// </summary>
+    /// <remarks>
+    /// Carried on the row so a provider viewing their contact list can tell which of these people have
+    /// subscribed to them, which is the same rule <c>POST /api/v1/messages</c> enforces. It comes off the same
+    /// response as everything else on the card, so it cannot disagree with what is on screen.
+    /// </remarks>
+    public List<string> SubscribedProviders { get; set; } = new();
+
     [ObservableProperty]
     private bool _isExpanded;
 

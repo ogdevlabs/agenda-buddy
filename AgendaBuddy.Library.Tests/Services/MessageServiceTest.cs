@@ -79,6 +79,28 @@ public class MessageServiceTest
         Assert.Equal(2, result.Count());
     }
 
+    // A thread has two participants and both own it. Filtering on recipient_email alone made a conversation
+    // the caller STARTED invisible to them — the client groups this flat list into threads, so a thread with no
+    // received message had no rows to group and the inbox drew "no messages yet" over a live conversation.
+    [Fact]
+    public async Task GetInboxAsync_MatchesEitherSideOfTheConversation()
+    {
+        BsonDocument? captured = null;
+        _repoMock.Setup(r => r.FindAllAsync(It.IsAny<BsonDocument>()))
+            .Callback<BsonDocument>(filter => captured = filter)
+            .ReturnsAsync(new List<MessageEntity>());
+
+        await _svc.GetInboxAsync("p@example.com");
+
+        Assert.NotNull(captured);
+        var clauses = captured!["$or"].AsBsonArray;
+        Assert.Equal(2, clauses.Count);
+        Assert.Contains(clauses, c => c.AsBsonDocument.Contains("recipient_email")
+                                      && c.AsBsonDocument["recipient_email"] == "p@example.com");
+        Assert.Contains(clauses, c => c.AsBsonDocument.Contains("sender_email")
+                                      && c.AsBsonDocument["sender_email"] == "p@example.com");
+    }
+
     [Fact]
     public void MessageEntity_DefaultIsRead_IsFalse()
     {

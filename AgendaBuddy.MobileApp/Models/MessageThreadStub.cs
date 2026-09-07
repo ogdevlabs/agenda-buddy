@@ -1,18 +1,18 @@
-using CommunityToolkit.Mvvm.ComponentModel;
 using AgendaBuddy.Library.Avatars;
 
 namespace AgendaBuddy.MobileApp.Models;
 
-public partial class MessageThreadStub : ObservableObject
+/// <summary>
+/// One conversation, as the inbox list draws it. Read-only: a row's single action is to open the thread, and
+/// the thread is what marks its messages read against the server.
+/// </summary>
+public class MessageThreadStub
 {
     public string ThreadId { get; set; } = string.Empty;
     public string OtherPartyEmail { get; set; } = string.Empty;
     public string LastMessageBody { get; set; } = string.Empty;
     public DateTime LastMessageAt { get; set; }
     public int UnreadCount { get; set; }
-
-    [ObservableProperty]
-    private bool _isExpanded;
 
     public string SenderName => OtherPartyEmail.Split('@')[0].Replace(".", " ");
     /// <summary>

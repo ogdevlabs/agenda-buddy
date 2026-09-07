@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using AgendaBuddy.MobileApp.Infrastructure;
 using AgendaBuddy.MobileApp.Models;
 using AgendaBuddy.MobileApp.Routing;
 
@@ -33,8 +34,7 @@ public class MessagingApiService : IMessagingApiService
         var route = MessagingRouteBuilder.Inbox();
         var response = await client.GetAsync(route.Path, ct);
 
-        if (!response.IsSuccessStatusCode)
-            return new List<MessageThreadStub>();
+        await ThrowIfNotSuccessAsync(response, ct);
 
         var json = await response.Content.ReadAsStringAsync(ct);
         var messages = JsonSerializer.Deserialize<List<MessageSummary>>(json, JsonOptions) ?? new List<MessageSummary>();
@@ -74,15 +74,34 @@ public class MessagingApiService : IMessagingApiService
         var route = MessagingRouteBuilder.Thread(counterpartEmail);
         var response = await client.GetAsync(route.Path, ct);
 
-        if (!response.IsSuccessStatusCode)
-            return new List<MessageSummary>();
+        await ThrowIfNotSuccessAsync(response, ct);
 
         var json = await response.Content.ReadAsStringAsync(ct);
         return JsonSerializer.Deserialize<List<MessageSummary>>(json, JsonOptions)
                ?? new List<MessageSummary>();
     }
 
-    public async Task<MessageSummary?> SendMessageAsync(string recipientEmail, string body, CancellationToken ct = default)
+    /// <summary>
+    /// A failed read is raised, never returned as an empty collection.
+    /// </summary>
+    /// <remarks>
+    /// Both list reads previously answered an empty list for any non-2xx, which made a 500 or an unreachable
+    /// destination indistinguishable from an empty inbox — so the caller drew "No messages yet" over a
+    /// conversation that exists, and its error banner was unreachable. The gateway case is separated first so
+    /// the banner can name the service that failed, matching <c>ProviderApiService.GetReportAsync</c>.
+    /// </remarks>
+    private static async Task ThrowIfNotSuccessAsync(HttpResponseMessage response, CancellationToken ct)
+    {
+        if (response.IsSuccessStatusCode) return;
+
+        var failedService = await response.TryReadFailedServiceAsync(ct);
+        if (failedService is not null)
+            throw new GatewayServiceUnavailableException(failedService);
+
+        response.EnsureSuccessStatusCode();
+    }
+
+    public async Task<MessageSendResult> SendMessageAsync(string recipientEmail, string body, CancellationToken ct = default)
     {
         var client = _httpClientFactory.CreateClient("AgendaBuddyApi");
         var route = MessagingRouteBuilder.SendMessage();
@@ -90,13 +109,27 @@ public class MessagingApiService : IMessagingApiService
             MessagingRouteBuilder.BuildSendMessagePayload(recipientEmail, body), JsonOptions);
         var content = new StringContent(payload, Encoding.UTF8, "application/json");
 
-        var response = await client.PostAsync(route.Path, content, ct);
+        HttpResponseMessage response;
+        try
+        {
+            response = await client.PostAsync(route.Path, content, ct);
+        }
+        catch (Exception)
+        {
+            // The only case where the connection is actually implicated. Everything below got an answer.
+            return MessageSendResult.Unreachable();
+        }
 
         if (!response.IsSuccessStatusCode)
-            return null;
+        {
+            // A destination the gateway could not reach is a transport failure wearing a status code.
+            return await response.TryReadFailedServiceAsync(ct) is not null
+                ? MessageSendResult.Unreachable()
+                : MessageSendResult.Refused(response.StatusCode);
+        }
 
         var json = await response.Content.ReadAsStringAsync(ct);
-        return JsonSerializer.Deserialize<MessageSummary>(json, JsonOptions);
+        return MessageSendResult.Sent(JsonSerializer.Deserialize<MessageSummary>(json, JsonOptions));
     }
 
     // The real route (Customer/Program.cs, messages.MapPost("/{id}/read", ...)) answers

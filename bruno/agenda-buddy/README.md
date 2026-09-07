@@ -11,6 +11,12 @@ in `2-Customer`. There is deliberately **no request that creates a notification*
 create route would let any authenticated caller write a convincing "Your appointment was cancelled" into
 somebody else's list (threat T-208). They are produced by domain events in Booking, Customer and Identity.
 
+`9-Messages` is the other top-level group on the **Customer** service (ADR D-2), for the same reason: a
+message is addressed to a *person*, and a provider has an inbox for exactly the same reason a customer does,
+so a URL saying `customers` about a provider's inbox would assert something false. ⚠️ **`3 Send message`
+needs a subscription between the two parties or it answers `403`** — run `2-Customer/5 Subscribe to provider`
+first. That refusal is a permission decision, not a transport failure.
+
 This file is for browsing the repo. Bruno's own in-app "Docs" tab on the collection root (`collection.bru`)
 has the same content and is what you'll actually see while working — open the collection in Bruno and click
 the collection name to read it there.

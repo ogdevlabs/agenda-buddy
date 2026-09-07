@@ -107,22 +107,30 @@ public partial class MessageThreadViewModel : ObservableObject
 
         try
         {
-            var sent = await _messagingService.SendMessageAsync(RecipientEmail, body);
-            if (sent is not null)
+            var result = await _messagingService.SendMessageAsync(RecipientEmail, body);
+
+            if (!result.Succeeded)
             {
-                var updated = new List<MessageSummary>(Messages) { sent };
-                Messages = updated;
-            }
-            else
-            {
-                ErrorMessage = "Could not send message. Check your connection and try again.";
+                // The service words this from what the server actually answered — a 403 is the subscription
+                // rule, not a network problem, and telling somebody to check a working connection sends them
+                // to fix the wrong thing.
+                ErrorMessage = result.ErrorMessage ?? MessageSendResult.RejectedMessage;
                 NewMessageBody = body;
                 await Infrastructure.ToastNotifier.ShowAsync(ErrorMessage);
+                return;
+            }
+
+            ErrorMessage = string.Empty;
+
+            if (result.Message is not null)
+            {
+                result.Message.IsMine = true;
+                Messages = new List<MessageSummary>(Messages) { result.Message };
             }
         }
         catch (Exception)
         {
-            ErrorMessage = "Could not send message. Check your connection and try again.";
+            ErrorMessage = MessageSendResult.UnreachableMessage;
             NewMessageBody = body;
             await Infrastructure.ToastNotifier.ShowAsync(ErrorMessage);
         }

@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text;
+using AgendaBuddy.MobileApp.Infrastructure;
 using AgendaBuddy.MobileApp.Models;
 using AgendaBuddy.MobileApp.Services;
 using Moq;
@@ -67,14 +68,45 @@ public class MessagingApiServiceTests
         Assert.Equal(0, result[1].UnreadCount);
     }
 
+    // An empty list must mean an empty inbox and nothing else. Answering one for a failed read is what let the
+    // page draw "No messages yet" over a conversation that exists, with its error banner unreachable.
     [Fact]
-    public async Task GetInbox_Returns401_ReturnsEmptyList()
+    public async Task GetInbox_Returns401_Throws()
     {
         var sut = new MessagingApiService(CreateFactory(HttpStatusCode.Unauthorized), CreateSession());
 
-        var result = await sut.GetInboxAsync();
+        await Assert.ThrowsAsync<HttpRequestException>(() => sut.GetInboxAsync());
+    }
 
-        Assert.Empty(result);
+    [Fact]
+    public async Task GetInbox_Returns500_Throws()
+    {
+        var sut = new MessagingApiService(CreateFactory(HttpStatusCode.InternalServerError), CreateSession());
+
+        await Assert.ThrowsAsync<HttpRequestException>(() => sut.GetInboxAsync());
+    }
+
+    [Fact]
+    public async Task GetThread_Returns500_Throws()
+    {
+        var sut = new MessagingApiService(CreateFactory(HttpStatusCode.InternalServerError), CreateSession());
+
+        await Assert.ThrowsAsync<HttpRequestException>(() => sut.GetThreadAsync("alice@example.com"));
+    }
+
+    // The gateway shapes a destination failure into a ProblemDetails naming the cluster, so the banner can say
+    // which service is down rather than "something went wrong".
+    [Fact]
+    public async Task GetInbox_GatewayDestinationUnreachable_ThrowsNamingTheService()
+    {
+        var problem = """
+            {"type":"gateway-destination-unreachable","failedService":"customer","status":502}
+            """;
+        var sut = new MessagingApiService(
+            CreateFactory(HttpStatusCode.BadGateway, problem), CreateSession());
+
+        var ex = await Assert.ThrowsAsync<GatewayServiceUnavailableException>(() => sut.GetInboxAsync());
+        Assert.Equal("customer", ex.FailedService);
     }
 
     // ---------------------------------------------------------------------------
@@ -92,21 +124,68 @@ public class MessagingApiServiceTests
 
         var result = await sut.SendMessageAsync("alice@example.com", "Hi there!");
 
-        Assert.NotNull(result);
-        Assert.Equal("m1", result!.Id);
-        Assert.Equal("t1", result.ThreadId);
-        Assert.Equal("Hi there!", result.Body);
-        Assert.False(result.IsRead);
+        Assert.True(result.Succeeded);
+        Assert.Null(result.ErrorMessage);
+        Assert.NotNull(result.Message);
+        Assert.Equal("m1", result.Message!.Id);
+        Assert.Equal("t1", result.Message.ThreadId);
+        Assert.Equal("Hi there!", result.Message.Body);
+        Assert.False(result.Message.IsRead);
+    }
+
+    // A 201 the client could not bind still stored the message. Reporting a failure would invite a duplicate.
+    [Fact]
+    public async Task SendMessage_Returns201WithUnbindableBody_StillSucceeds()
+    {
+        var sut = new MessagingApiService(CreateFactory(HttpStatusCode.Created, "null"), CreateSession());
+
+        var result = await sut.SendMessageAsync("alice@example.com", "Hi there!");
+
+        Assert.True(result.Succeeded);
+        Assert.Null(result.Message);
+    }
+
+    // THE reported symptom. POST /api/v1/messages answers 403 when the two parties are not on either side of
+    // a subscription; collapsing that into the same null as a dropped connection made the app tell people to
+    // check a network that was working.
+    [Fact]
+    public async Task SendMessage_Returns403_ReportsTheSubscriptionRuleNotTheConnection()
+    {
+        var sut = new MessagingApiService(CreateFactory(HttpStatusCode.Forbidden), CreateSession());
+
+        var result = await sut.SendMessageAsync("stranger@example.com", "body");
+
+        Assert.False(result.Succeeded);
+        Assert.Equal(MessageSendResult.NotPermittedMessage, result.ErrorMessage);
+        Assert.DoesNotContain("connection", result.ErrorMessage!, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
-    public async Task SendMessage_Returns400_ReturnsNull()
+    public async Task SendMessage_Returns400_ReportsARejectionNotTheConnection()
     {
         var sut = new MessagingApiService(CreateFactory(HttpStatusCode.BadRequest), CreateSession());
 
         var result = await sut.SendMessageAsync("bad-email", "body");
 
-        Assert.Null(result);
+        Assert.False(result.Succeeded);
+        Assert.Equal(MessageSendResult.RejectedMessage, result.ErrorMessage);
+        Assert.DoesNotContain("connection", result.ErrorMessage!, StringComparison.OrdinalIgnoreCase);
+    }
+
+    // The one case the connection IS implicated in, so it is the one case allowed to say so.
+    [Fact]
+    public async Task SendMessage_GatewayDestinationUnreachable_ReportsTheConnection()
+    {
+        var problem = """
+            {"type":"gateway-destination-unreachable","failedService":"customer","status":502}
+            """;
+        var sut = new MessagingApiService(
+            CreateFactory(HttpStatusCode.BadGateway, problem), CreateSession());
+
+        var result = await sut.SendMessageAsync("alice@example.com", "body");
+
+        Assert.False(result.Succeeded);
+        Assert.Equal(MessageSendResult.UnreachableMessage, result.ErrorMessage);
     }
 
     // ---------------------------------------------------------------------------
