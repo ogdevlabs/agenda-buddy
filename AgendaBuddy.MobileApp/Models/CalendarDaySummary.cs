@@ -43,12 +43,22 @@ public partial class CalendarDaySummary : ObservableObject
 /// the wire all along. Null for sessions booked before services were selectable — those genuinely have no
 /// recorded length, so the line is omitted rather than guessed at.
 /// </remarks>
-public sealed record BookedSlot(string Label, int? DurationMinutes)
+public sealed record BookedSlot(string Label, int? DurationMinutes, AppointmentDetail Appointment)
 {
     /// <summary>e.g. "45 min". Empty when the session has no recorded length.</summary>
     public string DurationLabel => DurationMinutes is { } minutes ? $"{minutes} min" : string.Empty;
 
     public bool HasDuration => DurationMinutes.HasValue;
+
+    /// <summary>
+    /// Whether tapping this row can open the session.
+    /// </summary>
+    /// <remarks>
+    /// A row with no identifier cannot be opened, and offering the tap anyway would land on a page that has
+    /// nothing to fetch — <c>AppointmentDetailPage</c> shows an explanatory error in that case, which is the
+    /// right behaviour but the wrong thing to walk somebody into from a row that looks navigable.
+    /// </remarks>
+    public bool CanOpen => !string.IsNullOrWhiteSpace(Appointment.Id);
 }
 
 public class TimeSlot

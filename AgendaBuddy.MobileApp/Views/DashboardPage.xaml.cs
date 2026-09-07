@@ -40,22 +40,11 @@ public partial class DashboardPage : ContentPage
 
     private static async Task OpenAppointmentAsync(AppointmentSummary selected)
     {
-        var nav = new Dictionary<string, object>
-        {
-            ["appointmentId"] = selected.Id,
-            ["customerEmail"] = selected.CustomerEmail,
-            ["customerName"] = selected.CustomerName,
-            ["customerPhone"] = selected.CustomerPhone,
-            ["providerName"] = selected.ProviderName,
-            ["displayName"] = selected.DisplayName,
-            ["scheduledAt"] = selected.ScheduledAt.ToString("O"),
-            ["status"] = selected.Status.ToString(),
-            ["serviceName"] = selected.ServiceName,
-            ["serviceDurationMinutes"] = selected.ServiceDurationMinutes?.ToString() ?? "",
-            ["customerNotes"] = selected.CustomerNotes ?? ""
-        };
+        // The SHARED builder: AppointmentDetailPage reads eleven query properties, and the calendar opens the
+        // same page. Two hand-built dictionaries is two chances for one to omit a key.
+        var nav = AppointmentNavigation.BuildQuery(selected);
 
-        await Shell.Current.GoToAsync("appointmentDetail", nav);
+        await Shell.Current.GoToAsync(AppointmentNavigation.Route, nav);
     }
 
     private async void OnLogoutClicked(object? sender, EventArgs e)

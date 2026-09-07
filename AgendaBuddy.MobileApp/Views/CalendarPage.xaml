@@ -4,6 +4,7 @@
              xmlns:controls="clr-namespace:AgendaBuddy.MobileApp.Controls"
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
              x:Class="AgendaBuddy.MobileApp.Views.CalendarPage"
+             x:Name="ThisPage"
              Title="Calendar"
              BackgroundColor="#F2F2F7"
              Shell.NavBarIsVisible="False">
@@ -156,8 +157,18 @@
                         </CollectionView.ItemsLayout>
                         <CollectionView.ItemTemplate>
                             <DataTemplate>
+                                <!-- TAPPABLE. The calendar is where a provider looks to change a scheduled
+                                     session, and until this the rows were inert: the ONLY way into an
+                                     appointment was a dashboard row, so a session further out than the
+                                     dashboard page showed could not be opened at all. The chevron is there
+                                     because a row that navigates has to look like one. -->
                                 <Grid Padding="20,0,20,0" HeightRequest="60">
-                                    <Grid ColumnDefinitions="4,12,*" ColumnSpacing="0">
+                                    <Grid.GestureRecognizers>
+                                        <TapGestureRecognizer
+                                            Command="{Binding Source={x:Reference ThisPage}, Path=BindingContext.OpenAppointmentCommand}"
+                                            CommandParameter="{Binding}" />
+                                    </Grid.GestureRecognizers>
+                                    <Grid ColumnDefinitions="4,12,*,Auto" ColumnSpacing="0">
                                         <!-- Color bar -->
                                         <BoxView Grid.Column="0"
                                                  BackgroundColor="{StaticResource iOSRed}"
@@ -178,6 +189,15 @@
                                                    FontSize="13"
                                                    TextColor="{StaticResource iOSGray}" />
                                         </VerticalStackLayout>
+                                        <!-- Hidden on a row with no identifier: it cannot be opened, and a
+                                             chevron would promise a tap that lands nowhere. -->
+                                        <Label Grid.Column="3"
+                                               Text="&#x203A;"
+                                               FontSize="22"
+                                               IsVisible="{Binding CanOpen}"
+                                               VerticalOptions="Center"
+                                               TextColor="{StaticResource iOSGray}"
+                                               AutomationId="OpenAppointmentChevron" />
                                     </Grid>
                                     <!-- Bottom separator -->
                                     <BoxView HeightRequest="0.5"

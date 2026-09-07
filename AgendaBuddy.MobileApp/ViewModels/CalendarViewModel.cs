@@ -139,5 +139,32 @@ public partial class CalendarViewModel : ObservableObject
         day.IsExpanded = !day.IsExpanded;
     }
 
+    /// <summary>
+    /// Raised when a booked row is tapped, so the page can open the appointment.
+    /// </summary>
+    /// <remarks>
+    /// An event rather than the view model navigating itself, matching how every other list page here works:
+    /// <c>Shell</c> is a MAUI type and this view model is covered on the <c>net10.0</c> test slice, where it does
+    /// not exist.
+    /// </remarks>
+    public event EventHandler<AppointmentDetail>? AppointmentSelected;
+
+    /// <summary>
+    /// Opens a booked session from the calendar.
+    /// </summary>
+    /// <remarks>
+    /// <b>The calendar had no way into an appointment at all before this.</b> The only entry point was a
+    /// dashboard row, so a session further out than the dashboard's page showed could not be opened — which
+    /// meant a provider could not reach the reschedule or cancel actions for most of their own calendar.
+    /// </remarks>
+    [RelayCommand]
+    private void OpenAppointment(BookedSlot? slot)
+    {
+        // A row with no identifier cannot be opened; the chevron is hidden on it for the same reason.
+        if (slot?.CanOpen != true) return;
+
+        AppointmentSelected?.Invoke(this, slot.Appointment);
+    }
+
     partial void OnErrorMessageChanged(string value) => OnPropertyChanged(nameof(HasError));
 }

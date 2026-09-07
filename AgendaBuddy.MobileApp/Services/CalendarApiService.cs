@@ -85,7 +85,12 @@ public class CalendarApiService : ICalendarApiService
 
                         // The appointment's own recorded length, which has been on the wire all along and was
                         // simply never read here.
-                        a.ServiceDurationMinutes))
+                        a.ServiceDurationMinutes,
+
+                        // Carried whole so a calendar row can OPEN the session, not merely describe it. The
+                        // calendar is where a provider looks to change a scheduled session, and until this the
+                        // rows were inert — the only way into an appointment was the dashboard.
+                        a))
                     .ToList()
             });
         }
