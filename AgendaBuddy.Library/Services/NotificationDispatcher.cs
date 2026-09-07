@@ -25,7 +25,16 @@ public class NotificationDispatcher(
         NotificationType.AppointmentBooked,
         NotificationType.AppointmentUpdated,
         NotificationType.AppointmentCancelled,
-        NotificationType.AppointmentCompleted
+        NotificationType.AppointmentCompleted,
+
+        // The reschedule family is emailed on the same reasoning as the rest of the appointment lifecycle: each
+        // one changes, or asks to change, when somebody has to be somewhere. A move nobody notices is a missed
+        // session, and an unanswered request holds up the person waiting on it. Contrast MessageReceived, which
+        // is deliberately NOT emailed -- a chat that emails every line is what makes people mute a product.
+        NotificationType.AppointmentRescheduled,
+        NotificationType.RescheduleRequested,
+        NotificationType.RescheduleApproved,
+        NotificationType.RescheduleDeclined
     ];
 
     public async Task DispatchAsync(NotificationEntity notification, CancellationToken cancellationToken = default)
@@ -112,6 +121,16 @@ public class NotificationDispatcher(
             ("Appointment completed", "An appointment has been marked complete. Open the app for details."),
         NotificationType.MessageReceived =>
             ("New message", "You have a new message. Open the app to read it."),
+        // Neither the old nor the new time appears here: a time on a lock screen tells anyone looking where
+        // somebody will be, which is exactly the disclosure T-002 is about. The detail rides in `data`.
+        NotificationType.AppointmentRescheduled =>
+            ("Appointment rescheduled", "An appointment has moved. Open the app for details."),
+        NotificationType.RescheduleRequested =>
+            ("New time requested", "Someone has asked to move an appointment. Open the app to answer."),
+        NotificationType.RescheduleApproved =>
+            ("New time approved", "A request to move an appointment was approved. Open the app for details."),
+        NotificationType.RescheduleDeclined =>
+            ("New time declined", "A request to move an appointment was declined. Open the app for details."),
         NotificationType.PasswordResetRequested =>
             ("Security alert", "There is a security update on your account. Open the app for details."),
         NotificationType.EmailConfirmationRequested =>

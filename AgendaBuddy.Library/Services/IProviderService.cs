@@ -99,4 +99,16 @@ public interface IProviderService
     /// </remarks>
     Task<ProviderEntity?> ChangeEmbeddedAppointmentStatusAsync(
         string providerEmail, string identifier, AppointmentStatus status, string description);
+
+    /// <summary>
+    /// Moves the provider's embedded copy of an appointment to new times, clearing any proposal on it and
+    /// returning it to <c>Booked</c>.
+    /// </summary>
+    /// <remarks>
+    /// The embedded list is what <see cref="Tools.AvailabilityCalculator"/> reads for the busy set, so a
+    /// reschedule that updates only the <c>appointments</c> collection leaves the OLD slot blocked and the new one
+    /// still on offer — which is a double-booking generator, not a stale display.
+    /// </remarks>
+    Task<ProviderEntity?> ChangeEmbeddedAppointmentScheduleAsync(
+        string providerEmail, string identifier, DateTime startUtc, DateTime endUtc);
 }

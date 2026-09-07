@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+    "Pick one of this provider's actually-free times." Bound to a SlotPickerViewModel, shared by every flow
+    that needs a slot: booking, a provider rescheduling, a customer proposing a new time.
+
+    Both lists are BindableLayout inside a FlexLayout, NOT a CollectionView. That is deliberate: this control is
+    designed to sit inside a host page's ScrollView, and a virtualizing list nested in a scroller gets unbounded
+    height — it renders every item, loses virtualization, and pushes whatever follows it off the screen.
+    ScrollableListNestingTest exists because of exactly that defect. The counts here are small and bounded (at
+    most 90 dates, at most a working day of times), so nothing is lost by laying them out directly.
+
+    Every state is rendered: loading, an error, nothing free at all, and the picked selection. A picker whose
+    selection is invisible is the worst failure mode here — the user cannot tell whether the tap registered, and
+    that is how a customer came to book 2:00 PM while looking at a chip reading 4:00 PM.
+-->
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="AgendaBuddy.MobileApp.Controls.SlotPicker"
+             x:Name="Root">
+
+    <VerticalStackLayout Spacing="14">
+
+        <!-- Loading. Its own state, so an empty list is never shown as "nothing free" while a request is open. -->
+        <VerticalStackLayout IsVisible="{Binding IsLoading}" Spacing="8" Padding="0,12">
+            <ActivityIndicator IsRunning="{Binding IsLoading}" Color="{StaticResource Primary}"
+                               HorizontalOptions="Center" AutomationId="SlotPickerBusyIndicator" />
+            <Label Text="Loading available times…" FontSize="13" HorizontalOptions="Center"
+                   TextColor="{StaticResource TextMuted}" />
+        </VerticalStackLayout>
+
+        <!-- A failed read is a real error and is worded as one, never as an empty calendar. -->
+        <Frame IsVisible="{Binding HasError}" BackgroundColor="#FEF2F2" BorderColor="{StaticResource Error}"
+               CornerRadius="12" HasShadow="False" Padding="14">
+            <Label Text="{Binding ErrorMessage}" FontSize="13" TextColor="{StaticResource Error}"
+                   AutomationId="SlotPickerErrorMessage" />
+        </Frame>
+
+        <!-- Asked and answered: this provider genuinely has nothing free. -->
+        <Frame IsVisible="{Binding IsFullyBooked}" BackgroundColor="#F8FAFC" BorderColor="#E2E8F0"
+               CornerRadius="12" HasShadow="False" Padding="14">
+            <Label Text="{Binding FullyBookedMessage, Source={x:Reference Root}}" FontSize="13"
+                   TextColor="{StaticResource TextMuted}" AutomationId="SlotPickerFullyBooked" />
+        </Frame>
+
+        <!-- DATE. A horizontal scroller of cards, one per date with room. -->
+        <VerticalStackLayout Spacing="8" IsVisible="{Binding HasBookableDates}">
+            <Label Text="PICK A DATE" FontSize="11" TextColor="{StaticResource TextMuted}"
+                   CharacterSpacing="1.5" />
+
+            <ScrollView Orientation="Horizontal" HorizontalScrollBarVisibility="Never">
+                <FlexLayout Wrap="NoWrap" BindableLayout.ItemsSource="{Binding BookableDates}">
+                    <BindableLayout.ItemTemplate>
+                        <DataTemplate>
+                            <Frame CornerRadius="14" BackgroundColor="White" BorderColor="#E2E8F0"
+                                   HasShadow="False" Padding="14,10" Margin="0,0,8,0" WidthRequest="66"
+                                   AutomationId="SlotPickerDateChoice"
+                                   SemanticProperties.Description="{Binding AccessibilityLabel}">
+                                <Frame.GestureRecognizers>
+                                    <TapGestureRecognizer
+                                        Command="{Binding Source={x:Reference Root}, Path=BindingContext.SelectDateCommand}"
+                                        CommandParameter="{Binding}" />
+                                </Frame.GestureRecognizers>
+                                <Frame.Triggers>
+                                    <DataTrigger TargetType="Frame" Binding="{Binding IsSelected}" Value="True">
+                                        <Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
+                                        <Setter Property="BorderColor" Value="{StaticResource Primary}" />
+                                    </DataTrigger>
+                                </Frame.Triggers>
+                                <VerticalStackLayout Spacing="1" HorizontalOptions="Center">
+                                    <Label Text="{Binding DayName}" FontSize="10" HorizontalOptions="Center"
+                                           TextColor="{StaticResource TextMuted}">
+                                        <Label.Triggers>
+                                            <DataTrigger TargetType="Label" Binding="{Binding IsSelected}" Value="True">
+                                                <Setter Property="TextColor" Value="White" />
+                                            </DataTrigger>
+                                        </Label.Triggers>
+                                    </Label>
+                                    <Label Text="{Binding DayNumber}" FontSize="18" FontAttributes="Bold"
+                                           HorizontalOptions="Center" TextColor="{StaticResource TextPrimary}">
+                                        <Label.Triggers>
+                                            <DataTrigger TargetType="Label" Binding="{Binding IsSelected}" Value="True">
+                                                <Setter Property="TextColor" Value="White" />
+                                            </DataTrigger>
+                                        </Label.Triggers>
+                                    </Label>
+                                    <Label Text="{Binding MonthName}" FontSize="10" HorizontalOptions="Center"
+                                           TextColor="{StaticResource TextMuted}">
+                                        <Label.Triggers>
+                                            <DataTrigger TargetType="Label" Binding="{Binding IsSelected}" Value="True">
+                                                <Setter Property="TextColor" Value="White" />
+                                            </DataTrigger>
+                                        </Label.Triggers>
+                                    </Label>
+                                </VerticalStackLayout>
+                            </Frame>
+                        </DataTemplate>
+                    </BindableLayout.ItemTemplate>
+                </FlexLayout>
+            </ScrollView>
+        </VerticalStackLayout>
+
+        <!-- TIME. Wrapping chips for the chosen date. -->
+        <VerticalStackLayout Spacing="8" IsVisible="{Binding HasTimes}">
+            <Label Text="PICK A TIME" FontSize="11" TextColor="{StaticResource TextMuted}"
+                   CharacterSpacing="1.5" />
+
+            <FlexLayout Wrap="Wrap" BindableLayout.ItemsSource="{Binding TimesForSelectedDate}">
+                <BindableLayout.ItemTemplate>
+                    <DataTemplate>
+                        <Frame CornerRadius="14" BackgroundColor="White" BorderColor="#E2E8F0"
+                               HasShadow="False" Padding="14,9" Margin="0,0,8,8"
+                               AutomationId="SlotPickerTimeChoice"
+                               SemanticProperties.Description="{Binding AccessibilityLabel}">
+                            <Frame.GestureRecognizers>
+                                <TapGestureRecognizer
+                                    Command="{Binding Source={x:Reference Root}, Path=BindingContext.SelectSlotCommand}"
+                                    CommandParameter="{Binding}" />
+                            </Frame.GestureRecognizers>
+                            <Frame.Triggers>
+                                <DataTrigger TargetType="Frame" Binding="{Binding IsSelected}" Value="True">
+                                    <Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
+                                    <Setter Property="BorderColor" Value="{StaticResource Primary}" />
+                                </DataTrigger>
+                            </Frame.Triggers>
+                            <Label Text="{Binding Label}" FontSize="14" VerticalOptions="Center"
+                                   TextColor="{StaticResource TextPrimary}">
+                                <Label.Triggers>
+                                    <DataTrigger TargetType="Label" Binding="{Binding IsSelected}" Value="True">
+                                        <Setter Property="TextColor" Value="White" />
+                                        <Setter Property="FontAttributes" Value="Bold" />
+                                    </DataTrigger>
+                                </Label.Triggers>
+                            </Label>
+                        </Frame>
+                    </DataTemplate>
+                </BindableLayout.ItemTemplate>
+            </FlexLayout>
+        </VerticalStackLayout>
+
+        <!-- The selection, restated in words with its timezone named. Two parties in different zones is the
+             normal case for a reschedule, and a bare time is ambiguous the moment that is true. -->
+        <VerticalStackLayout Spacing="2" IsVisible="{Binding HasSelectedSlot}">
+            <Label FontSize="14" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}"
+                   Text="{Binding SelectedSlotLabel}" AutomationId="SlotPickerSelectedLabel" />
+            <Label FontSize="11" TextColor="{StaticResource TextMuted}" Text="{Binding TimeZoneLabel}" />
+        </VerticalStackLayout>
+
+    </VerticalStackLayout>
+</ContentView>

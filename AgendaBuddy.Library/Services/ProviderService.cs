@@ -192,4 +192,50 @@ public class ProviderService(IRepository<ProviderEntity> providerRepository) : I
                 { "appointments.$.appointment_description", description }
             }));
     }
+
+    /// <summary>
+    /// Moves the provider's embedded copy of an appointment to new times.
+    /// </summary>
+    /// <remarks>
+    /// A positional <c>$set</c> for the same reason its status sibling is one: replacing the whole provider
+    /// document to change one embedded appointment is the lost-update shape ADR D-9 removed from booking, and it
+    /// would silently discard a concurrent edit to the provider's services or hours.
+    /// <para>
+    /// The embedded copy is what <c>AvailabilityCalculator</c> reads, so a reschedule that updates only the
+    /// <c>appointments</c> collection leaves the OLD slot blocked and the new one still on offer — a
+    /// double-booking generator.
+    /// </para>
+    /// </remarks>
+    public async Task<ProviderEntity?> ChangeEmbeddedAppointmentScheduleAsync(
+        string providerEmail, string identifier, DateTime startUtc, DateTime endUtc)
+    {
+        return await providerRepository.FindOneAndUpdateAsync(
+            new BsonDocument
+            {
+                { "email", providerEmail },
+                { "appointments.identifier", identifier }
+            },
+            new BsonDocument
+            {
+                {
+                    "$set", new BsonDocument
+                    {
+                        { "appointments.$.start", DateTime.SpecifyKind(startUtc.ToUniversalTime(), DateTimeKind.Utc) },
+                        { "appointments.$.end", DateTime.SpecifyKind(endUtc.ToUniversalTime(), DateTimeKind.Utc) },
+                        { "appointments.$.appointment_status", (int)AppointmentStatus.Booked },
+                        {
+                            "appointments.$.appointment_description",
+                            EnumHelper<AppointmentStatus>.GetEnumDescription(AppointmentStatus.Booked)
+                        }
+                    }
+                },
+                {
+                    "$unset", new BsonDocument
+                    {
+                        { "appointments.$.proposed_start", "" },
+                        { "appointments.$.proposed_by", "" }
+                    }
+                }
+            });
+    }
 }

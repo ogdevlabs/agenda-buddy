@@ -117,7 +117,9 @@ public class NotificationDispatcherTest
             seen.Add(title);
         }
 
-        // The two auth types deliberately share one wording, so the distinct count is members minus one.
+        // The two auth types deliberately share one wording ("Security alert"), so the distinct count is
+        // members minus one. Every other type must be distinguishable on the lock screen, or a cancellation and
+        // a reschedule read identically to somebody deciding whether to open the app.
         Assert.Equal(Enum.GetValues<NotificationType>().Length - 1, seen.Count);
     }
 

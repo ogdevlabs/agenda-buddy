@@ -229,9 +229,14 @@ public class NotificationServiceTest
         Assert.Equal(5, (int)NotificationType.EmailConfirmationRequested);
         Assert.Equal(6, (int)NotificationType.AppointmentRequested);
         Assert.Equal(7, (int)NotificationType.MessageReceived);
+        Assert.Equal(8, (int)NotificationType.AppointmentRescheduled);
+        Assert.Equal(9, (int)NotificationType.RescheduleRequested);
+        Assert.Equal(10, (int)NotificationType.RescheduleApproved);
+        Assert.Equal(11, (int)NotificationType.RescheduleDeclined);
 
         // A new member appended here has to be given a display label in NotificationSummary.TypeLabel, or it
-        // renders as "Info" — which is how a booking request came to be labelled "Info".
-        Assert.Equal(8, Enum.GetValues<NotificationType>().Length);
+        // renders as "Info" — which is how a booking request came to be labelled "Info". It also needs an accent
+        // and glyph in NotificationVisuals, and a decision recorded in NotificationDispatcher.EmailedTypes.
+        Assert.Equal(12, Enum.GetValues<NotificationType>().Length);
     }
 }

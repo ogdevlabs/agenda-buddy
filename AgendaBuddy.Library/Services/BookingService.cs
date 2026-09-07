@@ -35,8 +35,19 @@ public class BookingService(IRepository<AppointmentEntity> appointmentRepository
     /// description alongside it so the stored pair cannot disagree — the same two fields
     /// <see cref="ChangeStatusAsync"/> writes.
     /// </para>
+    /// <para>
+    /// <paramref name="earliestStartUtc"/> carries the customer's notice period into that SAME filter, for the
+    /// same reason. Reading the appointment, comparing its start against the clock and then writing is a race a
+    /// caller can win: the read and the write are separate operations, and nothing stops a request arriving in
+    /// between. Expressed as a filter clause, "is there enough notice" and "cancel it" are one operation.
+    /// </para>
     /// </remarks>
-    public async Task<bool> CancelAppointmentAsync(string identifier)
+    /// <param name="identifier">Which appointment.</param>
+    /// <param name="earliestStartUtc">
+    /// When supplied, the appointment must start at or after this instant to be cancellable — the caller's
+    /// notice requirement. Null means no notice requirement, which is a provider cancelling.
+    /// </param>
+    public async Task<bool> CancelAppointmentAsync(string identifier, DateTime? earliestStartUtc = null)
     {
         var filter = new BsonDocument
         {
@@ -45,10 +56,19 @@ public class BookingService(IRepository<AppointmentEntity> appointmentRepository
                 "appointment_status", new BsonDocument("$in", new BsonArray
                 {
                     (int)AppointmentStatus.Requested,
-                    (int)AppointmentStatus.Booked
+                    (int)AppointmentStatus.Booked,
+                    // A pending reschedule proposal must not trap the appointment: either party can still
+                    // cancel, mirroring AppointmentEntity.Cancel.
+                    (int)AppointmentStatus.RescheduleRequested
                 })
             }
         };
+
+        if (earliestStartUtc is { } earliest)
+        {
+            filter.Add("start", new BsonDocument(
+                "$gte", DateTime.SpecifyKind(earliest.ToUniversalTime(), DateTimeKind.Utc)));
+        }
 
         var update = new BsonDocument("$set", new BsonDocument
         {
@@ -122,5 +142,109 @@ public class BookingService(IRepository<AppointmentEntity> appointmentRepository
                 { "appointment_status", (int)status },
                 { "appointment_description", description }
             }));
+    }
+
+    /// <inheritdoc/>
+    /// <remarks>
+    /// <paramref name="expectedStatus"/> is in the FILTER, not asserted beforehand. Approving a proposal is
+    /// necessarily a read-then-write from the caller's side — it has to know the proposed time to apply it — and
+    /// putting the status it read into the filter is what stops the write landing on an appointment that was
+    /// cancelled or completed in between. The proposal fields are unset rather than written as null, so a row
+    /// with no outstanding proposal carries no keys for one.
+    /// </remarks>
+    public async Task<bool> ApplyRescheduleAsync(
+        string identifier, AppointmentEntity rescheduled, AppointmentStatus expectedStatus)
+    {
+        var filter = new BsonDocument
+        {
+            { "identifier", identifier },
+            { "appointment_status", (int)expectedStatus }
+        };
+
+        var update = new BsonDocument
+        {
+            {
+                "$set", new BsonDocument
+                {
+                    { "start", DateTime.SpecifyKind(rescheduled.Start.ToUniversalTime(), DateTimeKind.Utc) },
+                    { "end", DateTime.SpecifyKind(rescheduled.End.ToUniversalTime(), DateTimeKind.Utc) },
+                    { "appointment_status", (int)rescheduled.AppointmentStatus },
+                    { "appointment_description", rescheduled.AppointmentDescription },
+                    {
+                        "previous_start",
+                        rescheduled.PreviousStart.HasValue
+                            ? DateTime.SpecifyKind(rescheduled.PreviousStart.Value.ToUniversalTime(), DateTimeKind.Utc)
+                            : BsonNull.Value
+                    }
+                }
+            },
+            { "$unset", new BsonDocument { { "proposed_start", "" }, { "proposed_by", "" } } }
+        };
+
+        return await appointmentRepository.FindOneAndUpdateAsync(filter, update) is not null;
+    }
+
+    /// <inheritdoc/>
+    /// <remarks>
+    /// Both rules ride in the filter: still <c>Booked</c> (so a second proposal cannot be recorded over an
+    /// outstanding one, and a cancelled session cannot be proposed away) and starting after
+    /// <paramref name="earliestStartUtc"/> (so a session already under way cannot be moved).
+    /// </remarks>
+    public async Task<bool> RecordRescheduleProposalAsync(
+        string identifier, DateTime proposedStartUtc, string proposedBy, DateTime earliestStartUtc)
+    {
+        var filter = new BsonDocument
+        {
+            { "identifier", identifier },
+            { "appointment_status", (int)AppointmentStatus.Booked },
+            {
+                "start", new BsonDocument(
+                    "$gt", DateTime.SpecifyKind(earliestStartUtc.ToUniversalTime(), DateTimeKind.Utc))
+            }
+        };
+
+        var update = new BsonDocument("$set", new BsonDocument
+        {
+            { "appointment_status", (int)AppointmentStatus.RescheduleRequested },
+            {
+                "appointment_description",
+                EnumHelper<AppointmentStatus>.GetEnumDescription(AppointmentStatus.RescheduleRequested)
+            },
+            { "proposed_start", DateTime.SpecifyKind(proposedStartUtc.ToUniversalTime(), DateTimeKind.Utc) },
+            { "proposed_by", proposedBy }
+        });
+
+        return await appointmentRepository.FindOneAndUpdateAsync(filter, update) is not null;
+    }
+
+    /// <inheritdoc/>
+    /// <remarks>
+    /// The current status is in the filter, so declining cannot resurrect an appointment that was cancelled while
+    /// the proposal sat outstanding.
+    /// </remarks>
+    public async Task<bool> ClearRescheduleProposalAsync(string identifier)
+    {
+        var filter = new BsonDocument
+        {
+            { "identifier", identifier },
+            { "appointment_status", (int)AppointmentStatus.RescheduleRequested }
+        };
+
+        var update = new BsonDocument
+        {
+            {
+                "$set", new BsonDocument
+                {
+                    { "appointment_status", (int)AppointmentStatus.Booked },
+                    {
+                        "appointment_description",
+                        EnumHelper<AppointmentStatus>.GetEnumDescription(AppointmentStatus.Booked)
+                    }
+                }
+            },
+            { "$unset", new BsonDocument { { "proposed_start", "" }, { "proposed_by", "" } } }
+        };
+
+        return await appointmentRepository.FindOneAndUpdateAsync(filter, update) is not null;
     }
 }

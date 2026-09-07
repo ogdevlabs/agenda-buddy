@@ -112,6 +112,43 @@ public class AppointmentEntity
     [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
     public DateTime? PreviousStart { get; set; }
 
+    /// <summary>
+    /// How much notice a CUSTOMER must give to cancel. A provider may cancel at any notice.
+    /// </summary>
+    /// <remarks>
+    /// The asymmetry is the point: a provider calling off a session they cannot make is unavoidable, while a
+    /// customer cancelling an hour beforehand costs the provider a slot nobody else can now take.
+    /// </remarks>
+    public const int CustomerCancellationNoticeHours = 24;
+
+    /// <summary>
+    /// The last instant a customer may still cancel this appointment.
+    /// </summary>
+    /// <remarks>
+    /// Exposed so the deadline can be SHOWN while it is still in the future, rather than discovered by being
+    /// refused. Computed from the appointment's own start, so it is stable regardless of when it is read.
+    /// </remarks>
+    /// <remarks>
+    /// Clamped rather than computed blindly. A row whose <see cref="Start"/> is <c>default</c> — which older
+    /// documents and hand-built fixtures both have — would otherwise underflow subtracting the notice period, and
+    /// an <c>ArgumentOutOfRangeException</c> out of a property getter is a crash on a read path. Such an
+    /// appointment has no meaningful deadline, and <see cref="DateTime.MinValue"/> is the answer that makes it
+    /// uncancellable-by-notice rather than freely cancellable.
+    /// </remarks>
+    [BsonIgnore]
+    public DateTime CustomerCancellationDeadlineUtc
+    {
+        get
+        {
+            var start = Start.ToUniversalTime();
+            var notice = TimeSpan.FromHours(CustomerCancellationNoticeHours);
+            return start - DateTime.MinValue < notice ? DateTime.MinValue : start - notice;
+        }
+    }
+
+    /// <summary>Whether a customer may still cancel, as of <paramref name="nowUtc"/>.</summary>
+    public bool CustomerMayCancelAt(DateTime nowUtc) => nowUtc < CustomerCancellationDeadlineUtc;
+
     /// <summary>Whether a reschedule proposal is outstanding on this appointment.</summary>
     [BsonIgnore]
     public bool HasPendingReschedule =>

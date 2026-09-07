@@ -114,11 +114,51 @@ public class BookingServiceTest
             .Select(value => value.AsInt32)
             .ToList();
 
-        Assert.Equal(2, cancellable.Count);
+        Assert.Equal(3, cancellable.Count);
         Assert.Contains((int)AppointmentStatus.Requested, cancellable);
         Assert.Contains((int)AppointmentStatus.Booked, cancellable);
+
+        // A pending proposal must not trap the appointment: either party can still cancel, or an unanswered
+        // request would hold both of them until somebody replied. Mirrors AppointmentEntity.Cancel.
+        Assert.Contains((int)AppointmentStatus.RescheduleRequested, cancellable);
+
         Assert.DoesNotContain((int)AppointmentStatus.Completed, cancellable);
         Assert.DoesNotContain((int)AppointmentStatus.Cancelled, cancellable);
+    }
+
+    /// <summary>
+    /// The customer's notice period rides in the SAME filter as the cancellable-status rule. Reading the
+    /// appointment, comparing its start against the clock and then writing is a race a caller can win.
+    /// </summary>
+    [Fact]
+    public async Task CancelAppointmentAsync_PutsTheNoticeRequirementInTheFilter()
+    {
+        BsonDocument? filter = null;
+        _repoMock.Setup(r => r.FindOneAndUpdateAsync(It.IsAny<BsonDocument>(), It.IsAny<BsonDocument>()))
+            .Callback<BsonDocument, BsonDocument>((f, _) => filter = f)
+            .ReturnsAsync((AppointmentEntity?)null);
+
+        var earliest = new DateTime(2026, 9, 12, 8, 0, 0, DateTimeKind.Utc);
+        await _svc.CancelAppointmentAsync("abc123", earliest);
+
+        Assert.Equal(earliest, filter!["start"]["$gte"].ToUniversalTime());
+    }
+
+    /// <summary>
+    /// A provider may cancel at any notice, so no start clause is added at all — an absent requirement must not
+    /// be expressed as some very early instant that a future refactor could get wrong.
+    /// </summary>
+    [Fact]
+    public async Task CancelAppointmentAsync_WithNoNoticeRequirement_AddsNoStartClause()
+    {
+        BsonDocument? filter = null;
+        _repoMock.Setup(r => r.FindOneAndUpdateAsync(It.IsAny<BsonDocument>(), It.IsAny<BsonDocument>()))
+            .Callback<BsonDocument, BsonDocument>((f, _) => filter = f)
+            .ReturnsAsync((AppointmentEntity?)null);
+
+        await _svc.CancelAppointmentAsync("abc123");
+
+        Assert.False(filter!.Contains("start"));
     }
 
     // A filter that matched nothing means the appointment was completed, already cancelled, or absent -- all of

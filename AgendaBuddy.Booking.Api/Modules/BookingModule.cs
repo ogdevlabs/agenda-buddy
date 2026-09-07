@@ -79,7 +79,18 @@ public class BookingModule : ICarterModule
                     try { OwnershipGuard.AssertOwnerAny(user, appointmentEntity.EmailProvider, appointmentEntity.EmailCustomer); }
                     catch (ForbiddenException) { return TypedResults.Forbid(); }
 
-                    var result = await mediator.Send(new CancelAppointmentCommand { Identifier = appointmentEntity.Identifier },
+                    // From the TOKEN, never the body. It selects the rule that applies — a customer must give
+                    // 24 hours' notice, a provider may cancel at any notice — so a caller who could name it could
+                    // cancel late by claiming to be the provider.
+                    var cancelledBy = OwnershipGuard.ResolveCallerEmail(user);
+                    if (cancelledBy is null) return TypedResults.Forbid();
+
+                    var result = await mediator.Send(
+                        new CancelAppointmentCommand
+                        {
+                            Identifier = appointmentEntity.Identifier,
+                            CancelledByEmail = cancelledBy
+                        },
                         cancellationToken);
 
                     // A 204 cannot carry a body by HTTP semantics, so the success Value is discarded here rather
@@ -160,6 +171,144 @@ public class BookingModule : ICarterModule
                         new AppointmentStatusResponse(identifier, target.ToString())));
                 })
             .WithName("ChangeAppointmentStatus")
+            .RequireAuthorization();
+
+        // ── Reschedule ───────────────────────────────────────────────────────────────────────────────
+        //
+        // Three routes, and the asymmetry between them IS the product decision: the calendar is the
+        // PROVIDER'S, so they move a session outright; a CUSTOMER asks and the provider answers. A
+        // customer able to move a session on somebody else's calendar unilaterally is not a reschedule
+        // feature, it is a booking overwrite.
+        //
+        // None of them accepts participant emails, and none accepts an end time. Both parties come from
+        // the stored appointment, and the session's length is carried across — so neither who is involved
+        // nor how long the session is can be asserted by a caller on a move.
+
+        // The provider moving a booked session. Nothing here that PUT /appointments/ could not already do
+        // to the times; what it adds is that the move is no longer SILENT — the customer is notified and
+        // the previous time is recorded.
+        booking.MapPost("/appointments/{identifier}/reschedule",
+                async Task<Results<Ok<DataResponse<AppointmentEntity>>, ForbidHttpResult, NotFound, Conflict<string>, BadRequest<string>>> (
+                    string identifier,
+                    ClaimsPrincipal user,
+                    RescheduleRequest request,
+                    BookingService bookingService,
+                    IMediator mediator,
+                    CancellationToken cancellationToken) =>
+                {
+                    if (request is null || request.NewStartUtc == default)
+                        return TypedResults.BadRequest("newStartUtc is required.");
+
+                    var appointment = await bookingService.SearchAppointmentAsync(identifier);
+                    if (appointment is null) return TypedResults.NotFound();
+
+                    // Both participants first, so a third party gets 403 rather than a response that
+                    // reveals the appointment exists; then the provider specifically.
+                    try
+                    {
+                        OwnershipGuard.AssertOwnerAny(user, appointment.EmailProvider, appointment.EmailCustomer);
+                        OwnershipGuard.AssertOwner(user, appointment.EmailProvider);
+                    }
+                    catch (ForbiddenException) { return TypedResults.Forbid(); }
+
+                    var result = await mediator.Send(
+                        new RescheduleAppointmentCommand
+                        {
+                            Identifier = identifier,
+                            NewStartUtc = request.NewStartUtc,
+                            RequestedByEmail = appointment.EmailProvider
+                        },
+                        cancellationToken);
+
+                    // 409, not 400: the request is well-formed and conflicts with the appointment's state —
+                    // already completed, cancelled, or moved to a time that is now in the past.
+                    if (result.IsFailed)
+                        return TypedResults.Conflict(string.Join(" ", result.Errors.Select(e => e.Message)));
+
+                    return TypedResults.Ok(DataResponse<AppointmentEntity>.Ok(result.Value));
+                })
+            .WithName("RescheduleAppointment")
+            .RequireAuthorization();
+
+        // The customer asking. The appointment does NOT move — the proposal is recorded alongside it, so
+        // every calendar keeps showing the session where it still is until the provider answers.
+        booking.MapPost("/appointments/{identifier}/reschedule-request",
+                async Task<Results<Ok<DataResponse<AppointmentEntity>>, ForbidHttpResult, NotFound, Conflict<string>, BadRequest<string>>> (
+                    string identifier,
+                    ClaimsPrincipal user,
+                    RescheduleRequest request,
+                    BookingService bookingService,
+                    IMediator mediator,
+                    CancellationToken cancellationToken) =>
+                {
+                    if (request is null || request.NewStartUtc == default)
+                        return TypedResults.BadRequest("newStartUtc is required.");
+
+                    var appointment = await bookingService.SearchAppointmentAsync(identifier);
+                    if (appointment is null) return TypedResults.NotFound();
+
+                    try { OwnershipGuard.AssertOwnerAny(user, appointment.EmailProvider, appointment.EmailCustomer); }
+                    catch (ForbiddenException) { return TypedResults.Forbid(); }
+
+                    // Whoever is asking is taken from the token, not the body: it decides who owes the
+                    // answer, and a caller who could name it could make the other party's request for them.
+                    var requestedBy = OwnershipGuard.ResolveCallerEmail(user);
+                    if (requestedBy is null) return TypedResults.Forbid();
+
+                    var result = await mediator.Send(
+                        new RequestRescheduleCommand
+                        {
+                            Identifier = identifier,
+                            ProposedStartUtc = request.NewStartUtc,
+                            RequestedByEmail = requestedBy
+                        },
+                        cancellationToken);
+
+                    if (result.IsFailed)
+                        return TypedResults.Conflict(string.Join(" ", result.Errors.Select(e => e.Message)));
+
+                    return TypedResults.Ok(DataResponse<AppointmentEntity>.Ok(result.Value));
+                })
+            .WithName("RequestAppointmentReschedule")
+            .RequireAuthorization();
+
+        // Answering. Either party may hold an outstanding proposal, so this is not provider-only — but the
+        // handler refuses an answer from whoever made the proposal, or asking and agreeing would be one act.
+        booking.MapPost("/appointments/{identifier}/reschedule-answer",
+                async Task<Results<Ok<DataResponse<AppointmentEntity>>, ForbidHttpResult, NotFound, Conflict<string>, BadRequest<string>>> (
+                    string identifier,
+                    ClaimsPrincipal user,
+                    AnswerRescheduleRequest request,
+                    BookingService bookingService,
+                    IMediator mediator,
+                    CancellationToken cancellationToken) =>
+                {
+                    if (request is null) return TypedResults.BadRequest("approve is required.");
+
+                    var appointment = await bookingService.SearchAppointmentAsync(identifier);
+                    if (appointment is null) return TypedResults.NotFound();
+
+                    try { OwnershipGuard.AssertOwnerAny(user, appointment.EmailProvider, appointment.EmailCustomer); }
+                    catch (ForbiddenException) { return TypedResults.Forbid(); }
+
+                    var answeredBy = OwnershipGuard.ResolveCallerEmail(user);
+                    if (answeredBy is null) return TypedResults.Forbid();
+
+                    var result = await mediator.Send(
+                        new AnswerRescheduleCommand
+                        {
+                            Identifier = identifier,
+                            Approve = request.Approve,
+                            AnsweredByEmail = answeredBy
+                        },
+                        cancellationToken);
+
+                    if (result.IsFailed)
+                        return TypedResults.Conflict(string.Join(" ", result.Errors.Select(e => e.Message)));
+
+                    return TypedResults.Ok(DataResponse<AppointmentEntity>.Ok(result.Value));
+                })
+            .WithName("AnswerAppointmentReschedule")
             .RequireAuthorization();
 
         // ── Session notes — the most sensitive data in the product ───────────────────────────────────────────
