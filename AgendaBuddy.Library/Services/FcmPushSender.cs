@@ -239,17 +239,88 @@ public class FcmPushSender : IPushSender
         Convert.ToBase64String(bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_');
 
     /// <summary>
+    /// Whether the configured credential can actually be read, without constructing a sender.
+    /// </summary>
+    /// <remarks>
+    /// Lets <c>AddPushDelivery</c> decide at registration time rather than leaving a lazily-resolved singleton
+    /// to throw on the first request that needs a notification — which is how an unreadable push credential came
+    /// to break appointment booking and messaging in a deployed environment.
+    /// </remarks>
+    /// <param name="problem">A short, credential-free description of why not; <c>null</c> when it reads.</param>
+    public static bool CanReadServiceAccount(string serviceAccountJson, out string? problem)
+    {
+        try
+        {
+            ParseServiceAccount(serviceAccountJson);
+            problem = null;
+            return true;
+        }
+        catch (JsonException ex)
+        {
+            // The message names a position, never the credential's contents.
+            problem = $"not valid JSON ({ex.Message})";
+            return false;
+        }
+        catch (InvalidOperationException ex)
+        {
+            problem = ex.Message;
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Accepts the service-account credential either as raw JSON or as base64-encoded JSON.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Base64 exists because a JSON credential cannot survive a Bicep string literal.</b> The deploy
+    /// workflow escapes literal newlines to <c>\n</c> so azd's generated <c>main.bicepparam</c> is a valid
+    /// single-line literal — and Bicep then <i>un-escapes</i> <c>\n</c> when it parses that literal. For the two
+    /// JWT PEM parameters that round-trip is harmless. For this one it is fatal: the <c>private_key</c> field's
+    /// own <c>\n</c> escapes come back as raw newlines <i>inside a JSON string</i>, which is invalid JSON, so
+    /// the credential arrived in the container unparseable and every push-dispatching route answered 502.
+    /// Base64 has no newlines and no escape sequences, so no layer in that chain can reinterpret it.
+    /// </para>
+    /// <para>
+    /// Raw JSON stays supported and is what a laptop's user secrets hold — the deploy path is the only place
+    /// the value needs encoding, and requiring it everywhere would make local setup harder for no gain.
+    /// </para>
+    /// </remarks>
+    internal static string DecodeServiceAccountJson(string value)
+    {
+        var trimmed = value.Trim();
+
+        // A JSON object is the common case and is recognised by its opening brace; anything else is tried as
+        // base64. Deciding on the payload rather than a separate "is it encoded" flag means neither side has to
+        // remember which form it sent.
+        if (trimmed.StartsWith('{'))
+            return trimmed;
+
+        try
+        {
+            return Encoding.UTF8.GetString(Convert.FromBase64String(trimmed));
+        }
+        catch (FormatException)
+        {
+            // Not base64 either. Return it unchanged so the JSON parse below reports the real problem against
+            // the value actually supplied, rather than this method blaming the encoding.
+            return trimmed;
+        }
+    }
+
+    /// <summary>
     /// The three fields of the service-account JSON this needs.
     /// </summary>
     /// <remarks>
-    /// Parsed once at construction and deliberately allowed to throw: a malformed credential is a
-    /// misconfiguration to fix, not a delivery failure to swallow, and failing at startup is where it is
-    /// cheapest to notice. <see cref="AddPushDelivery"/>-time validation is what keeps this from being reached
-    /// with nothing configured at all.
+    /// Parsed once at construction and deliberately allowed to throw — but <c>AddPushDelivery</c> now validates
+    /// the credential before registering this type, and falls back to <see cref="UnconfiguredPushSender"/> when
+    /// it cannot be read. That matters because this is a <b>singleton resolved lazily</b>: a throw here used to
+    /// surface on the first request that needed a notification, not at startup, which took down appointment
+    /// booking and messaging alike over a credential that only push cares about.
     /// </remarks>
     private static ServiceAccount ParseServiceAccount(string json)
     {
-        using var document = JsonDocument.Parse(json);
+        using var document = JsonDocument.Parse(DecodeServiceAccountJson(json));
         var root = document.RootElement;
 
         var clientEmail = root.TryGetProperty("client_email", out var email) ? email.GetString() : null;

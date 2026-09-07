@@ -417,6 +417,70 @@ public class FcmPushSenderTest
         Assert.Contains("Firebase Console", exception.Message);
     }
 
+    // ── The credential's transport form ─────────────────────────────────────────────────────────────
+    //
+    // A base64 credential exists because a JSON one cannot survive a Bicep string literal: the deploy workflow
+    // escapes literal newlines to \n so azd's generated main.bicepparam is a valid single-line literal, and
+    // Bicep UN-escapes \n when it parses that literal. The private_key field's own \n escapes therefore came
+    // back as raw newlines inside a JSON string — invalid JSON — and the credential reached the container
+    // unreadable.
+
+    [Fact]
+    public void AServiceAccountJson_IsAcceptedBase64Encoded()
+    {
+        var encoded = Convert.ToBase64String(Encoding.UTF8.GetBytes(ServiceAccountJson()));
+
+        var sender = Create(new RecordingHandler(), encoded);
+
+        // Constructing it is the assertion: an unreadable credential throws.
+        Assert.NotNull(sender);
+    }
+
+    [Fact]
+    public void AServiceAccountJson_IsStillAcceptedAsRawJson()
+    {
+        // What a laptop's user secrets hold. Requiring base64 everywhere would make local setup harder for no
+        // gain — only the deploy path needs the encoding.
+        Assert.NotNull(Create(new RecordingHandler(), ServiceAccountJson()));
+    }
+
+    [Fact]
+    public void AServiceAccountJson_SurvivesLeadingAndTrailingWhitespace()
+    {
+        Assert.NotNull(Create(new RecordingHandler(), $"\n  {ServiceAccountJson()}  \n"));
+    }
+
+    // THE shape that reached Azure: the private_key's \n escapes replaced by raw newlines, which is a JSON
+    // control-character error. It must be reported as unreadable rather than crashing whatever resolves it.
+    [Fact]
+    public void ACredentialWithRawNewlinesInsideAString_IsReportedAsUnreadable()
+    {
+        var corrupted = ServiceAccountJson().Replace("\\n", "\n");
+
+        Assert.False(FcmPushSender.CanReadServiceAccount(corrupted, out var problem));
+        Assert.NotNull(problem);
+        // The reason travels, but never the credential itself.
+        Assert.DoesNotContain("BEGIN PRIVATE KEY", problem!);
+    }
+
+    [Fact]
+    public void CanReadServiceAccount_AnswersTrueForBothTransportForms()
+    {
+        Assert.True(FcmPushSender.CanReadServiceAccount(ServiceAccountJson(), out var rawProblem));
+        Assert.Null(rawProblem);
+
+        var encoded = Convert.ToBase64String(Encoding.UTF8.GetBytes(ServiceAccountJson()));
+        Assert.True(FcmPushSender.CanReadServiceAccount(encoded, out var encodedProblem));
+        Assert.Null(encodedProblem);
+    }
+
+    [Fact]
+    public void CanReadServiceAccount_AnswersFalseForAValueThatIsNeitherJsonNorBase64()
+    {
+        Assert.False(FcmPushSender.CanReadServiceAccount("this is not a credential", out var problem));
+        Assert.NotNull(problem);
+    }
+
     // ── Helpers ─────────────────────────────────────────────────────────────────────────────────────
 
     private static string ExtractAssertion(string formBody)
