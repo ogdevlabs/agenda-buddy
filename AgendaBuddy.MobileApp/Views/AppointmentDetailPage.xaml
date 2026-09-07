@@ -186,9 +186,15 @@
                          them should be visible at once, which is the whole reason to use tabs here. The Notes
                          segment is absent for a customer rather than disabled — the backend note routes are
                          Provider-role-gated, so it could only ever open an empty section. -->
-                    <Grid ColumnDefinitions="*,*,Auto" ColumnSpacing="8">
+                    <!-- TAB STRIP. Two tappable segments, not a Picker: the sections are peers and both should
+                         be visible at once, which is the whole reason to use tabs here. Manage spans both columns
+                         for a CUSTOMER, who has no Notes tab — a hidden segment still reserves its column, which
+                         would leave the strip visibly lopsided for every customer. -->
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
 
-                        <Frame Grid.Column="0" CornerRadius="12" Padding="0" HasShadow="False"
+                        <Frame Grid.Column="0"
+                               Grid.ColumnSpan="{Binding ManageTabColumnSpan}"
+                               CornerRadius="12" Padding="0" HasShadow="False"
                                BackgroundColor="White" BorderColor="#E2E8F0">
                             <Frame.GestureRecognizers>
                                 <TapGestureRecognizer Command="{Binding SelectTabCommand}"
@@ -214,33 +220,8 @@
                         </Frame>
 
                         <Frame Grid.Column="1" CornerRadius="12" Padding="0" HasShadow="False"
-                               BackgroundColor="White" BorderColor="#E2E8F0">
-                            <Frame.GestureRecognizers>
-                                <TapGestureRecognizer Command="{Binding SelectTabCommand}"
-                                                      CommandParameter="Payment" />
-                            </Frame.GestureRecognizers>
-                            <Frame.Triggers>
-                                <DataTrigger TargetType="Frame" Binding="{Binding IsPaymentTab}" Value="True">
-                                    <Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
-                                    <Setter Property="BorderColor" Value="{StaticResource Primary}" />
-                                </DataTrigger>
-                            </Frame.Triggers>
-                            <Label Text="Payment" FontSize="14" HorizontalTextAlignment="Center"
-                                   VerticalOptions="Center" Padding="0,12"
-                                   TextColor="{StaticResource TextPrimary}"
-                                   AutomationId="PaymentTabButton">
-                                <Label.Triggers>
-                                    <DataTrigger TargetType="Label" Binding="{Binding IsPaymentTab}" Value="True">
-                                        <Setter Property="TextColor" Value="White" />
-                                        <Setter Property="FontAttributes" Value="Bold" />
-                                    </DataTrigger>
-                                </Label.Triggers>
-                            </Label>
-                        </Frame>
-
-                        <Frame Grid.Column="2" CornerRadius="12" Padding="0" HasShadow="False"
                                BackgroundColor="White" BorderColor="#E2E8F0"
-                               IsVisible="{Binding ShowNotesTab}" MinimumWidthRequest="96">
+                               IsVisible="{Binding ShowNotesTab}">
                             <Frame.GestureRecognizers>
                                 <TapGestureRecognizer Command="{Binding SelectTabCommand}"
                                                       CommandParameter="Notes" />
@@ -252,7 +233,7 @@
                                 </DataTrigger>
                             </Frame.Triggers>
                             <Label Text="Notes" FontSize="14" HorizontalTextAlignment="Center"
-                                   VerticalOptions="Center" Padding="14,12"
+                                   VerticalOptions="Center" Padding="0,12"
                                    TextColor="{StaticResource TextPrimary}"
                                    AutomationId="NotesTabButton">
                                 <Label.Triggers>
@@ -399,34 +380,6 @@
 
                     </VerticalStackLayout>
                 </Frame>
-
-                    <!-- ══ PAYMENT TAB ══ -->
-                    <Frame CornerRadius="20"
-                           BackgroundColor="White"
-                           BorderColor="#E2E8F0"
-                           HasShadow="True"
-                           Padding="20"
-                           IsVisible="{Binding IsPaymentTab}">
-                        <VerticalStackLayout Spacing="10">
-                            <Label Text="PAYMENT"
-                                   FontSize="11"
-                                   TextColor="{StaticResource TextMuted}"
-                                   TextTransform="Uppercase"
-                                   CharacterSpacing="1.5" />
-
-                            <!-- The fee that was agreed, from the appointment itself. Named here because a
-                                 payment screen that shows no amount leaves the reader to remember it. -->
-                            <Label Text="{Binding PaymentSummary}"
-                                   FontSize="15"
-                                   TextColor="{StaticResource TextPrimary}"
-                                   LineBreakMode="WordWrap"
-                                   AutomationId="PaymentSummary" />
-
-                            <!-- No action here on purpose: payments are being handled outside this screen, so
-                                 the tab states what the session costs and nothing more. A button opening a
-                                 payment flow this app is not driving would be an offer it cannot keep. -->
-                        </VerticalStackLayout>
-                    </Frame>
 
                     <!-- ══ NOTES TAB ══ Provider-only; IsNotesTab folds the role gate in, so a customer has
                          neither the tab nor the section. -->

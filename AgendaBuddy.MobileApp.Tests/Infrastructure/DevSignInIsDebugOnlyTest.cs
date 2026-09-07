@@ -43,6 +43,7 @@ public class DevSignInIsDebugOnlyTest
     [InlineData("MAUI_DEV_EMAIL")]
     [InlineData("MAUI_DEV_PASSWORD")]
     [InlineData("MAUI_DEV_ROUTE")]
+    [InlineData("MAUI_DEV_TAB")]
     [InlineData("SignInFromLaunchEnvironmentAsync")]
     public void TheDevSignInOnlyExistsUnderIfDebug(string token)
     {

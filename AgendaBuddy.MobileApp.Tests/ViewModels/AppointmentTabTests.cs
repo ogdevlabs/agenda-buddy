@@ -8,7 +8,7 @@ using Xunit;
 namespace AgendaBuddy.MobileApp.Tests.ViewModels;
 
 /// <summary>
-/// The appointment page's three sections: Manage, Payment, Notes.
+/// The appointment page's two sections: Manage and Notes.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -68,7 +68,6 @@ public class AppointmentTabTests
 
         Assert.Equal(AppointmentTab.Manage, vm.SelectedTab);
         Assert.True(vm.IsManageTab);
-        Assert.False(vm.IsPaymentTab);
         Assert.False(vm.IsNotesTab);
     }
 
@@ -77,11 +76,11 @@ public class AppointmentTabTests
     {
         var vm = ViewModel(isProvider: true);
 
-        foreach (var tab in new[] { "Manage", "Payment", "Notes" })
+        foreach (var tab in new[] { "Manage", "Notes" })
         {
             vm.SelectTabCommand.Execute(tab);
 
-            var visible = new[] { vm.IsManageTab, vm.IsPaymentTab, vm.IsNotesTab }.Count(shown => shown);
+            var visible = new[] { vm.IsManageTab, vm.IsNotesTab }.Count(shown => shown);
             Assert.Equal(1, visible);
         }
     }
@@ -117,18 +116,23 @@ public class AppointmentTabTests
     /// <summary>
     /// Silently moving somebody off the tab they are on is more confusing than a tap that did nothing.
     /// </summary>
+    /// <remarks>
+    /// "Payment" is in the cases because it WAS a third tab: its name must now be ignored like any other
+    /// unrecognised one, not quietly honoured by a leftover enum member.
+    /// </remarks>
     [Theory]
     [InlineData(null)]
     [InlineData("")]
     [InlineData("Nonsense")]
+    [InlineData("Payment")]
     public void AnUnrecognisedTabNameIsIgnoredRatherThanResetting(string? name)
     {
         var vm = ViewModel(isProvider: true);
-        vm.SelectTabCommand.Execute("Payment");
+        vm.SelectTabCommand.Execute("Notes");
 
         vm.SelectTabCommand.Execute(name);
 
-        Assert.Equal(AppointmentTab.Payment, vm.SelectedTab);
+        Assert.Equal(AppointmentTab.Notes, vm.SelectedTab);
     }
 
     [Fact]
@@ -136,9 +140,27 @@ public class AppointmentTabTests
     {
         var vm = ViewModel(isProvider: true);
 
-        vm.SelectTabCommand.Execute("payment");
+        vm.SelectTabCommand.Execute("notes");
 
-        Assert.True(vm.IsPaymentTab);
+        Assert.True(vm.IsNotesTab);
+    }
+
+    /// <summary>
+    /// There are exactly two sections. A third would need a column in the strip, which is laid out for two.
+    /// </summary>
+    [Fact]
+    public void ThereAreExactlyTwoTabs() =>
+        Assert.Equal(2, Enum.GetValues<AppointmentTab>().Length);
+
+    /// <summary>
+    /// A customer has no Notes tab, so Manage spans both columns — a hidden segment still reserves its column,
+    /// which would leave the strip visibly lopsided for every customer.
+    /// </summary>
+    [Fact]
+    public void ManageSpansTheWholeStripWhenThereIsNoNotesTab()
+    {
+        Assert.Equal(2, ViewModel(isProvider: false).ManageTabColumnSpan);
+        Assert.Equal(1, ViewModel(isProvider: true).ManageTabColumnSpan);
     }
 
     /// <summary>
@@ -161,49 +183,10 @@ public class AppointmentTabTests
 
         Assert.True(vm.ShowManageSection);
 
-        vm.SelectTabCommand.Execute("Payment");
+        vm.SelectTabCommand.Execute("Notes");
         Assert.False(vm.ShowManageSection);
     }
 
-    /// <summary>
-    /// A payment section that shows no amount leaves the reader to remember what the session costs.
-    /// </summary>
-    [Fact]
-    public void ThePaymentSummaryNamesTheServiceItsLengthAndWhen()
-    {
-        var vm = ViewModel(isProvider: false);
-
-        Assert.Contains("1:1 Strength Session", vm.PaymentSummary);
-        Assert.Contains("45 min", vm.PaymentSummary);
-        Assert.Contains(vm.Appointment!.ScheduledAt.ToString("ddd d MMM"), vm.PaymentSummary);
-    }
-
-    /// <summary>
-    /// A session booked before services were selectable has no recorded length, so the summary omits it rather
-    /// than inventing one.
-    /// </summary>
-    [Fact]
-    public void ThePaymentSummaryOmitsALengthItDoesNotHave()
-    {
-        var vm = ViewModel(isProvider: false);
-        vm.Appointment = new AppointmentDetail
-        {
-            Id = "abc123",
-            ScheduledAt = DateTime.Now.AddDays(3),
-            ServiceName = "1:1 Strength Session"
-        };
-
-        Assert.DoesNotContain("min", vm.PaymentSummary);
-        Assert.Contains("1:1 Strength Session", vm.PaymentSummary);
-    }
-
-    [Fact]
-    public void ThePaymentSummaryIsEmptyWithoutAnAppointment()
-    {
-        var vm = ViewModel(isProvider: false, withAppointment: false);
-
-        Assert.Empty(vm.PaymentSummary);
-    }
 
     /// <summary>
     /// A notes tab that renders nothing looks broken, so it says so — but not before the read has finished.

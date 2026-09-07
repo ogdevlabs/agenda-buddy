@@ -91,6 +91,21 @@ public partial class App : Application
             var route = Environment.GetEnvironmentVariable("MAUI_DEV_ROUTE");
             await Shell.Current.GoToAsync(
                 string.IsNullOrWhiteSpace(route) ? "//dashboard" : route);
+
+            // MAUI_DEV_TAB selects a tab on the page just opened, so a section other than the default can be
+            // inspected. A tab is not reachable by navigation — it is a tap — so without this the non-default
+            // sections of a tabbed page cannot be seen at all when synthetic taps do not work.
+            var tab = Environment.GetEnvironmentVariable("MAUI_DEV_TAB");
+            if (string.IsNullOrWhiteSpace(tab)) return;
+
+            // Give the page its first layout pass before asking its view model for anything.
+            await Task.Delay(1500);
+
+            if (Shell.Current.CurrentPage?.BindingContext is ViewModels.AppointmentDetailViewModel appointment)
+            {
+                appointment.SelectTabCommand.Execute(tab);
+                Console.WriteLine($"DEV TAB: selected {appointment.SelectedTab}");
+            }
         }
         catch (Exception exception)
         {

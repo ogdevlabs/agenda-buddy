@@ -44,10 +44,11 @@ public enum AppointmentTab
     /// <summary>Reschedule, confirm, complete, cancel. The default, because it is why people open this page.</summary>
     Manage,
 
-    Payment,
-
     /// <summary>Provider-only: the backend note routes are role-gated, so a customer has no tab here at all.</summary>
     Notes
+
+    // Payment was a third tab and is gone: payments are being handled outside this screen, and a tab whose only
+    // content restated the session's own facts was a section with nothing of its own to say.
 }
 
 public partial class AppointmentDetailViewModel : ObservableObject
@@ -95,7 +96,6 @@ public partial class AppointmentDetailViewModel : ObservableObject
     private AppointmentTab _selectedTab = AppointmentTab.Manage;
 
     public bool IsManageTab => SelectedTab == AppointmentTab.Manage;
-    public bool IsPaymentTab => SelectedTab == AppointmentTab.Payment;
 
     /// <summary>
     /// Notes are shown only to a provider, and the TAB is hidden with them.
@@ -109,6 +109,16 @@ public partial class AppointmentDetailViewModel : ObservableObject
     public bool ShowNotesTab => ShowNotesSection;
 
     /// <summary>
+    /// How many of the strip's two columns the Manage tab occupies.
+    /// </summary>
+    /// <remarks>
+    /// A customer has no Notes tab, so Manage spans both columns rather than sitting at half width beside an
+    /// empty one — a hidden segment still reserves its column, which would leave the strip visibly lopsided for
+    /// every customer.
+    /// </remarks>
+    public int ManageTabColumnSpan => ShowNotesTab ? 1 : 2;
+
+    /// <summary>
     /// The Manage section: visible on its tab, and only once an appointment has loaded.
     /// </summary>
     /// <remarks>
@@ -118,30 +128,6 @@ public partial class AppointmentDetailViewModel : ObservableObject
     /// </remarks>
     public bool ShowManageSection => IsManageTab && HasAppointment;
 
-    /// <summary>
-    /// What the session costs, on the Payment tab.
-    /// </summary>
-    /// <remarks>
-    /// Named here rather than left to the payment screen: a payment section that shows no amount leaves the
-    /// reader to remember it. The service name carries it when a fee is not on the appointment — an appointment
-    /// records which service it was booked for but not its price, which is the same gap that makes the payment
-    /// amount client-asserted server-side.
-    /// </remarks>
-    public string PaymentSummary
-    {
-        get
-        {
-            if (Appointment is null) return string.Empty;
-
-            var service = string.IsNullOrWhiteSpace(Appointment.ServiceName)
-                ? "This session"
-                : Appointment.ServiceName;
-
-            return Appointment.ServiceDurationMinutes is { } minutes
-                ? $"{service} · {minutes} min, on {Appointment.ScheduledAt:ddd d MMM 'at' h:mm tt}."
-                : $"{service}, on {Appointment.ScheduledAt:ddd d MMM 'at' h:mm tt}.";
-        }
-    }
 
     /// <summary>
     /// Moves to a tab by name, so the tab strip can be laid out declaratively.
@@ -681,7 +667,6 @@ public partial class AppointmentDetailViewModel : ObservableObject
     partial void OnSelectedTabChanged(AppointmentTab value)
     {
         OnPropertyChanged(nameof(IsManageTab));
-        OnPropertyChanged(nameof(IsPaymentTab));
         OnPropertyChanged(nameof(IsNotesTab));
         OnPropertyChanged(nameof(ShowManageSection));
     }
@@ -716,7 +701,6 @@ public partial class AppointmentDetailViewModel : ObservableObject
         OnPropertyChanged(nameof(TimeAndDurationLabel));
         OnPropertyChanged(nameof(HasContactPhone));
         OnPropertyChanged(nameof(ShowManageSection));
-        OnPropertyChanged(nameof(PaymentSummary));
 
         // Every action's visibility depends on the appointment's status and on who is reading, so all of them
         // have to be re-raised here. A missed one leaves the row showing the PREVIOUS appointment's affordances
