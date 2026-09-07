@@ -32,6 +32,24 @@ public class AppointmentActionEventArgs : EventArgs
     public AppointmentActionEventArgs(ActionType action) => Action = action;
 }
 
+/// <summary>
+/// Which section of the appointment is on screen.
+/// </summary>
+/// <remarks>
+/// The session's own facts — who, when, how long — stay visible above the tabs, because they are the identity of
+/// the thing being looked at rather than one of its sections. What the tabs divide is what you can DO about it.
+/// </remarks>
+public enum AppointmentTab
+{
+    /// <summary>Reschedule, confirm, complete, cancel. The default, because it is why people open this page.</summary>
+    Manage,
+
+    Payment,
+
+    /// <summary>Provider-only: the backend note routes are role-gated, so a customer has no tab here at all.</summary>
+    Notes
+}
+
 public partial class AppointmentDetailViewModel : ObservableObject
 {
     private readonly IBookingApiService _bookingApiService;
@@ -65,6 +83,82 @@ public partial class AppointmentDetailViewModel : ObservableObject
     [ObservableProperty] private string _notesErrorMessage = string.Empty;
 
     public bool ShowNotesSection => _session.IsProvider;
+
+    // ── Tabs ──────────────────────────────────────────────────────────────────────────────────────────
+    //
+    // Three sections rather than one long column. Before this the page stacked the session facts, the
+    // customer's note, a payment row, the provider's notes editor and a growing action row into a single
+    // scroller -- which put the actions below the fold on a short screen and made the reason somebody opened
+    // the page the hardest thing to reach.
+
+    [ObservableProperty]
+    private AppointmentTab _selectedTab = AppointmentTab.Manage;
+
+    public bool IsManageTab => SelectedTab == AppointmentTab.Manage;
+    public bool IsPaymentTab => SelectedTab == AppointmentTab.Payment;
+
+    /// <summary>
+    /// Notes are shown only to a provider, and the TAB is hidden with them.
+    /// </summary>
+    /// <remarks>
+    /// A tab that opens an empty section is worse than no tab: the backend note routes are Provider-role-gated,
+    /// so a customer selecting it would be shown a section that can never hold anything.
+    /// </remarks>
+    public bool IsNotesTab => SelectedTab == AppointmentTab.Notes && ShowNotesSection;
+
+    public bool ShowNotesTab => ShowNotesSection;
+
+    /// <summary>
+    /// The Manage section: visible on its tab, and only once an appointment has loaded.
+    /// </summary>
+    /// <remarks>
+    /// Gated on <see cref="HasAppointment"/> as well as the tab, because every action inside it reads the
+    /// appointment's status and role — an empty card of hidden buttons is not something to render while a fetch
+    /// is in flight.
+    /// </remarks>
+    public bool ShowManageSection => IsManageTab && HasAppointment;
+
+    /// <summary>
+    /// What the session costs, on the Payment tab.
+    /// </summary>
+    /// <remarks>
+    /// Named here rather than left to the payment screen: a payment section that shows no amount leaves the
+    /// reader to remember it. The service name carries it when a fee is not on the appointment — an appointment
+    /// records which service it was booked for but not its price, which is the same gap that makes the payment
+    /// amount client-asserted server-side.
+    /// </remarks>
+    public string PaymentSummary
+    {
+        get
+        {
+            if (Appointment is null) return string.Empty;
+
+            var service = string.IsNullOrWhiteSpace(Appointment.ServiceName)
+                ? "This session"
+                : Appointment.ServiceName;
+
+            return Appointment.ServiceDurationMinutes is { } minutes
+                ? $"{service} · {minutes} min, on {Appointment.ScheduledAt:ddd d MMM 'at' h:mm tt}."
+                : $"{service}, on {Appointment.ScheduledAt:ddd d MMM 'at' h:mm tt}.";
+        }
+    }
+
+    /// <summary>
+    /// Moves to a tab by name, so the tab strip can be laid out declaratively.
+    /// </summary>
+    /// <remarks>
+    /// An unrecognised name is ignored rather than defaulting to Manage: silently moving somebody off the tab
+    /// they are on is more confusing than a tap that did nothing. Notes is refused for a customer, so the tab
+    /// cannot be reached even if something asks for it.
+    /// </remarks>
+    [RelayCommand]
+    private void SelectTab(string? tab)
+    {
+        if (!Enum.TryParse<AppointmentTab>(tab, ignoreCase: true, out var parsed)) return;
+        if (parsed == AppointmentTab.Notes && !ShowNotesSection) return;
+
+        SelectedTab = parsed;
+    }
     public bool HasNotesError => !string.IsNullOrEmpty(NotesErrorMessage);
 
     public bool HasError => !string.IsNullOrEmpty(ErrorMessage);
@@ -200,6 +294,14 @@ public partial class AppointmentDetailViewModel : ObservableObject
     /// claims its default height, which showed as a tall blank card and pushed the add-note field off-screen.
     /// </summary>
     public bool HasSessionNotes => Notes.Count > 0;
+
+    /// <summary>
+    /// Nothing recorded yet — said out loud, because a notes tab that renders nothing looks broken.
+    /// </summary>
+    /// <remarks>
+    /// Not claimed while the read is still in flight: "no notes" and "not asked yet" are different statements.
+    /// </remarks>
+    public bool HasNoSessionNotes => !IsLoadingNotes && Notes.Count == 0 && !HasNotesError;
 
     /// <summary>Hides the phone line rather than leaving an empty row when no number was ever given.</summary>
     public bool HasContactPhone => !string.IsNullOrWhiteSpace(Appointment?.ContactPhone);
@@ -576,9 +678,21 @@ public partial class AppointmentDetailViewModel : ObservableObject
         }
     }
 
+    partial void OnSelectedTabChanged(AppointmentTab value)
+    {
+        OnPropertyChanged(nameof(IsManageTab));
+        OnPropertyChanged(nameof(IsPaymentTab));
+        OnPropertyChanged(nameof(IsNotesTab));
+        OnPropertyChanged(nameof(ShowManageSection));
+    }
+
     partial void OnErrorMessageChanged(string value) => OnPropertyChanged(nameof(HasError));
 
-    partial void OnNotesErrorMessageChanged(string value) => OnPropertyChanged(nameof(HasNotesError));
+    partial void OnNotesErrorMessageChanged(string value)
+    {
+        OnPropertyChanged(nameof(HasNotesError));
+        OnPropertyChanged(nameof(HasNoSessionNotes));
+    }
 
     partial void OnIsLoadingChanged(bool value) => OnPropertyChanged(nameof(IsNotLoading));
 
@@ -588,13 +702,21 @@ public partial class AppointmentDetailViewModel : ObservableObject
         OnPropertyChanged(nameof(ShowCompletingIndicator));
     }
 
-    partial void OnNotesChanged(List<NoteEntity> value) => OnPropertyChanged(nameof(HasSessionNotes));
+    partial void OnNotesChanged(List<NoteEntity> value)
+    {
+        OnPropertyChanged(nameof(HasSessionNotes));
+        OnPropertyChanged(nameof(HasNoSessionNotes));
+    }
+
+    partial void OnIsLoadingNotesChanged(bool value) => OnPropertyChanged(nameof(HasNoSessionNotes));
 
     partial void OnAppointmentChanged(AppointmentDetail? value)
     {
         OnPropertyChanged(nameof(HasAppointment));
         OnPropertyChanged(nameof(TimeAndDurationLabel));
         OnPropertyChanged(nameof(HasContactPhone));
+        OnPropertyChanged(nameof(ShowManageSection));
+        OnPropertyChanged(nameof(PaymentSummary));
 
         // Every action's visibility depends on the appointment's status and on who is reading, so all of them
         // have to be re-raised here. A missed one leaves the row showing the PREVIOUS appointment's affordances

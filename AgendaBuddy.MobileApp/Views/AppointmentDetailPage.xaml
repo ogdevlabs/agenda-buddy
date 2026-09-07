@@ -12,7 +12,9 @@
 
         <controls:BrandHeader Grid.Row="0" />
 
-        <Grid Grid.Row="1" RowDefinitions="Auto,*,Auto">
+        <!-- Two rows: the header, then the scrolling body. The third row used to hold a pinned action
+             bar; the actions are a tab section now, so nothing is pinned here. -->
+        <Grid Grid.Row="1" RowDefinitions="Auto,*">
 
             <!-- Header: the SERVICE is the title — it is what the appointment actually is. The counterpart's
                  name, the date and the time all moved into the single card below, replacing an avatar
@@ -86,7 +88,12 @@
                                HorizontalOptions="Center"
                                VerticalOptions="Center" />
 
-            <!-- Detail cards -->
+            <!-- SESSION FACTS, then TABS.
+                 The facts stay visible because they are the identity of the thing being looked at, not one of
+                 its sections. What the tabs divide is what you can DO about it — and before this the page
+                 stacked the facts, the customer's note, a payment row, the notes editor and a growing action
+                 row into one scroller, which put the actions below the fold on a short screen and made the
+                 reason somebody opened the page the hardest thing to reach. -->
             <ScrollView Grid.Row="1"
                         IsVisible="{Binding HasAppointment}"
                         Margin="0,-16,0,0">
@@ -150,6 +157,8 @@
                            HasShadow="True"
                            Padding="20"
                            IsVisible="{Binding Appointment.HasNotes}">
+                        <!-- Stays OUTSIDE the tabs: the customer's note is context for the session, not one of
+                             the things you can do about it. -->
                         <VerticalStackLayout Spacing="8">
                             <Label Text="NOTES FROM CUSTOMER"
                                    FontSize="11"
@@ -163,36 +172,254 @@
                         </VerticalStackLayout>
                     </Frame>
 
-                    <!-- Payment entry point (F-014's payment route, never surfaced before F-015-T11) -->
-                    <Frame CornerRadius="20"
-                           BackgroundColor="White"
-                           BorderColor="#E2E8F0"
-                           HasShadow="True"
-                           Padding="20">
-                        <Grid ColumnDefinitions="*,Auto">
-                            <Label Grid.Column="0"
-                                   Text="Payment"
-                                   FontSize="15"
-                                   FontAttributes="Bold"
-                                   TextColor="{StaticResource TextPrimary}"
-                                   VerticalOptions="Center" />
-                            <controls:SafeButton Grid.Column="1"
-                                    Text="View"
-                                    Style="{StaticResource PrimaryButton}"
-                                    FontSize="13"
-                                    Padding="14,8"
-                                    Clicked="OnViewPaymentClicked"
-                                    AutomationId="ViewPaymentButton" />
-                        </Grid>
-                    </Frame>
+                    <!-- TAB STRIP. Three tappable segments, not a Picker: the sections are peers and all of
+                         them should be visible at once, which is the whole reason to use tabs here. The Notes
+                         segment is absent for a customer rather than disabled — the backend note routes are
+                         Provider-role-gated, so it could only ever open an empty section. -->
+                    <Grid ColumnDefinitions="*,*,Auto" ColumnSpacing="8">
 
-                    <!-- Session notes (Provider-only — the backend routes are role-gated) -->
+                        <Frame Grid.Column="0" CornerRadius="12" Padding="0" HasShadow="False"
+                               BackgroundColor="White" BorderColor="#E2E8F0">
+                            <Frame.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding SelectTabCommand}"
+                                                      CommandParameter="Manage" />
+                            </Frame.GestureRecognizers>
+                            <Frame.Triggers>
+                                <DataTrigger TargetType="Frame" Binding="{Binding IsManageTab}" Value="True">
+                                    <Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
+                                    <Setter Property="BorderColor" Value="{StaticResource Primary}" />
+                                </DataTrigger>
+                            </Frame.Triggers>
+                            <Label Text="Manage" FontSize="14" HorizontalTextAlignment="Center"
+                                   VerticalOptions="Center" Padding="0,12"
+                                   TextColor="{StaticResource TextPrimary}"
+                                   AutomationId="ManageTabButton">
+                                <Label.Triggers>
+                                    <DataTrigger TargetType="Label" Binding="{Binding IsManageTab}" Value="True">
+                                        <Setter Property="TextColor" Value="White" />
+                                        <Setter Property="FontAttributes" Value="Bold" />
+                                    </DataTrigger>
+                                </Label.Triggers>
+                            </Label>
+                        </Frame>
+
+                        <Frame Grid.Column="1" CornerRadius="12" Padding="0" HasShadow="False"
+                               BackgroundColor="White" BorderColor="#E2E8F0">
+                            <Frame.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding SelectTabCommand}"
+                                                      CommandParameter="Payment" />
+                            </Frame.GestureRecognizers>
+                            <Frame.Triggers>
+                                <DataTrigger TargetType="Frame" Binding="{Binding IsPaymentTab}" Value="True">
+                                    <Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
+                                    <Setter Property="BorderColor" Value="{StaticResource Primary}" />
+                                </DataTrigger>
+                            </Frame.Triggers>
+                            <Label Text="Payment" FontSize="14" HorizontalTextAlignment="Center"
+                                   VerticalOptions="Center" Padding="0,12"
+                                   TextColor="{StaticResource TextPrimary}"
+                                   AutomationId="PaymentTabButton">
+                                <Label.Triggers>
+                                    <DataTrigger TargetType="Label" Binding="{Binding IsPaymentTab}" Value="True">
+                                        <Setter Property="TextColor" Value="White" />
+                                        <Setter Property="FontAttributes" Value="Bold" />
+                                    </DataTrigger>
+                                </Label.Triggers>
+                            </Label>
+                        </Frame>
+
+                        <Frame Grid.Column="2" CornerRadius="12" Padding="0" HasShadow="False"
+                               BackgroundColor="White" BorderColor="#E2E8F0"
+                               IsVisible="{Binding ShowNotesTab}" MinimumWidthRequest="96">
+                            <Frame.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding SelectTabCommand}"
+                                                      CommandParameter="Notes" />
+                            </Frame.GestureRecognizers>
+                            <Frame.Triggers>
+                                <DataTrigger TargetType="Frame" Binding="{Binding IsNotesTab}" Value="True">
+                                    <Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
+                                    <Setter Property="BorderColor" Value="{StaticResource Primary}" />
+                                </DataTrigger>
+                            </Frame.Triggers>
+                            <Label Text="Notes" FontSize="14" HorizontalTextAlignment="Center"
+                                   VerticalOptions="Center" Padding="14,12"
+                                   TextColor="{StaticResource TextPrimary}"
+                                   AutomationId="NotesTabButton">
+                                <Label.Triggers>
+                                    <DataTrigger TargetType="Label" Binding="{Binding IsNotesTab}" Value="True">
+                                        <Setter Property="TextColor" Value="White" />
+                                        <Setter Property="FontAttributes" Value="Bold" />
+                                    </DataTrigger>
+                                </Label.Triggers>
+                            </Label>
+                        </Frame>
+
+                    </Grid>
+
+                    <!-- ══ MANAGE TAB ══ The default, because reschedule/cancel is why people open this page. -->
+                    <Frame
+                       BackgroundColor="White"
+                       CornerRadius="20"
+                       BorderColor="#E2E8F0"
+                       HasShadow="True"
+                       Padding="20,16"
+                       IsVisible="{Binding ShowManageSection}">
+                    <VerticalStackLayout Spacing="10">
+
+                        <!-- A proposal is outstanding. Worded entirely differently by who is waiting on whom, and it
+                             always restates where the session STILL is: a proposed time is not the appointment. -->
+                        <Frame IsVisible="{Binding HasPendingReschedule}"
+                               BackgroundColor="#FFFBEB" BorderColor="#F59E0B" CornerRadius="12"
+                               HasShadow="False" Padding="14">
+                            <Label Text="{Binding PendingRescheduleMessage}" FontSize="13"
+                                   TextColor="{StaticResource TextPrimary}"
+                                   AutomationId="PendingRescheduleMessage" />
+                        </Frame>
+
+                        <!-- Approve / Decline, shown only to the party who did NOT propose. The server refuses an
+                             answer from the proposer, so offering it to them would be two buttons that both 409. -->
+                        <Grid ColumnDefinitions="*,*" ColumnSpacing="10"
+                              IsVisible="{Binding ShowRescheduleAnswerButtons}">
+                            <controls:SafeButton Grid.Column="0"
+                                    Text="Approve new time"
+                                    Style="{StaticResource SuccessButton}"
+                                    FontSize="14"
+                                    Command="{Binding ApproveRescheduleCommand}"
+                                    IsEnabled="{Binding IsNotLoading}"
+                                    AutomationId="ApproveRescheduleButton" />
+                            <controls:SafeButton Grid.Column="1"
+                                    Text="Decline"
+                                    Style="{StaticResource DangerButton}"
+                                    FontSize="14"
+                                    Command="{Binding DeclineRescheduleCommand}"
+                                    IsEnabled="{Binding IsNotLoading}"
+                                    AutomationId="DeclineRescheduleButton" />
+                        </Grid>
+
+                        <!-- The provider MOVES a session; a customer ASKS. Only one is ever visible, because the
+                             calendar belongs to the provider — that asymmetry is the product decision, not a
+                             permissions accident. -->
+                        <controls:SafeButton Text="Reschedule"
+                                Style="{StaticResource PrimaryButton}"
+                                FontSize="14"
+                                Command="{Binding RescheduleCommand}"
+                                IsVisible="{Binding ShowRescheduleButton}"
+                                IsEnabled="{Binding IsNotLoading}"
+                                AutomationId="RescheduleButton" />
+
+                        <controls:SafeButton Text="Request a new time"
+                                Style="{StaticResource PrimaryButton}"
+                                FontSize="14"
+                                Command="{Binding RequestNewTimeCommand}"
+                                IsVisible="{Binding ShowRequestNewTimeButton}"
+                                IsEnabled="{Binding IsNotLoading}"
+                                AutomationId="RequestNewTimeButton" />
+
+                        <!-- Confirm (provider accepting a request) and Complete. Confirm is now status-gated too:
+                             it only ever applied to a Requested appointment. -->
+                        <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                            <controls:SafeButton Grid.Column="0"
+                                    Text="Confirm"
+                                    Style="{StaticResource SuccessButton}"
+                                    FontSize="14"
+                                    Command="{Binding ConfirmCommand}"
+                                    IsEnabled="{Binding IsNotLoading}"
+                                    IsVisible="{Binding ShowConfirmButton}"
+                                    AutomationId="ConfirmButton" />
+
+                            <!-- Complete button + activity indicator, matching the Sign In
+                                 button/ActivityIndicator overlay pattern on LoginPage. -->
+                            <Grid Grid.Column="1">
+                                <controls:SafeButton Text="Complete"
+                                        Style="{StaticResource PrimaryButton}"
+                                        FontSize="14"
+                                        Padding="12,14"
+                                        Command="{Binding CompleteCommand}"
+                                        IsEnabled="{Binding IsNotLoading}"
+                                        IsVisible="{Binding ShowCompleteButtonIdle}"
+                                        AutomationId="CompleteButton" />
+                                <ActivityIndicator IsRunning="{Binding ShowCompletingIndicator}"
+                                                   IsVisible="{Binding ShowCompletingIndicator}"
+                                                   Color="{StaticResource Primary}"
+                                                   HorizontalOptions="Center"
+                                                   VerticalOptions="Center"
+                                                   AutomationId="CompleteButtonBusyIndicator" />
+                            </Grid>
+                        </Grid>
+
+                        <!-- Cancel. A provider may cancel at any notice; a customer only outside the 24-hour
+                             window, and inside it the button is replaced by the reason rather than greyed. -->
+                        <controls:SafeButton Text="Cancel"
+                                Style="{StaticResource DangerButton}"
+                                FontSize="14"
+                                Command="{Binding CancelCommand}"
+                                IsVisible="{Binding ShowCancelButton}"
+                                IsEnabled="{Binding IsNotLoading}"
+                                AutomationId="CancelButton" />
+
+                        <!-- Shown while cancelling is still possible, so the deadline is not discovered by being
+                             refused. -->
+                        <Label Text="{Binding CancellationDeadlineMessage}"
+                               IsVisible="{Binding ShowCancellationDeadlineNotice}"
+                               FontSize="11" TextColor="{StaticResource TextMuted}"
+                               HorizontalTextAlignment="Center"
+                               AutomationId="CancellationDeadlineMessage" />
+
+                        <!-- And in place of the button once it has passed. A missing button with no explanation is
+                             indistinguishable from a bug. -->
+                        <Frame IsVisible="{Binding ShowCancellationClosedNotice}"
+                               BackgroundColor="#F8FAFC" BorderColor="#E2E8F0" CornerRadius="12"
+                               HasShadow="False" Padding="12">
+                            <Label Text="{Binding CancellationClosedMessage}" FontSize="12"
+                                   TextColor="{StaticResource TextMuted}"
+                                   AutomationId="CancellationClosedMessage" />
+                        </Frame>
+
+                        <ActivityIndicator IsRunning="{Binding IsRescheduling}" IsVisible="{Binding IsRescheduling}"
+                                           Color="{StaticResource Primary}" HorizontalOptions="Center"
+                                           AutomationId="RescheduleBusyIndicator" />
+
+                    </VerticalStackLayout>
+                </Frame>
+
+                    <!-- ══ PAYMENT TAB ══ -->
                     <Frame CornerRadius="20"
                            BackgroundColor="White"
                            BorderColor="#E2E8F0"
                            HasShadow="True"
                            Padding="20"
-                           IsVisible="{Binding ShowNotesSection}">
+                           IsVisible="{Binding IsPaymentTab}">
+                        <VerticalStackLayout Spacing="10">
+                            <Label Text="PAYMENT"
+                                   FontSize="11"
+                                   TextColor="{StaticResource TextMuted}"
+                                   TextTransform="Uppercase"
+                                   CharacterSpacing="1.5" />
+
+                            <!-- The fee that was agreed, from the appointment itself. Named here because a
+                                 payment screen that shows no amount leaves the reader to remember it. -->
+                            <Label Text="{Binding PaymentSummary}"
+                                   FontSize="15"
+                                   TextColor="{StaticResource TextPrimary}"
+                                   LineBreakMode="WordWrap"
+                                   AutomationId="PaymentSummary" />
+
+                            <controls:SafeButton Text="Open payment"
+                                    Style="{StaticResource PrimaryButton}"
+                                    FontSize="14"
+                                    Clicked="OnViewPaymentClicked"
+                                    AutomationId="ViewPaymentButton" />
+                        </VerticalStackLayout>
+                    </Frame>
+
+                    <!-- ══ NOTES TAB ══ Provider-only; IsNotesTab folds the role gate in, so a customer has
+                         neither the tab nor the section. -->
+                    <Frame CornerRadius="20"
+                           BackgroundColor="White"
+                           BorderColor="#E2E8F0"
+                           HasShadow="True"
+                           Padding="20"
+                           IsVisible="{Binding IsNotesTab}">
                         <VerticalStackLayout Spacing="10">
                             <Label Text="SESSION NOTES"
                                    FontSize="11"
@@ -207,18 +434,29 @@
                             <ActivityIndicator IsRunning="{Binding IsLoadingNotes}" IsVisible="{Binding IsLoadingNotes}"
                                                Color="{StaticResource Primary}" HorizontalOptions="Center" />
 
-                            <CollectionView ItemsSource="{Binding Notes}" SelectionMode="None"
-                                            IsVisible="{Binding HasSessionNotes}"
-                                            AutomationId="NotesCollectionView">
-                                <CollectionView.ItemTemplate>
+                            <!-- BindableLayout, not a CollectionView: this sits inside the page's ScrollView,
+                                 and a virtualizing list nested in a scroller gets unbounded height, renders
+                                 everything and pushes the add-note field off the screen. A session's notes are
+                                 a bounded handful, so nothing is lost. -->
+                            <VerticalStackLayout BindableLayout.ItemsSource="{Binding Notes}"
+                                                 IsVisible="{Binding HasSessionNotes}"
+                                                 AutomationId="NotesList">
+                                <BindableLayout.ItemTemplate>
                                     <DataTemplate>
                                         <VerticalStackLayout Spacing="2" Margin="0,4">
                                             <Label Text="{Binding Content}" FontSize="14" TextColor="{StaticResource TextPrimary}" />
                                             <BoxView HeightRequest="0.5" Color="#F1F5F9" Margin="0,6,0,0" />
                                         </VerticalStackLayout>
                                     </DataTemplate>
-                                </CollectionView.ItemTemplate>
-                            </CollectionView>
+                                </BindableLayout.ItemTemplate>
+                            </VerticalStackLayout>
+
+                            <!-- Empty state: a notes tab with nothing in it should say so rather than look
+                                 broken. -->
+                            <Label Text="No notes on this session yet."
+                                   IsVisible="{Binding HasNoSessionNotes}"
+                                   FontSize="13" TextColor="{StaticResource TextMuted}"
+                                   AutomationId="NoSessionNotesLabel" />
 
                             <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" Margin="0,4,0,0">
                                 <Frame Grid.Column="0" Style="{StaticResource InputFrame}" Margin="0">
@@ -252,130 +490,6 @@
                  button the server will refuse is worse: an ungated affordance is what made a messaging 403
                  surface to the user as a connection failure. Where an action is withheld for a reason the reader
                  can act on — the cancellation window having closed — the reason takes its place. -->
-            <Frame Grid.Row="2"
-                   BackgroundColor="White"
-                   CornerRadius="0"
-                   BorderColor="#E2E8F0"
-                   HasShadow="True"
-                   Padding="20,14">
-                <VerticalStackLayout Spacing="10">
-
-                    <!-- A proposal is outstanding. Worded entirely differently by who is waiting on whom, and it
-                         always restates where the session STILL is: a proposed time is not the appointment. -->
-                    <Frame IsVisible="{Binding HasPendingReschedule}"
-                           BackgroundColor="#FFFBEB" BorderColor="#F59E0B" CornerRadius="12"
-                           HasShadow="False" Padding="14">
-                        <Label Text="{Binding PendingRescheduleMessage}" FontSize="13"
-                               TextColor="{StaticResource TextPrimary}"
-                               AutomationId="PendingRescheduleMessage" />
-                    </Frame>
-
-                    <!-- Approve / Decline, shown only to the party who did NOT propose. The server refuses an
-                         answer from the proposer, so offering it to them would be two buttons that both 409. -->
-                    <Grid ColumnDefinitions="*,*" ColumnSpacing="10"
-                          IsVisible="{Binding ShowRescheduleAnswerButtons}">
-                        <controls:SafeButton Grid.Column="0"
-                                Text="Approve new time"
-                                Style="{StaticResource SuccessButton}"
-                                FontSize="14"
-                                Command="{Binding ApproveRescheduleCommand}"
-                                IsEnabled="{Binding IsNotLoading}"
-                                AutomationId="ApproveRescheduleButton" />
-                        <controls:SafeButton Grid.Column="1"
-                                Text="Decline"
-                                Style="{StaticResource DangerButton}"
-                                FontSize="14"
-                                Command="{Binding DeclineRescheduleCommand}"
-                                IsEnabled="{Binding IsNotLoading}"
-                                AutomationId="DeclineRescheduleButton" />
-                    </Grid>
-
-                    <!-- The provider MOVES a session; a customer ASKS. Only one is ever visible, because the
-                         calendar belongs to the provider — that asymmetry is the product decision, not a
-                         permissions accident. -->
-                    <controls:SafeButton Text="Reschedule"
-                            Style="{StaticResource PrimaryButton}"
-                            FontSize="14"
-                            Command="{Binding RescheduleCommand}"
-                            IsVisible="{Binding ShowRescheduleButton}"
-                            IsEnabled="{Binding IsNotLoading}"
-                            AutomationId="RescheduleButton" />
-
-                    <controls:SafeButton Text="Request a new time"
-                            Style="{StaticResource PrimaryButton}"
-                            FontSize="14"
-                            Command="{Binding RequestNewTimeCommand}"
-                            IsVisible="{Binding ShowRequestNewTimeButton}"
-                            IsEnabled="{Binding IsNotLoading}"
-                            AutomationId="RequestNewTimeButton" />
-
-                    <!-- Confirm (provider accepting a request) and Complete. Confirm is now status-gated too:
-                         it only ever applied to a Requested appointment. -->
-                    <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
-                        <controls:SafeButton Grid.Column="0"
-                                Text="Confirm"
-                                Style="{StaticResource SuccessButton}"
-                                FontSize="14"
-                                Command="{Binding ConfirmCommand}"
-                                IsEnabled="{Binding IsNotLoading}"
-                                IsVisible="{Binding ShowConfirmButton}"
-                                AutomationId="ConfirmButton" />
-
-                        <!-- Complete button + activity indicator, matching the Sign In
-                             button/ActivityIndicator overlay pattern on LoginPage. -->
-                        <Grid Grid.Column="1">
-                            <controls:SafeButton Text="Complete"
-                                    Style="{StaticResource PrimaryButton}"
-                                    FontSize="14"
-                                    Padding="12,14"
-                                    Command="{Binding CompleteCommand}"
-                                    IsEnabled="{Binding IsNotLoading}"
-                                    IsVisible="{Binding ShowCompleteButtonIdle}"
-                                    AutomationId="CompleteButton" />
-                            <ActivityIndicator IsRunning="{Binding ShowCompletingIndicator}"
-                                               IsVisible="{Binding ShowCompletingIndicator}"
-                                               Color="{StaticResource Primary}"
-                                               HorizontalOptions="Center"
-                                               VerticalOptions="Center"
-                                               AutomationId="CompleteButtonBusyIndicator" />
-                        </Grid>
-                    </Grid>
-
-                    <!-- Cancel. A provider may cancel at any notice; a customer only outside the 24-hour
-                         window, and inside it the button is replaced by the reason rather than greyed. -->
-                    <controls:SafeButton Text="Cancel"
-                            Style="{StaticResource DangerButton}"
-                            FontSize="14"
-                            Command="{Binding CancelCommand}"
-                            IsVisible="{Binding ShowCancelButton}"
-                            IsEnabled="{Binding IsNotLoading}"
-                            AutomationId="CancelButton" />
-
-                    <!-- Shown while cancelling is still possible, so the deadline is not discovered by being
-                         refused. -->
-                    <Label Text="{Binding CancellationDeadlineMessage}"
-                           IsVisible="{Binding ShowCancellationDeadlineNotice}"
-                           FontSize="11" TextColor="{StaticResource TextMuted}"
-                           HorizontalTextAlignment="Center"
-                           AutomationId="CancellationDeadlineMessage" />
-
-                    <!-- And in place of the button once it has passed. A missing button with no explanation is
-                         indistinguishable from a bug. -->
-                    <Frame IsVisible="{Binding ShowCancellationClosedNotice}"
-                           BackgroundColor="#F8FAFC" BorderColor="#E2E8F0" CornerRadius="12"
-                           HasShadow="False" Padding="12">
-                        <Label Text="{Binding CancellationClosedMessage}" FontSize="12"
-                               TextColor="{StaticResource TextMuted}"
-                               AutomationId="CancellationClosedMessage" />
-                    </Frame>
-
-                    <ActivityIndicator IsRunning="{Binding IsRescheduling}" IsVisible="{Binding IsRescheduling}"
-                                       Color="{StaticResource Primary}" HorizontalOptions="Center"
-                                       AutomationId="RescheduleBusyIndicator" />
-
-                </VerticalStackLayout>
-            </Frame>
-
         </Grid>
 
     </Grid>
