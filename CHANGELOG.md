@@ -20,6 +20,25 @@ All notable changes to this project are documented in this file, in [Keep a Chan
 
 ### Fixed
 
+- **F-031**: `azd deploy` could never have worked without `azd provision`, so `provision: false` — the mode
+  **both** `dev-redeploy.yml` and .NET CI's `deploy-dev` stage use — had never once succeeded. `.azure/` is
+  gitignored and a runner is ephemeral, so the workflow's `azd env new` created an *empty* azd environment on
+  every run and the `|| azd env select` fallback never fired. An empty environment holds none of the outputs
+  `azd provision` writes into `.azure/<env>/.env`, and the container registry endpoint is one of them: azd knew
+  the entire app model but not where to push an image, and died on the first service with
+  `could not determine container registry endpoint`. It was invisible because **the only deploy in this
+  repository's history that ever went green ran with `provision: true`**, which writes those outputs as a side
+  effect — the defect was absent from the mode a human dispatches by hand and fatal in the two that run
+  unattended. A `provision: false` run now calls `azd env refresh` first, re-reading the outputs from the
+  environment's last real deployment in Azure, and then **asserts `AZURE_CONTAINER_REGISTRY_ENDPOINT` actually
+  arrived** rather than trusting the refresh's exit code — a refresh that reports success while producing no
+  endpoint otherwise reproduces the original failure 40 packaging seconds later, under a message that blames
+  docker options. Chosen over azd remote state (`state.remote` in `azure.yaml`), which would need a seeding
+  `provision: true` run before it held anything, whereas Azure already has the deployment.
+- **F-031**: `ADeployWithoutAProvisionRefreshesTheAzdEnvironmentFirst` asserted the ordering by searching for
+  the string `azd env refresh`, which also appears in the comment explaining the step — so moving the step
+  *below* `azd deploy` left the test passing. Anchored on the step header instead. Same defect class as the
+  `id-token` assertion below: a guard that matches prose rather than structure.
 - **F-031**: the `deploy-dev` stage failed on its first ever run (CI 358 on `main`), and did so in a way that
   showed **every visible job green and the run red** — two independent defects, neither of which produced a log
   or a check run because the job never started.

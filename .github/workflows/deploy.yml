@@ -278,6 +278,45 @@ jobs:
         if: ${{ inputs.provision }}
         run: azd provision --no-prompt
 
+      # ⚠️ WITHOUT THIS, `azd deploy` CANNOT WORK ON A RUNNER — and for a long time it did not.
+      #
+      # `azd env new` above always creates an EMPTY environment here: `.azure/` is gitignored and the
+      # runner is ephemeral, so the `|| azd env select` fallback never once fired. An empty environment
+      # has none of the outputs `azd provision` writes into `.azure/<env>/.env` — the container registry
+      # endpoint, the Container Apps environment id, the managed identity — so azd knew the whole app
+      # model but not where to push an image to, and failed on the first service it tried:
+      #
+      #   profession: Failed … logging in to registry: could not determine container registry endpoint,
+      #   ensure 'registry' has been set in the docker options or 'AZURE_CONTAINER_REGISTRY_ENDPOINT'
+      #
+      # That made `provision: false` — the mode BOTH `dev-redeploy.yml` and .NET CI's `deploy-dev` stage
+      # use — a path that had never succeeded. It was invisible because the only deploy that ever went
+      # green ran with `provision: true`, which writes those outputs itself as a side effect.
+      #
+      # `azd env refresh` re-reads them from this environment's last real deployment in Azure. Preferred
+      # over azd remote state (`state.remote` in azure.yaml) because remote state would need a seeding
+      # `provision: true` run before it held anything, whereas Azure already has the deployment.
+      - name: azd env refresh — recover the provisioning outputs
+        if: ${{ !inputs.provision }}
+        env:
+          AZD_ENV: agenda-buddy-${{ inputs.environment }}
+        run: |
+          if ! azd env refresh -e "$AZD_ENV" --no-prompt; then
+            echo "::error::azd env refresh failed for $AZD_ENV. If this environment has never been"
+            echo "::error::provisioned, dispatch this workflow once with provision: true."
+            exit 1
+          fi
+
+          # Asserted rather than assumed. A refresh that "succeeds" while producing no registry endpoint
+          # leaves the exact failure this step exists to prevent, ~40 packaging seconds later and with a
+          # message that points at docker options rather than at the environment.
+          if ! azd env get-values -e "$AZD_ENV" | grep -q '^AZURE_CONTAINER_REGISTRY_ENDPOINT='; then
+            echo "::error::AZURE_CONTAINER_REGISTRY_ENDPOINT is still unset after refreshing $AZD_ENV."
+            echo "::error::azd cannot push images without it — re-run with provision: true."
+            exit 1
+          fi
+          echo "Provisioning outputs recovered for $AZD_ENV."
+
       - name: azd deploy
         run: azd deploy --no-prompt
 

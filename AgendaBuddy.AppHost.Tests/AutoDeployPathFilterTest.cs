@@ -461,4 +461,59 @@ public class AutoDeployPathFilterTest
     {
         Assert.Contains("parameters[param] = \"\"", Workflow("deploy.yml"), StringComparison.Ordinal);
     }
+
+    // ── A deploy without a provision recovers the provisioning outputs ─────────────────────────────
+
+    /// <summary>
+    /// A <c>provision: false</c> deploy must refresh the azd environment before deploying, and must do so
+    /// <b>before</b> <c>azd deploy</c> runs.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// This is the mode both <c>dev-redeploy.yml</c> and .NET CI's <c>deploy-dev</c> stage use, and it had
+    /// never succeeded. <c>.azure/</c> is gitignored and the runner is ephemeral, so the workflow's
+    /// <c>azd env new</c> creates an empty environment every time — no container registry endpoint, no
+    /// Container Apps environment id — and azd failed at "logging in to registry" on the first service.
+    /// </para>
+    /// <para>
+    /// Only the one deploy that ran with <c>provision: true</c> ever went green, because provisioning
+    /// writes those outputs itself. That is precisely why this needs a test: the defect is invisible in
+    /// the mode a human dispatches by hand and fatal in the two modes that run unattended.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public void ADeployWithoutAProvisionRefreshesTheAzdEnvironmentFirst()
+    {
+        var lines = Workflow("deploy.yml").Split('\n');
+
+        // Anchored on the step header, NOT on the string "azd env refresh": the comment above the step
+        // explains the command by name, so matching the bare command found the comment and reported the
+        // step as correctly ordered even after it had been moved below `azd deploy`.
+        var refresh = Array.FindIndex(lines,
+            l => l.TrimStart().StartsWith("- name: azd env refresh", StringComparison.Ordinal));
+        Assert.True(refresh >= 0, "deploy.yml never refreshes the azd environment, so a `provision: false` "
+                                  + "run has no container registry endpoint and cannot push an image.");
+
+        var deploy = Array.FindIndex(lines, l => l.Trim() == "run: azd deploy --no-prompt");
+        Assert.True(deploy >= 0, "deploy.yml no longer runs `azd deploy --no-prompt`.");
+        Assert.True(refresh < deploy, "the refresh has to precede `azd deploy` to be of any use.");
+
+        // Gated off when provisioning, which writes the same outputs itself.
+        var gate = Array.FindIndex(lines[refresh..], l => l.Contains("if:", StringComparison.Ordinal));
+        Assert.True(gate >= 0, "the refresh step declares no `if:` condition.");
+        Assert.Contains("!inputs.provision", lines[refresh + gate], StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// The refresh asserts the registry endpoint actually arrived, rather than trusting its own exit code.
+    /// </summary>
+    /// <remarks>
+    /// A refresh that reports success while producing no endpoint reproduces the original failure ~40
+    /// packaging seconds later, under a message that blames docker options rather than the environment.
+    /// </remarks>
+    [Fact]
+    public void TheRefreshVerifiesTheRegistryEndpointIsPresent()
+    {
+        Assert.Contains("AZURE_CONTAINER_REGISTRY_ENDPOINT", Workflow("deploy.yml"), StringComparison.Ordinal);
+    }
 }
