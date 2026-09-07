@@ -169,6 +169,31 @@ resource "azurerm_key_vault_secret" "resend_api_key" {
   depends_on = [time_sleep.rbac_propagation]
 }
 
+# Both optional and both counted the same way as resend-api-key above: an absent secret is the honest
+# representation of "this environment has no push credentials", and the deploy workflow treats them as
+# optional when reading. They are a pair -- FcmPushSender needs the project id for the send URL and the
+# service account to sign the token exchange -- so setting one without the other is a misconfiguration
+# that AddPushDelivery catches by requiring both before it registers the real sender.
+resource "azurerm_key_vault_secret" "push_firebase_project_id" {
+  count = var.push_firebase_project_id == "" ? 0 : 1
+
+  name         = "push-firebase-project-id"
+  value        = var.push_firebase_project_id
+  key_vault_id = azurerm_key_vault.secrets.id
+
+  depends_on = [time_sleep.rbac_propagation]
+}
+
+resource "azurerm_key_vault_secret" "push_service_account_json" {
+  count = var.push_service_account_json == "" ? 0 : 1
+
+  name         = "push-service-account-json"
+  value        = var.push_service_account_json
+  key_vault_id = azurerm_key_vault.secrets.id
+
+  depends_on = [time_sleep.rbac_propagation]
+}
+
 resource "azurerm_key_vault_secret" "jwt_public_key" {
   name         = "jwt-public-key"
   value        = var.jwt_public_key

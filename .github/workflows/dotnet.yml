@@ -17,9 +17,17 @@ permissions:
 # a direct push to main — each branch/PR gets its own group, main pushes never cancel each other's
 # already-completed-by-the-time-the-next-lands runs in practice, but the fallback keeps the group key
 # valid either way.
+#
+# ⚠️ cancel-in-progress is now FALSE on main, and that is load-bearing rather than cautious. This
+# pipeline can end in a deploy (see deploy-dev at the bottom), and cancelling a superseded run would
+# cancel it mid-`terraform apply` or mid-`azd deploy` — a half-applied environment is materially worse
+# than a queued run. The note above said main pushes "never cancel each other's already-completed-by-
+# the-time-the-next-lands runs in practice"; "in practice" stopped being good enough once a run could
+# change deployed infrastructure. PRs keep the superseding behaviour, which is the whole reason this
+# group exists.
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   # ---------------------------------------------------------------------------
@@ -43,6 +51,17 @@ jobs:
       # AND-ed into every build job so a markdown-only change never builds. See the long note on
       # the filters below for why this is a separate filter rather than a `!**/*.md` negation.
       code: ${{ steps.filter.outputs.code }}
+      # Narrower than `api` on purpose: the things that change what is actually RUNNING in a deployed
+      # environment. `api` includes the 12 backend test projects, and a test-only change alters no
+      # deployed behaviour — deploying for one would spend a full Terraform + azd run and 8 container
+      # builds for nothing. AgendaBuddy.MobileApp is absent for a different reason: it ships through
+      # TestFlight, not through azd.
+      #
+      # This exists so the deploy decision reads the SAME filter block every other job does. The
+      # alternative — a path list inside the deploy workflow — was written first and discarded: it
+      # duplicated this list, and the duplicate fails in the silent direction (a renamed service the
+      # copy misses simply stops being deployed, with no error anywhere).
+      deployable: ${{ steps.filter.outputs.deployable }}
     steps:
       - uses: actions/checkout@v7
       - uses: dorny/paths-filter@v4
@@ -205,6 +224,48 @@ jobs:
               - 'Directory.Build.props'
               - '.github/workflows/dotnet.yml'
             terraform:
+              - 'infra/terraform/**'
+            # What changes the behaviour of a DEPLOYED environment. The eight resources the AppHost
+            # declares, the projects they all compile in, and the infrastructure description itself.
+            #
+            # ⚠️ Every service the AppHost declares must appear here, and no test project may — both
+            # halves are asserted by AgendaBuddy.AppHost.Tests/AutoDeployPathFilterTest.cs, which derives
+            # the expected entries from the app model's own `Projects.AgendaBuddy_*` symbols. A missing
+            # service fails in the silent direction: merges that change it simply stop deploying.
+            deployable:
+              - 'AgendaBuddy.Booking.Api/**'
+              - 'AgendaBuddy.Booking.Core/**'
+              - 'AgendaBuddy.Booking.Domain/**'
+              - 'AgendaBuddy.Booking.Infrastructure/**'
+              - 'AgendaBuddy.Calendar.Api/**'
+              - 'AgendaBuddy.Calendar.Core/**'
+              - 'AgendaBuddy.Calendar.Domain/**'
+              - 'AgendaBuddy.Calendar.Infrastructure/**'
+              - 'AgendaBuddy.Customer.Api/**'
+              - 'AgendaBuddy.Customer.Core/**'
+              - 'AgendaBuddy.Customer.Domain/**'
+              - 'AgendaBuddy.Customer.Infrastructure/**'
+              - 'AgendaBuddy.Provider.Api/**'
+              - 'AgendaBuddy.Provider.Core/**'
+              - 'AgendaBuddy.Provider.Domain/**'
+              - 'AgendaBuddy.Provider.Infrastructure/**'
+              - 'AgendaBuddy.Services.Api/**'
+              - 'AgendaBuddy.Services.Core/**'
+              - 'AgendaBuddy.Services.Domain/**'
+              - 'AgendaBuddy.Services.Infrastructure/**'
+              - 'AgendaBuddy.Profession.Api/**'
+              - 'AgendaBuddy.Profession.Core/**'
+              - 'AgendaBuddy.Profession.Domain/**'
+              - 'AgendaBuddy.Profession.Infrastructure/**'
+              - 'AgendaBuddy.Identity/**'
+              - 'AgendaBuddy.Gateway/**'
+              - 'AgendaBuddy.Library/**'
+              - 'AgendaBuddy.Library.ServerAuth/**'
+              - 'AgendaBuddy.EventAndCommands/**'
+              - 'AgendaBuddy.ServiceDefaults/**'
+              - 'AgendaBuddy.AppHost/**'
+              - 'Directory.Build.props'
+              - 'azure.yaml'
               - 'infra/terraform/**'
 
   # ---------------------------------------------------------------------------
@@ -893,3 +954,64 @@ jobs:
             exit 1
           fi
           echo "No job failed. Filters — api=$API mobile=$MOBILE mobile-tests=$MOBILE_TESTS"
+
+  # ---------------------------------------------------------------------------
+  # Deploy dev — the pipeline's last stage on a merge to main
+  # ---------------------------------------------------------------------------
+  # THE INVARIANT: the dev environment runs the backend code that is on main. Every merge to main that
+  # changes deployed behaviour ends with dev carrying it.
+  #
+  # This exists because the alternative was measured. Dev sat at 63a8262a (2026-09-03) while main moved
+  # three days ahead, and the cost was three bug reports against behaviour that was already correct —
+  # notification ordering, the unread-only filter, and push. An environment updated only when somebody
+  # remembers to press a button will drift, and whoever is testing pays for it.
+  #
+  # WHY IT IS A PIPELINE STAGE RATHER THAN A workflow_run LISTENER. An earlier revision of this hung off
+  # ".NET CI" completing, which worked but had to restate the deployable-path list in a second file — and
+  # that duplicate fails in the silent direction: a renamed service the copy misses simply stops being
+  # deployed, with nothing reporting it. As a stage it reads `changes.outputs.deployable`, so there is one
+  # filter block in the repository and no copy to drift.
+  #
+  # STILL ON DEMAND. dev-redeploy.yml carries workflow_dispatch as well as workflow_call, so the same
+  # three-stage sequence is a button; deploy.yml keeps its own dispatch for a provision-and-deploy. One
+  # implementation, three entry points.
+  #
+  # ⚠️ ON BY DEFAULT, with a kill switch. Set the repository variable AUTO_DEPLOY_DEV to `false` to stop
+  # it without touching this file. Note the polarity: only the literal string `false` disables it, so an
+  # unset or mistyped variable deploys rather than silently doing nothing — the failure mode of the
+  # earlier opt-IN version was an automation that looked wired and wasn't.
+  #
+  # ⚠️ It deploys against the one shared Atlas cluster, whose credential is still unrotated
+  # (agenda-buddy-41s, and item 1 of docs/deployment.md's "Before this is production"). That is a known,
+  # accepted risk of automating this now, recorded in ADR-065 — not an oversight.
+  deploy-dev:
+    needs:
+      [changes, build-and-test, security-scan, docker-build-and-scan, integration,
+       build-android, build-ios, build-mobile-tests, terraform-validate]
+    # !cancelled() rather than always(): a cancelled pipeline must not deploy. Every gate is accepted as
+    # `success` OR `skipped`, because most of them are filter-gated and a skip means "not relevant to this
+    # change", not "unverified" — but a `failure` in any of them stops the deploy, mobile included. A red
+    # pipeline is a red pipeline.
+    if: >-
+      ${{ !cancelled()
+      && github.event_name == 'push'
+      && github.ref == 'refs/heads/main'
+      && vars.AUTO_DEPLOY_DEV != 'false'
+      && needs.changes.outputs.deployable == 'true'
+      && needs.build-and-test.result != 'failure'
+      && needs.security-scan.result != 'failure'
+      && needs.docker-build-and-scan.result != 'failure'
+      && needs.integration.result != 'failure'
+      && needs.build-android.result != 'failure'
+      && needs.build-ios.result != 'failure'
+      && needs.build-mobile-tests.result != 'failure'
+      && needs.terraform-validate.result != 'failure' }}
+    permissions:
+      # The deploy exchanges a GitHub OIDC token for an Azure one; the workflow-level permissions above
+      # are read-only and job-level permissions replace rather than extend them.
+      id-token: write
+      contents: read
+    uses: ./.github/workflows/dev-redeploy.yml
+    with:
+      environment: dev
+    secrets: inherit

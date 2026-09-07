@@ -6,6 +6,36 @@ All notable changes to this project are documented in this file, in [Keep a Chan
 
 ### Added
 
+- **F-031 auto-deploy-dev**: `.NET CI` gained a final `deploy-dev` stage, so **the dev environment runs the
+  backend code that is on `main`**. It fires on a push to `main` when the pipeline is not failing and the
+  `changes` job's new `deployable` filter matched, and calls `dev-redeploy.yml` — stop → deploy → restore —
+  which is also dispatchable; `deploy.yml` keeps its own dispatch, the only way to run with `provision: true`.
+  Three entry points, one implementation. Written first as a separate `workflow_run` workflow and rewritten as a
+  pipeline stage: the standalone version had to restate the deployable-path list in a second file, and that
+  duplicate fails silently — a renamed service the copy misses simply stops being deployed. On by default with
+  `AUTO_DEPLOY_DEV=false` as the brake, and the polarity is deliberate: only the literal `false` disables it, so
+  an unset or mistyped variable deploys rather than doing nothing quietly (ADR-065).
+- **F-031**: push credentials now reach a deployed environment, which they never had. `AppHostWiring` declared
+  the two push parameters only when a value was already in `builder.Configuration` — never true while the AppHost
+  is being *published*, because azd supplies parameter values at provision time and not to the app model during
+  manifest generation. So the condition was always false in the Cloud shape, the parameters never entered the
+  generated Bicep, and **every deployed environment resolved `UnconfiguredPushSender`: a backend that could not
+  push, with nothing anywhere reporting why.** The Cloud shape now declares them unconditionally as
+  `resendApiKey` does, while the Local shape keeps the configuration check that protects against ISSUE-001's
+  silent `ValueMissing` parking. Terraform stores both as optional Key Vault secrets
+  (`push-firebase-project-id`, `push-service-account-json`) and `deploy.yml` maps them to azd parameters.
+
+### Changed
+
+- **F-031**: `.NET CI`'s `cancel-in-progress` is now `false` on `main` — it was unconditionally `true`, and its
+  own comment conceded main pushes "never cancel each other's… in practice". That stopped being good enough once
+  a run can end in a deploy: cancelling a superseded run would cancel it mid-`terraform apply` or
+  mid-`azd deploy`. PRs keep the superseding behaviour, which is why the group exists.
+- **F-031**: an optional deploy secret that is absent is now passed to azd as an **empty string rather than
+  omitted**. A parameter the app model declares but supplies no value for fails `azd provision --no-prompt`,
+  while empty is exactly what `PushOptions`/`EmailOptions` read as "not configured" — so an environment with no
+  push credentials deploys and simply logs that push is off.
+
 - **F-030 contact-avatars**: `AvatarCatalog` (`AgendaBuddy.Library`) names 24 avatars, assigned at random when a
   Provider or Customer profile is created (`avatar_id` on both entities) and derived deterministically from the
   email where a row has none — so this ships with no data migration and no account renders as a blank circle.

@@ -323,9 +323,17 @@ public partial class NotificationsViewModel : ObservableObject
     /// <c>ProviderAvailability</c> had.
     /// </para>
     /// </remarks>
-    internal static List<NotificationSummary> ApplySections(List<NotificationSummary> rows)
+    /// <param name="localNow">
+    /// Now, on the reader's own clock. A parameter so the banding is deterministic in a test — the same
+    /// reason <c>AvailabilityCalculator</c> takes <c>nowUtc</c>. Without it a test that builds rows relative
+    /// to the current time bands them differently depending on the hour it runs at: one written as
+    /// "an hour ago is Today" passed all day and failed in CI at 00:32 UTC, because an hour before that is
+    /// the previous day.
+    /// </param>
+    internal static List<NotificationSummary> ApplySections(
+        List<NotificationSummary> rows, DateTime? localNow = null)
     {
-        var now = DateTime.Now;
+        var now = localNow ?? DateTime.Now;
         var previous = string.Empty;
 
         foreach (var row in rows)
