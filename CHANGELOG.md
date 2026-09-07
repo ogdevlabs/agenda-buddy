@@ -4,8 +4,72 @@ All notable changes to this project are documented in this file, in [Keep a Chan
 
 ## [Unreleased]
 
+### Changed
+
+- **F-031**: a change to the **deploy machinery itself** now triggers a dev deploy —
+  `.github/workflows/{deploy,dev-redeploy,dev-env-power}.yml` are in the `deployable` filter. They were not,
+  which is why the CI 358 fix (a concurrency self-deadlock and a stripped OIDC permission, both of which failed
+  the job before it started and produced no log) merged to `main` **without the deploy path running once** — and
+  why the defects reached `main` by the same route. A change to how deploying works now proves itself on the
+  merge that makes it, rather than days later on whatever unrelated backend change happens to deploy next. The
+  cost is accepted: a comment-only edit to one of those three files spends a full Terraform + azd run and eight
+  container builds. `dotnet.yml` is deliberately excluded — the stage inside it is a handful of
+  `if:`/`needs:`/`uses:` lines guarded by `AutoDeployPathFilterTest`, and including it would make every CI edit
+  of any kind deploy.
+
+
+### Added
+
+- **F-031**: `.github/workflows/dev-env-drift.yml` — **"dev is running `main`" is now a measured fact.** A
+  successful deploy stamps its commit onto the resource group (`deployedSha`, **after** the smoke test, so it
+  means *deployed and serving*), and an hourly check reads it back, diffs it against `main`, and calls
+  `dev-redeploy.yml` when anything material differs. Nothing previously recorded what a deployed environment
+  was running — CLAUDE.md's advice was to infer it from `deploy.yml`'s run history, which is how dev sat three
+  days behind `main` and produced three bug reports against already-fixed behaviour.
+  - **Why a check and not a better path filter.** `deploy-dev` fires off the `deployable` **allowlist**, which
+    can only be as complete as whoever last edited it and fails in the silent direction: a path nobody listed
+    just stops deploying, with every job green. It also cannot notice a deploy that failed after CI went green
+    (exactly what happened on the first real redeploy), an environment stopped by hand, or a dispatch that
+    shipped an old branch. Comparing deployed-to-`main` catches all four with one mechanism, and costs a
+    single `az group show` when they agree. **The filter is demoted to a latency optimisation** — a miss now
+    costs up to an hour of staleness instead of going unnoticed indefinitely.
+  - **Inert denylist, not the `deployable` allowlist.** Reusing that list would reproduce its blind spot
+    exactly, with the drift check confirming nothing needs deploying while dev ran stale code. Everything is
+    therefore deployable *unless* it is on a short list of paths that provably cannot change what a container
+    serves (`docs/`, `bruno/`, `.github/`, `scripts/`, `compose/`, `.beads/`, `*.md`, `AgendaBuddy.MobileApp*/`,
+    `*.Tests/`, `AgendaBuddy.IntegrationTests/`, compose files). **A new project is deployable the moment it
+    exists**, with nobody registering it anywhere. An absent or unrecognisable stamp is read as drift, never
+    as current — unknown means redeploy. `DevEnvDriftTest` (39 tests) asserts no AppHost-declared service and
+    no shared project can be written onto the inert list, and validates the pattern under both .NET's regex
+    engine and `grep -E`, which is what the workflow actually runs.
+
 ### Fixed
 
+- **F-031**: `AutoDeployPathFilterTest.TheSequenceAndTheDeployDoNotShareAConcurrencyGroup` compared the
+  concurrency groups as **raw text**, so `redeploy-${{ inputs.environment || 'dev' }}` and
+  `redeploy-${{ inputs.environment }}` read as different groups while both resolve to `redeploy-dev` and
+  deadlock identically. Found by negative-testing the new drift check against it: renaming the drift group to
+  the redeploy one left the test green. Both tests now normalise `${{ … }}` away before comparing. This is the
+  guard that was supposed to stop run 358's defect class recurring, and it would not have.
+- **F-031**: `azd deploy` could never have worked without `azd provision`, so `provision: false` — the mode
+  **both** `dev-redeploy.yml` and .NET CI's `deploy-dev` stage use — had never once succeeded. `.azure/` is
+  gitignored and a runner is ephemeral, so the workflow's `azd env new` created an *empty* azd environment on
+  every run and the `|| azd env select` fallback never fired. An empty environment holds none of the outputs
+  `azd provision` writes into `.azure/<env>/.env`, and the container registry endpoint is one of them: azd knew
+  the entire app model but not where to push an image, and died on the first service with
+  `could not determine container registry endpoint`. It was invisible because **the only deploy in this
+  repository's history that ever went green ran with `provision: true`**, which writes those outputs as a side
+  effect — the defect was absent from the mode a human dispatches by hand and fatal in the two that run
+  unattended. A `provision: false` run now calls `azd env refresh` first, re-reading the outputs from the
+  environment's last real deployment in Azure, and then **asserts `AZURE_CONTAINER_REGISTRY_ENDPOINT` actually
+  arrived** rather than trusting the refresh's exit code — a refresh that reports success while producing no
+  endpoint otherwise reproduces the original failure 40 packaging seconds later, under a message that blames
+  docker options. Chosen over azd remote state (`state.remote` in `azure.yaml`), which would need a seeding
+  `provision: true` run before it held anything, whereas Azure already has the deployment.
+- **F-031**: `ADeployWithoutAProvisionRefreshesTheAzdEnvironmentFirst` asserted the ordering by searching for
+  the string `azd env refresh`, which also appears in the comment explaining the step — so moving the step
+  *below* `azd deploy` left the test passing. Anchored on the step header instead. Same defect class as the
+  `id-token` assertion below: a guard that matches prose rather than structure.
 - **F-031**: the `deploy-dev` stage failed on its first ever run (CI 358 on `main`), and did so in a way that
   showed **every visible job green and the run red** — two independent defects, neither of which produced a log
   or a check run because the job never started.

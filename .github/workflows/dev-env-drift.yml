@@ -1,0 +1,209 @@
+name: Dev environment — drift check (is it running main?)
+
+# Answers one question, by measurement rather than inference: is the deployed environment running the
+# code that is on `main`, and if not, make it so.
+#
+# ─────────────────────────────────────────────────────────────────────────────────────────────────
+# WHY THIS EXISTS WHEN .NET CI ALREADY DEPLOYS ON MERGE
+#
+# The `deploy-dev` stage deploys when the `changes` job's `deployable` path filter matches. That filter
+# is a hand-maintained ALLOWLIST, so it can only ever be as complete as whoever last edited it — and it
+# fails silently in the dangerous direction: a path nobody listed just stops deploying, with every job
+# green. It also cannot notice a deploy that failed after CI went green, an environment somebody stopped
+# by hand, or a dispatch that shipped an old branch.
+#
+# So correctness cannot come from the filter being right. It comes from comparing what is DEPLOYED to
+# what is on `main`. That is a measurement, it catches every one of the causes above with one mechanism,
+# and it costs a single `az group show` when the two agree. The filter is downgraded to what it should
+# always have been: a latency optimisation that gets the common case deployed within minutes of merge.
+#
+# ─────────────────────────────────────────────────────────────────────────────────────────────────
+# WHY AN INERT DENYLIST AND NOT THE `deployable` ALLOWLIST
+#
+# Reusing `deployable` here would reproduce its blind spot exactly: a path missing from the list would be
+# missing from the drift check too, and the two would agree that nothing needs deploying while dev ran
+# stale code. So this inverts the default. Everything is treated as affecting the deployed environment
+# UNLESS it is on a short list of paths that provably cannot — documentation, the mobile app, test
+# projects, CI definitions, the Bruno collection.
+#
+# The consequence is the one worth having: a NEW project directory, or a new file at the repository root,
+# counts as deployable the moment it exists, without anybody remembering to add it anywhere. `unknown`
+# means deploy. `DevEnvDriftTest` asserts no service the AppHost declares can be written onto the inert
+# list.
+
+on:
+  schedule:
+    # Hourly, offset off the top of the hour to avoid the global runner rush. An hour is the worst-case
+    # window in which dev can be behind `main` without anybody being told, and merges that touch a
+    # `deployable` path are already deployed by .NET CI within minutes — this is the backstop, not the
+    # primary path.
+    - cron: "17 * * * *"
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Environment to check"
+        required: false
+        default: dev
+        type: string
+      heal:
+        description: "Redeploy if drift is found. Uncheck to report only."
+        required: false
+        default: true
+        type: boolean
+
+permissions:
+  id-token: write
+  contents: read
+
+# ⚠️ A THIRD distinct group. It must not be `deploy-<env>` or `redeploy-<env>`: this workflow calls
+# dev-redeploy.yml, which calls deploy.yml, and sharing a group with either child deadlocks the parent
+# against its own descendant — a job that never starts, with no log and no check run. That exact defect
+# cost run 358. `DevEnvDriftTest` asserts all three groups differ.
+concurrency:
+  group: drift-${{ inputs.environment || 'dev' }}
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    environment: ${{ inputs.environment || 'dev' }}
+    outputs:
+      drift: ${{ steps.compare.outputs.drift }}
+      reason: ${{ steps.compare.outputs.reason }}
+      deployed: ${{ steps.compare.outputs.deployed }}
+      target: ${{ steps.compare.outputs.target }}
+
+    steps:
+      # `main` explicitly, and full history: the question is always "is dev in sync with main", including
+      # when a human dispatches this from a topic branch. `git diff A..B` needs both commits present,
+      # which checkout's default depth of 1 does not give.
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Azure login (this environment's own federated identity)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Compare the deployed commit with main
+        id: compare
+        env:
+          RESOURCE_GROUP: rg-agenda-buddy-${{ inputs.environment || 'dev' }}
+        run: |
+          set -uo pipefail
+
+          target=$(git rev-parse HEAD)
+          echo "target=$target" >> "$GITHUB_OUTPUT"
+          echo "main is at $target"
+
+          deployed=$(az group show --name "$RESOURCE_GROUP" --query "tags.deployedSha" -o tsv 2>/dev/null || echo "")
+          echo "deployed=$deployed" >> "$GITHUB_OUTPUT"
+
+          drift() { echo "drift=true"  >> "$GITHUB_OUTPUT"; echo "reason=$1" >> "$GITHUB_OUTPUT"; echo "DRIFT: $1"; exit 0; }
+          sync()  { echo "drift=false" >> "$GITHUB_OUTPUT"; echo "reason=$1" >> "$GITHUB_OUTPUT"; echo "IN SYNC: $1"; exit 0; }
+
+          # No tag at all. Either this environment has never been deployed by a workflow that stamps one,
+          # or the last deploy failed before its smoke test passed. Both mean "we do not know what is
+          # running", and the safe reading of that is to deploy — never to assume it is current.
+          if [ -z "$deployed" ]; then
+            drift "the resource group carries no deployedSha tag, so what is running there is unknown"
+          fi
+
+          if [ "$deployed" = "$target" ]; then
+            sync "dev is running $target, which is main"
+          fi
+
+          # A sha that is not in this repository's history — a force-push, or a deploy from a branch that
+          # has since been deleted. Nothing can be diffed against it, so it is drift by definition.
+          if ! git cat-file -e "${deployed}^{commit}" 2>/dev/null; then
+            drift "deployed sha $deployed is not a commit in this repository"
+          fi
+
+          # ── The inert list ──────────────────────────────────────────────────────────────────────
+          # Paths that cannot change what a deployed container serves. Everything else counts.
+          # Kept as one anchored ERE rather than git pathspecs because `:(exclude)` globbing rules are
+          # subtle enough that a wrong pattern silently excludes nothing, or everything.
+          INERT='^docs/|^bruno/|^\.github/|^scripts/|^compose/|^\.beads/|\.md$|^AgendaBuddy\.MobileApp/|^AgendaBuddy\.MobileApp\.Tests/|^AgendaBuddy\.IntegrationTests/|^[^/]+\.Tests/|^docker-compose[^/]*\.yml$|^\.gitignore$|^\.gitleaks\.toml$|^\.editorconfig$|^LICENSE$'
+
+          changed=$(git diff --name-only "$deployed" "$target")
+          if [ -z "$changed" ]; then
+            sync "dev is at $deployed, which has identical content to main"
+          fi
+
+          material=$(printf '%s\n' "$changed" | grep -Ev "$INERT")
+          count=$(printf '%s\n' "$material" | grep -c . )
+
+          {
+            echo "### Drift check — ${{ inputs.environment || 'dev' }}"
+            echo
+            echo "| | commit |"
+            echo "|---|---|"
+            echo "| deployed | \`$deployed\` |"
+            echo "| main | \`$target\` |"
+            echo
+            echo "$(printf '%s\n' "$changed" | grep -c .) file(s) differ, **$count** of them material."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [ "$count" -eq 0 ]; then
+            sync "dev is at $deployed and every file that differs from main is documentation, tests, CI or the mobile app"
+          fi
+
+          {
+            echo
+            echo "<details><summary>Material changes not yet deployed</summary>"
+            echo
+            echo '```'
+            printf '%s\n' "$material"
+            echo '```'
+            echo
+            echo "</details>"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          drift "$count file(s) affecting the deployed services differ between $deployed and main"
+
+  # Deliberately the same sequence a human would run and the same one .NET CI calls — stop, deploy,
+  # restore — rather than a fourth implementation of "deploy". `heal` defaults to true on the schedule
+  # (where `inputs` is empty) because a backstop that only reports is a backstop somebody has to watch.
+  heal:
+    needs: check
+    if: ${{ needs.check.outputs.drift == 'true' && (github.event_name == 'schedule' || inputs.heal) }}
+    uses: ./.github/workflows/dev-redeploy.yml
+    with:
+      environment: ${{ inputs.environment || 'dev' }}
+    secrets: inherit
+
+  report:
+    needs: [check, heal]
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - env:
+          DRIFT: ${{ needs.check.outputs.drift }}
+          REASON: ${{ needs.check.outputs.reason }}
+          HEAL: ${{ needs.heal.result }}
+        run: |
+          {
+            echo "### ${{ inputs.environment || 'dev' }} vs main"
+            echo
+            if [ "$DRIFT" = "true" ]; then
+              echo "**Drift:** $REASON"
+              case "$HEAL" in
+                success) echo; echo "Redeployed. The next hourly check confirms it." ;;
+                skipped) echo; echo "Not redeployed — reporting only." ;;
+                *)       echo; echo "⚠️ The redeploy did **not** succeed (\`$HEAL\`). dev is still behind main." ;;
+              esac
+            else
+              echo "In sync: $REASON"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # A drift that could not be healed is the one state nobody must have to go looking for. In sync, or
+      # healed, is green; anything else is red.
+      - if: ${{ needs.check.outputs.drift == 'true' && needs.heal.result != 'success' && needs.heal.result != 'skipped' }}
+        run: |
+          echo "::error::dev is not running main and the redeploy did not succeed."
+          exit 1
