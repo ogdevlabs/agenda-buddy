@@ -37,7 +37,7 @@ on:
     # window in which dev can be behind `main` without anybody being told, and merges that touch a
     # `deployable` path are already deployed by .NET CI within minutes — this is the backstop, not the
     # primary path.
-    - cron: "17 * * * *"
+    - cron: "0 */12 * * *"
   workflow_dispatch:
     inputs:
       environment:
