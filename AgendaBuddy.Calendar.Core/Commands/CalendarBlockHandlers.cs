@@ -39,9 +39,16 @@ public class BlockCalendarCommandHandler(
                 // The COUNT, not the appointments: this message is the provider's own, but a failure message is
                 // the wrong place to carry customer emails and session times. The conflicts route returns them
                 // to the provider deliberately, guarded, so a client can list them.
-                return Result.Fail<CalendarBlockEntity>(
-                    $"{conflicts.Count} booked session{(conflicts.Count == 1 ? "" : "s")} fall inside this "
-                    + "range. Move or cancel them first, or block it anyway and handle them afterwards.");
+                //
+                // Singular and plural are written out rather than assembled from an "s" -- the verb and the
+                // pronoun change too, and pluralising only the noun produced "1 booked session fall inside".
+                var message = conflicts.Count == 1
+                    ? "1 booked session falls inside this range. Move or cancel it first, or block the range "
+                      + "anyway and handle it afterwards."
+                    : $"{conflicts.Count} booked sessions fall inside this range. Move or cancel them first, or "
+                      + "block the range anyway and handle them afterwards.";
+
+                return Result.Fail<CalendarBlockEntity>(message);
             }
         }
 

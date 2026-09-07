@@ -183,7 +183,7 @@ public class CalendarModule : ICarterModule
 
                 // 409 for "sessions are in the way" -- the request is well-formed and conflicts with state the
                 // provider can resolve. 400 for a malformed range, which no amount of resolving will fix.
-                return messages.Any(message => message.Contains("fall inside this range"))
+                return messages.Any(message => message.Contains("inside this range"))
                     ? TypedResults.Conflict(DataResponse<CalendarBlockEntity>.Fail(messages))
                     : TypedResults.BadRequest(DataResponse<CalendarBlockEntity>.Fail(messages));
             })

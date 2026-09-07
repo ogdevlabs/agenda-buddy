@@ -154,8 +154,8 @@ public partial class TimeOffViewModel : ObservableObject
     public string ConflictMessage => ConflictCount switch
     {
         null or 0 => string.Empty,
-        1 => "1 booked session falls inside this range. Blocking it will not cancel the session — move or cancel "
-             + "it yourself.",
+        1 => "1 booked session falls inside this range. Blocking it will not cancel that session — move or "
+             + "cancel it yourself.",
         _ => $"{ConflictCount} booked sessions fall inside this range. Blocking it will not cancel them — move "
              + "or cancel them yourself."
     };

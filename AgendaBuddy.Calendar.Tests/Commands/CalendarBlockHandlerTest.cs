@@ -108,7 +108,10 @@ public class CalendarBlockHandlerTest
 
         var result = await handler.Handle(Command(), CancellationToken.None);
 
-        Assert.Contains("1 booked session fall", result.Errors[0].Message);
+        Assert.Contains("1 booked session falls inside", result.Errors[0].Message);
+
+        // The verb and the pronoun agree too: pluralising only the noun gave "1 session fall".
+        Assert.Contains("cancel it first", result.Errors[0].Message);
     }
 
     /// <summary>
