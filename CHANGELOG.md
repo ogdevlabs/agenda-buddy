@@ -18,8 +18,39 @@ All notable changes to this project are documented in this file, in [Keep a Chan
   of any kind deploy.
 
 
+### Added
+
+- **F-031**: `.github/workflows/dev-env-drift.yml` — **"dev is running `main`" is now a measured fact.** A
+  successful deploy stamps its commit onto the resource group (`deployedSha`, **after** the smoke test, so it
+  means *deployed and serving*), and an hourly check reads it back, diffs it against `main`, and calls
+  `dev-redeploy.yml` when anything material differs. Nothing previously recorded what a deployed environment
+  was running — CLAUDE.md's advice was to infer it from `deploy.yml`'s run history, which is how dev sat three
+  days behind `main` and produced three bug reports against already-fixed behaviour.
+  - **Why a check and not a better path filter.** `deploy-dev` fires off the `deployable` **allowlist**, which
+    can only be as complete as whoever last edited it and fails in the silent direction: a path nobody listed
+    just stops deploying, with every job green. It also cannot notice a deploy that failed after CI went green
+    (exactly what happened on the first real redeploy), an environment stopped by hand, or a dispatch that
+    shipped an old branch. Comparing deployed-to-`main` catches all four with one mechanism, and costs a
+    single `az group show` when they agree. **The filter is demoted to a latency optimisation** — a miss now
+    costs up to an hour of staleness instead of going unnoticed indefinitely.
+  - **Inert denylist, not the `deployable` allowlist.** Reusing that list would reproduce its blind spot
+    exactly, with the drift check confirming nothing needs deploying while dev ran stale code. Everything is
+    therefore deployable *unless* it is on a short list of paths that provably cannot change what a container
+    serves (`docs/`, `bruno/`, `.github/`, `scripts/`, `compose/`, `.beads/`, `*.md`, `AgendaBuddy.MobileApp*/`,
+    `*.Tests/`, `AgendaBuddy.IntegrationTests/`, compose files). **A new project is deployable the moment it
+    exists**, with nobody registering it anywhere. An absent or unrecognisable stamp is read as drift, never
+    as current — unknown means redeploy. `DevEnvDriftTest` (39 tests) asserts no AppHost-declared service and
+    no shared project can be written onto the inert list, and validates the pattern under both .NET's regex
+    engine and `grep -E`, which is what the workflow actually runs.
+
 ### Fixed
 
+- **F-031**: `AutoDeployPathFilterTest.TheSequenceAndTheDeployDoNotShareAConcurrencyGroup` compared the
+  concurrency groups as **raw text**, so `redeploy-${{ inputs.environment || 'dev' }}` and
+  `redeploy-${{ inputs.environment }}` read as different groups while both resolve to `redeploy-dev` and
+  deadlock identically. Found by negative-testing the new drift check against it: renaming the drift group to
+  the redeploy one left the test green. Both tests now normalise `${{ … }}` away before comparing. This is the
+  guard that was supposed to stop run 358's defect class recurring, and it would not have.
 - **F-031**: `azd deploy` could never have worked without `azd provision`, so `provision: false` — the mode
   **both** `dev-redeploy.yml` and .NET CI's `deploy-dev` stage use — had never once succeeded. `.azure/` is
   gitignored and a runner is ephemeral, so the workflow's `azd env new` created an *empty* azd environment on

@@ -362,3 +362,31 @@ jobs:
           done
 
           echo "Gateway healthy: both /health and /alive returned 200 over HTTPS."
+
+      # ── What is actually running here ───────────────────────────────────────────────────────────
+      #
+      # Until this existed there was NO way to ask a deployed environment which commit it was running.
+      # The nearest thing was reading deploy.yml's run history and inferring, which is how the dev
+      # environment sat three days behind `main` and produced three "notifications are broken" reports
+      # against behaviour that was already fixed.
+      #
+      # Deliberately AFTER the smoke test: the tag asserts "this commit is deployed and serving", so a
+      # deploy whose gateway never answered must not claim it. An absent or stale tag is then read as
+      # drift by dev-env-drift.yml, which is the safe direction — unknown means redeploy.
+      #
+      # `--operation merge` because azd stamps its own `azd-env-name` tag on this same group and a
+      # wholesale `--tags` replace would delete it. Safe against Terraform: the resource group already
+      # declares `lifecycle { ignore_changes = [tags] }` for exactly that reason.
+      - name: Stamp the deployed commit on the resource group
+        if: success()
+        env:
+          RESOURCE_GROUP: ${{ steps.tf.outputs.resource_group_name }}
+          DEPLOYED_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          rg_id=$(az group show --name "$RESOURCE_GROUP" --query id -o tsv)
+          az tag update --resource-id "$rg_id" --operation merge --only-show-errors -o none \
+            --tags "deployedSha=$DEPLOYED_SHA" \
+                   "deployedRun=${{ github.run_id }}" \
+                   "deployedAt=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          echo "$RESOURCE_GROUP is now recorded as running $DEPLOYED_SHA." >> "$GITHUB_STEP_SUMMARY"

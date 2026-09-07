@@ -398,18 +398,11 @@ public class AutoDeployPathFilterTest
         Assert.Contains("cancel-in-progress: false", Workflow(workflow), StringComparison.Ordinal);
     }
 
-    /// <summary>The workflow-level <c>concurrency.group</c> expression, verbatim.</summary>
-    private static string ConcurrencyGroup(string name)
-    {
-        var lines = Workflow(name).Split('\n');
-        var start = Array.FindIndex(lines, l => l.StartsWith("concurrency:", StringComparison.Ordinal));
-        Assert.True(start >= 0, $"{name} declares no workflow-level `concurrency:` block.");
-
-        var group = Array.Find(lines[start..], l => l.TrimStart().StartsWith("group:", StringComparison.Ordinal));
-        Assert.NotNull(group);
-
-        return group!.Trim();
-    }
+    /// <summary>
+    /// The workflow-level <c>concurrency.group</c>, with <c>${{ … }}</c> expressions normalised away —
+    /// see <see cref="DevEnvDriftTest.ConcurrencyGroup"/> for why comparing the raw text is not enough.
+    /// </summary>
+    private static string ConcurrencyGroup(string name) => DevEnvDriftTest.ConcurrencyGroup(name);
 
     // ── Push credentials reach a deployed environment ──────────────────────────────────────────────
 
