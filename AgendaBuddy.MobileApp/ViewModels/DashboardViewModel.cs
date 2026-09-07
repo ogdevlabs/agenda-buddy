@@ -173,11 +173,16 @@ public partial class DashboardViewModel : ObservableObject
 
             AppointmentsLoaded?.Invoke(this, EventArgs.Empty);
         }
-        catch (Exception)
+        catch (Exception exception)
         {
             // Real failure (network, timeout, malformed response, ambiguous write, etc.) — surface it
             // through the error banner rather than masking it with fabricated data.
             ErrorMessage = "Could not load appointments. Check your connection and try again.";
+
+            // The banner deliberately says nothing technical, which means a genuine fault -- a parse error, a
+            // null reference -- is indistinguishable from a dropped connection to anyone reading the screen.
+            // Logged so it is at least distinguishable to whoever is looking at the console.
+            Console.WriteLine($"DASHBOARD LOAD FAILED: {exception}");
         }
         finally
         {

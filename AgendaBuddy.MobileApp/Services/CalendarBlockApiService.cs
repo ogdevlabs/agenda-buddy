@@ -174,7 +174,10 @@ public class CalendarBlockApiService(
 
     private static bool TryReadUtc(JsonElement element, string propertyName, out DateTime value)
     {
-        if (element.TryGetProperty(propertyName, out var property) && property.TryGetDateTime(out var parsed))
+        // ValueKind first: TryGetDateTime THROWS on a JSON null rather than returning false, despite the name.
+        if (element.TryGetProperty(propertyName, out var property)
+            && property.ValueKind == JsonValueKind.String
+            && property.TryGetDateTime(out var parsed))
         {
             value = parsed.Kind == DateTimeKind.Unspecified
                 ? DateTime.SpecifyKind(parsed, DateTimeKind.Utc)

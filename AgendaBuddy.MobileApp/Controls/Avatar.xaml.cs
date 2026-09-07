@@ -45,10 +45,19 @@ public partial class Avatar : ContentView
     /// Half the edge, so the clip is a circle at any size.
     /// </summary>
     /// <remarks>
+    /// <para>
     /// Derived rather than exposed: a radius that can be set independently of the size is a radius that can be
     /// set wrong, and every avatar in this app is round.
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>Typed <see cref="Microsoft.Maui.CornerRadius"/>, not <c>double</c>.</b> That is what
+    /// <c>RoundRectangle.CornerRadius</c> takes, and a binding does NOT run the XAML type converter that makes
+    /// a literal <c>CornerRadius="24"</c> work. Bound as a double it silently fails to apply, the stroke shape
+    /// never resolves, and every row using this control renders blank — which looked like the whole list failing
+    /// to load rather than one property failing to convert.
+    /// </para>
     /// </remarks>
-    public double Radius => Size / 2d;
+    public Microsoft.Maui.CornerRadius Radius => new(Size / 2d);
 
     public Avatar() => InitializeComponent();
 

@@ -81,7 +81,11 @@ public class CalendarApiService : ICalendarApiService
                 BookedSlots = bookedByDate[date]
                     .OrderBy(a => a.ScheduledAt)
                     .Select(a => new BookedSlot(
-                        $"{a.ScheduledAt:h:mm tt} — {(_session.IsProvider ? a.CustomerEmail : a.ProviderEmail)}",
+                        // DisplayName, not the raw address: the directory pass above already resolved the
+                        // counterpart's real name, and the dashboard shows it -- so the calendar was the one
+                        // surface still identifying somebody by their email. Falls back to the address when the
+                        // directory could not be read, which is what every row showed before.
+                        $"{a.ScheduledAt:h:mm tt} — {(string.IsNullOrWhiteSpace(a.DisplayName) ? a.ContactEmail : a.DisplayName)}",
 
                         // The appointment's own recorded length, which has been on the wire all along and was
                         // simply never read here.
@@ -151,8 +155,10 @@ public class CalendarApiService : ICalendarApiService
             || data.ValueKind != JsonValueKind.Array)
             return result;
 
+        // ValueKind first: TryGetDateTime throws on a null element rather than returning false. Availability
+        // never contains one today, but the guard costs nothing and the trap is not obvious from the name.
         foreach (var element in data.EnumerateArray())
-            if (element.TryGetDateTime(out var dt))
+            if (element.ValueKind == JsonValueKind.String && element.TryGetDateTime(out var dt))
                 result.Add(dt);
 
         return result;
@@ -318,8 +324,19 @@ public class CalendarApiService : ICalendarApiService
             ? value.GetInt32()
             : null;
 
+    /// <summary>
+    /// A date property, or <c>default</c> when it is absent, null, or unparseable.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b><c>ValueKind</c> is checked BEFORE <c>TryGetDateTime</c>, and that is not belt and braces.</b>
+    /// <c>JsonElement.TryGetDateTime</c> does not return false for a JSON <c>null</c> — it THROWS
+    /// <c>InvalidOperationException</c> ("requires an element of type 'String', but the target element has type
+    /// 'Null'"). The name says Try, so it reads as safe.
+    /// </remarks>
     private static DateTime GetDateTime(JsonElement element, string propertyName) =>
-        element.TryGetProperty(propertyName, out var value) && value.TryGetDateTime(out var dt)
+        element.TryGetProperty(propertyName, out var value)
+        && value.ValueKind == JsonValueKind.String
+        && value.TryGetDateTime(out var dt)
             ? dt
             : default;
 
@@ -327,11 +344,21 @@ public class CalendarApiService : ICalendarApiService
     /// A date that may legitimately be absent, kept distinct from <see cref="GetDateTime"/>'s <c>default</c>.
     /// </summary>
     /// <remarks>
+    /// <para>
     /// <c>default(DateTime)</c> and "no proposal outstanding" are different facts, and conflating them would make
     /// every appointment look as though it carried a proposal for year 1.
+    /// </para>
+    /// <para>
+    /// ⚠️ The <c>ValueKind</c> check is load-bearing. The server serialises an unset proposal as
+    /// <c>"proposedStart": null</c> — present, not absent — and <c>TryGetDateTime</c> THROWS on a null element
+    /// rather than returning false. Without it, every appointment read failed the moment the reschedule fields
+    /// shipped, and the dashboard reported "check your connection" on a perfectly good response.
+    /// </para>
     /// </remarks>
     private static DateTime? GetNullableDateTime(JsonElement element, string propertyName) =>
-        element.TryGetProperty(propertyName, out var value) && value.TryGetDateTime(out var dt)
+        element.TryGetProperty(propertyName, out var value)
+        && value.ValueKind == JsonValueKind.String
+        && value.TryGetDateTime(out var dt)
             ? dt
             : null;
 

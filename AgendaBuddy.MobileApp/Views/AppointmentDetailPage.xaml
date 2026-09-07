@@ -306,42 +306,39 @@
                                     AutomationId="DeclineRescheduleButton" />
                         </Grid>
 
-                        <!-- The provider MOVES a session; a customer ASKS. Only one is ever visible, because the
-                             calendar belongs to the provider — that asymmetry is the product decision, not a
-                             permissions accident. -->
-                        <controls:SafeButton Text="Reschedule"
-                                Style="{StaticResource PrimaryButton}"
+                        <!-- Confirm: the provider accepting a REQUEST, so it only ever applies to a Requested
+                             session and never sits beside Reschedule or Complete, which are for a Booked one. -->
+                        <controls:SafeButton Text="Confirm"
+                                Style="{StaticResource SuccessButton}"
                                 FontSize="14"
-                                Command="{Binding RescheduleCommand}"
-                                IsVisible="{Binding ShowRescheduleButton}"
+                                Command="{Binding ConfirmCommand}"
                                 IsEnabled="{Binding IsNotLoading}"
-                                AutomationId="RescheduleButton" />
+                                IsVisible="{Binding ShowConfirmButton}"
+                                AutomationId="ConfirmButton" />
 
-                        <controls:SafeButton Text="Request a new time"
-                                Style="{StaticResource PrimaryButton}"
-                                FontSize="14"
-                                Command="{Binding RequestNewTimeCommand}"
-                                IsVisible="{Binding ShowRequestNewTimeButton}"
-                                IsEnabled="{Binding IsNotLoading}"
-                                AutomationId="RequestNewTimeButton" />
-
-                        <!-- Confirm (provider accepting a request) and Complete. Confirm is now status-gated too:
-                             it only ever applied to a Requested appointment. -->
+                        <!-- Reschedule and Complete: equal halves, colour-coded by what they DO rather than by
+                             prominence. Amber for rescheduling — it changes a commitment both parties agreed to,
+                             which is neither a success nor a destruction — and green for completing, the one
+                             that closes the session out. Cancel stays the red outline below.
+                             The provider MOVES a session; a customer ASKS, and their button is below, because
+                             the calendar belongs to the provider — that asymmetry is the product decision, not
+                             a permissions accident. -->
                         <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
                             <controls:SafeButton Grid.Column="0"
-                                    Text="Confirm"
-                                    Style="{StaticResource SuccessButton}"
+                                    Text="Reschedule"
+                                    Style="{StaticResource WarningButton}"
                                     FontSize="14"
-                                    Command="{Binding ConfirmCommand}"
+                                    Padding="12,14"
+                                    Command="{Binding RescheduleCommand}"
+                                    IsVisible="{Binding ShowRescheduleButton}"
                                     IsEnabled="{Binding IsNotLoading}"
-                                    IsVisible="{Binding ShowConfirmButton}"
-                                    AutomationId="ConfirmButton" />
+                                    AutomationId="RescheduleButton" />
 
                             <!-- Complete button + activity indicator, matching the Sign In
                                  button/ActivityIndicator overlay pattern on LoginPage. -->
                             <Grid Grid.Column="1">
                                 <controls:SafeButton Text="Complete"
-                                        Style="{StaticResource PrimaryButton}"
+                                        Style="{StaticResource SuccessButton}"
                                         FontSize="14"
                                         Padding="12,14"
                                         Command="{Binding CompleteCommand}"
@@ -356,6 +353,17 @@
                                                    AutomationId="CompleteButtonBusyIndicator" />
                             </Grid>
                         </Grid>
+
+                        <!-- The customer's counterpart to Reschedule. Full width because a customer has no
+                             Complete to sit beside: Complete is a claim about work delivered, which is the
+                             provider's to make. -->
+                        <controls:SafeButton Text="Request a new time"
+                                Style="{StaticResource WarningButton}"
+                                FontSize="14"
+                                Command="{Binding RequestNewTimeCommand}"
+                                IsVisible="{Binding ShowRequestNewTimeButton}"
+                                IsEnabled="{Binding IsNotLoading}"
+                                AutomationId="RequestNewTimeButton" />
 
                         <!-- Cancel. A provider may cancel at any notice; a customer only outside the 24-hour
                              window, and inside it the button is replaced by the reason rather than greyed. -->
@@ -414,11 +422,9 @@
                                    LineBreakMode="WordWrap"
                                    AutomationId="PaymentSummary" />
 
-                            <controls:SafeButton Text="Open payment"
-                                    Style="{StaticResource PrimaryButton}"
-                                    FontSize="14"
-                                    Clicked="OnViewPaymentClicked"
-                                    AutomationId="ViewPaymentButton" />
+                            <!-- No action here on purpose: payments are being handled outside this screen, so
+                                 the tab states what the session costs and nothing more. A button opening a
+                                 payment flow this app is not driving would be an offer it cannot keep. -->
                         </VerticalStackLayout>
                     </Frame>
 

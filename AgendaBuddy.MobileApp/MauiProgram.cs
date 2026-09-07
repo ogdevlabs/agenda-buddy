@@ -59,6 +59,15 @@ public static class MauiProgram
 
 #if DEBUG
         builder.Logging.AddDebug();
+
+        // ⚠️ A FAILED BINDING IS OTHERWISE SILENT, and that is how a broken list looks like a broken feature.
+        //
+        // Binding a double to RoundRectangle.CornerRadius did not apply — a binding does not run the XAML type
+        // converter that makes a literal work — so the avatar's stroke shape never resolved and every row using
+        // it rendered blank. Nothing was logged, the data was fine, and the symptom read as "the calendar does
+        // not load". BindingDiagnostics turns that into a console line naming the property.
+        Microsoft.Maui.Controls.Xaml.Diagnostics.BindingDiagnostics.BindingFailed += (_, failure) =>
+            Console.WriteLine($"BINDING FAILED: {failure.Message}");
 #endif
 
         // Secure storage abstraction

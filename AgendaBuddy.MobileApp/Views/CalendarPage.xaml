@@ -83,9 +83,12 @@
 
             <!-- Day selector strip -->
             <Grid Grid.Row="1" BackgroundColor="White" Padding="0,0,0,12">
+                <!-- SelectionMode="None" and a tap instead: with "Single", iOS draws its OWN grey selected-cell
+                     background, which appeared as a grey rectangle behind the red circle this template already
+                     draws for the selected day. Two selection visuals, one of them wrong. Selection still lives
+                     on the view model, which is what the red circle binds to. -->
                 <CollectionView ItemsSource="{Binding Days}"
-                                SelectionMode="Single"
-                                SelectedItem="{Binding SelectedDay}"
+                                SelectionMode="None"
                                 HeightRequest="76"
                                 Margin="12,0">
                     <CollectionView.ItemsLayout>
@@ -94,6 +97,11 @@
                     <CollectionView.ItemTemplate>
                         <DataTemplate>
                             <Grid WidthRequest="52" HeightRequest="72">
+                                <Grid.GestureRecognizers>
+                                    <TapGestureRecognizer
+                                        Command="{Binding Source={x:Reference ThisPage}, Path=BindingContext.SelectDayCommand}"
+                                        CommandParameter="{Binding}" />
+                                </Grid.GestureRecognizers>
                                 <VerticalStackLayout VerticalOptions="Center"
                                                      HorizontalOptions="Center"
                                                      Spacing="4">

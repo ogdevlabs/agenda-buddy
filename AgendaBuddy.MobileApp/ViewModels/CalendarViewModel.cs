@@ -133,6 +133,21 @@ public partial class CalendarViewModel : ObservableObject
             d.IsSelected = d == value;
     }
 
+    /// <summary>
+    /// Selects a day from the strip.
+    /// </summary>
+    /// <remarks>
+    /// The strip drives selection through this rather than through <c>CollectionView.SelectedItem</c>, because
+    /// <c>SelectionMode="Single"</c> also draws iOS's own grey selected-cell background — behind the red circle
+    /// the template already draws for the selected day. Setting the property here keeps the one visual and drops
+    /// the other.
+    /// </remarks>
+    [RelayCommand]
+    private void SelectDay(CalendarDaySummary? day)
+    {
+        if (day is not null) SelectedDay = day;
+    }
+
     [RelayCommand]
     private void ToggleDay(CalendarDaySummary day)
     {

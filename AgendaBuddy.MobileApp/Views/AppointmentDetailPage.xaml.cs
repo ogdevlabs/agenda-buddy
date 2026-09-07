@@ -217,11 +217,9 @@ public partial class AppointmentDetailPage : ContentPage
         await Shell.Current.GoToAsync("..");
     }
 
-    private async void OnViewPaymentClicked(object? sender, EventArgs e)
-    {
-        var nav = new Dictionary<string, object> { ["appointmentId"] = _viewModel.AppointmentId };
-        await Shell.Current.GoToAsync("payment", nav);
-    }
+    // OnViewPaymentClicked removed with the Payment tab's button: payments are being handled outside this
+    // screen. PaymentPage and its Shell route are left in place — nothing navigates to them from here now, and
+    // deleting a working screen for a redesign that has not landed yet would be throwing it away early.
 
     private void OnUnauthorizedAccess(object? sender, EventArgs e)
     {
