@@ -336,11 +336,38 @@ if [ "$run_app" = "1" ]; then
   # cross-targeting wrapper project. The outer wrapper forwards Build but not Run — "-t:Run" on it fails
   # with MSB4057 ("The target does not exist"). "-f" selects the inner per-TFM build directly, where the
   # iOS SDK's own targets (and Run) are actually imported.
+  # ⚠️ RESTORE FIRST, WITHOUT /p:MobileWorkloads=false.
+  #
+  # Running the integration suite (or the mobile tests) with that flag leaves
+  # AgendaBuddy.MobileApp/obj restored to a net10.0-ONLY TargetFrameworks set. The iOS build below then
+  # finds nothing to do and `-t:Run` happily launches whatever .app is already on disk — so the simulator
+  # shows a build that can be days old while every local suite passes. It is silent in both directions:
+  # the build prints success and the app starts.
+  dotnet restore "$REPO_ROOT/AgendaBuddy.MobileApp/AgendaBuddy.MobileApp.csproj" >/dev/null
+
+  local app_binary="$REPO_ROOT/AgendaBuddy.MobileApp/bin/Debug/net10.0-ios/$rid/AgendaBuddy.MobileApp.app/AgendaBuddy.MobileApp"
+  local newest_source
+  newest_source=$(find "$REPO_ROOT/AgendaBuddy.MobileApp" \
+    \( -name '*.cs' -o -name '*.xaml' -o -name '*.csproj' \) \
+    -not -path '*/obj/*' -not -path '*/bin/*' \
+    -newer "$app_binary" -print -quit 2>/dev/null || true)
+
   dotnet build "$REPO_ROOT/AgendaBuddy.MobileApp/AgendaBuddy.MobileApp.csproj" \
     -f net10.0-ios \
     -p:RuntimeIdentifier="$rid" \
     -t:Run \
     -p:_DeviceName=":v2:udid=$udid"
+
+  # Then PROVE it rebuilt. A source file newer than the binary after a build means the build was skipped,
+  # and the simulator is showing stale UI — the one failure mode of this script that looks like success.
+  if [[ -n "$newest_source" && -f "$app_binary" ]]; then
+    if [[ "$newest_source" -nt "$app_binary" ]]; then
+      say "⚠️  the app binary is OLDER than $(basename "$newest_source") — the build was skipped."
+      say "    The simulator is running stale UI. Clean and retry:"
+      say "      rm -rf AgendaBuddy.MobileApp/obj AgendaBuddy.MobileApp/bin && ./scripts/run-ios.sh"
+      return 1
+    fi
+  fi
 
   cat <<EOF
 
