@@ -4,6 +4,7 @@ using AgendaBuddy.Library.Repositories;
 using AgendaBuddy.Library.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using MongoDB.Driver;
 
 namespace AgendaBuddy.Library.Extensions;
@@ -93,8 +94,16 @@ public static class NotificationDeliveryExtensions
 
         var options = configuration.GetSection(PushOptions.Section).Get<PushOptions>() ?? new PushOptions();
 
-        if (!string.IsNullOrWhiteSpace(options.FirebaseProjectId)
-            && !string.IsNullOrWhiteSpace(options.ServiceAccountJson))
+        var configured = !string.IsNullOrWhiteSpace(options.FirebaseProjectId)
+                         && !string.IsNullOrWhiteSpace(options.ServiceAccountJson);
+
+        // Only meaningful when something was supplied — "absent" and "unreadable" are different states and get
+        // different messages.
+        string? credentialProblem = null;
+        var readable = configured
+                       && FcmPushSender.CanReadServiceAccount(options.ServiceAccountJson!, out credentialProblem);
+
+        if (readable)
         {
             // Named client so an outbound push timeout cannot be confused with a service-to-service one, and so
             // the resilience defaults ServiceDefaults applies to service discovery do not retry a send.
@@ -105,6 +114,33 @@ public static class NotificationDeliveryExtensions
         }
         else
         {
+            // ⚠️ A credential that is present but UNREADABLE degrades push to its documented off state; it does
+            // not take the process's notification-dispatching routes with it.
+            //
+            // FcmPushSender is a lazily-resolved singleton whose constructor throws on a malformed credential, so
+            // that throw landed on the first request needing a notification — and INotificationDispatcher is
+            // injected into the Booking handlers as well as MessageModule, so appointment booking, cancellation,
+            // status changes AND messaging all answered 502 over a credential only push reads. Push is
+            // best-effort by contract (DispatchAsync never throws, every channel is independent); a channel that
+            // cannot be constructed has to fail the same way a channel that cannot deliver does.
+            if (credentialProblem is not null)
+            {
+                services.AddSingleton<IPushSender>(provider =>
+                {
+                    provider.GetService<ILoggerFactory>()
+                        ?.CreateLogger(typeof(NotificationDeliveryExtensions))
+                        .LogError(
+                            "push.credential-unreadable: {Key} is set but could not be read ({Problem}), so push "
+                            + "is disabled. Supply the service-account JSON raw, or base64-encoded.",
+                            $"{PushOptions.Section}:{nameof(PushOptions.ServiceAccountJson)}",
+                            credentialProblem);
+
+                    return ActivatorUtilities.CreateInstance<UnconfiguredPushSender>(provider);
+                });
+
+                return services;
+            }
+
             services.AddSingleton<IPushSender, UnconfiguredPushSender>();
         }
 

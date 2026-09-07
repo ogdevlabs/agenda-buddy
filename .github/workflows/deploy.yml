@@ -215,7 +215,7 @@ jobs:
           # form, and they keep their original casing (IdentityDb, not identity_db). Read them off
           # `azd provision --preview --no-prompt`, which lists every parameter with both spellings.
           python3 - <<'PY'
-          import json, os, pathlib, subprocess, sys
+          import base64, json, os, pathlib, subprocess, sys
 
           vault = os.environ["KEY_VAULT_NAME"]
           env_name = os.environ["AZD_ENV"]
@@ -259,10 +259,27 @@ jobs:
               # az strips no trailing newline of its own, but tsv output appends one.
               value = result.stdout.rstrip("\n")
 
+              # ⚠️ A JSON-shaped secret CANNOT go through the \n-escaping below. Bicep treats \n inside a
+              # string literal as an escape and UN-escapes it when parsing, so whatever is escaped here comes
+              # back out as a real newline on the other side. For the two PEM keys that round-trip is
+              # harmless — a PEM does not care, and their readers call .Replace("\\n", "\n") anyway. For the
+              # service-account JSON it is fatal: the private_key field's OWN \n escapes are un-escaped into
+              # raw newlines INSIDE a JSON string, which is invalid JSON, so FcmPushSender's constructor threw
+              # on a credential that was correct when it left the vault. Because that sender is a lazily
+              # resolved singleton, the throw landed on the first request needing a notification — taking out
+              # appointment booking, cancellation, status changes and messaging, all with a gateway 502.
+              #
+              # Base64 has no newlines and no escape sequences, so nothing in the azd/Bicep chain can
+              # reinterpret it. FcmPushSender.DecodeServiceAccountJson accepts either form, so a laptop's user
+              # secrets can still hold plain JSON.
+              if param == "push_service_account_json":
+                  parameters[param] = base64.b64encode(value.encode("utf-8")).decode("ascii")
+                  continue
+
               # azd writes each parameter into a per-service main.bicepparam as a single-line
               # string literal, and Bicep rejects a raw newline inside one ("BCP004: The string at
-              # this location is not terminated"). The two PEM keys are the only multiline values.
-              # Escaped here and un-escaped by the services that read them: both
+              # this location is not terminated"). The two PEM keys are the only multiline values left
+              # taking this path. Escaped here and un-escaped by the services that read them: both
               # AuthenticationExtensions and IdentityService.ReadPrivateKeyPem already call
               # .Replace("\\n", "\n") for exactly this case.
               parameters[param] = value.replace("\n", "\\n")
