@@ -1616,9 +1616,12 @@ the operation that triggered it, and on the reset path a 500 would confirm to an
 account (see that class's own remarks). So there is no runtime signal for either failure, and the only place the
 correct value can be defended is a test.
 
-**Consequences.** ⚠️ **`fererelabs.com` must be verified in the Resend dashboard — domain, DKIM and SPF
-records — or every send is rejected**, silently, for the reason above. That is a human action outside this
-repository, and it is a hard prerequisite for email working at all in any environment. Development against a
+**Consequences.** `fererelabs.com` must be verified in the Resend dashboard — domain, DKIM and SPF records —
+or every send is rejected, silently, for the reason above. **✅ Done and confirmed 2026-09-07** (verified before
+this ADR was written, and already serving another product): DKIM resolves at `resend._domainkey.fererelabs.com`
+and `send.fererelabs.com` carries the SPF record and the SES feedback MX, which is Resend's root-domain setup.
+Verify with `dig +short TXT resend._domainkey.fererelabs.com` rather than by asking — this was raised as an
+outstanding prerequisite twice after it had already been satisfied. Development against a
 Resend account whose owner address was the test recipient no longer works by accident; a developer wanting that
 sets `Email:FromAddress` explicitly, which is now a visible, deliberate override rather than the default.
 
