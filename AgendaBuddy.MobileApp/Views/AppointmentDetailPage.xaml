@@ -117,6 +117,15 @@
                                        FontSize="16"
                                        FontAttributes="Bold"
                                        TextColor="{StaticResource Primary}" />
+
+                                <!-- Where it was before it was moved. Without this a rescheduled session reads
+                                     exactly as one that was always at this time, so somebody who half-remembers
+                                     the old slot has no way to confirm the change was real. -->
+                                <Label Text="{Binding PreviousTimeLabel}"
+                                       IsVisible="{Binding WasRescheduled}"
+                                       FontSize="12"
+                                       TextColor="{StaticResource TextMuted}"
+                                       AutomationId="PreviousTimeLabel" />
                             </VerticalStackLayout>
 
                             <BoxView HeightRequest="1" Color="#EEF1F6" />
@@ -233,50 +242,138 @@
                 </VerticalStackLayout>
             </ScrollView>
 
-            <!-- Action buttons -->
+            <!-- ACTION ROW.
+                 Reworked from a fixed 3-column Grid (Confirm / Cancel / Complete), which was already full and
+                 could not take Reschedule, Request new time, Approve and Decline. Every action is now visibility-
+                 gated on the appointment's status AND the reader's role, laid out in wrapping rows rather than
+                 fixed columns, so the row shows exactly what is actually available and nothing else.
+
+                 Every gate HIDES rather than disables. A greyed button with no explanation reads as broken, and a
+                 button the server will refuse is worse: an ungated affordance is what made a messaging 403
+                 surface to the user as a connection failure. Where an action is withheld for a reason the reader
+                 can act on — the cancellation window having closed — the reason takes its place. -->
             <Frame Grid.Row="2"
                    BackgroundColor="White"
                    CornerRadius="0"
                    BorderColor="#E2E8F0"
                    HasShadow="True"
-                   Padding="20,16">
-                <Grid ColumnDefinitions="*,*,*" ColumnSpacing="10">
+                   Padding="20,14">
+                <VerticalStackLayout Spacing="10">
 
-                    <controls:SafeButton Grid.Column="0"
-                            Text="Confirm"
-                            Style="{StaticResource SuccessButton}"
-                            Command="{Binding ConfirmCommand}"
+                    <!-- A proposal is outstanding. Worded entirely differently by who is waiting on whom, and it
+                         always restates where the session STILL is: a proposed time is not the appointment. -->
+                    <Frame IsVisible="{Binding HasPendingReschedule}"
+                           BackgroundColor="#FFFBEB" BorderColor="#F59E0B" CornerRadius="12"
+                           HasShadow="False" Padding="14">
+                        <Label Text="{Binding PendingRescheduleMessage}" FontSize="13"
+                               TextColor="{StaticResource TextPrimary}"
+                               AutomationId="PendingRescheduleMessage" />
+                    </Frame>
+
+                    <!-- Approve / Decline, shown only to the party who did NOT propose. The server refuses an
+                         answer from the proposer, so offering it to them would be two buttons that both 409. -->
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="10"
+                          IsVisible="{Binding ShowRescheduleAnswerButtons}">
+                        <controls:SafeButton Grid.Column="0"
+                                Text="Approve new time"
+                                Style="{StaticResource SuccessButton}"
+                                FontSize="14"
+                                Command="{Binding ApproveRescheduleCommand}"
+                                IsEnabled="{Binding IsNotLoading}"
+                                AutomationId="ApproveRescheduleButton" />
+                        <controls:SafeButton Grid.Column="1"
+                                Text="Decline"
+                                Style="{StaticResource DangerButton}"
+                                FontSize="14"
+                                Command="{Binding DeclineRescheduleCommand}"
+                                IsEnabled="{Binding IsNotLoading}"
+                                AutomationId="DeclineRescheduleButton" />
+                    </Grid>
+
+                    <!-- The provider MOVES a session; a customer ASKS. Only one is ever visible, because the
+                         calendar belongs to the provider — that asymmetry is the product decision, not a
+                         permissions accident. -->
+                    <controls:SafeButton Text="Reschedule"
+                            Style="{StaticResource PrimaryButton}"
+                            FontSize="14"
+                            Command="{Binding RescheduleCommand}"
+                            IsVisible="{Binding ShowRescheduleButton}"
                             IsEnabled="{Binding IsNotLoading}"
-                            IsVisible="{Binding ShowConfirmButton}"
-                            AutomationId="ConfirmButton" />
+                            AutomationId="RescheduleButton" />
 
-                    <controls:SafeButton Grid.Column="1"
-                            Text="Cancel"
+                    <controls:SafeButton Text="Request a new time"
+                            Style="{StaticResource PrimaryButton}"
+                            FontSize="14"
+                            Command="{Binding RequestNewTimeCommand}"
+                            IsVisible="{Binding ShowRequestNewTimeButton}"
+                            IsEnabled="{Binding IsNotLoading}"
+                            AutomationId="RequestNewTimeButton" />
+
+                    <!-- Confirm (provider accepting a request) and Complete. Confirm is now status-gated too:
+                         it only ever applied to a Requested appointment. -->
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                        <controls:SafeButton Grid.Column="0"
+                                Text="Confirm"
+                                Style="{StaticResource SuccessButton}"
+                                FontSize="14"
+                                Command="{Binding ConfirmCommand}"
+                                IsEnabled="{Binding IsNotLoading}"
+                                IsVisible="{Binding ShowConfirmButton}"
+                                AutomationId="ConfirmButton" />
+
+                        <!-- Complete button + activity indicator, matching the Sign In
+                             button/ActivityIndicator overlay pattern on LoginPage. -->
+                        <Grid Grid.Column="1">
+                            <controls:SafeButton Text="Complete"
+                                    Style="{StaticResource PrimaryButton}"
+                                    FontSize="14"
+                                    Padding="12,14"
+                                    Command="{Binding CompleteCommand}"
+                                    IsEnabled="{Binding IsNotLoading}"
+                                    IsVisible="{Binding ShowCompleteButtonIdle}"
+                                    AutomationId="CompleteButton" />
+                            <ActivityIndicator IsRunning="{Binding ShowCompletingIndicator}"
+                                               IsVisible="{Binding ShowCompletingIndicator}"
+                                               Color="{StaticResource Primary}"
+                                               HorizontalOptions="Center"
+                                               VerticalOptions="Center"
+                                               AutomationId="CompleteButtonBusyIndicator" />
+                        </Grid>
+                    </Grid>
+
+                    <!-- Cancel. A provider may cancel at any notice; a customer only outside the 24-hour
+                         window, and inside it the button is replaced by the reason rather than greyed. -->
+                    <controls:SafeButton Text="Cancel"
                             Style="{StaticResource DangerButton}"
+                            FontSize="14"
                             Command="{Binding CancelCommand}"
+                            IsVisible="{Binding ShowCancelButton}"
                             IsEnabled="{Binding IsNotLoading}"
                             AutomationId="CancelButton" />
 
-                    <!-- Complete button + activity indicator (ux-review.md 8-state spot-check, finding
-                         P3), matching the Sign In button/ActivityIndicator overlay pattern on LoginPage. -->
-                    <Grid Grid.Column="2">
-                        <controls:SafeButton Text="Complete"
-                                Style="{StaticResource PrimaryButton}"
-                                FontSize="14"
-                                Padding="12,14"
-                                Command="{Binding CompleteCommand}"
-                                IsEnabled="{Binding IsNotLoading}"
-                                IsVisible="{Binding ShowCompleteButtonIdle}"
-                                AutomationId="CompleteButton" />
-                        <ActivityIndicator IsRunning="{Binding ShowCompletingIndicator}"
-                                           IsVisible="{Binding ShowCompletingIndicator}"
-                                           Color="{StaticResource Primary}"
-                                           HorizontalOptions="Center"
-                                           VerticalOptions="Center"
-                                           AutomationId="CompleteButtonBusyIndicator" />
-                    </Grid>
+                    <!-- Shown while cancelling is still possible, so the deadline is not discovered by being
+                         refused. -->
+                    <Label Text="{Binding CancellationDeadlineMessage}"
+                           IsVisible="{Binding ShowCancellationDeadlineNotice}"
+                           FontSize="11" TextColor="{StaticResource TextMuted}"
+                           HorizontalTextAlignment="Center"
+                           AutomationId="CancellationDeadlineMessage" />
 
-                </Grid>
+                    <!-- And in place of the button once it has passed. A missing button with no explanation is
+                         indistinguishable from a bug. -->
+                    <Frame IsVisible="{Binding ShowCancellationClosedNotice}"
+                           BackgroundColor="#F8FAFC" BorderColor="#E2E8F0" CornerRadius="12"
+                           HasShadow="False" Padding="12">
+                        <Label Text="{Binding CancellationClosedMessage}" FontSize="12"
+                               TextColor="{StaticResource TextMuted}"
+                               AutomationId="CancellationClosedMessage" />
+                    </Frame>
+
+                    <ActivityIndicator IsRunning="{Binding IsRescheduling}" IsVisible="{Binding IsRescheduling}"
+                                       Color="{StaticResource Primary}" HorizontalOptions="Center"
+                                       AutomationId="RescheduleBusyIndicator" />
+
+                </VerticalStackLayout>
             </Frame>
 
         </Grid>

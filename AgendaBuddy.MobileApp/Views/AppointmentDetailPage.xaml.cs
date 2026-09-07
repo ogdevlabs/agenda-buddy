@@ -99,8 +99,10 @@ public partial class AppointmentDetailPage : ContentPage
                 break;
 
             case ActionType.Cancel:
+                // The confirmation NAMES the session rather than asking a bare "are you sure?". Cancelled is
+                // terminal (ADR-037), so this is the last chance to notice it is the wrong appointment.
                 var cancelChoice = await DisplayActionSheetAsync(
-                    "Cancel this appointment?",
+                    $"Cancel {SessionDescription()}?",
                     "Keep it",
                     null,
                     "Cancel appointment");
@@ -121,7 +123,75 @@ public partial class AppointmentDetailPage : ContentPage
                 if (completeChoice == "Mark complete")
                     await _viewModel.ExecuteStatusUpdateAsync(AppointmentStatus.Completed);
                 break;
+
+            // Both open the SAME page: the interaction is identical, and RescheduleViewModel words itself from
+            // the session role. Everything it needs travels with the navigation, because this page already holds
+            // the appointment -- passing the id alone would make it re-fetch what was just read, and the service
+            // name is what sizes the slots to the length that was agreed.
+            case ActionType.Reschedule:
+            case ActionType.RequestNewTime:
+                await OpenReschedulePageAsync();
+                break;
+
+            case ActionType.ApproveReschedule:
+                var approveChoice = await DisplayActionSheetAsync(
+                    $"Move this session to {_viewModel.ProposedTimeLabel}?",
+                    "Not now",
+                    null,
+                    "Approve");
+                if (approveChoice == "Approve")
+                    await _viewModel.ExecuteRescheduleAnswerAsync(approve: true);
+                break;
+
+            case ActionType.DeclineReschedule:
+                // Declining is destructive to the other party's request, so it is confirmed too -- and the
+                // confirmation states what declining LEAVES, which is the thing a reader wants to be sure of.
+                var declineChoice = await DisplayActionSheetAsync(
+                    "Decline the new time? The session stays where it is.",
+                    "Not now",
+                    null,
+                    "Decline");
+                if (declineChoice == "Decline")
+                    await _viewModel.ExecuteRescheduleAnswerAsync(approve: false);
+                break;
         }
+    }
+
+    /// <summary>
+    /// Opens the slot picker for this appointment, on the PROVIDER'S calendar whichever side is asking.
+    /// </summary>
+    private async Task OpenReschedulePageAsync()
+    {
+        var appointment = _viewModel.Appointment;
+        if (appointment is null) return;
+
+        var nav = new Dictionary<string, object>
+        {
+            ["appointmentId"] = _viewModel.AppointmentId,
+            ["providerEmail"] = appointment.ProviderEmail,
+            ["serviceName"] = appointment.ServiceName ?? string.Empty,
+
+            // Round-trip format: a Shell query property arrives as text, and a culture-formatted date would be
+            // reinterpreted by whatever the device's culture happens to be on the way back in.
+            ["currentStart"] = appointment.ScheduledAt.ToString("o")
+        };
+
+        await Shell.Current.GoToAsync("reschedule", nav);
+    }
+
+    /// <summary>
+    /// The session in words, for a confirmation that has to be unambiguous about WHICH appointment it means.
+    /// </summary>
+    private string SessionDescription()
+    {
+        var appointment = _viewModel.Appointment;
+        if (appointment is null) return "this appointment";
+
+        var service = string.IsNullOrWhiteSpace(appointment.ServiceName)
+            ? "this session"
+            : appointment.ServiceName;
+
+        return $"{service} on {appointment.ScheduledAt:ddd d MMM 'at' h:mm tt}";
     }
 
     private async void OnBackClicked(object? sender, EventArgs e)

@@ -199,6 +199,13 @@ public class CalendarApiService : ICalendarApiService
             appointment.ScheduledAt = appointment.ScheduledAt.Kind == DateTimeKind.Utc
                 ? appointment.ScheduledAt.ToLocalTime()
                 : appointment.ScheduledAt;
+
+            // The proposed and previous times get the same treatment, or a proposal renders in UTC directly
+            // beside a session rendered locally -- and the whole point of showing both is that they are
+            // comparable. Nothing sends these back: the reschedule routes carry their own instant from the
+            // availability response.
+            appointment.ProposedStart = ToLocal(appointment.ProposedStart);
+            appointment.PreviousStart = ToLocal(appointment.PreviousStart);
         }
 
         return appointments;
@@ -276,7 +283,13 @@ public class CalendarApiService : ICalendarApiService
             // Both are on the wire and were simply never read, so every screen bound to ServiceName
             // rendered an empty row even though the appointment records which service it was booked for.
             ServiceName = GetString(element, "serviceName"),
-            ServiceDurationMinutes = GetInt(element, "serviceDurationMinutes")
+            ServiceDurationMinutes = GetInt(element, "serviceDurationMinutes"),
+
+            // The reschedule fields. Absent on every appointment with nothing outstanding -- the server unsets
+            // them rather than writing null -- so these are nullable reads, not defaults.
+            ProposedStart = GetNullableDateTime(element, "proposedStart"),
+            ProposedBy = GetString(element, "proposedBy"),
+            PreviousStart = GetNullableDateTime(element, "previousStart")
         };
     }
 
@@ -294,6 +307,21 @@ public class CalendarApiService : ICalendarApiService
         element.TryGetProperty(propertyName, out var value) && value.TryGetDateTime(out var dt)
             ? dt
             : default;
+
+    /// <summary>
+    /// A date that may legitimately be absent, kept distinct from <see cref="GetDateTime"/>'s <c>default</c>.
+    /// </summary>
+    /// <remarks>
+    /// <c>default(DateTime)</c> and "no proposal outstanding" are different facts, and conflating them would make
+    /// every appointment look as though it carried a proposal for year 1.
+    /// </remarks>
+    private static DateTime? GetNullableDateTime(JsonElement element, string propertyName) =>
+        element.TryGetProperty(propertyName, out var value) && value.TryGetDateTime(out var dt)
+            ? dt
+            : null;
+
+    private static DateTime? ToLocal(DateTime? value) =>
+        value is { Kind: DateTimeKind.Utc } utc ? utc.ToLocalTime() : value;
 
     private static AppointmentStatus GetStatus(JsonElement element)
     {

@@ -129,7 +129,8 @@ public class BookingApiService : IBookingApiService
         return ExtractDataField(json, "identifier");
     }
 
-    public async Task<bool> CancelAppointmentAsync(string identifier, string emailProvider, string emailCustomer, CancellationToken ct = default)
+    public async Task<AppointmentActionResult> CancelAppointmentAsync(
+        string identifier, string emailProvider, string emailCustomer, CancellationToken ct = default)
     {
         var client = _httpClientFactory.CreateClient("AgendaBuddyApi");
         var route = BookingRouteBuilder.CancelAppointment();
@@ -142,8 +143,122 @@ public class BookingApiService : IBookingApiService
         {
             Content = new StringContent(body, Encoding.UTF8, "application/json")
         };
-        var response = await client.SendAsync(request, ct);
-        return response.IsSuccessStatusCode;
+
+        return await SendAppointmentActionAsync(client, request, ct);
+    }
+
+    public Task<AppointmentActionResult> RescheduleAsync(
+        string identifier, DateTime newStartUtc, CancellationToken ct = default) =>
+        PostAppointmentActionAsync(
+            BookingRouteBuilder.RescheduleAppointment(identifier),
+            BookingRouteBuilder.BuildReschedulePayload(newStartUtc),
+            ct);
+
+    public Task<AppointmentActionResult> RequestRescheduleAsync(
+        string identifier, DateTime proposedStartUtc, CancellationToken ct = default) =>
+        PostAppointmentActionAsync(
+            BookingRouteBuilder.RequestReschedule(identifier),
+            BookingRouteBuilder.BuildReschedulePayload(proposedStartUtc),
+            ct);
+
+    public Task<AppointmentActionResult> AnswerRescheduleAsync(
+        string identifier, bool approve, CancellationToken ct = default) =>
+        PostAppointmentActionAsync(
+            BookingRouteBuilder.AnswerReschedule(identifier),
+            BookingRouteBuilder.BuildAnswerReschedulePayload(approve),
+            ct);
+
+    private async Task<AppointmentActionResult> PostAppointmentActionAsync(
+        RouteSpec route, object payload, CancellationToken ct)
+    {
+        var client = _httpClientFactory.CreateClient("AgendaBuddyApi");
+        using var request = new HttpRequestMessage(route.Method, route.Path)
+        {
+            Content = new StringContent(
+                JsonSerializer.Serialize(payload, JsonOptions), Encoding.UTF8, "application/json")
+        };
+
+        return await SendAppointmentActionAsync(client, request, ct);
+    }
+
+    /// <summary>
+    /// Sends an appointment action and words its outcome.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The server's own message is preferred on a refusal, because these refusals are specific and only the
+    /// server holds what makes them so — the cancellation deadline, whether a slot was taken in between. A
+    /// generic client string in its place throws away the one thing the reader can act on.
+    /// </para>
+    /// <para>
+    /// A transport failure is reported as unreachable and nothing else, so "the server said no" and "the server
+    /// was never reached" cannot arrive worded the same. That distinction is why these return a result rather
+    /// than a bool.
+    /// </para>
+    /// </remarks>
+    private static async Task<AppointmentActionResult> SendAppointmentActionAsync(
+        HttpClient client, HttpRequestMessage request, CancellationToken ct)
+    {
+        try
+        {
+            var response = await client.SendAsync(request, ct);
+            if (response.IsSuccessStatusCode) return AppointmentActionResult.Done();
+
+            // The Gateway names the cluster it could not reach; that is a reachability failure dressed as an HTTP
+            // status, so it is worded as one rather than as a refusal.
+            var failedService = await response.TryReadFailedServiceAsync(ct);
+            if (failedService is not null)
+                return new AppointmentActionResult(false, GatewayErrorMapper.Describe(failedService));
+
+            return AppointmentActionResult.Refused(
+                response.StatusCode, await ReadRefusalMessageAsync(response, ct));
+        }
+        catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException)
+        {
+            return AppointmentActionResult.Unreachable();
+        }
+    }
+
+    /// <summary>
+    /// The server's explanation for a refusal, from either shape these routes answer with.
+    /// </summary>
+    /// <remarks>
+    /// A 409 from the reschedule routes is <c>TypedResults.Conflict(string)</c> — a bare JSON string — while a
+    /// 400 from cancel is a <c>DataResponse&lt;T&gt;</c> whose <c>errors</c> array holds the message. Both are
+    /// read, because picking one would silently lose the other's wording, and the wording is the point.
+    /// </remarks>
+    private static async Task<string?> ReadRefusalMessageAsync(HttpResponseMessage response, CancellationToken ct)
+    {
+        try
+        {
+            var raw = await response.Content.ReadAsStringAsync(ct);
+            if (string.IsNullOrWhiteSpace(raw)) return null;
+
+            using var document = JsonDocument.Parse(raw);
+
+            if (document.RootElement.ValueKind == JsonValueKind.String)
+                return document.RootElement.GetString();
+
+            if (document.RootElement.ValueKind == JsonValueKind.Object
+                && document.RootElement.TryGetProperty("errors", out var errors)
+                && errors.ValueKind == JsonValueKind.Array)
+            {
+                var messages = errors.EnumerateArray()
+                    .Where(error => error.ValueKind == JsonValueKind.String)
+                    .Select(error => error.GetString())
+                    .Where(message => !string.IsNullOrWhiteSpace(message));
+
+                var joined = string.Join(" ", messages);
+                return string.IsNullOrWhiteSpace(joined) ? null : joined;
+            }
+
+            return null;
+        }
+        catch (Exception exception) when (exception is JsonException or InvalidOperationException)
+        {
+            // An unparseable body must not turn a refusal into a crash; the caller's generic wording covers it.
+            return null;
+        }
     }
 
     /// <summary>

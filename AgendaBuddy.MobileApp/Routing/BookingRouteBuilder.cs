@@ -64,6 +64,40 @@ public static class BookingRouteBuilder
     public static object BuildUpdateStatusPayload(AppointmentStatus status) =>
         new { status = status.ToString() };
 
+    // ── Reschedule ────────────────────────────────────────────────────────────────────────────────────
+    //
+    // Three routes, because the two directions are genuinely different acts: a PROVIDER moves a session on
+    // their own calendar, a CUSTOMER asks and the provider answers. Sending a customer down the provider
+    // route earns a 403, and the client must not offer that action to them at all -- an ungated affordance
+    // that produces a server refusal is what made a messaging 403 read as a connection failure.
+
+    /// <summary>The provider moving a booked session outright.</summary>
+    public static RouteSpec RescheduleAppointment(string identifier) =>
+        new(HttpMethod.Post, $"api/v1/booking/appointments/{identifier}/reschedule");
+
+    /// <summary>Either party proposing a new time. The appointment does not move.</summary>
+    public static RouteSpec RequestReschedule(string identifier) =>
+        new(HttpMethod.Post, $"api/v1/booking/appointments/{identifier}/reschedule-request");
+
+    /// <summary>The other party approving or declining an outstanding proposal.</summary>
+    public static RouteSpec AnswerReschedule(string identifier) =>
+        new(HttpMethod.Post, $"api/v1/booking/appointments/{identifier}/reschedule-answer");
+
+    /// <summary>
+    /// Payload shape Booking's <c>RescheduleRequest(DateTime NewStartUtc)</c> binds, for both the reschedule and
+    /// the request routes.
+    /// </summary>
+    /// <remarks>
+    /// <b>The start only.</b> The server carries the session's length across from what was agreed, so a
+    /// reschedule cannot quietly change it — and sending an end here would make that length client-assertable.
+    /// The value must be the server's own UTC instant from the availability response, unchanged: sending a local
+    /// rendering of it books a different time than the one that was shown.
+    /// </remarks>
+    public static object BuildReschedulePayload(DateTime newStartUtc) => new { newStartUtc };
+
+    /// <summary>Payload shape Booking's <c>AnswerRescheduleRequest(bool Approve)</c> binds.</summary>
+    public static object BuildAnswerReschedulePayload(bool approve) => new { approve };
+
     // ── Session notes (api-contracts.md §2) ──────────────────────────────────────────────────────────
 
     public static RouteSpec GetNotes(string identifier) =>

@@ -11,7 +11,19 @@ public enum ActionType
 {
     Confirm,
     Cancel,
-    Complete
+    Complete,
+
+    /// <summary>The provider moving the session. Opens the slot picker.</summary>
+    Reschedule,
+
+    /// <summary>The customer asking for a new time. Opens the same slot picker.</summary>
+    RequestNewTime,
+
+    /// <summary>Accepting the outstanding proposal.</summary>
+    ApproveReschedule,
+
+    /// <summary>Refusing it. The session stays where it is.</summary>
+    DeclineReschedule
 }
 
 public class AppointmentActionEventArgs : EventArgs
@@ -37,6 +49,9 @@ public partial class AppointmentDetailViewModel : ObservableObject
     [ObservableProperty] private bool _isCompleting;
 
     [ObservableProperty] private bool _isCancelling;
+
+    /// <summary>In flight for any of the four reschedule calls, so the action row can show it is working.</summary>
+    [ObservableProperty] private bool _isRescheduling;
 
     // Booking's GET/POST/PUT notes routes are all Provider-role-gated server-side
     // (OwnershipGuard.AssertRole(user, "Provider") in BookingModule.cs) — a Customer calling any of them gets
@@ -68,7 +83,117 @@ public partial class AppointmentDetailViewModel : ObservableObject
     /// promote their own request straight to Booked, so "Booked" said nothing about whether the provider
     /// had agreed to it.
     /// </summary>
-    public bool ShowConfirmButton => _session.IsProvider;
+    public bool ShowConfirmButton => _session.IsProvider && Appointment?.Status == AppointmentStatus.Requested;
+
+    // ── Reschedule ────────────────────────────────────────────────────────────────────────────────────
+    //
+    // The action row is state- AND role-dependent, and every gate below is HIDE rather than disable. A greyed
+    // button with no explanation reads as broken, and a button that produces a server refusal is worse still:
+    // an ungated affordance is what made a messaging 403 surface to the user as a connection failure.
+
+    /// <summary>Only a booked session can be moved, and only its provider moves one outright.</summary>
+    public bool ShowRescheduleButton =>
+        _session.IsProvider && Appointment?.Status == AppointmentStatus.Booked;
+
+    /// <summary>A customer asks rather than moves. Same status rule, other side of it.</summary>
+    public bool ShowRequestNewTimeButton =>
+        !_session.IsProvider && Appointment?.Status == AppointmentStatus.Booked;
+
+    /// <summary>A proposal is outstanding on this appointment.</summary>
+    public bool HasPendingReschedule => Appointment?.HasPendingReschedule == true;
+
+    /// <summary>
+    /// This reader made the outstanding proposal, so they are waiting rather than deciding.
+    /// </summary>
+    /// <remarks>
+    /// The server refuses an answer from whoever proposed — otherwise asking and agreeing would be one act — so
+    /// showing them Approve/Decline would be offering two buttons that both 409.
+    /// </remarks>
+    public bool IsMyPendingReschedule =>
+        HasPendingReschedule
+        && string.Equals(Appointment!.ProposedBy, _session.Email, StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>Approve and Decline, shown only to the party who owes the answer.</summary>
+    public bool ShowRescheduleAnswerButtons => HasPendingReschedule && !IsMyPendingReschedule;
+
+    /// <summary>The proposed time, on this device's clock.</summary>
+    public string ProposedTimeLabel => Appointment?.ProposedStart is { } proposed
+        ? $"{proposed:dddd d MMMM 'at' h:mm tt}"
+        : string.Empty;
+
+    /// <summary>What the pending banner says, which differs entirely by who is waiting on whom.</summary>
+    public string PendingRescheduleMessage
+    {
+        get
+        {
+            if (!HasPendingReschedule) return string.Empty;
+
+            return IsMyPendingReschedule
+                ? $"You asked to move this to {ProposedTimeLabel}. Waiting for a reply — the session is still on "
+                  + $"{Appointment!.ScheduledAt:dddd d MMMM 'at' h:mm tt} until then."
+                : $"A new time was requested: {ProposedTimeLabel}. Until you answer, the session stays on "
+                  + $"{Appointment!.ScheduledAt:dddd d MMMM 'at' h:mm tt}.";
+        }
+    }
+
+    /// <summary>Set on a completed reschedule, so a move is visible as a move rather than read as the original.</summary>
+    public bool WasRescheduled => Appointment?.PreviousStart is not null;
+
+    public string PreviousTimeLabel => Appointment?.PreviousStart is { } previous
+        ? $"Moved from {previous:ddd d MMM, h:mm tt}"
+        : string.Empty;
+
+    // ── Cancellation, and its notice period ───────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Whether cancelling is offered at all.
+    /// </summary>
+    /// <remarks>
+    /// A PROVIDER may cancel at any notice. A CUSTOMER must give
+    /// <see cref="AppointmentEntity.CustomerCancellationNoticeHours"/> hours, and inside that window the button is
+    /// hidden rather than shown-and-refused. The gate reads the appointment already on screen, so it costs no
+    /// request and is exactly as fresh as the card it sits on. The server still decides — this is courtesy, since
+    /// the device clock is not trustworthy.
+    /// </remarks>
+    public bool ShowCancelButton
+    {
+        get
+        {
+            if (Appointment is null) return false;
+
+            // Nothing to cancel once it is over or already called off.
+            if (Appointment.Status is AppointmentStatus.Completed or AppointmentStatus.Cancelled) return false;
+
+            return _session.IsProvider || DateTime.Now < Appointment.CustomerCancellationDeadline;
+        }
+    }
+
+    /// <summary>
+    /// Shown to a customer once the window has closed, in place of the button.
+    /// </summary>
+    /// <remarks>
+    /// A missing button with no explanation is indistinguishable from a bug. The deadline is named as a concrete
+    /// local time, because "too late" leaves the reader unable to tell how late.
+    /// </remarks>
+    public bool ShowCancellationClosedNotice =>
+        Appointment is not null
+        && !_session.IsProvider
+        && Appointment.Status is not (AppointmentStatus.Completed or AppointmentStatus.Cancelled)
+        && DateTime.Now >= Appointment.CustomerCancellationDeadline;
+
+    public string CancellationClosedMessage =>
+        $"Cancellations closed {Appointment?.CustomerCancellationDeadline:ddd d MMM 'at' h:mm tt}. "
+        + "Message your provider to ask.";
+
+    /// <summary>
+    /// Shown to a customer while cancelling is still possible, so the deadline is not discovered by being
+    /// refused.
+    /// </summary>
+    public bool ShowCancellationDeadlineNotice =>
+        ShowCancelButton && !_session.IsProvider;
+
+    public string CancellationDeadlineMessage =>
+        $"Free to cancel until {Appointment?.CustomerCancellationDeadline:ddd d MMM, h:mm tt}.";
 
     /// <summary>
     /// Keeps the notes list out of the layout entirely when there are none. An empty CollectionView still
@@ -186,6 +311,22 @@ public partial class AppointmentDetailViewModel : ObservableObject
     private void Complete() =>
         ActionRequested?.Invoke(this, new AppointmentActionEventArgs(ActionType.Complete));
 
+    [RelayCommand(CanExecute = nameof(ShowRescheduleButton))]
+    private void Reschedule() =>
+        ActionRequested?.Invoke(this, new AppointmentActionEventArgs(ActionType.Reschedule));
+
+    [RelayCommand(CanExecute = nameof(ShowRequestNewTimeButton))]
+    private void RequestNewTime() =>
+        ActionRequested?.Invoke(this, new AppointmentActionEventArgs(ActionType.RequestNewTime));
+
+    [RelayCommand(CanExecute = nameof(ShowRescheduleAnswerButtons))]
+    private void ApproveReschedule() =>
+        ActionRequested?.Invoke(this, new AppointmentActionEventArgs(ActionType.ApproveReschedule));
+
+    [RelayCommand(CanExecute = nameof(ShowRescheduleAnswerButtons))]
+    private void DeclineReschedule() =>
+        ActionRequested?.Invoke(this, new AppointmentActionEventArgs(ActionType.DeclineReschedule));
+
     /// <summary>
     /// The real cancellation path — <c>DELETE /api/v1/booking/appointments/</c> — replacing the previous
     /// (broken) attempt to reach <c>Cancelled</c> through the status-transition route, which only accepts
@@ -205,9 +346,12 @@ public partial class AppointmentDetailViewModel : ObservableObject
             var cancelled = await _bookingApiService.CancelAppointmentAsync(
                 AppointmentId, Appointment.ProviderEmail, Appointment.CustomerEmail);
 
-            if (!cancelled)
+            if (!cancelled.Succeeded)
             {
-                ErrorMessage = "Could not cancel this appointment — try again.";
+                // The server's own wording, which for the case a customer will actually hit names the
+                // cancellation deadline. Only the server holds the authoritative clock, so this cannot be
+                // reconstructed here -- and "try again" would be advice that never works.
+                ErrorMessage = cancelled.ErrorMessage ?? "Could not cancel this appointment — try again.";
                 await ToastNotifier.ShowAsync(ErrorMessage);
                 return false;
             }
@@ -233,6 +377,106 @@ public partial class AppointmentDetailViewModel : ObservableObject
         {
             IsLoading = false;
             IsCancelling = false;
+        }
+    }
+
+    /// <summary>
+    /// Applies a chosen slot: the provider moves the session, a customer proposes it.
+    /// </summary>
+    /// <remarks>
+    /// One method for both, branching on the session role, because the two differ only in which route is called
+    /// and what is said afterwards. The instant passed in is the server's own UTC value from the availability
+    /// response, unchanged — sending a local rendering of it would book a different time than the one shown.
+    /// </remarks>
+    public async Task<bool> ExecuteRescheduleAsync(DateTime newStartUtc)
+    {
+        if (Appointment is null) return false;
+
+        IsLoading = true;
+        IsRescheduling = true;
+        ErrorMessage = string.Empty;
+
+        try
+        {
+            var result = _session.IsProvider
+                ? await _bookingApiService.RescheduleAsync(AppointmentId, newStartUtc)
+                : await _bookingApiService.RequestRescheduleAsync(AppointmentId, newStartUtc);
+
+            if (!result.Succeeded)
+            {
+                ErrorMessage = result.ErrorMessage ?? "Could not change this appointment. Try again.";
+                await ToastNotifier.ShowAsync(ErrorMessage);
+                return false;
+            }
+
+            await ToastNotifier.ShowAsync(_session.IsProvider
+                ? "Session rescheduled. The customer has been notified."
+                : "New time requested. Your provider will answer.");
+
+            // Re-read rather than patching in memory: the server decides where the session ended up and whether
+            // a proposal is now outstanding, and guessing either would put the page out of step with the truth.
+            await LoadAsync();
+            return true;
+        }
+        catch (GatewayServiceUnavailableException ex)
+        {
+            ErrorMessage = GatewayErrorMapper.Describe(ex.FailedService);
+            await ToastNotifier.ShowAsync(ErrorMessage);
+            return false;
+        }
+        finally
+        {
+            IsLoading = false;
+            IsRescheduling = false;
+        }
+    }
+
+    /// <summary>
+    /// Answers the outstanding proposal.
+    /// </summary>
+    /// <remarks>
+    /// A refused APPROVAL is a normal outcome, not an error: the slot may have been taken between the request and
+    /// the answer. It is worded from the server's message and the page reloads, so the stale proposal disappears
+    /// rather than being offered again.
+    /// </remarks>
+    public async Task<bool> ExecuteRescheduleAnswerAsync(bool approve)
+    {
+        if (Appointment is null) return false;
+
+        IsLoading = true;
+        IsRescheduling = true;
+        ErrorMessage = string.Empty;
+
+        try
+        {
+            var result = await _bookingApiService.AnswerRescheduleAsync(AppointmentId, approve);
+
+            if (!result.Succeeded)
+            {
+                ErrorMessage = result.ErrorMessage
+                    ?? "Could not answer this request. It may have been withdrawn.";
+                await ToastNotifier.ShowAsync(ErrorMessage);
+                await LoadAsync();
+                return false;
+            }
+
+            await ToastNotifier.ShowAsync(approve
+                ? "New time approved. The session has moved."
+                : "New time declined. The session stays as it was.");
+
+            await LoadAsync();
+            return true;
+        }
+        catch (GatewayServiceUnavailableException ex)
+        {
+            ErrorMessage = GatewayErrorMapper.Describe(ex.FailedService);
+            await ToastNotifier.ShowAsync(ErrorMessage);
+            return false;
+        }
+        finally
+        {
+            IsLoading = false;
+            IsRescheduling = false;
         }
     }
 
@@ -351,5 +595,29 @@ public partial class AppointmentDetailViewModel : ObservableObject
         OnPropertyChanged(nameof(HasAppointment));
         OnPropertyChanged(nameof(TimeAndDurationLabel));
         OnPropertyChanged(nameof(HasContactPhone));
+
+        // Every action's visibility depends on the appointment's status and on who is reading, so all of them
+        // have to be re-raised here. A missed one leaves the row showing the PREVIOUS appointment's affordances
+        // -- which after a reschedule means offering to reschedule a session that just moved.
+        OnPropertyChanged(nameof(ShowConfirmButton));
+        OnPropertyChanged(nameof(ShowRescheduleButton));
+        OnPropertyChanged(nameof(ShowRequestNewTimeButton));
+        OnPropertyChanged(nameof(HasPendingReschedule));
+        OnPropertyChanged(nameof(IsMyPendingReschedule));
+        OnPropertyChanged(nameof(ShowRescheduleAnswerButtons));
+        OnPropertyChanged(nameof(ProposedTimeLabel));
+        OnPropertyChanged(nameof(PendingRescheduleMessage));
+        OnPropertyChanged(nameof(WasRescheduled));
+        OnPropertyChanged(nameof(PreviousTimeLabel));
+        OnPropertyChanged(nameof(ShowCancelButton));
+        OnPropertyChanged(nameof(ShowCancellationClosedNotice));
+        OnPropertyChanged(nameof(CancellationClosedMessage));
+        OnPropertyChanged(nameof(ShowCancellationDeadlineNotice));
+        OnPropertyChanged(nameof(CancellationDeadlineMessage));
+
+        RescheduleCommand.NotifyCanExecuteChanged();
+        RequestNewTimeCommand.NotifyCanExecuteChanged();
+        ApproveRescheduleCommand.NotifyCanExecuteChanged();
+        DeclineRescheduleCommand.NotifyCanExecuteChanged();
     }
 }

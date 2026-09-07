@@ -42,6 +42,13 @@ public static class NotificationVisuals
         NotificationType.MessageReceived => "#8B5CF6",
         NotificationType.PasswordResetRequested => "#0EA5E9",
         NotificationType.EmailConfirmationRequested => "#0EA5E9",
+        NotificationType.AppointmentRescheduled => "#0891B2",
+        NotificationType.RescheduleRequested => "#D97706",
+        NotificationType.RescheduleApproved => "#059669",
+
+        // Amber-brown, NOT cancellation's red. A declined request leaves the session exactly where it was;
+        // colouring it like a cancellation would say the session is off when it is still on.
+        NotificationType.RescheduleDeclined => "#B45309",
         _ => NeutralAccent
     };
 
@@ -56,6 +63,10 @@ public static class NotificationVisuals
         NotificationType.MessageReceived => "#EDE9FE",
         NotificationType.PasswordResetRequested => "#E0F2FE",
         NotificationType.EmailConfirmationRequested => "#E0F2FE",
+        NotificationType.AppointmentRescheduled => "#CFFAFE",
+        NotificationType.RescheduleRequested => "#FEF3C7",
+        NotificationType.RescheduleApproved => "#D1FAE5",
+        NotificationType.RescheduleDeclined => "#FEF3C7",
         _ => NeutralTint
     };
 
@@ -73,6 +84,10 @@ public static class NotificationVisuals
         NotificationType.MessageReceived => "\U0001F4AC",
         NotificationType.PasswordResetRequested => "\U0001F510",
         NotificationType.EmailConfirmationRequested => "✉",
+        NotificationType.AppointmentRescheduled => "\U0001F5D2",
+        NotificationType.RescheduleRequested => "\U0001F551",
+        NotificationType.RescheduleApproved => "\U0001F44D",
+        NotificationType.RescheduleDeclined => "\U0001F44E",
         _ => "\U0001F514"
     };
 
