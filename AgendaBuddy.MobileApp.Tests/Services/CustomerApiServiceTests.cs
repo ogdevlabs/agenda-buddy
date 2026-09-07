@@ -71,6 +71,48 @@ public class CustomerApiServiceTests
         Assert.Empty(result);
     }
 
+    // The row carries who this customer subscribes to, which is what decides whether the signed-in provider
+    // may message them — the same rule POST /api/v1/messages enforces. Read off this response rather than a
+    // second call, so the gate cannot disagree with the card it sits on.
+    [Fact]
+    public async Task GetCustomers_ParsesEachRowsSubscribedProviders()
+    {
+        const string json = """
+            {
+                "data": {
+                    "items": [
+                        {"id":"1","email":"alice@example.com","firstName":"Alice","lastName":"Smith",
+                         "subscribedProviderCollection":["coach@example.com","tutor@example.com"]},
+                        {"id":"2","email":"bob@example.com","firstName":"Bob","lastName":"Jones",
+                         "subscribedProviderCollection":[]}
+                    ],
+                    "totalCount": 2, "page": 1, "pageSize": 25
+                },
+                "errors": []
+            }
+            """;
+
+        var result = await new CustomerApiService(CreateFactory(HttpStatusCode.OK, json)).GetCustomersAsync();
+
+        Assert.Equal(["coach@example.com", "tutor@example.com"], result[0].SubscribedProviders);
+        Assert.Empty(result[1].SubscribedProviders);
+    }
+
+    // A row predating the field, or one where it is not an array. Empty means "this provider may not message
+    // them", which is the direction the server already enforces.
+    [Fact]
+    public async Task GetCustomers_AbsentSubscribedProviders_ParsesAsEmptyList()
+    {
+        const string json = """
+            {"data": {"items": [{"id":"1","email":"alice@example.com","subscribedProviderCollection":null}],
+             "totalCount": 1, "page": 1, "pageSize": 25}, "errors": []}
+            """;
+
+        var result = await new CustomerApiService(CreateFactory(HttpStatusCode.OK, json)).GetCustomersAsync();
+
+        Assert.Empty(result[0].SubscribedProviders);
+    }
+
     [Fact]
     public async Task GetCustomers_EmptyPage_ReturnsEmptyList()
     {

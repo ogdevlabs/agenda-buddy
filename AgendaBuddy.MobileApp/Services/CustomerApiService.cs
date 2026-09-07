@@ -178,7 +178,12 @@ public class CustomerApiService : ICustomerApiService
                 Phone = GetString(element, "phoneNumber"),
                 // Absent on every account created before avatars existed; AvatarAsset falls back to a stable
                 // derivation from the email, so an unmapped or missing value is never a blank circle.
-                AvatarId = GetString(element, "avatarId")
+                AvatarId = GetString(element, "avatarId"),
+                // Who this customer subscribes to, straight off the row. This is what decides whether a
+                // provider may message them, so it has to be exactly as fresh as the row it sits on — reading
+                // the provider's own reciprocal list instead meant a second, independently cached source that
+                // could disagree with the list on screen for the length of its own TTL.
+                SubscribedProviders = GetStringArray(element, "subscribedProviderCollection")
             });
         }
 
@@ -189,4 +194,21 @@ public class CustomerApiService : ICustomerApiService
         element.TryGetProperty(propertyName, out var value) && value.ValueKind == JsonValueKind.String
             ? value.GetString() ?? string.Empty
             : string.Empty;
+
+    private static List<string> GetStringArray(JsonElement element, string propertyName)
+    {
+        var result = new List<string>();
+
+        if (!element.TryGetProperty(propertyName, out var array) || array.ValueKind != JsonValueKind.Array)
+            return result;
+
+        foreach (var item in array.EnumerateArray())
+        {
+            var value = item.ValueKind == JsonValueKind.String ? item.GetString() : null;
+            if (!string.IsNullOrWhiteSpace(value))
+                result.Add(value);
+        }
+
+        return result;
+    }
 }

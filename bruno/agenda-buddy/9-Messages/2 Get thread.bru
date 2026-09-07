@@ -1,0 +1,20 @@
+meta {
+  name: 2 Get thread
+  type: http
+  seq: 2
+}
+get {
+  url: {{gatewayUrl}}/api/v1/messages/thread/{{providerEmail}}
+  body: none
+}
+docs {
+  One conversation, keyed on the **counterpart's email address** — not on `threadId`. The server sorts
+  the caller's own claim together with this address to derive the thread, so with the caller always
+  supplying one side a thread between two other people has no representation in this URL space at all:
+  it is unrequestable rather than merely refused.
+
+  Swap `{{providerEmail}}` for `{{customerEmail}}` when running this as the provider.
+
+  Same flat `MessageEntity` array as the inbox. An empty array is `200` — it means nothing has been
+  said yet, which is a valid state for a thread you are about to start.
+}

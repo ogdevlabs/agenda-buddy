@@ -1,0 +1,37 @@
+meta {
+  name: 3 Send message
+  type: http
+  seq: 3
+}
+post {
+  url: {{gatewayUrl}}/api/v1/messages
+  body: json
+}
+body:json {
+  {
+    "recipientEmail": "{{providerEmail}}",
+    "body": "Hello from Bruno."
+  }
+}
+docs {
+  **A subscription is required, in either direction, and `403` is what you get without one.** A
+  customer may message a provider they subscribe to; a provider may message a customer who subscribes
+  to them. Run `2-Customer/5 Subscribe to provider` first, or this returns `403` with no body detail.
+
+  ⚠️ `403` here means "not permitted", **not** "the server is unreachable" — the two are different
+  outcomes and a client must word them differently. The directory is browsable by design so customers
+  can find someone to book, but browsable must not imply messageable, or every provider's inbox becomes
+  a cold-outreach target.
+
+  There is **no sender field** in the request. The sender is the caller's `sub` claim, which is the
+  cheapest guarantee that no future change trusts one from the body.
+
+  Other refusals: `400` for a missing `recipientEmail` or `body`, and `400` for messaging yourself.
+
+  `201 Created` returns the stored `MessageEntity`, with the server-derived `threadId`. Sending also
+  dispatches a `MessageReceived` notification to the recipient — in-app inbox **and** push,
+  deliberately **no email** (a conversation that emails every line is what makes people mute a
+  product). The OS-visible push text is the generic "New message" category, never the message content
+  (threat T-002); the real subject and preview travel in the push `data` payload and are rendered only
+  inside the authenticated app.
+}

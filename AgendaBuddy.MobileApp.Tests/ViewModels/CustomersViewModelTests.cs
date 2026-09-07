@@ -58,6 +58,82 @@ public class CustomersViewModelTests
         service.Verify(s => s.GetCustomersAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
+    // ---------------------------------------------------------------------------
+    // Who may be messaged — the same rule POST /api/v1/messages enforces
+    // ---------------------------------------------------------------------------
+
+    // GET /api/v1/customers is a Provider-role-gated paged read of the WHOLE customer table (ADR-026), so its
+    // membership says nothing about who this provider may message. Granting CanMessage to every row offered the
+    // button on strangers; the send answered 403 and the client reported it as a connection failure.
+    [Fact]
+    public async Task LoadAsync_ProviderRole_OnlyCustomersSubscribedToThisProviderCanBeMessaged()
+    {
+        const string me = "sarah.mitchell@agendabuddy.dev";
+        var customers = new List<CustomerSummary>
+        {
+            new() { Id = "1", FullName = "Alice Smith", Email = "alice@example.com", SubscribedProviders = [me] },
+            // Subscribed, but to somebody else — in the table, and still not messageable.
+            new() { Id = "2", FullName = "Bob Jones", Email = "bob@example.com", SubscribedProviders = ["other@x.dev"] },
+            new() { Id = "3", FullName = "Cara Lee", Email = "cara@example.com" }
+        };
+
+        var vm = new CustomersViewModel(
+            CreateMockCustomerApi(customers).Object,
+            CreateMockProviderApi().Object,
+            CreateMockSession(email: me).Object);
+
+        await vm.LoadCommand.ExecuteAsync(null);
+
+        Assert.True(vm.Customers.Single(c => c.Email == "alice@example.com").CanMessage);
+        Assert.False(vm.Customers.Single(c => c.Email == "bob@example.com").CanMessage);
+        Assert.False(vm.Customers.Single(c => c.Email == "cara@example.com").CanMessage);
+    }
+
+    // An address is an address whatever its case; the server compares it OrdinalIgnoreCase too.
+    [Fact]
+    public async Task LoadAsync_ProviderRole_SubscriberMatchIgnoresCase()
+    {
+        var customers = new List<CustomerSummary>
+        {
+            new() { Email = "alice@example.com", SubscribedProviders = ["Sarah.Mitchell@AgendaBuddy.dev"] }
+        };
+
+        var vm = new CustomersViewModel(
+            CreateMockCustomerApi(customers).Object,
+            CreateMockProviderApi().Object,
+            CreateMockSession(email: "sarah.mitchell@agendabuddy.dev").Object);
+
+        await vm.LoadCommand.ExecuteAsync(null);
+
+        Assert.True(vm.Customers.Single().CanMessage);
+    }
+
+    // The customer's half of the same rule: subscribing is what opens the channel, so the directory stays
+    // browsable without becoming a cold-outreach surface.
+    [Fact]
+    public async Task LoadAsync_CustomerRole_OnlySubscribedProvidersCanBeMessaged()
+    {
+        var providers = new List<CustomerSummary>
+        {
+            new() { Email = "coach@example.com", FullName = "Pat Coach" },
+            new() { Email = "tutor@example.com", FullName = "Sam Tutor" }
+        };
+
+        var customerApi = CreateMockCustomerApi();
+        customerApi.Setup(s => s.GetSubscriptionsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                   .ReturnsAsync(["coach@example.com"]);
+
+        var vm = new CustomersViewModel(
+            customerApi.Object,
+            CreateMockProviderApi(providers).Object,
+            CreateMockSession(role: "Customer").Object);
+
+        await vm.LoadCommand.ExecuteAsync(null);
+
+        Assert.True(vm.Customers.Single(c => c.Email == "coach@example.com").CanMessage);
+        Assert.False(vm.Customers.Single(c => c.Email == "tutor@example.com").CanMessage);
+    }
+
     [Theory]
     [InlineData("Coach")]
     [InlineData("coach@example.com")]

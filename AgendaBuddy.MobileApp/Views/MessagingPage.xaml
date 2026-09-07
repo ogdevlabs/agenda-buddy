@@ -111,7 +111,7 @@
                         <Grid BackgroundColor="White">
                             <Grid.GestureRecognizers>
                                 <TapGestureRecognizer
-                                    Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.ToggleThreadCommand}"
+                                    Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.OpenThreadCommand}"
                                     CommandParameter="{Binding .}" />
                             </Grid.GestureRecognizers>
 
@@ -186,34 +186,6 @@
                                         </Grid>
                                     </VerticalStackLayout>
                                 </Grid>
-
-                                <!-- Expanded content -->
-                                <VerticalStackLayout Spacing="8"
-                                                     Margin="76,0,16,12"
-                                                     IsVisible="{Binding IsExpanded}">
-                                    <BoxView HeightRequest="0.5" Color="{StaticResource iOSGray5}" />
-                                    <Label Text="{Binding LastMessageBody}"
-                                           FontSize="15"
-                                           TextColor="{StaticResource iOSLabel}"
-                                           LineBreakMode="WordWrap"
-                                           Margin="0,4,0,0" />
-                                    <Label Text="{Binding OtherPartyEmail}"
-                                           FontSize="13"
-                                           TextColor="{StaticResource iOSGray}" />
-                                    <controls:SafeButton Text="Open conversation"
-                                            BackgroundColor="{StaticResource iOSBlue}"
-                                            TextColor="White"
-                                            CornerRadius="10"
-                                            FontSize="13"
-                                            FontAttributes="Bold"
-                                            HeightRequest="36"
-                                            HorizontalOptions="Start"
-                                            Padding="16,4"
-                                            Margin="0,6,0,0"
-                                            Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.OpenThreadCommand}"
-                                            CommandParameter="{Binding .}"
-                                            AutomationId="OpenConversationButton" />
-                                </VerticalStackLayout>
 
                                 <!-- Separator -->
                                 <BoxView HeightRequest="0.5"

@@ -79,4 +79,23 @@ public class MessagingViewModelTests
         Assert.False(vm.IsLoading);
         Assert.True(vm.IsEmpty);
     }
+
+    // A row's single action is to open the conversation. It used to expand to a copy of the preview and zero
+    // the unread count in memory without calling the read endpoint, so the badge returned on the next
+    // OnAppearing and nothing was ever written. Opening the thread is what marks it read for real.
+    [Fact]
+    public void OpenThread_RaisesTheOpenRequest()
+    {
+        var thread = new MessageThreadStub { ThreadId = "t1", OtherPartyEmail = "alice@example.com", UnreadCount = 3 };
+        var vm = new MessagingViewModel(new Mock<IMessagingApiService>().Object, CreateMockSession().Object);
+
+        MessageThreadStub? opened = null;
+        vm.ThreadOpenRequested += (_, t) => opened = t;
+
+        vm.OpenThreadCommand.Execute(thread);
+
+        Assert.Same(thread, opened);
+        // Not cleared locally: the count is whatever the server reports on the next load.
+        Assert.Equal(3, thread.UnreadCount);
+    }
 }

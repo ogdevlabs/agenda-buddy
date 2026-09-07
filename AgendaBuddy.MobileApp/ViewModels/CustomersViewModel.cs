@@ -193,10 +193,15 @@ public partial class CustomersViewModel : ObservableObject
             {
                 var customers = await _customerApiService.GetCustomersAsync();
 
-                // A provider's own contact list is already the customers subscribed to them, so every row
-                // here is reachable — GET /api/v1/customers is what the subscription populates.
+                // GET /api/v1/customers is a Provider-role-gated paged read of the WHOLE customer table
+                // (ADR-026) — not this provider's own subscribers. Messaging is only permitted along a
+                // subscription, so the button is gated per row rather than granted to every row: offering it on
+                // a stranger produced a 403 the client then reported as a connection failure.
+                //
+                // Read off the row itself, so the gate is exactly as fresh as the card it sits on.
                 foreach (var customer in customers)
-                    customer.CanMessage = true;
+                    customer.CanMessage =
+                        customer.SubscribedProviders.Contains(_session.Email, StringComparer.OrdinalIgnoreCase);
 
                 _allContacts = customers;
                 AvailableProfessions = [];

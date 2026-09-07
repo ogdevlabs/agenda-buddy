@@ -1,0 +1,19 @@
+meta {
+  name: 4 Mark message read
+  type: http
+  seq: 4
+}
+post {
+  url: {{gatewayUrl}}/api/v1/messages/{{messageId}}/read
+  body: none
+}
+docs {
+  Only the **recipient** may mark a message read. A sender marking their own message read is
+  meaningless, and permitting it would let a sender probe whether an id exists.
+
+  A missing message and somebody else's message answer **identically** (`403`), so this cannot be used
+  to enumerate message ids.
+
+  `204 No Content` on success — no body. Set `{{messageId}}` from an `id` in the inbox or thread
+  response.
+}

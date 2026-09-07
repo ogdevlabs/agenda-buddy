@@ -60,27 +60,18 @@ public partial class MessagingViewModel : ObservableObject
         }
     }
 
-    [RelayCommand]
-    private void ToggleThread(MessageThreadStub thread)
-    {
-        thread.IsExpanded = !thread.IsExpanded;
-
-        if (thread.IsExpanded && thread.UnreadCount > 0)
-            ScheduleMarkRead(thread);
-    }
-
+    /// <summary>
+    /// Opens the conversation. The only thing a row does.
+    /// </summary>
+    /// <remarks>
+    /// A row used to expand to a copy of the preview plus an "Open conversation" button, and expanding also
+    /// zeroed the unread count in memory without ever calling <c>POST /api/v1/messages/{id}/read</c> — so the
+    /// badge came back on the next <c>OnAppearing</c> and nothing was ever written. Opening the thread is what
+    /// marks its messages read against the real endpoint (<c>MessageThreadViewModel.LoadThreadAsync</c>), so
+    /// making that the row's single action removed the fake state rather than adding a second writer for it.
+    /// </remarks>
     [RelayCommand]
     private void OpenThread(MessageThreadStub thread) => ThreadOpenRequested?.Invoke(this, thread);
-
-    private async void ScheduleMarkRead(MessageThreadStub thread)
-    {
-        await Task.Delay(2000);
-        if (!thread.IsExpanded || thread.UnreadCount == 0)
-            return;
-
-        thread.UnreadCount = 0;
-        Threads = new List<MessageThreadStub>(Threads);
-    }
 
     partial void OnErrorMessageChanged(string value)
     {

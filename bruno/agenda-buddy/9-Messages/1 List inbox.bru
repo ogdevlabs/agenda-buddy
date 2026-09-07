@@ -1,0 +1,26 @@
+meta {
+  name: 1 List inbox
+  type: http
+  seq: 1
+}
+get {
+  url: {{gatewayUrl}}/api/v1/messages
+  body: none
+}
+docs {
+  Every message the caller is a **party to — sent as well as received**, scoped to the
+  `NameIdentifier` claim. There is no address in the request, so nothing here can be pointed at
+  somebody else's inbox.
+
+  ⚠️ This used to filter on `recipient_email` alone, which made a conversation the caller
+  **started** invisible to them: the mobile client groups this flat list into threads by `threadId`,
+  so a thread with no received message had no rows to group and the Messages tab drew its
+  "no messages yet" empty state over a live conversation until the other side replied.
+
+  The body is a flat `MessageEntity` array — `id`, `senderEmail`, `recipientEmail`, `body`, `sentAt`,
+  `isRead`, `threadId` — **one entry per message, not per thread**. Grouping into conversations is the
+  client's job (`MessagingApiService.GroupIntoThreads`); there is no per-thread summary route.
+
+  `threadId` is derived server-side as the two addresses sorted and joined with `::`, so it is stable
+  whichever party sends first.
+}
