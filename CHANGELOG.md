@@ -4,6 +4,30 @@ All notable changes to this project are documented in this file, in [Keep a Chan
 
 ## [Unreleased]
 
+### Fixed
+
+- **F-031**: the `deploy-dev` stage failed on its first ever run (CI 358 on `main`), and did so in a way that
+  showed **every visible job green and the run red** — two independent defects, neither of which produced a log
+  or a check run because the job never started.
+  - **Concurrency self-deadlock.** `dev-redeploy.yml` and `deploy.yml` declared the *same* group
+    (`deploy-<env>`). The sequence acquired it and then called the deploy, which requested the same group — and
+    it could never be released, because releasing it was what the parent was waiting on the child to allow.
+    `dev-env-power.yml` declares no concurrency at all, which is precisely why the `stop` stage succeeded while
+    `deploy` never began; that contrast is what identified it. The sequence now uses `redeploy-<env>`, so two
+    redeploys still serialise against each other and the inner deploy still serialises against a directly
+    dispatched `deploy.yml`.
+  - **`id-token: write` was silently stripped.** It was declared on the `deploy-dev` job, which looks
+    sufficient and is not: a job may narrow the workflow-level grant but cannot escalate beyond it, and
+    `id-token` is only available where the workflow level allows it. The run proved it — the job-level block
+    took effect for `contents` (workflow-level `pull-requests: read` was gone from the nested job) while
+    `id-token` vanished, leaving `Contents: read, Metadata: read` and no way to exchange an OIDC token with
+    Azure. Now granted at workflow level, which is the only option GitHub offers.
+- **F-031**: `AutoDeployPathFilterTest`'s OIDC assertion checked that the string `id-token: write` appeared
+  *anywhere* in `dotnet.yml` — so it passed while the permission was ineffective. It now parses the
+  workflow-level block specifically, and a new assertion requires the two concurrency groups to differ. Both
+  were verified by reintroducing each defect and confirming the test fails.
+
+
 ### Added
 
 - **F-031 auto-deploy-dev**: `.NET CI` gained a final `deploy-dev` stage, so **the dev environment runs the
