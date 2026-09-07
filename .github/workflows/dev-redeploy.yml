@@ -47,10 +47,23 @@ permissions:
   id-token: write
   contents: read
 
-# Shares deploy.yml's own group so a dispatch, a pipeline-driven run and a manual deploy can never
-# overlap. Never cancel-in-progress: a half-applied Terraform/azd run is worse than a queued one.
+# ⚠️ A DIFFERENT group from deploy.yml's, and it has to be.
+#
+# This originally used deploy.yml's own `deploy-<env>` group, reasoning that a dispatch, a pipeline run and
+# a manual deploy should all serialise together. That deadlocked: this workflow acquires the group and then
+# calls deploy.yml, which requests THE SAME group — which can never be released, because releasing it is
+# what this workflow is waiting on the child to allow. GitHub resolves the impossible pending job by
+# failing it, with no log and no check run, so run 358 showed every visible job green and the run red.
+# (`dev-env-power.yml`, the other nested call, declares no concurrency at all — which is exactly why the
+# `stop` stage succeeded while `deploy` never started. That contrast is what identified it.)
+#
+# Distinct groups still give the guarantee that was wanted: two redeploys serialise here, and the inner
+# deploy serialises against any directly dispatched deploy.yml on `deploy-<env>`. Nothing overlaps, and
+# nothing waits on itself.
+#
+# Never cancel-in-progress: a half-applied Terraform/azd run is worse than a queued one.
 concurrency:
-  group: deploy-${{ inputs.environment }}
+  group: redeploy-${{ inputs.environment }}
   cancel-in-progress: false
 
 jobs:

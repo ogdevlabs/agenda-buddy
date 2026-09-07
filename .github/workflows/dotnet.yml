@@ -6,9 +6,22 @@ on:
   pull_request:
     branches: ["main"]
 
+# ⚠️ id-token: write is here, at WORKFLOW level, and cannot be moved down to the one job that needs it.
+#
+# `deploy-dev` declares `permissions: { id-token: write, contents: read }` on itself, which looks like it
+# should be enough and is not: a job may NARROW the workflow-level grant but cannot escalate beyond it, and
+# `id-token` in particular is only available where the workflow level allows it. Run 358 proved it — the job
+# level took effect for `contents` (workflow-level `pull-requests: read` was gone from the nested job) while
+# `id-token: write` was silently stripped, leaving the nested job with `Contents: read, Metadata: read` and
+# no way to exchange an OIDC token with Azure.
+#
+# The cost is that every job in this pipeline can now mint an OIDC token, which is broader than the one job
+# that needs it. There is no narrower option: GitHub offers no way to grant `id-token` to a single job when
+# the workflow level withholds it. The other jobs run no cloud step, and the deploy is the only consumer.
 permissions:
   contents: read
   pull-requests: read
+  id-token: write
 
 # Cancel a superseded run for the same branch/PR when a new commit is pushed — this pipeline had no
 # concurrency group at all (documented gap, docs/pdlc/context/08-cicd-deploy.md), so pushing twice in

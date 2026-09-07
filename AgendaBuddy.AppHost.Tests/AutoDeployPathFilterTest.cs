@@ -259,14 +259,40 @@ public class AutoDeployPathFilterTest
     }
 
     /// <summary>
-    /// The deploy exchanges a GitHub OIDC token for an Azure one, and <c>dotnet.yml</c>'s workflow-level
-    /// permissions are read-only — job-level permissions replace rather than extend them, so the stage has
-    /// to grant <c>id-token: write</c> itself or the Azure login fails with a token it never received.
+    /// ⚠️ <c>id-token: write</c> must be granted at <b>workflow</b> level, not only on the deploy job.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// A job may narrow the workflow-level grant but cannot escalate beyond it, and <c>id-token</c> in
+    /// particular is only available where the workflow level allows it. Run 358 proved it: the deploy job's
+    /// own <c>permissions</c> block took effect for <c>contents</c> (workflow-level <c>pull-requests: read</c>
+    /// was gone from the nested job) while <c>id-token: write</c> was silently stripped, leaving
+    /// <c>Contents: read, Metadata: read</c> and no way to exchange an OIDC token with Azure.
+    /// </para>
+    /// <para>
+    /// <b>The previous version of this test asserted that the string <c>id-token: write</c> appeared anywhere
+    /// in the file, and passed while the permission was ineffective.</b> That is the lesson worth keeping:
+    /// asserting the text is not asserting the effect. This checks the <c>on:</c>-adjacent workflow-level
+    /// block specifically.
+    /// </para>
+    /// </remarks>
     [Fact]
-    public void TheDeployStageGrantsItselfTheOidcPermission()
+    public void TheOidcPermissionIsGrantedAtWorkflowLevel()
     {
-        Assert.Contains("id-token: write", Ci(), StringComparison.Ordinal);
+        var lines = Ci().Split('\n');
+
+        // The workflow-level block is the one at column zero, before `jobs:`.
+        var start = Array.FindIndex(lines, l => l.StartsWith("permissions:", StringComparison.Ordinal));
+        Assert.True(start >= 0, "dotnet.yml has no workflow-level `permissions:` block.");
+
+        var jobs = Array.FindIndex(lines, l => l.StartsWith("jobs:", StringComparison.Ordinal));
+        Assert.True(start < jobs, "The `permissions:` block found is not the workflow-level one.");
+
+        var end = Array.FindIndex(lines, start + 1, l =>
+            l.Length > 0 && !char.IsWhiteSpace(l[0]) && !l.StartsWith("#", StringComparison.Ordinal));
+        var block = string.Join('\n', lines[start..(end < 0 ? jobs : end)]);
+
+        Assert.Contains("id-token: write", block, StringComparison.Ordinal);
     }
 
     // ── The sequence, and the on-demand path ───────────────────────────────────────────────────────
@@ -311,16 +337,50 @@ public class AutoDeployPathFilterTest
     }
 
     /// <summary>
-    /// Never cancels, and shares deploy.yml's group so a dispatch, a pipeline run and a manual deploy
-    /// cannot overlap.
+    /// ⚠️ The sequence and the deploy it calls must be in <b>different</b> concurrency groups.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// They were originally the same, on the reasoning that a dispatch, a pipeline run and a manual deploy
+    /// should all serialise together. That self-deadlocks: <c>dev-redeploy.yml</c> acquires the group and then
+    /// calls <c>deploy.yml</c>, which requests the same one — and it can never be released, because releasing
+    /// it is what the parent is waiting on the child to allow. GitHub fails the impossible pending job with no
+    /// log and no check run, so run 358 showed every visible job green and the run red.
+    /// </para>
+    /// <para>
+    /// Distinct groups keep the guarantee: two redeploys serialise against each other, and the inner deploy
+    /// still serialises against any directly dispatched <c>deploy.yml</c>.
+    /// </para>
+    /// </remarks>
     [Fact]
-    public void TheRedeploySequenceNeverCancelsAndSharesTheDeployGroup()
+    public void TheSequenceAndTheDeployDoNotShareAConcurrencyGroup()
     {
-        var redeploy = Workflow("dev-redeploy.yml");
+        var redeployGroup = ConcurrencyGroup("dev-redeploy.yml");
+        var deployGroup = ConcurrencyGroup("deploy.yml");
 
-        Assert.Contains("group: deploy-${{ inputs.environment }}", redeploy, StringComparison.Ordinal);
-        Assert.Contains("cancel-in-progress: false", redeploy, StringComparison.Ordinal);
+        Assert.NotEqual(deployGroup, redeployGroup);
+    }
+
+    // Neither may cancel a run in flight: a half-applied Terraform/azd run is worse than a queued one.
+    [Theory]
+    [InlineData("dev-redeploy.yml")]
+    [InlineData("deploy.yml")]
+    public void NeitherTheSequenceNorTheDeployCancelsInProgress(string workflow)
+    {
+        Assert.Contains("cancel-in-progress: false", Workflow(workflow), StringComparison.Ordinal);
+    }
+
+    /// <summary>The workflow-level <c>concurrency.group</c> expression, verbatim.</summary>
+    private static string ConcurrencyGroup(string name)
+    {
+        var lines = Workflow(name).Split('\n');
+        var start = Array.FindIndex(lines, l => l.StartsWith("concurrency:", StringComparison.Ordinal));
+        Assert.True(start >= 0, $"{name} declares no workflow-level `concurrency:` block.");
+
+        var group = Array.Find(lines[start..], l => l.TrimStart().StartsWith("group:", StringComparison.Ordinal));
+        Assert.NotNull(group);
+
+        return group!.Trim();
     }
 
     // ── Push credentials reach a deployed environment ──────────────────────────────────────────────
