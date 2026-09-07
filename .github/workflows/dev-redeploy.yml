@@ -14,8 +14,13 @@ name: Dev environment — redeploy (stop, deploy, restore)
 #
 # `dev-env-stop` sets minReplicas=0 through `az containerapp update`. `azd deploy` then creates a new
 # revision per app carrying the new image, but it does NOT reset the scale rule — only `azd provision`
-# re-applies the template's replica settings, and provision is deliberately false here because
-# application code changing is not a reason to re-apply infrastructure.
+# re-applies the template's replica settings, and provision defaults to false here because application
+# code changing is not a reason to re-apply infrastructure.
+#
+# ⚠️ `azd deploy` ALSO does not re-apply parameters or secrets. Terraform writes them to Key Vault on
+# every run and the deploy job marshals them into azd parameters on every run, but only `azd provision`
+# pushes them onto the container apps. So a secret corrected at the source stays corrected nowhere until
+# a provision run — which is why `provision` is a dispatch input rather than a constant.
 #
 # So a bare stop→deploy leaves the new code at minReplicas=0: not truly down, because ACA cold-starts it
 # on an inbound request, but not started either, and `dev-env-schedule` would not correct it until the
@@ -35,6 +40,12 @@ on:
         required: false
         default: dev
         type: string
+      # Defaults false, so the pipeline caller that omits it keeps getting an application-only deploy.
+      provision:
+        description: "Also run azd provision (re-applies infrastructure AND parameters/secrets)"
+        required: false
+        default: false
+        type: boolean
   workflow_dispatch:
     inputs:
       environment:
@@ -42,6 +53,20 @@ on:
         required: false
         default: dev
         type: string
+      # ⚠️ Exposed because some fixes are only reachable through provision, and a hardcoded false meant the
+      # operator had to edit this file to get one. A changed secret or parameter is the case that matters:
+      # `azd deploy` pushes images and nothing else, so a parameter corrected in Key Vault does NOT reach the
+      # container apps until provision re-applies it. That is how a push credential stayed broken in dev while
+      # every deploy reported success.
+      #
+      # Prefer this over dispatching deploy.yml directly for anything on the dev environment: deploy.yml alone
+      # skips the stop and restore stages, and `azd deploy` does not reset the scale rule dev-env-stop changed
+      # — see this file's header.
+      provision:
+        description: "Also run azd provision — needed when a secret or parameter changed, not just code"
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   id-token: write
@@ -107,13 +132,14 @@ jobs:
 
   deploy:
     needs: stop
-    # provision stays false: this path exists for application code changes, and re-running provision on
-    # every merge would re-apply infrastructure for no reason. An infra change goes through deploy.yml's
-    # own dispatch with provision: true, which is where that decision belongs.
+    # Defaults to false, so a merge to main still gets an application-only deploy — re-applying
+    # infrastructure on every merge would be pointless churn. Passing it through rather than hardcoding it
+    # is what makes "the environment needs provision" an operator decision at dispatch time instead of a
+    # commit to this file.
     uses: ./.github/workflows/deploy.yml
     with:
       environment: ${{ inputs.environment }}
-      provision: false
+      provision: ${{ inputs.provision || false }}
     secrets: inherit
 
   restore:
@@ -137,6 +163,12 @@ jobs:
             echo "### ${{ inputs.environment }} after this redeploy"
             echo
             echo "- deploy: ${{ needs.deploy.result }}"
+            if [ "${{ inputs.provision }}" = "true" ]; then
+              echo "- provision: **ran** — infrastructure, parameters and secrets re-applied."
+            else
+              echo "- provision: skipped (application code only). A changed secret or parameter does NOT"
+              echo "  reach the container apps on this path — re-run with provision: true for that."
+            fi
             if [ "${{ needs.window.outputs.start_after }}" = "true" ]; then
               echo "- restarted: ${{ needs.restore.result }} (inside 09:00–17:00 Mexico City, weekday)"
             else

@@ -358,10 +358,61 @@ public class AutoDeployPathFilterTest
         Assert.Contains("action: stop", redeploy, StringComparison.Ordinal);
         Assert.Contains("action: start", redeploy, StringComparison.Ordinal);
         Assert.Contains("uses: ./.github/workflows/deploy.yml", redeploy, StringComparison.Ordinal);
-        Assert.Contains("provision: false", redeploy, StringComparison.Ordinal);
         // The restore is conditional on the schedule's own window, not unconditional: starting the
         // environment out of hours would defeat the cost control dev-env-schedule.yml exists for.
         Assert.Contains("start_after", redeploy, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// The redeploy sequence must not provision <b>by default</b>, and must still let an operator ask it to.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Two failure modes, in opposite directions, and this holds both. Provisioning on every merge to main
+    /// would re-apply infrastructure for no reason. But <c>provision</c> hardcoded to <c>false</c> — which is
+    /// what this was — made a whole class of fix unreachable without editing the workflow: <c>azd deploy</c>
+    /// pushes images and nothing else, so a parameter or secret corrected at its source does not reach the
+    /// container apps until a provision run. A corrupted push credential stayed broken in dev through several
+    /// successful deploys for exactly that reason.
+    /// </para>
+    /// <para>
+    /// Asserted on the default rather than on a literal <c>provision: false</c>, because the passthrough
+    /// expression is the whole point and a literal cannot express "false unless asked".
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public void TheRedeploySequenceDefaultsToNoProvisionButExposesIt()
+    {
+        var redeploy = Workflow("dev-redeploy.yml");
+
+        // Declared on both triggers — the pipeline caller and the human one. Anchored to the input
+        // indentation, or the report job's own prose about provisioning counts as a declaration.
+        Assert.Equal(2, CountOccurrences(redeploy, "\n      provision:\n"));
+
+        // Defaulting to false is what keeps a merge to main an application-only deploy.
+        Assert.Equal(2, CountOccurrences(redeploy, "\n        default: false\n"));
+
+        // Passed through to deploy.yml, never pinned to a constant.
+        Assert.Contains("provision: ${{ inputs.provision || false }}", redeploy, StringComparison.Ordinal);
+        Assert.DoesNotContain("\n      provision: true", redeploy, StringComparison.Ordinal);
+
+        // deploy.yml has to accept it on the callable trigger, or the passthrough silently does nothing.
+        var deploy = Workflow("deploy.yml");
+        Assert.Contains("workflow_call:", deploy, StringComparison.Ordinal);
+        Assert.Contains("provision:", deploy, StringComparison.Ordinal);
+    }
+
+    private static int CountOccurrences(string haystack, string needle)
+    {
+        var count = 0;
+        for (var i = haystack.IndexOf(needle, StringComparison.Ordinal);
+             i >= 0;
+             i = haystack.IndexOf(needle, i + needle.Length, StringComparison.Ordinal))
+        {
+            count++;
+        }
+
+        return count;
     }
 
     /// <summary>
