@@ -1,0 +1,33 @@
+meta {
+  name: 6 Answer a reschedule request
+  type: http
+  seq: 6
+}
+post {
+  url: {{gatewayUrl}}/api/v1/booking/appointments/{{appointmentIdentifier}}/reschedule-answer
+  body: json
+}
+body:json {
+  {
+    "approve": true
+  }
+}
+docs {
+  Approving or declining an outstanding proposal. One route with a bool rather than two, because both
+  answers share every precondition — same appointment, same authorisation, same "is there still
+  something to answer" — and differ only in the write.
+
+  ⚠️ **The answer must come from the OTHER party.** Answering your own proposal returns `409`
+  ("The other party has to answer a reschedule request, not the one who made it") — otherwise asking
+  and agreeing would be one act, and a customer could move a provider's session unilaterally. So run
+  this as whichever side did NOT send request #5.
+
+  `approve: true` — the session moves to `proposedStart`, its LENGTH is preserved, `previousStart` is
+  recorded, the proposal is cleared and the status returns to `1` (`Booked`).
+
+  `approve: false` — the session stays exactly where it was, the proposal is cleared, status returns to
+  `Booked`, and `previousStart` stays **null**: a declined proposal must not read afterwards as though a
+  reschedule happened.
+
+  Either way the proposer is notified. Declining is news too — silence reads as an unanswered request.
+}

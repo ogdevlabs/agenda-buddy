@@ -139,6 +139,33 @@
             "type": "integer",
             "format": "int32",
             "nullable": true
+          },
+          "proposedStart": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "proposedBy": {
+            "type": "string",
+            "nullable": true
+          },
+          "previousStart": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "customerCancellationDeadlineUtc": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "hasPendingReschedule": {
+            "type": "boolean",
+            "readOnly": true
+          },
+          "proposedByCustomer": {
+            "type": "boolean",
+            "readOnly": true
           }
         },
         "additionalProperties": false
@@ -173,7 +200,8 @@
           1,
           2,
           3,
-          4
+          4,
+          5
         ],
         "type": "integer",
         "format": "int32"

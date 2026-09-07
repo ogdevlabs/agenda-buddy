@@ -71,7 +71,7 @@ public class RescheduleAppointmentCommandHandler(
         }
 
         await providerService.ChangeEmbeddedAppointmentScheduleAsync(
-            appointment.EmailProvider, request.Identifier, appointment.Start, appointment.End);
+            appointment.EmailProvider, request.Identifier, appointment.Start, appointment.End, previousStart);
 
         await mediator.Publish(
             new RescheduleAppointmentEvent { Identifier = request.Identifier }, cancellationToken);

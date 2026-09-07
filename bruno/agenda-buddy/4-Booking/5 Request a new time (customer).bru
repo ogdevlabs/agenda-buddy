@@ -1,0 +1,29 @@
+meta {
+  name: 5 Request a new time (customer)
+  type: http
+  seq: 5
+}
+post {
+  url: {{gatewayUrl}}/api/v1/booking/appointments/{{appointmentIdentifier}}/reschedule-request
+  body: json
+}
+body:json {
+  {
+    "newStartUtc": "2026-09-21T14:00:00Z"
+  }
+}
+docs {
+  A **customer** proposing a new time. **The appointment does not move.**
+
+  The response still carries the original `start`; the proposal sits alongside it as `proposedStart` +
+  `proposedBy`, and `appointmentStatus` becomes `5` (`RescheduleRequested`). Until the other party
+  answers, every calendar keeps showing the session where it still is — a proposal is not an agreement.
+
+  Pick the time from `GET /api/v1/calendar/availability/{email}` and send the server's own UTC instant
+  back unchanged, so an approval is one tap and the slot was known free when it was picked. It is
+  re-checked at approval: availability at proposal time is not a reservation.
+
+  `409` when the session is not `Booked`, when a request is **already awaiting an answer** (refused
+  rather than silently replacing the first, so neither party answers a proposal the other replaced),
+  when the time is in the past, or when it is the time already booked.
+}

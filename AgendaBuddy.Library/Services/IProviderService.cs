@@ -110,5 +110,21 @@ public interface IProviderService
     /// still on offer — which is a double-booking generator, not a stale display.
     /// </remarks>
     Task<ProviderEntity?> ChangeEmbeddedAppointmentScheduleAsync(
-        string providerEmail, string identifier, DateTime startUtc, DateTime endUtc);
+        string providerEmail, string identifier, DateTime startUtc, DateTime endUtc,
+        DateTime? previousStartUtc = null);
+
+    /// <summary>
+    /// Records a reschedule proposal on the provider's embedded copy.
+    /// </summary>
+    /// <remarks>
+    /// <b>The embedded list is the client-facing read.</b>
+    /// <c>GET /api/v1/calendar/appointments/{email}</c> serves it for BOTH roles, so a proposal written only to
+    /// the <c>appointments</c> collection reaches no screen: the status arrives as <c>RescheduleRequested</c>
+    /// carrying no proposed time, which every reader correctly treats as no proposal at all.
+    /// </remarks>
+    Task<ProviderEntity?> SetEmbeddedRescheduleProposalAsync(
+        string providerEmail, string identifier, DateTime proposedStartUtc, string proposedBy);
+
+    /// <summary>Clears a proposal from the embedded copy and returns it to <c>Booked</c>. For a decline.</summary>
+    Task<ProviderEntity?> ClearEmbeddedRescheduleProposalAsync(string providerEmail, string identifier);
 }

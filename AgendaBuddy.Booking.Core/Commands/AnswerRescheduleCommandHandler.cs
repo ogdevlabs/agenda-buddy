@@ -86,7 +86,7 @@ public class AnswerRescheduleCommandHandler(
         }
 
         await providerService.ChangeEmbeddedAppointmentScheduleAsync(
-            appointment.EmailProvider, request.Identifier, appointment.Start, appointment.End);
+            appointment.EmailProvider, request.Identifier, appointment.Start, appointment.End, previousStart);
 
         await mediator.Publish(
             new AnswerRescheduleEvent { Identifier = request.Identifier }, cancellationToken);
@@ -127,11 +127,11 @@ public class AnswerRescheduleCommandHandler(
                 "This request could not be declined — the session may have been cancelled since it was made.");
         }
 
-        await providerService.ChangeEmbeddedAppointmentStatusAsync(
-            appointment.EmailProvider,
-            request.Identifier,
-            AppointmentStatus.Booked,
-            EnumHelper<AppointmentStatus>.GetEnumDescription(AppointmentStatus.Booked));
+        // Unsets the proposal as well as restoring the status. Setting the status back alone would leave a
+        // Booked appointment still carrying a proposed time, which reads as an outstanding request against a
+        // status saying there is none.
+        await providerService.ClearEmbeddedRescheduleProposalAsync(
+            appointment.EmailProvider, request.Identifier);
 
         await mediator.Publish(
             new AnswerRescheduleEvent { Identifier = request.Identifier }, cancellationToken);

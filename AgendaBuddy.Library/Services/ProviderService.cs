@@ -207,7 +207,90 @@ public class ProviderService(IRepository<ProviderEntity> providerRepository) : I
     /// </para>
     /// </remarks>
     public async Task<ProviderEntity?> ChangeEmbeddedAppointmentScheduleAsync(
-        string providerEmail, string identifier, DateTime startUtc, DateTime endUtc)
+        string providerEmail, string identifier, DateTime startUtc, DateTime endUtc, DateTime? previousStartUtc = null)
+    {
+        var set = new BsonDocument
+        {
+            { "appointments.$.start", DateTime.SpecifyKind(startUtc.ToUniversalTime(), DateTimeKind.Utc) },
+            { "appointments.$.end", DateTime.SpecifyKind(endUtc.ToUniversalTime(), DateTimeKind.Utc) },
+            { "appointments.$.appointment_status", (int)AppointmentStatus.Booked },
+            {
+                "appointments.$.appointment_description",
+                EnumHelper<AppointmentStatus>.GetEnumDescription(AppointmentStatus.Booked)
+            }
+        };
+
+        if (previousStartUtc is { } previous)
+        {
+            set.Add(
+                "appointments.$.previous_start",
+                DateTime.SpecifyKind(previous.ToUniversalTime(), DateTimeKind.Utc));
+        }
+
+        return await providerRepository.FindOneAndUpdateAsync(
+            new BsonDocument
+            {
+                { "email", providerEmail },
+                { "appointments.identifier", identifier }
+            },
+            new BsonDocument
+            {
+                { "$set", set },
+                {
+                    "$unset", new BsonDocument
+                    {
+                        { "appointments.$.proposed_start", "" },
+                        { "appointments.$.proposed_by", "" }
+                    }
+                }
+            });
+    }
+
+    /// <summary>
+    /// Records a reschedule proposal on the provider's embedded copy.
+    /// </summary>
+    /// <remarks>
+    /// <b>Needed because the embedded list IS the client-facing read.</b>
+    /// <c>GET /api/v1/calendar/appointments/{email}</c> serves <see cref="ProviderEntity.AppointmentEntities"/>
+    /// — for a customer as well, since <c>CustomerEntity</c> holds only identifier strings — so a proposal
+    /// written to the <c>appointments</c> collection alone reaches no screen at all. The status would arrive as
+    /// <c>RescheduleRequested</c> with no proposed time, which every reader treats as "no proposal outstanding":
+    /// the banner would never draw and Approve/Decline would never appear.
+    /// </remarks>
+    public async Task<ProviderEntity?> SetEmbeddedRescheduleProposalAsync(
+        string providerEmail, string identifier, DateTime proposedStartUtc, string proposedBy)
+    {
+        return await providerRepository.FindOneAndUpdateAsync(
+            new BsonDocument
+            {
+                { "email", providerEmail },
+                { "appointments.identifier", identifier }
+            },
+            new BsonDocument("$set", new BsonDocument
+            {
+                { "appointments.$.appointment_status", (int)AppointmentStatus.RescheduleRequested },
+                {
+                    "appointments.$.appointment_description",
+                    EnumHelper<AppointmentStatus>.GetEnumDescription(AppointmentStatus.RescheduleRequested)
+                },
+                {
+                    "appointments.$.proposed_start",
+                    DateTime.SpecifyKind(proposedStartUtc.ToUniversalTime(), DateTimeKind.Utc)
+                },
+                { "appointments.$.proposed_by", proposedBy }
+            }));
+    }
+
+    /// <summary>
+    /// Clears a proposal from the embedded copy and returns it to <c>Booked</c>, leaving its times alone.
+    /// </summary>
+    /// <remarks>
+    /// For a DECLINE. Setting the status back without unsetting the proposal fields would leave a
+    /// <c>Booked</c> appointment still carrying a proposed time, which reads as an outstanding request against a
+    /// status that says there is none.
+    /// </remarks>
+    public async Task<ProviderEntity?> ClearEmbeddedRescheduleProposalAsync(
+        string providerEmail, string identifier)
     {
         return await providerRepository.FindOneAndUpdateAsync(
             new BsonDocument
@@ -220,8 +303,6 @@ public class ProviderService(IRepository<ProviderEntity> providerRepository) : I
                 {
                     "$set", new BsonDocument
                     {
-                        { "appointments.$.start", DateTime.SpecifyKind(startUtc.ToUniversalTime(), DateTimeKind.Utc) },
-                        { "appointments.$.end", DateTime.SpecifyKind(endUtc.ToUniversalTime(), DateTimeKind.Utc) },
                         { "appointments.$.appointment_status", (int)AppointmentStatus.Booked },
                         {
                             "appointments.$.appointment_description",

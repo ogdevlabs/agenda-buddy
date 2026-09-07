@@ -177,6 +177,195 @@
         }
       }
     },
+    "/api/v1/booking/appointments/{identifier}/reschedule": {
+      "post": {
+        "tags": [
+          "BookingAPI"
+        ],
+        "operationId": "RescheduleAppointment",
+        "parameters": [
+          {
+            "name": "identifier",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RescheduleRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppointmentEntityDataResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/booking/appointments/{identifier}/reschedule-request": {
+      "post": {
+        "tags": [
+          "BookingAPI"
+        ],
+        "operationId": "RequestAppointmentReschedule",
+        "parameters": [
+          {
+            "name": "identifier",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RescheduleRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppointmentEntityDataResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/booking/appointments/{identifier}/reschedule-answer": {
+      "post": {
+        "tags": [
+          "BookingAPI"
+        ],
+        "operationId": "AnswerAppointmentReschedule",
+        "parameters": [
+          {
+            "name": "identifier",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnswerRescheduleRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppointmentEntityDataResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/booking/appointments/{identifier}/notes": {
       "get": {
         "tags": [
@@ -423,6 +612,15 @@
   },
   "components": {
     "schemas": {
+      "AnswerRescheduleRequest": {
+        "type": "object",
+        "properties": {
+          "approve": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
       "AppointmentEntity": {
         "required": [
           "emailCustomer",
@@ -473,6 +671,33 @@
             "type": "integer",
             "format": "int32",
             "nullable": true
+          },
+          "proposedStart": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "proposedBy": {
+            "type": "string",
+            "nullable": true
+          },
+          "previousStart": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "customerCancellationDeadlineUtc": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "hasPendingReschedule": {
+            "type": "boolean",
+            "readOnly": true
+          },
+          "proposedByCustomer": {
+            "type": "boolean",
+            "readOnly": true
           }
         },
         "additionalProperties": false
@@ -503,7 +728,8 @@
           1,
           2,
           3,
-          4
+          4,
+          5
         ],
         "type": "integer",
         "format": "int32"
@@ -765,6 +991,16 @@
         ],
         "type": "integer",
         "format": "int32"
+      },
+      "RescheduleRequest": {
+        "type": "object",
+        "properties": {
+          "newStartUtc": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
       }
     }
   }

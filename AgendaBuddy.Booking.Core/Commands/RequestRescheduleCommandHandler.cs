@@ -51,11 +51,15 @@ public class RequestRescheduleCommandHandler(
                 + "a request awaiting an answer.");
         }
 
-        await providerService.ChangeEmbeddedAppointmentStatusAsync(
+        // The proposal itself, not just the status. GET /api/v1/calendar/appointments/{email} serves the
+        // provider's EMBEDDED list for both roles, so a proposal written only to the appointments collection
+        // reaches no screen: the status arrives as RescheduleRequested with no proposed time, which every reader
+        // correctly reads as "no proposal outstanding".
+        await providerService.SetEmbeddedRescheduleProposalAsync(
             appointment.EmailProvider,
             request.Identifier,
-            AppointmentStatus.RescheduleRequested,
-            EnumHelper<AppointmentStatus>.GetEnumDescription(AppointmentStatus.RescheduleRequested));
+            request.ProposedStartUtc,
+            request.RequestedByEmail);
 
         await mediator.Publish(
             new RequestRescheduleEvent { Identifier = request.Identifier }, cancellationToken);

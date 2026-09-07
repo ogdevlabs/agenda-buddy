@@ -345,6 +345,33 @@
             "type": "integer",
             "format": "int32",
             "nullable": true
+          },
+          "proposedStart": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "proposedBy": {
+            "type": "string",
+            "nullable": true
+          },
+          "previousStart": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "customerCancellationDeadlineUtc": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "hasPendingReschedule": {
+            "type": "boolean",
+            "readOnly": true
+          },
+          "proposedByCustomer": {
+            "type": "boolean",
+            "readOnly": true
           }
         },
         "additionalProperties": false
@@ -355,7 +382,21 @@
           1,
           2,
           3,
-          4
+          4,
+          5
+        ],
+        "type": "integer",
+        "format": "int32"
+      },
+      "DayOfWeek": {
+        "enum": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
         ],
         "type": "integer",
         "format": "int32"
@@ -520,6 +561,13 @@
             "minimum": 1,
             "type": "integer",
             "format": "int32",
+            "nullable": true
+          },
+          "workWeek": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WorkDayHours"
+            },
             "nullable": true
           }
         },
@@ -727,6 +775,36 @@
           "professionName": {
             "type": "string",
             "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "WorkDayHours": {
+        "type": "object",
+        "properties": {
+          "day": {
+            "$ref": "#/components/schemas/DayOfWeek"
+          },
+          "startHour": {
+            "maximum": 23,
+            "minimum": 0,
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "endHour": {
+            "maximum": 24,
+            "minimum": 1,
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "isClosed": {
+            "type": "boolean"
+          },
+          "describesAWindow": {
+            "type": "boolean",
+            "readOnly": true
           }
         },
         "additionalProperties": false
