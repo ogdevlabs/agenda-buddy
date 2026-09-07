@@ -52,14 +52,23 @@ public class AutoDeployPathFilterTest
     /// surrounding prose — several of these paths are *discussed* in comments, so a whole-file search
     /// would pass on a mention and prove nothing.
     /// </summary>
-    private static string DeployableFilter()
+    private static string DeployableFilter() => Filter("deployable");
+
+    /// <summary>The <c>integration:</c> filter's own entries, isolated the same way.</summary>
+    private static string IntegrationFilter() => Filter("integration");
+
+    /// <summary>
+    /// One named filter block from the <c>changes</c> job, isolated from every other filter and from the
+    /// surrounding prose.
+    /// </summary>
+    private static string Filter(string name)
     {
         var lines = Ci().Split('\n');
 
-        var start = Array.FindIndex(lines, l => l.TrimEnd() == "            deployable:");
+        var start = Array.FindIndex(lines, l => l.TrimEnd() == $"            {name}:");
         Assert.True(start >= 0,
-            "dotnet.yml's `changes` job no longer declares a `deployable:` filter — the deploy stage's "
-            + "path decision has moved or been deleted, and this test can no longer see what it matches.");
+            $"dotnet.yml's `changes` job no longer declares a `{name}:` filter — the path decision it drove "
+            + "has moved or been deleted, and this test can no longer see what it matches.");
 
         // Runs until the next line at the filter-name indent that is not itself an entry or a comment.
         var end = start + 1;
@@ -123,6 +132,88 @@ public class AutoDeployPathFilterTest
     public void TheAppHostGraphYieldsTheEightDeployedProjects()
     {
         Assert.Equal(8, DeployedProjectDirectories().Count());
+    }
+
+    // ── The integration suite's own filter ──────────────────────────────────────────────────────────
+    //
+    // Narrower than `api` for cost — the suite references none of the 11 backend unit test projects, so a
+    // change to one cannot alter what it observes, and gating on `api` spent a ~4-minute Docker + Mongo run
+    // on things like editing a structural test in this very file.
+    //
+    // Being a positive list, an unlisted project makes the suite SILENTLY SKIP. These tests are what turn
+    // that into a failure instead.
+
+    [Theory]
+    [MemberData(nameof(DeployedProjectDirectories))]
+    public void EveryAppHostDeclaredServiceIsInTheIntegrationFilter(string projectDirectory)
+    {
+        Assert.Contains($"'{projectDirectory}/**'", IntegrationFilter(), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// The paths that change what the integration suite observes without being a service directory.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="Filter"/> reads one block in isolation, so a path merely discussed in a comment elsewhere
+    /// cannot satisfy these. The last three are the ones a reader would not guess:
+    /// <c>AgendaBuddy.MobileApp</c> because <c>AgendaBuddy.IntegrationTests</c> holds a real
+    /// <c>ProjectReference</c> to it, <c>docs/api/openapi</c> because <c>OpenApiSpecDriftTest</c> diffs those
+    /// committed baselines, and <c>verify-container-reaping.sh</c> because the job runs it as a step.
+    /// </remarks>
+    [Theory]
+    [InlineData("'AgendaBuddy.Library/**'")]
+    [InlineData("'AgendaBuddy.Library.ServerAuth/**'")]
+    [InlineData("'AgendaBuddy.EventAndCommands/**'")]
+    [InlineData("'AgendaBuddy.ServiceDefaults/**'")]
+    [InlineData("'AgendaBuddy.IntegrationTests/**'")]
+    [InlineData("'AgendaBuddy.MobileApp/**'")]
+    [InlineData("'docs/api/openapi/**'")]
+    [InlineData("'scripts/verify-container-reaping.sh'")]
+    [InlineData("'Directory.Build.props'")]
+    [InlineData("'.github/workflows/dotnet.yml'")]
+    public void TheIntegrationFilterCoversWhatTheSuiteActuallyReads(string entry)
+    {
+        Assert.Contains(entry, IntegrationFilter(), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// The whole point of the filter: a backend UNIT test project must not trigger the integration suite.
+    /// </summary>
+    /// <remarks>
+    /// <c>AgendaBuddy.IntegrationTests</c> is deliberately not in this list — it IS the suite. Every other
+    /// test project is, because none of them is referenced by it.
+    /// </remarks>
+    [Theory]
+    [InlineData("AgendaBuddy.AppHost.Tests")]
+    [InlineData("AgendaBuddy.Library.Tests")]
+    [InlineData("AgendaBuddy.Booking.Tests")]
+    [InlineData("AgendaBuddy.Calendar.Tests")]
+    [InlineData("AgendaBuddy.Customer.Tests")]
+    [InlineData("AgendaBuddy.Provider.Tests")]
+    [InlineData("AgendaBuddy.Services.Tests")]
+    [InlineData("AgendaBuddy.Profession.Tests")]
+    [InlineData("AgendaBuddy.Identity.Tests")]
+    [InlineData("AgendaBuddy.EventsAndCommands.Tests")]
+    [InlineData("AgendaBuddy.ServiceDefaults.Tests")]
+    [InlineData("AgendaBuddy.MobileApp.Tests")]
+    public void ABackendUnitTestProjectDoesNotTriggerTheIntegrationSuite(string testProject)
+    {
+        Assert.DoesNotContain($"'{testProject}/**'", IntegrationFilter(), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// The job has to read the filter, or narrowing it changes nothing. An unresolvable
+    /// <c>needs.changes.outputs.integration</c> evaluates to empty and the suite never runs at all.
+    /// </summary>
+    [Fact]
+    public void TheIntegrationJobGatesOnTheIntegrationFilter()
+    {
+        var ci = Ci();
+
+        Assert.Contains("integration: ${{ steps.filter.outputs.integration }}", ci, StringComparison.Ordinal);
+        Assert.Contains(
+            "if: needs.changes.outputs.integration == 'true' && needs.changes.outputs.code == 'true'",
+            ci, StringComparison.Ordinal);
     }
 
     /// <summary>
