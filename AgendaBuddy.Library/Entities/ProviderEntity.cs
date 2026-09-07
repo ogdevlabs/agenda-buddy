@@ -105,4 +105,25 @@ public class ProviderEntity
     [BsonIgnoreIfNull]
     [Range(1, 24, ErrorMessage = "Work day end hour must be between 1 and 24.")]
     public int? WorkDayEndHour { get; set; }
+
+    /// <summary>
+    /// Per-weekday working hours. At most one entry per <see cref="DayOfWeek"/>; days with no entry inherit
+    /// <see cref="WorkDayStartHour"/>/<see cref="WorkDayEndHour"/>, and from there the calculator's default.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Additive, and the single pair above is deliberately NOT removed.</b> Every stored provider has hours
+    /// expressed as that one pair; dropping it in favour of this list would empty the calendar of every provider
+    /// who has not yet opened the new settings screen. The pair remains the fallback for any weekday this list
+    /// does not mention, which makes an empty list behave exactly as before.
+    /// </para>
+    /// <para>
+    /// A list rather than a map keyed by day, because MongoDB map keys are strings and would store the weekday as
+    /// <c>"Monday"</c> — a second spelling of a value the BCL already has an integer for, free to disagree with
+    /// it across locales. Duplicate days are resolved by taking the first, so a document written twice cannot
+    /// produce two conflicting windows for one day.
+    /// </para>
+    /// </remarks>
+    [BsonElement("work_week")]
+    public List<WorkDayHours> WorkWeek { get; set; } = [];
 }

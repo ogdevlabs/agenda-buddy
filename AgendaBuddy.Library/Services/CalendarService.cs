@@ -18,25 +18,4 @@ public class CalendarService(IRepository<AppointmentEntity> appointmentRepositor
         return await appointmentRepository.FindAllAsync(filter);
     }
 
-    public async Task<bool> BlockCalendarPeriodAsync(string emailProvider, DateTime startDate, DateTime endDate)
-    {
-        var numberOfDays = (int)(endDate - startDate).TotalDays;
-
-        for (var i = 0; i < numberOfDays; i++)
-        {
-            var blockDay = new AppointmentEntity
-            {
-                Identifier = Guid.NewGuid().ToString(),
-                AppointmentStatus = AppointmentStatus.Confirmed,
-                Start = startDate.AddDays(i),
-                End = startDate.AddDays(i + 1),
-                DayOff = true,
-                EmailProvider = emailProvider,
-                EmailCustomer = string.Empty
-            };
-            await appointmentRepository.InsertAsync(blockDay);
-        }
-
-        return true;
-    }
 }
