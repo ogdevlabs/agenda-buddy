@@ -108,7 +108,12 @@ public class BookingApiService : IBookingApiService
         // the Phone row permanently blank however well the directory lookup worked upstream.
         CustomerName = detail.CustomerName,
         CustomerPhone = detail.CustomerPhone,
-        CustomerNotes = detail.CustomerNotes
+        CustomerNotes = detail.CustomerNotes,
+
+        // Same reason as the phone above: dropped here, the dashboard card would fall back to a deterministic
+        // avatar and disagree with Contacts and Messages for anybody the server assigned a mark to.
+        ContactEmail = detail.ContactEmail,
+        ContactAvatarId = detail.ContactAvatarId
     };
 
     // ── Create / cancel ───────────────────────────────────────────────────────────────────────────────

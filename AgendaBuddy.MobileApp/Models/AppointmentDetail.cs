@@ -24,6 +24,19 @@ public class AppointmentDetail
     public bool HasNotes => !string.IsNullOrWhiteSpace(CustomerNotes);
 
     /// <summary>
+    /// The counterpart's assigned avatar id, filled from the contact directory.
+    /// </summary>
+    /// <remarks>
+    /// Not on the appointment wire — it comes from the same directory read that already supplies the display name
+    /// and phone, so showing an avatar costs no extra request. Empty when the directory could not be read, which
+    /// falls back to the deterministic mark rather than to nothing.
+    /// </remarks>
+    public string ContactAvatarId { get; set; } = string.Empty;
+
+    /// <summary>The image to bind, resolved the same way on every surface that shows a person.</summary>
+    public string AvatarAsset => Infrastructure.AvatarSource.For(ContactAvatarId, ContactEmail);
+
+    /// <summary>
     /// The new start somebody has proposed, on this device's clock. Set only while
     /// <see cref="AppointmentStatus.RescheduleRequested"/>.
     /// </summary>

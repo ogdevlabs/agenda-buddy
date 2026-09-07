@@ -168,15 +168,21 @@
                                             Command="{Binding Source={x:Reference ThisPage}, Path=BindingContext.OpenAppointmentCommand}"
                                             CommandParameter="{Binding}" />
                                     </Grid.GestureRecognizers>
-                                    <Grid ColumnDefinitions="4,12,*,Auto" ColumnSpacing="0">
+                                    <Grid ColumnDefinitions="4,12,Auto,*,Auto" ColumnSpacing="0">
                                         <!-- Color bar -->
                                         <BoxView Grid.Column="0"
                                                  BackgroundColor="{StaticResource iOSRed}"
                                                  CornerRadius="2"
                                                  VerticalOptions="Fill"
                                                  Margin="0,6" />
+                                        <!-- The counterpart's assigned avatar, same as everywhere else. -->
+                                        <controls:Avatar Grid.Column="2"
+                                                         Size="34"
+                                                         Margin="0,0,10,0"
+                                                         Source="{Binding Appointment.AvatarAsset}"
+                                                         AutomationId="CalendarRowAvatar" />
                                         <!-- Content -->
-                                        <VerticalStackLayout Grid.Column="2"
+                                        <VerticalStackLayout Grid.Column="3"
                                                              VerticalOptions="Center"
                                                              Spacing="2">
                                             <Label Text="{Binding Label}"
@@ -191,7 +197,7 @@
                                         </VerticalStackLayout>
                                         <!-- Hidden on a row with no identifier: it cannot be opened, and a
                                              chevron would promise a tap that lands nowhere. -->
-                                        <Label Grid.Column="3"
+                                        <Label Grid.Column="4"
                                                Text="&#x203A;"
                                                FontSize="22"
                                                IsVisible="{Binding CanOpen}"

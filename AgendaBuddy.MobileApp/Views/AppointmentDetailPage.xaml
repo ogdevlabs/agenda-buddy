@@ -109,11 +109,21 @@
                         <VerticalStackLayout Spacing="14">
 
                             <!-- Counterpart: the provider when a customer is looking, the customer when a
-                                 provider is. -->
-                            <Label Text="{Binding Appointment.DisplayName}"
-                                   FontSize="20"
-                                   FontAttributes="Bold"
-                                   TextColor="{StaticResource TextPrimary}" />
+                                 provider is. The avatar is the same mark Contacts, Messages, the Dashboard and
+                                 the Calendar show for this person. -->
+                            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+                                <controls:Avatar Grid.Column="0"
+                                                 Size="48"
+                                                 Source="{Binding Appointment.AvatarAsset}"
+                                                 AutomationId="CounterpartAvatar" />
+                                <Label Grid.Column="1"
+                                       Text="{Binding Appointment.DisplayName}"
+                                       FontSize="20"
+                                       FontAttributes="Bold"
+                                       VerticalOptions="Center"
+                                       LineBreakMode="TailTruncation"
+                                       TextColor="{StaticResource TextPrimary}" />
+                            </Grid>
 
                             <!-- Date and time on one line each, no tile. -->
                             <VerticalStackLayout Spacing="2">

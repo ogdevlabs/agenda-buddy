@@ -35,7 +35,7 @@ public static class AppointmentNavigation
             appointment.Id, appointment.CustomerEmail, appointment.CustomerName, appointment.CustomerPhone,
             appointment.ProviderName, appointment.DisplayName, appointment.ScheduledAt,
             appointment.Status.ToString(), appointment.ServiceName, appointment.ServiceDurationMinutes,
-            appointment.CustomerNotes);
+            appointment.CustomerNotes, appointment.ContactEmail, appointment.ContactAvatarId);
 
     /// <inheritdoc cref="BuildQuery(Models.AppointmentDetail)"/>
     public static Dictionary<string, object> BuildQuery(Models.AppointmentSummary appointment) =>
@@ -43,7 +43,7 @@ public static class AppointmentNavigation
             appointment.Id, appointment.CustomerEmail, appointment.CustomerName, appointment.CustomerPhone,
             appointment.ProviderName, appointment.DisplayName, appointment.ScheduledAt,
             appointment.Status.ToString(), appointment.ServiceName, appointment.ServiceDurationMinutes,
-            appointment.CustomerNotes);
+            appointment.CustomerNotes, appointment.ContactEmail, appointment.ContactAvatarId);
 
     private static Dictionary<string, object> Build(
         string id,
@@ -56,7 +56,9 @@ public static class AppointmentNavigation
         string status,
         string serviceName,
         int? serviceDurationMinutes,
-        string? customerNotes) =>
+        string? customerNotes,
+        string? contactEmail,
+        string? contactAvatarId) =>
         new()
         {
             ["appointmentId"] = id,
@@ -71,6 +73,11 @@ public static class AppointmentNavigation
             ["status"] = status,
             ["serviceName"] = serviceName,
             ["serviceDurationMinutes"] = serviceDurationMinutes?.ToString() ?? string.Empty,
-            ["customerNotes"] = customerNotes ?? string.Empty
+            ["customerNotes"] = customerNotes ?? string.Empty,
+
+            // Carried so the fallback render shows the SAME mark the list the caller came from showed. Without
+            // it the detail page would derive one from the address and disagree with the row that opened it.
+            ["contactEmail"] = contactEmail ?? string.Empty,
+            ["contactAvatarId"] = contactAvatarId ?? string.Empty
         };
 }

@@ -59,6 +59,6 @@ public partial class CustomerSummary : ObservableObject
     /// profile. <c>.png</c> because MAUI rasterises the committed <c>.svg</c> at build time and the asset is
     /// referenced by its raster name.
     /// </remarks>
-    public string AvatarAsset => $"{AvatarCatalog.Resolve(AvatarId, Email)}.png";
+    public string AvatarAsset => Infrastructure.AvatarSource.For(AvatarId, Email);
     public string SessionsLabel => IsProvider ? $"{TotalSessions} services" : $"{TotalSessions} sessions";
 }

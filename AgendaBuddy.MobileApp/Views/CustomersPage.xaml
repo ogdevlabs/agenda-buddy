@@ -210,23 +210,13 @@
                                         Border's StrokeShape rather than drawn over a BoxView, so there is one
                                         element and no chance of the letter and the disc disagreeing on size.
                                     -->
-                                    <Border Grid.Column="0"
-                                            WidthRequest="46"
-                                            HeightRequest="46"
-                                            VerticalOptions="Center"
-                                            Padding="0"
-                                            StrokeThickness="0"
-                                            Stroke="Transparent"
-                                            BackgroundColor="{StaticResource Divider}">
-                                        <Border.StrokeShape>
-                                            <RoundRectangle CornerRadius="23" />
-                                        </Border.StrokeShape>
-                                        <Image Source="{Binding AvatarAsset}"
-                                               Aspect="AspectFill"
-                                               WidthRequest="46"
-                                               HeightRequest="46"
-                                               AutomationId="ContactAvatar" />
-                                    </Border>
+                                    <!-- The shared control: the circular-clip markup was 16 lines repeated per surface, and the
+                                         two copies had already drifted in how they RESOLVED the image. -->
+                                    <controls:Avatar Grid.Column="0"
+                                                     Size="48"
+                                                     VerticalOptions="Start"
+                                                     Source="{Binding AvatarAsset}"
+                                                     AutomationId="ContactAvatar" />
 
                                     <!-- Name + subtitle -->
                                     <VerticalStackLayout Grid.Column="1"

@@ -194,6 +194,11 @@ public class CalendarApiService : ICalendarApiService
                 // block reads ContactPhone. Filling only one left whichever screen used the other blank.
                 appointment.CustomerPhone = contact.Phone;
                 appointment.ContactPhone = contact.Phone;
+
+                // The assigned mark, from the read that is already happening. Without it every appointment
+                // surface would fall back to the deterministic avatar and disagree with Contacts and Messages
+                // for any account the server actually assigned one to.
+                appointment.ContactAvatarId = contact.AvatarId ?? string.Empty;
             }
 
             if (string.IsNullOrWhiteSpace(appointment.DisplayName))
