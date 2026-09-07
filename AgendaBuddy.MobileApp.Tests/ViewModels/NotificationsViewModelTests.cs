@@ -424,29 +424,63 @@ public class NotificationsViewModelTests
     /// The header is stamped on the first row of each band and cleared on the rest, so a flat list can draw
     /// "Today"/"Yesterday" headers without a grouped CollectionView.
     /// </summary>
+    /// <summary>
+    /// Anchored to a fixed local midday and an injected clock, not to <c>DateTime.UtcNow</c>.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ The earlier version built rows as <c>DateTime.UtcNow.AddHours(-1)</c> and asserted "Today". It
+    /// passed every time it was run by hand and **failed in CI at 00:32 UTC**, because an hour before that
+    /// is the previous day — the test's expectations depended on what time of day it ran. Midday is chosen
+    /// so ±2 hours cannot cross a local date boundary in any zone, and the clock is passed in so the
+    /// banding cannot drift from what the assertions assume. Same reasoning as
+    /// <c>AvailabilityCalculator</c> taking <c>nowUtc</c>.
+    /// </remarks>
     [Fact]
-    public async Task LoadAsync_StampsADateHeaderOnTheFirstRowOfEachBandOnly()
+    public void ApplySections_StampsADateHeaderOnTheFirstRowOfEachBandOnly()
     {
-        var now = DateTime.UtcNow;
+        var localNow = new DateTime(2026, 9, 6, 12, 0, 0, DateTimeKind.Local);
+
+        // CreatedAt is a UTC instant on the wire, and ApplySections converts it back with ToLocalTime() —
+        // so the fixtures are built by converting a known LOCAL time outward. That round-trip is what makes
+        // this independent of the machine's zone rather than merely correct in one.
         var rows = new List<NotificationSummary>
         {
-            new() { Id = "a", CreatedAt = now.AddHours(-1) },
-            new() { Id = "b", CreatedAt = now.AddHours(-2) },
-            new() { Id = "c", CreatedAt = now.AddDays(-1) },
-            new() { Id = "d", CreatedAt = now.AddDays(-1).AddHours(-1) }
+            new() { Id = "a", CreatedAt = localNow.AddHours(-1).ToUniversalTime() },
+            new() { Id = "b", CreatedAt = localNow.AddHours(-2).ToUniversalTime() },
+            new() { Id = "c", CreatedAt = localNow.AddDays(-1).ToUniversalTime() },
+            new() { Id = "d", CreatedAt = localNow.AddDays(-1).AddHours(-1).ToUniversalTime() }
+        };
+
+        var banded = NotificationsViewModel.ApplySections(rows, localNow);
+
+        Assert.Equal("Today", banded[0].SectionHeader);
+        Assert.True(banded[0].StartsSection);
+
+        Assert.Equal(string.Empty, banded[1].SectionHeader);
+        Assert.False(banded[1].StartsSection);
+
+        Assert.Equal("Yesterday", banded[2].SectionHeader);
+        Assert.Equal(string.Empty, banded[3].SectionHeader);
+    }
+
+    /// <summary>
+    /// The load path still bands — the assertion above exercises <c>ApplySections</c> directly, so this
+    /// keeps <c>LoadAsync</c> wired to it. Asserts only that a header was stamped, never which one, because
+    /// which one depends on the clock this runs at.
+    /// </summary>
+    [Fact]
+    public async Task LoadAsync_BandsTheRowsItLoads()
+    {
+        var rows = new List<NotificationSummary>
+        {
+            new() { Id = "a", CreatedAt = DateTime.UtcNow.AddHours(-1) }
         };
 
         var vm = CreateViewModel(CreateService(rows), out _);
         await vm.LoadCommand.ExecuteAsync(null);
 
-        Assert.Equal("Today", vm.Notifications[0].SectionHeader);
         Assert.True(vm.Notifications[0].StartsSection);
-
-        Assert.Equal(string.Empty, vm.Notifications[1].SectionHeader);
-        Assert.False(vm.Notifications[1].StartsSection);
-
-        Assert.Equal("Yesterday", vm.Notifications[2].SectionHeader);
-        Assert.Equal(string.Empty, vm.Notifications[3].SectionHeader);
+        Assert.False(string.IsNullOrEmpty(vm.Notifications[0].SectionHeader));
     }
 
     /// <summary>
@@ -456,14 +490,21 @@ public class NotificationsViewModelTests
     [Fact]
     public void TheBandingUsesTheReadersOwnClock()
     {
-        var utc = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Utc);
+        // Both the fixture and the clock are fixed. The previous version read DateTime.Now twice — once
+        // inside ApplySections and once in the assertion — which is self-consistent but not deterministic:
+        // a run straddling local midnight compares two different days.
+        var localNow = new DateTime(2026, 9, 6, 12, 0, 0, DateTimeKind.Local);
+        var utc = localNow.AddHours(-3).ToUniversalTime();
         var rows = new List<NotificationSummary> { new() { Id = "a", CreatedAt = utc } };
 
-        NotificationsViewModel.ApplySections(rows);
+        NotificationsViewModel.ApplySections(rows, localNow);
 
+        // Banded on the LOCAL conversion, not on the stored UTC instant — banding on UTC files a 01:00Z
+        // row under the wrong day for every reader behind UTC.
         Assert.Equal(
-            AgendaBuddy.MobileApp.Infrastructure.NotificationVisuals.Section(utc.ToLocalTime(), DateTime.Now),
+            AgendaBuddy.MobileApp.Infrastructure.NotificationVisuals.Section(utc.ToLocalTime(), localNow),
             rows[0].SectionHeader);
+        Assert.Equal("Today", rows[0].SectionHeader);
     }
 
     // ── Row chrome ──────────────────────────────────────────────────────────────────────────────────
