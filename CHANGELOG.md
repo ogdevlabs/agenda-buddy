@@ -6,20 +6,35 @@ All notable changes to this project are documented in this file, in [Keep a Chan
 
 ### Added
 
-- **F-031 auto-deploy-dev**: `.github/workflows/main-deploy-dev.yml` keeps the dev environment in step with
-  `main` — stop → deploy → restore, on a merge that touched a deployed backend service. **Off unless the
-  repository variable `AUTO_DEPLOY_DEV` is `true`**, because `deploy.yml` is manual "deliberately" until
-  `docs/deployment.md`'s "Before this is production" list is done and item 1 (rotate the Atlas credential,
-  `agenda-buddy-41s`) is still open — so merging this changes nothing until somebody opts in. Triggered by
-  **".NET CI" completing successfully on `main`**, not by the push: a push trigger deploys a merge result whose
-  build and tests have not finished. The third stage is not optional — `dev-env-stop` sets `minReplicas=0` and
-  `azd deploy` does not reset the scale rule (only `azd provision` does, and it is deliberately off for an
-  application-code deploy), so a bare stop→deploy would leave the new code at zero replicas until the next
-  weekday 09:00; the restore returns the environment to whatever `dev-env-schedule` would have chosen, which
-  means **deliberately leaving it stopped outside 09:00–17:00 Mexico City**. `deploy.yml` gained a
-  `workflow_call` trigger so there is one implementation of "deploy". ⚠️ A service missing from the workflow's
-  path list silently stops being deployed, so `AutoDeployPathFilterTest` derives the expected entries from the
-  AppHost's own `Projects.AgendaBuddy_*` symbols and fails if one is absent (ADR-065).
+- **F-031 auto-deploy-dev**: `.NET CI` gained a final `deploy-dev` stage, so **the dev environment runs the
+  backend code that is on `main`**. It fires on a push to `main` when the pipeline is not failing and the
+  `changes` job's new `deployable` filter matched, and calls `dev-redeploy.yml` — stop → deploy → restore —
+  which is also dispatchable; `deploy.yml` keeps its own dispatch, the only way to run with `provision: true`.
+  Three entry points, one implementation. Written first as a separate `workflow_run` workflow and rewritten as a
+  pipeline stage: the standalone version had to restate the deployable-path list in a second file, and that
+  duplicate fails silently — a renamed service the copy misses simply stops being deployed. On by default with
+  `AUTO_DEPLOY_DEV=false` as the brake, and the polarity is deliberate: only the literal `false` disables it, so
+  an unset or mistyped variable deploys rather than doing nothing quietly (ADR-065).
+- **F-031**: push credentials now reach a deployed environment, which they never had. `AppHostWiring` declared
+  the two push parameters only when a value was already in `builder.Configuration` — never true while the AppHost
+  is being *published*, because azd supplies parameter values at provision time and not to the app model during
+  manifest generation. So the condition was always false in the Cloud shape, the parameters never entered the
+  generated Bicep, and **every deployed environment resolved `UnconfiguredPushSender`: a backend that could not
+  push, with nothing anywhere reporting why.** The Cloud shape now declares them unconditionally as
+  `resendApiKey` does, while the Local shape keeps the configuration check that protects against ISSUE-001's
+  silent `ValueMissing` parking. Terraform stores both as optional Key Vault secrets
+  (`push-firebase-project-id`, `push-service-account-json`) and `deploy.yml` maps them to azd parameters.
+
+### Changed
+
+- **F-031**: `.NET CI`'s `cancel-in-progress` is now `false` on `main` — it was unconditionally `true`, and its
+  own comment conceded main pushes "never cancel each other's… in practice". That stopped being good enough once
+  a run can end in a deploy: cancelling a superseded run would cancel it mid-`terraform apply` or
+  mid-`azd deploy`. PRs keep the superseding behaviour, which is why the group exists.
+- **F-031**: an optional deploy secret that is absent is now passed to azd as an **empty string rather than
+  omitted**. A parameter the app model declares but supplies no value for fails `azd provision --no-prompt`,
+  while empty is exactly what `PushOptions`/`EmailOptions` read as "not configured" — so an environment with no
+  push credentials deploys and simply logs that push is off.
 
 - **F-030 contact-avatars**: `AvatarCatalog` (`AgendaBuddy.Library`) names 24 avatars, assigned at random when a
   Provider or Customer profile is created (`avatar_id` on both entities) and derived deterministically from the

@@ -326,14 +326,41 @@ shared ones.
 
 ## Automatic dev deploys on merge to main
 
-`.github/workflows/main-deploy-dev.yml` keeps the **dev** environment in step with `main`. It is **off
-until the repository variable `AUTO_DEPLOY_DEV` is set to the string `true`** (Settings → Secrets and
-variables → Actions → Variables), because item 1 of "Before this is production" below — rotating the
-Atlas credential — is still open. Merging the workflow changed nothing; enabling it is a deliberate act.
+**The invariant: the dev environment runs the backend code that is on `main`.**
 
-Once enabled, it runs on **".NET CI" completing successfully on `main`** — not on the push. A push
-trigger would deploy a merge result whose build and tests have not finished, which on a project with one
-shared Atlas cluster is exactly the foot-gun `deploy.yml`'s header warns about. Three stages:
+`.NET CI`'s final `deploy-dev` stage fires on a push to `main` when the pipeline is not failing and the
+`changes` job's `deployable` filter matched. It calls `.github/workflows/dev-redeploy.yml`, which is also
+`workflow_dispatch`-able, so the same sequence is a button; `deploy.yml` keeps its own dispatch and is the
+only route to `provision: true`. **Three entry points, one implementation.**
+
+It is a **pipeline stage rather than a separate `workflow_run` listener**, and that is not cosmetic: the
+standalone version had to restate the deployable-path list in a second file, and the duplicate fails in the
+silent direction — a renamed service the copy misses simply stops being deployed. As a stage it reads
+`needs.changes.outputs.deployable`, so there is one filter block in the repository. It also puts the deploy
+in the same run as the checks that gated it.
+
+⚠️ **On by default.** `AUTO_DEPLOY_DEV=false` (Settings → Secrets and variables → Actions → Variables) is
+the brake. **The polarity is deliberate:** only the literal string `false` disables it, so an unset or
+mistyped variable deploys rather than silently doing nothing — which was the failure mode of the earlier
+opt-in version. ⚠️ It deploys against the one shared Atlas cluster whose credential is still unrotated
+(item 1 of "Before this is production" below, `agenda-buddy-41s`). That is a known, accepted trade recorded
+in ADR-065, taken because three days of drift produced three bug reports against behaviour that was already
+correct — not an oversight.
+
+Two guardrails worth knowing, both of which were defects avoided:
+
+- **`.NET CI` no longer cancels superseded runs on `main`** (`cancel-in-progress: ${{ github.ref !=
+  'refs/heads/main' }}`). It was unconditionally `true`; cancelling a superseded run would now cancel it
+  mid-`terraform apply` or mid-`azd deploy`. PRs keep the superseding behaviour.
+- **The stage grants itself `id-token: write`.** `dotnet.yml`'s workflow-level permissions are read-only,
+  and job-level permissions *replace* rather than extend them — without it the Azure OIDC login fails with
+  a token it never received.
+
+Gates are compared `!= 'failure'` rather than `== 'success'`, because most are filter-gated and a skip means
+"not relevant to this change"; a failure in any of them, mobile included, stops the deploy. `!cancelled()`
+rather than `always()`, so a cancelled pipeline never deploys.
+
+Three stages:
 
 1. **stop** — `dev-env-power` with `action: stop`, so no window has an old and a new revision live
    against the same database at once.
@@ -350,11 +377,39 @@ restore leaves the new code sitting at zero replicas: ACA still cold-starts it o
 it is not *down*, but it is not started either, and nothing corrects it until the next weekday 09:00. The
 run summary says explicitly which of the two end states it left behind.
 
-It deploys only when a **deployed backend service** changed. The path list lives in the workflow and
-excludes test projects and `AgendaBuddy.MobileApp` — neither changes deployed behaviour, and the mobile
-client ships through TestFlight. ⚠️ **A service missing from that list silently stops being deployed**,
-with no error anywhere, which is why `AgendaBuddy.AppHost.Tests/AutoDeployPathFilterTest.cs` derives the
-expected entries from the AppHost's own `Projects.AgendaBuddy_*` symbols and fails if one is absent.
+It deploys only when a **deployed backend service** changed — the `deployable` filter in `dotnet.yml`'s
+`changes` job, which excludes the 12 backend test projects and `AgendaBuddy.MobileApp`: neither changes
+deployed behaviour, and the mobile client ships through TestFlight rather than azd. ⚠️ **A service missing
+from that filter silently stops being deployed**, with no error anywhere, which is why
+`AgendaBuddy.AppHost.Tests/AutoDeployPathFilterTest.cs` derives the expected entries from the AppHost's own
+`Projects.AgendaBuddy_*` symbols and fails if one is absent.
+
+### Push credentials in a deployed environment
+
+⚠️ **Before 2026-09-06 no deployed environment could send a push notification, and nothing reported it.**
+`AppHostWiring` declared the two push parameters only when a value was already present in
+`builder.Configuration` — which is never true while the AppHost is being *published*, because azd supplies
+parameter values at provision time and not to the app model during manifest generation. The condition was
+therefore always false in the Cloud shape, the parameters never entered the generated Bicep, and every
+deployed service resolved `UnconfiguredPushSender`.
+
+The Cloud shape now declares them unconditionally, exactly as `resendApiKey` does; the Local shape keeps the
+configuration check, which is what protects a developer without credentials from ISSUE-001's silent
+`ValueMissing` parking. The full path:
+
+| Link | Where |
+|---|---|
+| `PUSH_FIREBASE_PROJECT_ID` (variable), `PUSH_SERVICE_ACCOUNT_JSON` (secret) | GitHub environment |
+| `TF_VAR_push_firebase_project_id` / `TF_VAR_push_service_account_json` | `deploy.yml` |
+| `push-firebase-project-id` / `push-service-account-json` | Key Vault, via Terraform, both **optional** |
+| azd parameters `push_firebase_project_id` / `push_service_account_json` | `deploy.yml`'s mapping step |
+
+Both are optional: absent means `AddPushDelivery` resolves `UnconfiguredPushSender`, which logs and names the
+missing key, rather than the deploy failing. ⚠️ But an absent optional secret is now supplied to azd as an
+**empty string rather than omitted** — a parameter the app model declares with no value supplied fails
+`azd provision --no-prompt`, while empty is exactly what `PushOptions`/`EmailOptions` read as "not
+configured". Setting only one of the pair is a misconfiguration: `AddPushDelivery` requires both before it
+registers the real sender, because a project id cannot mint a token and a credential has no URL to send to.
 
 Concurrency shares `deploy.yml`'s `deploy-dev` group with `cancel-in-progress: false`, so a manual
 dispatch and an automatic run cannot overlap and a half-applied run is never cancelled.

@@ -62,6 +62,19 @@ variable "resend_api_key" {
   default     = ""
 }
 
+variable "push_firebase_project_id" {
+  description = "Firebase project id for FCM push. Optional, and paired with push_service_account_json -- both must be set or push stays off. Empty means the deployed services resolve UnconfiguredPushSender, which logs and names the missing key, rather than the deploy failing."
+  type        = string
+  default     = ""
+}
+
+variable "push_service_account_json" {
+  description = "Firebase service-account key JSON for FCM HTTP v1, as a single string. Optional; see push_firebase_project_id. A project id without this cannot mint an OAuth token, so setting only one produces a service that looks configured and fails at send time."
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
 variable "jwt_public_key" {
   description = "RSA public key (PEM) for JWT verification, generated fresh for this environment."
   type        = string

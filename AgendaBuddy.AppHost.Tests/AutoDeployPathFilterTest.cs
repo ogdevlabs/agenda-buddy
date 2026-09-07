@@ -4,18 +4,18 @@ using Xunit;
 namespace AgendaBuddy.AppHost.Tests;
 
 /// <summary>
-/// The auto-deploy workflow decides whether a merge to main touched a deployed backend service by
-/// prefix-matching a hand-maintained path list. This holds that list against the AppHost's own resource
-/// graph.
+/// The pipeline's last stage deploys the dev environment when a merge to main changes deployed behaviour.
+/// This holds the parts of that decision that fail silently.
 /// </summary>
 /// <remarks>
 /// <para>
-/// <b>The failure this exists for is silent in the worst direction.</b> Rename or add a service and
-/// forget the list, and merges that change it stop triggering a deploy — no error, no red check, just a
-/// dev environment that quietly drifts behind main until somebody notices the behaviour they shipped is
-/// not there. CLAUDE.md already records that every path filter in <c>dotnet.yml</c>'s <c>changes</c> job
-/// had to be updated for each of F-020's 12 project renames; this is the same trap with a quieter
-/// symptom.
+/// <b>The failure this exists for is silent in the worst direction.</b> The decision is driven by the
+/// <c>deployable</c> path filter in <c>dotnet.yml</c>'s <c>changes</c> job. Rename or add a service and
+/// forget that filter, and merges touching it stop triggering a deploy — no error, no red check, just a
+/// dev environment drifting behind main until somebody reports a bug that was already fixed. CLAUDE.md
+/// records that every path filter in that job had to be updated for each of F-020's 12 project renames;
+/// this is the same trap with a quieter symptom, so the expected entries are derived from the AppHost's
+/// own resource graph rather than restated.
 /// </para>
 /// <para>
 /// Structural, YAML-as-text, no CI run needed — the same pattern as
@@ -24,8 +24,6 @@ namespace AgendaBuddy.AppHost.Tests;
 /// </remarks>
 public class AutoDeployPathFilterTest
 {
-    private const string WorkflowName = "main-deploy-dev.yml";
-
     private static string RepoRoot()
     {
         var current = new DirectoryInfo(AppContext.BaseDirectory);
@@ -44,13 +42,46 @@ public class AutoDeployPathFilterTest
         return current.FullName;
     }
 
-    private static string Workflow() =>
-        File.ReadAllText(Path.Combine(RepoRoot(), ".github", "workflows", WorkflowName));
+    private static string Workflow(string name) =>
+        File.ReadAllText(Path.Combine(RepoRoot(), ".github", "workflows", name));
+
+    private static string Ci() => Workflow("dotnet.yml");
 
     /// <summary>
-    /// Every project the AppHost declares as a resource — the seven services plus the Gateway — derived
-    /// from <c>Projects.AgendaBuddy_*</c> in the app model rather than from a second hardcoded list, so
-    /// adding a service to the graph is what makes this test demand a filter entry.
+    /// The <c>deployable:</c> filter's own entries, isolated from every other filter and from the
+    /// surrounding prose — several of these paths are *discussed* in comments, so a whole-file search
+    /// would pass on a mention and prove nothing.
+    /// </summary>
+    private static string DeployableFilter()
+    {
+        var lines = Ci().Split('\n');
+
+        var start = Array.FindIndex(lines, l => l.TrimEnd() == "            deployable:");
+        Assert.True(start >= 0,
+            "dotnet.yml's `changes` job no longer declares a `deployable:` filter — the deploy stage's "
+            + "path decision has moved or been deleted, and this test can no longer see what it matches.");
+
+        // Runs until the next line at the filter-name indent that is not itself an entry or a comment.
+        var end = start + 1;
+        while (end < lines.Length)
+        {
+            var line = lines[end];
+            var trimmed = line.TrimStart();
+            var indent = line.Length - trimmed.Length;
+
+            if (trimmed.Length > 0 && indent <= 12 && !trimmed.StartsWith('-') && !trimmed.StartsWith('#'))
+                break;
+
+            end++;
+        }
+
+        return string.Join('\n', lines[start..end]);
+    }
+
+    /// <summary>
+    /// Every project the AppHost declares as a resource — the seven services plus the Gateway — read from
+    /// <c>Projects.AgendaBuddy_*</c> in the app model rather than from a second hardcoded list, so adding a
+    /// service to the graph is what makes this test demand a filter entry.
     /// </summary>
     public static TheoryData<string> DeployedProjectDirectories()
     {
@@ -78,15 +109,15 @@ public class AutoDeployPathFilterTest
 
     [Theory]
     [MemberData(nameof(DeployedProjectDirectories))]
-    public void EveryAppHostDeclaredServiceAppearsInTheAutoDeployPathList(string projectDirectory)
+    public void EveryAppHostDeclaredServiceIsInTheDeployableFilter(string projectDirectory)
     {
-        Assert.Contains($"{projectDirectory}/", Workflow(), StringComparison.Ordinal);
+        Assert.Contains($"'{projectDirectory}/**'", DeployableFilter(), StringComparison.Ordinal);
     }
 
     /// <summary>
     /// Sanity check on the discovery above: if the regex ever stops matching, every
-    /// <see cref="EveryAppHostDeclaredServiceAppearsInTheAutoDeployPathList"/> case would vanish and the
-    /// suite would go green having asserted nothing at all.
+    /// <see cref="EveryAppHostDeclaredServiceIsInTheDeployableFilter"/> case would vanish and the suite
+    /// would go green having asserted nothing at all.
     /// </summary>
     [Fact]
     public void TheAppHostGraphYieldsTheEightDeployedProjects()
@@ -95,27 +126,30 @@ public class AutoDeployPathFilterTest
     }
 
     /// <summary>
-    /// The shared projects every service compiles into. A change to <c>AgendaBuddy.Library</c> changes
-    /// all seven services' behaviour, so it has to trigger a deploy even though no service directory was
-    /// touched — this is exactly the class of omission that made a JWT-validation change run zero CI jobs
-    /// before <c>AgendaBuddy.Library.ServerAuth</c> was added to <c>dotnet.yml</c>'s filters.
+    /// The shared projects every service compiles in, and the infrastructure description. A change to
+    /// <c>AgendaBuddy.Library</c> changes all eight apps' behaviour, so it has to trigger a deploy even
+    /// though no service directory was touched — the same class of omission that once let a
+    /// JWT-validation change run zero CI jobs, because <c>AgendaBuddy.Library.ServerAuth</c> was in no
+    /// filter at all.
     /// </summary>
     [Theory]
-    [InlineData("AgendaBuddy.Library/")]
-    [InlineData("AgendaBuddy.Library.ServerAuth/")]
-    [InlineData("AgendaBuddy.EventAndCommands/")]
-    [InlineData("AgendaBuddy.ServiceDefaults/")]
-    [InlineData("Directory.Build.props")]
-    [InlineData("azure.yaml")]
-    [InlineData("infra/terraform/")]
-    public void TheSharedAndInfrastructurePathsAreCovered(string path)
+    [InlineData("'AgendaBuddy.Library/**'")]
+    [InlineData("'AgendaBuddy.Library.ServerAuth/**'")]
+    [InlineData("'AgendaBuddy.EventAndCommands/**'")]
+    [InlineData("'AgendaBuddy.ServiceDefaults/**'")]
+    [InlineData("'AgendaBuddy.AppHost/**'")]
+    [InlineData("'Directory.Build.props'")]
+    [InlineData("'azure.yaml'")]
+    [InlineData("'infra/terraform/**'")]
+    public void TheSharedAndInfrastructurePathsAreInTheDeployableFilter(string entry)
     {
-        Assert.Contains(path, Workflow(), StringComparison.Ordinal);
+        Assert.Contains(entry, DeployableFilter(), StringComparison.Ordinal);
     }
 
     /// <summary>
-    /// Test projects and the mobile client must NOT trigger a deploy: neither changes any deployed
-    /// behaviour, and the mobile client ships through TestFlight rather than azd.
+    /// Test projects and the mobile client must NOT trigger a deploy. Neither changes deployed behaviour,
+    /// and a deploy is a full Terraform + azd run plus eight container builds — the mobile client ships
+    /// through TestFlight, not through azd.
     /// </summary>
     [Theory]
     [InlineData("AgendaBuddy.Library.Tests/")]
@@ -123,135 +157,220 @@ public class AutoDeployPathFilterTest
     [InlineData("AgendaBuddy.IntegrationTests/")]
     [InlineData("AgendaBuddy.MobileApp/")]
     [InlineData("AgendaBuddy.MobileApp.Tests/")]
-    public void NonDeployablePathsAreNotInTheList(string path)
+    public void NonDeployablePathsAreNotInTheDeployableFilter(string path)
     {
-        // The path list is the only place a bare `<Project>/` prefix appears; the surrounding prose names
-        // some of these deliberately ("Test projects are deliberately absent"), so the assertion is scoped
-        // to the shell variable that actually drives the matching.
-        var list = PathListBlock();
-
-        Assert.DoesNotContain(path, list, StringComparison.Ordinal);
+        Assert.DoesNotContain($"'{path}", DeployableFilter(), StringComparison.Ordinal);
     }
 
     /// <summary>
-    /// The <c>paths='…'</c> heredoc the workflow prefix-matches against, isolated from the surrounding
-    /// comments so a path merely *mentioned* in prose cannot satisfy or break the assertions above.
-    /// </summary>
-    private static string PathListBlock()
-    {
-        var workflow = Workflow();
-        var start = workflow.IndexOf("paths='", StringComparison.Ordinal);
-        Assert.True(start >= 0, $"{WorkflowName} no longer contains a `paths='` list; this test cannot see what it matches.");
-
-        var end = workflow.IndexOf('\'', start + "paths='".Length);
-        Assert.True(end > start, $"{WorkflowName}'s `paths='` list is unterminated.");
-
-        return workflow[start..end];
-    }
-
-    // ── The guardrails themselves ──────────────────────────────────────────────────────────────────
-
-    /// <summary>
-    /// Off unless <c>AUTO_DEPLOY_DEV</c> is set. deploy.yml is manual "deliberately" until
-    /// docs/deployment.md's "Before this is production" list is done, and item 1 on that list — rotating
-    /// the Atlas credential (<c>agenda-buddy-41s</c>) — is still open. Merging this workflow must not
-    /// start deploying on its own.
+    /// The filter has to be exposed as a job output, or the deploy stage cannot read it — and an
+    /// unresolvable <c>needs.changes.outputs.deployable</c> evaluates to empty, which silently never
+    /// equals <c>'true'</c>. That is a deploy stage that looks wired and never fires.
     /// </summary>
     [Fact]
-    public void TheAutoDeployIsGatedOnAnExplicitOptInVariable()
+    public void TheDeployableFilterIsExposedAsAJobOutputAndReadByTheDeployStage()
     {
-        Assert.Contains("vars.AUTO_DEPLOY_DEV", Workflow(), StringComparison.Ordinal);
+        var ci = Ci();
+
+        Assert.Contains("deployable: ${{ steps.filter.outputs.deployable }}", ci, StringComparison.Ordinal);
+        Assert.Contains("needs.changes.outputs.deployable == 'true'", ci, StringComparison.Ordinal);
     }
 
+    // ── The deploy stage's own guardrails ──────────────────────────────────────────────────────────
+
     /// <summary>
-    /// It hangs off ".NET CI" completing rather than off the push, so main is never deployed before main
-    /// itself is green — and it checks the conclusion, because <c>workflow_run</c>/<c>completed</c> fires
-    /// on failure too.
+    /// It is a stage of the pipeline, reusing the same sequence the on-demand button runs.
     /// </summary>
     [Fact]
-    public void ItDeploysOnlyAfterCiSucceededOnMain()
+    public void TheDeployIsAPipelineStageThatReusesTheRedeploySequence()
     {
-        var workflow = Workflow();
+        var ci = Ci();
 
-        Assert.Contains("workflow_run:", workflow, StringComparison.Ordinal);
-        Assert.Contains("workflows: [\".NET CI\"]", workflow, StringComparison.Ordinal);
-        Assert.Contains("branches: [main]", workflow, StringComparison.Ordinal);
-        Assert.Contains("workflow_run.conclusion", workflow, StringComparison.Ordinal);
-
-        // Scoped to the trigger block, not the file: the surrounding comments discuss `push: branches:
-        // [main]` at length as the thing this deliberately is NOT, so a whole-file search finds the prose
-        // and asserts the opposite of what it means.
-        Assert.DoesNotContain("push:", TriggerBlock(), StringComparison.Ordinal);
-    }
-
-    /// <summary>The workflow's <c>on:</c> block alone — the triggers, with none of the prose around them.</summary>
-    private static string TriggerBlock()
-    {
-        var lines = Workflow().Split('\n');
-        var start = Array.FindIndex(lines, l => l.StartsWith("on:", StringComparison.Ordinal));
-        Assert.True(start >= 0, $"{WorkflowName} has no top-level `on:` block.");
-
-        // Runs to the next top-level key — a line starting in column zero that is not a comment.
-        var end = Array.FindIndex(lines, start + 1, l =>
-            l.Length > 0 && !char.IsWhiteSpace(l[0]) && !l.StartsWith("#", StringComparison.Ordinal));
-
-        return string.Join('\n', lines[start..(end < 0 ? lines.Length : end)]);
+        Assert.Contains("deploy-dev:", ci, StringComparison.Ordinal);
+        Assert.Contains("uses: ./.github/workflows/dev-redeploy.yml", ci, StringComparison.Ordinal);
     }
 
     /// <summary>
-    /// Never <c>cancel-in-progress</c>, and in deploy.yml's own concurrency group: a half-applied
-    /// Terraform/azd run is worse than a queued one, and a manual dispatch must not race an automatic run.
+    /// Only on a merge to main. A pull_request run must never deploy — the same workflow serves both
+    /// events, so this is the one condition standing between a PR and the dev environment.
     /// </summary>
     [Fact]
-    public void ConcurrencyIsSharedWithTheManualDeployAndNeverCancels()
+    public void ItDeploysOnlyOnAPushToMain()
     {
-        var workflow = Workflow();
+        var ci = Ci();
 
-        Assert.Contains("group: deploy-dev", workflow, StringComparison.Ordinal);
-        Assert.Contains("cancel-in-progress: false", workflow, StringComparison.Ordinal);
+        Assert.Contains("github.event_name == 'push'", ci, StringComparison.Ordinal);
+        Assert.Contains("github.ref == 'refs/heads/main'", ci, StringComparison.Ordinal);
     }
 
     /// <summary>
-    /// The environment is restored after deploying.
+    /// A cancelled pipeline must not deploy, and a failed gate must not either.
     /// </summary>
     /// <remarks>
-    /// <c>dev-env-stop</c> sets <c>minReplicas=0</c>, and <c>azd deploy</c> does not reset the scale rule
-    /// — only <c>azd provision</c> re-applies it, and provision is deliberately <c>false</c> here. So
-    /// without a restore step a stop→deploy leaves the new code sitting at zero replicas until the next
-    /// scheduled 09:00 start, which is the whole reason this job has three stages rather than two.
+    /// <c>!cancelled()</c> rather than <c>always()</c>, and every gate compared against
+    /// <c>!= 'failure'</c> rather than <c>== 'success'</c>: most of these jobs are filter-gated, so a skip
+    /// means "not relevant to this change" and must not block, while a failure in any of them — mobile
+    /// included — must.
     /// </remarks>
     [Fact]
-    public void TheEnvironmentIsReturnedToItsScheduledStateAfterDeploying()
+    public void ACancelledOrFailedPipelineDoesNotDeploy()
     {
-        var workflow = Workflow();
+        var ci = Ci();
 
-        Assert.Contains("action: start", workflow, StringComparison.Ordinal);
-        Assert.Contains("start_after", workflow, StringComparison.Ordinal);
-        // provision must stay false on an application-code deploy, or every merge re-applies infrastructure.
-        Assert.Contains("provision: false", workflow, StringComparison.Ordinal);
+        Assert.Contains("!cancelled()", ci, StringComparison.Ordinal);
+
+        foreach (var gate in new[]
+                 {
+                     "build-and-test", "security-scan", "docker-build-and-scan", "integration",
+                     "build-android", "build-ios", "build-mobile-tests", "terraform-validate"
+                 })
+        {
+            Assert.Contains($"needs.{gate}.result != 'failure'", ci, StringComparison.Ordinal);
+        }
     }
 
     /// <summary>
-    /// It reuses the existing reusable workflows rather than restating Terraform/azd wiring, so there is
-    /// one implementation of "deploy" and one of "power" in this repository.
+    /// ⚠️ The pipeline must not cancel a superseded run on main, because that run can be mid-deploy.
     /// </summary>
+    /// <remarks>
+    /// A half-applied <c>terraform apply</c>/<c>azd deploy</c> is materially worse than a queued run. PRs
+    /// keep the superseding behaviour, which is the reason the concurrency group exists at all — so this
+    /// asserts the expression, not a bare <c>false</c>.
+    /// </remarks>
     [Fact]
-    public void ItReusesTheExistingDeployAndPowerWorkflows()
+    public void TheCiPipelineDoesNotCancelInProgressRunsOnMain()
     {
-        var workflow = Workflow();
-
-        Assert.Contains("uses: ./.github/workflows/deploy.yml", workflow, StringComparison.Ordinal);
-        Assert.Contains("uses: ./.github/workflows/dev-env-power.yml", workflow, StringComparison.Ordinal);
+        Assert.Contains(
+            "cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}", Ci(), StringComparison.Ordinal);
     }
 
-    // And deploy.yml has to actually be callable, or the reuse above fails at workflow-parse time with an
-    // error that names nothing useful.
+    /// <summary>
+    /// A kill switch that stops the automation without a code change, and its polarity matters: only the
+    /// literal string <c>false</c> disables it, so an unset or mistyped variable deploys. The earlier
+    /// opt-IN version failed the other way — an automation that looked wired and did nothing.
+    /// </summary>
     [Fact]
-    public void TheDeployWorkflowIsCallable()
+    public void ThereIsAKillSwitchAndItFailsTowardsDeploying()
     {
-        var deploy = File.ReadAllText(Path.Combine(RepoRoot(), ".github", "workflows", "deploy.yml"));
+        var ci = Ci();
 
-        Assert.Contains("workflow_call:", deploy, StringComparison.Ordinal);
+        Assert.Contains("vars.AUTO_DEPLOY_DEV != 'false'", ci, StringComparison.Ordinal);
+        Assert.DoesNotContain("vars.AUTO_DEPLOY_DEV == 'true'", ci, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// The deploy exchanges a GitHub OIDC token for an Azure one, and <c>dotnet.yml</c>'s workflow-level
+    /// permissions are read-only — job-level permissions replace rather than extend them, so the stage has
+    /// to grant <c>id-token: write</c> itself or the Azure login fails with a token it never received.
+    /// </summary>
+    [Fact]
+    public void TheDeployStageGrantsItselfTheOidcPermission()
+    {
+        Assert.Contains("id-token: write", Ci(), StringComparison.Ordinal);
+    }
+
+    // ── The sequence, and the on-demand path ───────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Still on demand: the same three-stage sequence is dispatchable, and <c>deploy.yml</c> keeps its own
+    /// dispatch — which is the only way to run with <c>provision: true</c>.
+    /// </summary>
+    [Fact]
+    public void TheSequenceAndTheDeployAreBothStillRunnableOnDemand()
+    {
+        var redeploy = Workflow("dev-redeploy.yml");
+        var deploy = Workflow("deploy.yml");
+
+        Assert.Contains("workflow_dispatch:", redeploy, StringComparison.Ordinal);
+        Assert.Contains("workflow_call:", redeploy, StringComparison.Ordinal);
         Assert.Contains("workflow_dispatch:", deploy, StringComparison.Ordinal);
+        Assert.Contains("workflow_call:", deploy, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// Three stages, not two, and the third is load-bearing.
+    /// </summary>
+    /// <remarks>
+    /// <c>dev-env-stop</c> sets <c>minReplicas=0</c> and <c>azd deploy</c> does not reset the scale rule —
+    /// only <c>azd provision</c> does, and it is deliberately <c>false</c> for an application-code deploy.
+    /// So without the restore, a stop→deploy leaves the new code at zero replicas until the next scheduled
+    /// weekday 09:00.
+    /// </remarks>
+    [Fact]
+    public void TheRedeploySequenceStopsDeploysAndRestores()
+    {
+        var redeploy = Workflow("dev-redeploy.yml");
+
+        Assert.Contains("action: stop", redeploy, StringComparison.Ordinal);
+        Assert.Contains("action: start", redeploy, StringComparison.Ordinal);
+        Assert.Contains("uses: ./.github/workflows/deploy.yml", redeploy, StringComparison.Ordinal);
+        Assert.Contains("provision: false", redeploy, StringComparison.Ordinal);
+        // The restore is conditional on the schedule's own window, not unconditional: starting the
+        // environment out of hours would defeat the cost control dev-env-schedule.yml exists for.
+        Assert.Contains("start_after", redeploy, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// Never cancels, and shares deploy.yml's group so a dispatch, a pipeline run and a manual deploy
+    /// cannot overlap.
+    /// </summary>
+    [Fact]
+    public void TheRedeploySequenceNeverCancelsAndSharesTheDeployGroup()
+    {
+        var redeploy = Workflow("dev-redeploy.yml");
+
+        Assert.Contains("group: deploy-${{ inputs.environment }}", redeploy, StringComparison.Ordinal);
+        Assert.Contains("cancel-in-progress: false", redeploy, StringComparison.Ordinal);
+    }
+
+    // ── Push credentials reach a deployed environment ──────────────────────────────────────────────
+
+    /// <summary>
+    /// The two push parameters have to travel all the way from a GitHub secret to a container app's
+    /// environment, and every link is in a different file.
+    /// </summary>
+    /// <remarks>
+    /// They previously reached none of it: <c>AppHostWiring</c> declared them only when a value was already
+    /// in <c>builder.Configuration</c>, which is never true while the AppHost is being published, so the
+    /// parameters never entered the generated Bicep and every deployed environment resolved
+    /// <c>UnconfiguredPushSender</c> — a backend that could not push, with nothing reporting why.
+    /// </remarks>
+    [Fact]
+    public void ThePushCredentialsAreWiredFromSecretToKeyVaultToAzdParameter()
+    {
+        var deploy = Workflow("deploy.yml");
+        var variables = File.ReadAllText(
+            Path.Combine(RepoRoot(), "infra", "terraform", "environment", "variables.tf"));
+        var main = File.ReadAllText(
+            Path.Combine(RepoRoot(), "infra", "terraform", "environment", "main.tf"));
+
+        // GitHub → Terraform
+        Assert.Contains("TF_VAR_push_firebase_project_id", deploy, StringComparison.Ordinal);
+        Assert.Contains("TF_VAR_push_service_account_json", deploy, StringComparison.Ordinal);
+
+        // Terraform → Key Vault
+        Assert.Contains("variable \"push_firebase_project_id\"", variables, StringComparison.Ordinal);
+        Assert.Contains("variable \"push_service_account_json\"", variables, StringComparison.Ordinal);
+        Assert.Contains("name         = \"push-firebase-project-id\"", main, StringComparison.Ordinal);
+        Assert.Contains("name         = \"push-service-account-json\"", main, StringComparison.Ordinal);
+
+        // Key Vault → azd parameter, under the Aspire parameter names with hyphens as underscores.
+        Assert.Contains("\"push-firebase-project-id\": (\"push_firebase_project_id\", False)", deploy, StringComparison.Ordinal);
+        Assert.Contains("\"push-service-account-json\": (\"push_service_account_json\", False)", deploy, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// An optional secret that is absent must still be supplied to azd as an empty string, not omitted.
+    /// </summary>
+    /// <remarks>
+    /// The Cloud shape declares these parameters unconditionally, and <c>azd provision --no-prompt</c>
+    /// fails on a declared parameter with no value. Empty is exactly what <c>PushOptions</c> and
+    /// <c>EmailOptions</c> read as "not configured", so an environment without push credentials deploys and
+    /// simply logs that push is off.
+    /// </remarks>
+    [Fact]
+    public void AnAbsentOptionalSecretIsSuppliedAsEmptyRatherThanOmitted()
+    {
+        Assert.Contains("parameters[param] = \"\"", Workflow("deploy.yml"), StringComparison.Ordinal);
     }
 }

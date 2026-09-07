@@ -1,8 +1,19 @@
 name: Deploy to Azure Container Apps
 
-# Manual only, deliberately. A push-triggered deploy on a project with one shared Atlas cluster and
-# no staging/production split is a foot-gun; wire this to `push: branches: [main]` once
-# docs/deployment.md's "Before this is production" list is actually done.
+# Three entry points, one implementation:
+#
+#   * workflow_dispatch — a human deploying any environment, and the only way to run with
+#     `provision: true` (an environment's first ever run, or an infrastructure change).
+#   * dev-redeploy.yml — the stop → deploy → restore sequence, itself both callable and dispatchable.
+#   * .NET CI's `deploy-dev` stage — every merge to main that changes deployed behaviour, so the dev
+#     environment runs the backend code that is on main. See ADR-065.
+#
+# ⚠️ This header used to read "Manual only, deliberately… wire this to `push: branches: [main]` once
+# docs/deployment.md's 'Before this is production' list is actually done." That list is NOT done — item 1,
+# rotating the Atlas credential (`agenda-buddy-41s`), is still open — and the pipeline stage was wired
+# anyway, as a deliberate, recorded trade (ADR-065): three days of drift between main and the deployed
+# environment produced three bug reports against behaviour that was already correct, and that cost was
+# judged the larger one. `AUTO_DEPLOY_DEV=false` is the brake if that judgement changes.
 #
 # No step in this workflow requires a human to run a CLI command by hand: Terraform provisions
 # this environment's resource group, deploy identity and secrets store, then azd/Aspire's own
@@ -24,9 +35,9 @@ on:
         type: boolean
         required: false
         default: false
-  # Callable so `main-deploy-dev.yml` can reuse this exact job rather than restating 200 lines of
-  # Terraform + azd wiring. The inputs are identical to the dispatch ones, so `inputs.*` below resolves
-  # the same way on either trigger and there is one implementation of "deploy" in this repository.
+  # Callable so `dev-redeploy.yml` reuses this exact job rather than restating 200 lines of Terraform +
+  # azd wiring. The inputs are identical to the dispatch ones, so `inputs.*` below resolves the same way
+  # on either trigger and there is one implementation of "deploy" in this repository.
   workflow_call:
     inputs:
       environment:
@@ -78,6 +89,8 @@ jobs:
           TF_VAR_agenda_buddy_connection_string: ${{ secrets.ATLAS_AGENDA_BUDDY_CONNECTION_STRING }}
           TF_VAR_identity_db_connection_string: ${{ secrets.ATLAS_IDENTITY_DB_CONNECTION_STRING }}
           TF_VAR_resend_api_key: ${{ secrets.RESEND_API_KEY }}
+          TF_VAR_push_firebase_project_id: ${{ vars.PUSH_FIREBASE_PROJECT_ID }}
+          TF_VAR_push_service_account_json: ${{ secrets.PUSH_SERVICE_ACCOUNT_JSON }}
           TF_VAR_jwt_public_key: ${{ secrets.JWT_PUBLIC_KEY }}
           TF_VAR_jwt_private_key: ${{ secrets.JWT_PRIVATE_KEY }}
         run: |
@@ -129,6 +142,8 @@ jobs:
           TF_VAR_agenda_buddy_connection_string: ${{ secrets.ATLAS_AGENDA_BUDDY_CONNECTION_STRING }}
           TF_VAR_identity_db_connection_string: ${{ secrets.ATLAS_IDENTITY_DB_CONNECTION_STRING }}
           TF_VAR_resend_api_key: ${{ secrets.RESEND_API_KEY }}
+          TF_VAR_push_firebase_project_id: ${{ vars.PUSH_FIREBASE_PROJECT_ID }}
+          TF_VAR_push_service_account_json: ${{ secrets.PUSH_SERVICE_ACCOUNT_JSON }}
           TF_VAR_jwt_public_key: ${{ secrets.JWT_PUBLIC_KEY }}
           TF_VAR_jwt_private_key: ${{ secrets.JWT_PRIVATE_KEY }}
         run: terraform apply -input=false -auto-approve
@@ -205,14 +220,24 @@ jobs:
           vault = os.environ["KEY_VAULT_NAME"]
           env_name = os.environ["AZD_ENV"]
 
-          # Key Vault secret name -> azd parameter name. resend-api-key is absent when the
-          # environment has no mail provider, which is supported: the service warns at startup.
+          # Key Vault secret name -> (azd parameter name, required). The parameter name is the Aspire
+          # parameter name with hyphens as underscores. resend-api-key is absent when the environment has
+          # no mail provider, which is supported: the service warns at startup. The two push secrets are
+          # optional on the same terms -- absent means AddPushDelivery resolves UnconfiguredPushSender,
+          # which logs and names the missing key, rather than the deploy failing.
+          #
+          # ⚠️ An optional-and-absent parameter still has to be supplied to azd, because the AppHost
+          # declares it unconditionally in the Cloud shape (AppHostWiring: the conditional cannot work at
+          # publish time -- see the long comment there). An empty string is what "not configured" looks
+          # like to PushOptions/EmailOptions, and both check for it.
           wanted = {
               "agenda-buddy-connection": ("agenda_buddy", True),
               "identity-db-connection": ("IdentityDb", True),
               "jwt-public-key": ("jwt_public_key", True),
               "jwt-private-key": ("jwt_private_key", True),
               "resend-api-key": ("resend_api_key", False),
+              "push-firebase-project-id": ("push_firebase_project_id", False),
+              "push-service-account-json": ("push_service_account_json", False),
           }
 
           parameters = {}
@@ -226,6 +251,10 @@ jobs:
                       print(f"::error::{secret} is missing from {vault}.")
                       sys.exit(1)
                   print(f"::warning::{secret} is not set in {vault} - continuing without it.")
+                  # Empty rather than omitted: the parameter IS declared in the Cloud app model, and azd
+                  # prompts (or fails under --no-prompt) for a declared parameter with no value. Empty is
+                  # exactly what EmailOptions/PushOptions read as "not configured".
+                  parameters[param] = ""
                   continue
               # az strips no trailing newline of its own, but tsv output appends one.
               value = result.stdout.rstrip("\n")

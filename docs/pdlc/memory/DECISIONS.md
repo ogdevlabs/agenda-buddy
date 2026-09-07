@@ -1677,60 +1677,77 @@ later without changing what everyone already sees.
 
 ---
 
-## ADR-065 — The dev environment auto-deploys on merge to main, gated on an explicit opt-in variable (F-031)
+## ADR-065 — The dev environment is deployed by the CI pipeline on every merge to main that changes it (F-031)
 
 **Date:** 2026-09-06 · **Status:** Accepted
 
 **Context.** The deployed dev environment had drifted three days and several features behind `main`, and the
 consequence was not a stale demo — it was three bug reports against behaviour that had already been fixed
 (notification ordering, the unread-only filter, and push, all reported broken while `main` was correct). A
-deployed environment that is only ever updated by somebody remembering to dispatch a workflow will drift again,
-and the cost of the drift falls on whoever is testing.
+deployed environment that is only updated when somebody remembers to dispatch a workflow will drift again, and
+the cost of the drift falls on whoever is testing.
 
-`deploy.yml`'s own header says it is manual **deliberately**: "A push-triggered deploy on a project with one
-shared Atlas cluster and no staging/production split is a foot-gun; wire this to `push: branches: [main]` once
-docs/deployment.md's 'Before this is production' list is actually done." Item 1 on that list — rotate the Atlas
-credential (`agenda-buddy-41s`, P0) — is **still open**.
+**Decision.** The invariant is: **the dev environment runs the backend code that is on `main`.** `.NET CI` gains
+a final `deploy-dev` stage that runs on a push to `main`, when the pipeline is not failing and the `changes`
+job's `deployable` filter fired. It calls `dev-redeploy.yml` — stop → deploy → restore — which is also
+`workflow_dispatch`-able, and `deploy.yml` keeps its own dispatch. Three entry points, one implementation.
 
-**Decision.** Wire the automation, and gate it on a repository variable that is absent by default.
-`main-deploy-dev.yml` runs stop → deploy → restore against `dev` only, and does nothing at all unless
-`AUTO_DEPLOY_DEV` equals `true`. Merging the workflow therefore changes no behaviour; enabling it is a separate,
-deliberate act, taken when whoever owns that decision judges the precondition met.
+**Why a pipeline stage rather than a `workflow_run` listener.** The first implementation was a separate workflow
+hanging off ".NET CI" completing. It worked, but it had to restate the deployable-path list in a second file, and
+that duplicate fails in the silent direction: a renamed service the copy misses simply stops being deployed, with
+nothing reporting it. As a stage it reads `needs.changes.outputs.deployable`, so there is one filter block in the
+repository and no copy to drift. Being a stage also means the deploy is visible in the same run as the checks
+that gated it, rather than in a second run somebody has to go and find.
 
-**Why `workflow_run` on ".NET CI" rather than `push: branches: [main]`.** A push trigger deploys a commit whose
-build and tests have not finished. On this project that means deploying against a shared production-data Atlas
-cluster on the strength of a PR check that passed on a *different* tree — the pre-merge branch, not the merge
-result. Hanging off ".NET CI" completing with `conclusion == 'success'` means `main` is deployed only after
-`main` itself is green. The `completed` type fires on failure too, so the conclusion is checked explicitly.
+**Why the deployable filter is narrower than `api`.** `api` includes the 12 backend test projects. A test-only
+change alters no deployed behaviour, and a deploy is a full Terraform + azd run plus eight container builds.
+`AgendaBuddy.MobileApp` is excluded for a different reason: it ships through TestFlight, not through azd.
 
-**Why there is a third stage, and why stop→deploy alone would have been a defect.** `dev-env-stop` sets
-`minReplicas=0` through `az containerapp update`. `azd deploy` then creates a new revision per app carrying the
-new image but does **not** reset the scale rule — only `azd provision` re-applies the template's replica
-settings, and provision is deliberately `false` here because application code changing is not a reason to
-re-apply infrastructure. So a bare stop→deploy leaves the new code at zero replicas: not truly down, because ACA
-cold-starts on an inbound request, but not started either, and `dev-env-schedule` would not correct it until the
-next weekday 09:00. The third stage returns the environment to the state the schedule would have chosen — it
-starts the apps inside 09:00–17:00 America/Mexico_City on a weekday and deliberately leaves them stopped
-outside it, because starting them would defeat the cost control that schedule exists for.
+**Why it is on by default with a kill switch, having first been written opt-in.** `deploy.yml`'s header said it
+was manual "deliberately… wire this to `push: branches: [main]` once docs/deployment.md's 'Before this is
+production' list is actually done", and item 1 on that list — rotate the Atlas credential (`agenda-buddy-41s`,
+P0) — is **still open**. The first version therefore did nothing unless a variable opted in. That was the wrong
+trade for this project at this moment: the measured cost of drift was three misdirected bug reports, and an
+automation that is off is an automation that does not prevent the next one. It is on, with
+`AUTO_DEPLOY_DEV=false` as the brake. **The polarity is deliberate** — only the literal string `false` disables
+it, so an unset or mistyped variable deploys rather than silently doing nothing, which was the failure mode of
+the opt-in version. The Atlas exposure is a known, accepted risk recorded here, not an oversight.
 
-**Why stop first at all.** It is not technically required: the apps are in Single revision mode, so a deploy
-replaces the running revision regardless. It is honoured because it was asked for, and it does buy one real
-thing — no window in which an old and a new revision are both live against the one shared database.
+**Consequences, each of which was a defect avoided rather than a nicety.**
 
-**Consequences.** The deployable-path list is maintained by hand, and getting it wrong fails in the silent
-direction: a renamed or newly added service that the list misses simply stops triggering deploys, with no error
-anywhere. `AutoDeployPathFilterTest` derives the expected entries from the AppHost's own
-`Projects.AgendaBuddy_*` symbols and fails if any is absent, which is the only reason this is safe to maintain
-by hand — CLAUDE.md already records that every path filter in `dotnet.yml` needed updating for each of F-020's
-12 project renames. Test projects and `AgendaBuddy.MobileApp` are excluded and asserted excluded: neither changes
-deployed behaviour, and the mobile client ships through TestFlight. Concurrency shares `deploy.yml`'s own
-`deploy-dev` group with `cancel-in-progress: false`, so a manual dispatch and an automatic run cannot overlap and
-a half-applied Terraform/azd run is never cancelled. `deploy.yml` gained a `workflow_call` trigger so there
-remains exactly one implementation of "deploy" in this repository.
+1. **`.NET CI`'s `cancel-in-progress` is now `false` on `main`.** It was unconditionally `true`, and its own
+   comment said main pushes "never cancel each other's… in practice". "In practice" stopped being good enough
+   once a run can change deployed infrastructure: cancelling a superseded run would cancel it mid-`terraform
+   apply` or mid-`azd deploy`. PRs keep the superseding behaviour, which is why the group exists.
+2. **The stage grants itself `id-token: write`.** `dotnet.yml`'s workflow-level permissions are read-only and
+   job-level permissions *replace* rather than extend them, so without this the Azure OIDC login fails with a
+   token it never received.
+3. **Gates are compared `!= 'failure'`, not `== 'success'`.** Most are filter-gated, so a skip means "not
+   relevant to this change" and must not block; a failure in any of them — mobile included — must.
+   `!cancelled()` rather than `always()`, so a cancelled pipeline never deploys.
+4. **The restore stage is load-bearing.** `dev-env-stop` sets `minReplicas=0` and `azd deploy` does not reset
+   the scale rule — only `azd provision` does, and it is deliberately `false` because application code changing
+   is no reason to re-apply infrastructure. Without the restore, a stop→deploy leaves the new code at zero
+   replicas: cold-starting on request, not started, and uncorrected until the next weekday 09:00. Restore
+   returns the environment to the state `dev-env-schedule` would have chosen, which means **deliberately
+   leaving it stopped outside 09:00–17:00 America/Mexico_City** — starting it out of hours would defeat the
+   cost control that schedule exists for.
+5. **Push credentials now actually reach a deployed environment**, which they never had.
+   `AppHostWiring` declared the two push parameters only when a value was already in `builder.Configuration` —
+   never true while the AppHost is being *published*, because azd supplies parameter values at provision time
+   and not to the app model during manifest generation. So the condition was always false in the Cloud shape,
+   the parameters never entered the generated Bicep, and every deployed environment resolved
+   `UnconfiguredPushSender`: a backend that could not push, with nothing anywhere reporting why. The Cloud shape
+   now declares them unconditionally, exactly as `resendApiKey` does, while the Local shape keeps the
+   configuration check that protects against ISSUE-001's silent `ValueMissing` parking. Terraform stores both
+   as optional Key Vault secrets and `deploy.yml` maps them to azd parameters — and an absent optional secret is
+   now supplied as an **empty string rather than omitted**, because a declared parameter with no value fails
+   `azd provision --no-prompt`, while empty is precisely what `PushOptions`/`EmailOptions` read as "not
+   configured".
 
-**Alternatives rejected.** `push: branches: [main]` — rejected above, it deploys untested merge results.
-Deploying on every merge regardless of what changed — rejected: a docs-only or mobile-only merge would spend a
-full Terraform+azd run and a container build per service for no change in deployed behaviour. Removing the stop
-stage — rejected, it was explicitly asked for and the concurrent-revisions argument for it is real. Restoring
-the environment unconditionally after deploying — rejected, it would silently defeat the out-of-hours cost
-control; the schedule's window is respected instead.
+**Alternatives rejected.** `push: branches: [main]` as `deploy.yml`'s own trigger — rejected: it would deploy
+before the pipeline's checks finish, and it would put the deploy in a run with no relationship to those checks.
+A separate `workflow_run` workflow — rejected above, it duplicates the path filter. Deploying on every merge
+regardless of what changed — rejected, a docs-only or mobile-only merge would spend a full Terraform+azd run and
+eight container builds for no change in deployed behaviour. Restoring the environment unconditionally —
+rejected, it silently defeats the out-of-hours cost control. Keeping the opt-in variable — rejected above.

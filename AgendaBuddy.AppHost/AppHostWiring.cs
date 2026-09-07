@@ -61,22 +61,33 @@ internal static class AppHostWiring
         // startup naming the key.
         IResourceBuilder<ParameterResource>? resendApiKey = null;
 
-        // Push delivery, declared in BOTH shapes but only when a value actually exists — which is why this
-        // does not follow resendApiKey's cloud-only pattern. Push has to be testable on a local emulator, so
-        // it cannot be cloud-only; but an unconditional AddParameter with no user secret resolves to
-        // ValueMissing and parks every service that references it in Waiting with nothing logged (ISSUE-001).
-        // Reading configuration first is what lets a machine with credentials get push and a machine without
-        // get a working graph. Without them, AddPushDelivery resolves UnconfiguredPushSender, which logs and
-        // names the missing key.
+        // Push delivery. Declared in both shapes, but on different terms, and the difference is the whole
+        // point.
         //
-        // Both are required together: a project id with no credential cannot mint a token, and a credential
-        // with no project id has no URL to send to. Declaring only one would produce a service that looks
-        // configured and fails at send time.
+        // LOCALLY: only when a value actually exists in configuration. Push has to be testable against an
+        // emulator, so it cannot be cloud-only like resendApiKey — but an unconditional AddParameter with no
+        // user secret resolves to ValueMissing and parks every service that references it in Waiting with
+        // nothing logged (ISSUE-001). Reading configuration first is what lets a machine with credentials get
+        // push and a machine without get a working graph.
+        //
+        // IN THE CLOUD: unconditionally, exactly as resendApiKey is. ⚠️ The conditional CANNOT be used there,
+        // and this was the bug: `builder.Configuration` is empty of these parameters while the AppHost is
+        // being published, because azd supplies parameter values at provision time and not to the app model
+        // during manifest generation. So the condition was always false in the Cloud shape, the parameters
+        // never reached the generated Bicep, and the deployed services resolved UnconfiguredPushSender —
+        // a deployed environment that could never push, with nothing anywhere reporting why.
+        //
+        // Either way, both are declared together: a project id with no credential cannot mint a token, and a
+        // credential with no project id has no URL to send to. One alone is a service that looks configured
+        // and fails at send time.
         IResourceBuilder<ParameterResource>? pushProjectId = null;
         IResourceBuilder<ParameterResource>? pushServiceAccountJson = null;
 
-        if (!string.IsNullOrWhiteSpace(builder.Configuration["Parameters:push-firebase-project-id"])
-            && !string.IsNullOrWhiteSpace(builder.Configuration["Parameters:push-service-account-json"]))
+        var pushConfiguredLocally =
+            !string.IsNullOrWhiteSpace(builder.Configuration["Parameters:push-firebase-project-id"])
+            && !string.IsNullOrWhiteSpace(builder.Configuration["Parameters:push-service-account-json"]);
+
+        if (deployTarget == DeploymentTarget.Cloud || pushConfiguredLocally)
         {
             pushProjectId = builder.AddParameter("push-firebase-project-id");
             pushServiceAccountJson = builder.AddParameter("push-service-account-json", secret: true);
