@@ -75,6 +75,15 @@ jobs:
       # duplicated this list, and the duplicate fails in the silent direction (a renamed service the
       # copy misses simply stops being deployed, with no error anywhere).
       deployable: ${{ steps.filter.outputs.deployable }}
+      # Narrower than `api` on purpose, for cost. `api` includes the 11 backend UNIT test projects, and a
+      # change to one of those cannot alter what the integration suite observes — it hosts real services over
+      # HTTP against a MongoDB Testcontainer and never references them. Editing a single AppHost structural
+      # test used to spend a ~4-minute Docker + Mongo run for nothing.
+      #
+      # ⚠️ Positive list, so an unlisted project makes this suite SILENTLY SKIP. That risk is converted into
+      # a failing test rather than tolerated: AutoDeployPathFilterTest derives the expected service entries
+      # from the AppHost's own Projects.AgendaBuddy_* symbols, exactly as it does for `deployable`.
+      integration: ${{ steps.filter.outputs.integration }}
     steps:
       - uses: actions/checkout@v7
       - uses: dorny/paths-filter@v4
@@ -245,6 +254,63 @@ jobs:
             # halves are asserted by AgendaBuddy.AppHost.Tests/AutoDeployPathFilterTest.cs, which derives
             # the expected entries from the app model's own `Projects.AgendaBuddy_*` symbols. A missing
             # service fails in the silent direction: merges that change it simply stop deploying.
+            # The integration suite's own trigger — deliberately NARROWER than `api`.
+            #
+            # It hosts the real services over HTTP against a MongoDB Testcontainer, so anything those
+            # services are built from belongs here. What does NOT belong is the 11 backend UNIT test
+            # projects: the suite has no reference to any of them, so a change to one cannot alter what it
+            # observes, and gating on `api` spent a ~4-minute Docker + Mongo run on (for example) editing a
+            # single AppHost structural test.
+            #
+            # Four entries here are less obvious than the projects:
+            #   • AgendaBuddy.MobileApp — AgendaBuddy.IntegrationTests has a real ProjectReference to it
+            #     (MobileClientRouteResolutionTest), so a route-builder change genuinely changes this suite.
+            #   • docs/api/openapi/** — OpenApiSpecDriftTest diffs the committed baselines against a live
+            #     regeneration, so editing a baseline is exactly the change this suite exists to catch.
+            #   • scripts/verify-container-reaping.sh — the job runs it as a step.
+            #   • .github/workflows/dotnet.yml — this job's own definition.
+            #
+            # AgendaBuddy.AppHost is absent on purpose: the suite hosts services directly and never starts
+            # the app model. `api` still covers it, so build-and-test does.
+            integration:
+              - 'AgendaBuddy.Booking.Api/**'
+              - 'AgendaBuddy.Booking.Core/**'
+              - 'AgendaBuddy.Booking.Domain/**'
+              - 'AgendaBuddy.Booking.Infrastructure/**'
+              - 'AgendaBuddy.Calendar.Api/**'
+              - 'AgendaBuddy.Calendar.Core/**'
+              - 'AgendaBuddy.Calendar.Domain/**'
+              - 'AgendaBuddy.Calendar.Infrastructure/**'
+              - 'AgendaBuddy.Customer.Api/**'
+              - 'AgendaBuddy.Customer.Core/**'
+              - 'AgendaBuddy.Customer.Domain/**'
+              - 'AgendaBuddy.Customer.Infrastructure/**'
+              - 'AgendaBuddy.Provider.Api/**'
+              - 'AgendaBuddy.Provider.Core/**'
+              - 'AgendaBuddy.Provider.Domain/**'
+              - 'AgendaBuddy.Provider.Infrastructure/**'
+              - 'AgendaBuddy.Services.Api/**'
+              - 'AgendaBuddy.Services.Core/**'
+              - 'AgendaBuddy.Services.Domain/**'
+              - 'AgendaBuddy.Services.Infrastructure/**'
+              - 'AgendaBuddy.Profession.Api/**'
+              - 'AgendaBuddy.Profession.Core/**'
+              - 'AgendaBuddy.Profession.Domain/**'
+              - 'AgendaBuddy.Profession.Infrastructure/**'
+              - 'AgendaBuddy.Identity/**'
+              - 'AgendaBuddy.Gateway/**'
+              - 'AgendaBuddy.Library/**'
+              - 'AgendaBuddy.Library.ServerAuth/**'
+              - 'AgendaBuddy.EventAndCommands/**'
+              - 'AgendaBuddy.ServiceDefaults/**'
+              - 'AgendaBuddy.IntegrationTests/**'
+              - 'AgendaBuddy.MobileApp/**'
+              - 'docs/api/openapi/**'
+              - 'scripts/verify-container-reaping.sh'
+              - 'Directory.Build.props'
+              - 'global.json'
+              - '*.sln'
+              - '.github/workflows/dotnet.yml'
             deployable:
               - 'AgendaBuddy.Booking.Api/**'
               - 'AgendaBuddy.Booking.Core/**'
@@ -699,7 +765,9 @@ jobs:
   integration:
     name: "Integration — real services + MongoDB"
     needs: changes
-    if: needs.changes.outputs.api == 'true' && needs.changes.outputs.code == 'true'
+    # `integration`, not `api`: see that filter's own note. `api` also fires on the 11 backend unit test
+    # projects, none of which this suite references.
+    if: needs.changes.outputs.integration == 'true' && needs.changes.outputs.code == 'true'
     runs-on: ubuntu-24.04
 
     # Hard ceiling. The suite measured 1 m 13 s locally with a warm image; a cold runner adds ~1 min
