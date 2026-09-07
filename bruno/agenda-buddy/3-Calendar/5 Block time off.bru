@@ -1,0 +1,43 @@
+meta {
+  name: 5 Block time off
+  type: http
+  seq: 5
+}
+post {
+  url: {{gatewayUrl}}/api/v1/calendar/blocks/{{providerEmail}}
+  body: json
+}
+body:json {
+  {
+    "startUtc": "2026-09-21T00:00:00Z",
+    "endUtc": "2026-09-24T00:00:00Z",
+    "reason": "Away travelling",
+    "force": false
+  }
+}
+docs {
+  Records a period the provider is unavailable.
+
+  ⚠️ **A time RANGE, not a date** — which is the whole reason this exists. It replaces a whole-day
+  `day_off` flag on a fake appointment, so an afternoon off used to cost the entire day. Multi-day is one
+  long interval, not a run of days: the replaced implementation looped over days and wrote **nothing at
+  all** when start and end fell on the same date.
+
+  `endUtc` is **exclusive**, so whole days need the following midnight. Three days off from the 21st ends
+  at the 24th's midnight — ending it on the 23rd would leave the 23rd bookable.
+
+  ⚠️ **`409` by default when live sessions fall inside the range**, and the message names how many. Blocking
+  over existing bookings silently would leave the provider believing they were free while customers still
+  held sessions that had vanished from availability but from nobody's calendar. Send `"force": true` to
+  block anyway — the sessions are deliberately **left standing**, and it is then the provider's job to move
+  or cancel them. Use `4 Check what a block would strand` first.
+
+  ⚠️ `reason` is the **provider's own note** and is never returned on a customer-facing route. It is also
+  deliberately kept out of the audit event.
+
+  `400` when the range does not end after it starts — **refused, never clamped**, because widening a
+  provider's time off blocks hours they never chose. `403` unless `{email}` is your own claim.
+
+  Verify with `1 Availability`: those hours disappear. The morning of a part-day block stays bookable,
+  which is the behaviour the whole-day mechanism could not express.
+}

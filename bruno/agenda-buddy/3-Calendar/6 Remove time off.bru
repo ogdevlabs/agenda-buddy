@@ -1,0 +1,24 @@
+meta {
+  name: 6 Remove time off
+  type: http
+  seq: 6
+}
+delete {
+  url: {{gatewayUrl}}/api/v1/calendar/blocks/{{providerEmail}}/{{calendarBlockIdentifier}}
+}
+docs {
+  Removes one of the provider's own blocks. Fill `calendarBlockIdentifier` from a
+  `3 List time off` response.
+
+  **Removal matters as much as creating one:** a cancelled trip that still blocks the calendar costs the
+  provider bookings they never meant to refuse.
+
+  The owning email is in the delete's own **filter**, not checked beforehand, so it cannot be raced into
+  removing somebody else's block.
+
+  `204` on success, `404` when no such block exists for this provider. Deliberately **not** 204-regardless,
+  unlike `DELETE /device-token`: whether a provider holds a given block of their own is not information
+  withheld from them, and a silent success would hide a client sending the wrong identifier.
+
+  Verify with `1 Availability`: those hours are bookable again.
+}

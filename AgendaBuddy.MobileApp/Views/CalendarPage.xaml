@@ -168,10 +168,13 @@
                                         <VerticalStackLayout Grid.Column="2"
                                                              VerticalOptions="Center"
                                                              Spacing="2">
-                                            <Label Text="{Binding .}"
+                                            <Label Text="{Binding Label}"
                                                    FontSize="15"
                                                    TextColor="{StaticResource iOSLabel}" />
+                                            <!-- Hidden rather than blank when the session has no recorded
+                                                 length: an empty second line reads as missing data. -->
                                             <Label Text="{Binding DurationLabel}"
+                                                   IsVisible="{Binding HasDuration}"
                                                    FontSize="13"
                                                    TextColor="{StaticResource iOSGray}" />
                                         </VerticalStackLayout>

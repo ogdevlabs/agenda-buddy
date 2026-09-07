@@ -1,0 +1,24 @@
+meta {
+  name: 4 Check what a block would strand
+  type: http
+  seq: 4
+}
+get {
+  url: {{gatewayUrl}}/api/v1/calendar/blocks/{{providerEmail}}/conflicts?startUtc=2026-09-21T00:00:00Z&endUtc=2026-09-24T00:00:00Z
+}
+params:query {
+  startUtc: 2026-09-21T00:00:00Z
+  endUtc: 2026-09-24T00:00:00Z
+}
+docs {
+  The live sessions a proposed range would strand, read **before** creating the block — so the cost is
+  visible in advance rather than discovered from a refusal.
+
+  Cancelled and completed sessions are excluded: neither is something a block can strand. Overlap, not
+  containment — a session that begins before the range and runs into it is just as stranded as one wholly
+  inside it. Half-open on both sides, so a session ending exactly as the range opens is untouched.
+
+  Owner-only: it returns whole appointments, which carry the counterparty's email address.
+
+  `400` when the range does not end after it starts.
+}

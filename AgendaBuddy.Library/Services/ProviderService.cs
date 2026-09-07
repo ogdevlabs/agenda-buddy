@@ -164,6 +164,56 @@ public class ProviderService(IRepository<ProviderEntity> providerRepository) : I
             }));
     }
 
+    /// <inheritdoc/>
+    /// <remarks>
+    /// <b>Read-merge-write on the array, deliberately, and it is not the lost-update shape ADR D-9 removed.</b>
+    /// What that ADR is about is replacing a WHOLE DOCUMENT after reading it, which silently discards a
+    /// concurrent edit to any other field. This reads only <c>work_week</c> and writes back only
+    /// <c>work_week</c>, so a concurrent edit to services, appointments or professions is untouched. Two
+    /// providers cannot race here at all — a provider's own calendar settings have exactly one writer.
+    /// <para>
+    /// The merge is what makes a partial week coherent: a request naming Monday and Tuesday must not clear
+    /// Wednesday. MongoDB has no "upsert one element of an array by key" primitive — a positional <c>$set</c>
+    /// needs the element to exist already, and <c>$addToSet</c> would append a second entry for a weekday
+    /// rather than replace it, which is exactly the duplicate the calculator then has to resolve.
+    /// </para>
+    /// </remarks>
+    public async Task<ProviderEntity?> SetWorkWeekAsync(string providerEmail, List<WorkDayHours> days)
+    {
+        if (days is null || days.Count == 0) return null;
+
+        var provider = await providerRepository.FindOneAsync(new BsonDocument("email", providerEmail));
+        if (provider is null) return null;
+
+        // Incoming days win; everything else the provider already had is kept.
+        var incoming = days.ToDictionary(day => day.Day);
+        var merged = (provider.WorkWeek ?? [])
+            .Where(existing => !incoming.ContainsKey(existing.Day))
+            .Concat(days)
+            .OrderBy(day => day.Day)
+            .ToList();
+
+        var serialised = new BsonArray(merged.Select(day =>
+        {
+            var document = new BsonDocument
+            {
+                { "day", (int)day.Day },
+                { "is_closed", day.IsClosed }
+            };
+
+            // Omitted rather than written as null, matching [BsonIgnoreIfNull] on the entity — so a closed day
+            // that never had hours carries no keys for them.
+            if (day.StartHour.HasValue) document.Add("start_hour", day.StartHour.Value);
+            if (day.EndHour.HasValue) document.Add("end_hour", day.EndHour.Value);
+
+            return document;
+        }));
+
+        return await providerRepository.FindOneAndUpdateAsync(
+            new BsonDocument("email", providerEmail),
+            new BsonDocument("$set", new BsonDocument("work_week", serialised)));
+    }
+
     /// <summary>
     /// Writes a new status onto one appointment inside a provider's embedded list.
     /// </summary>

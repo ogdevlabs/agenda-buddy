@@ -226,6 +226,59 @@
         }
       }
     },
+    "/api/v1/providers/{email}/work-week": {
+      "put": {
+        "tags": [
+          "ProviderAPI"
+        ],
+        "operationId": "SetProviderWorkWeek",
+        "parameters": [
+          {
+            "name": "email",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkWeekRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProviderEntityDataResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProviderEntityDataResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/providers/{email}/report": {
       "get": {
         "tags": [
@@ -809,6 +862,39 @@
         },
         "additionalProperties": false
       },
+      "WorkDayRequest": {
+        "required": [
+          "day"
+        ],
+        "type": "object",
+        "properties": {
+          "day": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "startHour": {
+            "maximum": 23,
+            "minimum": 0,
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "endHour": {
+            "maximum": 24,
+            "minimum": 1,
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "isClosed": {
+            "type": "boolean"
+          },
+          "parsedDay": {
+            "$ref": "#/components/schemas/DayOfWeek"
+          }
+        },
+        "additionalProperties": false
+      },
       "WorkHoursRequest": {
         "type": "object",
         "properties": {
@@ -823,6 +909,22 @@
             "minimum": 1,
             "type": "integer",
             "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "WorkWeekRequest": {
+        "required": [
+          "days"
+        ],
+        "type": "object",
+        "properties": {
+          "days": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WorkDayRequest"
+            }
           }
         },
         "additionalProperties": false

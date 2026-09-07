@@ -35,5 +35,14 @@ public partial class CalendarSettingsPage : ContentPage
     {
         await Shell.Current.GoToAsync("..");
     }
+
+    /// <summary>
+    /// Time off is the other half of managing a calendar: the working week says when the provider normally
+    /// works, time off says when they are away regardless of it.
+    /// </summary>
+    private async void OnTimeOffClicked(object? sender, EventArgs e)
+    {
+        await Shell.Current.GoToAsync("timeOff");
+    }
 }
 #endif

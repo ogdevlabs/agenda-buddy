@@ -84,6 +84,23 @@ public interface IProviderService
     Task<ProviderEntity?> SetWorkHoursAsync(string providerEmail, int startHour, int endHour);
 
     /// <summary>
+    /// Replaces the provider's per-weekday hours for the weekdays given, leaving the rest alone.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// A targeted <c>$set</c> on <c>work_week</c>, for the same reason its single-pair sibling is one: a
+    /// whole-document replace would discard a concurrent edit to the provider's services or appointments.
+    /// </para>
+    /// <para>
+    /// <b>Merged, not overwritten.</b> A request naming Monday and Tuesday must not silently clear Wednesday —
+    /// a partial week is a coherent request, and the single legacy pair remains the fallback for any weekday
+    /// still absent.
+    /// </para>
+    /// </remarks>
+    /// <returns><c>null</c> when no provider matched, which also serves as the existence check.</returns>
+    Task<ProviderEntity?> SetWorkWeekAsync(string providerEmail, List<WorkDayHours> days);
+
+    /// <summary>
     /// Writes a new status onto one appointment inside a provider's embedded list, via the positional
     /// <c>$</c> operator so only the matched element changes.
     /// </summary>

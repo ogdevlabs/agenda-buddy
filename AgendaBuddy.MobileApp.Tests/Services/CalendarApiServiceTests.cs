@@ -96,7 +96,7 @@ public class CalendarApiServiceTests
         Assert.Equal(today.ToString("yyyy-MM-dd"), result[0].Date);
         Assert.Equal(2, result[0].AvailableSlots.Count);
         Assert.Single(result[0].BookedSlots);
-        Assert.Contains("bob@example.com", result[0].BookedSlots[0]);
+        Assert.Contains("bob@example.com", result[0].BookedSlots[0].Label);
         Assert.Equal(tomorrow.ToString("yyyy-MM-dd"), result[1].Date);
         Assert.Single(result[1].AvailableSlots);
         Assert.Empty(result[1].BookedSlots);
@@ -138,7 +138,7 @@ public class CalendarApiServiceTests
         var result = await sut.GetAvailabilityAsync(1);
 
         Assert.Single(result[0].BookedSlots);
-        Assert.Contains("prov@example.com", result[0].BookedSlots[0]);
+        Assert.Contains("prov@example.com", result[0].BookedSlots[0].Label);
     }
 
     // ParseAppointments is static and role-blind, so it leaves DisplayName empty — which rendered a
@@ -227,7 +227,7 @@ public class CalendarApiServiceTests
 
         Assert.Equal(3, result.Count);
         Assert.Single(result[0].BookedSlots);
-        Assert.Contains("prov@example.com", result[0].BookedSlots[0]);
+        Assert.Contains("prov@example.com", result[0].BookedSlots[0].Label);
         Assert.All(result, day => Assert.Empty(day.AvailableSlots));
     }
 

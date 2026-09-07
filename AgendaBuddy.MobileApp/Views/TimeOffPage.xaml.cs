@@ -1,0 +1,32 @@
+#if MOBILE
+using AgendaBuddy.MobileApp.ViewModels;
+
+namespace AgendaBuddy.MobileApp.Views;
+
+/// <summary>
+/// A provider's time off. Reached from Calendar Settings, which is itself behind the calendar's gear.
+/// </summary>
+public partial class TimeOffPage : ContentPage
+{
+    private readonly TimeOffViewModel _viewModel;
+
+    public TimeOffPage(TimeOffViewModel viewModel)
+    {
+        InitializeComponent();
+        _viewModel = viewModel;
+        BindingContext = _viewModel;
+    }
+
+    protected override void OnAppearing()
+    {
+        base.OnAppearing();
+        _viewModel.LoadCommand.Execute(null);
+    }
+
+    /// <summary>
+    /// Back to Calendar Settings, whose own OnAppearing re-reads the week — so a block added here is reflected
+    /// wherever it matters without this page reaching into that one.
+    /// </summary>
+    private async void OnBackClicked(object? sender, EventArgs e) => await Shell.Current.GoToAsync("..");
+}
+#endif

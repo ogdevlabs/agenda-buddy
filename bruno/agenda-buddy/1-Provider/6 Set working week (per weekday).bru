@@ -1,0 +1,49 @@
+meta {
+  name: 6 Set working week (per weekday)
+  type: http
+  seq: 6
+}
+put {
+  url: {{gatewayUrl}}/api/v1/providers/{{providerEmail}}/work-week
+  body: json
+}
+body:json {
+  {
+    "days": [
+      { "day": "Monday",    "startHour": 9,  "endHour": 17, "isClosed": false },
+      { "day": "Tuesday",   "startHour": 9,  "endHour": 17, "isClosed": false },
+      { "day": "Wednesday", "startHour": 9,  "endHour": 17, "isClosed": false },
+      { "day": "Thursday",  "startHour": 9,  "endHour": 17, "isClosed": false },
+      { "day": "Friday",    "startHour": 9,  "endHour": 13, "isClosed": false },
+      { "day": "Saturday",  "startHour": 10, "endHour": 14, "isClosed": false },
+      { "day": "Sunday",    "startHour": 9,  "endHour": 17, "isClosed": true  }
+    ]
+  }
+}
+docs {
+  Per-weekday hours. A **dedicated route** for the same reason `5 Set work hours` is one: `PUT /{email}`
+  replaces the whole document, so saving a calendar through it would carry every defect of a
+  whole-document write. This is a targeted `$set` on `work_week`.
+
+  **Both routes coexist on purpose.** The single pair from #5 remains the server's fallback for any weekday
+  this request does not mention, which is what keeps every provider stored before per-weekday hours existed
+  bookable on exactly the hours they had. Sending a partial week is therefore a coherent request:
+
+      { "days": [ { "day": "Saturday", "startHour": 10, "endHour": 14, "isClosed": false } ] }
+
+  …sets Saturday and leaves the rest of the week alone.
+
+  ⚠️ `endHour` is **exclusive**: 17 means the last session finishes at 17:00. Whole hours only — the slot
+  grid steps by the hour, so a half-past start has nowhere to land.
+
+  ⚠️ **A day is closed by the flag, not by omitting its hours.** The two are different statements: closed
+  means "I do not work Sundays", while a day absent from the list keeps whatever it had. Hours sent
+  alongside `isClosed` are kept, so re-opening a day does not mean re-entering them.
+
+  `400` when a day that is not closed does not open before it closes — **refused, never clamped** — and the
+  message names the day. Also `400` on an unrecognised weekday name, or the same weekday listed twice
+  (picking one silently would store hours nobody chose). `403` unless `{email}` is your own claim.
+
+  Verify with `3-Calendar/1 Availability`: the Friday slots should stop at 13:00 and Sunday should offer
+  none at all.
+}

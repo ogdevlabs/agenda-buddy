@@ -210,6 +210,54 @@ public class ProviderModule : ICarterModule
         .WithName("SetProviderWorkHours")
         .RequireAuthorization();
 
+        // Per-weekday hours. A DEDICATED route for the same reason the single-pair sibling above is one:
+        // PUT /{email} replaces the whole document, so saving a calendar through it would carry every defect
+        // of a whole-document write. Both routes coexist on purpose -- the single pair remains the fallback for
+        // any weekday this one does not mention, so a provider who has never opened the new screen keeps
+        // exactly the hours they had.
+        providers.MapPut("/{email}/work-week", async Task<Results<ValidationProblem, ForbidHttpResult, NotFound, BadRequest<DataResponse<ProviderEntity>>, Ok<DataResponse<ProviderEntity>>>> (
+            string email,
+            ClaimsPrincipal user,
+            IMediator mediator,
+            WorkWeekRequest request,
+            IDistributedCache cache,
+            CancellationToken cancellationToken) =>
+        {
+            // MiniValidator runs the per-day IValidatableObject too, so an unusable window or an unrecognised
+            // weekday name is a 400 naming the day rather than a silent rewrite of the wrong one.
+            if (!MiniValidator.TryValidate(request, out var errors))
+                return TypedResults.ValidationProblem(errors);
+
+            try { OwnershipGuard.AssertOwner(user, email); }
+            catch (ForbiddenException) { return TypedResults.Forbid(); }
+
+            var result = await mediator.Send(
+                new SetProviderWorkWeekCommand
+                {
+                    Email = email,
+                    Days = [.. request.Days.Select(day => new WorkDayHours(
+                        day.ParsedDay!.Value, day.StartHour, day.EndHour, day.IsClosed))]
+                },
+                cancellationToken);
+
+            if (!result.IsSuccess)
+            {
+                // A missing provider is a 404; anything else the handler refused is a 400 carrying its reason,
+                // because the reasons here are specific and actionable (which day, and why).
+                return result.Errors.Any(error => error.Message.Contains("No provider found"))
+                    ? TypedResults.NotFound()
+                    : TypedResults.BadRequest(
+                        DataResponse<ProviderEntity>.Fail(result.Errors.Select(error => error.Message)));
+            }
+
+            // The cache-aside read of GET /{email} is not invalidated on write, so without this the provider
+            // would not see their own new week for up to 5 minutes.
+            await cache.RemoveAsync($"providers-{email}", cancellationToken);
+            return TypedResults.Ok(DataResponse<ProviderEntity>.Ok(result.Value));
+        })
+        .WithName("SetProviderWorkWeek")
+        .RequireAuthorization();
+
         // ── Reporting and deactivation ────────────────────────────────────────────────────────────────
 
         // A provider's own metrics. {email} is in the path for symmetry with the other provider routes, NOT as a

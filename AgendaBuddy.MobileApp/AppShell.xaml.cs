@@ -23,6 +23,7 @@ public partial class AppShell : Shell
         Microsoft.Maui.Controls.Routing.RegisterRoute("addService", typeof(AddServicePage));
         Microsoft.Maui.Controls.Routing.RegisterRoute("calendarSettings", typeof(CalendarSettingsPage));
         Microsoft.Maui.Controls.Routing.RegisterRoute("reschedule", typeof(ReschedulePage));
+        Microsoft.Maui.Controls.Routing.RegisterRoute("timeOff", typeof(TimeOffPage));
         // Reached from MorePage now that they are no longer tabs of their own.
         Microsoft.Maui.Controls.Routing.RegisterRoute("notifications", typeof(NotificationsPage));
         Microsoft.Maui.Controls.Routing.RegisterRoute("account", typeof(AccountPage));

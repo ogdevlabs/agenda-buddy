@@ -80,7 +80,12 @@ public class CalendarApiService : ICalendarApiService
                 AvailableSlots = slotsByDate[date].OrderBy(s => s).Select(s => s.ToString("h:mm tt")).ToList(),
                 BookedSlots = bookedByDate[date]
                     .OrderBy(a => a.ScheduledAt)
-                    .Select(a => $"{a.ScheduledAt:h:mm tt} — {(_session.IsProvider ? a.CustomerEmail : a.ProviderEmail)}")
+                    .Select(a => new BookedSlot(
+                        $"{a.ScheduledAt:h:mm tt} — {(_session.IsProvider ? a.CustomerEmail : a.ProviderEmail)}",
+
+                        // The appointment's own recorded length, which has been on the wire all along and was
+                        // simply never read here.
+                        a.ServiceDurationMinutes))
                     .ToList()
             });
         }

@@ -93,6 +93,7 @@ public static class MauiProgram
         builder.Services.AddTransient<IAuthService, AuthService>();
         builder.Services.AddTransient<IBookingApiService, BookingApiService>();
         builder.Services.AddTransient<ICalendarApiService, CalendarApiService>();
+        builder.Services.AddTransient<ICalendarBlockApiService, CalendarBlockApiService>();
         builder.Services.AddTransient<ICustomerApiService, CustomerApiService>();
         builder.Services.AddTransient<IMessagingApiService, MessagingApiService>();
         builder.Services.AddTransient<INotificationApiService, NotificationApiService>();
@@ -119,6 +120,7 @@ public static class MauiProgram
         builder.Services.AddTransient<DashboardViewModel>();
         builder.Services.AddTransient<AppointmentDetailViewModel>();
         builder.Services.AddTransient<RescheduleViewModel>();
+        builder.Services.AddTransient<TimeOffViewModel>();
         builder.Services.AddTransient<CalendarViewModel>();
         builder.Services.AddTransient<CalendarSettingsViewModel>();
         builder.Services.AddTransient<CustomersViewModel>();
@@ -147,6 +149,7 @@ public static class MauiProgram
         builder.Services.AddTransient<NotificationsPage>();
         builder.Services.AddTransient<AppointmentDetailPage>();
         builder.Services.AddTransient<ReschedulePage>();
+        builder.Services.AddTransient<TimeOffPage>();
         builder.Services.AddTransient<ProviderReportPage>();
         builder.Services.AddTransient<PaymentPage>();
         builder.Services.AddTransient<BookAppointmentPage>();

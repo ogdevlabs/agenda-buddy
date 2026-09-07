@@ -290,6 +290,128 @@ public class ProviderApiService : IProviderApiService
         return response.IsSuccessStatusCode;
     }
 
+    public async Task<List<WorkDayHoursDto>> GetWorkWeekAsync(string email, CancellationToken ct = default)
+    {
+        var client = _httpClientFactory.CreateClient("AgendaBuddyApi");
+
+        var response = await client.GetAsync(ProviderRouteBuilder.GetProvider(email).Path, ct);
+        if (!response.IsSuccessStatusCode) return [];
+
+        using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync(ct));
+        if (doc.RootElement.ValueKind != JsonValueKind.Object
+            || !doc.RootElement.TryGetProperty("data", out var data)
+            || !data.TryGetProperty("workWeek", out var week)
+            || week.ValueKind != JsonValueKind.Array)
+        {
+            // Absent on every provider stored before per-weekday hours existed, which is not a failure: an empty
+            // week means "every day inherits the single pair", and that is exactly what the server does too.
+            return [];
+        }
+
+        var days = new List<WorkDayHoursDto>();
+
+        foreach (var entry in week.EnumerateArray())
+        {
+            if (!entry.TryGetProperty("day", out var dayValue)) continue;
+
+            // The server serialises the weekday as its integer (Sunday = 0), which is DayOfWeek's own value.
+            // A name is accepted too, so a future contract change to strings does not silently drop the week.
+            DayOfWeek day;
+            if (dayValue.ValueKind == JsonValueKind.Number && dayValue.TryGetInt32(out var numeric)
+                && Enum.IsDefined(typeof(DayOfWeek), numeric))
+            {
+                day = (DayOfWeek)numeric;
+            }
+            else if (dayValue.ValueKind == JsonValueKind.String
+                     && Enum.TryParse(dayValue.GetString(), ignoreCase: true, out DayOfWeek parsed))
+            {
+                day = parsed;
+            }
+            else
+            {
+                continue;
+            }
+
+            days.Add(new WorkDayHoursDto(
+                day,
+                ReadHour(entry, "startHour"),
+                ReadHour(entry, "endHour"),
+                entry.TryGetProperty("isClosed", out var closed)
+                && closed.ValueKind is JsonValueKind.True or JsonValueKind.False
+                && closed.GetBoolean()));
+        }
+
+        return days;
+    }
+
+    public async Task<AppointmentActionResult> UpdateWorkWeekAsync(
+        string email, IEnumerable<WorkDayHoursDto> days, CancellationToken ct = default)
+    {
+        var client = _httpClientFactory.CreateClient("AgendaBuddyApi");
+        var route = ProviderRouteBuilder.WorkWeek(email);
+        var body = JsonSerializer.Serialize(ProviderRouteBuilder.BuildWorkWeekPayload(days));
+
+        try
+        {
+            var response = await client.PutAsync(
+                route.Path, new StringContent(body, Encoding.UTF8, "application/json"), ct);
+
+            if (response.IsSuccessStatusCode) return AppointmentActionResult.Done();
+
+            // The server names WHICH weekday is unusable, and a bool cannot carry that.
+            return AppointmentActionResult.Refused(
+                response.StatusCode, await ReadServerMessageAsync(response, ct));
+        }
+        catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException)
+        {
+            return AppointmentActionResult.Unreachable();
+        }
+    }
+
+    /// <summary>
+    /// A server refusal's own wording, from either shape these routes answer with.
+    /// </summary>
+    /// <remarks>
+    /// A <c>DataResponse&lt;T&gt;</c> puts it in <c>errors</c>; a <c>ValidationProblem</c> puts it under
+    /// <c>errors</c> keyed by field. Both are read, because picking one loses the other's message — and the
+    /// message is the only place "which day is wrong" exists.
+    /// </remarks>
+    private static async Task<string?> ReadServerMessageAsync(
+        HttpResponseMessage response, CancellationToken ct)
+    {
+        try
+        {
+            var raw = await response.Content.ReadAsStringAsync(ct);
+            if (string.IsNullOrWhiteSpace(raw)) return null;
+
+            using var document = JsonDocument.Parse(raw);
+            if (document.RootElement.ValueKind != JsonValueKind.Object) return null;
+            if (!document.RootElement.TryGetProperty("errors", out var errors)) return null;
+
+            var messages = errors.ValueKind switch
+            {
+                JsonValueKind.Array => errors.EnumerateArray()
+                    .Where(error => error.ValueKind == JsonValueKind.String)
+                    .Select(error => error.GetString()),
+
+                // ValidationProblem's shape: { "errors": { "Days": ["Monday: ..."] } }
+                JsonValueKind.Object => errors.EnumerateObject()
+                    .SelectMany(field => field.Value.ValueKind == JsonValueKind.Array
+                        ? field.Value.EnumerateArray().Select(item => item.GetString())
+                        : [field.Value.GetString()]),
+
+                _ => []
+            };
+
+            var joined = string.Join(" ", messages.Where(message => !string.IsNullOrWhiteSpace(message)));
+            return string.IsNullOrWhiteSpace(joined) ? null : joined;
+        }
+        catch (Exception exception) when (exception is JsonException or InvalidOperationException)
+        {
+            return null;
+        }
+    }
+
     public async Task<bool> DeactivateAsync(CancellationToken ct = default)
     {
         var client = _httpClientFactory.CreateClient("AgendaBuddyApi");

@@ -4,6 +4,7 @@
              xmlns:controls="clr-namespace:AgendaBuddy.MobileApp.Controls"
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
              x:Class="AgendaBuddy.MobileApp.Views.CalendarSettingsPage"
+             x:Name="ThisPage"
              Title="Calendar Settings"
              BackgroundColor="{StaticResource BackgroundPage}"
              Shell.NavBarIsVisible="False"
@@ -44,37 +45,105 @@
                     <Frame CornerRadius="16" BackgroundColor="White" BorderColor="{StaticResource BorderLight}"
                            HasShadow="True" Padding="16">
                         <VerticalStackLayout Spacing="12">
-                            <Label Text="YOUR CALENDAR DAY" FontSize="11" TextColor="{StaticResource TextMuted}"
+                            <Label Text="YOUR WORKING WEEK" FontSize="11" TextColor="{StaticResource TextMuted}"
                                    TextTransform="Uppercase" CharacterSpacing="1.5" />
-                            <Label Text="Customers can only book inside this window. Times are on your own device's clock."
+                            <Label Text="Customers can only book inside these windows. Times are on your own device's clock, and each day can differ."
                                    FontSize="13" TextColor="{StaticResource TextSecondary}" />
 
-                            <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
-                                <VerticalStackLayout Grid.Column="0" Spacing="4">
-                                    <Label Text="Day starts" FontSize="13" TextColor="{StaticResource TextMuted}" />
-                                    <Frame Style="{StaticResource InputFrame}" Margin="0">
-                                        <Picker ItemsSource="{Binding StartHourOptions}"
-                                                SelectedIndex="{Binding StartHourIndex}"
-                                                Title="Start"
-                                                TextColor="{StaticResource TextPrimary}"
-                                                AutomationId="CalendarStartHourPicker" />
-                                    </Frame>
-                                </VerticalStackLayout>
-                                <VerticalStackLayout Grid.Column="1" Spacing="4">
-                                    <Label Text="Day ends" FontSize="13" TextColor="{StaticResource TextMuted}" />
-                                    <Frame Style="{StaticResource InputFrame}" Margin="0">
-                                        <Picker ItemsSource="{Binding EndHourOptions}"
-                                                SelectedIndex="{Binding EndHourIndex}"
-                                                Title="End"
-                                                TextColor="{StaticResource TextPrimary}"
-                                                AutomationId="CalendarEndHourPicker" />
-                                    </Frame>
-                                </VerticalStackLayout>
-                            </Grid>
+                            <controls:SafeButton Text="Copy first open day to all"
+                                    BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
+                                    FontSize="13" HorizontalOptions="Start" Padding="0"
+                                    Command="{Binding CopyFirstDayToAllCommand}"
+                                    AutomationId="CopyDayToAllButton" />
 
-                            <Label Text="{Binding WindowSummary}" FontSize="13"
-                                   TextColor="{Binding IsWindowValid, Converter={toolkit:BoolToObjectConverter TrueObject={StaticResource TextSecondary}, FalseObject={StaticResource Error}}}"
-                                   AutomationId="CalendarWindowSummary" />
+                            <!-- Seven rows laid out DIRECTLY, not as a CollectionView: this sits inside a
+                                 ScrollView, and a virtualizing list nested in a scroller gets unbounded height,
+                                 renders everything and pushes the Save button off the screen. Seven items is
+                                 bounded, so nothing is lost. -->
+                            <VerticalStackLayout BindableLayout.ItemsSource="{Binding Days}" Spacing="8">
+                                <BindableLayout.ItemTemplate>
+                                    <DataTemplate>
+                                        <Frame CornerRadius="12" BackgroundColor="#F8FAFC"
+                                               BorderColor="{StaticResource BorderLight}" HasShadow="False"
+                                               Padding="12">
+                                            <VerticalStackLayout Spacing="8">
+
+                                                <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+                                                    <Label Grid.Column="0" Text="{Binding DayName}" FontSize="15"
+                                                           FontAttributes="Bold" VerticalOptions="Center"
+                                                           TextColor="{StaticResource TextPrimary}" />
+                                                    <Label Grid.Column="1" Text="{Binding Summary}" FontSize="13"
+                                                           VerticalOptions="Center"
+                                                           TextColor="{StaticResource TextMuted}" />
+                                                    <!-- Closed is a switch, not a hidden state: the provider has
+                                                         to be able to say "I do not work Sundays" without
+                                                         inventing hours that mean it. -->
+                                                    <Switch Grid.Column="2" IsToggled="{Binding IsOpen}"
+                                                            OnColor="{StaticResource Primary}"
+                                                            VerticalOptions="Center"
+                                                            AutomationId="WorkDayOpenSwitch" />
+                                                </Grid>
+
+                                                <!-- Hours only where the day is open. Kept on a closed day, so
+                                                     re-opening it does not mean re-entering them. -->
+                                                <Grid ColumnDefinitions="*,*" ColumnSpacing="10"
+                                                      IsVisible="{Binding IsOpen}">
+                                                    <Frame Grid.Column="0" Style="{StaticResource InputFrame}"
+                                                           Margin="0">
+                                                        <Picker ItemsSource="{Binding Source={x:Reference ThisPage}, Path=BindingContext.StartHourOptions}"
+                                                                SelectedIndex="{Binding StartHourIndex}"
+                                                                Title="Starts"
+                                                                TextColor="{StaticResource TextPrimary}"
+                                                                AutomationId="WorkDayStartHourPicker" />
+                                                    </Frame>
+                                                    <Frame Grid.Column="1" Style="{StaticResource InputFrame}"
+                                                           Margin="0">
+                                                        <Picker ItemsSource="{Binding Source={x:Reference ThisPage}, Path=BindingContext.EndHourOptions}"
+                                                                SelectedIndex="{Binding EndHourIndex}"
+                                                                Title="Ends"
+                                                                TextColor="{StaticResource TextPrimary}"
+                                                                AutomationId="WorkDayEndHourPicker" />
+                                                    </Frame>
+                                                </Grid>
+
+                                                <!-- PER ROW, so the provider is told which day is wrong. A single
+                                                     page-level error for seven rows is unusable. -->
+                                                <Label Text="{Binding ErrorMessage}"
+                                                       IsVisible="{Binding HasError}"
+                                                       FontSize="12" TextColor="{StaticResource Error}"
+                                                       AutomationId="WorkDayErrorMessage" />
+
+                                            </VerticalStackLayout>
+                                        </Frame>
+                                    </DataTemplate>
+                                </BindableLayout.ItemTemplate>
+                            </VerticalStackLayout>
+
+                            <Label Text="{Binding WeekSummary}" FontSize="13"
+                                   TextColor="{Binding IsWeekValid, Converter={toolkit:BoolToObjectConverter TrueObject={StaticResource TextSecondary}, FalseObject={StaticResource Error}}}"
+                                   AutomationId="CalendarWeekSummary" />
+
+                            <!-- Warned about, not blocked: a provider may genuinely be shutting up shop. -->
+                            <Label Text="Nobody can book you while every day is closed."
+                                   IsVisible="{Binding IsFullyClosed}"
+                                   FontSize="12" TextColor="{StaticResource Error}"
+                                   AutomationId="FullyClosedWarning" />
+                        </VerticalStackLayout>
+                    </Frame>
+
+                    <!-- Time off is the OTHER half of managing a calendar: the week says when you normally
+                         work, this says when you are away regardless. -->
+                    <Frame CornerRadius="16" BackgroundColor="White" BorderColor="{StaticResource BorderLight}"
+                           HasShadow="True" Padding="16">
+                        <VerticalStackLayout Spacing="8">
+                            <Label Text="TIME OFF" FontSize="11" TextColor="{StaticResource TextMuted}"
+                                   TextTransform="Uppercase" CharacterSpacing="1.5" />
+                            <Label Text="Holiday, travel or anything personal. Blocks a range of hours or whole days, whatever your working week says."
+                                   FontSize="13" TextColor="{StaticResource TextSecondary}" />
+                            <controls:SafeButton Text="Manage time off"
+                                    Style="{StaticResource SecondaryButton}"
+                                    Clicked="OnTimeOffClicked"
+                                    AutomationId="ManageTimeOffButton" />
                         </VerticalStackLayout>
                     </Frame>
 
@@ -82,7 +151,7 @@
             </ScrollView>
 
             <Grid Grid.Row="3">
-                <controls:SafeButton Text="Save Calendar Hours"
+                <controls:SafeButton Text="Save Working Week"
                         Style="{StaticResource PrimaryButton}"
                         HeightRequest="48"
                         Command="{Binding SaveCommand}"
