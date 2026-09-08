@@ -52,6 +52,25 @@ public class CustomerEntity
     [BsonElement("avatar_id")]
     public string AvatarId { get; set; } = string.Empty;
 
+    /// <summary>
+    /// When this account last confirmed the Terms and Conditions. <c>null</c> means never.
+    /// </summary>
+    /// <remarks>
+    /// A timestamp rather than a boolean: "they agreed" without a date is not a record of anything, and the two
+    /// documents are revised independently, so they get a field each. It records the <b>latest</b> confirmation,
+    /// not the first — what matters is consent to the text currently published, and re-confirming is the act that
+    /// establishes it. Additive and nullable, so every account that predates consent capture reads back as
+    /// not-yet-accepted rather than failing to deserialise.
+    /// </remarks>
+    [BsonElement("terms_accepted_at")]
+    [BsonIgnoreIfNull]
+    public DateTime? TermsAcceptedAt { get; set; }
+
+    /// <summary>When this account last confirmed the Privacy Policy. See <see cref="TermsAcceptedAt"/>.</summary>
+    [BsonElement("privacy_accepted_at")]
+    [BsonIgnoreIfNull]
+    public DateTime? PrivacyAcceptedAt { get; set; }
+
     [BsonElement("subscribed_provider_collection")]
     public List<string>? SubscribedProviderCollection { get; set; } = [];
 

@@ -24,9 +24,6 @@
         <Grid Grid.Row="1" RowDefinitions="Auto,Auto,*,Auto" Padding="20,12,20,16" RowSpacing="12">
 
             <Grid Grid.Row="0" ColumnDefinitions="Auto,*">
-                <controls:SafeButton Grid.Column="0" Text="&#x2190; Back" BackgroundColor="Transparent"
-                        TextColor="{StaticResource Primary}" FontSize="14" HorizontalOptions="Start"
-                        Padding="4" Clicked="OnBackClicked" />
                 <Label Grid.Column="1" Text="Add a Service" FontSize="22" FontAttributes="Bold"
                        TextColor="{StaticResource TextPrimary}" VerticalOptions="Center" Margin="8,0,0,0" />
             </Grid>

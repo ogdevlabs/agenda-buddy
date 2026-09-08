@@ -150,4 +150,23 @@ public interface IProviderService
 
     /// <summary>Clears a proposal from the embedded copy and returns it to <c>Booked</c>. For a decline.</summary>
     Task<ProviderEntity?> ClearEmbeddedRescheduleProposalAsync(string providerEmail, string identifier);
+
+    /// <summary>
+    /// Sets which avatar this account is drawn with, via a targeted <c>$set</c> on <c>avatar_id</c> alone.
+    /// </summary>
+    /// <remarks>
+    /// A dedicated write for the same reason <see cref="SetWorkHoursAsync"/> is one — the profile <c>PUT</c>
+    /// replaces the whole document, and here that additionally means resetting every nested
+    /// <c>ServiceEntity.Id</c> to <c>ObjectId.Empty</c> (agenda-buddy-2wf). Changing an avatar must not be able
+    /// to disturb a provider's service catalogue.
+    /// </remarks>
+    /// <returns><c>null</c> when no provider matched, which also serves as the existence check.</returns>
+    Task<ProviderEntity?> SetAvatarAsync(string providerEmail, string avatarId);
+
+    /// <summary>
+    /// Records — or clears — this account's acceptance of the Terms and Conditions and the Privacy Policy.
+    /// Same contract as <see cref="ICustomerService.SetConsentAsync"/>.
+    /// </summary>
+    /// <returns><c>null</c> when no provider matched.</returns>
+    Task<ProviderEntity?> SetConsentAsync(string providerEmail, DateTime? termsAcceptedAt, DateTime? privacyAcceptedAt);
 }

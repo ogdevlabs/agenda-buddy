@@ -142,7 +142,11 @@ public static class MauiProgram
         builder.Services.AddTransient<ServicesViewModel>();
         builder.Services.AddTransient<AddServiceViewModel>();
         builder.Services.AddTransient<ProfessionsViewModel>();
-        builder.Services.AddTransient<AccountViewModel>();
+        builder.Services.AddTransient<ProfileViewModel>();
+        builder.Services.AddTransient<EditProfileViewModel>();
+        builder.Services.AddTransient<AvatarPickerViewModel>();
+        builder.Services.AddTransient<LanguageViewModel>();
+        builder.Services.AddTransient<LegalDocumentViewModel>();
         builder.Services.AddTransient<ForgotPasswordViewModel>();
         builder.Services.AddTransient<ResetPasswordConfirmViewModel>();
 
@@ -165,7 +169,12 @@ public static class MauiProgram
         builder.Services.AddTransient<ServicesPage>();
         builder.Services.AddTransient<AddServicePage>();
         builder.Services.AddTransient<ProfessionsPage>();
-        builder.Services.AddTransient<AccountPage>();
+        builder.Services.AddTransient<ProfilePage>();
+        builder.Services.AddTransient<EditProfilePage>();
+        builder.Services.AddTransient<AvatarPickerPage>();
+        builder.Services.AddTransient<LanguagePage>();
+        builder.Services.AddTransient<TermsPage>();
+        builder.Services.AddTransient<PrivacyPage>();
         builder.Services.AddTransient<MorePage>();
         builder.Services.AddTransient<ForgotPasswordPage>();
         builder.Services.AddTransient<ResetPasswordConfirmPage>();

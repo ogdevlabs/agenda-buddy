@@ -79,6 +79,25 @@ public class InMemoryCredentialRepository : IRepository<CredentialEntity>
             "InMemoryCredentialRepository does not implement multi-document updates. No credential path uses " +
             "them; implement it here rather than letting a test pass on a write it never applied.");
 
+    /// <summary>
+    /// Deletes every match, over <see cref="MatchesStrictFilter"/> rather than the permissive
+    /// <see cref="MatchesFilter"/>.
+    /// </summary>
+    /// <remarks>
+    /// The strict evaluator is the whole point on a delete: <see cref="MatchesFilter"/> ignores a field it does
+    /// not recognise, so an unsupported filter would match every credential in the store and this would report a
+    /// green test for having erased the entire collection.
+    /// </remarks>
+    public Task<long> DeleteManyAsync(BsonDocument filter)
+    {
+        ArgumentNullException.ThrowIfNull(filter);
+
+        var matched = _store.Where(entity => MatchesStrictFilter(entity, filter)).ToList();
+        foreach (var entity in matched) _store.Remove(entity);
+
+        return Task.FromResult((long)matched.Count);
+    }
+
     // ADR-023's repository half. Negatives are normalised to zero to match
     // MongoDbRepository, where Skip(-1) throws rather than being the no-op LINQ makes it.
     public Task<(IEnumerable<CredentialEntity> Items, long TotalCount)> GetPagedAsync(int skip, int take) =>

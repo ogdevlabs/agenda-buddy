@@ -1,0 +1,38 @@
+meta {
+  name: 8 Set avatar
+  type: http
+  seq: 8
+}
+put {
+  url: {{gatewayUrl}}/api/v1/customers/{{customerEmail}}/avatar
+  body: json
+}
+body:json {
+  {
+    "avatarId": "avatar_07"
+  }
+}
+docs {
+  Which of the 24 built-in marks this account is drawn with. `avatar_01`..`avatar_24` — the catalogue is
+  `AgendaBuddy.Library/Avatars/AvatarCatalog.cs`, shared by both sides so the client cannot offer an id the
+  server refuses.
+
+  A dedicated route rather than a field on `PUT /api/v1/customers/{email}`, because that one replaces the
+  whole stored document — sending only an avatar through it would wipe `phoneNumber`,
+  `subscribedProviderCollection` and `appointmentIdentifierCollection`. This one is a targeted `$set` on
+  `avatar_id` alone.
+
+  Answers:
+  - `200` with the updated customer on success.
+  - `400` for an id the catalogue does not know (try `avatar_99`). ⚠️ **Refused, never stored** — an unknown
+    id throws nowhere, because `AvatarCatalog.Resolve` treats it as absent and falls back to a mark derived
+    from the email address, so storing it would leave the account showing its old avatar behind a `200`.
+  - `403` for another account's email. Ownership-guarded.
+  - `404` when no customer has that email.
+
+  There is deliberately **no photo upload** yet (`agenda-buddy-5qr`): this product has no image storage, so
+  that needs a storage decision first. This is the write path a photo would hang off.
+
+  Verify with `2 Get customer by email` — `avatarId` comes back on the entity, and the read's 5-minute cache
+  is invalidated by this write.
+}

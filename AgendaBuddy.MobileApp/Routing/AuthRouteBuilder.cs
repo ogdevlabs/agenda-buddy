@@ -33,4 +33,22 @@ public static class AuthRouteBuilder
     public static RouteSpec RequestPasswordReset() => new(HttpMethod.Post, "api/v1/auth/password-reset/request");
 
     public static RouteSpec ConfirmPasswordReset() => new(HttpMethod.Post, "api/v1/auth/password-reset/confirm");
+
+    /// <summary>
+    /// <c>DELETE /api/v1/auth/account</c> — deletes the caller's own credential, so sign-in stops working. The
+    /// <b>credential half</b> of account deletion.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// No email in the path or the body: the account is the caller's <c>sub</c> claim, so there is nothing to
+    /// substitute in order to delete somebody else's.
+    /// </para>
+    /// <para>
+    /// Called <b>after</b> the domain-side delete (<see cref="CustomerRouteBuilder.DeleteCustomer"/> /
+    /// <see cref="ProviderRouteBuilder.DeleteProvider"/>), because this credential is what authorises those.
+    /// Answers 204 whether or not a credential matched — a deletion that reported the difference would be an
+    /// enumeration oracle.
+    /// </para>
+    /// </remarks>
+    public static RouteSpec DeleteAccount() => new(HttpMethod.Delete, "api/v1/auth/account");
 }

@@ -1,3 +1,5 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using AgendaBuddy.Identity.Requests;
 using AgendaBuddy.Identity.Services;
 
@@ -109,6 +111,33 @@ public class AuthModule : ICarterModule
             catch (ServiceUnavailableException ex) { return Results.Problem(detail: ex.Message, statusCode: 503, title: "service_unavailable"); }
         }).WithName("ConfirmPasswordReset");
 
+        // The credential half of account deletion (App Review Guideline 5.1.1(v)). Takes NO email: the account
+        // is the caller's own sub claim, so there is nothing here for a caller to substitute in order to delete
+        // somebody else — the same reasoning as DELETE /device-token and Customer's POST /notifications/read-all.
+        //
+        // 204 whether or not a credential matched, because a deletion that answered differently for a known and
+        // an unknown address would be an enumeration oracle. The domain profile is deleted separately by
+        // DELETE /api/v1/{customers|providers}/{email}, which the client calls FIRST: this credential is what
+        // authorises that call.
+        auth.MapDelete("/account", async (ClaimsPrincipal user, HttpRequest request, IdentityService svc) =>
+        {
+            var email = user.FindFirstValue(ClaimTypes.NameIdentifier)
+                        ?? user.FindFirstValue(JwtRegisteredClaimNames.Sub);
+
+            if (string.IsNullOrWhiteSpace(email))
+                return Results.Unauthorized();
+
+            try
+            {
+                // The caller's own access token, so it stops working the moment the account is gone rather than
+                // staying valid for the rest of its 60-minute lifetime. Read from the header the caller already
+                // sent, not from a body — /logout takes it in the body only because it also takes a refresh token.
+                await svc.DeleteAccountAsync(email, ReadBearerToken(request));
+                return Results.NoContent();
+            }
+            catch (ServiceUnavailableException ex) { return Results.Problem(detail: ex.Message, statusCode: 503, title: "service_unavailable"); }
+        }).RequireAuthorization().WithName("DeleteAccount");
+
         // Not required for login (see CredentialEntity.EmailVerified's own remarks) — confirms
         // ownership of the registered address, an informational/UX signal only.
         auth.MapPost("/register/confirm", async (EmailConfirmRequest req, IdentityService svc) =>
@@ -121,5 +150,15 @@ public class AuthModule : ICarterModule
             catch (UnauthorizedException ex) { return Results.Problem(detail: ex.Message, statusCode: 401, title: "unauthorized"); }
             catch (ServiceUnavailableException ex) { return Results.Problem(detail: ex.Message, statusCode: 503, title: "service_unavailable"); }
         }).WithName("ConfirmEmail");
+    }
+
+    /// <summary>The bearer token from the Authorization header, or <c>null</c> when the header is absent or not one.</summary>
+    private static string? ReadBearerToken(HttpRequest request)
+    {
+        var header = request.Headers.Authorization.ToString();
+
+        return header.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase)
+            ? header["Bearer ".Length..].Trim()
+            : null;
     }
 }

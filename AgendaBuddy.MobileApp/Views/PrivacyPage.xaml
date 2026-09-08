@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Thin: the whole layout is in LegalDocumentBody, which this page and its sibling share. See TermsPage.xaml.cs.
+-->
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:controls="clr-namespace:AgendaBuddy.MobileApp.Controls"
+             x:Class="AgendaBuddy.MobileApp.Views.PrivacyPage"
+             Title="{Binding Title}"
+             BackgroundColor="{StaticResource BackgroundPage}"
+             Shell.NavBarIsVisible="False">
+
+    <Grid RowDefinitions="Auto,*">
+
+        <controls:BrandHeader Grid.Row="0" />
+
+        <ScrollView Grid.Row="1">
+            <controls:LegalDocumentBody Padding="20,16,20,28" />
+        </ScrollView>
+
+    </Grid>
+
+</ContentPage>

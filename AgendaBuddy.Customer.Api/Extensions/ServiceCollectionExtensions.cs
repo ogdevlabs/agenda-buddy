@@ -61,6 +61,11 @@ public static class ServiceCollectionExtensions
         // message), so it needs the whole delivery set, not just INotificationService.
         serviceCollection.AddNotificationDelivery(configuration);
 
+        // Deleting an account has to reach every collection carrying the address, including several this
+        // service does not otherwise touch (appointments, notes, payments). One call, because the set is only
+        // correct as a set -- see AddAccountErasure's own remarks.
+        serviceCollection.AddAccountErasure(configuration);
+
         return serviceCollection;
     }
 }

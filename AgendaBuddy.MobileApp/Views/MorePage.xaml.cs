@@ -29,9 +29,9 @@ public partial class MorePage : ContentPage
         await Shell.Current.GoToAsync("notifications");
     }
 
-    private async void OnAccountClicked(object? sender, TappedEventArgs e)
+    private async void OnProfileClicked(object? sender, TappedEventArgs e)
     {
-        await Shell.Current.GoToAsync("account");
+        await Shell.Current.GoToAsync("profile");
     }
 }
 #endif

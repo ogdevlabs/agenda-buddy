@@ -108,7 +108,15 @@ public partial class BrandHeaderViewModel : ObservableObject
         _resolvedFor = email;
     }
 
-    private void Clear()
+    /// <summary>
+    /// Empties the header, and the badge with it.
+    /// </summary>
+    /// <remarks>
+    /// Public because signing out and deleting an account both have to clear it <b>before</b> navigating away.
+    /// <see cref="RefreshAsync"/> does clear a signed-out session on the next navigation, but "the next
+    /// navigation" is the login screen — which is precisely where the previous account's name must not still be.
+    /// </remarks>
+    public void Clear()
     {
         _resolvedFor = string.Empty;
         DisplayName = string.Empty;
@@ -117,6 +125,17 @@ public partial class BrandHeaderViewModel : ObservableObject
         // A signed-out header must not keep showing the previous account's unread count.
         Notifications.Clear();
     }
+
+    /// <summary>
+    /// Forgets the cached name so the next <see cref="RefreshAsync"/> fetches it again, without disturbing the
+    /// badge or what is currently on screen.
+    /// </summary>
+    /// <remarks>
+    /// The name is fetched once per account and then cached, which is what keeps the header off the network on
+    /// every navigation — and is also why editing your own name left the header showing the old one until the app
+    /// restarted. The editor calls this on a successful save.
+    /// </remarks>
+    public void InvalidateName() => _resolvedFor = string.Empty;
 
     private async Task<bool> TryRefreshSessionAsync()
     {

@@ -100,4 +100,48 @@ public static class ProviderRouteBuilder
 
     public static object BuildWorkHoursPayload(int startHour, int endHour) =>
         new { startHour, endHour };
+
+    /// <summary>
+    /// <c>PUT /api/v1/providers/{email}/avatar</c> — which built-in mark this account is drawn with. A dedicated
+    /// route, not a field on <see cref="UpdateProvider"/>: that one replaces the whole document, and doing so
+    /// also resets every nested service's id (agenda-buddy-2wf). <c>{email}</c> must be the caller's own claim.
+    /// </summary>
+    public static RouteSpec Avatar(string email) => new(HttpMethod.Put, $"api/v1/providers/{email}/avatar");
+
+    /// <summary>Payload shape Provider's <c>AvatarRequest</c> binds. An unknown id is answered 400, not stored.</summary>
+    public static object BuildAvatarPayload(string avatarId) => new { avatarId };
+
+    /// <summary>
+    /// <c>PUT /api/v1/providers/{email}/consent</c> — acceptance of the Terms and the Privacy Policy. Dedicated
+    /// for the same reason <see cref="Avatar"/> is.
+    /// </summary>
+    public static RouteSpec Consent(string email) => new(HttpMethod.Put, $"api/v1/providers/{email}/consent");
+
+    /// <summary>
+    /// Payload shape Provider's <c>ConsentRequest</c> binds.
+    /// </summary>
+    /// <remarks>
+    /// Booleans, not dates: the server stamps the time, because a consent record whose timestamp the consenting
+    /// party supplies proves nothing. Both are always sent, so <c>false</c> reads as "not accepted" rather than
+    /// "unchanged".
+    /// </remarks>
+    public static object BuildConsentPayload(bool acceptedTerms, bool acceptedPrivacy) =>
+        new { acceptedTerms, acceptedPrivacy };
+
+    /// <summary>
+    /// <c>DELETE /api/v1/providers/{email}</c> — erases the profile, and with it the provider's services and
+    /// embedded appointment list, then scrubs the address from their customers' records. The <b>domain half</b>
+    /// of account deletion.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Not the same operation as <see cref="Deactivate"/>, which keeps everything and only hides the provider
+    /// from the directory.
+    /// </para>
+    /// <para>
+    /// Call this <b>before</b> <see cref="AuthRouteBuilder.DeleteAccount"/>: the credential that route deletes is
+    /// what authorises this one, so the reverse order strands a live profile nothing can reach.
+    /// </para>
+    /// </remarks>
+    public static RouteSpec DeleteProvider(string email) => new(HttpMethod.Delete, $"api/v1/providers/{email}");
 }

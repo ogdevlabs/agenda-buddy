@@ -93,7 +93,12 @@ public class ServiceCollectionMongoResolutionTest
                                  && descriptor.ServiceType.GetGenericTypeDefinition() == typeof(IRepository<>))
             .ToList();
 
-        Assert.Single(repositories);
+        // One for this service's own work — ProviderEntity — plus seven from AddAccountErasure: CustomerEntity,
+        // AppointmentEntity, MessageEntity, NotificationEntity, NoteEntity, PaymentEntity and DeviceTokenEntity.
+        // Deleting an account has to scrub the address out of every collection carrying it, and all seven are
+        // collections this service does not otherwise touch. It registers with TryAddScoped, so ProviderEntity is
+        // not duplicated — a request resolving it gets a single instance, not two.
+        Assert.Equal(8, repositories.Count);
         Assert.All(repositories, descriptor => Assert.Equal(ServiceLifetime.Scoped, descriptor.Lifetime));
     }
 }

@@ -60,14 +60,16 @@
 
                         <BoxView HeightRequest="0.5" Color="{StaticResource BorderLight}" Margin="16,0" />
 
+                        <!-- "Profile", not "Account": the screen behind it now leads with who you are — avatar,
+                             name, role — and carries the account settings underneath. -->
                         <Grid ColumnDefinitions="Auto,*,Auto" Padding="16,14" ColumnSpacing="14"
-                              AutomationId="MoreAccountRow">
+                              AutomationId="MoreProfileRow">
                             <Grid.GestureRecognizers>
-                                <TapGestureRecognizer Tapped="OnAccountClicked" />
+                                <TapGestureRecognizer Tapped="OnProfileClicked" />
                             </Grid.GestureRecognizers>
                             <Image Grid.Column="0" Source="customers_icon.png"
                                    WidthRequest="22" HeightRequest="22" VerticalOptions="Center" />
-                            <Label Grid.Column="1" Text="Account" FontSize="16"
+                            <Label Grid.Column="1" Text="Profile" FontSize="16"
                                    TextColor="{StaticResource TextPrimary}" VerticalOptions="Center" />
                             <Label Grid.Column="2" Text="&#x276F;" FontSize="14"
                                    TextColor="{StaticResource TextMuted}" VerticalOptions="Center" />

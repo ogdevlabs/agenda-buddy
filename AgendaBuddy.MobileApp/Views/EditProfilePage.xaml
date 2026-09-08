@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Editing your own details.
+
+    The email field is rendered but disabled, with the reason on the line under it. Leaving it out entirely reads
+    as "we lost your address"; showing it greyed with an explanation reads as "this is fixed, and here is why".
+
+    Save is PINNED outside the scroller. A form whose submit button is the last thing in a ScrollView is a form
+    people do not realise they can submit — and PinnedActionTest fails any view that scrolls a named action.
+-->
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:controls="clr-namespace:AgendaBuddy.MobileApp.Controls"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             x:Class="AgendaBuddy.MobileApp.Views.EditProfilePage"
+             Title="Edit profile"
+             BackgroundColor="{StaticResource BackgroundPage}"
+             Shell.NavBarIsVisible="False">
+
+    <ContentPage.Resources>
+        <toolkit:InvertedBoolConverter x:Key="InvertedBoolConverter" />
+    </ContentPage.Resources>
+
+    <Grid RowDefinitions="Auto,*,Auto">
+
+        <controls:BrandHeader Grid.Row="0" />
+
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Padding="20,16,20,24" Spacing="14">
+
+                <Label Text="Edit profile" Style="{StaticResource TitleMedium}" />
+
+                <Frame Style="{StaticResource CardCompact}" Margin="0">
+                    <VerticalStackLayout Spacing="12">
+
+                        <Label Text="Personal information" Style="{StaticResource Overline}" />
+
+                        <!--
+                            Every field carries a LABEL above it, not only a placeholder. A placeholder disappears
+                            the moment the field is filled, which is the normal state of an edit form — so a
+                            populated form read as three unexplained values ("Ada", "Lovelace", "+15550100") with
+                            nothing saying which was which. It is also the field's accessibility name.
+                        -->
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="First name" FontSize="12.5" TextColor="{StaticResource TextSecondary}" />
+                            <Frame Style="{StaticResource InputFrame}" Margin="0">
+                                <Entry Text="{Binding FirstName}" Placeholder="First name"
+                                       Style="{StaticResource InputStyle}" AutomationId="ProfileFirstNameEntry" />
+                            </Frame>
+                        </VerticalStackLayout>
+
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Last name" FontSize="12.5" TextColor="{StaticResource TextSecondary}" />
+                            <Frame Style="{StaticResource InputFrame}" Margin="0">
+                                <Entry Text="{Binding LastName}" Placeholder="Last name"
+                                       Style="{StaticResource InputStyle}" AutomationId="ProfileLastNameEntry" />
+                            </Frame>
+                        </VerticalStackLayout>
+
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Phone (optional)" FontSize="12.5" TextColor="{StaticResource TextSecondary}" />
+                            <Frame Style="{StaticResource InputFrame}" Margin="0">
+                                <Entry Text="{Binding PhoneNumber}" Placeholder="Phone (optional)" Keyboard="Telephone"
+                                       Style="{StaticResource InputStyle}" AutomationId="ProfilePhoneEntry" />
+                            </Frame>
+                        </VerticalStackLayout>
+
+                        <!-- Disabled, not hidden. IsEnabled=false is what stops the keyboard opening on tap; the
+                             muted background is what makes it read as fixed rather than as a broken field. -->
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Email" FontSize="12.5" TextColor="{StaticResource TextSecondary}" />
+                            <Frame Style="{StaticResource InputFrame}" Margin="0"
+                                   BackgroundColor="{StaticResource Divider}">
+                                <Entry Text="{Binding Email}" IsEnabled="False"
+                                       Style="{StaticResource InputStyle}"
+                                       TextColor="{StaticResource TextMuted}"
+                                       AutomationId="ProfileEmailEntry" />
+                            </Frame>
+                        </VerticalStackLayout>
+
+                        <Label Text="Your email address cannot be changed — it is what identifies your account."
+                               FontSize="12" TextColor="{StaticResource TextMuted}" />
+
+                    </VerticalStackLayout>
+                </Frame>
+
+                <Frame Style="{StaticResource CardCompact}" Margin="0">
+                    <VerticalStackLayout Spacing="12">
+
+                        <Label Text="Agreements" Style="{StaticResource Overline}" />
+
+                        <!-- Checkbox and a tappable document name on the same row: the label opens the document,
+                             so nobody has to leave this screen to find out what they are agreeing to. -->
+                        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10" AutomationId="AcceptTermsRow">
+                            <CheckBox Grid.Column="0"
+                                      IsChecked="{Binding AcceptedTerms, Mode=TwoWay}"
+                                      Color="{StaticResource Primary}"
+                                      VerticalOptions="Center"
+                                      AutomationId="AcceptTermsCheckBox" />
+                            <Label Grid.Column="1" VerticalOptions="Center" FontSize="14"
+                                   TextColor="{StaticResource TextPrimary}">
+                                <Label.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnTermsTapped" />
+                                </Label.GestureRecognizers>
+                                <Label.FormattedText>
+                                    <FormattedString>
+                                        <Span Text="I accept the " />
+                                        <Span Text="Terms and Conditions"
+                                              TextColor="{StaticResource Primary}"
+                                              TextDecorations="Underline" />
+                                    </FormattedString>
+                                </Label.FormattedText>
+                            </Label>
+                        </Grid>
+
+                        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10" AutomationId="AcceptPrivacyRow">
+                            <CheckBox Grid.Column="0"
+                                      IsChecked="{Binding AcceptedPrivacy, Mode=TwoWay}"
+                                      Color="{StaticResource Primary}"
+                                      VerticalOptions="Center"
+                                      AutomationId="AcceptPrivacyCheckBox" />
+                            <Label Grid.Column="1" VerticalOptions="Center" FontSize="14"
+                                   TextColor="{StaticResource TextPrimary}">
+                                <Label.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnPrivacyTapped" />
+                                </Label.GestureRecognizers>
+                                <Label.FormattedText>
+                                    <FormattedString>
+                                        <Span Text="I accept the " />
+                                        <Span Text="Privacy Policy"
+                                              TextColor="{StaticResource Primary}"
+                                              TextDecorations="Underline" />
+                                    </FormattedString>
+                                </Label.FormattedText>
+                            </Label>
+                        </Grid>
+
+                        <Label Text="{Binding LegalEffectiveDate, StringFormat='Version effective {0}'}"
+                               FontSize="12" TextColor="{StaticResource TextMuted}"
+                               AutomationId="LegalEffectiveDateLabel" />
+
+                    </VerticalStackLayout>
+                </Frame>
+
+                <Frame Style="{StaticResource ErrorBannerStyle}" IsVisible="{Binding HasError}" Margin="0">
+                    <Label Text="{Binding ErrorMessage}" TextColor="{StaticResource Error}" FontSize="13.5" />
+                </Frame>
+
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <!-- Pinned. Disabled until both names are filled and both boxes are ticked — a disabled button next to
+             two unticked boxes says what is missing without a message. -->
+        <Grid Grid.Row="2" Padding="20,12,20,20" BackgroundColor="{StaticResource BackgroundPage}">
+            <controls:SafeButton Text="Save"
+                    Style="{StaticResource PrimaryButton}"
+                    Command="{Binding SaveCommand}"
+                    IsVisible="{Binding IsSaving, Converter={StaticResource InvertedBoolConverter}}"
+                    AutomationId="SaveProfileButton" />
+            <ActivityIndicator IsRunning="{Binding IsSaving}" IsVisible="{Binding IsSaving}"
+                               Color="{StaticResource Primary}" HorizontalOptions="Center" />
+        </Grid>
+
+    </Grid>
+
+</ContentPage>

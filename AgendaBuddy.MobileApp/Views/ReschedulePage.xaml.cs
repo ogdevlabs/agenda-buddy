@@ -69,6 +69,5 @@ public partial class ReschedulePage : ContentPage
     /// </summary>
     private async void OnCompleted(object? sender, EventArgs e) => await Shell.Current.GoToAsync("..");
 
-    private async void OnBackClicked(object? sender, EventArgs e) => await Shell.Current.GoToAsync("..");
 }
 #endif

@@ -31,4 +31,28 @@ public interface ICustomerService
     /// </summary>
     /// <returns>The customer post-update, or <c>null</c> if <paramref name="customerEmail"/> matches no customer.</returns>
     Task<CustomerEntity?> UnsubscribeFromProviderAsync(string customerEmail, string providerEmail);
+
+    /// <summary>
+    /// Sets which avatar this account is drawn with, via a targeted <c>$set</c> on <c>avatar_id</c> alone.
+    /// </summary>
+    /// <remarks>
+    /// A dedicated write rather than a field on the profile <c>PUT</c>, which replaces the whole document — so
+    /// changing an avatar through it would carry every defect of a whole-document write, including discarding a
+    /// concurrent change to the subscription or appointment lists.
+    /// </remarks>
+    /// <returns>The customer post-update, or <c>null</c> if <paramref name="customerEmail"/> matches no customer.</returns>
+    Task<CustomerEntity?> SetAvatarAsync(string customerEmail, string avatarId);
+
+    /// <summary>
+    /// Records — or clears — this account's acceptance of the Terms and Conditions and the Privacy Policy.
+    /// </summary>
+    /// <param name="termsAcceptedAt">When the terms were confirmed, or <c>null</c> to record that they are not.</param>
+    /// <param name="privacyAcceptedAt">When the policy was confirmed, or <c>null</c> to record that it is not.</param>
+    /// <remarks>
+    /// A targeted <c>$set</c>, for the same reason <see cref="SetAvatarAsync"/> is one. Both fields are always
+    /// written, including to null: withdrawing consent is a state the record has to be able to express, and a
+    /// method that could only ever add a timestamp would make an unticked box silently keep the old one.
+    /// </remarks>
+    /// <returns>The customer post-update, or <c>null</c> if <paramref name="customerEmail"/> matches no customer.</returns>
+    Task<CustomerEntity?> SetConsentAsync(string customerEmail, DateTime? termsAcceptedAt, DateTime? privacyAcceptedAt);
 }

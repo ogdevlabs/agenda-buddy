@@ -96,12 +96,16 @@ public class ServiceCollectionMongoResolutionTest
                                  && descriptor.ServiceType.GetGenericTypeDefinition() == typeof(IRepository<>))
             .ToList();
 
-        // Includes MessageEntity and NotificationEntity, neither of which had ever been persisted
-        // because nothing registered a repository for them.
-        // DeviceTokenEntity is the fifth, added by AddNotificationDelivery: a new-message notification goes out
-        // by push as well as into the inbox, which means reading the recipient's device token. Bound to
-        // Identity's database because that is where POST /device-token writes it. Read-only from here.
-        Assert.Equal(5, repositories.Count);
+        // Five from this service's own needs: ProviderEntity, CustomerEntity, MessageEntity,
+        // NotificationEntity, and DeviceTokenEntity — the last two from AddNotificationDelivery, because a
+        // new-message notification goes out by push as well as into the inbox, which means reading the
+        // recipient's device token. That one is bound to Identity's database, where POST /device-token writes it.
+        //
+        // Three more from AddAccountErasure: AppointmentEntity, NoteEntity and PaymentEntity. Deleting an account
+        // has to scrub the address out of every collection carrying it, and those three are collections this
+        // service does not otherwise touch. It registers with TryAddScoped, so the five above are not duplicated
+        // — a request resolving one of them gets a single instance, not two.
+        Assert.Equal(8, repositories.Count);
         Assert.All(repositories, descriptor => Assert.Equal(ServiceLifetime.Scoped, descriptor.Lifetime));
     }
 }

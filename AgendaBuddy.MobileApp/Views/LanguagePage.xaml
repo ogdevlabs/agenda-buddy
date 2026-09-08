@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Target languages.
+
+    Two rows, so a plain layout rather than a CollectionView — and the notice under them is the screen's main
+    fact, not fine print: Spanish is listed because this product's market will look for it, and marking it
+    unavailable answers the question honestly instead of leaving it off the list.
+-->
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:controls="clr-namespace:AgendaBuddy.MobileApp.Controls"
+             xmlns:models="clr-namespace:AgendaBuddy.MobileApp.ViewModels"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             x:Class="AgendaBuddy.MobileApp.Views.LanguagePage"
+             Title="Language"
+             BackgroundColor="{StaticResource BackgroundPage}"
+             Shell.NavBarIsVisible="False">
+
+    <Grid RowDefinitions="Auto,*">
+
+        <controls:BrandHeader Grid.Row="0" />
+
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Padding="20,16,20,24" Spacing="14">
+
+                <Label Text="Language" Style="{StaticResource TitleMedium}" />
+
+                <Frame Style="{StaticResource CardCompact}" Padding="0" Margin="0">
+                    <VerticalStackLayout BindableLayout.ItemsSource="{Binding Languages}"
+                                         AutomationId="LanguageList">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="models:LanguageOption">
+                                <Grid ColumnDefinitions="*,Auto" Padding="16,14" ColumnSpacing="12">
+                                    <Grid.GestureRecognizers>
+                                        <TapGestureRecognizer
+                                            Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.SelectCommand}"
+                                            CommandParameter="{Binding .}" />
+                                    </Grid.GestureRecognizers>
+
+                                    <VerticalStackLayout Grid.Column="0" Spacing="2">
+                                        <!-- An unavailable language is muted, not hidden: it has to be readable
+                                             to say "coming soon". -->
+                                        <Label Text="{Binding Name}" FontSize="16">
+                                            <Label.TextColor>
+                                                <Binding Path="IsAvailable"
+                                                         Converter="{toolkit:BoolToObjectConverter TrueObject={StaticResource TextPrimary}, FalseObject={StaticResource TextMuted}}" />
+                                            </Label.TextColor>
+                                        </Label>
+                                        <Label Text="{Binding Detail}" FontSize="12"
+                                               TextColor="{StaticResource TextMuted}" />
+                                    </VerticalStackLayout>
+
+                                    <Label Grid.Column="1" Text="&#x2713;" FontSize="18"
+                                           TextColor="{StaticResource Primary}"
+                                           VerticalOptions="Center"
+                                           IsVisible="{Binding IsSelected}" />
+                                </Grid>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </VerticalStackLayout>
+                </Frame>
+
+                <Label Text="{Binding Notice}"
+                       FontSize="12.5"
+                       TextColor="{StaticResource TextMuted}"
+                       AutomationId="LanguageNoticeLabel" />
+
+            </VerticalStackLayout>
+        </ScrollView>
+
+    </Grid>
+
+</ContentPage>

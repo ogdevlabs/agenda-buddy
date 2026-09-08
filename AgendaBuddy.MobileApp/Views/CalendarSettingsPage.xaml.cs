@@ -31,10 +31,6 @@ public partial class CalendarSettingsPage : ContentPage
         await Shell.Current.GoToAsync("..");
     }
 
-    private async void OnBackClicked(object? sender, EventArgs e)
-    {
-        await Shell.Current.GoToAsync("..");
-    }
 
     /// <summary>
     /// Time off is the other half of managing a calendar: the working week says when the provider normally

@@ -39,4 +39,41 @@ public static class CustomerRouteBuilder
 
     public static RouteSpec Subscriptions(string email) =>
         new(HttpMethod.Get, $"api/v1/customers/{email}/subscriptions");
+
+    /// <summary>
+    /// <c>PUT /api/v1/customers/{email}/avatar</c> — which built-in mark this account is drawn with. A dedicated
+    /// route, not a field on <see cref="UpdateCustomer"/>, because that one replaces the whole document.
+    /// <c>{email}</c> must be the caller's own claim.
+    /// </summary>
+    public static RouteSpec Avatar(string email) => new(HttpMethod.Put, $"api/v1/customers/{email}/avatar");
+
+    /// <summary>Payload shape Customer's <c>AvatarRequest</c> binds. An unknown id is answered 400, not stored.</summary>
+    public static object BuildAvatarPayload(string avatarId) => new { avatarId };
+
+    /// <summary>
+    /// <c>PUT /api/v1/customers/{email}/consent</c> — acceptance of the Terms and the Privacy Policy. Dedicated
+    /// for the same reason <see cref="Avatar"/> is.
+    /// </summary>
+    public static RouteSpec Consent(string email) => new(HttpMethod.Put, $"api/v1/customers/{email}/consent");
+
+    /// <summary>
+    /// Payload shape Customer's <c>ConsentRequest</c> binds.
+    /// </summary>
+    /// <remarks>
+    /// Booleans, not dates: the server stamps the time, because a consent record whose timestamp the consenting
+    /// party supplies proves nothing. Both are always sent, so <c>false</c> reads as "not accepted" rather than
+    /// "unchanged".
+    /// </remarks>
+    public static object BuildConsentPayload(bool acceptedTerms, bool acceptedPrivacy) =>
+        new { acceptedTerms, acceptedPrivacy };
+
+    /// <summary>
+    /// <c>DELETE /api/v1/customers/{email}</c> — erases the profile and scrubs the address from every dependent
+    /// record. The <b>domain half</b> of account deletion.
+    /// </summary>
+    /// <remarks>
+    /// Call this <b>before</b> <see cref="AuthRouteBuilder.DeleteAccount"/>: the credential that route deletes is
+    /// what authorises this one, so the reverse order strands a live profile nothing can reach.
+    /// </remarks>
+    public static RouteSpec DeleteCustomer(string email) => new(HttpMethod.Delete, $"api/v1/customers/{email}");
 }

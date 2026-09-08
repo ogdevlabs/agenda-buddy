@@ -1,0 +1,25 @@
+meta {
+  name: 8 Record consent
+  type: http
+  seq: 8
+}
+put {
+  url: {{gatewayUrl}}/api/v1/providers/{{providerEmail}}/consent
+  body: json
+}
+body:json {
+  {
+    "acceptedTerms": true,
+    "acceptedPrivacy": true
+  }
+}
+docs {
+  Acceptance of the Terms and Conditions and the Privacy Policy, recorded as two timestamps on the profile
+  (`termsAcceptedAt`, `privacyAcceptedAt`). Byte-identical contract to
+  `2-Customer/9 Record consent` — see that request for the full reasoning.
+
+  ⚠️ **Two booleans, not two dates: the server stamps the time.** ⚠️ **Both flags are always written, so
+  `false` clears a previous acceptance** rather than leaving it standing.
+
+  Answers `200`, `403` for another provider's email, `404` when no provider has that email.
+}

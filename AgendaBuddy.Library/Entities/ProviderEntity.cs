@@ -80,6 +80,19 @@ public class ProviderEntity
     [BsonElement("avatar_id")]
     public string AvatarId { get; set; } = string.Empty;
 
+    /// <summary>
+    /// When this account last confirmed the Terms and Conditions. <c>null</c> means never. Same shape and same
+    /// reasoning as <see cref="CustomerEntity.TermsAcceptedAt"/>.
+    /// </summary>
+    [BsonElement("terms_accepted_at")]
+    [BsonIgnoreIfNull]
+    public DateTime? TermsAcceptedAt { get; set; }
+
+    /// <summary>When this account last confirmed the Privacy Policy. See <see cref="TermsAcceptedAt"/>.</summary>
+    [BsonElement("privacy_accepted_at")]
+    [BsonIgnoreIfNull]
+    public DateTime? PrivacyAcceptedAt { get; set; }
+
     [BsonElement("time_zone_id")]
     [BsonIgnoreIfNull]
     public string? TimeZoneId { get; set; }

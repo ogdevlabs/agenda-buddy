@@ -297,6 +297,41 @@ public class MobileCustomerMessagingRouteResolutionTest(
             _tokens.CreateToken(Caller, TokenFactory.CustomerRole)));
         Assert.Equal(HttpStatusCode.NoContent, markRead.StatusCode);
     }
+
+    /// <summary>
+    /// The three profile-settings routes the client builds. Each is a dedicated route rather than a field on the
+    /// profile PUT, so a resolution failure here would mean the picker, the consent boxes or Delete Account
+    /// silently doing nothing.
+    /// </summary>
+    [Fact]
+    public async Task Avatar_Consent_AndDeleteAccount_AllResolve()
+    {
+        using var service = host.StartService("Production");
+        await service.Database.GetCollection<CustomerEntity>("customers").InsertOneAsync(new CustomerEntity
+        {
+            Id = ObjectId.GenerateNewId(),
+            FirstName = "Route",
+            LastName = "Check",
+            Email = Caller
+        });
+
+        var token = _tokens.CreateToken(Caller, TokenFactory.CustomerRole);
+
+        var avatar = await service.Client.SendAsync(MobileRouteRequests.Build(
+            CustomerRouteBuilder.Avatar(Caller), token,
+            CustomerRouteBuilder.BuildAvatarPayload(AgendaBuddy.Library.Avatars.AvatarCatalog.Ids[0])));
+        Assert.Equal(HttpStatusCode.OK, avatar.StatusCode);
+
+        var consent = await service.Client.SendAsync(MobileRouteRequests.Build(
+            CustomerRouteBuilder.Consent(Caller), token,
+            CustomerRouteBuilder.BuildConsentPayload(acceptedTerms: true, acceptedPrivacy: true)));
+        Assert.Equal(HttpStatusCode.OK, consent.StatusCode);
+
+        // Last, because it erases the profile the two above just wrote to.
+        var deleted = await service.Client.SendAsync(MobileRouteRequests.Build(
+            CustomerRouteBuilder.DeleteCustomer(Caller), token));
+        Assert.Equal(HttpStatusCode.NoContent, deleted.StatusCode);
+    }
 }
 
 // ── Provider ───────────────────────────────────────────────────────────────────────────────────────────
@@ -344,5 +379,52 @@ public class MobileProviderRouteResolutionTest(ServiceHostFixture<ProviderAnchor
             route, _tokens.CreateToken(Provider, TokenFactory.ProviderRole)));
 
         Assert.Equal(HttpStatusCode.Accepted, response.StatusCode);
+    }
+
+    /// <summary>
+    /// The avatar route the client builds. A dedicated route rather than a field on the profile PUT, so a
+    /// resolution failure here would mean the picker silently saved nothing.
+    /// </summary>
+    [Fact]
+    public async Task Avatar_Resolves()
+    {
+        using var service = await SeedAsync();
+        var route = ProviderRouteBuilder.Avatar(Provider);
+
+        var response = await service.Client.SendAsync(MobileRouteRequests.Build(
+            route, _tokens.CreateToken(Provider, TokenFactory.ProviderRole),
+            ProviderRouteBuilder.BuildAvatarPayload(AgendaBuddy.Library.Avatars.AvatarCatalog.Ids[0])));
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Consent_Resolves()
+    {
+        using var service = await SeedAsync();
+        var route = ProviderRouteBuilder.Consent(Provider);
+
+        var response = await service.Client.SendAsync(MobileRouteRequests.Build(
+            route, _tokens.CreateToken(Provider, TokenFactory.ProviderRole),
+            ProviderRouteBuilder.BuildConsentPayload(acceptedTerms: true, acceptedPrivacy: true)));
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    /// <summary>
+    /// ⚠️ Deliberately LAST in this class by intent rather than by ordering: it erases the seeded provider. Each
+    /// test seeds its own database, so there is no ordering dependency — stated because reading it as shared setup
+    /// is the natural mistake.
+    /// </summary>
+    [Fact]
+    public async Task DeleteAccount_Resolves()
+    {
+        using var service = await SeedAsync();
+        var route = ProviderRouteBuilder.DeleteProvider(Provider);
+
+        var response = await service.Client.SendAsync(MobileRouteRequests.Build(
+            route, _tokens.CreateToken(Provider, TokenFactory.ProviderRole)));
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
     }
 }

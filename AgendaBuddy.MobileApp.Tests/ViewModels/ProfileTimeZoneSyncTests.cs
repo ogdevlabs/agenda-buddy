@@ -10,7 +10,7 @@ namespace AgendaBuddy.MobileApp.Tests.ViewModels;
 /// A provider's availability window is generated in THEIR timezone, so the server has to know it. It is
 /// taken from the device rather than asked for.
 /// </summary>
-public class AccountTimeZoneSyncTests
+public class ProfileTimeZoneSyncTests
 {
     private const string ProviderEmail = "coach@example.com";
     private const string CustomerEmail = "me@example.com";
@@ -26,7 +26,7 @@ public class AccountTimeZoneSyncTests
         return session;
     }
 
-    private static (AccountViewModel Vm, Mock<IProviderApiService> ProviderApi) Build(
+    private static (ProfileViewModel Vm, Mock<IProviderApiService> ProviderApi) Build(
         string role, Mock<IProviderApiService>? providerApi = null)
     {
         providerApi ??= new Mock<IProviderApiService>();
@@ -37,7 +37,7 @@ public class AccountTimeZoneSyncTests
         customerApi.Setup(c => c.GetProfileAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                    .ReturnsAsync(new ProfileInfo { Email = CustomerEmail, FirstName = "Me", LastName = "Too" });
 
-        return (new AccountViewModel(
+        return (new ProfileViewModel(
             providerApi.Object, customerApi.Object, Mock.Of<IAuthService>(), Session(role).Object), providerApi);
     }
 
@@ -75,6 +75,6 @@ public class AccountTimeZoneSyncTests
         await vm.LoadCommand.ExecuteAsync(null);
 
         Assert.False(vm.HasError);
-        Assert.Equal("Pat", vm.FirstName);
+        Assert.Equal("Pat Coach", vm.FullName);
     }
 }

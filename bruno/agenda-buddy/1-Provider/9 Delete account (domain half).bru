@@ -1,0 +1,37 @@
+meta {
+  name: 9 Delete account (domain half)
+  type: http
+  seq: 9
+}
+delete {
+  url: {{gatewayUrl}}/api/v1/providers/{{providerEmail}}
+  body: none
+}
+docs {
+  ⚠️ **DESTRUCTIVE, and irreversible.** Erases the provider profile — services and embedded appointment list
+  included — and scrubs the address out of their customers' records.
+
+  ⚠️ **This is NOT `POST /api/v1/providers/{email}/deactivate`.** Deactivation sets `isActive=false`, hides
+  the provider from the customer directory and **keeps everything**; it is reversible and is what a provider
+  going temporarily offline wants. This deletes.
+
+  **This is the domain half only. Call `0-Auth/10 Delete account (credential half)` SECOND** — the
+  credential that route deletes is what authorises this one.
+
+  What happens:
+  - The `ProviderEntity` is deleted, taking its `services` and embedded `appointments` with it.
+  - The provider's own notifications are deleted, and their session **notes** are deleted outright —
+    those are private to them and are *about* their clients, so anonymising the owner would leave the
+    client's free text standing with no owner and no route to erase it.
+  - The device-token registration is deleted.
+  - Appointments, messages and payments **survive** with the provider's address replaced by a tombstone
+    (`deleted-user-xxxxxxxx@deleted.invalid`): a customer's own history of sessions they attended is theirs.
+  - Every customer's subscription to this provider is `$pull`ed.
+
+  Answers:
+  - `204` on success — **and also when there was no profile to remove** (App Review Guideline 5.1.1(v)).
+  - `403` for another provider's email. Ownership-guarded.
+  - `500` if the erasure could not complete; nothing is removed, and the call is safe to retry.
+
+  Idempotent.
+}

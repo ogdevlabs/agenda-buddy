@@ -36,19 +36,35 @@ public class MongoDbRepository<TEntity> : IRepository<TEntity> where TEntity : c
         await _collection.InsertOneAsync(entity);
     }
 
+    /// <inheritdoc />
+    /// <remarks>
+    /// ⚠️ <b><c>MatchedCount</c>, not <c>ModifiedCount</c>, and the difference is a real defect this used to
+    /// have.</b> MongoDB reports <c>ModifiedCount == 0</c> when the replacement is byte-identical to the stored
+    /// document — nothing needed writing — which is indistinguishable from "no such document" under a
+    /// <c>ModifiedCount &gt; 0</c> test. So <b>saving a form without changing a value reported failure</b>: the
+    /// profile editor's own natural flow (open it, tick the two agreement boxes, Save) leaves the name and phone
+    /// untouched, so the whole-document replace was a no-op, the route answered <c>404</c>, and the user was told
+    /// "could not save your profile — try again" on a request that had in fact succeeded.
+    /// <para>
+    /// <c>MatchedCount</c> answers the question the callers are actually asking: does the document exist, and does
+    /// it now hold what I sent? Both are true for a no-op.
+    /// </para>
+    /// </remarks>
     public async Task<bool> UpdateAsync(string id, TEntity entity)
     {
         var objectId = new ObjectId(id);
         var filter = Builders<TEntity>.Filter.Eq("_id", objectId);
         var result = await _collection.ReplaceOneAsync(filter, entity);
-        return result.IsAcknowledged && result.ModifiedCount > 0;
+        return result.IsAcknowledged && result.MatchedCount > 0;
     }
 
+    /// <inheritdoc />
+    /// <remarks>See <see cref="UpdateAsync"/> for why this counts matches rather than modifications.</remarks>
     public async Task<bool> UpdateByIdentifierAsync(string identifier, TEntity entity)
     {
         var filter = Builders<TEntity>.Filter.Eq("identifier", identifier);
         var result = await _collection.ReplaceOneAsync(filter, entity);
-        return result.IsAcknowledged && result.ModifiedCount > 0;
+        return result.IsAcknowledged && result.MatchedCount > 0;
     }
 
     public async Task<bool> DeleteAsync(string id)
@@ -97,6 +113,12 @@ public class MongoDbRepository<TEntity> : IRepository<TEntity> where TEntity : c
     {
         var result = await _collection.UpdateManyAsync(filter, update);
         return result.IsAcknowledged ? result.ModifiedCount : 0;
+    }
+
+    public async Task<long> DeleteManyAsync(BsonDocument filter)
+    {
+        var result = await _collection.DeleteManyAsync(filter);
+        return result.IsAcknowledged ? result.DeletedCount : 0;
     }
 
     /// <inheritdoc />

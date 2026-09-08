@@ -24,15 +24,6 @@
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
-                <controls:SafeButton Grid.Row="0"
-                        Text="&#x2190; Back"
-                        BackgroundColor="Transparent"
-                        TextColor="#C7D2FE"
-                        FontSize="14"
-                        HorizontalOptions="Start"
-                        Padding="4"
-                        Margin="0,0,0,16"
-                        Clicked="OnBackClicked" />
                 <Label Grid.Row="1"
                        Text="{Binding CounterpartName}"
                        FontSize="24"

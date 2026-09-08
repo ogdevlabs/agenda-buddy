@@ -345,8 +345,12 @@ if [ "$run_app" = "1" ]; then
   # the build prints success and the app starts.
   dotnet restore "$REPO_ROOT/AgendaBuddy.MobileApp/AgendaBuddy.MobileApp.csproj" >/dev/null
 
-  local app_binary="$REPO_ROOT/AgendaBuddy.MobileApp/bin/Debug/net10.0-ios/$rid/AgendaBuddy.MobileApp.app/AgendaBuddy.MobileApp"
-  local newest_source
+  # ⚠️ NOT `local`. This block runs at the TOP LEVEL of the script, inside `if [ "$run_app" = "1" ]`,
+  # not inside a function — `local` there is a hard bash error, and under `set -euo pipefail` it aborted
+  # the script on the line before the build. That is why this staleness guard never once ran: the script
+  # died with "local: can only be used in a function" every single time, after starting the AppHost and
+  # booting the simulator but before building the app.
+  app_binary="$REPO_ROOT/AgendaBuddy.MobileApp/bin/Debug/net10.0-ios/$rid/AgendaBuddy.MobileApp.app/AgendaBuddy.MobileApp"
   newest_source=$(find "$REPO_ROOT/AgendaBuddy.MobileApp" \
     \( -name '*.cs' -o -name '*.xaml' -o -name '*.csproj' \) \
     -not -path '*/obj/*' -not -path '*/bin/*' \
@@ -365,7 +369,10 @@ if [ "$run_app" = "1" ]; then
       say "⚠️  the app binary is OLDER than $(basename "$newest_source") — the build was skipped."
       say "    The simulator is running stale UI. Clean and retry:"
       say "      rm -rf AgendaBuddy.MobileApp/obj AgendaBuddy.MobileApp/bin && ./scripts/run-ios.sh"
-      return 1
+      # `die`, not `return` — same reason as the `local` above: this is top-level code, and `return`
+      # outside a function is an error rather than an exit. Failing loudly is the whole point of the
+      # guard: a warning the script then ignored would leave stale UI on screen with a success message.
+      die "the simulator is running a stale build"
     fi
   fi
 
