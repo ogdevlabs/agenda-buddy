@@ -149,6 +149,62 @@ public class AppointmentEntity
     /// <summary>Whether a customer may still cancel, as of <paramref name="nowUtc"/>.</summary>
     public bool CustomerMayCancelAt(DateTime nowUtc) => nowUtc < CustomerCancellationDeadlineUtc;
 
+    /// <summary>
+    /// Whether this session is over and should be recorded as completed.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Completion is a fact about the clock, not a claim somebody makes.</b> It used to be a button the
+    /// provider pressed, which made "Completed" a chore they had to remember — and a session nobody marked stayed
+    /// <c>Booked</c> for ever, so <c>ReportingService</c> counted it as outstanding indefinitely.
+    /// </para>
+    /// <para>
+    /// Only <c>Booked</c> qualifies. <c>Requested</c> was never agreed to, so a past request is an expired ask
+    /// rather than work delivered; <c>Cancelled</c> is called off; and a session carrying an unanswered reschedule
+    /// proposal is deliberately left alone, because auto-completing it would silently answer the proposal.
+    /// </para>
+    /// </remarks>
+    public bool ShouldAutoCompleteAt(DateTime nowUtc) =>
+        AppointmentStatus == AppointmentStatus.Booked && EffectiveEndUtc <= nowUtc;
+
+    /// <summary>
+    /// When this session actually finishes, UTC.
+    /// </summary>
+    /// <remarks>
+    /// Older rows predate <c>End</c> being required and can carry one at or before <c>Start</c>; those are treated
+    /// as one default-length session rather than as zero-length, which would complete them the moment they began.
+    /// </remarks>
+    [BsonIgnore]
+    public DateTime EffectiveEndUtc
+    {
+        get
+        {
+            var start = AsUtc(Start);
+            var end = AsUtc(End);
+            return end > start
+                ? end
+                : start.AddMinutes(ServiceDurationMinutes is > 0 ? ServiceDurationMinutes.Value : 60);
+        }
+    }
+
+    /// <summary>
+    /// Reads a stored instant as UTC, whatever <see cref="DateTimeKind"/> it arrives with.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b><c>ToUniversalTime()</c> is wrong for an <c>Unspecified</c> value: it treats it as LOCAL and shifts
+    /// it by the machine's offset.</b> <c>start</c> and <c>end</c> are stored UTC — that is what
+    /// <c>[BsonDateTimeOptions(Kind = DateTimeKind.Utc)]</c> declares — so an unspecified kind means "already UTC,
+    /// just untagged", which is what a hand-built object or a future code path can hand in. Interpreting it as
+    /// local made this rule depend on the timezone the process happened to run in, which is exactly the class of
+    /// defect <c>AvailabilityCalculator</c> was rewritten to remove.
+    /// </remarks>
+    private static DateTime AsUtc(DateTime value) => value.Kind switch
+    {
+        DateTimeKind.Utc => value,
+        DateTimeKind.Unspecified => DateTime.SpecifyKind(value, DateTimeKind.Utc),
+        _ => value.ToUniversalTime()
+    };
+
     /// <summary>Whether a reschedule proposal is outstanding on this appointment.</summary>
     [BsonIgnore]
     public bool HasPendingReschedule =>

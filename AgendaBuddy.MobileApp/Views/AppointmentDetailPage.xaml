@@ -273,25 +273,21 @@
 
                         <!-- Approve / Decline, shown only to the party who did NOT propose. The server refuses an
                              answer from the proposer, so offering it to them would be two buttons that both 409. -->
-                        <Grid ColumnDefinitions="*,*" ColumnSpacing="10"
-                              IsVisible="{Binding ShowRescheduleAnswerButtons}">
-                            <controls:SafeButton Grid.Column="0"
-                                    Text="Approve new time"
+                        <VerticalStackLayout Spacing="14"
+                                             IsVisible="{Binding ShowRescheduleAnswerButtons}">
+                            <controls:SafeButton Text="Approve new time"
                                     Style="{StaticResource SuccessButton}"
-                                    FontSize="14"
                                     HeightRequest="60"
                                     Command="{Binding ApproveRescheduleCommand}"
                                     IsEnabled="{Binding IsNotLoading}"
                                     AutomationId="ApproveRescheduleButton" />
-                            <controls:SafeButton Grid.Column="1"
-                                    Text="Decline"
+                            <controls:SafeButton Text="Decline"
                                     Style="{StaticResource DangerButton}"
-                                    FontSize="14"
                                     HeightRequest="60"
                                     Command="{Binding DeclineRescheduleCommand}"
                                     IsEnabled="{Binding IsNotLoading}"
                                     AutomationId="DeclineRescheduleButton" />
-                        </Grid>
+                        </VerticalStackLayout>
 
                         <!-- Confirm: the provider accepting a REQUEST, so it only ever applies to a Requested
                              session and never sits beside Reschedule or Complete, which are for a Booked one. -->
@@ -320,23 +316,10 @@
                                 IsEnabled="{Binding IsNotLoading}"
                                 AutomationId="RescheduleButton" />
 
-                        <!-- Complete button + activity indicator, matching the Sign In
-                             button/ActivityIndicator overlay pattern on LoginPage. -->
-                        <Grid>
-                            <controls:SafeButton Text="Complete"
-                                    Style="{StaticResource SuccessButton}"
-                                    HeightRequest="60"
-                                    Command="{Binding CompleteCommand}"
-                                    IsEnabled="{Binding IsNotLoading}"
-                                    IsVisible="{Binding ShowCompleteButtonIdle}"
-                                    AutomationId="CompleteButton" />
-                            <ActivityIndicator IsRunning="{Binding ShowCompletingIndicator}"
-                                               IsVisible="{Binding ShowCompletingIndicator}"
-                                               Color="{StaticResource Primary}"
-                                               HorizontalOptions="Center"
-                                               VerticalOptions="Center"
-                                               AutomationId="CompleteButtonBusyIndicator" />
-                        </Grid>
+                        <!-- No Complete button. A session is over when its time has passed, which the server can
+                             see for itself — asking the provider to assert it made "Completed" a chore they had
+                             to remember rather than a fact, and a session nobody marked stayed Booked forever.
+                             AppointmentAutoCompletionService does it now. -->
 
                         <!-- The customer's counterpart to Reschedule. Full width because a customer has no
                              Complete to sit beside: Complete is a claim about work delivered, which is the

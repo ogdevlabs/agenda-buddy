@@ -132,15 +132,6 @@ public partial class AppointmentDetailPage : ContentPage
                 }
                 break;
 
-            case ActionType.Complete:
-                var completeChoice = await DisplayActionSheetAsync(
-                    "Mark this appointment as complete?",
-                    "Go back",
-                    null,
-                    "Mark complete");
-                if (completeChoice == "Mark complete")
-                    await _viewModel.ExecuteStatusUpdateAsync(AppointmentStatus.Completed);
-                break;
 
             // Both open the SAME page: the interaction is identical, and RescheduleViewModel words itself from
             // the session role. Everything it needs travels with the navigation, because this page already holds

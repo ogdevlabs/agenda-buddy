@@ -167,60 +167,8 @@ public class AppointmentDetailViewModelTests
     // busy indicator while the POST .../status call is in flight (AC13's loading-state finding).
     // ---------------------------------------------------------------------------
 
-    [Fact]
-    public async Task ExecuteStatusUpdateAsync_Completed_IsCompletingTrueWhileInFlight_FalseAfter()
-    {
-        var tcs = new TaskCompletionSource<AppointmentDetail?>();
-        var service = new Mock<IBookingApiService>();
-        service.Setup(s => s.UpdateStatusAsync("a1", AppointmentStatus.Completed, It.IsAny<CancellationToken>()))
-               .Returns(tcs.Task);
 
-        var vm = new AppointmentDetailViewModel(service.Object, ProviderSession().Object) { AppointmentId = "a1" };
 
-        Assert.False(vm.IsCompleting);
-
-        var updateTask = vm.ExecuteStatusUpdateAsync(AppointmentStatus.Completed);
-
-        Assert.True(vm.IsCompleting);
-        Assert.True(vm.ShowCompletingIndicator);
-        Assert.False(vm.ShowCompleteButtonIdle);
-
-        tcs.SetResult(Appt(status: AppointmentStatus.Completed));
-        await updateTask;
-
-        Assert.False(vm.IsCompleting);
-        Assert.False(vm.ShowCompletingIndicator);
-        Assert.True(vm.ShowCompleteButtonIdle);
-    }
-
-    [Fact]
-    public async Task ExecuteStatusUpdateAsync_NonCompleteTransition_DoesNotSetIsCompleting()
-    {
-        var tcs = new TaskCompletionSource<AppointmentDetail?>();
-        var service = new Mock<IBookingApiService>();
-        service.Setup(s => s.UpdateStatusAsync("a1", AppointmentStatus.Confirmed, It.IsAny<CancellationToken>()))
-               .Returns(tcs.Task);
-
-        var vm = new AppointmentDetailViewModel(service.Object, ProviderSession().Object) { AppointmentId = "a1" };
-
-        var updateTask = vm.ExecuteStatusUpdateAsync(AppointmentStatus.Confirmed);
-
-        Assert.False(vm.IsCompleting);
-
-        tcs.SetResult(Appt(status: AppointmentStatus.Confirmed));
-        await updateTask;
-
-        Assert.False(vm.IsCompleting);
-    }
-
-    [Fact]
-    public void ShowCompletingIndicator_CustomerSession_IsAlwaysFalse()
-    {
-        var vm = new AppointmentDetailViewModel(new Mock<IBookingApiService>().Object, CustomerSession().Object);
-
-        Assert.False(vm.ShowCompletingIndicator);
-        Assert.False(vm.ShowCompleteButtonIdle);
-    }
 
     // ---------------------------------------------------------------------------
     // Command wiring: Confirm/Cancel/Complete commands raise ActionRequested
@@ -250,51 +198,12 @@ public class AppointmentDetailViewModelTests
         Assert.Equal(ActionType.Cancel, captured);
     }
 
-    [Fact]
-    public void CompleteCommand_RaisesActionRequestedWithComplete()
-    {
-        var vm = new AppointmentDetailViewModel(new Mock<IBookingApiService>().Object, ProviderSession().Object);
-        ActionType? captured = null;
-        vm.ActionRequested += (_, e) => captured = e.Action;
-
-        vm.CompleteCommand.Execute(null);
-
-        Assert.Equal(ActionType.Complete, captured);
-    }
 
     // ---------------------------------------------------------------------------
     // AC7 / ux-review.md finding 3: "mark complete" must be genuinely absent for a customer, not disabled.
     // ---------------------------------------------------------------------------
 
-    [Fact]
-    public void ShowCompleteButton_ProviderSession_IsTrue()
-    {
-        var vm = new AppointmentDetailViewModel(new Mock<IBookingApiService>().Object, ProviderSession().Object);
 
-        Assert.True(vm.ShowCompleteButton);
-    }
 
-    [Fact]
-    public void ShowCompleteButton_CustomerSession_IsFalse()
-    {
-        var vm = new AppointmentDetailViewModel(new Mock<IBookingApiService>().Object, CustomerSession().Object);
 
-        Assert.False(vm.ShowCompleteButton);
-    }
-
-    [Fact]
-    public void CompleteCommand_CustomerSession_CanExecuteIsFalse()
-    {
-        var vm = new AppointmentDetailViewModel(new Mock<IBookingApiService>().Object, CustomerSession().Object);
-
-        Assert.False(vm.CompleteCommand.CanExecute(null));
-    }
-
-    [Fact]
-    public void CompleteCommand_ProviderSession_CanExecuteIsTrue()
-    {
-        var vm = new AppointmentDetailViewModel(new Mock<IBookingApiService>().Object, ProviderSession().Object);
-
-        Assert.True(vm.CompleteCommand.CanExecute(null));
-    }
 }

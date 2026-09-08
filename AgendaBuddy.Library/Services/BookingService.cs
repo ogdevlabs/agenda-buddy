@@ -219,6 +219,44 @@ public class BookingService(IRepository<AppointmentEntity> appointmentRepository
 
     /// <inheritdoc/>
     /// <remarks>
+    /// <para>
+    /// Filtered on <c>end</c>, and on <c>start</c> as a fallback for older rows whose <c>end</c> is missing or not
+    /// after their start — those would otherwise never match, so a session booked before <c>End</c> was required
+    /// would stay <c>Booked</c> for ever. The caller re-checks each candidate against
+    /// <c>AppointmentEntity.ShouldAutoCompleteAt</c>, which is where the exact rule lives.
+    /// </para>
+    /// <para>
+    /// <c>RescheduleRequested</c> is deliberately NOT matched: auto-completing a session with an unanswered
+    /// proposal on it would silently answer the proposal.
+    /// </para>
+    /// </remarks>
+    public async Task<List<AppointmentEntity>> FindCompletableAppointmentsAsync(DateTime nowUtc, int limit)
+    {
+        var now = DateTime.SpecifyKind(nowUtc.ToUniversalTime(), DateTimeKind.Utc);
+
+        var filter = new BsonDocument
+        {
+            { "appointment_status", (int)AppointmentStatus.Booked },
+            {
+                "$or", new BsonArray
+                {
+                    new BsonDocument("end", new BsonDocument("$lte", now)),
+
+                    // A row with no usable end: matched on start so it is a candidate at all, then judged by the
+                    // caller against the same default-length rule the calculator uses.
+                    new BsonDocument("end", new BsonDocument("$exists", false)),
+                    new BsonDocument("start", new BsonDocument("$lte", now.AddDays(-1)))
+                }
+            }
+        };
+
+        // Oldest first, so a backlog drains in the order it accumulated rather than starving the earliest.
+        var due = await appointmentRepository.FindAllAsync(filter, new BsonDocument("start", 1), limit);
+        return [.. due.Where(appointment => appointment.ShouldAutoCompleteAt(now))];
+    }
+
+    /// <inheritdoc/>
+    /// <remarks>
     /// The current status is in the filter, so declining cannot resurrect an appointment that was cancelled while
     /// the proposal sat outstanding.
     /// </remarks>

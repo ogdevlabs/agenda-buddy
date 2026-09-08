@@ -41,4 +41,27 @@ public interface IBookingService
     /// Clears an outstanding proposal and returns the appointment to <c>Booked</c>, leaving its times alone.
     /// </summary>
     Task<bool> ClearRescheduleProposalAsync(string identifier);
+
+    /// <summary>
+    /// The booked sessions that have finished and are still recorded as <c>Booked</c>.
+    /// </summary>
+    /// <remarks>
+    /// Read rather than blind-written so each one can be completed in BOTH stores — the appointments collection
+    /// and the provider's embedded copy, which is what <c>ReportingService</c> counts from and what
+    /// <c>AvailabilityCalculator</c> reads. A single <c>UpdateMany</c> would leave the embedded copies saying
+    /// <c>Booked</c> for ever.
+    /// </remarks>
+    /// <param name="nowUtc">The instant to treat as now.</param>
+    /// <param name="limit">Ceiling on one pass, so a long-neglected backlog cannot make one tick unbounded.</param>
+    Task<List<AppointmentEntity>> FindCompletableAppointmentsAsync(DateTime nowUtc, int limit);
+
+    /// <summary>
+    /// Writes a status onto the appointment document with a targeted <c>$set</c>.
+    /// </summary>
+    /// <remarks>
+    /// On the interface for the same reason <c>IProviderService.ChangeEmbeddedAppointmentStatusAsync</c> is:
+    /// auto-completion needs it, and it runs outside a request scope where only interfaces are resolved.
+    /// </remarks>
+    /// <returns>The updated appointment, or <c>null</c> when no appointment has that identifier.</returns>
+    Task<AppointmentEntity?> ChangeStatusAsync(string identifier, AppointmentStatus status, string description);
 }

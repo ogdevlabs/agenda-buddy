@@ -342,6 +342,11 @@
             "format": "date-time",
             "readOnly": true
           },
+          "effectiveEndUtc": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
           "hasPendingReschedule": {
             "type": "boolean",
             "readOnly": true

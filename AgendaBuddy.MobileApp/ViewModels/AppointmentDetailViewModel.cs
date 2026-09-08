@@ -11,7 +11,6 @@ public enum ActionType
 {
     Confirm,
     Cancel,
-    Complete,
 
     /// <summary>The provider moving the session. Opens the slot picker.</summary>
     Reschedule,
@@ -76,12 +75,6 @@ public partial class AppointmentDetailViewModel : ObservableObject
     [ObservableProperty] private bool _isLoading;
     [ObservableProperty] private string _errorMessage = string.Empty;
     [ObservableProperty] private bool _isConfirmEnabled = true;
-
-    // ux-review.md 8-state spot-check, finding P3: the provider-view "mark complete" button needs an
-    // explicit busy indicator for the new POST .../status call — the legacy PUT-based call this
-    // replaces had no equivalent. Set only around the Completed transition (not Confirm/Cancel),
-    // matching the Sign In button + ActivityIndicator overlay pattern already used on LoginPage.
-    [ObservableProperty] private bool _isCompleting;
 
     [ObservableProperty] private bool _isCancelling;
 
@@ -187,11 +180,6 @@ public partial class AppointmentDetailViewModel : ObservableObject
     public bool IsNotLoading => !IsLoading;
     public bool HasAppointment => Appointment is not null;
 
-    // ux-review.md finding 3 / PRD requirement 6 / AC7: the customer-facing "mark complete" control must be
-    // HIDDEN entirely, not disabled — a disabled button with no explanation invites "why can't I do this?"
-    // Bound to the Complete button's IsVisible (not IsEnabled) in AppointmentDetailPage.xaml, and gates the
-    // command's CanExecute below so the action is genuinely unavailable, not merely invisible.
-    public bool ShowCompleteButton => _session.IsProvider;
 
     /// <summary>
     /// Confirming is the PROVIDER accepting the request. Hidden for a Customer, and hidden rather than
@@ -351,11 +339,9 @@ public partial class AppointmentDetailViewModel : ObservableObject
         }
     }
 
-    // The Complete button itself, replaced by the busy indicator below while the status call is in
-    // flight — matching LoginPage's Sign In button/ActivityIndicator overlay, not a new pattern.
-    public bool ShowCompleteButtonIdle => ShowCompleteButton && !IsCompleting;
-
-    public bool ShowCompletingIndicator => ShowCompleteButton && IsCompleting;
+    // Complete is gone from the UI: a session is over when its time has passed, which the server sees for
+    // itself (AppointmentAutoCompletionService). Asking the provider to assert it made "Completed" a chore
+    // they had to remember, and a session nobody marked stayed Booked for ever.
 
     public string AppointmentId { get; set; } = string.Empty;
 
@@ -437,9 +423,6 @@ public partial class AppointmentDetailViewModel : ObservableObject
     private void Cancel() =>
         ActionRequested?.Invoke(this, new AppointmentActionEventArgs(ActionType.Cancel));
 
-    [RelayCommand(CanExecute = nameof(ShowCompleteButton))]
-    private void Complete() =>
-        ActionRequested?.Invoke(this, new AppointmentActionEventArgs(ActionType.Complete));
 
     [RelayCommand(CanExecute = nameof(ShowRescheduleButton))]
     private void Reschedule() =>
@@ -671,9 +654,6 @@ public partial class AppointmentDetailViewModel : ObservableObject
     public async Task ExecuteStatusUpdateAsync(AppointmentStatus status)
     {
         IsLoading = true;
-        var isCompleteTransition = status == AppointmentStatus.Completed;
-        if (isCompleteTransition)
-            IsCompleting = true;
         ErrorMessage = string.Empty;
 
         try
@@ -705,8 +685,6 @@ public partial class AppointmentDetailViewModel : ObservableObject
         finally
         {
             IsLoading = false;
-            if (isCompleteTransition)
-                IsCompleting = false;
         }
     }
 
@@ -736,11 +714,6 @@ public partial class AppointmentDetailViewModel : ObservableObject
 
     partial void OnIsLoadingChanged(bool value) => OnPropertyChanged(nameof(IsNotLoading));
 
-    partial void OnIsCompletingChanged(bool value)
-    {
-        OnPropertyChanged(nameof(ShowCompleteButtonIdle));
-        OnPropertyChanged(nameof(ShowCompletingIndicator));
-    }
 
     partial void OnNotesChanged(List<NoteEntity> value)
     {
