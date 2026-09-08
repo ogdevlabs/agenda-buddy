@@ -114,8 +114,14 @@ public interface IProviderService
     /// whole provider document. <c>ReportingService</c> counts statuses from the embedded list, so a status
     /// written to only the <c>appointments</c> collection would leave the dashboard reporting the old value.
     /// </remarks>
+    /// <param name="clearProposal">
+    /// Also unset any reschedule proposal on the embedded copy. Needed when completing a session that had one
+    /// outstanding — a <c>Completed</c> row still carrying a proposed time reads as an outstanding request
+    /// against a status saying the session is over.
+    /// </param>
     Task<ProviderEntity?> ChangeEmbeddedAppointmentStatusAsync(
-        string providerEmail, string identifier, AppointmentStatus status, string description);
+        string providerEmail, string identifier, AppointmentStatus status, string description,
+        bool clearProposal = false);
 
     /// <summary>
     /// Moves the provider's embedded copy of an appointment to new times, clearing any proposal on it and

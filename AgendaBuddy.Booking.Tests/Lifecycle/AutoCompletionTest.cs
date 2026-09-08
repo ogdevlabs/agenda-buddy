@@ -70,23 +70,63 @@ public class AutoCompletionTest
     }
 
     /// <summary>
-    /// Only a BOOKED session completes, and each exclusion is a different statement.
+    /// Each exclusion is a different statement.
     /// </summary>
     /// <remarks>
     /// <c>Requested</c> was never agreed to, so a past request is an expired ask rather than work delivered.
-    /// <c>Cancelled</c> was called off. <c>Completed</c> already is. And <c>RescheduleRequested</c> is left alone
-    /// deliberately: completing it would silently answer a proposal nobody responded to.
+    /// <c>Cancelled</c> was called off. <c>Completed</c> already is.
     /// </remarks>
     [Theory]
     [InlineData(AppointmentStatus.Requested)]
     [InlineData(AppointmentStatus.Cancelled)]
     [InlineData(AppointmentStatus.Completed)]
-    [InlineData(AppointmentStatus.RescheduleRequested)]
-    public void OnlyABookedSessionCompletes(AppointmentStatus status)
+    public void AStatusThatIsNotDeliverableWorkDoesNotComplete(AppointmentStatus status)
     {
         var appointment = Appointment(status, NowUtc.AddDays(-3));
 
         Assert.False(appointment.ShouldAutoCompleteAt(NowUtc));
+    }
+
+    /// <summary>
+    /// A session whose time passed with an unanswered reschedule request DOES complete, and the proposal goes
+    /// with it.
+    /// </summary>
+    /// <remarks>
+    /// The session happened at the time it was booked for, so a proposal to move it that nobody answered in time
+    /// is moot. Left alone it was the one state auto-completion could not resolve, so it sat in the provider's
+    /// outstanding count for ever waiting on an answer that no longer means anything.
+    /// </remarks>
+    [Fact]
+    public void APastSessionWithAnUnansweredRequestCompletesAndDropsTheProposal()
+    {
+        var appointment = Appointment(AppointmentStatus.Booked, NowUtc.AddDays(-2));
+        appointment.RequestReschedule(NowUtc.AddDays(5), appointment.EmailCustomer, NowUtc.AddDays(-3));
+
+        Assert.True(appointment.HasPendingReschedule);
+        Assert.True(appointment.ShouldAutoCompleteAt(NowUtc));
+
+        appointment.TransitionTo(AppointmentStatus.Completed);
+
+        Assert.Equal(AppointmentStatus.Completed, appointment.AppointmentStatus);
+
+        // A Completed row still carrying a proposed time would read as an outstanding request against a status
+        // saying the session is over.
+        Assert.False(appointment.HasPendingReschedule);
+        Assert.Null(appointment.ProposedStart);
+        Assert.Null(appointment.ProposedBy);
+    }
+
+    /// <summary>
+    /// A request on a session still to come is untouched — it is not late, it is pending.
+    /// </summary>
+    [Fact]
+    public void ARequestOnAFutureSessionIsNotCompleted()
+    {
+        var appointment = Appointment(AppointmentStatus.Booked, NowUtc.AddDays(3));
+        appointment.RequestReschedule(NowUtc.AddDays(5), appointment.EmailCustomer, NowUtc);
+
+        Assert.False(appointment.ShouldAutoCompleteAt(NowUtc));
+        Assert.True(appointment.HasPendingReschedule);
     }
 
     /// <summary>

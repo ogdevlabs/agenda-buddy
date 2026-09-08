@@ -159,13 +159,19 @@ public class AppointmentEntity
     /// <c>Booked</c> for ever, so <c>ReportingService</c> counted it as outstanding indefinitely.
     /// </para>
     /// <para>
-    /// Only <c>Booked</c> qualifies. <c>Requested</c> was never agreed to, so a past request is an expired ask
-    /// rather than work delivered; <c>Cancelled</c> is called off; and a session carrying an unanswered reschedule
-    /// proposal is deliberately left alone, because auto-completing it would silently answer the proposal.
+    /// <c>Booked</c> qualifies, and so does <c>RescheduleRequested</c>: a session whose time has passed happened
+    /// at the time it was booked for, so a proposal to move it that nobody answered in time is moot. Leaving it
+    /// alone was the one state auto-completion could not resolve, and it would have sat in the provider's
+    /// outstanding count for ever waiting on an answer that no longer means anything.
+    /// </para>
+    /// <para>
+    /// <c>Requested</c> does not: it was never agreed to, so a past request is an expired ask rather than work
+    /// delivered. Neither does <c>Cancelled</c>, which was called off.
     /// </para>
     /// </remarks>
     public bool ShouldAutoCompleteAt(DateTime nowUtc) =>
-        AppointmentStatus == AppointmentStatus.Booked && EffectiveEndUtc <= nowUtc;
+        AppointmentStatus is AppointmentStatus.Booked or AppointmentStatus.RescheduleRequested
+        && EffectiveEndUtc <= nowUtc;
 
     /// <summary>
     /// When this session actually finishes, UTC.
@@ -224,12 +230,27 @@ public class AppointmentEntity
             throw new InvalidOperationException("Only requested appointments can be booked.");
     }
 
+    /// <summary>
+    /// Marks the session as delivered.
+    /// </summary>
+    /// <remarks>
+    /// <b>An unanswered reschedule proposal does not block completion.</b> A session whose time has passed
+    /// happened at the time it was booked for, so a proposal to move it is moot — and leaving it
+    /// <c>RescheduleRequested</c> for ever was the one state auto-completion could not resolve, so it sat in the
+    /// provider's outstanding count indefinitely waiting for an answer that no longer means anything. The
+    /// proposal is cleared with it, because there is nothing left to move.
+    /// </remarks>
     public void Complete()
     {
-        if (AppointmentStatus == AppointmentStatus.Booked)
+        if (AppointmentStatus is AppointmentStatus.Booked or AppointmentStatus.RescheduleRequested)
+        {
             AppointmentStatus = AppointmentStatus.Completed;
+            ClearProposal();
+        }
         else
+        {
             throw new InvalidOperationException("Only booked appointments can be completed.");
+        }
     }
 
     /// <summary>

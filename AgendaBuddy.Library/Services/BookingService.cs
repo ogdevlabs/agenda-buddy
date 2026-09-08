@@ -226,8 +226,9 @@ public class BookingService(IRepository<AppointmentEntity> appointmentRepository
     /// <c>AppointmentEntity.ShouldAutoCompleteAt</c>, which is where the exact rule lives.
     /// </para>
     /// <para>
-    /// <c>RescheduleRequested</c> is deliberately NOT matched: auto-completing a session with an unanswered
-    /// proposal on it would silently answer the proposal.
+    /// <c>RescheduleRequested</c> IS matched. The proposal is cleared by
+    /// <see cref="AppointmentEntity.Complete"/> along with the transition, so a completed session carries no
+    /// stale proposed time.
     /// </para>
     /// </remarks>
     public async Task<List<AppointmentEntity>> FindCompletableAppointmentsAsync(DateTime nowUtc, int limit)
@@ -236,7 +237,16 @@ public class BookingService(IRepository<AppointmentEntity> appointmentRepository
 
         var filter = new BsonDocument
         {
-            { "appointment_status", (int)AppointmentStatus.Booked },
+            {
+                // RescheduleRequested too: a session whose time has passed happened when it was booked for, so a
+                // proposal nobody answered in time is moot. Left out, it was the one state auto-completion could
+                // not resolve and sat in the outstanding count for ever.
+                "appointment_status", new BsonDocument("$in", new BsonArray
+                {
+                    (int)AppointmentStatus.Booked,
+                    (int)AppointmentStatus.RescheduleRequested
+                })
+            },
             {
                 "$or", new BsonArray
                 {

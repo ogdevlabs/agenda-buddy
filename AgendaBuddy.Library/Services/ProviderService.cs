@@ -228,19 +228,34 @@ public class ProviderService(IRepository<ProviderEntity> providerRepository) : I
     /// of the two places would leave the dashboard reporting the old value indefinitely.
     /// </remarks>
     public async Task<ProviderEntity?> ChangeEmbeddedAppointmentStatusAsync(
-        string providerEmail, string identifier, AppointmentStatus status, string description)
+        string providerEmail, string identifier, AppointmentStatus status, string description,
+        bool clearProposal = false)
     {
+        var update = new BsonDocument("$set", new BsonDocument
+        {
+            { "appointments.$.appointment_status", (int)status },
+            { "appointments.$.appointment_description", description }
+        });
+
+        // Auto-completion needs this: a session that had a proposal outstanding when its time passed is completed
+        // with the proposal dropped, and a Completed row still carrying a proposed time reads as an outstanding
+        // request against a status saying the session is over.
+        if (clearProposal)
+        {
+            update.Add("$unset", new BsonDocument
+            {
+                { "appointments.$.proposed_start", "" },
+                { "appointments.$.proposed_by", "" }
+            });
+        }
+
         return await providerRepository.FindOneAndUpdateAsync(
             new BsonDocument
             {
                 { "email", providerEmail },
                 { "appointments.identifier", identifier }
             },
-            new BsonDocument("$set", new BsonDocument
-            {
-                { "appointments.$.appointment_status", (int)status },
-                { "appointments.$.appointment_description", description }
-            }));
+            update);
     }
 
     /// <summary>

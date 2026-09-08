@@ -108,8 +108,12 @@ public class AppointmentAutoCompletionService(
         {
             if (stoppingToken.IsCancellationRequested) break;
 
-            // Through the entity, so the transition rules are the same ones every other path obeys — Completed
-            // is only reachable from Booked, and the description is refreshed with it.
+            // Noted before the transition clears it: a session that was awaiting an answer needs its proposal
+            // unset on the embedded copy too, not just its status changed.
+            var wasAwaitingAnAnswer = appointment.HasPendingReschedule;
+
+            // Through the entity, so the transition rules are the same ones every other path obeys, and the
+            // description is refreshed with the status.
             try
             {
                 appointment.TransitionTo(AppointmentStatus.Completed);
@@ -120,6 +124,8 @@ public class AppointmentAutoCompletionService(
                 // it is now.
                 continue;
             }
+
+            var hadProposal = wasAwaitingAnAnswer;
 
             var stored = await bookings.ChangeStatusAsync(
                 appointment.Identifier,
@@ -134,7 +140,8 @@ public class AppointmentAutoCompletionService(
                 appointment.EmailProvider,
                 appointment.Identifier,
                 AppointmentStatus.Completed,
-                appointment.AppointmentDescription);
+                appointment.AppointmentDescription,
+                clearProposal: hadProposal);
 
             completed++;
         }
