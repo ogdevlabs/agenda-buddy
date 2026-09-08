@@ -171,6 +171,27 @@
             }
           }
         }
+      },
+      "delete": {
+        "tags": [
+          "ProviderAPI"
+        ],
+        "operationId": "DeleteProviderAccount",
+        "parameters": [
+          {
+            "name": "email",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
       }
     },
     "/api/v1/providers/{email}/work-hours": {
@@ -344,6 +365,102 @@
           }
         }
       }
+    },
+    "/api/v1/providers/{email}/avatar": {
+      "put": {
+        "tags": [
+          "ProviderAPI"
+        ],
+        "operationId": "SetProviderAvatar",
+        "parameters": [
+          {
+            "name": "email",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AvatarRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProviderEntityDataResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProviderEntityDataResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/providers/{email}/consent": {
+      "put": {
+        "tags": [
+          "ProviderAPI"
+        ],
+        "operationId": "SetProviderConsent",
+        "parameters": [
+          {
+            "name": "email",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConsentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "404": {
+            "description": "Not Found"
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProviderEntityDataResponse"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -445,6 +562,28 @@
         ],
         "type": "integer",
         "format": "int32"
+      },
+      "AvatarRequest": {
+        "type": "object",
+        "properties": {
+          "avatarId": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ConsentRequest": {
+        "type": "object",
+        "properties": {
+          "acceptedTerms": {
+            "type": "boolean"
+          },
+          "acceptedPrivacy": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
       },
       "DayOfWeek": {
         "enum": [
@@ -601,6 +740,16 @@
           },
           "avatarId": {
             "type": "string",
+            "nullable": true
+          },
+          "termsAcceptedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "privacyAcceptedAt": {
+            "type": "string",
+            "format": "date-time",
             "nullable": true
           },
           "timeZoneId": {

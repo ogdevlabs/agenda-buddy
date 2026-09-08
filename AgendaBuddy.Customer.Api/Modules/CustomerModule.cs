@@ -195,6 +195,106 @@ public class CustomerModule : ICarterModule
             })
             .WithName("GetSubscribedProviders")
             .RequireAuthorization();
+
+        // ── profile settings and erasure ──────────────────────────────────────────────────────────────
+        //
+        // Avatar and consent get DEDICATED routes rather than two more fields on PUT /{email}, which replaces
+        // the whole document -- the same reason Provider's work-hours route is its own. Each is a targeted $set.
+
+        customers.MapPut("/{email}/avatar",
+            async Task<Results<ValidationProblem, ForbidHttpResult, NotFound, BadRequest<DataResponse<CustomerEntity>>, Ok<DataResponse<CustomerEntity>>>> (
+                string email,
+                ClaimsPrincipal user,
+                IMediator mediator,
+                AvatarRequest request,
+                IDistributedCache cache,
+                CancellationToken cancellationToken) =>
+            {
+                if (!MiniValidator.TryValidate(request, out var errors))
+                    return TypedResults.ValidationProblem(errors);
+
+                OwnershipGuard.AssertOwner(user, email);
+
+                var result = await mediator.Send(
+                    new SetCustomerAvatarCommand { Email = email, AvatarId = request.AvatarId }, cancellationToken);
+
+                if (result.IsSuccess)
+                {
+                    await cache.RemoveAsync($"customers-{email}", cancellationToken);
+                    return TypedResults.Ok(DataResponse<CustomerEntity>.Ok(result.Value));
+                }
+
+                // An id the catalogue does not know is the caller's mistake, not a missing account -- and the two
+                // are worth telling apart, because a 404 would send a client looking for a profile that is there.
+                return AvatarCatalog.IsKnown(request.AvatarId)
+                    ? TypedResults.NotFound()
+                    : TypedResults.BadRequest(DataResponse<CustomerEntity>.Fail(
+                        result.Errors.Select(error => error.Message).ToArray()));
+            })
+            .WithName("SetCustomerAvatar")
+            .RequireAuthorization();
+
+        customers.MapPut("/{email}/consent",
+            async Task<Results<ForbidHttpResult, NotFound, Ok<DataResponse<CustomerEntity>>>> (
+                string email,
+                ClaimsPrincipal user,
+                IMediator mediator,
+                ConsentRequest request,
+                IDistributedCache cache,
+                CancellationToken cancellationToken) =>
+            {
+                OwnershipGuard.AssertOwner(user, email);
+
+                var result = await mediator.Send(
+                    new SetCustomerConsentCommand
+                    {
+                        Email = email,
+                        AcceptedTerms = request.AcceptedTerms,
+                        AcceptedPrivacy = request.AcceptedPrivacy
+                    },
+                    cancellationToken);
+
+                if (!result.IsSuccess)
+                    return TypedResults.NotFound();
+
+                await cache.RemoveAsync($"customers-{email}", cancellationToken);
+                return TypedResults.Ok(DataResponse<CustomerEntity>.Ok(result.Value));
+            })
+            .WithName("SetCustomerConsent")
+            .RequireAuthorization();
+
+        // Account erasure. 204 whether or not a profile existed -- an account whose profile creation failed is
+        // the one that most needs deleting, and a 404 here would make it permanently undeletable (App Review
+        // Guideline 5.1.1(v)). The credential is deleted separately by DELETE /api/v1/auth/account, which the
+        // client calls SECOND: this route authorises off that credential.
+        customers.MapDelete("/{email}",
+            async Task<Results<ForbidHttpResult, ProblemHttpResult, NoContent>> (
+                string email,
+                ClaimsPrincipal user,
+                IMediator mediator,
+                IDistributedCache cache,
+                CancellationToken cancellationToken) =>
+            {
+                OwnershipGuard.AssertOwner(user, email);
+
+                var result = await mediator.Send(
+                    new DeleteCustomerAccountCommand { Email = email }, cancellationToken);
+
+                if (!result.IsSuccess)
+                {
+                    return TypedResults.Problem(
+                        detail: "Could not delete the account. Nothing has been removed; try again.",
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        title: "account_deletion_failed");
+                }
+
+                // The cached read outlives the document by up to five minutes otherwise, so a client that
+                // re-read its own profile straight after deleting it would be served the deleted copy.
+                await cache.RemoveAsync($"customers-{email}", cancellationToken);
+                return TypedResults.NoContent();
+            })
+            .WithName("DeleteCustomerAccount")
+            .RequireAuthorization();
     }
 
     private static Dictionary<string, string[]> GenerateErrorMessage(string key, string[] values) =>

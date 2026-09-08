@@ -37,6 +37,11 @@ public static class ServiceCollectionExtension
         // its own, which is part of why nobody noticed it was never registered.
         serviceCollection.AddScoped<IReportingService, ReportingService>();
 
+        // Deleting an account has to reach every collection carrying the address, including several this
+        // service does not otherwise touch (customers, appointments, messages, notes, payments, notifications,
+        // device tokens). One call, because the set is only correct as a set -- see AddAccountErasure's remarks.
+        serviceCollection.AddAccountErasure(configuration);
+
         return serviceCollection;
     }
 }

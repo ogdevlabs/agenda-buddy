@@ -133,7 +133,7 @@ public class RegisterViewModelTests
 
     /// <summary>
     /// A profile that could not be created is reported, and the message has to name the way out — this is
-    /// the half-created account, and it is recoverable only because <c>AccountViewModel</c> now creates a
+    /// the half-created account, and it is recoverable only because <c>EditProfileViewModel</c> now creates a
     /// missing profile rather than only updating one.
     /// </summary>
     [Fact]

@@ -163,6 +163,27 @@
             "description": "Not Found"
           }
         }
+      },
+      "delete": {
+        "tags": [
+          "CustomerAPI"
+        ],
+        "operationId": "DeleteCustomerAccount",
+        "parameters": [
+          {
+            "name": "email",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
       }
     },
     "/api/v1/customers/{email}/subscriptions/{providerEmail}": {
@@ -271,6 +292,102 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/StringListDataResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/customers/{email}/avatar": {
+      "put": {
+        "tags": [
+          "CustomerAPI"
+        ],
+        "operationId": "SetCustomerAvatar",
+        "parameters": [
+          {
+            "name": "email",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AvatarRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerEntityDataResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerEntityDataResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/customers/{email}/consent": {
+      "put": {
+        "tags": [
+          "CustomerAPI"
+        ],
+        "operationId": "SetCustomerConsent",
+        "parameters": [
+          {
+            "name": "email",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConsentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "404": {
+            "description": "Not Found"
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerEntityDataResponse"
                 }
               }
             }
@@ -503,6 +620,28 @@
   },
   "components": {
     "schemas": {
+      "AvatarRequest": {
+        "type": "object",
+        "properties": {
+          "avatarId": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ConsentRequest": {
+        "type": "object",
+        "properties": {
+          "acceptedTerms": {
+            "type": "boolean"
+          },
+          "acceptedPrivacy": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
       "CustomerEntity": {
         "required": [
           "email",
@@ -534,6 +673,16 @@
           },
           "avatarId": {
             "type": "string",
+            "nullable": true
+          },
+          "termsAcceptedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "privacyAcceptedAt": {
+            "type": "string",
+            "format": "date-time",
             "nullable": true
           },
           "subscribedProviderCollection": {

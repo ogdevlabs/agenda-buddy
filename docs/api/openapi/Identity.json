@@ -177,6 +177,19 @@
         }
       }
     },
+    "/api/v1/auth/account": {
+      "delete": {
+        "tags": [
+          "IdentityAPI"
+        ],
+        "operationId": "DeleteAccount",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/auth/register/confirm": {
       "post": {
         "tags": [

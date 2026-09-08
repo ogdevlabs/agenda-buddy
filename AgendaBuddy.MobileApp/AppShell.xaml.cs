@@ -26,8 +26,16 @@ public partial class AppShell : Shell
         Microsoft.Maui.Controls.Routing.RegisterRoute("timeOff", typeof(TimeOffPage));
         // Reached from MorePage now that they are no longer tabs of their own.
         Microsoft.Maui.Controls.Routing.RegisterRoute("notifications", typeof(NotificationsPage));
-        Microsoft.Maui.Controls.Routing.RegisterRoute("account", typeof(AccountPage));
         Microsoft.Maui.Controls.Routing.RegisterRoute("professions", typeof(ProfessionsPage));
+
+        // Profile, and the screens it opens. Replaces the old "account" route: the Account screen's contents moved
+        // under Profile, which additionally carries the avatar, language and the two legal documents.
+        Microsoft.Maui.Controls.Routing.RegisterRoute("profile", typeof(ProfilePage));
+        Microsoft.Maui.Controls.Routing.RegisterRoute("editProfile", typeof(EditProfilePage));
+        Microsoft.Maui.Controls.Routing.RegisterRoute("avatarPicker", typeof(AvatarPickerPage));
+        Microsoft.Maui.Controls.Routing.RegisterRoute("language", typeof(LanguagePage));
+        Microsoft.Maui.Controls.Routing.RegisterRoute("terms", typeof(TermsPage));
+        Microsoft.Maui.Controls.Routing.RegisterRoute("privacy", typeof(PrivacyPage));
 
         JwtDelegatingHandler.UnauthorizedAccess += async (_, _) =>
             await Shell.Current.GoToAsync("//login");

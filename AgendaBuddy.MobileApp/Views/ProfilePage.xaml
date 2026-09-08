@@ -1,0 +1,261 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The Profile screen. The avatar is the hero, in its own segment directly under the brand band, because it is
+    the one thing on this screen that is unmistakably "you" — everything below it is a list of settings.
+
+    Sign out and Delete Account sit OUTSIDE the settings card and at the bottom, separated: they are the two
+    actions on this screen that end something, and a destructive row nested among navigational ones is a mistap
+    waiting to happen.
+-->
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:controls="clr-namespace:AgendaBuddy.MobileApp.Controls"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             x:Class="AgendaBuddy.MobileApp.Views.ProfilePage"
+             Title="Profile"
+             BackgroundColor="{StaticResource BackgroundPage}"
+             Shell.NavBarIsVisible="False">
+
+    <ContentPage.Resources>
+        <toolkit:InvertedBoolConverter x:Key="InvertedBoolConverter" />
+    </ContentPage.Resources>
+
+    <Grid RowDefinitions="Auto,*">
+
+        <controls:BrandHeader Grid.Row="0" />
+
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Padding="20,0,20,28" Spacing="16">
+
+                <!-- Hero. Full-bleed to the page padding and gradient-backed so it reads as part of the brand
+                     band above it rather than as the first card in a list of cards. -->
+                <Border Margin="-20,0,-20,0"
+                        Background="{StaticResource BrandGradient}"
+                        Stroke="Transparent"
+                        StrokeThickness="0"
+                        Padding="20,22,20,24"
+                        AutomationId="ProfileHero">
+                    <VerticalStackLayout Spacing="12" HorizontalOptions="Center">
+
+                        <!-- Tappable, with an explicit "Change" affordance under it: a bare tappable image is an
+                             affordance nobody discovers. -->
+                        <Grid HorizontalOptions="Center">
+                            <Grid.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnAvatarTapped" />
+                            </Grid.GestureRecognizers>
+                            <controls:Avatar Size="104" Source="{Binding AvatarAsset}" AutomationId="ProfileAvatar" />
+                        </Grid>
+
+                        <Label Text="{Binding DisplayName}"
+                               FontSize="21"
+                               FontAttributes="Bold"
+                               TextColor="{StaticResource TextOnPrimary}"
+                               HorizontalTextAlignment="Center"
+                               AutomationId="ProfileNameLabel" />
+
+                        <Label Text="{Binding Email}"
+                               FontSize="13.5"
+                               TextColor="{StaticResource TextOnPrimaryMuted}"
+                               HorizontalTextAlignment="Center"
+                               AutomationId="ProfileEmailLabel" />
+
+                        <Label Text="{Binding Role}"
+                               FontSize="11.5"
+                               CharacterSpacing="0.8"
+                               TextTransform="Uppercase"
+                               TextColor="{StaticResource BrandAccent}"
+                               HorizontalTextAlignment="Center"
+                               AutomationId="ProfileRoleLabel" />
+
+                        <Button Text="Change avatar"
+                                BackgroundColor="Transparent"
+                                BorderColor="{StaticResource BrandAccent}"
+                                BorderWidth="1"
+                                CornerRadius="18"
+                                HeightRequest="36"
+                                Padding="18,0"
+                                FontSize="13"
+                                TextColor="{StaticResource TextOnPrimary}"
+                                HorizontalOptions="Center"
+                                Clicked="OnAvatarTapped"
+                                AutomationId="ChangeAvatarButton" />
+
+                        <!-- An account with no name is the half-created state registration can leave behind, and
+                             Edit profile is the only thing that repairs it. Saying so beats showing an email
+                             address where a name goes. -->
+                        <Label Text="Finish setting up your profile — add your name."
+                               IsVisible="{Binding NeedsProfileSetup}"
+                               FontSize="12.5"
+                               TextColor="{StaticResource BrandAccent}"
+                               HorizontalTextAlignment="Center"
+                               Margin="0,2,0,0"
+                               AutomationId="ProfileSetupPrompt" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <Frame Style="{StaticResource ErrorBannerStyle}" IsVisible="{Binding HasError}" Margin="0">
+                    <Label Text="{Binding ErrorMessage}" TextColor="{StaticResource Error}" FontSize="13.5" />
+                </Frame>
+
+                <!-- Account -->
+                <Label Text="Account" Style="{StaticResource Overline}" Margin="4,4,0,0" />
+
+                <Frame Style="{StaticResource CardCompact}" Padding="0" Margin="0">
+                    <VerticalStackLayout Spacing="0">
+
+                        <Grid ColumnDefinitions="*,Auto" Padding="16,14" ColumnSpacing="12"
+                              AutomationId="EditProfileRow">
+                            <Grid.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnEditProfileTapped" />
+                            </Grid.GestureRecognizers>
+                            <VerticalStackLayout Grid.Column="0" Spacing="2">
+                                <Label Text="Edit profile" FontSize="16" TextColor="{StaticResource TextPrimary}" />
+                                <Label Text="Name, phone, and the agreements you have accepted"
+                                       FontSize="12" TextColor="{StaticResource TextMuted}" />
+                            </VerticalStackLayout>
+                            <Label Grid.Column="1" Text="&#x276F;" FontSize="14"
+                                   TextColor="{StaticResource TextMuted}" VerticalOptions="Center" />
+                        </Grid>
+
+                        <BoxView HeightRequest="0.5" Color="{StaticResource BorderLight}" Margin="16,0" />
+
+                        <Grid ColumnDefinitions="*,Auto,Auto" Padding="16,14" ColumnSpacing="10"
+                              AutomationId="LanguageRow">
+                            <Grid.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnLanguageTapped" />
+                            </Grid.GestureRecognizers>
+                            <Label Grid.Column="0" Text="Language" FontSize="16"
+                                   TextColor="{StaticResource TextPrimary}" VerticalOptions="Center" />
+                            <Label Grid.Column="1" Text="{Binding LanguageLabel}" FontSize="14"
+                                   TextColor="{StaticResource TextMuted}" VerticalOptions="Center"
+                                   AutomationId="LanguageValueLabel" />
+                            <Label Grid.Column="2" Text="&#x276F;" FontSize="14"
+                                   TextColor="{StaticResource TextMuted}" VerticalOptions="Center" />
+                        </Grid>
+
+                        <BoxView HeightRequest="0.5" Color="{StaticResource BorderLight}" Margin="16,0" />
+
+                        <Grid ColumnDefinitions="*,Auto" Padding="16,14" ColumnSpacing="12"
+                              AutomationId="ChangePasswordRow">
+                            <Grid.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnChangePasswordTapped" />
+                            </Grid.GestureRecognizers>
+                            <Label Grid.Column="0" Text="Change password" FontSize="16"
+                                   TextColor="{StaticResource TextPrimary}" VerticalOptions="Center" />
+                            <Label Grid.Column="1" Text="&#x276F;" FontSize="14"
+                                   TextColor="{StaticResource TextMuted}" VerticalOptions="Center" />
+                        </Grid>
+
+                    </VerticalStackLayout>
+                </Frame>
+
+                <!-- Provider-only. Rows rather than a second screen: everything else here is identical for both
+                     roles, and two parallel profile screens would drift. -->
+                <Label Text="My business" Style="{StaticResource Overline}" Margin="4,4,0,0"
+                       IsVisible="{Binding IsProvider}" />
+
+                <Frame Style="{StaticResource CardCompact}" Padding="0" Margin="0"
+                       IsVisible="{Binding IsProvider}">
+                    <VerticalStackLayout Spacing="0">
+
+                        <Grid ColumnDefinitions="*,Auto" Padding="16,14" ColumnSpacing="12"
+                              AutomationId="MyServicesRow">
+                            <Grid.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnServicesTapped" />
+                            </Grid.GestureRecognizers>
+                            <Label Grid.Column="0" Text="My services" FontSize="16"
+                                   TextColor="{StaticResource TextPrimary}" VerticalOptions="Center" />
+                            <Label Grid.Column="1" Text="&#x276F;" FontSize="14"
+                                   TextColor="{StaticResource TextMuted}" VerticalOptions="Center" />
+                        </Grid>
+
+                        <BoxView HeightRequest="0.5" Color="{StaticResource BorderLight}" Margin="16,0" />
+
+                        <Grid ColumnDefinitions="*,Auto" Padding="16,14" ColumnSpacing="12"
+                              AutomationId="ProfessionsRow">
+                            <Grid.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnProfessionsTapped" />
+                            </Grid.GestureRecognizers>
+                            <Label Grid.Column="0" Text="Professions" FontSize="16"
+                                   TextColor="{StaticResource TextPrimary}" VerticalOptions="Center" />
+                            <Label Grid.Column="1" Text="&#x276F;" FontSize="14"
+                                   TextColor="{StaticResource TextMuted}" VerticalOptions="Center" />
+                        </Grid>
+
+                    </VerticalStackLayout>
+                </Frame>
+
+                <!-- Legal -->
+                <Label Text="Legal" Style="{StaticResource Overline}" Margin="4,4,0,0" />
+
+                <Frame Style="{StaticResource CardCompact}" Padding="0" Margin="0">
+                    <VerticalStackLayout Spacing="0">
+
+                        <Grid ColumnDefinitions="*,Auto" Padding="16,14" ColumnSpacing="12"
+                              AutomationId="TermsRow">
+                            <Grid.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnTermsTapped" />
+                            </Grid.GestureRecognizers>
+                            <Label Grid.Column="0" Text="Terms and Conditions" FontSize="16"
+                                   TextColor="{StaticResource TextPrimary}" VerticalOptions="Center" />
+                            <Label Grid.Column="1" Text="&#x276F;" FontSize="14"
+                                   TextColor="{StaticResource TextMuted}" VerticalOptions="Center" />
+                        </Grid>
+
+                        <BoxView HeightRequest="0.5" Color="{StaticResource BorderLight}" Margin="16,0" />
+
+                        <Grid ColumnDefinitions="*,Auto" Padding="16,14" ColumnSpacing="12"
+                              AutomationId="PrivacyRow">
+                            <Grid.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnPrivacyTapped" />
+                            </Grid.GestureRecognizers>
+                            <Label Grid.Column="0" Text="Privacy Policy" FontSize="16"
+                                   TextColor="{StaticResource TextPrimary}" VerticalOptions="Center" />
+                            <Label Grid.Column="1" Text="&#x276F;" FontSize="14"
+                                   TextColor="{StaticResource TextMuted}" VerticalOptions="Center" />
+                        </Grid>
+
+                    </VerticalStackLayout>
+                </Frame>
+
+                <!-- Ending actions, deliberately outside the cards above and last. -->
+                <controls:SafeButton Text="Sign out"
+                        Style="{StaticResource SecondaryButton}"
+                        Margin="0,8,0,0"
+                        Command="{Binding LogoutCommand}"
+                        AutomationId="ProfileLogoutButton" />
+
+                <controls:SafeButton Text="Deactivate account"
+                        Style="{StaticResource SecondaryButton}"
+                        IsVisible="{Binding IsProvider}"
+                        Clicked="OnDeactivateClicked"
+                        IsEnabled="{Binding IsDeactivating, Converter={StaticResource InvertedBoolConverter}}"
+                        AutomationId="DeactivateAccountButton" />
+
+                <Label Text="Deactivating hides you from customers and keeps your data. Deleting removes it."
+                       IsVisible="{Binding IsProvider}"
+                       FontSize="12"
+                       TextColor="{StaticResource TextMuted}"
+                       HorizontalTextAlignment="Center" />
+
+                <Grid Margin="0,8,0,0">
+                    <controls:SafeButton Text="Delete account"
+                            Style="{StaticResource DangerButton}"
+                            Clicked="OnDeleteAccountClicked"
+                            IsVisible="{Binding IsDeleting, Converter={StaticResource InvertedBoolConverter}}"
+                            AutomationId="DeleteAccountButton" />
+                    <ActivityIndicator IsRunning="{Binding IsDeleting}" IsVisible="{Binding IsDeleting}"
+                                       Color="{StaticResource Error}" HorizontalOptions="Center" />
+                </Grid>
+
+                <Label Text="Deleting your account is permanent. Your profile is removed and your name, email and phone number are erased from the records of people you dealt with."
+                       FontSize="12"
+                       TextColor="{StaticResource TextMuted}"
+                       HorizontalTextAlignment="Center" />
+
+            </VerticalStackLayout>
+        </ScrollView>
+
+    </Grid>
+
+</ContentPage>

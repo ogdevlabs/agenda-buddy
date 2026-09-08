@@ -51,4 +51,34 @@ public class CustomerService(IRepository<CustomerEntity> customerRepository) : I
         var update = new BsonDocument("$pull", new BsonDocument("subscribed_provider_collection", providerEmail));
         return await customerRepository.FindOneAndUpdateAsync(filter, update);
     }
+
+    public async Task<CustomerEntity?> SetAvatarAsync(string customerEmail, string avatarId)
+    {
+        return await customerRepository.FindOneAndUpdateAsync(
+            SupportTools<CustomerEntity>.FilterByEmail(customerEmail),
+            new BsonDocument("$set", new BsonDocument("avatar_id", avatarId)));
+    }
+
+    public async Task<CustomerEntity?> SetConsentAsync(
+        string customerEmail, DateTime? termsAcceptedAt, DateTime? privacyAcceptedAt)
+    {
+        return await customerRepository.FindOneAndUpdateAsync(
+            SupportTools<CustomerEntity>.FilterByEmail(customerEmail),
+            new BsonDocument("$set", new BsonDocument
+            {
+                { "terms_accepted_at", ConsentTimestamp(termsAcceptedAt) },
+                { "privacy_accepted_at", ConsentTimestamp(privacyAcceptedAt) }
+            }));
+    }
+
+    /// <summary>
+    /// A consent timestamp as BSON — an explicit null for "not accepted", not an omitted field.
+    /// </summary>
+    /// <remarks>
+    /// Omitting it would leave a previous acceptance standing, so an unticked box would look accepted on the next
+    /// read. The entity's <c>[BsonIgnoreIfNull]</c> governs serialising the whole document; this write is a
+    /// <c>$set</c> and has to state the null itself.
+    /// </remarks>
+    private static BsonValue ConsentTimestamp(DateTime? at) =>
+        at is null ? BsonNull.Value : new BsonDateTime(at.Value);
 }

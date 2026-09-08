@@ -147,8 +147,53 @@ public class ProviderApiService : IProviderApiService
             Email = data.TryGetProperty("email", out var e) && e.ValueKind == JsonValueKind.String ? e.GetString() ?? "" : "",
             FirstName = data.TryGetProperty("firstName", out var f) && f.ValueKind == JsonValueKind.String ? f.GetString() ?? "" : "",
             LastName = data.TryGetProperty("lastName", out var l) && l.ValueKind == JsonValueKind.String ? l.GetString() ?? "" : "",
-            PhoneNumber = data.TryGetProperty("phoneNumber", out var p) && p.ValueKind == JsonValueKind.String ? p.GetString() ?? "" : ""
+            PhoneNumber = data.TryGetProperty("phoneNumber", out var p) && p.ValueKind == JsonValueKind.String ? p.GetString() ?? "" : "",
+            AvatarId = data.TryGetProperty("avatarId", out var a) && a.ValueKind == JsonValueKind.String ? a.GetString() ?? "" : "",
+            TermsAcceptedAt = ReadDateTime(data, "termsAcceptedAt"),
+            PrivacyAcceptedAt = ReadDateTime(data, "privacyAcceptedAt")
         };
+    }
+
+    /// <summary>
+    /// A nullable timestamp off the wire.
+    /// </summary>
+    /// <remarks>
+    /// Absent, <c>null</c> and unparseable all read as "not accepted" — the three are indistinguishable to a
+    /// reader, and treating an unparseable value as accepted would be the one wrong answer.
+    /// </remarks>
+    private static DateTime? ReadDateTime(JsonElement element, string propertyName) =>
+        element.TryGetProperty(propertyName, out var value)
+        && value.ValueKind == JsonValueKind.String
+        && value.TryGetDateTime(out var parsed)
+            ? parsed
+            : null;
+
+    public async Task<bool> SetAvatarAsync(string email, string avatarId, CancellationToken ct = default)
+    {
+        var client = _httpClientFactory.CreateClient("AgendaBuddyApi");
+        var route = ProviderRouteBuilder.Avatar(email);
+        var body = JsonSerializer.Serialize(ProviderRouteBuilder.BuildAvatarPayload(avatarId));
+        var response = await client.PutAsync(route.Path, new StringContent(body, Encoding.UTF8, "application/json"), ct);
+        return response.IsSuccessStatusCode;
+    }
+
+    public async Task<bool> SetConsentAsync(
+        string email, bool acceptedTerms, bool acceptedPrivacy, CancellationToken ct = default)
+    {
+        var client = _httpClientFactory.CreateClient("AgendaBuddyApi");
+        var route = ProviderRouteBuilder.Consent(email);
+        var body = JsonSerializer.Serialize(
+            ProviderRouteBuilder.BuildConsentPayload(acceptedTerms, acceptedPrivacy));
+        var response = await client.PutAsync(route.Path, new StringContent(body, Encoding.UTF8, "application/json"), ct);
+        return response.IsSuccessStatusCode;
+    }
+
+    public async Task<bool> DeleteAccountAsync(string email, CancellationToken ct = default)
+    {
+        var client = _httpClientFactory.CreateClient("AgendaBuddyApi");
+        var route = ProviderRouteBuilder.DeleteProvider(email);
+        var response = await client.DeleteAsync(route.Path, ct);
+        return response.IsSuccessStatusCode;
     }
 
     /// <summary>

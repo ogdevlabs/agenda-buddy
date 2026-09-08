@@ -1,0 +1,38 @@
+meta {
+  name: 9 Record consent
+  type: http
+  seq: 9
+}
+put {
+  url: {{gatewayUrl}}/api/v1/customers/{{customerEmail}}/consent
+  body: json
+}
+body:json {
+  {
+    "acceptedTerms": true,
+    "acceptedPrivacy": true
+  }
+}
+docs {
+  Acceptance of the Terms and Conditions and the Privacy Policy, recorded as two timestamps on the profile
+  (`termsAcceptedAt`, `privacyAcceptedAt`).
+
+  ⚠️ **Two booleans, not two dates — the server stamps the time.** A consent record whose timestamp the
+  consenting party supplies proves nothing, and a device with a wrong clock would file the acceptance in the
+  wrong year.
+
+  ⚠️ **Both flags are always written, so `false` means "not accepted" rather than "unchanged".** Send
+  `{"acceptedTerms": false, "acceptedPrivacy": false}` and both timestamps come back `null`: withdrawing
+  consent is a state the record has to be able to express, and a partial-update shape would make an unticked
+  box silently keep the previous acceptance.
+
+  A dedicated route, targeted `$set` on those two fields only — the name, the phone number and the
+  subscription list all survive it.
+
+  Answers:
+  - `200` with the updated customer on success.
+  - `403` for another account's email. Ownership-guarded.
+  - `404` when no customer has that email.
+
+  Verify with `2 Get customer by email`.
+}

@@ -48,6 +48,23 @@ public interface IRepository<TEntity> where TEntity : class
     Task<long> UpdateManyAsync(BsonDocument filter, BsonDocument update);
 
     /// <summary>
+    /// Deletes every document matching <paramref name="filter"/>, and returns how many it removed.
+    /// </summary>
+    /// <returns>The number of documents deleted — zero when the filter matched nothing.</returns>
+    /// <remarks>
+    /// The many-document sibling of <see cref="FindOneAndDeleteAsync"/>, added for the same reason
+    /// <see cref="UpdateManyAsync"/> was: erasing an account removes its whole notification inbox and its whole
+    /// set of private notes, and doing that as a read of N followed by N single deletes is both N+1 round trips
+    /// and a partially-erased account if it stops halfway. There is no post-image — a caller that needs the
+    /// documents reads them first.
+    /// <para>
+    /// It is not a step towards a query DSL (PRD requirement 3): <c>BsonDocument</c> in, a count out, stopping at
+    /// the driver boundary, exactly like every other primitive here.
+    /// </para>
+    /// </remarks>
+    Task<long> DeleteManyAsync(BsonDocument filter);
+
+    /// <summary>
     /// One page of the collection, plus the total number of documents in it.
     /// </summary>
     /// <param name="skip">Documents to skip. Negative values are treated as zero.</param>

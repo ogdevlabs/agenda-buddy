@@ -445,6 +445,16 @@
             "type": "string",
             "nullable": true
           },
+          "termsAcceptedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "privacyAcceptedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
           "timeZoneId": {
             "type": "string",
             "nullable": true

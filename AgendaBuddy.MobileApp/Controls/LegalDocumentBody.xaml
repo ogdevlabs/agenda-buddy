@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+    A legal document's title, effective date, summary and clauses.
+
+    One control shared by TermsPage and PrivacyPage: the two pages differ only in which document they bind, so a
+    second copy of this layout would be a second place for the typography to drift — and a legal screen that looks
+    different on one of the two documents reads as one of them being less official.
+
+    BindableLayout over a VerticalStackLayout rather than a CollectionView, because a document is read top to
+    bottom in one pass: it has no rows to recycle, no selection, and it must be inside the page's single scroller
+    so the whole document scrolls as one thing.
+-->
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:infrastructure="clr-namespace:AgendaBuddy.MobileApp.Infrastructure"
+             x:Class="AgendaBuddy.MobileApp.Controls.LegalDocumentBody">
+
+    <VerticalStackLayout Spacing="14">
+
+        <Label Text="{Binding Title}" Style="{StaticResource TitleMedium}" AutomationId="LegalTitleLabel" />
+
+        <Label Text="{Binding EffectiveDate}" FontSize="12" TextColor="{StaticResource TextMuted}"
+               AutomationId="LegalEffectiveLabel" />
+
+        <Frame Style="{StaticResource CardCompact}" Margin="0">
+            <Label Text="{Binding Summary}" FontSize="14" LineHeight="1.4"
+                   TextColor="{StaticResource TextSecondary}" AutomationId="LegalSummaryLabel" />
+        </Frame>
+
+        <VerticalStackLayout BindableLayout.ItemsSource="{Binding Clauses}" Spacing="14"
+                             AutomationId="LegalClauseList">
+            <BindableLayout.ItemTemplate>
+                <DataTemplate x:DataType="infrastructure:LegalClause">
+                    <VerticalStackLayout Spacing="5">
+                        <Label Text="{Binding Heading}" FontSize="15" FontAttributes="Bold"
+                               TextColor="{StaticResource TextPrimary}" />
+                        <Label Text="{Binding Body}" FontSize="14" LineHeight="1.45"
+                               TextColor="{StaticResource TextSecondary}" />
+                    </VerticalStackLayout>
+                </DataTemplate>
+            </BindableLayout.ItemTemplate>
+        </VerticalStackLayout>
+
+    </VerticalStackLayout>
+
+</ContentView>

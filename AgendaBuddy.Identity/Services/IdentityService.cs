@@ -23,7 +23,8 @@ public class IdentityService(
     INotificationService? notificationService = null,
     ITokenRevocationStore? tokenRevocationStore = null,
     IEmailSender? emailSender = null,
-    IOptions<EmailOptions>? emailOptions = null)
+    IOptions<EmailOptions>? emailOptions = null,
+    IDeviceTokenService? deviceTokenService = null)
 {
     private const string PrivateKeyEnvVar = "JWT_PRIVATE_KEY";
     private const string Issuer = "agenda-buddy-identity";
@@ -762,6 +763,72 @@ public class IdentityService(
         "acct_" + Convert.ToHexString(
                 SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(email.ToLowerInvariant())))
             .ToLowerInvariant()[..12];
+
+    /// <summary>
+    /// Deletes the credential for <paramref name="email"/>, releases its device registration, and revokes the
+    /// access token that authorised the call.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The <b>credential half</b> of account deletion. The domain profile lives in a different database and is
+    /// removed by <c>DELETE /api/v1/{customers|providers}/{email}</c>, which the client calls <b>first</b> —
+    /// this credential is what authorises that call, so reversing the order would strand a live profile nothing
+    /// could reach to finish erasing.
+    /// </para>
+    /// <para>
+    /// <b>Idempotent, and it never reports whether an account existed.</b> A deletion that answered differently
+    /// for a known and an unknown address would be an enumeration oracle on the one route guaranteed to be
+    /// reachable by an authenticated caller — the same reasoning that makes <c>DELETE /device-token</c> answer
+    /// 204 either way.
+    /// </para>
+    /// <para>
+    /// The device registration goes <b>before</b> the credential, and that order is load-bearing for the same
+    /// reason <c>AuthService.LogoutAsync</c>'s is: a fault between the two leaves an account that can still sign
+    /// in and is still addressable, rather than a deleted account whose device keeps receiving push — subject and
+    /// body included — on hardware it no longer controls. The domain-side erasure deletes the same registration,
+    /// so this is deliberately belt and braces: a client that reached here without completing the domain half
+    /// still stops being pushed to.
+    /// </para>
+    /// </remarks>
+    public async Task DeleteAccountAsync(string email, string? accessToken = null)
+    {
+        email = email.ToLowerInvariant();
+        var account = AccountReference(email);
+
+        if (deviceTokenService is not null)
+        {
+            try
+            {
+                await deviceTokenService.DeleteByEmailAsync(email);
+            }
+            catch (Exception ex) when (IsMongoDown(ex))
+            {
+                // Deliberately not fatal: the registration is in a different collection from the credential, and
+                // an account that cannot be deleted because a push table was briefly unreachable is a worse
+                // outcome than a stale token row. The credential delete below is what makes sign-in stop.
+                _log.LogWarning(ex, "credential.device-token-release-failed for {Account}", account);
+            }
+        }
+
+        long deleted;
+        try
+        {
+            // DeleteMany on a strict email filter rather than FindOneAndDelete: it is naturally idempotent, and
+            // it removes a duplicate credential too. There is no unique index on email (agenda-buddy-b0w), so
+            // duplicates are possible, and a delete that left one of them behind would leave the account able to
+            // sign in after being told it was gone.
+            deleted = await repository.DeleteManyAsync(new BsonDocument("email", email));
+        }
+        catch (Exception ex) when (IsMongoDown(ex))
+        {
+            throw new ServiceUnavailableException();
+        }
+
+        _log.LogInformation(
+            "credential.deleted for {Account} ({Count} credential(s))", account, deleted);
+
+        await RevokeAccessTokenAsync(accessToken);
+    }
 
     public static string HashToken(string token)
     {

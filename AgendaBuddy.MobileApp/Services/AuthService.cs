@@ -126,6 +126,48 @@ public class AuthService : IAuthService
         return _secureStorage.GetAsync(JwtDelegatingHandler.JwtKey);
     }
 
+    /// <inheritdoc />
+    /// <remarks>
+    /// <para>
+    /// Push is unregistered <b>first</b>, before the credential goes, for the reason <see cref="LogoutAsync"/>
+    /// does it in that order: the route that releases the registration authorises off the token being deleted, so
+    /// afterwards there is no way to reach it, and a device left registered keeps receiving push — subject and
+    /// body included — for an account that no longer exists.
+    /// </para>
+    /// <para>
+    /// Sent through the <b>authenticated</b> client, unlike <see cref="LogoutAsync"/>: there is no refresh token
+    /// in the request for a transparent 401-retry to rotate out from under it, and the route needs the caller's
+    /// claim to know whose account to delete.
+    /// </para>
+    /// <para>
+    /// The local session is cleared in a <c>finally</c>, so a failed or unreachable delete still signs the device
+    /// out. Leaving somebody logged in to an account they have just asked to be deleted is the worse failure, and
+    /// the caller reports the outcome from the return value rather than from what is still on the device.
+    /// </para>
+    /// </remarks>
+    public async Task<bool> DeleteAccountAsync(CancellationToken ct = default)
+    {
+        if (_pushNotificationService is not null)
+            await _pushNotificationService.UnregisterTokenAsync();
+
+        try
+        {
+            var client = _httpClientFactory.CreateClient("AgendaBuddyApi");
+            var route = AuthRouteBuilder.DeleteAccount();
+            var response = await client.DeleteAsync(route.Path, ct);
+            return response.IsSuccessStatusCode;
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+        finally
+        {
+            _secureStorage.Remove(JwtDelegatingHandler.JwtKey);
+            _secureStorage.Remove(RefreshTokenKey);
+        }
+    }
+
     public async Task<bool> RequestPasswordResetAsync(string email, CancellationToken ct = default)
     {
         var client = _httpClientFactory.CreateClient("AgendaBuddyApiNoAuth");

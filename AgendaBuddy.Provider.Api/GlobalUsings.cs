@@ -16,6 +16,7 @@ global using AgendaBuddy.Provider.Domain.Queries;
 global using AgendaBuddy.Provider.Domain.Requests;
 global using AgendaBuddy.Provider.Domain.Responses;
 global using AgendaBuddy.Provider.Extensions;
+global using AgendaBuddy.Library.Avatars;
 global using AgendaBuddy.Library.Dtos;
 global using AgendaBuddy.Library.Entities;
 global using AgendaBuddy.Library.Extensions;

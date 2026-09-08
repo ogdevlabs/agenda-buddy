@@ -63,8 +63,39 @@ public class CustomerApiService : ICustomerApiService
             Email = GetString(data, "email"),
             FirstName = GetString(data, "firstName"),
             LastName = GetString(data, "lastName"),
-            PhoneNumber = GetString(data, "phoneNumber")
+            PhoneNumber = GetString(data, "phoneNumber"),
+            AvatarId = GetString(data, "avatarId"),
+            TermsAcceptedAt = GetDateTime(data, "termsAcceptedAt"),
+            PrivacyAcceptedAt = GetDateTime(data, "privacyAcceptedAt")
         };
+    }
+
+    public async Task<bool> SetAvatarAsync(string email, string avatarId, CancellationToken ct = default)
+    {
+        var client = _httpClientFactory.CreateClient("AgendaBuddyApi");
+        var route = CustomerRouteBuilder.Avatar(email);
+        var body = JsonSerializer.Serialize(CustomerRouteBuilder.BuildAvatarPayload(avatarId));
+        var response = await client.PutAsync(route.Path, new StringContent(body, Encoding.UTF8, "application/json"), ct);
+        return response.IsSuccessStatusCode;
+    }
+
+    public async Task<bool> SetConsentAsync(
+        string email, bool acceptedTerms, bool acceptedPrivacy, CancellationToken ct = default)
+    {
+        var client = _httpClientFactory.CreateClient("AgendaBuddyApi");
+        var route = CustomerRouteBuilder.Consent(email);
+        var body = JsonSerializer.Serialize(
+            CustomerRouteBuilder.BuildConsentPayload(acceptedTerms, acceptedPrivacy));
+        var response = await client.PutAsync(route.Path, new StringContent(body, Encoding.UTF8, "application/json"), ct);
+        return response.IsSuccessStatusCode;
+    }
+
+    public async Task<bool> DeleteAccountAsync(string email, CancellationToken ct = default)
+    {
+        var client = _httpClientFactory.CreateClient("AgendaBuddyApi");
+        var route = CustomerRouteBuilder.DeleteCustomer(email);
+        var response = await client.DeleteAsync(route.Path, ct);
+        return response.IsSuccessStatusCode;
     }
 
     /// <summary>
@@ -189,6 +220,20 @@ public class CustomerApiService : ICustomerApiService
 
         return result;
     }
+
+    /// <summary>
+    /// A nullable timestamp off the wire.
+    /// </summary>
+    /// <remarks>
+    /// Absent, <c>null</c> and unparseable all read as "not accepted" — the three states are indistinguishable to
+    /// a reader and treating an unparseable value as accepted would be the one wrong answer.
+    /// </remarks>
+    private static DateTime? GetDateTime(JsonElement element, string propertyName) =>
+        element.TryGetProperty(propertyName, out var value)
+        && value.ValueKind == JsonValueKind.String
+        && value.TryGetDateTime(out var parsed)
+            ? parsed
+            : null;
 
     private static string GetString(JsonElement element, string propertyName) =>
         element.TryGetProperty(propertyName, out var value) && value.ValueKind == JsonValueKind.String

@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Choosing an avatar from the built-in set.
+
+    The CollectionView is the page's own scroller — NOT nested inside a ScrollView. A CollectionView inside a
+    ScrollView gets unbounded height, renders every item and loses virtualisation, which is what buried the
+    Professions screen's action buttons (ScrollableListNestingTest guards it).
+
+    The preview and Save are pinned above and below it, so the mark being chosen and the button that commits it are
+    both always on screen while the grid scrolls.
+-->
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:controls="clr-namespace:AgendaBuddy.MobileApp.Controls"
+             xmlns:models="clr-namespace:AgendaBuddy.MobileApp.Models"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             x:Class="AgendaBuddy.MobileApp.Views.AvatarPickerPage"
+             Title="Choose avatar"
+             BackgroundColor="{StaticResource BackgroundPage}"
+             Shell.NavBarIsVisible="False">
+
+    <ContentPage.Resources>
+        <toolkit:InvertedBoolConverter x:Key="InvertedBoolConverter" />
+    </ContentPage.Resources>
+
+    <Grid RowDefinitions="Auto,Auto,*,Auto">
+
+        <controls:BrandHeader Grid.Row="0" />
+
+        <VerticalStackLayout Grid.Row="1" Padding="20,16,20,12" Spacing="10">
+            <controls:Avatar Size="96" Source="{Binding PreviewAsset}" HorizontalOptions="Center"
+                             AutomationId="AvatarPreview" />
+            <Label Text="Pick a mark. Abstract rather than a face, so nothing about you is assumed."
+                   FontSize="12.5"
+                   TextColor="{StaticResource TextMuted}"
+                   HorizontalTextAlignment="Center" />
+            <Frame Style="{StaticResource ErrorBannerStyle}" IsVisible="{Binding HasError}" Margin="0">
+                <Label Text="{Binding ErrorMessage}" TextColor="{StaticResource Error}" FontSize="13" />
+            </Frame>
+        </VerticalStackLayout>
+
+        <CollectionView Grid.Row="2"
+                        ItemsSource="{Binding Choices}"
+                        Margin="12,0"
+                        AutomationId="AvatarGrid">
+            <CollectionView.ItemsLayout>
+                <GridItemsLayout Orientation="Vertical" Span="4"
+                                 HorizontalItemSpacing="8" VerticalItemSpacing="8" />
+            </CollectionView.ItemsLayout>
+            <CollectionView.ItemTemplate>
+                <DataTemplate x:DataType="models:AvatarChoice">
+                    <!-- The ring, not a checkmark: a tick over an abstract mark obscures the thing being chosen.
+                         Transparent stroke when unselected keeps every tile the same size, so the grid does not
+                         reflow on selection. -->
+                    <Border Padding="6"
+                            StrokeThickness="2.5"
+                            BackgroundColor="Transparent"
+                            HorizontalOptions="Center">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="34" />
+                        </Border.StrokeShape>
+                        <Border.Stroke>
+                            <Binding Path="IsSelected"
+                                     Converter="{toolkit:BoolToObjectConverter TrueObject={StaticResource Primary}, FalseObject=Transparent}" />
+                        </Border.Stroke>
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer
+                                Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.SelectCommand}"
+                                CommandParameter="{Binding .}" />
+                        </Border.GestureRecognizers>
+                        <controls:Avatar Size="58" Source="{Binding Asset}" />
+                    </Border>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <Grid Grid.Row="3" Padding="20,12,20,20" BackgroundColor="{StaticResource BackgroundPage}">
+            <controls:SafeButton Text="Save avatar"
+                    Style="{StaticResource PrimaryButton}"
+                    Command="{Binding SaveCommand}"
+                    IsVisible="{Binding IsSaving, Converter={StaticResource InvertedBoolConverter}}"
+                    AutomationId="SaveAvatarButton" />
+            <ActivityIndicator IsRunning="{Binding IsSaving}" IsVisible="{Binding IsSaving}"
+                               Color="{StaticResource Primary}" HorizontalOptions="Center" />
+        </Grid>
+
+    </Grid>
+
+</ContentPage>

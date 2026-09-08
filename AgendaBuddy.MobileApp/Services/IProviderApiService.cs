@@ -65,4 +65,30 @@ public interface IProviderApiService
     /// </returns>
     Task<AppointmentActionResult> UpdateWorkWeekAsync(
         string email, IEnumerable<WorkDayHoursDto> days, CancellationToken ct = default);
+
+    /// <summary>
+    /// Sets which built-in mark this account is drawn with, through the dedicated avatar route.
+    /// </summary>
+    /// <remarks>
+    /// A targeted write. The fetch-merge-PUT in <see cref="UpdateProfileAsync"/> replaces the whole document, and
+    /// doing so also resets every nested service's id (agenda-buddy-2wf) — changing an avatar must not be able to
+    /// damage a provider's service catalogue.
+    /// </remarks>
+    Task<bool> SetAvatarAsync(string email, string avatarId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Records acceptance — or non-acceptance — of the Terms and the Privacy Policy. The server stamps the time.
+    /// </summary>
+    Task<bool> SetConsentAsync(string email, bool acceptedTerms, bool acceptedPrivacy, CancellationToken ct = default);
+
+    /// <summary>
+    /// Erases the profile — services and embedded appointments included — and scrubs the address from the
+    /// provider's customers' records.
+    /// </summary>
+    /// <remarks>
+    /// Not <see cref="DeactivateAsync"/>, which keeps everything and only hides the provider from the directory.
+    /// The domain half only: <see cref="IAuthService.DeleteAccountAsync"/> removes the credential, and must be
+    /// called second because this call authorises off it.
+    /// </remarks>
+    Task<bool> DeleteAccountAsync(string email, CancellationToken ct = default);
 }

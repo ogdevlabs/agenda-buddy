@@ -1,0 +1,35 @@
+meta {
+  name: 7 Set avatar
+  type: http
+  seq: 7
+}
+put {
+  url: {{gatewayUrl}}/api/v1/providers/{{providerEmail}}/avatar
+  body: json
+}
+body:json {
+  {
+    "avatarId": "avatar_07"
+  }
+}
+docs {
+  Which of the 24 built-in marks this account is drawn with. `avatar_01`..`avatar_24` — the catalogue is
+  `AgendaBuddy.Library/Avatars/AvatarCatalog.cs`, shared by both sides so the client cannot offer an id the
+  server refuses.
+
+  A dedicated route rather than a field on `PUT /api/v1/providers/{email}` for the same reason
+  `5 Set work hours` is one — that route replaces the whole document, and doing so additionally resets every
+  nested `ServiceEntity.Id` to `ObjectId.Empty` (`agenda-buddy-2wf`). Changing an avatar must not be able to
+  damage a service catalogue. This one is a targeted `$set` on `avatar_id` alone.
+
+  Answers:
+  - `200` with the updated provider on success.
+  - `400` for an id the catalogue does not know (try `avatar_99`). ⚠️ **Refused, never stored** — an unknown
+    id throws nowhere, because `AvatarCatalog.Resolve` treats it as absent and falls back to a mark derived
+    from the email address, so storing it would leave the account showing its old avatar behind a `200`.
+  - `403` for another provider's email. Ownership-guarded.
+  - `404` when no provider has that email.
+
+  There is deliberately **no photo upload** yet (`agenda-buddy-5qr`). Verify with `2 Get provider by email` —
+  `avatarId` comes back, and your `services` array keeps its ids.
+}

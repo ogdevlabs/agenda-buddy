@@ -1,0 +1,42 @@
+meta {
+  name: 10 Delete account (domain half)
+  type: http
+  seq: 10
+}
+delete {
+  url: {{gatewayUrl}}/api/v1/customers/{{customerEmail}}
+  body: none
+}
+docs {
+  ⚠️ **DESTRUCTIVE, and irreversible.** Erases the customer profile and scrubs the address out of every
+  record that carries it.
+
+  **This is the domain half only. Call `0-Auth/10 Delete account (credential half)` SECOND** — the
+  credential that route deletes is what authorises this one, so the reverse order strands a live profile
+  nothing can reach to finish erasing.
+
+  What happens:
+  - The `CustomerEntity` is deleted.
+  - The account's own notifications are **deleted** (a scrubbed notification is a row addressed to nobody).
+  - The device-token registration is deleted, so nothing further is pushed to that device.
+  - Appointments, messages and payments **survive** with the address replaced by a tombstone
+    (`deleted-user-xxxxxxxx@deleted.invalid`). Deleting them would delete the *provider's* record of
+    sessions they delivered and were paid for.
+  - The provider's embedded copy of each appointment is scrubbed too — that copy is what the calendar reads.
+  - The subscription is `$pull`ed from the provider's client list, because a subscription is a live
+    relationship rather than a historical record.
+
+  One tombstone per deletion, reused across every field, so a provider still sees "one person, twenty
+  sessions" while nothing about who that was is retained. It is random rather than derived from the address:
+  a hash would stay linkable back to the person by testing guesses.
+
+  Answers:
+  - `204` on success — **and also when there was no profile to remove.** An account whose profile creation
+    failed at registration can sign in and has no profile, and that is exactly the account that must stay
+    deletable (App Review Guideline 5.1.1(v)).
+  - `403` for another account's email. Ownership-guarded.
+  - `500` if the erasure could not complete; nothing is removed, and the call is safe to retry.
+
+  Idempotent: a second call is another `204` and does not scrub the already-scrubbed rows again under a
+  fresh tombstone.
+}

@@ -99,6 +99,12 @@ public class MongoDbRepository<TEntity> : IRepository<TEntity> where TEntity : c
         return result.IsAcknowledged ? result.ModifiedCount : 0;
     }
 
+    public async Task<long> DeleteManyAsync(BsonDocument filter)
+    {
+        var result = await _collection.DeleteManyAsync(filter);
+        return result.IsAcknowledged ? result.DeletedCount : 0;
+    }
+
     /// <inheritdoc />
     /// <remarks>
     /// <c>IsUpsert</c> is left at its default of <c>false</c> and no option sets it — AC-9 depends

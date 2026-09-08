@@ -384,4 +384,30 @@ public class ProviderService(IRepository<ProviderEntity> providerRepository) : I
                 }
             });
     }
+
+    public async Task<ProviderEntity?> SetAvatarAsync(string providerEmail, string avatarId)
+    {
+        return await providerRepository.FindOneAndUpdateAsync(
+            new BsonDocument("email", providerEmail),
+            new BsonDocument("$set", new BsonDocument("avatar_id", avatarId)));
+    }
+
+    public async Task<ProviderEntity?> SetConsentAsync(
+        string providerEmail, DateTime? termsAcceptedAt, DateTime? privacyAcceptedAt)
+    {
+        return await providerRepository.FindOneAndUpdateAsync(
+            new BsonDocument("email", providerEmail),
+            new BsonDocument("$set", new BsonDocument
+            {
+                { "terms_accepted_at", ConsentTimestamp(termsAcceptedAt) },
+                { "privacy_accepted_at", ConsentTimestamp(privacyAcceptedAt) }
+            }));
+    }
+
+    /// <summary>
+    /// A consent timestamp as BSON — an explicit null for "not accepted", not an omitted field, so an unticked
+    /// box cannot leave a previous acceptance standing. See <c>CustomerService.ConsentTimestamp</c>.
+    /// </summary>
+    private static BsonValue ConsentTimestamp(DateTime? at) =>
+        at is null ? BsonNull.Value : new BsonDateTime(at.Value);
 }
