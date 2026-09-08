@@ -24,15 +24,6 @@
                   Padding="24,16,24,28"
                   RowDefinitions="Auto,Auto,Auto">
 
-                <controls:SafeButton Grid.Row="0"
-                        Text="&#x2190; Back"
-                        BackgroundColor="Transparent"
-                        TextColor="#C7D2FE"
-                        FontSize="14"
-                        HorizontalOptions="Start"
-                        Padding="4"
-                        Margin="0,0,0,12"
-                        Clicked="OnBackClicked" />
 
                 <Label Grid.Row="1"
                        Text="{Binding Appointment.ServiceName}"

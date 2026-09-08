@@ -203,10 +203,6 @@ public partial class AppointmentDetailPage : ContentPage
         return $"{service} on {appointment.ScheduledAt:ddd d MMM 'at' h:mm tt}";
     }
 
-    private async void OnBackClicked(object? sender, EventArgs e)
-    {
-        await Shell.Current.GoToAsync("..");
-    }
 
     // OnViewPaymentClicked removed with the Payment tab's button: payments are being handled outside this
     // screen. PaymentPage and its Shell route are left in place — nothing navigates to them from here now, and

@@ -37,11 +37,9 @@ public partial class EditProfileViewModel : ObservableObject
     private string _email = string.Empty;
 
     [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
     private string _firstName = string.Empty;
 
     [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
     private string _lastName = string.Empty;
 
     /// <summary>Optional contact number, editable here as well as captured at registration.</summary>
@@ -49,11 +47,9 @@ public partial class EditProfileViewModel : ObservableObject
     private string _phoneNumber = string.Empty;
 
     [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
     private bool _acceptedTerms;
 
     [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
     private bool _acceptedPrivacy;
 
     [ObservableProperty]
@@ -152,11 +148,46 @@ public partial class EditProfileViewModel : ObservableObject
     /// name back because a consent write failed would discard work the user can see succeeded.
     /// </para>
     /// </remarks>
-    [RelayCommand(CanExecute = nameof(CanSave))]
+    /// <remarks>
+    /// <para>
+    /// ⚠️ <b>The button is always tappable, and validation happens here rather than in a <c>CanExecute</c>.</b>
+    /// Two reasons, and the second one is why this changed.
+    /// </para>
+    /// <para>
+    /// First, product: a disabled button does not say what is missing. The earlier version gated Save on the two
+    /// consent boxes and left the user to work out the connection, which on a form with a scrolled-off Agreements
+    /// card is not discoverable at all.
+    /// </para>
+    /// <para>
+    /// Second, and decisively: a <c>CanExecute</c> that depends on state arriving from XAML bindings is a screen
+    /// that can get permanently stuck. On the device the two checkboxes ticked visually while Save stayed inert,
+    /// so the form could not be submitted at all — and no unit test caught it, because they all invoke
+    /// <c>ExecuteAsync</c> directly, which bypasses <c>CanExecute</c> entirely. Validating inside the handler
+    /// means the worst case is a wrong message, not an unusable screen.
+    /// </para>
+    /// </remarks>
+    [RelayCommand]
     private async Task SaveAsync()
     {
-        IsSaving = true;
         ErrorMessage = string.Empty;
+
+        // The name is what the create handlers' duplicate check discriminates on, and what every other screen
+        // shows for this account.
+        if (string.IsNullOrWhiteSpace(FirstName) || string.IsNullOrWhiteSpace(LastName))
+        {
+            ErrorMessage = "Enter your first and last name.";
+            await ToastNotifier.ShowAsync(ErrorMessage);
+            return;
+        }
+
+        if (!AcceptedTerms || !AcceptedPrivacy)
+        {
+            ErrorMessage = "Accept the Terms and Conditions and the Privacy Policy to continue.";
+            await ToastNotifier.ShowAsync(ErrorMessage);
+            return;
+        }
+
+        IsSaving = true;
 
         try
         {
@@ -206,20 +237,6 @@ public partial class EditProfileViewModel : ObservableObject
             IsSaving = false;
         }
     }
-
-    /// <summary>
-    /// A name is required, and so is agreement to both documents.
-    /// </summary>
-    /// <remarks>
-    /// Gating Save on the two checkboxes rather than letting the form submit and then complaining: an unticked box
-    /// is not an error to report, it is a decision the user has not made yet, and a disabled button next to two
-    /// unticked boxes says what is missing without a message.
-    /// </remarks>
-    private bool CanSave() =>
-        !string.IsNullOrWhiteSpace(FirstName)
-        && !string.IsNullOrWhiteSpace(LastName)
-        && AcceptedTerms
-        && AcceptedPrivacy;
 
     partial void OnErrorMessageChanged(string value) => OnPropertyChanged(nameof(HasError));
 }

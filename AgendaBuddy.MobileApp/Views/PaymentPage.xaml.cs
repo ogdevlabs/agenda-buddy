@@ -24,9 +24,5 @@ public partial class PaymentPage : ContentPage
         _viewModel.LoadCommand.Execute(null);
     }
 
-    private async void OnBackClicked(object? sender, EventArgs e)
-    {
-        await Shell.Current.GoToAsync("..");
-    }
 }
 #endif

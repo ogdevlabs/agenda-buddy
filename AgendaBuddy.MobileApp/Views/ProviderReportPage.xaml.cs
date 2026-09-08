@@ -20,9 +20,5 @@ public partial class ProviderReportPage : ContentPage
         _viewModel.LoadCommand.Execute(null);
     }
 
-    private async void OnBackClicked(object? sender, EventArgs e)
-    {
-        await Shell.Current.GoToAsync("..");
-    }
 }
 #endif

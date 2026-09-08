@@ -49,9 +49,5 @@ public partial class BookAppointmentPage : ContentPage
         await Shell.Current.GoToAsync("//dashboard");
     }
 
-    private async void OnBackClicked(object? sender, EventArgs e)
-    {
-        await Shell.Current.GoToAsync("..");
-    }
 }
 #endif

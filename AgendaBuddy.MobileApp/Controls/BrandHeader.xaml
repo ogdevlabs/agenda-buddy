@@ -93,6 +93,40 @@
         </Grid>
 
         <!--
+            Back, pinned to the LEFT edge of the same row as the centred lockup so the lockup stays centred —
+            the mirror of the badge below.
+
+            Every view in this app hides the native navigation bar, which hides the platform back button with it,
+            so before this a pushed page could only be left by the iOS edge-swipe gesture and nothing on screen
+            said so. It lives here rather than on each page because the header is the one element every non-auth
+            view carries: a new view gets a back button by existing. Visibility comes from the Shell navigation
+            depth (CanGoBack), so a tab root does not show one that would do nothing.
+
+            The hit target is the whole Border, padded well past the glyph — a 14pt chevron alone is under the
+            44pt minimum touch size.
+        -->
+        <Border Grid.Row="0"
+                IsVisible="{Binding CanGoBack, Source={x:Reference Root}}"
+                AutomationId="BrandHeaderBackButton"
+                HorizontalOptions="Start"
+                VerticalOptions="Center"
+                Margin="6,0,0,0"
+                Padding="14,10"
+                BackgroundColor="Transparent"
+                Stroke="Transparent"
+                StrokeThickness="0">
+            <Border.GestureRecognizers>
+                <TapGestureRecognizer Tapped="OnBackTapped" />
+            </Border.GestureRecognizers>
+            <Label Text="&#x2039;"
+                   FontSize="30"
+                   FontAttributes="Bold"
+                   TextColor="{StaticResource TextOnPrimary}"
+                   VerticalOptions="Center"
+                   HorizontalOptions="Center" />
+        </Border>
+
+        <!--
             The unread badge, pinned to the right edge of the same row as the centred lockup so the lockup
             stays centred. Shown ONLY when something is unread: Notifications is not a tab, so without this the
             count lived on the two screens that already knew about it, and a provider on any other screen was

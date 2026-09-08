@@ -35,30 +35,48 @@
 
                         <Label Text="Personal information" Style="{StaticResource Overline}" />
 
-                        <Frame Style="{StaticResource InputFrame}" Margin="0">
-                            <Entry Text="{Binding FirstName}" Placeholder="First name"
-                                   Style="{StaticResource InputStyle}" AutomationId="ProfileFirstNameEntry" />
-                        </Frame>
+                        <!--
+                            Every field carries a LABEL above it, not only a placeholder. A placeholder disappears
+                            the moment the field is filled, which is the normal state of an edit form — so a
+                            populated form read as three unexplained values ("Ada", "Lovelace", "+15550100") with
+                            nothing saying which was which. It is also the field's accessibility name.
+                        -->
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="First name" FontSize="12.5" TextColor="{StaticResource TextSecondary}" />
+                            <Frame Style="{StaticResource InputFrame}" Margin="0">
+                                <Entry Text="{Binding FirstName}" Placeholder="First name"
+                                       Style="{StaticResource InputStyle}" AutomationId="ProfileFirstNameEntry" />
+                            </Frame>
+                        </VerticalStackLayout>
 
-                        <Frame Style="{StaticResource InputFrame}" Margin="0">
-                            <Entry Text="{Binding LastName}" Placeholder="Last name"
-                                   Style="{StaticResource InputStyle}" AutomationId="ProfileLastNameEntry" />
-                        </Frame>
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Last name" FontSize="12.5" TextColor="{StaticResource TextSecondary}" />
+                            <Frame Style="{StaticResource InputFrame}" Margin="0">
+                                <Entry Text="{Binding LastName}" Placeholder="Last name"
+                                       Style="{StaticResource InputStyle}" AutomationId="ProfileLastNameEntry" />
+                            </Frame>
+                        </VerticalStackLayout>
 
-                        <Frame Style="{StaticResource InputFrame}" Margin="0">
-                            <Entry Text="{Binding PhoneNumber}" Placeholder="Phone (optional)" Keyboard="Telephone"
-                                   Style="{StaticResource InputStyle}" AutomationId="ProfilePhoneEntry" />
-                        </Frame>
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Phone (optional)" FontSize="12.5" TextColor="{StaticResource TextSecondary}" />
+                            <Frame Style="{StaticResource InputFrame}" Margin="0">
+                                <Entry Text="{Binding PhoneNumber}" Placeholder="Phone (optional)" Keyboard="Telephone"
+                                       Style="{StaticResource InputStyle}" AutomationId="ProfilePhoneEntry" />
+                            </Frame>
+                        </VerticalStackLayout>
 
                         <!-- Disabled, not hidden. IsEnabled=false is what stops the keyboard opening on tap; the
                              muted background is what makes it read as fixed rather than as a broken field. -->
-                        <Frame Style="{StaticResource InputFrame}" Margin="0"
-                               BackgroundColor="{StaticResource Divider}">
-                            <Entry Text="{Binding Email}" IsEnabled="False"
-                                   Style="{StaticResource InputStyle}"
-                                   TextColor="{StaticResource TextMuted}"
-                                   AutomationId="ProfileEmailEntry" />
-                        </Frame>
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Email" FontSize="12.5" TextColor="{StaticResource TextSecondary}" />
+                            <Frame Style="{StaticResource InputFrame}" Margin="0"
+                                   BackgroundColor="{StaticResource Divider}">
+                                <Entry Text="{Binding Email}" IsEnabled="False"
+                                       Style="{StaticResource InputStyle}"
+                                       TextColor="{StaticResource TextMuted}"
+                                       AutomationId="ProfileEmailEntry" />
+                            </Frame>
+                        </VerticalStackLayout>
 
                         <Label Text="Your email address cannot be changed — it is what identifies your account."
                                FontSize="12" TextColor="{StaticResource TextMuted}" />
@@ -75,7 +93,7 @@
                              so nobody has to leave this screen to find out what they are agreeing to. -->
                         <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10" AutomationId="AcceptTermsRow">
                             <CheckBox Grid.Column="0"
-                                      IsChecked="{Binding AcceptedTerms}"
+                                      IsChecked="{Binding AcceptedTerms, Mode=TwoWay}"
                                       Color="{StaticResource Primary}"
                                       VerticalOptions="Center"
                                       AutomationId="AcceptTermsCheckBox" />
@@ -97,7 +115,7 @@
 
                         <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10" AutomationId="AcceptPrivacyRow">
                             <CheckBox Grid.Column="0"
-                                      IsChecked="{Binding AcceptedPrivacy}"
+                                      IsChecked="{Binding AcceptedPrivacy, Mode=TwoWay}"
                                       Color="{StaticResource Primary}"
                                       VerticalOptions="Center"
                                       AutomationId="AcceptPrivacyCheckBox" />

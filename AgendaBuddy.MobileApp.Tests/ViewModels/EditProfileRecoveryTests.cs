@@ -245,29 +245,65 @@ public class EditProfileRecoveryTests
     [Theory]
     [InlineData("", "Lovelace")]
     [InlineData("Ada", "  ")]
-    public void SavingIsBlockedWithoutAName(string firstName, string lastName)
+    public async Task SavingWithoutANameIsRefusedAndWritesNothing(string firstName, string lastName)
     {
-        var vm = Create(true, out _, out _, updateSucceeds: true);
+        var vm = Create(true, out var provider, out _, updateSucceeds: true);
         vm.FirstName = firstName;
         vm.LastName = lastName;
 
-        Assert.False(vm.SaveCommand.CanExecute(null));
+        await vm.SaveCommand.ExecuteAsync(null);
+
+        Assert.Contains("name", vm.ErrorMessage, StringComparison.OrdinalIgnoreCase);
+        provider.Verify(p => p.UpdateProfileAsync(
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            Times.Never);
     }
 
     /// <summary>
-    /// Save is gated on both boxes rather than validated after the fact: an unticked box is a decision not yet
-    /// made, and a disabled button beside it says what is missing without a message.
+    /// ⚠️ <b>Validated in the handler, not by a disabled button — and the test goes through the command.</b>
+    /// The earlier version gated Save with a <c>CanExecute</c>, which on the device left the screen permanently
+    /// unusable: the two checkboxes ticked visually while Save stayed inert, so the form could not be submitted at
+    /// all. No test caught it, because every one of them called <c>ExecuteAsync</c> directly and so bypassed
+    /// <c>CanExecute</c> entirely. These assert the refusal is a <b>message</b>, which is both discoverable to a
+    /// user and reachable by a test.
     /// </summary>
     [Theory]
     [InlineData(false, true)]
     [InlineData(true, false)]
     [InlineData(false, false)]
-    public void SavingIsBlockedUntilBothAgreementsAreAccepted(bool acceptedTerms, bool acceptedPrivacy)
+    public async Task SavingWithoutBothAgreementsIsRefusedWithAMessageAndWritesNothing(
+        bool acceptedTerms, bool acceptedPrivacy)
+    {
+        var vm = Create(true, out var provider, out _, updateSucceeds: true);
+        vm.AcceptedTerms = acceptedTerms;
+        vm.AcceptedPrivacy = acceptedPrivacy;
+
+        await vm.SaveCommand.ExecuteAsync(null);
+
+        Assert.True(vm.HasError);
+        Assert.Contains("Terms", vm.ErrorMessage, StringComparison.Ordinal);
+        Assert.Contains("Privacy", vm.ErrorMessage, StringComparison.Ordinal);
+        provider.Verify(p => p.UpdateProfileAsync(
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+        provider.Verify(p => p.SetConsentAsync(
+            It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    /// <summary>
+    /// ⚠️ <b>The button must never be inert.</b> This is the regression test for the stuck screen: whatever the
+    /// state of the form, the command is executable, so a tap always produces either a save or an explanation.
+    /// </summary>
+    [Theory]
+    [InlineData(true, true)]
+    [InlineData(false, false)]
+    public void SaveIsAlwaysExecutable(bool acceptedTerms, bool acceptedPrivacy)
     {
         var vm = Create(true, out _, out _, updateSucceeds: true);
         vm.AcceptedTerms = acceptedTerms;
         vm.AcceptedPrivacy = acceptedPrivacy;
+        vm.FirstName = string.Empty;
 
-        Assert.False(vm.SaveCommand.CanExecute(null));
+        Assert.True(vm.SaveCommand.CanExecute(null));
     }
 }

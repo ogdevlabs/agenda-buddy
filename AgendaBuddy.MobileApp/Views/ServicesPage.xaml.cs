@@ -34,10 +34,6 @@ public partial class ServicesPage : ContentPage
             await _viewModel.RemoveConfirmedAsync(service);
     }
 
-    private async void OnBackClicked(object? sender, EventArgs e)
-    {
-        await Shell.Current.GoToAsync("..");
-    }
 
     private async void OnAddServiceClicked(object? sender, EventArgs e)
     {
