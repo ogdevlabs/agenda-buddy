@@ -7,10 +7,19 @@ using Xunit;
 namespace AgendaBuddy.MobileApp.Tests.ViewModels;
 
 /// <summary>
-/// A provider sets their own calendar day. The end hour is exclusive, so the pickers and the saved payload
-/// have to agree on what "day ends at 17:00" means, and a window that opens at or after it closes has to be
-/// refused rather than quietly corrected.
+/// A provider sets their own working week — seven rows, one per weekday.
 /// </summary>
+/// <remarks>
+/// <para>
+/// The end hour is exclusive, so the pickers and the saved payload have to agree on what "ends at 17:00" means,
+/// and a day that opens at or after it closes has to be refused rather than quietly corrected.
+/// </para>
+/// <para>
+/// The load-bearing assertion in here is the FALLBACK: every provider stored before per-weekday hours existed has
+/// an empty week, and the rows have to be seeded from their single pair. Otherwise this screen opens as seven
+/// blanks and saving turns it into a change they never intended.
+/// </para>
+/// </remarks>
 public class CalendarSettingsViewModelTests
 {
     private const string Email = "coach@example.com";
@@ -30,59 +39,129 @@ public class CalendarSettingsViewModelTests
         Mock<IProviderApiService> providerApi, bool isProvider = true) =>
         new(providerApi.Object, Session(isProvider).Object);
 
-    private static Mock<IProviderApiService> Api(WorkHours? stored)
+    private static Mock<IProviderApiService> Api(
+        WorkHours? stored, List<WorkDayHoursDto>? week = null, AppointmentActionResult? saveResult = null)
     {
         var api = new Mock<IProviderApiService>();
         api.Setup(p => p.GetWorkHoursAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
            .ReturnsAsync(stored);
-        api.Setup(p => p.UpdateWorkHoursAsync(It.IsAny<string>(), It.IsAny<WorkHours>(), It.IsAny<CancellationToken>()))
-           .ReturnsAsync(true);
+        api.Setup(p => p.GetWorkWeekAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+           .ReturnsAsync(week ?? []);
+        api.Setup(p => p.UpdateWorkWeekAsync(
+                It.IsAny<string>(), It.IsAny<IEnumerable<WorkDayHoursDto>>(), It.IsAny<CancellationToken>()))
+           .ReturnsAsync(saveResult ?? AppointmentActionResult.Done());
         return api;
     }
 
-    [Fact]
-    public void BeforeAnythingLoadsTheWindowIsTheStandardEightToFive()
-    {
-        var vm = Build(Api(null));
+    private static WorkDayRow Day(CalendarSettingsViewModel vm, DayOfWeek day) =>
+        vm.Days.Single(row => row.Day == day);
 
-        Assert.Equal(8, vm.StartHour);
-        Assert.Equal(17, vm.EndHour);
+    [Fact]
+    public void SevenRowsAreOfferedMondayFirst()
+    {
+        var vm = Build(Api(WorkHours.Default));
+
+        Assert.Equal(7, vm.Days.Count);
+        Assert.Equal(DayOfWeek.Monday, vm.Days[0].Day);
+        Assert.Equal(DayOfWeek.Sunday, vm.Days[^1].Day);
+    }
+
+    [Fact]
+    public void BeforeAnythingLoadsEveryDayIsTheStandardEightToFive()
+    {
+        var vm = Build(Api(WorkHours.Default));
+
+        Assert.All(vm.Days, day =>
+        {
+            Assert.Equal(8, day.StartHour);
+            Assert.Equal(17, day.EndHour);
+            Assert.False(day.IsClosed);
+        });
     }
 
     [Fact]
     public void ThePickersCoverEveryHourAStartAndAnEndCanTake()
     {
-        var vm = Build(Api(null));
+        var vm = Build(Api(WorkHours.Default));
 
-        // A day cannot start at 24:00, and cannot end at 00:00.
         Assert.Equal(24, vm.StartHourOptions.Count);
         Assert.Equal("00:00", vm.StartHourOptions[0]);
-        Assert.Equal("23:00", vm.StartHourOptions[23]);
+        Assert.Equal("23:00", vm.StartHourOptions[^1]);
 
+        // The end runs to 24:00, which means midnight — a day CAN end there, but cannot start there.
         Assert.Equal(24, vm.EndHourOptions.Count);
         Assert.Equal("01:00", vm.EndHourOptions[0]);
-        Assert.Equal("24:00", vm.EndHourOptions[23]);
+        Assert.Equal("24:00", vm.EndHourOptions[^1]);
     }
 
+    /// <summary>
+    /// The fallback. A provider who has only ever set the single pair must see THAT on every row, not blanks.
+    /// </summary>
     [Fact]
-    public async Task LoadingShowsTheStoredWindow()
+    public async Task AnEmptyStoredWeekIsSeededFromTheSinglePair()
     {
-        var vm = Build(Api(new WorkHours(6, 14)));
+        var vm = Build(Api(new WorkHours(10, 15), week: []));
 
         await vm.LoadCommand.ExecuteAsync(null);
 
-        Assert.Equal(6, vm.StartHour);
-        Assert.Equal(14, vm.EndHour);
-        Assert.Equal(6, vm.StartHourIndex);
-        // The end options begin at 01:00, so the index trails the hour by one.
-        Assert.Equal(13, vm.EndHourIndex);
-        Assert.False(vm.HasError);
+        Assert.All(vm.Days, day =>
+        {
+            Assert.Equal(10, day.StartHour);
+            Assert.Equal(15, day.EndHour);
+        });
+    }
+
+    [Fact]
+    public async Task AStoredWeekdayWinsOverTheFallbackForThatDayOnly()
+    {
+        var vm = Build(Api(
+            new WorkHours(9, 17),
+            week: [new WorkDayHoursDto(DayOfWeek.Saturday, 7, 11, false)]));
+
+        await vm.LoadCommand.ExecuteAsync(null);
+
+        Assert.Equal(7, Day(vm, DayOfWeek.Saturday).StartHour);
+        Assert.Equal(11, Day(vm, DayOfWeek.Saturday).EndHour);
+
+        Assert.Equal(9, Day(vm, DayOfWeek.Monday).StartHour);
+        Assert.Equal(17, Day(vm, DayOfWeek.Monday).EndHour);
+    }
+
+    [Fact]
+    public async Task AStoredClosedDayLoadsAsClosed()
+    {
+        var vm = Build(Api(
+            WorkHours.Default,
+            week: [new WorkDayHoursDto(DayOfWeek.Sunday, null, null, true)]));
+
+        await vm.LoadCommand.ExecuteAsync(null);
+
+        Assert.True(Day(vm, DayOfWeek.Sunday).IsClosed);
+        Assert.False(Day(vm, DayOfWeek.Monday).IsClosed);
+    }
+
+    /// <summary>
+    /// An unusable stored pair is treated as unconfigured rather than as closed, matching the server: a provider
+    /// silently unbookable is worse than one on their fallback hours.
+    /// </summary>
+    [Fact]
+    public async Task AnUnusableStoredDayFallsBackRatherThanClosingIt()
+    {
+        var vm = Build(Api(
+            new WorkHours(9, 17),
+            week: [new WorkDayHoursDto(DayOfWeek.Tuesday, 17, 9, false)]));
+
+        await vm.LoadCommand.ExecuteAsync(null);
+
+        Assert.False(Day(vm, DayOfWeek.Tuesday).IsClosed);
+        Assert.Equal(9, Day(vm, DayOfWeek.Tuesday).StartHour);
+        Assert.Equal(17, Day(vm, DayOfWeek.Tuesday).EndHour);
     }
 
     [Fact]
     public async Task AProviderWhoCannotBeReadSeesAnErrorRatherThanInventedHours()
     {
-        var vm = Build(Api(null));
+        var vm = Build(Api(stored: null));
 
         await vm.LoadCommand.ExecuteAsync(null);
 
@@ -94,8 +173,7 @@ public class CalendarSettingsViewModelTests
     {
         var api = new Mock<IProviderApiService>();
         api.Setup(p => p.GetWorkHoursAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-           .ThrowsAsync(new HttpRequestException("gateway down"));
-
+           .ThrowsAsync(new HttpRequestException("down"));
         var vm = Build(api);
 
         await vm.LoadCommand.ExecuteAsync(null);
@@ -103,113 +181,209 @@ public class CalendarSettingsViewModelTests
         Assert.True(vm.HasError);
     }
 
+    /// <summary>
+    /// Every one of the seven rows is sent, so a weekday left on its fallback is stored explicitly rather than
+    /// left to inherit — otherwise saving a week would silently leave gaps behind.
+    /// </summary>
     [Fact]
-    public async Task SavingSendsTheHoursThePickersShow()
+    public async Task SavingSendsAllSevenDaysAsTheRowsShowThem()
     {
-        var api = Api(new WorkHours(8, 17));
-        WorkHours? sent = null;
-        api.Setup(p => p.UpdateWorkHoursAsync(Email, It.IsAny<WorkHours>(), It.IsAny<CancellationToken>()))
-           .Callback<string, WorkHours, CancellationToken>((_, hours, _) => sent = hours)
-           .ReturnsAsync(true);
+        List<WorkDayHoursDto>? sent = null;
+        var api = Api(WorkHours.Default);
+        api.Setup(p => p.UpdateWorkWeekAsync(
+                It.IsAny<string>(), It.IsAny<IEnumerable<WorkDayHoursDto>>(), It.IsAny<CancellationToken>()))
+           .Callback<string, IEnumerable<WorkDayHoursDto>, CancellationToken>((_, days, _) => sent = days.ToList())
+           .ReturnsAsync(AppointmentActionResult.Done());
 
         var vm = Build(api);
-        vm.StartHourIndex = 10;   // 10:00
-        vm.EndHourIndex = 18;     // 19:00
+        await vm.LoadCommand.ExecuteAsync(null);
+
+        Day(vm, DayOfWeek.Monday).StartHourIndex = 6;    // 06:00
+        Day(vm, DayOfWeek.Monday).EndHourIndex = 11;     // 12:00 — the options start at 1
+        Day(vm, DayOfWeek.Sunday).IsClosed = true;
 
         await vm.SaveCommand.ExecuteAsync(null);
 
-        Assert.Equal(new WorkHours(10, 19), sent);
+        Assert.NotNull(sent);
+        Assert.Equal(7, sent!.Count);
+
+        var monday = sent.Single(day => day.Day == DayOfWeek.Monday);
+        Assert.Equal(6, monday.StartHour);
+        Assert.Equal(12, monday.EndHour);
+        Assert.False(monday.IsClosed);
+
+        Assert.True(sent.Single(day => day.Day == DayOfWeek.Sunday).IsClosed);
     }
 
     [Fact]
     public async Task SavingRaisesSavedSoThePageCanReturnToTheCalendar()
     {
-        var vm = Build(Api(new WorkHours(8, 17)));
-        var raised = 0;
-        vm.Saved += (_, _) => raised++;
+        var vm = Build(Api(WorkHours.Default));
+        var raised = false;
+        vm.Saved += (_, _) => raised = true;
 
+        await vm.LoadCommand.ExecuteAsync(null);
         await vm.SaveCommand.ExecuteAsync(null);
 
-        Assert.Equal(1, raised);
+        Assert.True(raised);
     }
 
+    /// <summary>
+    /// The server names WHICH weekday it refused, and that message has to reach the banner — it cannot be
+    /// reconstructed here.
+    /// </summary>
     [Fact]
-    public async Task ARejectedSaveKeepsThePageOpenAndSaysSo()
+    public async Task ARejectedSaveShowsTheServersOwnReason()
     {
-        var api = Api(new WorkHours(8, 17));
-        api.Setup(p => p.UpdateWorkHoursAsync(It.IsAny<string>(), It.IsAny<WorkHours>(), It.IsAny<CancellationToken>()))
-           .ReturnsAsync(false);
+        var vm = Build(Api(
+            WorkHours.Default,
+            saveResult: new AppointmentActionResult(
+                false, "These days do not describe a usable window: Wednesday.")));
 
-        var vm = Build(api);
-        var raised = 0;
-        vm.Saved += (_, _) => raised++;
-
+        await vm.LoadCommand.ExecuteAsync(null);
         await vm.SaveCommand.ExecuteAsync(null);
 
-        Assert.Equal(0, raised);
         Assert.True(vm.HasError);
+        Assert.Contains("Wednesday", vm.ErrorMessage);
     }
 
     [Fact]
     public async Task AnUnreachableServerKeepsThePageOpenToo()
     {
-        var api = Api(new WorkHours(8, 17));
-        api.Setup(p => p.UpdateWorkHoursAsync(It.IsAny<string>(), It.IsAny<WorkHours>(), It.IsAny<CancellationToken>()))
-           .ThrowsAsync(new HttpRequestException("gateway down"));
+        var vm = Build(Api(WorkHours.Default, saveResult: AppointmentActionResult.Unreachable()));
 
-        var vm = Build(api);
-        var raised = 0;
-        vm.Saved += (_, _) => raised++;
-
+        await vm.LoadCommand.ExecuteAsync(null);
         await vm.SaveCommand.ExecuteAsync(null);
 
-        Assert.Equal(0, raised);
         Assert.True(vm.HasError);
     }
 
     [Theory]
-    [InlineData(17, 7)]   // start 17:00, end 08:00
-    [InlineData(9, 8)]    // start 09:00, end 09:00
-    [InlineData(23, 0)]   // start 23:00, end 01:00
-    public void AWindowThatDoesNotOpenBeforeItClosesCannotBeSaved(int startIndex, int endIndex)
+    [InlineData(17, 8)]   // 17:00 to 09:00 — the end index is one behind the hour
+    [InlineData(9, 8)]    // 09:00 to 09:00
+    public async Task ADayThatDoesNotOpenBeforeItClosesBlocksTheWholeSave(int startIndex, int endIndex)
     {
-        var vm = Build(Api(new WorkHours(8, 17)));
-        vm.StartHourIndex = startIndex;
-        vm.EndHourIndex = endIndex;
+        var vm = Build(Api(WorkHours.Default));
+        await vm.LoadCommand.ExecuteAsync(null);
 
-        Assert.False(vm.IsWindowValid);
+        Day(vm, DayOfWeek.Wednesday).StartHourIndex = startIndex;
+        Day(vm, DayOfWeek.Wednesday).EndHourIndex = endIndex;
+
+        Assert.False(Day(vm, DayOfWeek.Wednesday).IsValid);
+        Assert.False(vm.IsWeekValid);
         Assert.False(vm.SaveCommand.CanExecute(null));
-        Assert.Contains("start before it ends", vm.WindowSummary);
+
+        // Named per day, so the provider is told which one is wrong rather than that something is.
+        Assert.Contains("Wednesday", Day(vm, DayOfWeek.Wednesday).ErrorMessage);
     }
 
+    /// <summary>A closed day has no window, so it cannot be the invalid one.</summary>
     [Fact]
-    public void AValidWindowCanBeSavedAndIsDescribedBackToTheProvider()
+    public async Task ClosingAnInvalidDayMakesTheWeekSaveable()
     {
-        var vm = Build(Api(new WorkHours(8, 17)));
-        vm.StartHourIndex = 9;    // 09:00
-        vm.EndHourIndex = 17;     // 18:00
+        var vm = Build(Api(WorkHours.Default));
+        await vm.LoadCommand.ExecuteAsync(null);
 
-        Assert.True(vm.IsWindowValid);
+        Day(vm, DayOfWeek.Wednesday).StartHourIndex = 17;
+        Day(vm, DayOfWeek.Wednesday).EndHourIndex = 8;
+        Assert.False(vm.IsWeekValid);
+
+        Day(vm, DayOfWeek.Wednesday).IsClosed = true;
+
+        Assert.True(vm.IsWeekValid);
         Assert.True(vm.SaveCommand.CanExecute(null));
-        Assert.Equal("Bookable 09:00 to 18:00, 9 hours a day.", vm.WindowSummary);
     }
 
     [Fact]
-    public void AWindowEndingAtMidnightIsValid()
+    public async Task ADayEndingAtMidnightIsValid()
     {
-        var vm = Build(Api(new WorkHours(8, 17)));
-        vm.StartHourIndex = 20;
-        vm.EndHourIndex = 23;     // 24:00
+        var vm = Build(Api(WorkHours.Default));
+        await vm.LoadCommand.ExecuteAsync(null);
 
-        Assert.Equal(24, vm.EndHour);
-        Assert.True(vm.IsWindowValid);
-        Assert.Equal("Bookable 20:00 to 24:00, 4 hours a day.", vm.WindowSummary);
+        Day(vm, DayOfWeek.Friday).StartHourIndex = 20;
+        Day(vm, DayOfWeek.Friday).EndHourIndex = 23;    // 24:00
+
+        Assert.Equal(24, Day(vm, DayOfWeek.Friday).EndHour);
+        Assert.True(Day(vm, DayOfWeek.Friday).IsValid);
+    }
+
+    /// <summary>
+    /// Closing a day keeps its hours, so re-opening it does not mean re-entering them.
+    /// </summary>
+    [Fact]
+    public async Task ClosingAndReopeningADayKeepsItsHours()
+    {
+        var vm = Build(Api(new WorkHours(11, 14)));
+        await vm.LoadCommand.ExecuteAsync(null);
+
+        var monday = Day(vm, DayOfWeek.Monday);
+        monday.IsClosed = true;
+        monday.IsClosed = false;
+
+        Assert.Equal(11, monday.StartHour);
+        Assert.Equal(14, monday.EndHour);
+    }
+
+    /// <summary>
+    /// Without this, setting up a normal week is fourteen pickers.
+    /// </summary>
+    [Fact]
+    public async Task CopyingTheFirstOpenDaySpreadsItsHoursToEveryOtherOpenDay()
+    {
+        var vm = Build(Api(WorkHours.Default));
+        await vm.LoadCommand.ExecuteAsync(null);
+
+        Day(vm, DayOfWeek.Sunday).IsClosed = true;
+        Day(vm, DayOfWeek.Monday).StartHourIndex = 6;
+        Day(vm, DayOfWeek.Monday).EndHourIndex = 11;    // 12:00
+
+        await vm.CopyFirstDayToAllCommand.ExecuteAsync(null);
+
+        foreach (var day in vm.Days.Where(day => !day.IsClosed))
+        {
+            Assert.Equal(6, day.StartHour);
+            Assert.Equal(12, day.EndHour);
+        }
+
+        // A closed day is left closed: "copy hours" is not an instruction to start working that day.
+        Assert.True(Day(vm, DayOfWeek.Sunday).IsClosed);
+    }
+
+    /// <summary>
+    /// Warned about, not blocked — a provider may genuinely be shutting up shop for a while.
+    /// </summary>
+    [Fact]
+    public async Task AWeekWithEveryDayClosedIsSaveableButFlagged()
+    {
+        var vm = Build(Api(WorkHours.Default));
+        await vm.LoadCommand.ExecuteAsync(null);
+
+        foreach (var day in vm.Days) day.IsClosed = true;
+
+        Assert.True(vm.IsFullyClosed);
+        Assert.True(vm.IsWeekValid);
+        Assert.True(vm.SaveCommand.CanExecute(null));
+    }
+
+    /// <summary>
+    /// The summary names the CLOSED days: a provider scanning it is checking they have not shut one by accident,
+    /// which is the mistake that costs bookings silently.
+    /// </summary>
+    [Fact]
+    public async Task TheSummaryNamesTheClosedDays()
+    {
+        var vm = Build(Api(WorkHours.Default));
+        await vm.LoadCommand.ExecuteAsync(null);
+
+        Day(vm, DayOfWeek.Sunday).IsClosed = true;
+
+        Assert.Contains("Sun", vm.WeekSummary);
     }
 
     [Fact]
     public async Task OnlyAProviderHasACalendarToConfigure()
     {
-        var vm = Build(Api(new WorkHours(8, 17)), isProvider: false);
+        var vm = Build(Api(WorkHours.Default), isProvider: false);
 
         await vm.LoadCommand.ExecuteAsync(null);
 

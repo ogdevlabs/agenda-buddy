@@ -30,6 +30,10 @@ builder.Services.AddMediatR(cfg =>
     cfg.RegisterServicesFromAssemblies(typeof(Program).Assembly, typeof(BookingAppointmentCommandHandler).Assembly));
 builder.Services.AddEventStore();
 
+// Completion is a fact about the clock, not a claim somebody makes: the appointment page no longer has a
+// Complete button, so without this nothing would ever complete at all.
+builder.Services.AddHostedService<AppointmentAutoCompletionService>();
+
 // Add services required to support using MVC's model binders
 builder.Services.AddMvcCore();
 

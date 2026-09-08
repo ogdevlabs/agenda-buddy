@@ -1,5 +1,6 @@
 // Global using directives
 
+global using System.Text.Json;
 global using AgendaBuddy.Calendar.Domain.Queries;
 global using AgendaBuddy.EventAndCommands.Events.Calendar;
 global using AgendaBuddy.EventAndCommands.Persistence;

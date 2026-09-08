@@ -2,11 +2,6 @@ namespace AgendaBuddy.Library.Tools;
 
 public static class SupportTools<TEntity> where TEntity : class
 {
-    public static BsonDocument FilterByNameAndLastName(string firstName, string lastName)
-    {
-        return new BsonDocument("first_name", firstName).Add("last_name", lastName);
-    }
-
     public static BsonDocument FilterByIdentifier(string identifier)
     {
         return new BsonDocument("identifier", identifier);

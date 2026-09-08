@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    A provider's time off: travel, holiday, anything personal. A time RANGE, which is the whole point — the
+    mechanism this replaces was a whole-day flag, so an afternoon off cost the entire day.
+
+    Removal is a first-class action, not something to re-do by editing: a cancelled trip that still blocks the
+    calendar costs bookings the provider never meant to refuse.
+
+    The Save button sits OUTSIDE the scroller (PinnedActionTest). The blocks list is a BindableLayout rather than a
+    CollectionView because it shares a ScrollView with the add form, and a virtualizing list nested in a scroller
+    gets unbounded height and buries whatever follows it (ScrollableListNestingTest).
+-->
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:controls="clr-namespace:AgendaBuddy.MobileApp.Controls"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             x:Class="AgendaBuddy.MobileApp.Views.TimeOffPage"
+             x:Name="ThisPage"
+             Title="Time Off"
+             BackgroundColor="{StaticResource BackgroundPage}"
+             Shell.NavBarIsVisible="False"
+             NavigationPage.HasNavigationBar="False">
+
+    <ContentPage.Resources>
+        <toolkit:InvertedBoolConverter x:Key="InvertedBoolConverter" />
+    </ContentPage.Resources>
+
+    <Grid RowDefinitions="Auto,*">
+
+        <controls:BrandHeader Grid.Row="0" />
+
+        <Grid Grid.Row="1" RowDefinitions="Auto,Auto,*,Auto" Padding="20,12,20,16" RowSpacing="12">
+
+            <Grid Grid.Row="0" ColumnDefinitions="Auto,*">
+                <controls:SafeButton Grid.Column="0" Text="&#x2190; Back" BackgroundColor="Transparent"
+                        TextColor="{StaticResource Primary}" FontSize="14" HorizontalOptions="Start"
+                        Padding="4" Clicked="OnBackClicked" />
+                <Label Grid.Column="1" Text="Time Off" FontSize="22" FontAttributes="Bold"
+                       TextColor="{StaticResource TextPrimary}" VerticalOptions="Center" Margin="8,0,0,0" />
+            </Grid>
+
+            <VerticalStackLayout Grid.Row="1" Spacing="8">
+                <Frame Style="{StaticResource ErrorBannerStyle}" IsVisible="{Binding HasError}">
+                    <Label Text="{Binding ErrorMessage}" TextColor="{StaticResource Error}" FontSize="14"
+                           AutomationId="TimeOffErrorMessage" />
+                </Frame>
+
+                <ActivityIndicator IsRunning="{Binding IsLoading}" IsVisible="{Binding IsLoading}"
+                                   Color="{StaticResource Primary}" HorizontalOptions="Center" />
+            </VerticalStackLayout>
+
+            <RefreshView Grid.Row="2" IsRefreshing="{Binding IsRefreshing}"
+                         Command="{Binding RefreshCommand}">
+                <ScrollView>
+                    <VerticalStackLayout Spacing="14">
+
+                        <!-- ADD. First, because the reason somebody opens this screen is usually to book time
+                             off rather than to audit what they already have. -->
+                        <Frame CornerRadius="16" BackgroundColor="White"
+                               BorderColor="{StaticResource BorderLight}" HasShadow="True" Padding="16">
+                            <VerticalStackLayout Spacing="12">
+                                <Label Text="BLOCK SOME TIME" FontSize="11"
+                                       TextColor="{StaticResource TextMuted}" CharacterSpacing="1.5" />
+
+                                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                                    <Label Grid.Column="0" Text="Whole days" FontSize="14"
+                                           VerticalOptions="Center"
+                                           TextColor="{StaticResource TextPrimary}" />
+                                    <Switch Grid.Column="1" IsToggled="{Binding IsAllDay}"
+                                            OnColor="{StaticResource Primary}"
+                                            AutomationId="TimeOffAllDaySwitch" />
+                                </Grid>
+
+                                <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                                    <VerticalStackLayout Grid.Column="0" Spacing="4">
+                                        <Label Text="From" FontSize="13"
+                                               TextColor="{StaticResource TextMuted}" />
+                                        <Frame Style="{StaticResource InputFrame}" Margin="0">
+                                            <DatePicker Date="{Binding StartDate}"
+                                                        TextColor="{StaticResource TextPrimary}"
+                                                        AutomationId="TimeOffStartDatePicker" />
+                                        </Frame>
+                                    </VerticalStackLayout>
+                                    <VerticalStackLayout Grid.Column="1" Spacing="4">
+                                        <Label Text="To" FontSize="13"
+                                               TextColor="{StaticResource TextMuted}" />
+                                        <Frame Style="{StaticResource InputFrame}" Margin="0">
+                                            <DatePicker Date="{Binding EndDate}"
+                                                        TextColor="{StaticResource TextPrimary}"
+                                                        AutomationId="TimeOffEndDatePicker" />
+                                        </Frame>
+                                    </VerticalStackLayout>
+                                </Grid>
+
+                                <!-- Only for a part-day block; a whole-day one runs midnight to midnight and
+                                     must not make the provider set that by hand. -->
+                                <Grid ColumnDefinitions="*,*" ColumnSpacing="10"
+                                      IsVisible="{Binding ShowTimePickers}">
+                                    <VerticalStackLayout Grid.Column="0" Spacing="4">
+                                        <Label Text="Starts at" FontSize="13"
+                                               TextColor="{StaticResource TextMuted}" />
+                                        <Frame Style="{StaticResource InputFrame}" Margin="0">
+                                            <TimePicker Time="{Binding StartTime}"
+                                                        TextColor="{StaticResource TextPrimary}"
+                                                        AutomationId="TimeOffStartTimePicker" />
+                                        </Frame>
+                                    </VerticalStackLayout>
+                                    <VerticalStackLayout Grid.Column="1" Spacing="4">
+                                        <Label Text="Ends at" FontSize="13"
+                                               TextColor="{StaticResource TextMuted}" />
+                                        <Frame Style="{StaticResource InputFrame}" Margin="0">
+                                            <TimePicker Time="{Binding EndTime}"
+                                                        TextColor="{StaticResource TextPrimary}"
+                                                        AutomationId="TimeOffEndTimePicker" />
+                                        </Frame>
+                                    </VerticalStackLayout>
+                                </Grid>
+
+                                <VerticalStackLayout Spacing="4">
+                                    <Label Text="Reason (only you see this)" FontSize="13"
+                                           TextColor="{StaticResource TextMuted}" />
+                                    <Frame Style="{StaticResource InputFrame}" Margin="0">
+                                        <Entry Text="{Binding Reason}" Placeholder="Holiday, travel, personal…"
+                                               MaxLength="200"
+                                               TextColor="{StaticResource TextPrimary}"
+                                               AutomationId="TimeOffReasonEntry" />
+                                    </Frame>
+                                </VerticalStackLayout>
+
+                                <Label Text="{Binding RangeSummary}" FontSize="13"
+                                       TextColor="{Binding IsRangeValid, Converter={toolkit:BoolToObjectConverter TrueObject={StaticResource TextSecondary}, FalseObject={StaticResource Error}}}"
+                                       AutomationId="TimeOffRangeSummary" />
+
+                                <!-- What blocking this range would cost, BEFORE saving. Without it the provider
+                                     meets a refusal they could have seen coming. -->
+                                <controls:SafeButton Text="Check for booked sessions"
+                                        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
+                                        FontSize="13" HorizontalOptions="Start" Padding="0"
+                                        Command="{Binding CheckConflictsCommand}"
+                                        AutomationId="CheckConflictsButton" />
+
+                                <Frame IsVisible="{Binding HasConflicts}" BackgroundColor="#FFFBEB"
+                                       BorderColor="#F59E0B" CornerRadius="12" HasShadow="False"
+                                       Padding="12">
+                                    <Label Text="{Binding ConflictMessage}" FontSize="12"
+                                           TextColor="{StaticResource TextPrimary}"
+                                           AutomationId="TimeOffConflictMessage" />
+                                </Frame>
+                            </VerticalStackLayout>
+                        </Frame>
+
+                        <!-- EXISTING. -->
+                        <Label Text="UPCOMING TIME OFF" FontSize="11"
+                               TextColor="{StaticResource TextMuted}" CharacterSpacing="1.5"
+                               IsVisible="{Binding HasBlocks}" />
+
+                        <VerticalStackLayout BindableLayout.ItemsSource="{Binding Blocks}" Spacing="8">
+                            <BindableLayout.ItemTemplate>
+                                <DataTemplate>
+                                    <Frame CornerRadius="12" BackgroundColor="White"
+                                           BorderColor="{StaticResource BorderLight}" HasShadow="False"
+                                           Padding="14">
+                                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                                            <VerticalStackLayout Grid.Column="0" Spacing="2">
+                                                <Label Text="{Binding RangeLabel}" FontSize="14"
+                                                       FontAttributes="Bold"
+                                                       TextColor="{StaticResource TextPrimary}" />
+                                                <Label Text="{Binding Reason}"
+                                                       IsVisible="{Binding HasReason}"
+                                                       FontSize="12"
+                                                       TextColor="{StaticResource TextMuted}" />
+                                            </VerticalStackLayout>
+                                            <controls:SafeButton Grid.Column="1" Text="Remove"
+                                                    BackgroundColor="Transparent"
+                                                    TextColor="{StaticResource Error}"
+                                                    FontSize="13" Padding="8,4"
+                                                    Command="{Binding Source={x:Reference ThisPage}, Path=BindingContext.RemoveCommand}"
+                                                    CommandParameter="{Binding}"
+                                                    AutomationId="RemoveTimeOffButton" />
+                                        </Grid>
+                                    </Frame>
+                                </DataTemplate>
+                            </BindableLayout.ItemTemplate>
+                        </VerticalStackLayout>
+
+                        <!-- Empty state says what the feature is FOR, not just that there is nothing here. -->
+                        <Frame IsVisible="{Binding ShowEmptyState}" BackgroundColor="#F8FAFC"
+                               BorderColor="{StaticResource BorderLight}" CornerRadius="12"
+                               HasShadow="False" Padding="16">
+                            <VerticalStackLayout Spacing="4">
+                                <Label Text="No time off booked" FontSize="14" FontAttributes="Bold"
+                                       TextColor="{StaticResource TextPrimary}"
+                                       AutomationId="TimeOffEmptyState" />
+                                <Label Text="Block a holiday, a trip, or a few hours for something personal. Customers simply will not see those times as available."
+                                       FontSize="13" TextColor="{StaticResource TextMuted}" />
+                            </VerticalStackLayout>
+                        </Frame>
+
+                    </VerticalStackLayout>
+                </ScrollView>
+            </RefreshView>
+
+            <Grid Grid.Row="3">
+                <controls:SafeButton Text="Block this time"
+                        Style="{StaticResource PrimaryButton}"
+                        HeightRequest="48"
+                        Command="{Binding SaveCommand}"
+                        IsVisible="{Binding IsSaving, Converter={StaticResource InvertedBoolConverter}}"
+                        AutomationId="SaveTimeOffButton" />
+                <ActivityIndicator IsRunning="{Binding IsSaving}" IsVisible="{Binding IsSaving}"
+                                   Color="{StaticResource Primary}" HorizontalOptions="Center" />
+            </Grid>
+
+        </Grid>
+
+    </Grid>
+</ContentPage>

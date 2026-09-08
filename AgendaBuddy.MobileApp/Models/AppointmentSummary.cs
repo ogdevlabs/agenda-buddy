@@ -24,6 +24,17 @@ public partial class AppointmentSummary : ObservableObject
     public string DurationLabel => ServiceDurationMinutes is null ? "—" : $"{ServiceDurationMinutes} min";
     public string CustomerNotes { get; set; } = string.Empty;
 
+    /// <summary>The counterpart this session is with, from the reader's side.</summary>
+    public string ContactEmail { get; set; } = string.Empty;
+
+    /// <summary>
+    /// The counterpart's assigned avatar id, filled from the contact directory rather than the appointment wire.
+    /// </summary>
+    public string ContactAvatarId { get; set; } = string.Empty;
+
+    /// <summary>The image to bind, resolved the same way on every surface that shows a person.</summary>
+    public string AvatarAsset => Infrastructure.AvatarSource.For(ContactAvatarId, ContactEmail);
+
     [ObservableProperty]
     private bool _isExpanded;
 

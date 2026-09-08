@@ -12,7 +12,9 @@
 
         <controls:BrandHeader Grid.Row="0" />
 
-        <Grid Grid.Row="1" RowDefinitions="Auto,*,Auto">
+        <!-- Two rows: the header, then the scrolling body. The third row used to hold a pinned action
+             bar; the actions are a tab section now, so nothing is pinned here. -->
+        <Grid Grid.Row="1" RowDefinitions="Auto,*">
 
             <!-- Header: the SERVICE is the title — it is what the appointment actually is. The counterpart's
                  name, the date and the time all moved into the single card below, replacing an avatar
@@ -86,11 +88,20 @@
                                HorizontalOptions="Center"
                                VerticalOptions="Center" />
 
-            <!-- Detail cards -->
+            <!-- SESSION FACTS, then TABS.
+                 The facts stay visible because they are the identity of the thing being looked at, not one of
+                 its sections. What the tabs divide is what you can DO about it — and before this the page
+                 stacked the facts, the customer's note, a payment row, the notes editor and a growing action
+                 row into one scroller, which put the actions below the fold on a short screen and made the
+                 reason somebody opened the page the hardest thing to reach. -->
             <ScrollView Grid.Row="1"
                         IsVisible="{Binding HasAppointment}"
                         Margin="0,-16,0,0">
-                <VerticalStackLayout Padding="20,0,20,24" Spacing="14">
+                <!-- The bottom padding clears the FLOATING tab bar, which overlays the page rather than taking a
+                     row of its own — at 24 the last element in the tallest section (the Notes editor's Add
+                     button) sat underneath it. Reachable by scrolling, but a button you have to discover by
+                     scrolling past the bar reads as cut off. -->
+                <VerticalStackLayout Padding="20,0,20,96" Spacing="14">
 
                     <!-- ONE card: who it is with, when, and how to reach them. Previously two cards plus a
                          date tile and two icon chips; the information is the same, with four fewer components. -->
@@ -102,11 +113,21 @@
                         <VerticalStackLayout Spacing="14">
 
                             <!-- Counterpart: the provider when a customer is looking, the customer when a
-                                 provider is. -->
-                            <Label Text="{Binding Appointment.DisplayName}"
-                                   FontSize="20"
-                                   FontAttributes="Bold"
-                                   TextColor="{StaticResource TextPrimary}" />
+                                 provider is. The avatar is the same mark Contacts, Messages, the Dashboard and
+                                 the Calendar show for this person. -->
+                            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+                                <controls:Avatar Grid.Column="0"
+                                                 Size="48"
+                                                 Source="{Binding Appointment.AvatarAsset}"
+                                                 AutomationId="CounterpartAvatar" />
+                                <Label Grid.Column="1"
+                                       Text="{Binding Appointment.DisplayName}"
+                                       FontSize="20"
+                                       FontAttributes="Bold"
+                                       VerticalOptions="Center"
+                                       LineBreakMode="TailTruncation"
+                                       TextColor="{StaticResource TextPrimary}" />
+                            </Grid>
 
                             <!-- Date and time on one line each, no tile. -->
                             <VerticalStackLayout Spacing="2">
@@ -117,6 +138,15 @@
                                        FontSize="16"
                                        FontAttributes="Bold"
                                        TextColor="{StaticResource Primary}" />
+
+                                <!-- Where it was before it was moved. Without this a rescheduled session reads
+                                     exactly as one that was always at this time, so somebody who half-remembers
+                                     the old slot has no way to confirm the change was real. -->
+                                <Label Text="{Binding PreviousTimeLabel}"
+                                       IsVisible="{Binding WasRescheduled}"
+                                       FontSize="12"
+                                       TextColor="{StaticResource TextMuted}"
+                                       AutomationId="PreviousTimeLabel" />
                             </VerticalStackLayout>
 
                             <BoxView HeightRequest="1" Color="#EEF1F6" />
@@ -141,6 +171,8 @@
                            HasShadow="True"
                            Padding="20"
                            IsVisible="{Binding Appointment.HasNotes}">
+                        <!-- Stays OUTSIDE the tabs: the customer's note is context for the session, not one of
+                             the things you can do about it. -->
                         <VerticalStackLayout Spacing="8">
                             <Label Text="NOTES FROM CUSTOMER"
                                    FontSize="11"
@@ -154,42 +186,257 @@
                         </VerticalStackLayout>
                     </Frame>
 
-                    <!-- Payment entry point (F-014's payment route, never surfaced before F-015-T11) -->
-                    <Frame CornerRadius="20"
-                           BackgroundColor="White"
-                           BorderColor="#E2E8F0"
-                           HasShadow="True"
-                           Padding="20">
-                        <Grid ColumnDefinitions="*,Auto">
-                            <Label Grid.Column="0"
-                                   Text="Payment"
-                                   FontSize="15"
-                                   FontAttributes="Bold"
-                                   TextColor="{StaticResource TextPrimary}"
-                                   VerticalOptions="Center" />
-                            <controls:SafeButton Grid.Column="1"
-                                    Text="View"
-                                    Style="{StaticResource PrimaryButton}"
-                                    FontSize="13"
-                                    Padding="14,8"
-                                    Clicked="OnViewPaymentClicked"
-                                    AutomationId="ViewPaymentButton" />
-                        </Grid>
-                    </Frame>
+                    <!-- TAB STRIP. Three tappable segments, not a Picker: the sections are peers and all of
+                         them should be visible at once, which is the whole reason to use tabs here. The Notes
+                         segment is absent for a customer rather than disabled — the backend note routes are
+                         Provider-role-gated, so it could only ever open an empty section. -->
+                    <!-- TAB STRIP. Two tappable segments, not a Picker: the sections are peers and both should
+                         be visible at once, which is the whole reason to use tabs here. Manage spans both columns
+                         for a CUSTOMER, who has no Notes tab — a hidden segment still reserves its column, which
+                         would leave the strip visibly lopsided for every customer. -->
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
 
-                    <!-- Session notes (Provider-only — the backend routes are role-gated) -->
+                        <Frame Grid.Column="0"
+                               Grid.ColumnSpan="{Binding ManageTabColumnSpan}"
+                               CornerRadius="12" Padding="0" HasShadow="False"
+                               BackgroundColor="White" BorderColor="#E2E8F0">
+                            <Frame.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding SelectTabCommand}"
+                                                      CommandParameter="Manage" />
+                            </Frame.GestureRecognizers>
+                            <Frame.Triggers>
+                                <DataTrigger TargetType="Frame" Binding="{Binding IsManageTab}" Value="True">
+                                    <Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
+                                    <Setter Property="BorderColor" Value="{StaticResource Primary}" />
+                                </DataTrigger>
+                            </Frame.Triggers>
+                            <Label Text="Manage" FontSize="14" HorizontalTextAlignment="Center"
+                                   VerticalOptions="Center" Padding="0,12"
+                                   TextColor="{StaticResource TextPrimary}"
+                                   AutomationId="ManageTabButton">
+                                <Label.Triggers>
+                                    <DataTrigger TargetType="Label" Binding="{Binding IsManageTab}" Value="True">
+                                        <Setter Property="TextColor" Value="White" />
+                                        <Setter Property="FontAttributes" Value="Bold" />
+                                    </DataTrigger>
+                                </Label.Triggers>
+                            </Label>
+                        </Frame>
+
+                        <Frame Grid.Column="1" CornerRadius="12" Padding="0" HasShadow="False"
+                               BackgroundColor="White" BorderColor="#E2E8F0"
+                               IsVisible="{Binding ShowNotesTab}">
+                            <Frame.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding SelectTabCommand}"
+                                                      CommandParameter="Notes" />
+                            </Frame.GestureRecognizers>
+                            <Frame.Triggers>
+                                <DataTrigger TargetType="Frame" Binding="{Binding IsNotesTab}" Value="True">
+                                    <Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
+                                    <Setter Property="BorderColor" Value="{StaticResource Primary}" />
+                                </DataTrigger>
+                            </Frame.Triggers>
+                            <Label Text="Notes" FontSize="14" HorizontalTextAlignment="Center"
+                                   VerticalOptions="Center" Padding="0,12"
+                                   TextColor="{StaticResource TextPrimary}"
+                                   AutomationId="NotesTabButton">
+                                <Label.Triggers>
+                                    <DataTrigger TargetType="Label" Binding="{Binding IsNotesTab}" Value="True">
+                                        <Setter Property="TextColor" Value="White" />
+                                        <Setter Property="FontAttributes" Value="Bold" />
+                                    </DataTrigger>
+                                </Label.Triggers>
+                            </Label>
+                        </Frame>
+
+                    </Grid>
+
+                    <!-- ══ MANAGE TAB ══ The default, because reschedule/cancel is why people open this page. -->
+                    <Frame
+                       BackgroundColor="White"
+                       CornerRadius="20"
+                       BorderColor="#E2E8F0"
+                       HasShadow="True"
+                       Padding="20,20"
+                       IsVisible="{Binding ShowManageSection}">
+                    <VerticalStackLayout Spacing="14">
+
+                        <!-- A proposal is outstanding. Worded entirely differently by who is waiting on whom, and it
+                             always restates where the session STILL is: a proposed time is not the appointment. -->
+                        <Frame IsVisible="{Binding HasPendingReschedule}"
+                               BackgroundColor="#FFFBEB" BorderColor="#F59E0B" CornerRadius="12"
+                               HasShadow="False" Padding="14">
+                            <Label Text="{Binding PendingRescheduleMessage}" FontSize="13"
+                                   TextColor="{StaticResource TextPrimary}"
+                                   AutomationId="PendingRescheduleMessage" />
+                        </Frame>
+
+                        <!-- Approve / Decline, shown only to the party who did NOT propose. The server refuses an
+                             answer from the proposer, so offering it to them would be two buttons that both 409. -->
+                        <VerticalStackLayout Spacing="14"
+                                             IsVisible="{Binding ShowRescheduleAnswerButtons}">
+                            <controls:SafeButton Text="Approve new time"
+                                    Style="{StaticResource SuccessButton}"
+                                    HeightRequest="60"
+                                    Command="{Binding ApproveRescheduleCommand}"
+                                    IsEnabled="{Binding IsNotLoading}"
+                                    AutomationId="ApproveRescheduleButton" />
+                            <controls:SafeButton Text="Decline"
+                                    Style="{StaticResource DangerButton}"
+                                    HeightRequest="60"
+                                    Command="{Binding DeclineRescheduleCommand}"
+                                    IsEnabled="{Binding IsNotLoading}"
+                                    AutomationId="DeclineRescheduleButton" />
+                        </VerticalStackLayout>
+
+                        <!-- Confirm: the provider accepting a REQUEST, so it only ever applies to a Requested
+                             session and never sits beside Reschedule or Complete, which are for a Booked one. -->
+                        <controls:SafeButton Text="Confirm"
+                                Style="{StaticResource SuccessButton}"
+                                HeightRequest="60"
+                                Command="{Binding ConfirmCommand}"
+                                IsEnabled="{Binding IsNotLoading}"
+                                IsVisible="{Binding ShowConfirmButton}"
+                                AutomationId="ConfirmButton" />
+
+                        <!-- One action per row, all full width and the same size, colour-coded by what they DO
+                             rather than by prominence: amber for rescheduling, which changes a commitment both
+                             parties agreed to and is neither a success nor a destruction; green for completing,
+                             which closes the session out; a red outline for cancelling. Side by side they read as
+                             a pair of alternatives, which Reschedule and Complete are not — they are three
+                             separate decisions about the same session.
+                             The provider MOVES a session; a customer ASKS, and their button is below, because
+                             the calendar belongs to the provider — that asymmetry is the product decision, not
+                             a permissions accident. -->
+                        <controls:SafeButton Text="Reschedule"
+                                Style="{StaticResource WarningButton}"
+                                HeightRequest="60"
+                                Command="{Binding RescheduleCommand}"
+                                IsVisible="{Binding ShowRescheduleButton}"
+                                IsEnabled="{Binding IsNotLoading}"
+                                AutomationId="RescheduleButton" />
+
+                        <!-- No Complete button. A session is over when its time has passed, which the server can
+                             see for itself — asking the provider to assert it made "Completed" a chore they had
+                             to remember rather than a fact, and a session nobody marked stayed Booked forever.
+                             AppointmentAutoCompletionService does it now. -->
+
+                        <!-- The customer's counterpart to Reschedule. Full width because a customer has no
+                             Complete to sit beside: Complete is a claim about work delivered, which is the
+                             provider's to make. -->
+                        <controls:SafeButton Text="Request a new time"
+                                Style="{StaticResource WarningButton}"
+                                HeightRequest="60"
+                                Command="{Binding RequestNewTimeCommand}"
+                                IsVisible="{Binding ShowRequestNewTimeButton}"
+                                IsEnabled="{Binding IsNotLoading}"
+                                AutomationId="RequestNewTimeButton" />
+
+                        <!-- Cancel. A provider may cancel at any notice; a customer only outside the 24-hour
+                             window, and inside it the button is replaced by the reason rather than greyed. -->
+                        <controls:SafeButton Text="Cancel"
+                                Style="{StaticResource DangerButton}"
+                                HeightRequest="60"
+                                Command="{Binding CancelCommand}"
+                                IsVisible="{Binding ShowCancelButton}"
+                                IsEnabled="{Binding IsNotLoading}"
+                                AutomationId="CancelButton" />
+
+                        <!-- Shown while cancelling is still possible, so the deadline is not discovered by being
+                             refused. -->
+                        <Label Text="{Binding CancellationDeadlineMessage}"
+                               IsVisible="{Binding ShowCancellationDeadlineNotice}"
+                               FontSize="11" TextColor="{StaticResource TextMuted}"
+                               HorizontalTextAlignment="Center"
+                               AutomationId="CancellationDeadlineMessage" />
+
+                        <!-- And in place of the button once it has passed. A missing button with no explanation is
+                             indistinguishable from a bug. -->
+                        <Frame IsVisible="{Binding ShowCancellationClosedNotice}"
+                               BackgroundColor="#F8FAFC" BorderColor="#E2E8F0" CornerRadius="12"
+                               HasShadow="False" Padding="12">
+                            <Label Text="{Binding CancellationClosedMessage}" FontSize="12"
+                                   TextColor="{StaticResource TextMuted}"
+                                   AutomationId="CancellationClosedMessage" />
+                        </Frame>
+
+                        <ActivityIndicator IsRunning="{Binding IsRescheduling}" IsVisible="{Binding IsRescheduling}"
+                                           Color="{StaticResource Primary}" HorizontalOptions="Center"
+                                           AutomationId="RescheduleBusyIndicator" />
+
+                    </VerticalStackLayout>
+                </Frame>
+
+                    <!-- ══ NOTES TAB ══ Provider-only; IsNotesTab folds the role gate in, so a customer has
+                         neither the tab nor the section. -->
                     <Frame CornerRadius="20"
                            BackgroundColor="White"
                            BorderColor="#E2E8F0"
                            HasShadow="True"
-                           Padding="20"
-                           IsVisible="{Binding ShowNotesSection}">
-                        <VerticalStackLayout Spacing="10">
-                            <Label Text="SESSION NOTES"
-                                   FontSize="11"
-                                   TextColor="{StaticResource TextMuted}"
-                                   TextTransform="Uppercase"
-                                   CharacterSpacing="1.5" />
+                           Padding="20,20"
+                           IsVisible="{Binding IsNotesTab}">
+                        <VerticalStackLayout Spacing="14">
+                            <!-- Two halves, because reading notes and writing one have different shapes and
+                                 stacking both made this card taller than the viewport: the Add button ended up
+                                 under the floating tab bar, so the one control that commits a note could only be
+                                 found by scrolling. Each half fits on its own. -->
+                            <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+
+                                <Frame Grid.Column="0" CornerRadius="10" Padding="0" HasShadow="False"
+                                       BackgroundColor="#F8FAFC" BorderColor="#E2E8F0">
+                                    <Frame.GestureRecognizers>
+                                        <TapGestureRecognizer Command="{Binding SelectNotesTabCommand}"
+                                                              CommandParameter="Current" />
+                                    </Frame.GestureRecognizers>
+                                    <Frame.Triggers>
+                                        <DataTrigger TargetType="Frame" Binding="{Binding IsCurrentNotesTab}"
+                                                     Value="True">
+                                            <Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
+                                            <Setter Property="BorderColor" Value="{StaticResource Primary}" />
+                                        </DataTrigger>
+                                    </Frame.Triggers>
+                                    <Label Text="Current notes" FontSize="13" HorizontalTextAlignment="Center"
+                                           VerticalOptions="Center" Padding="0,10"
+                                           TextColor="{StaticResource TextPrimary}"
+                                           AutomationId="CurrentNotesTabButton">
+                                        <Label.Triggers>
+                                            <DataTrigger TargetType="Label" Binding="{Binding IsCurrentNotesTab}"
+                                                         Value="True">
+                                                <Setter Property="TextColor" Value="White" />
+                                                <Setter Property="FontAttributes" Value="Bold" />
+                                            </DataTrigger>
+                                        </Label.Triggers>
+                                    </Label>
+                                </Frame>
+
+                                <Frame Grid.Column="1" CornerRadius="10" Padding="0" HasShadow="False"
+                                       BackgroundColor="#F8FAFC" BorderColor="#E2E8F0">
+                                    <Frame.GestureRecognizers>
+                                        <TapGestureRecognizer Command="{Binding SelectNotesTabCommand}"
+                                                              CommandParameter="Add" />
+                                    </Frame.GestureRecognizers>
+                                    <Frame.Triggers>
+                                        <DataTrigger TargetType="Frame" Binding="{Binding IsAddNoteTab}"
+                                                     Value="True">
+                                            <Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
+                                            <Setter Property="BorderColor" Value="{StaticResource Primary}" />
+                                        </DataTrigger>
+                                    </Frame.Triggers>
+                                    <Label Text="Add a note" FontSize="13" HorizontalTextAlignment="Center"
+                                           VerticalOptions="Center" Padding="0,10"
+                                           TextColor="{StaticResource TextPrimary}"
+                                           AutomationId="AddNoteTabButton">
+                                        <Label.Triggers>
+                                            <DataTrigger TargetType="Label" Binding="{Binding IsAddNoteTab}"
+                                                         Value="True">
+                                                <Setter Property="TextColor" Value="White" />
+                                                <Setter Property="FontAttributes" Value="Bold" />
+                                            </DataTrigger>
+                                        </Label.Triggers>
+                                    </Label>
+                                </Frame>
+
+                            </Grid>
 
                             <Frame Style="{StaticResource ErrorBannerStyle}" IsVisible="{Binding HasNotesError}">
                                 <Label Text="{Binding NotesErrorMessage}" TextColor="{StaticResource Error}" FontSize="13" />
@@ -198,87 +445,75 @@
                             <ActivityIndicator IsRunning="{Binding IsLoadingNotes}" IsVisible="{Binding IsLoadingNotes}"
                                                Color="{StaticResource Primary}" HorizontalOptions="Center" />
 
-                            <CollectionView ItemsSource="{Binding Notes}" SelectionMode="None"
-                                            IsVisible="{Binding HasSessionNotes}"
-                                            AutomationId="NotesCollectionView">
-                                <CollectionView.ItemTemplate>
+                            <!-- BindableLayout, not a CollectionView: this sits inside the page's ScrollView,
+                                 and a virtualizing list nested in a scroller gets unbounded height, renders
+                                 everything and pushes the add-note field off the screen. A session's notes are
+                                 a bounded handful, so nothing is lost. -->
+                            <VerticalStackLayout BindableLayout.ItemsSource="{Binding Notes}"
+                                                 IsVisible="{Binding ShowNotesList}"
+                                                 AutomationId="NotesList">
+                                <BindableLayout.ItemTemplate>
                                     <DataTemplate>
                                         <VerticalStackLayout Spacing="2" Margin="0,4">
                                             <Label Text="{Binding Content}" FontSize="14" TextColor="{StaticResource TextPrimary}" />
                                             <BoxView HeightRequest="0.5" Color="#F1F5F9" Margin="0,6,0,0" />
                                         </VerticalStackLayout>
                                     </DataTemplate>
-                                </CollectionView.ItemTemplate>
-                            </CollectionView>
+                                </BindableLayout.ItemTemplate>
+                            </VerticalStackLayout>
 
-                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" Margin="0,4,0,0">
-                                <Frame Grid.Column="0" Style="{StaticResource InputFrame}" Margin="0">
-                                    <Entry Text="{Binding NewNoteContent}"
-                                           Placeholder="Add a note..."
-                                           Style="{StaticResource InputStyle}"
-                                           AutomationId="NewNoteEntry" />
+                            <!-- Empty state: a notes tab with nothing in it should say so rather than look
+                                 broken. -->
+                            <Label Text="No notes on this session yet."
+                                   IsVisible="{Binding ShowNoNotesMessage}"
+                                   FontSize="13" TextColor="{StaticResource TextMuted}"
+                                   AutomationId="NoSessionNotesLabel" />
+
+                            <!-- An Editor, not an Entry: a session note is a paragraph about what happened, and a
+                                 single-line field that scrolls horizontally is the wrong shape for one — the
+                                 provider could not see what they had already typed. The Add button moves onto its
+                                 own row underneath, because a tall multi-line box beside a short button leaves the
+                                 button floating against nothing. -->
+                            <VerticalStackLayout Spacing="10" Margin="0,4,0,0"
+                                                 IsVisible="{Binding IsAddNoteTab}">
+                                <Frame Style="{StaticResource InputFrame}" Margin="0" Padding="12,4">
+                                    <!-- 64pt: about three lines at this font size, so it is a paragraph field
+                                         rather than the single-line Entry it replaced — and short enough that the
+                                         Add button below it is visible AT REST, without scrolling. That is the
+                                         binding constraint on this card: the floating tab bar overlays the page,
+                                         so anything taller pushes the one control that commits the note
+                                         underneath it. An Editor scrolls internally, so a longer note still fits;
+                                         what must not need scrolling is the button. -->
+                                    <Editor Text="{Binding NewNoteContent}"
+                                            Placeholder="Add a note about this session..."
+                                            HeightRequest="64"
+                                            AutoSize="Disabled"
+                                            FontSize="15"
+                                            TextColor="{StaticResource TextPrimary}"
+                                            AutomationId="NewNoteEntry" />
                                 </Frame>
-                                <controls:SafeButton Grid.Column="1"
-                                        Text="Add"
+                                <controls:SafeButton Text="Add note"
                                         Style="{StaticResource PrimaryButton}"
-                                        FontSize="13"
-                                        Padding="16,8"
-                                        HeightRequest="44"
+                                        HeightRequest="52"
                                         Command="{Binding AddNoteCommand}"
                                         AutomationId="AddNoteButton" />
-                            </Grid>
+                            </VerticalStackLayout>
                         </VerticalStackLayout>
                     </Frame>
 
                 </VerticalStackLayout>
             </ScrollView>
 
-            <!-- Action buttons -->
-            <Frame Grid.Row="2"
-                   BackgroundColor="White"
-                   CornerRadius="0"
-                   BorderColor="#E2E8F0"
-                   HasShadow="True"
-                   Padding="20,16">
-                <Grid ColumnDefinitions="*,*,*" ColumnSpacing="10">
+            <!-- ACTION ROW.
+                 Reworked from a fixed 3-column Grid (Confirm / Cancel / Complete), which was already full and
+                 could not take Reschedule, Request new time, Approve and Decline. Every action is now visibility-
+                 gated on the appointment's status AND the reader's role, laid out in wrapping rows rather than
+                 fixed columns, so the row shows exactly what is actually available and nothing else.
 
-                    <controls:SafeButton Grid.Column="0"
-                            Text="Confirm"
-                            Style="{StaticResource SuccessButton}"
-                            Command="{Binding ConfirmCommand}"
-                            IsEnabled="{Binding IsNotLoading}"
-                            IsVisible="{Binding ShowConfirmButton}"
-                            AutomationId="ConfirmButton" />
-
-                    <controls:SafeButton Grid.Column="1"
-                            Text="Cancel"
-                            Style="{StaticResource DangerButton}"
-                            Command="{Binding CancelCommand}"
-                            IsEnabled="{Binding IsNotLoading}"
-                            AutomationId="CancelButton" />
-
-                    <!-- Complete button + activity indicator (ux-review.md 8-state spot-check, finding
-                         P3), matching the Sign In button/ActivityIndicator overlay pattern on LoginPage. -->
-                    <Grid Grid.Column="2">
-                        <controls:SafeButton Text="Complete"
-                                Style="{StaticResource PrimaryButton}"
-                                FontSize="14"
-                                Padding="12,14"
-                                Command="{Binding CompleteCommand}"
-                                IsEnabled="{Binding IsNotLoading}"
-                                IsVisible="{Binding ShowCompleteButtonIdle}"
-                                AutomationId="CompleteButton" />
-                        <ActivityIndicator IsRunning="{Binding ShowCompletingIndicator}"
-                                           IsVisible="{Binding ShowCompletingIndicator}"
-                                           Color="{StaticResource Primary}"
-                                           HorizontalOptions="Center"
-                                           VerticalOptions="Center"
-                                           AutomationId="CompleteButtonBusyIndicator" />
-                    </Grid>
-
-                </Grid>
-            </Frame>
-
+                 Every gate HIDES rather than disables. A greyed button with no explanation reads as broken, and a
+                 button the server will refuse is worse: an ungated affordance is what made a messaging 403
+                 surface to the user as a connection failure. Where an action is withheld for a reason the reader
+                 can act on — the cancellation window having closed — the reason takes its place. -->
         </Grid>
 
     </Grid>

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+    One person, one mark. Bind Source to a model's AvatarAsset, which every surface resolves through
+    AvatarSource so the same person shows the same avatar in Contacts, Messages, the Dashboard, the Calendar and
+    on an appointment.
+
+    Extracted because the circular-clip markup was 16 lines repeated per surface, and the two that existed had
+    already drifted apart in how they RESOLVED the image: Contacts honoured the assigned id, Messages always
+    derived one from the address. A shared control makes the visual identical; AvatarSource makes the image
+    identical.
+
+    The Border with a RoundRectangle stroke shape is what clips the square asset to a circle — MAUI has no
+    CornerRadius on Image — and the muted background is what shows while the asset loads, so a slow load reads
+    as a placeholder rather than a hole.
+-->
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="AgendaBuddy.MobileApp.Controls.Avatar"
+             x:Name="Root">
+
+    <Border WidthRequest="{Binding Size, Source={x:Reference Root}}"
+            HeightRequest="{Binding Size, Source={x:Reference Root}}"
+            VerticalOptions="Center"
+            Padding="0"
+            StrokeThickness="0"
+            Stroke="Transparent"
+            BackgroundColor="{StaticResource Divider}">
+        <Border.StrokeShape>
+            <RoundRectangle CornerRadius="{Binding Radius, Source={x:Reference Root}}" />
+        </Border.StrokeShape>
+        <Image Source="{Binding Source, Source={x:Reference Root}}"
+               Aspect="AspectFill"
+               WidthRequest="{Binding Size, Source={x:Reference Root}}"
+               HeightRequest="{Binding Size, Source={x:Reference Root}}"
+               AutomationId="AvatarImage" />
+    </Border>
+</ContentView>

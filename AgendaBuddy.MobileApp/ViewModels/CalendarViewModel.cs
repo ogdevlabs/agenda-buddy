@@ -133,10 +133,52 @@ public partial class CalendarViewModel : ObservableObject
             d.IsSelected = d == value;
     }
 
+    /// <summary>
+    /// Selects a day from the strip.
+    /// </summary>
+    /// <remarks>
+    /// The strip drives selection through this rather than through <c>CollectionView.SelectedItem</c>, because
+    /// <c>SelectionMode="Single"</c> also draws iOS's own grey selected-cell background — behind the red circle
+    /// the template already draws for the selected day. Setting the property here keeps the one visual and drops
+    /// the other.
+    /// </remarks>
+    [RelayCommand]
+    private void SelectDay(CalendarDaySummary? day)
+    {
+        if (day is not null) SelectedDay = day;
+    }
+
     [RelayCommand]
     private void ToggleDay(CalendarDaySummary day)
     {
         day.IsExpanded = !day.IsExpanded;
+    }
+
+    /// <summary>
+    /// Raised when a booked row is tapped, so the page can open the appointment.
+    /// </summary>
+    /// <remarks>
+    /// An event rather than the view model navigating itself, matching how every other list page here works:
+    /// <c>Shell</c> is a MAUI type and this view model is covered on the <c>net10.0</c> test slice, where it does
+    /// not exist.
+    /// </remarks>
+    public event EventHandler<AppointmentDetail>? AppointmentSelected;
+
+    /// <summary>
+    /// Opens a booked session from the calendar.
+    /// </summary>
+    /// <remarks>
+    /// <b>The calendar had no way into an appointment at all before this.</b> The only entry point was a
+    /// dashboard row, so a session further out than the dashboard's page showed could not be opened — which
+    /// meant a provider could not reach the reschedule or cancel actions for most of their own calendar.
+    /// </remarks>
+    [RelayCommand]
+    private void OpenAppointment(BookedSlot? slot)
+    {
+        // A row with no identifier cannot be opened; the chevron is hidden on it for the same reason.
+        if (slot?.CanOpen != true) return;
+
+        AppointmentSelected?.Invoke(this, slot.Appointment);
     }
 
     partial void OnErrorMessageChanged(string value) => OnPropertyChanged(nameof(HasError));

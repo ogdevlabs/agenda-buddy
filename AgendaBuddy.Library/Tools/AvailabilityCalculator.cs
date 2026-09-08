@@ -39,8 +39,16 @@ namespace AgendaBuddy.Library.Tools;
 /// in favour of that default rather than yielding an empty calendar.
 /// </para>
 /// <para>
-/// ⚠️ <b>Every weekday is still treated alike:</b> the window is one pair of hours per provider, not one
-/// per day of the week (the remaining half of the F-005 gap, <c>05-data-model.md</c>).
+/// <b>Hours are per weekday</b> — <see cref="ProviderEntity.WorkWeek"/> — resolved for each date in the window
+/// rather than once for the whole of it, so a provider who works Saturday mornings and not Sundays is offered
+/// correctly. A weekday with no entry inherits the single legacy pair, and a weekday marked closed yields
+/// nothing at all. See <see cref="ResolveHours(ProviderEntity, DayOfWeek)"/> for the three tiers.
+/// </para>
+/// <para>
+/// <b>Time off is subtracted as an interval</b> — <see cref="CalendarBlockEntity"/> — not as a whole date, so
+/// blocking an afternoon leaves the morning bookable. Blocks are half-open like everything else here. The older
+/// whole-day <c>day_off</c> appointment flag is still honoured for rows already written, so nothing already
+/// blocked becomes bookable; nothing new writes one.
 /// </para>
 /// <para>
 /// DST is handled rather than ignored: a local start that does not exist (the spring-forward gap) is
@@ -83,11 +91,17 @@ public static class AvailabilityCalculator
     /// Session length. Non-positive values fall back to <see cref="DefaultDurationMinutes"/>, so a
     /// service with no duration set still yields slots rather than none.
     /// </param>
+    /// <param name="blocks">
+    /// The provider's time-off blocks. Subtracted as INTERVALS, not whole dates, so an afternoon off leaves the
+    /// morning bookable. Optional so existing callers that have no block store are unaffected; a caller that
+    /// omits them offers slots inside the provider's time off, which is why the query handler must pass them.
+    /// </param>
     public static List<DateTime> GetAvailability(
         ProviderEntity provider,
         DateTime nowUtc,
         int days = 30,
-        int durationMinutes = DefaultDurationMinutes)
+        int durationMinutes = DefaultDurationMinutes,
+        IEnumerable<CalendarBlockEntity>? blocks = null)
     {
         ArgumentNullException.ThrowIfNull(provider);
 
@@ -120,8 +134,17 @@ public static class AvailabilityCalculator
             })
             .ToList();
 
+        // Blocks are the provider's own time off. Kept as intervals and filtered to the ones that could matter
+        // at all, so a provider with years of history does not re-scan every past block per candidate slot.
+        var windowEndUtc = nowUtc.AddDays(window + 1);
+        var timeOff = (blocks ?? [])
+            .Where(block => block.DescribesAnInterval
+                            && block.End.ToUniversalTime() > nowUtc
+                            && block.Start.ToUniversalTime() < windowEndUtc)
+            .Select(block => (Start: block.Start.ToUniversalTime(), End: block.End.ToUniversalTime()))
+            .ToList();
+
         var zone = ResolveZone(provider.TimeZoneId);
-        var (openingHour, closingHour) = ResolveHours(provider);
 
         var slots = new List<DateTime>();
 
@@ -133,6 +156,13 @@ public static class AvailabilityCalculator
         for (var offset = 0; offset < window; offset++)
         {
             var localDate = firstLocalDate.AddDays(offset);
+
+            // Hours are resolved PER DAY, on the provider's own weekday — a provider who works Saturday
+            // mornings and not at all on Sunday has two different answers inside one window.
+            var hours = ResolveHours(provider, localDate.DayOfWeek);
+            if (hours is null) continue;
+
+            var (openingHour, closingHour) = hours.Value;
 
             for (var hour = openingHour; hour < closingHour; hour++)
             {
@@ -152,13 +182,48 @@ public static class AvailabilityCalculator
                 if (daysOff.Contains(TimeZoneInfo.ConvertTimeFromUtc(slot, zone).Date)) continue;
 
                 // Half-open intervals: an appointment ending exactly when a slot starts is not a clash,
-                // so back-to-back sessions remain bookable.
-                var clashes = busy.Any(b => slot < b.End && b.Start < slot + duration);
-                if (!clashes) slots.Add(slot);
+                // so back-to-back sessions remain bookable. Time off is compared the same way, so a block
+                // ending at noon leaves noon bookable.
+                var slotEnd = slot + duration;
+                if (busy.Any(b => slot < b.End && b.Start < slotEnd)) continue;
+                if (timeOff.Any(b => slot < b.End && b.Start < slotEnd)) continue;
+
+                slots.Add(slot);
             }
         }
 
         return slots;
+    }
+
+    /// <summary>
+    /// The provider's working window for one weekday, or <c>null</c> when they are closed that day.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Three tiers, most specific first: an entry in <see cref="ProviderEntity.WorkWeek"/> for this weekday, then
+    /// the single <see cref="ProviderEntity.WorkDayStartHour"/>/<see cref="ProviderEntity.WorkDayEndHour"/> pair,
+    /// then the default. The middle tier is what keeps every provider stored before per-weekday hours existed
+    /// bookable on exactly the hours they had.
+    /// </para>
+    /// <para>
+    /// <b>Only an explicitly closed day returns <c>null</c>.</b> An entry with unusable hours falls through to
+    /// the fallback rather than closing the day, because "0 to 0" is far more likely to be a bad write than a
+    /// deliberate closure — and a provider silently unbookable is worse than one bookable on standard hours.
+    /// Saying "closed" takes the flag.
+    /// </para>
+    /// </remarks>
+    internal static (int OpeningHour, int ClosingHour)? ResolveHours(ProviderEntity provider, DayOfWeek day)
+    {
+        // First wins on a duplicate day, so a document written twice cannot yield two windows for one weekday.
+        var forDay = provider.WorkWeek?.FirstOrDefault(entry => entry.Day == day);
+
+        if (forDay is not null)
+        {
+            if (forDay.IsClosed) return null;
+            if (forDay.DescribesAWindow) return (forDay.StartHour!.Value, forDay.EndHour!.Value);
+        }
+
+        return ResolveHours(provider);
     }
 
     /// <summary>

@@ -11,6 +11,32 @@ public record AppointmentStatusRequest(string Status);
 public record AppointmentStatusResponse(string Identifier, string Status);
 
 /// <summary>
+/// A new start time for a session, UTC.
+/// </summary>
+/// <remarks>
+/// <para>
+/// <b>The start only — no end.</b> The session's length is carried across from what was agreed, so a reschedule
+/// cannot quietly turn a 90-minute session into a 60-minute one. Accepting an end here would make that length
+/// client-assertable on every move.
+/// </para>
+/// <para>
+/// <b>And no participant emails.</b> Both come from the stored appointment, so a caller cannot reschedule
+/// somebody else's session by naming them — the same reasoning as <see cref="NoteRequest"/> and
+/// <see cref="PaymentRequest"/>. Who is asking comes from the caller's own token.
+/// </para>
+/// </remarks>
+public record RescheduleRequest(DateTime NewStartUtc);
+
+/// <summary>
+/// Whether an outstanding reschedule proposal is accepted.
+/// </summary>
+/// <remarks>
+/// A required bool rather than two routes, because approve and decline share every precondition — same
+/// appointment, same authorisation, same "is there still something to answer" — and differ only in the write.
+/// </remarks>
+public record AnswerRescheduleRequest(bool Approve);
+
+/// <summary>
 /// A session note's content, and nothing else.
 /// </summary>
 /// <remarks>

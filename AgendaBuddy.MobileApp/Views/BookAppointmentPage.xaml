@@ -137,112 +137,17 @@
                         </VerticalStackLayout>
                     </Frame>
 
-                    <!-- STEP 2 — date. Only dates the provider actually has room on appear at all, so a
-                         full day cannot be selected and then found empty. -->
+                    <!-- STEPS 2 & 3 — date, then time, from the provider's real free slots. The shared
+                         SlotPicker control, so a provider rescheduling and a customer proposing a new time get
+                         the identical interaction and the identical timezone handling. It renders its own
+                         loading, error, fully-booked and selected states. -->
                     <Frame CornerRadius="20" BackgroundColor="White" BorderColor="#E2E8F0" HasShadow="True"
-                           Padding="20" IsVisible="{Binding HasBookableDates}">
+                           Padding="20" IsVisible="{Binding HasSelectedService}">
                         <VerticalStackLayout Spacing="10">
-                            <Label Text="2 · CHOOSE A DATE" FontSize="11" TextColor="{StaticResource TextMuted}"
-                                   CharacterSpacing="1.5" />
+                            <Label Text="2 · CHOOSE A DATE AND TIME" FontSize="11"
+                                   TextColor="{StaticResource TextMuted}" CharacterSpacing="1.5" />
 
-                            <CollectionView ItemsSource="{Binding BookableDates}" SelectionMode="None"
-                                            HeightRequest="92" AutomationId="DateChoiceCollectionView">
-                                <CollectionView.ItemsLayout>
-                                    <LinearItemsLayout Orientation="Horizontal" ItemSpacing="8" />
-                                </CollectionView.ItemsLayout>
-                                <CollectionView.ItemTemplate>
-                                    <DataTemplate>
-                                        <Frame CornerRadius="14" BackgroundColor="White" BorderColor="#E2E8F0"
-                                               HasShadow="False" Padding="12,10" WidthRequest="74"
-                                               AutomationId="DateChoice"
-                                               SemanticProperties.Description="{Binding AccessibilityLabel}">
-                                            <Frame.GestureRecognizers>
-                                                <TapGestureRecognizer
-                                                    Command="{Binding Source={x:Reference ThisPage}, Path=BindingContext.SelectDateCommand}"
-                                                    CommandParameter="{Binding}" />
-                                            </Frame.GestureRecognizers>
-                                            <!-- The chosen date inverts to a solid accent fill: unmistakable at a
-                                                 glance, which a matching border alone was not. -->
-                                            <Frame.Triggers>
-                                                <DataTrigger TargetType="Frame" Binding="{Binding IsSelected}" Value="True">
-                                                    <Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
-                                                    <Setter Property="BorderColor" Value="{StaticResource Primary}" />
-                                                </DataTrigger>
-                                            </Frame.Triggers>
-                                            <VerticalStackLayout Spacing="2" HorizontalOptions="Center">
-                                                <Label Text="{Binding DayName}" FontSize="11"
-                                                       TextColor="{StaticResource TextMuted}"
-                                                       HorizontalOptions="Center">
-                                                    <Label.Triggers>
-                                                        <DataTrigger TargetType="Label" Binding="{Binding IsSelected}" Value="True">
-                                                            <Setter Property="TextColor" Value="#DDE3FF" />
-                                                        </DataTrigger>
-                                                    </Label.Triggers>
-                                                </Label>
-                                                <Label Text="{Binding DayNumber}" FontSize="20"
-                                                       FontAttributes="Bold" TextColor="{StaticResource TextPrimary}"
-                                                       HorizontalOptions="Center">
-                                                    <Label.Triggers>
-                                                        <DataTrigger TargetType="Label" Binding="{Binding IsSelected}" Value="True">
-                                                            <Setter Property="TextColor" Value="White" />
-                                                        </DataTrigger>
-                                                    </Label.Triggers>
-                                                </Label>
-                                                <Label Text="{Binding MonthName}" FontSize="11"
-                                                       TextColor="{StaticResource TextMuted}"
-                                                       HorizontalOptions="Center">
-                                                    <Label.Triggers>
-                                                        <DataTrigger TargetType="Label" Binding="{Binding IsSelected}" Value="True">
-                                                            <Setter Property="TextColor" Value="#DDE3FF" />
-                                                        </DataTrigger>
-                                                    </Label.Triggers>
-                                                </Label>
-                                            </VerticalStackLayout>
-                                        </Frame>
-                                    </DataTemplate>
-                                </CollectionView.ItemTemplate>
-                            </CollectionView>
-                        </VerticalStackLayout>
-                    </Frame>
-
-                    <!-- STEP 3 — time, from that date's real free slots. -->
-                    <Frame CornerRadius="20" BackgroundColor="White" BorderColor="#E2E8F0" HasShadow="True"
-                           Padding="20" IsVisible="{Binding HasTimes}">
-                        <VerticalStackLayout Spacing="10">
-                            <Label Text="3 · CHOOSE A TIME" FontSize="11" TextColor="{StaticResource TextMuted}"
-                                   CharacterSpacing="1.5" />
-
-                            <FlexLayout Wrap="Wrap" BindableLayout.ItemsSource="{Binding TimesForSelectedDate}">
-                                <BindableLayout.ItemTemplate>
-                                    <DataTemplate>
-                                        <Frame CornerRadius="14" BackgroundColor="White" BorderColor="#E2E8F0"
-                                               HasShadow="False" Padding="14,9" Margin="0,0,8,8"
-                                               AutomationId="TimeChoice"
-                                               SemanticProperties.Description="{Binding AccessibilityLabel}">
-                                            <Frame.GestureRecognizers>
-                                                <TapGestureRecognizer
-                                                    Command="{Binding Source={x:Reference ThisPage}, Path=BindingContext.SelectSlotCommand}"
-                                                    CommandParameter="{Binding}" />
-                                            </Frame.GestureRecognizers>
-                                            <Frame.Triggers>
-                                                <DataTrigger TargetType="Frame" Binding="{Binding IsSelected}" Value="True">
-                                                    <Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
-                                                    <Setter Property="BorderColor" Value="{StaticResource Primary}" />
-                                                </DataTrigger>
-                                            </Frame.Triggers>
-                                            <Label Text="{Binding Label}" FontSize="14"
-                                                   TextColor="{StaticResource TextPrimary}" VerticalOptions="Center">
-                                                <Label.Triggers>
-                                                    <DataTrigger TargetType="Label" Binding="{Binding IsSelected}" Value="True">
-                                                        <Setter Property="TextColor" Value="White" />
-                                                        <Setter Property="FontAttributes" Value="Bold" />
-                                                    </DataTrigger>
-                                                </Label.Triggers>
-                                            </Label>
-                                        </Frame>
-                                    </DataTemplate>
-                                </BindableLayout.ItemTemplate>
-                            </FlexLayout>
+                            <controls:SlotPicker BindingContext="{Binding Picker}" />
                         </VerticalStackLayout>
                     </Frame>
 

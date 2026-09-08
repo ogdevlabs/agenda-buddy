@@ -127,23 +127,13 @@
                                         The derivation is stable, which is what makes the same person show the
                                         same mark here and in the contacts list.
                                     -->
-                                    <Border Grid.Column="0"
-                                            WidthRequest="48"
-                                            HeightRequest="48"
-                                            VerticalOptions="Start"
-                                            Padding="0"
-                                            StrokeThickness="0"
-                                            Stroke="Transparent"
-                                            BackgroundColor="{StaticResource Divider}">
-                                        <Border.StrokeShape>
-                                            <RoundRectangle CornerRadius="24" />
-                                        </Border.StrokeShape>
-                                        <Image Source="{Binding AvatarAsset}"
-                                               Aspect="AspectFill"
-                                               WidthRequest="48"
-                                               HeightRequest="48"
-                                               AutomationId="ThreadAvatar" />
-                                    </Border>
+                                    <!-- The shared control: the circular-clip markup was 16 lines repeated per surface, and the
+                                         two copies had already drifted in how they RESOLVED the image. -->
+                                    <controls:Avatar Grid.Column="0"
+                                                     Size="48"
+                                                     VerticalOptions="Start"
+                                                     Source="{Binding AvatarAsset}"
+                                                     AutomationId="ThreadAvatar" />
 
                                     <!-- Name + preview -->
                                     <VerticalStackLayout Grid.Column="1"

@@ -1,0 +1,36 @@
+meta {
+  name: 7 Cancel inside the 24-hour window
+  type: http
+  seq: 7
+}
+delete {
+  url: {{gatewayUrl}}/api/v1/booking/appointments/
+  body: json
+}
+body:json {
+  {
+    "identifier": "{{appointmentIdentifier}}",
+    "emailProvider": "{{providerEmail}}",
+    "emailCustomer": "{{customerEmail}}"
+  }
+}
+docs {
+  The same route as #3 — this entry exists to exercise the **notice period**, which is asymmetric.
+
+  A **CUSTOMER** must give 24 hours' notice. Inside that window this returns `400` with the deadline
+  named as a concrete local time:
+
+      "Cancellations close 24 hours before a session. This one closed on Monday 7 September at
+       2:00 AM. Contact the provider to ask."
+
+  A **PROVIDER** may cancel at any notice and gets `204`. A session they cannot make is unavoidable; a
+  customer cancelling an hour beforehand costs the provider a slot nobody else can now take.
+
+  ⚠️ **The rule lives in the same atomic filter as the cancellable-status rule**, not in a check before
+  it. Reading the appointment, comparing its start against the clock and then writing is a race a
+  caller can win — the read and the write are separate operations.
+
+  To see the refusal: book a session less than 24 hours out, sign in as the customer, and run this.
+  The client hides its Cancel button in that window and shows the deadline instead, so this refusal is
+  reachable through the API but not through the app.
+}

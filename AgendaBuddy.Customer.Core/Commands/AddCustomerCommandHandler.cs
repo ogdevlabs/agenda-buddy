@@ -14,9 +14,11 @@ public class AddCustomerCommandHandler(
 
         var customerEntity = request.CustomerEntity;
 
-        // Matches by NAME, not by email, and runs before anything is persisted or published.
+        // The email is the identity — see AddProviderCommandHandler for the same reasoning. Matching on
+        // first+last name refused a genuinely new account because somebody already shared its holder's name.
+        // Runs before anything is persisted or published.
         var existingCustomer = await customerService.FindCustomerAsync(
-            SupportTools<CustomerEntity>.FilterByNameAndLastName(customerEntity.FirstName!, customerEntity.LastName!));
+            SupportTools<CustomerEntity>.FilterByEmail(customerEntity.Email!));
         if (existingCustomer is not null)
             return Result.Fail<CustomerEntity>($"Existing record found for Email:{customerEntity.Email}");
 

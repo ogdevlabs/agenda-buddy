@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    One page for both directions: a provider MOVES the session, a customer ASKS for a new time. The interaction is
+    identical, so every string that differs comes from the view model rather than being duplicated in two pages.
+
+    The confirm bar is deliberately OUTSIDE the ScrollView (PinnedActionTest): as the last item in a scrolling
+    column it sat below the fold on a short screen, so the action was reachable only by scrolling past every slot.
+-->
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:controls="clr-namespace:AgendaBuddy.MobileApp.Controls"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             x:Class="AgendaBuddy.MobileApp.Views.ReschedulePage"
+             Title="Reschedule"
+             BackgroundColor="{StaticResource BackgroundPage}"
+             Shell.NavBarIsVisible="False"
+             NavigationPage.HasNavigationBar="False">
+
+    <ContentPage.Resources>
+        <toolkit:InvertedBoolConverter x:Key="InvertedBoolConverter" />
+    </ContentPage.Resources>
+
+    <Grid RowDefinitions="Auto,*">
+
+        <controls:BrandHeader Grid.Row="0" />
+
+        <Grid Grid.Row="1" RowDefinitions="Auto,*,Auto">
+
+            <Grid Grid.Row="0" ColumnDefinitions="Auto,*" Padding="20,12,20,4">
+                <controls:SafeButton Grid.Column="0" Text="&#x2190; Back" BackgroundColor="Transparent"
+                        TextColor="{StaticResource Primary}" FontSize="14" HorizontalOptions="Start"
+                        Padding="4" Clicked="OnBackClicked" />
+                <Label Grid.Column="1" Text="{Binding Title}" FontSize="22" FontAttributes="Bold"
+                       TextColor="{StaticResource TextPrimary}" VerticalOptions="Center" Margin="8,0,0,0"
+                       AutomationId="RescheduleTitle" />
+            </Grid>
+
+            <ScrollView Grid.Row="1">
+                <VerticalStackLayout Padding="20,8,20,20" Spacing="14">
+
+                    <Frame Style="{StaticResource ErrorBannerStyle}" IsVisible="{Binding HasError}">
+                        <Label Text="{Binding ErrorMessage}" TextColor="{StaticResource Error}" FontSize="14"
+                               AutomationId="RescheduleErrorMessage" />
+                    </Frame>
+
+                    <!-- Where the session is now. Named so the change is comparable — a new time on its own
+                         leaves the reader unsure whether they misremembered the old one. -->
+                    <Frame CornerRadius="16" BackgroundColor="#F8FAFC" BorderColor="#E2E8F0" HasShadow="False"
+                           Padding="16">
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="{Binding CurrentTimeLabel}" FontSize="15" FontAttributes="Bold"
+                                   TextColor="{StaticResource TextPrimary}"
+                                   AutomationId="RescheduleCurrentTime" />
+                            <Label Text="{Binding Explanation}" FontSize="13"
+                                   TextColor="{StaticResource TextMuted}" />
+                        </VerticalStackLayout>
+                    </Frame>
+
+                    <!-- The shared picker: the same control and the same rules the booking flow uses. -->
+                    <Frame CornerRadius="20" BackgroundColor="White" BorderColor="#E2E8F0" HasShadow="True"
+                           Padding="20">
+                        <controls:SlotPicker BindingContext="{Binding Picker}" />
+                    </Frame>
+
+                </VerticalStackLayout>
+            </ScrollView>
+
+            <!-- Pinned confirm bar. -->
+            <Frame Grid.Row="2" BackgroundColor="White" CornerRadius="0" BorderColor="#E2E8F0" HasShadow="True"
+                   Padding="20,16">
+                <Grid>
+                    <controls:SafeButton Text="{Binding SubmitLabel}"
+                            Style="{StaticResource PrimaryButton}"
+                            Command="{Binding SubmitCommand}"
+                            IsVisible="{Binding IsSubmitting, Converter={StaticResource InvertedBoolConverter}}"
+                            AutomationId="RescheduleSubmitButton" />
+                    <ActivityIndicator IsRunning="{Binding IsSubmitting}" IsVisible="{Binding IsSubmitting}"
+                                       Color="{StaticResource Primary}" HorizontalOptions="Center"
+                                       VerticalOptions="Center"
+                                       AutomationId="RescheduleSubmitBusyIndicator" />
+                </Grid>
+            </Frame>
+
+        </Grid>
+
+    </Grid>
+</ContentPage>

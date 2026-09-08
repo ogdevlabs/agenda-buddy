@@ -17,6 +17,8 @@ namespace AgendaBuddy.MobileApp.Views;
 [QueryProperty(nameof(ServiceName), "serviceName")]
 [QueryProperty(nameof(ServiceDurationMinutesStr), "serviceDurationMinutes")]
 [QueryProperty(nameof(CustomerNotes), "customerNotes")]
+[QueryProperty(nameof(ContactEmailStr), "contactEmail")]
+[QueryProperty(nameof(ContactAvatarId), "contactAvatarId")]
 public partial class AppointmentDetailPage : ContentPage
 {
     private readonly AppointmentDetailViewModel _viewModel;
@@ -28,6 +30,19 @@ public partial class AppointmentDetailPage : ContentPage
     public string ProviderName { get; set; } = string.Empty;
     public string DisplayName { get; set; } = string.Empty;
     public string ScheduledAtStr { get; set; } = string.Empty;
+
+    /// <summary>
+    /// The counterpart from the CALLER's side, which is not always the customer.
+    /// </summary>
+    /// <remarks>
+    /// The older query properties are all customer-shaped because the page was built for a provider looking at
+    /// their customer. A customer looking at their provider has the opposite counterpart, so the avatar and the
+    /// contact row need the resolved one rather than <c>customerEmail</c>.
+    /// </remarks>
+    public string ContactEmailStr { get; set; } = string.Empty;
+
+    /// <summary>The assigned mark the calling list already resolved, so both surfaces show the same one.</summary>
+    public string ContactAvatarId { get; set; } = string.Empty;
     public string StatusStr { get; set; } = string.Empty;
     public string ServiceName { get; set; } = string.Empty;
 
@@ -77,7 +92,10 @@ public partial class AppointmentDetailPage : ContentPage
             CustomerPhone = CustomerPhone,
             ProviderName = ProviderName,
             DisplayName = string.IsNullOrEmpty(DisplayName) ? CustomerName : DisplayName,
-            ContactEmail = CustomerEmail,
+            // The caller's resolved counterpart when it travelled; the customer address is the pre-existing
+            // fallback, which is right for a provider and wrong for a customer -- hence preferring the former.
+            ContactEmail = string.IsNullOrWhiteSpace(ContactEmailStr) ? CustomerEmail : ContactEmailStr,
+            ContactAvatarId = ContactAvatarId,
             ContactPhone = CustomerPhone,
             ScheduledAt = DateTime.TryParse(ScheduledAtStr, out var dt) ? dt : DateTime.Now,
             Status = Enum.TryParse<AppointmentStatus>(StatusStr, out var st) ? st : AppointmentStatus.Requested,
@@ -99,8 +117,10 @@ public partial class AppointmentDetailPage : ContentPage
                 break;
 
             case ActionType.Cancel:
+                // The confirmation NAMES the session rather than asking a bare "are you sure?". Cancelled is
+                // terminal (ADR-037), so this is the last chance to notice it is the wrong appointment.
                 var cancelChoice = await DisplayActionSheetAsync(
-                    "Cancel this appointment?",
+                    $"Cancel {SessionDescription()}?",
                     "Keep it",
                     null,
                     "Cancel appointment");
@@ -112,16 +132,75 @@ public partial class AppointmentDetailPage : ContentPage
                 }
                 break;
 
-            case ActionType.Complete:
-                var completeChoice = await DisplayActionSheetAsync(
-                    "Mark this appointment as complete?",
-                    "Go back",
+
+            // Both open the SAME page: the interaction is identical, and RescheduleViewModel words itself from
+            // the session role. Everything it needs travels with the navigation, because this page already holds
+            // the appointment -- passing the id alone would make it re-fetch what was just read, and the service
+            // name is what sizes the slots to the length that was agreed.
+            case ActionType.Reschedule:
+            case ActionType.RequestNewTime:
+                await OpenReschedulePageAsync();
+                break;
+
+            case ActionType.ApproveReschedule:
+                var approveChoice = await DisplayActionSheetAsync(
+                    $"Move this session to {_viewModel.ProposedTimeLabel}?",
+                    "Not now",
                     null,
-                    "Mark complete");
-                if (completeChoice == "Mark complete")
-                    await _viewModel.ExecuteStatusUpdateAsync(AppointmentStatus.Completed);
+                    "Approve");
+                if (approveChoice == "Approve")
+                    await _viewModel.ExecuteRescheduleAnswerAsync(approve: true);
+                break;
+
+            case ActionType.DeclineReschedule:
+                // Declining is destructive to the other party's request, so it is confirmed too -- and the
+                // confirmation states what declining LEAVES, which is the thing a reader wants to be sure of.
+                var declineChoice = await DisplayActionSheetAsync(
+                    "Decline the new time? The session stays where it is.",
+                    "Not now",
+                    null,
+                    "Decline");
+                if (declineChoice == "Decline")
+                    await _viewModel.ExecuteRescheduleAnswerAsync(approve: false);
                 break;
         }
+    }
+
+    /// <summary>
+    /// Opens the slot picker for this appointment, on the PROVIDER'S calendar whichever side is asking.
+    /// </summary>
+    private async Task OpenReschedulePageAsync()
+    {
+        var appointment = _viewModel.Appointment;
+        if (appointment is null) return;
+
+        var nav = new Dictionary<string, object>
+        {
+            ["appointmentId"] = _viewModel.AppointmentId,
+            ["providerEmail"] = appointment.ProviderEmail,
+            ["serviceName"] = appointment.ServiceName ?? string.Empty,
+
+            // Round-trip format: a Shell query property arrives as text, and a culture-formatted date would be
+            // reinterpreted by whatever the device's culture happens to be on the way back in.
+            ["currentStart"] = appointment.ScheduledAt.ToString("o")
+        };
+
+        await Shell.Current.GoToAsync("reschedule", nav);
+    }
+
+    /// <summary>
+    /// The session in words, for a confirmation that has to be unambiguous about WHICH appointment it means.
+    /// </summary>
+    private string SessionDescription()
+    {
+        var appointment = _viewModel.Appointment;
+        if (appointment is null) return "this appointment";
+
+        var service = string.IsNullOrWhiteSpace(appointment.ServiceName)
+            ? "this session"
+            : appointment.ServiceName;
+
+        return $"{service} on {appointment.ScheduledAt:ddd d MMM 'at' h:mm tt}";
     }
 
     private async void OnBackClicked(object? sender, EventArgs e)
@@ -129,11 +208,9 @@ public partial class AppointmentDetailPage : ContentPage
         await Shell.Current.GoToAsync("..");
     }
 
-    private async void OnViewPaymentClicked(object? sender, EventArgs e)
-    {
-        var nav = new Dictionary<string, object> { ["appointmentId"] = _viewModel.AppointmentId };
-        await Shell.Current.GoToAsync("payment", nav);
-    }
+    // OnViewPaymentClicked removed with the Payment tab's button: payments are being handled outside this
+    // screen. PaymentPage and its Shell route are left in place — nothing navigates to them from here now, and
+    // deleting a working screen for a redesign that has not landed yet would be throwing it away early.
 
     private void OnUnauthorizedAccess(object? sender, EventArgs e)
     {

@@ -1,0 +1,20 @@
+meta {
+  name: 3 List time off
+  type: http
+  seq: 3
+}
+get {
+  url: {{gatewayUrl}}/api/v1/calendar/blocks/{{providerEmail}}
+}
+docs {
+  A provider's own time off that has not finished yet, soonest first.
+
+  ⚠️ **Owner-only, and that guard is stronger than it looks:** a block's `reason` is the provider's private
+  note. Customers see time off as **absence** from `1 Availability` and nothing more — that busy time is
+  inferable is inherent to a booking product, but why a provider is away is not.
+
+  Bounded to blocks still in force rather than every block ever recorded: past time off is not actionable,
+  and a provider with years of history would otherwise pay for all of it on this read.
+
+  A provider with nothing booked off is `200` with an empty list — not `404`.
+}

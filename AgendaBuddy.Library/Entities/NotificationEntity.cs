@@ -62,5 +62,17 @@ public enum NotificationType
     AppointmentRequested,
 
     /// <summary>The other party sent a message.</summary>
-    MessageReceived
+    MessageReceived,
+
+    /// <summary>The provider moved a booked session. The customer had no say and needs to be told.</summary>
+    AppointmentRescheduled,
+
+    /// <summary>The customer proposed a new time; the provider owes an answer.</summary>
+    RescheduleRequested,
+
+    /// <summary>The proposal was accepted and the session has moved.</summary>
+    RescheduleApproved,
+
+    /// <summary>The proposal was refused and the session stands where it was.</summary>
+    RescheduleDeclined
 }

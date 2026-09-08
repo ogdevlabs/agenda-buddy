@@ -24,8 +24,8 @@ public class CalendarViewModelTests
     {
         var days = new List<CalendarDaySummary>
         {
-            new() { Date = "2026-08-01", AvailableSlots = ["09:00", "10:00"], BookedSlots = ["11:00"] },
-            new() { Date = "2026-08-02", AvailableSlots = [],                 BookedSlots = ["09:00"] }
+            new() { Date = "2026-08-01", AvailableSlots = ["09:00", "10:00"], BookedSlots = [new BookedSlot("11:00 AM — bob@example.com", 45, new AppointmentDetail { Id = "a1" })] },
+            new() { Date = "2026-08-02", AvailableSlots = [],                 BookedSlots = [new BookedSlot("09:00 AM — bob@example.com", null, new AppointmentDetail { Id = "a2" })] }
         };
 
         var service = new Mock<ICalendarApiService>();

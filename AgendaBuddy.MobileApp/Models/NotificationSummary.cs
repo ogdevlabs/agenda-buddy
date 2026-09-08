@@ -114,6 +114,10 @@ public partial class NotificationSummary : ObservableObject
         NotificationType.MessageReceived => "Message",
         NotificationType.PasswordResetRequested => "Security",
         NotificationType.EmailConfirmationRequested => "Security",
+        NotificationType.AppointmentRescheduled => "Rescheduled",
+        NotificationType.RescheduleRequested => "New time asked",
+        NotificationType.RescheduleApproved => "New time agreed",
+        NotificationType.RescheduleDeclined => "New time declined",
         _ => "Info"
     };
 

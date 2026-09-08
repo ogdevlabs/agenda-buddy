@@ -23,8 +23,15 @@ public class CancelAppointmentCommandHandler(
         await mediator.Publish(new CancelAppointmentEvent { Identifier = appointmentIdentifier },
             cancellationToken);
         var appointmentEntity = await bookingService.SearchAppointmentAsync(appointmentIdentifier);
+
+        // A customer must give notice; a provider may cancel at any notice. Decided here and carried into the
+        // write's own filter, never checked as a separate step -- see SearchAndCancelAppointment's remarks.
+        var nowUtc = DateTime.UtcNow;
+        var cancelledByCustomer = appointmentEntity is not null && string.Equals(
+            request.CancelledByEmail, appointmentEntity.EmailCustomer, StringComparison.OrdinalIgnoreCase);
+
         if (appointmentEntity != null)
-            if (await SearchAndCancelAppointment(appointmentIdentifier))
+            if (await SearchAndCancelAppointment(appointmentIdentifier, cancelledByCustomer, nowUtc))
             {
                 var successEvent = new Event
                 {
@@ -45,12 +52,14 @@ public class CancelAppointmentCommandHandler(
                 // genuinely does not carry that, and inventing it would be worse than omitting it.
                 await NotifyAsync(
                     appointmentEntity.EmailCustomer,
-                    BuildCancelBody(appointmentEntity, counterparty: appointmentEntity.EmailProvider),
+                    BuildCancelBody(appointmentEntity, counterparty: appointmentEntity.EmailProvider,
+                        cancelledBy: request.CancelledByEmail),
                     appointmentIdentifier,
                     cancellationToken);
                 await NotifyAsync(
                     appointmentEntity.EmailProvider,
-                    BuildCancelBody(appointmentEntity, counterparty: appointmentEntity.EmailCustomer),
+                    BuildCancelBody(appointmentEntity, counterparty: appointmentEntity.EmailCustomer,
+                        cancelledBy: request.CancelledByEmail),
                     appointmentIdentifier,
                     cancellationToken);
 
@@ -70,6 +79,18 @@ public class CancelAppointmentCommandHandler(
             })
         };
         await eventStore.SaveAsync(failEvent);
+
+        // The refusal a customer will actually hit is the notice period, and it needs its own wording with the
+        // deadline in it -- "error when trying to cancel" tells them nothing they can act on. Distinguished after
+        // the write rather than before it, so the atomic filter stays the only thing that decides.
+        if (appointmentEntity is not null && cancelledByCustomer
+            && !appointmentEntity.CustomerMayCancelAt(nowUtc)
+            && appointmentEntity.AppointmentStatus is AppointmentStatus.Requested
+                or AppointmentStatus.Booked or AppointmentStatus.RescheduleRequested)
+        {
+            return Result.Fail<AppointmentEntity>(LateCancellationMessage(appointmentEntity));
+        }
+
         return Result.Fail<AppointmentEntity>(
             $"Error when trying to cancel appointment identifier: {appointmentIdentifier}");
     }
@@ -96,12 +117,20 @@ public class CancelAppointmentCommandHandler(
     /// that had already been delivered. Requested and Booked are both cancellable; Completed is not.
     /// </para>
     /// </remarks>
-    private async Task<bool> SearchAndCancelAppointment(string identifier)
+    private async Task<bool> SearchAndCancelAppointment(
+        string identifier, bool cancelledByCustomer, DateTime nowUtc)
     {
         var appointment = await bookingService.SearchAppointmentAsync(identifier);
         if (appointment is null) return false;
 
-        if (!await bookingService.CancelAppointmentAsync(identifier)) return false;
+        // The notice requirement rides in the same filter as the cancellable-status rule. Comparing the clock
+        // here and writing afterwards is a race a caller can win -- the read and the write are separate
+        // operations, and nothing stops a request arriving in between.
+        var earliestStartUtc = cancelledByCustomer
+            ? nowUtc.AddHours(AppointmentEntity.CustomerCancellationNoticeHours)
+            : (DateTime?)null;
+
+        if (!await bookingService.CancelAppointmentAsync(identifier, earliestStartUtc)) return false;
 
         await providerService.ChangeEmbeddedAppointmentStatusAsync(
             appointment.EmailProvider,
@@ -111,11 +140,28 @@ public class CancelAppointmentCommandHandler(
 
         return true;
     }
-    private static string BuildCancelBody(AppointmentEntity appointment, string counterparty)
+    /// <summary>
+    /// What a customer is told when they cancel too late. Names the deadline as a concrete local time, because
+    /// "too late" without one leaves them unable to tell how late.
+    /// </summary>
+    internal static string LateCancellationMessage(AppointmentEntity appointment) =>
+        $"Cancellations close {AppointmentEntity.CustomerCancellationNoticeHours} hours before a session. This "
+        + $"one closed on {appointment.CustomerCancellationDeadlineUtc.ToLocalTime():dddd d MMMM 'at' h:mm tt}. "
+        + "Contact the provider to ask.";
+
+    private static string BuildCancelBody(
+        AppointmentEntity appointment, string counterparty, string cancelledBy)
     {
         var service = string.IsNullOrWhiteSpace(appointment.ServiceName) ? "A session" : appointment.ServiceName;
+
+        // Now that the command records who cancelled, the body says so. Reading "your session was cancelled"
+        // without knowing which side did it leaves the reader unsure whether to expect an apology or to send one.
+        var by = string.Equals(cancelledBy, appointment.EmailCustomer, StringComparison.OrdinalIgnoreCase)
+            ? appointment.EmailCustomer
+            : appointment.EmailProvider;
+
         return $"{service} with {counterparty} on {appointment.Start.ToLocalTime():dddd d MMMM} at "
-             + $"{appointment.Start.ToLocalTime():h:mm tt} was cancelled.";
+             + $"{appointment.Start.ToLocalTime():h:mm tt} was cancelled by {by}.";
     }
 
     /// <summary>

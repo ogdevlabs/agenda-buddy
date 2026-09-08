@@ -67,6 +67,24 @@ public static class OwnershipGuard
             throw new ForbiddenException();
     }
 
+    /// <summary>
+    /// The caller's own email, from their <c>sub</c> claim, or <c>null</c> when they carry none.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// For the routes where WHO is acting is part of the operation rather than only a permission check — a
+    /// reschedule proposal records who proposed it, and a cancellation records who cancelled. Those routes must
+    /// not take that from the request body: a caller who could name it could make the other party's proposal for
+    /// them, or attribute their own cancellation to the person they stood up.
+    /// </para>
+    /// <para>
+    /// Reads the same claim <see cref="IsOwner"/> and <see cref="AssertOwnerAny"/> read, from this one place, so
+    /// "which claim is the caller's identity" cannot come to be answered differently in different routes.
+    /// </para>
+    /// </remarks>
+    public static string? ResolveCallerEmail(ClaimsPrincipal user) =>
+        user.FindFirstValue(ClaimTypes.NameIdentifier);
+
     public static void AssertRole(ClaimsPrincipal user, string requiredRole)
     {
         if (!user.IsInRole(requiredRole))

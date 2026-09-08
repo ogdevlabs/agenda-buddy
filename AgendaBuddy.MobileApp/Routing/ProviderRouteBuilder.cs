@@ -1,3 +1,5 @@
+using AgendaBuddy.MobileApp.Models;
+
 namespace AgendaBuddy.MobileApp.Routing;
 
 /// <summary>
@@ -65,6 +67,37 @@ public static class ProviderRouteBuilder
         new(HttpMethod.Put, $"api/v1/providers/{email}/work-hours");
 
     /// <summary><c>endHour</c> is exclusive: 8–17 means the last session finishes at 17:00.</summary>
+    /// <summary>
+    /// <c>PUT /api/v1/providers/{email}/work-week</c> — per-weekday hours. A dedicated route for the same reason
+    /// the single-pair sibling is one: <c>PUT /{email}</c> replaces the whole document.
+    /// </summary>
+    /// <remarks>
+    /// The two coexist. The single pair remains the server's fallback for any weekday the week does not mention,
+    /// so a provider who has never opened the new screen keeps exactly the hours they had.
+    /// </remarks>
+    public static RouteSpec WorkWeek(string email) =>
+        new(HttpMethod.Put, $"api/v1/providers/{email}/work-week");
+
+    /// <summary>
+    /// Payload shape Provider's <c>WorkWeekRequest</c> binds: <c>{"days":[{"day":"Monday",…}]}</c>.
+    /// </summary>
+    /// <remarks>
+    /// <paramref name="days"/> carries the weekday by NAME, because the server takes a string and answers 400 on
+    /// an unrecognised one — an integer would model-bind to Sunday (the enum's zero) and rewrite the wrong day.
+    /// A closed day sends <c>isClosed</c> and keeps its hours, so re-opening it does not mean re-entering them.
+    /// </remarks>
+    public static object BuildWorkWeekPayload(IEnumerable<WorkDayHoursDto> days) =>
+        new
+        {
+            days = days.Select(day => new
+            {
+                day = day.Day.ToString(),
+                startHour = day.StartHour,
+                endHour = day.EndHour,
+                isClosed = day.IsClosed
+            }).ToList()
+        };
+
     public static object BuildWorkHoursPayload(int startHour, int endHour) =>
         new { startHour, endHour };
 }

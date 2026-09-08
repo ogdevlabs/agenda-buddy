@@ -8,6 +8,7 @@ namespace AgendaBuddy.Calendar.Core.Queries;
 public class CheckCalendarAvailabilityQueryHandler(
     IMediator mediator,
     IProviderService providerService,
+    ICalendarBlockService calendarBlockService,
     IEventStore eventStore) : IRequestHandler<CheckCalendarAvailabilityQuery, Result<List<DateTime>>>
 {
     public async Task<Result<List<DateTime>>> Handle(CheckCalendarAvailabilityQuery request, CancellationToken cancellationToken)
@@ -32,8 +33,14 @@ public class CheckCalendarAvailabilityQueryHandler(
             ?.DurationMinutes
             ?? AvailabilityCalculator.DefaultDurationMinutes;
 
+        // The provider's time off is subtracted here, so a blocked afternoon is never offered. The calculator
+        // takes blocks as an optional argument for the sake of callers that have no block store; this route is
+        // the customer-facing one, so omitting them is exactly the bug the blocks exist to prevent.
+        var nowUtc = DateTime.UtcNow;
+        var blocks = await calendarBlockService.GetBlocksAsync(request.Email, nowUtc);
+
         var slots = AvailabilityCalculator.GetAvailability(
-            providerEntity, DateTime.UtcNow, request.Days, duration);
+            providerEntity, nowUtc, request.Days, duration, blocks);
         await eventStore.SaveAsync(QueryAudit.Success(nameof(CheckCalendarAvailabilityQuery), slots.Count));
         return Result.Ok(slots);
     }

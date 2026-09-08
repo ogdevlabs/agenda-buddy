@@ -82,9 +82,29 @@ public class ServiceCollectionMongoResolutionTest
         Assert.NotNull(scope.ServiceProvider.GetService<IRepository<ProviderEntity>>());
         Assert.NotNull(scope.ServiceProvider.GetService<IRepository<AppointmentEntity>>());
         Assert.NotNull(scope.ServiceProvider.GetService<IRepository<CustomerEntity>>());
+        Assert.NotNull(scope.ServiceProvider.GetService<IRepository<CalendarBlockEntity>>());
     }
 
-    // The refactor must not change how many repositories exist, or their lifetime.
+    /// <summary>
+    /// <c>CheckCalendarAvailabilityQueryHandler</c> takes this, and the calculator's blocks argument is optional —
+    /// so a missing registration is a startup failure rather than a compile error, and the shape it would
+    /// degrade to is "offer the customer slots inside the provider's time off".
+    /// </summary>
+    [Fact]
+    public void AddMongoDbRepository_RegistersTheTimeOffBlockService()
+    {
+        var services = new ServiceCollection();
+        services.AddSingleton<IMongoClient>(new MongoClient("mongodb://localhost:27017"));
+
+        services.AddMongoDbRepository(AspireOnly());
+
+        var descriptor = Assert.Single(
+            services.Where(service => service.ServiceType == typeof(ICalendarBlockService)));
+        Assert.Equal(ServiceLifetime.Scoped, descriptor.Lifetime);
+    }
+
+    // Every repository this service registers is scoped, and the count is asserted so an accidental extra
+    // registration -- or a lost one -- is visible rather than silent.
     [Fact]
     public void AddMongoDbRepository_KeepsRepositoryCountAndLifetimeUnchanged()
     {
@@ -98,7 +118,9 @@ public class ServiceCollectionMongoResolutionTest
                                  && descriptor.ServiceType.GetGenericTypeDefinition() == typeof(IRepository<>))
             .ToList();
 
-        Assert.Equal(3, repositories.Count);
+        // Providers, appointments, customers, and calendar blocks -- time off is its own collection, not
+        // whole-day fake appointments in `appointments`.
+        Assert.Equal(4, repositories.Count);
         Assert.All(repositories, descriptor => Assert.Equal(ServiceLifetime.Scoped, descriptor.Lifetime));
     }
 }

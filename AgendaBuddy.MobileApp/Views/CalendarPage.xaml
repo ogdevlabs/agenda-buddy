@@ -4,6 +4,7 @@
              xmlns:controls="clr-namespace:AgendaBuddy.MobileApp.Controls"
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
              x:Class="AgendaBuddy.MobileApp.Views.CalendarPage"
+             x:Name="ThisPage"
              Title="Calendar"
              BackgroundColor="#F2F2F7"
              Shell.NavBarIsVisible="False">
@@ -82,9 +83,12 @@
 
             <!-- Day selector strip -->
             <Grid Grid.Row="1" BackgroundColor="White" Padding="0,0,0,12">
+                <!-- SelectionMode="None" and a tap instead: with "Single", iOS draws its OWN grey selected-cell
+                     background, which appeared as a grey rectangle behind the red circle this template already
+                     draws for the selected day. Two selection visuals, one of them wrong. Selection still lives
+                     on the view model, which is what the red circle binds to. -->
                 <CollectionView ItemsSource="{Binding Days}"
-                                SelectionMode="Single"
-                                SelectedItem="{Binding SelectedDay}"
+                                SelectionMode="None"
                                 HeightRequest="76"
                                 Margin="12,0">
                     <CollectionView.ItemsLayout>
@@ -93,6 +97,11 @@
                     <CollectionView.ItemTemplate>
                         <DataTemplate>
                             <Grid WidthRequest="52" HeightRequest="72">
+                                <Grid.GestureRecognizers>
+                                    <TapGestureRecognizer
+                                        Command="{Binding Source={x:Reference ThisPage}, Path=BindingContext.SelectDayCommand}"
+                                        CommandParameter="{Binding}" />
+                                </Grid.GestureRecognizers>
                                 <VerticalStackLayout VerticalOptions="Center"
                                                      HorizontalOptions="Center"
                                                      Spacing="4">
@@ -156,25 +165,53 @@
                         </CollectionView.ItemsLayout>
                         <CollectionView.ItemTemplate>
                             <DataTemplate>
+                                <!-- TAPPABLE. The calendar is where a provider looks to change a scheduled
+                                     session, and until this the rows were inert: the ONLY way into an
+                                     appointment was a dashboard row, so a session further out than the
+                                     dashboard page showed could not be opened at all. The chevron is there
+                                     because a row that navigates has to look like one. -->
                                 <Grid Padding="20,0,20,0" HeightRequest="60">
-                                    <Grid ColumnDefinitions="4,12,*" ColumnSpacing="0">
+                                    <Grid.GestureRecognizers>
+                                        <TapGestureRecognizer
+                                            Command="{Binding Source={x:Reference ThisPage}, Path=BindingContext.OpenAppointmentCommand}"
+                                            CommandParameter="{Binding}" />
+                                    </Grid.GestureRecognizers>
+                                    <Grid ColumnDefinitions="4,12,Auto,*,Auto" ColumnSpacing="0">
                                         <!-- Color bar -->
                                         <BoxView Grid.Column="0"
                                                  BackgroundColor="{StaticResource iOSRed}"
                                                  CornerRadius="2"
                                                  VerticalOptions="Fill"
                                                  Margin="0,6" />
+                                        <!-- The counterpart's assigned avatar, same as everywhere else. -->
+                                        <controls:Avatar Grid.Column="2"
+                                                         Size="34"
+                                                         Margin="0,0,10,0"
+                                                         Source="{Binding Appointment.AvatarAsset}"
+                                                         AutomationId="CalendarRowAvatar" />
                                         <!-- Content -->
-                                        <VerticalStackLayout Grid.Column="2"
+                                        <VerticalStackLayout Grid.Column="3"
                                                              VerticalOptions="Center"
                                                              Spacing="2">
-                                            <Label Text="{Binding .}"
+                                            <Label Text="{Binding Label}"
                                                    FontSize="15"
                                                    TextColor="{StaticResource iOSLabel}" />
+                                            <!-- Hidden rather than blank when the session has no recorded
+                                                 length: an empty second line reads as missing data. -->
                                             <Label Text="{Binding DurationLabel}"
+                                                   IsVisible="{Binding HasDuration}"
                                                    FontSize="13"
                                                    TextColor="{StaticResource iOSGray}" />
                                         </VerticalStackLayout>
+                                        <!-- Hidden on a row with no identifier: it cannot be opened, and a
+                                             chevron would promise a tap that lands nowhere. -->
+                                        <Label Grid.Column="4"
+                                               Text="&#x203A;"
+                                               FontSize="22"
+                                               IsVisible="{Binding CanOpen}"
+                                               VerticalOptions="Center"
+                                               TextColor="{StaticResource iOSGray}"
+                                               AutomationId="OpenAppointmentChevron" />
                                     </Grid>
                                     <!-- Bottom separator -->
                                     <BoxView HeightRequest="0.5"

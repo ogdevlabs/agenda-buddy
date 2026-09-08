@@ -21,6 +21,8 @@ public static class ServiceCollectionExtension
         var providersCollection = MongoConnectionResolver.ResolveSetting(configuration, "ProvidersCollection", "providers");
         var appointmentsCollection = MongoConnectionResolver.ResolveSetting(configuration, "AppointmentsCollection", "appointments");
         var customersCollection = MongoConnectionResolver.ResolveSetting(configuration, "CustomersCollection", "customers");
+        var calendarBlocksCollection = MongoConnectionResolver.ResolveSetting(
+            configuration, "CalendarBlocksCollection", "calendar_blocks");
         serviceCollection.AddScoped<IRepository<ProviderEntity>>(serviceProvider =>
             new MongoDbRepository<ProviderEntity>(
                 serviceProvider.GetRequiredService<IMongoClient>().GetDatabase(databaseName),
@@ -36,9 +38,19 @@ public static class ServiceCollectionExtension
                 serviceProvider.GetRequiredService<IMongoClient>().GetDatabase(databaseName),
                 customersCollection));
 
+        // Time off lives in its own collection, not as whole-day fake appointments in `appointments`.
+        serviceCollection.AddScoped<IRepository<CalendarBlockEntity>>(serviceProvider =>
+            new MongoDbRepository<CalendarBlockEntity>(
+                serviceProvider.GetRequiredService<IMongoClient>().GetDatabase(databaseName),
+                calendarBlocksCollection));
+
         serviceCollection.AddScoped<ProviderService>();
         serviceCollection.AddScoped<CalendarService>();
         serviceCollection.AddScoped<CustomerService>();
+
+        // Required by CheckCalendarAvailabilityQueryHandler: without it a customer is offered slots inside the
+        // provider's time off, which is the whole point of recording it.
+        serviceCollection.AddScoped<ICalendarBlockService, CalendarBlockService>();
 
         // CheckCalendarAvailabilityQueryHandler/CheckCalendarAppointmentsQueryHandler are typed against
         // IProviderService, not the concrete class -- it already covers everything they call.

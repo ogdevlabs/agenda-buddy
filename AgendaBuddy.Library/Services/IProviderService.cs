@@ -84,6 +84,23 @@ public interface IProviderService
     Task<ProviderEntity?> SetWorkHoursAsync(string providerEmail, int startHour, int endHour);
 
     /// <summary>
+    /// Replaces the provider's per-weekday hours for the weekdays given, leaving the rest alone.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// A targeted <c>$set</c> on <c>work_week</c>, for the same reason its single-pair sibling is one: a
+    /// whole-document replace would discard a concurrent edit to the provider's services or appointments.
+    /// </para>
+    /// <para>
+    /// <b>Merged, not overwritten.</b> A request naming Monday and Tuesday must not silently clear Wednesday —
+    /// a partial week is a coherent request, and the single legacy pair remains the fallback for any weekday
+    /// still absent.
+    /// </para>
+    /// </remarks>
+    /// <returns><c>null</c> when no provider matched, which also serves as the existence check.</returns>
+    Task<ProviderEntity?> SetWorkWeekAsync(string providerEmail, List<WorkDayHours> days);
+
+    /// <summary>
     /// Writes a new status onto one appointment inside a provider's embedded list, via the positional
     /// <c>$</c> operator so only the matched element changes.
     /// </summary>
@@ -97,6 +114,40 @@ public interface IProviderService
     /// whole provider document. <c>ReportingService</c> counts statuses from the embedded list, so a status
     /// written to only the <c>appointments</c> collection would leave the dashboard reporting the old value.
     /// </remarks>
+    /// <param name="clearProposal">
+    /// Also unset any reschedule proposal on the embedded copy. Needed when completing a session that had one
+    /// outstanding — a <c>Completed</c> row still carrying a proposed time reads as an outstanding request
+    /// against a status saying the session is over.
+    /// </param>
     Task<ProviderEntity?> ChangeEmbeddedAppointmentStatusAsync(
-        string providerEmail, string identifier, AppointmentStatus status, string description);
+        string providerEmail, string identifier, AppointmentStatus status, string description,
+        bool clearProposal = false);
+
+    /// <summary>
+    /// Moves the provider's embedded copy of an appointment to new times, clearing any proposal on it and
+    /// returning it to <c>Booked</c>.
+    /// </summary>
+    /// <remarks>
+    /// The embedded list is what <see cref="Tools.AvailabilityCalculator"/> reads for the busy set, so a
+    /// reschedule that updates only the <c>appointments</c> collection leaves the OLD slot blocked and the new one
+    /// still on offer — which is a double-booking generator, not a stale display.
+    /// </remarks>
+    Task<ProviderEntity?> ChangeEmbeddedAppointmentScheduleAsync(
+        string providerEmail, string identifier, DateTime startUtc, DateTime endUtc,
+        DateTime? previousStartUtc = null);
+
+    /// <summary>
+    /// Records a reschedule proposal on the provider's embedded copy.
+    /// </summary>
+    /// <remarks>
+    /// <b>The embedded list is the client-facing read.</b>
+    /// <c>GET /api/v1/calendar/appointments/{email}</c> serves it for BOTH roles, so a proposal written only to
+    /// the <c>appointments</c> collection reaches no screen: the status arrives as <c>RescheduleRequested</c>
+    /// carrying no proposed time, which every reader correctly treats as no proposal at all.
+    /// </remarks>
+    Task<ProviderEntity?> SetEmbeddedRescheduleProposalAsync(
+        string providerEmail, string identifier, DateTime proposedStartUtc, string proposedBy);
+
+    /// <summary>Clears a proposal from the embedded copy and returns it to <c>Booked</c>. For a decline.</summary>
+    Task<ProviderEntity?> ClearEmbeddedRescheduleProposalAsync(string providerEmail, string identifier);
 }

@@ -23,7 +23,17 @@ public class MessageThreadStub
     /// counterparty's profile, so there is no assigned avatar to read. The derivation is stable, which is what
     /// makes the same person show the same mark here and in the contacts list.
     /// </remarks>
-    public string AvatarAsset => $"{AvatarCatalog.Deterministic(OtherPartyEmail)}.png";
+    /// <summary>
+    /// The counterpart's assigned avatar id, when a directory read supplied one.
+    /// </summary>
+    /// <remarks>
+    /// The message wire carries participant emails and nothing else, so a thread only knows the assigned mark if
+    /// something filled it in. Empty is the normal case and falls back to the deterministic derivation.
+    /// </remarks>
+    public string OtherPartyAvatarId { get; set; } = string.Empty;
+
+    public string AvatarAsset =>
+        Infrastructure.AvatarSource.For(OtherPartyAvatarId, OtherPartyEmail);
     public string TimeAgo => FormatTimeAgo(LastMessageAt);
     public bool HasUnread => UnreadCount > 0;
 

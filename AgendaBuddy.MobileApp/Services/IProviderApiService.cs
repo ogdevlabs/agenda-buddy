@@ -45,4 +45,24 @@ public interface IProviderApiService
     /// it closes, so a <c>false</c> return can mean invalid as well as unreachable.
     /// </summary>
     Task<bool> UpdateWorkHoursAsync(string email, WorkHours hours, CancellationToken ct = default);
+
+    /// <summary>
+    /// The provider's per-weekday hours, one entry per weekday they have actually configured.
+    /// </summary>
+    /// <remarks>
+    /// Empty for a provider who has only ever set the single pair, which is the majority — the caller fills the
+    /// gaps from <see cref="GetWorkHoursAsync"/> so the screen opens showing the hours they already had rather
+    /// than seven blanks.
+    /// </remarks>
+    Task<List<WorkDayHoursDto>> GetWorkWeekAsync(string email, CancellationToken ct = default);
+
+    /// <summary>
+    /// <c>PUT /api/v1/providers/{email}/work-week</c>.
+    /// </summary>
+    /// <returns>
+    /// The server's refusal when it refuses — it names which weekday is wrong, which cannot be reconstructed
+    /// here from a bool.
+    /// </returns>
+    Task<AppointmentActionResult> UpdateWorkWeekAsync(
+        string email, IEnumerable<WorkDayHoursDto> days, CancellationToken ct = default);
 }

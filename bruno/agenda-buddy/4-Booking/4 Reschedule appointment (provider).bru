@@ -1,0 +1,33 @@
+meta {
+  name: 4 Reschedule appointment (provider)
+  type: http
+  seq: 4
+}
+post {
+  url: {{gatewayUrl}}/api/v1/booking/appointments/{{appointmentIdentifier}}/reschedule
+  body: json
+}
+body:json {
+  {
+    "newStartUtc": "2026-09-20T16:00:00Z"
+  }
+}
+docs {
+  The **provider** moving a booked session outright — no proposal, no approval. The calendar is theirs.
+
+  Run this signed in as the PROVIDER. A customer gets `403`: moving a session on somebody else's
+  calendar without asking is what `reschedule-request` exists for.
+
+  ⚠️ **The start only, no end.** The session's length is carried across from what was agreed, so a
+  reschedule cannot quietly turn a 45-minute session into 60. Sending an end would make that length
+  client-assertable on every move.
+
+  ⚠️ **No participant emails either** — both come from the stored appointment, so a caller cannot
+  reschedule somebody else's session by naming them. Who is asking comes from the token.
+
+  `409` when the session is not `Booked` (completed, cancelled, already has a request outstanding), or
+  when the proposed time is in the past or is the time already booked. `404` when no such appointment.
+
+  On success the customer is notified and `previousStart` is recorded, so the change can be described
+  rather than merely applied — the client renders "Moved from …" off it.
+}

@@ -24,9 +24,15 @@ public class PaymentsAndStatusTest(ServiceHostFixture<BookingAnchor> host, Crypt
     private readonly TokenFactory _tokens = new(crypto);
 
     private async Task<ServiceHost> StartWithAnAppointmentAsync(
-        AppointmentStatus status = AppointmentStatus.Requested)
+        AppointmentStatus status = AppointmentStatus.Requested,
+        DateTime? startUtc = null)
     {
         var service = host.StartService("Production");
+
+        // The default is a fixed past date, which suits every test about the cancel/status MECHANISM. The
+        // customer's notice period is the one rule that cannot be expressed against a fixed date -- "more than
+        // 24 hours away" is relative to now -- so that test supplies its own.
+        var start = startUtc ?? new DateTime(2026, 9, 1, 10, 0, 0, DateTimeKind.Utc);
 
         var appointment = new AppointmentEntity
         {
@@ -34,8 +40,8 @@ public class PaymentsAndStatusTest(ServiceHostFixture<BookingAnchor> host, Crypt
             Identifier = Appointment,
             EmailProvider = Provider,
             EmailCustomer = Customer,
-            Start = new DateTime(2026, 9, 1, 10, 0, 0, DateTimeKind.Utc),
-            End = new DateTime(2026, 9, 1, 11, 0, 0, DateTimeKind.Utc),
+            Start = start,
+            End = start.AddHours(1),
             AppointmentStatus = status
         };
 
@@ -234,8 +240,10 @@ public class PaymentsAndStatusTest(ServiceHostFixture<BookingAnchor> host, Crypt
         // real activates the bug, so both are fixed together.
         using var booked = await StartWithAnAppointmentAsync(AppointmentStatus.Booked);
 
+        // As the PROVIDER, who may cancel at any notice: this asserts the soft delete and the embedded copy,
+        // not the customer's notice period, and the fixture's window is a fixed past date.
         var cancelBooked = await booked.Client.SendAsync(Authorised(
-            HttpMethod.Delete, "api/v1/booking/appointments/", Customer, TokenFactory.CustomerRole,
+            HttpMethod.Delete, "api/v1/booking/appointments/", Provider, TokenFactory.ProviderRole,
             new
             {
                 identifier = Appointment,
@@ -295,8 +303,11 @@ public class PaymentsAndStatusTest(ServiceHostFixture<BookingAnchor> host, Crypt
     {
         using var service = await StartWithAnAppointmentAsync(AppointmentStatus.Booked);
 
+        // As the PROVIDER: this test is about the slot being freed, and a provider may cancel at any notice.
+        // The fixture's window is a fixed past date, so a CUSTOMER is refused by the 24-hour rule -- see
+        // ACustomerCannotCancelInsideTheNoticePeriod for that half.
         var cancel = await service.Client.SendAsync(Authorised(
-            HttpMethod.Delete, "api/v1/booking/appointments/", Customer, TokenFactory.CustomerRole,
+            HttpMethod.Delete, "api/v1/booking/appointments/", Provider, TokenFactory.ProviderRole,
             new
             {
                 identifier = Appointment,
@@ -322,6 +333,69 @@ public class PaymentsAndStatusTest(ServiceHostFixture<BookingAnchor> host, Crypt
             }));
 
         Assert.NotEqual(HttpStatusCode.Conflict, rebook.StatusCode);
+    }
+
+    /// <summary>
+    /// A CUSTOMER must give 24 hours' notice; inside that window the cancellation is refused and the refusal
+    /// names the deadline.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The rule rides in the same atomic filter as the cancellable-status rule, so this also proves the
+    /// appointment is left untouched — a refusal that had already written would be worse than one that had not.
+    /// </para>
+    /// <para>
+    /// The wording is asserted because it is the whole point: only the server holds the authoritative clock, so
+    /// the deadline cannot be reconstructed on the client, and "could not cancel" is advice nobody can act on.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public async Task ACustomerCannotCancelInsideTheNoticePeriod()
+    {
+        using var service = await StartWithAnAppointmentAsync(
+            AppointmentStatus.Booked, DateTime.UtcNow.AddHours(6));
+
+        var cancel = await service.Client.SendAsync(Authorised(
+            HttpMethod.Delete, "api/v1/booking/appointments/", Customer, TokenFactory.CustomerRole,
+            new { identifier = Appointment, emailProvider = Provider, emailCustomer = Customer }));
+
+        Assert.Equal(HttpStatusCode.BadRequest, cancel.StatusCode);
+        Assert.Contains("Cancellations close 24 hours", await cancel.Content.ReadAsStringAsync());
+
+        // Refused, not partly applied.
+        var stored = await service.Database.GetCollection<AppointmentEntity>("appointments")
+            .Find(Builders<AppointmentEntity>.Filter.Eq(a => a.Identifier, Appointment)).SingleAsync();
+        Assert.Equal(AppointmentStatus.Booked, stored.AppointmentStatus);
+    }
+
+    [Fact]
+    public async Task ACustomerCanCancelOutsideTheNoticePeriod()
+    {
+        using var service = await StartWithAnAppointmentAsync(
+            AppointmentStatus.Booked, DateTime.UtcNow.AddDays(5));
+
+        var cancel = await service.Client.SendAsync(Authorised(
+            HttpMethod.Delete, "api/v1/booking/appointments/", Customer, TokenFactory.CustomerRole,
+            new { identifier = Appointment, emailProvider = Provider, emailCustomer = Customer }));
+
+        Assert.Equal(HttpStatusCode.NoContent, cancel.StatusCode);
+    }
+
+    /// <summary>
+    /// A PROVIDER may cancel at any notice. The asymmetry is deliberate: a session they cannot make is
+    /// unavoidable, while a customer cancelling an hour beforehand costs a slot nobody else can now take.
+    /// </summary>
+    [Fact]
+    public async Task AProviderCanCancelInsideTheNoticePeriod()
+    {
+        using var service = await StartWithAnAppointmentAsync(
+            AppointmentStatus.Booked, DateTime.UtcNow.AddHours(6));
+
+        var cancel = await service.Client.SendAsync(Authorised(
+            HttpMethod.Delete, "api/v1/booking/appointments/", Provider, TokenFactory.ProviderRole,
+            new { identifier = Appointment, emailProvider = Provider, emailCustomer = Customer }));
+
+        Assert.Equal(HttpStatusCode.NoContent, cancel.StatusCode);
     }
 
     // ── Payments ────────────────────────────────────────────────────────────────────────────────────

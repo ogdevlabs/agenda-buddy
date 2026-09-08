@@ -164,6 +164,56 @@ public class ProviderService(IRepository<ProviderEntity> providerRepository) : I
             }));
     }
 
+    /// <inheritdoc/>
+    /// <remarks>
+    /// <b>Read-merge-write on the array, deliberately, and it is not the lost-update shape ADR D-9 removed.</b>
+    /// What that ADR is about is replacing a WHOLE DOCUMENT after reading it, which silently discards a
+    /// concurrent edit to any other field. This reads only <c>work_week</c> and writes back only
+    /// <c>work_week</c>, so a concurrent edit to services, appointments or professions is untouched. Two
+    /// providers cannot race here at all — a provider's own calendar settings have exactly one writer.
+    /// <para>
+    /// The merge is what makes a partial week coherent: a request naming Monday and Tuesday must not clear
+    /// Wednesday. MongoDB has no "upsert one element of an array by key" primitive — a positional <c>$set</c>
+    /// needs the element to exist already, and <c>$addToSet</c> would append a second entry for a weekday
+    /// rather than replace it, which is exactly the duplicate the calculator then has to resolve.
+    /// </para>
+    /// </remarks>
+    public async Task<ProviderEntity?> SetWorkWeekAsync(string providerEmail, List<WorkDayHours> days)
+    {
+        if (days is null || days.Count == 0) return null;
+
+        var provider = await providerRepository.FindOneAsync(new BsonDocument("email", providerEmail));
+        if (provider is null) return null;
+
+        // Incoming days win; everything else the provider already had is kept.
+        var incoming = days.ToDictionary(day => day.Day);
+        var merged = (provider.WorkWeek ?? [])
+            .Where(existing => !incoming.ContainsKey(existing.Day))
+            .Concat(days)
+            .OrderBy(day => day.Day)
+            .ToList();
+
+        var serialised = new BsonArray(merged.Select(day =>
+        {
+            var document = new BsonDocument
+            {
+                { "day", (int)day.Day },
+                { "is_closed", day.IsClosed }
+            };
+
+            // Omitted rather than written as null, matching [BsonIgnoreIfNull] on the entity — so a closed day
+            // that never had hours carries no keys for them.
+            if (day.StartHour.HasValue) document.Add("start_hour", day.StartHour.Value);
+            if (day.EndHour.HasValue) document.Add("end_hour", day.EndHour.Value);
+
+            return document;
+        }));
+
+        return await providerRepository.FindOneAndUpdateAsync(
+            new BsonDocument("email", providerEmail),
+            new BsonDocument("$set", new BsonDocument("work_week", serialised)));
+    }
+
     /// <summary>
     /// Writes a new status onto one appointment inside a provider's embedded list.
     /// </summary>
@@ -178,7 +228,102 @@ public class ProviderService(IRepository<ProviderEntity> providerRepository) : I
     /// of the two places would leave the dashboard reporting the old value indefinitely.
     /// </remarks>
     public async Task<ProviderEntity?> ChangeEmbeddedAppointmentStatusAsync(
-        string providerEmail, string identifier, AppointmentStatus status, string description)
+        string providerEmail, string identifier, AppointmentStatus status, string description,
+        bool clearProposal = false)
+    {
+        var update = new BsonDocument("$set", new BsonDocument
+        {
+            { "appointments.$.appointment_status", (int)status },
+            { "appointments.$.appointment_description", description }
+        });
+
+        // Auto-completion needs this: a session that had a proposal outstanding when its time passed is completed
+        // with the proposal dropped, and a Completed row still carrying a proposed time reads as an outstanding
+        // request against a status saying the session is over.
+        if (clearProposal)
+        {
+            update.Add("$unset", new BsonDocument
+            {
+                { "appointments.$.proposed_start", "" },
+                { "appointments.$.proposed_by", "" }
+            });
+        }
+
+        return await providerRepository.FindOneAndUpdateAsync(
+            new BsonDocument
+            {
+                { "email", providerEmail },
+                { "appointments.identifier", identifier }
+            },
+            update);
+    }
+
+    /// <summary>
+    /// Moves the provider's embedded copy of an appointment to new times.
+    /// </summary>
+    /// <remarks>
+    /// A positional <c>$set</c> for the same reason its status sibling is one: replacing the whole provider
+    /// document to change one embedded appointment is the lost-update shape ADR D-9 removed from booking, and it
+    /// would silently discard a concurrent edit to the provider's services or hours.
+    /// <para>
+    /// The embedded copy is what <c>AvailabilityCalculator</c> reads, so a reschedule that updates only the
+    /// <c>appointments</c> collection leaves the OLD slot blocked and the new one still on offer — a
+    /// double-booking generator.
+    /// </para>
+    /// </remarks>
+    public async Task<ProviderEntity?> ChangeEmbeddedAppointmentScheduleAsync(
+        string providerEmail, string identifier, DateTime startUtc, DateTime endUtc, DateTime? previousStartUtc = null)
+    {
+        var set = new BsonDocument
+        {
+            { "appointments.$.start", DateTime.SpecifyKind(startUtc.ToUniversalTime(), DateTimeKind.Utc) },
+            { "appointments.$.end", DateTime.SpecifyKind(endUtc.ToUniversalTime(), DateTimeKind.Utc) },
+            { "appointments.$.appointment_status", (int)AppointmentStatus.Booked },
+            {
+                "appointments.$.appointment_description",
+                EnumHelper<AppointmentStatus>.GetEnumDescription(AppointmentStatus.Booked)
+            }
+        };
+
+        if (previousStartUtc is { } previous)
+        {
+            set.Add(
+                "appointments.$.previous_start",
+                DateTime.SpecifyKind(previous.ToUniversalTime(), DateTimeKind.Utc));
+        }
+
+        return await providerRepository.FindOneAndUpdateAsync(
+            new BsonDocument
+            {
+                { "email", providerEmail },
+                { "appointments.identifier", identifier }
+            },
+            new BsonDocument
+            {
+                { "$set", set },
+                {
+                    "$unset", new BsonDocument
+                    {
+                        { "appointments.$.proposed_start", "" },
+                        { "appointments.$.proposed_by", "" }
+                    }
+                }
+            });
+    }
+
+    /// <summary>
+    /// Records a reschedule proposal on the provider's embedded copy.
+    /// </summary>
+    /// <remarks>
+    /// <b>Needed because the embedded list IS the client-facing read.</b>
+    /// <c>GET /api/v1/calendar/appointments/{email}</c> serves <see cref="ProviderEntity.AppointmentEntities"/>
+    /// — for a customer as well, since <c>CustomerEntity</c> holds only identifier strings — so a proposal
+    /// written to the <c>appointments</c> collection alone reaches no screen at all. The status would arrive as
+    /// <c>RescheduleRequested</c> with no proposed time, which every reader treats as "no proposal outstanding":
+    /// the banner would never draw and Approve/Decline would never appear.
+    /// </remarks>
+    public async Task<ProviderEntity?> SetEmbeddedRescheduleProposalAsync(
+        string providerEmail, string identifier, DateTime proposedStartUtc, string proposedBy)
     {
         return await providerRepository.FindOneAndUpdateAsync(
             new BsonDocument
@@ -188,8 +333,55 @@ public class ProviderService(IRepository<ProviderEntity> providerRepository) : I
             },
             new BsonDocument("$set", new BsonDocument
             {
-                { "appointments.$.appointment_status", (int)status },
-                { "appointments.$.appointment_description", description }
+                { "appointments.$.appointment_status", (int)AppointmentStatus.RescheduleRequested },
+                {
+                    "appointments.$.appointment_description",
+                    EnumHelper<AppointmentStatus>.GetEnumDescription(AppointmentStatus.RescheduleRequested)
+                },
+                {
+                    "appointments.$.proposed_start",
+                    DateTime.SpecifyKind(proposedStartUtc.ToUniversalTime(), DateTimeKind.Utc)
+                },
+                { "appointments.$.proposed_by", proposedBy }
             }));
+    }
+
+    /// <summary>
+    /// Clears a proposal from the embedded copy and returns it to <c>Booked</c>, leaving its times alone.
+    /// </summary>
+    /// <remarks>
+    /// For a DECLINE. Setting the status back without unsetting the proposal fields would leave a
+    /// <c>Booked</c> appointment still carrying a proposed time, which reads as an outstanding request against a
+    /// status that says there is none.
+    /// </remarks>
+    public async Task<ProviderEntity?> ClearEmbeddedRescheduleProposalAsync(
+        string providerEmail, string identifier)
+    {
+        return await providerRepository.FindOneAndUpdateAsync(
+            new BsonDocument
+            {
+                { "email", providerEmail },
+                { "appointments.identifier", identifier }
+            },
+            new BsonDocument
+            {
+                {
+                    "$set", new BsonDocument
+                    {
+                        { "appointments.$.appointment_status", (int)AppointmentStatus.Booked },
+                        {
+                            "appointments.$.appointment_description",
+                            EnumHelper<AppointmentStatus>.GetEnumDescription(AppointmentStatus.Booked)
+                        }
+                    }
+                },
+                {
+                    "$unset", new BsonDocument
+                    {
+                        { "appointments.$.proposed_start", "" },
+                        { "appointments.$.proposed_by", "" }
+                    }
+                }
+            });
     }
 }

@@ -87,5 +87,129 @@ public class CalendarModule : ICarterModule
             })
             .WithName("CheckCalendarAppointments")
             .RequireAuthorization();
+
+        // ── Time off ──────────────────────────────────────────────────────────────────────────────────
+        //
+        // A block is a first-class record on its own collection, replacing the whole-day fake appointment
+        // (an AppointmentEntity with day_off = true, an invented empty customer email, no time range and no
+        // reason). Every route here is OWNER-ONLY, and that is a stronger requirement than it looks: a
+        // block's `reason` is the provider's private note. The customer-facing availability route already
+        // reflects blocks -- as ABSENCE, which is all a customer needs and all they get.
+
+        calendar.MapGet("/blocks/{email}",
+            async Task<Results<Ok<DataResponse<List<CalendarBlockEntity>>>, NotFound>> (
+                IMediator mediator,
+                ClaimsPrincipal user,
+                string email,
+                CancellationToken cancellationToken) =>
+            {
+                // No local try/catch: AgendaBuddyExceptionHandler maps ForbiddenException to 403 centrally.
+                OwnershipGuard.AssertOwner(user, email);
+
+                var result = await mediator.Send(
+                    new GetCalendarBlocksQuery { EmailProvider = email }, cancellationToken);
+
+                // A provider with no time off recorded is not "not found" -- an empty list is the answer.
+                return result.IsSuccess
+                    ? TypedResults.Ok(DataResponse<List<CalendarBlockEntity>>.Ok(result.Value))
+                    : TypedResults.NotFound();
+            })
+            .WithName("GetCalendarBlocks")
+            .RequireAuthorization();
+
+        // What a proposed range would strand, read BEFORE creating a block, so the cost is visible in
+        // advance rather than discovered afterwards. Owner-only: it returns whole appointments, which carry
+        // the counterparty's email.
+        calendar.MapGet("/blocks/{email}/conflicts",
+            async Task<Results<Ok<DataResponse<List<AppointmentEntity>>>, BadRequest<DataResponse<List<AppointmentEntity>>>>> (
+                IMediator mediator,
+                ClaimsPrincipal user,
+                string email,
+                DateTime startUtc,
+                DateTime endUtc,
+                CancellationToken cancellationToken) =>
+            {
+                OwnershipGuard.AssertOwner(user, email);
+
+                var result = await mediator.Send(
+                    new GetCalendarBlockConflictsQuery
+                    {
+                        EmailProvider = email,
+                        StartUtc = startUtc,
+                        EndUtc = endUtc
+                    },
+                    cancellationToken);
+
+                return result.IsSuccess
+                    ? TypedResults.Ok(DataResponse<List<AppointmentEntity>>.Ok(result.Value))
+                    : TypedResults.BadRequest(DataResponse<List<AppointmentEntity>>.Fail(
+                        result.Errors.Select(error => error.Message)));
+            })
+            .WithName("GetCalendarBlockConflicts")
+            .RequireAuthorization();
+
+        calendar.MapPost("/blocks/{email}",
+            async Task<Results<ValidationProblem, Created<DataResponse<CalendarBlockEntity>>, Conflict<DataResponse<CalendarBlockEntity>>, BadRequest<DataResponse<CalendarBlockEntity>>>> (
+                IMediator mediator,
+                ClaimsPrincipal user,
+                string email,
+                CalendarBlockRequest request,
+                CancellationToken cancellationToken) =>
+            {
+                OwnershipGuard.AssertOwner(user, email);
+
+                if (!MiniValidator.TryValidate(request, out var errors))
+                    return TypedResults.ValidationProblem(errors);
+
+                var result = await mediator.Send(
+                    new BlockCalendarCommand
+                    {
+                        EmailProvider = email,
+                        StartUtc = request.StartUtc,
+                        EndUtc = request.EndUtc,
+                        Reason = request.Reason,
+                        Force = request.Force
+                    },
+                    cancellationToken);
+
+                if (result.IsSuccess)
+                {
+                    return TypedResults.Created(
+                        $"/api/v1/calendar/blocks/{email}",
+                        DataResponse<CalendarBlockEntity>.Ok(result.Value));
+                }
+
+                var messages = result.Errors.Select(error => error.Message).ToList();
+
+                // 409 for "sessions are in the way" -- the request is well-formed and conflicts with state the
+                // provider can resolve. 400 for a malformed range, which no amount of resolving will fix.
+                return messages.Any(message => message.Contains("inside this range"))
+                    ? TypedResults.Conflict(DataResponse<CalendarBlockEntity>.Fail(messages))
+                    : TypedResults.BadRequest(DataResponse<CalendarBlockEntity>.Fail(messages));
+            })
+            .WithName("BlockCalendar")
+            .RequireAuthorization();
+
+        calendar.MapDelete("/blocks/{email}/{identifier}",
+            async Task<Results<NoContent, NotFound>> (
+                IMediator mediator,
+                ClaimsPrincipal user,
+                string email,
+                string identifier,
+                CancellationToken cancellationToken) =>
+            {
+                OwnershipGuard.AssertOwner(user, email);
+
+                var result = await mediator.Send(
+                    new RemoveCalendarBlockCommand { EmailProvider = email, Identifier = identifier },
+                    cancellationToken);
+
+                // 404 rather than 204-regardless: unlike the device-token DELETE, whether a provider has a
+                // given block of their OWN is not information withheld from them, and a silent success would
+                // hide a client sending the wrong identifier.
+                return result.IsSuccess ? TypedResults.NoContent() : TypedResults.NotFound();
+            })
+            .WithName("RemoveCalendarBlock")
+            .RequireAuthorization();
     }
 }

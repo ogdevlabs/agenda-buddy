@@ -173,6 +173,19 @@
                 <Setter Property="HeightRequest" Value="48" />
             </Style>
 
+            <!-- Warning Button — amber, for an action that CHANGES a commitment rather than completing or
+                 destroying one. Rescheduling is neither a success nor a danger: it moves something both parties
+                 agreed to, which is why it reads in its own colour beside a green Complete and a red Cancel. -->
+            <Style x:Key="WarningButton" TargetType="Button">
+                <Setter Property="BackgroundColor" Value="{StaticResource Warning}" />
+                <Setter Property="TextColor" Value="{StaticResource TextOnPrimary}" />
+                <Setter Property="FontAttributes" Value="Bold" />
+                <Setter Property="FontSize" Value="15" />
+                <Setter Property="CornerRadius" Value="24" />
+                <Setter Property="Padding" Value="20,14" />
+                <Setter Property="HeightRequest" Value="48" />
+            </Style>
+
             <!-- Danger Button (outline) -->
             <Style x:Key="DangerButton" TargetType="Button">
                 <Setter Property="BackgroundColor" Value="Transparent" />

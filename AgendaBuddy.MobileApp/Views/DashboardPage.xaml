@@ -234,23 +234,18 @@
 
                                                 <!-- Main row -->
                                                 <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
-                                                    <!-- Colored avatar -->
-                                                    <Grid Grid.Column="0"
-                                                          WidthRequest="46"
-                                                          HeightRequest="46"
-                                                          VerticalOptions="Center">
-                                                        <BoxView CornerRadius="23"
-                                                                 WidthRequest="46"
-                                                                 HeightRequest="46"
-                                                                 Color="{Binding IsPast, Converter={toolkit:BoolToObjectConverter TrueObject={StaticResource iOSGray5}, FalseObject=#E8F5E9}}" />
-                                                        <Label Text="{Binding DisplayName, StringFormat='{0[0]}'}"
-                                                               FontSize="19"
-                                                               FontAttributes="Bold"
-                                                               TextColor="{Binding IsPast, Converter={toolkit:BoolToObjectConverter TrueObject={StaticResource iOSPastText}, FalseObject={StaticResource iOSGreen}}}"
-                                                               HorizontalOptions="Center"
-                                                               VerticalOptions="Center"
-                                                               TextTransform="Uppercase" />
-                                                    </Grid>
+                                                    <!-- The person's ASSIGNED avatar, the same mark Contacts and
+                                                         Messages show. It replaces a coloured circle holding the
+                                                         first letter of their name: an initial is what avatars
+                                                         were introduced to replace, and it made this the only
+                                                         surface identifying somebody differently from every
+                                                         other. Resolved through AvatarSource, so an account with
+                                                         no assigned mark still gets a stable one derived from
+                                                         its address rather than an empty circle. -->
+                                                    <controls:Avatar Grid.Column="0"
+                                                                     Size="46"
+                                                                     Source="{Binding AvatarAsset}"
+                                                                     AutomationId="AppointmentAvatar" />
 
                                                     <!-- Name + time -->
                                                     <VerticalStackLayout Grid.Column="1"
