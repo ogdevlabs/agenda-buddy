@@ -51,6 +51,22 @@ public enum AppointmentTab
     // content restated the session's own facts was a section with nothing of its own to say.
 }
 
+/// <summary>
+/// Which half of the Notes section is on screen.
+/// </summary>
+/// <remarks>
+/// Split in two because reading notes and writing one have different shapes, and stacking both made the card
+/// taller than the viewport — the Add button ended up under the floating tab bar, so the one control that commits
+/// a note could only be found by scrolling. Two halves each fit.
+/// </remarks>
+public enum AppointmentNotesTab
+{
+    /// <summary>What is already recorded. The default: reading is the commoner reason to open the section.</summary>
+    Current,
+
+    Add
+}
+
 public partial class AppointmentDetailViewModel : ObservableObject
 {
     private readonly IBookingApiService _bookingApiService;
@@ -128,6 +144,26 @@ public partial class AppointmentDetailViewModel : ObservableObject
     /// </remarks>
     public bool ShowManageSection => IsManageTab && HasAppointment;
 
+
+    // ── Notes sub-tabs ────────────────────────────────────────────────────────────────────────────────
+
+    [ObservableProperty]
+    private AppointmentNotesTab _selectedNotesTab = AppointmentNotesTab.Current;
+
+    public bool IsCurrentNotesTab => SelectedNotesTab == AppointmentNotesTab.Current;
+    public bool IsAddNoteTab => SelectedNotesTab == AppointmentNotesTab.Add;
+
+    /// <summary>Moves between reading notes and writing one.</summary>
+    /// <remarks>
+    /// Unrecognised names are ignored, for the same reason as the outer strip: silently moving somebody off the
+    /// half they are on is more confusing than a tap that did nothing.
+    /// </remarks>
+    [RelayCommand]
+    private void SelectNotesTab(string? tab)
+    {
+        if (Enum.TryParse<AppointmentNotesTab>(tab, ignoreCase: true, out var parsed))
+            SelectedNotesTab = parsed;
+    }
 
     /// <summary>
     /// Moves to a tab by name, so the tab strip can be laid out declaratively.
@@ -288,6 +324,12 @@ public partial class AppointmentDetailViewModel : ObservableObject
     /// Not claimed while the read is still in flight: "no notes" and "not asked yet" are different statements.
     /// </remarks>
     public bool HasNoSessionNotes => !IsLoadingNotes && Notes.Count == 0 && !HasNotesError;
+
+    /// <summary>The recorded notes, on the reading half only.</summary>
+    public bool ShowNotesList => IsCurrentNotesTab && HasSessionNotes;
+
+    /// <summary>The nothing-recorded-yet line, on the reading half only.</summary>
+    public bool ShowNoNotesMessage => IsCurrentNotesTab && HasNoSessionNotes;
 
     /// <summary>Hides the phone line rather than leaving an empty row when no number was ever given.</summary>
     public bool HasContactPhone => !string.IsNullOrWhiteSpace(Appointment?.ContactPhone);
@@ -603,6 +645,10 @@ public partial class AppointmentDetailViewModel : ObservableObject
             if (created is not null)
             {
                 Notes = new List<NoteEntity>(Notes) { created };
+
+                // Back to the list, so the note the provider just wrote is what they see. Staying on an empty
+                // form gives no evidence it was saved.
+                SelectedNotesTab = AppointmentNotesTab.Current;
                 await ToastNotifier.ShowAsync("Note added.");
             }
             else
@@ -664,6 +710,14 @@ public partial class AppointmentDetailViewModel : ObservableObject
         }
     }
 
+    partial void OnSelectedNotesTabChanged(AppointmentNotesTab value)
+    {
+        OnPropertyChanged(nameof(IsCurrentNotesTab));
+        OnPropertyChanged(nameof(IsAddNoteTab));
+        OnPropertyChanged(nameof(ShowNotesList));
+        OnPropertyChanged(nameof(ShowNoNotesMessage));
+    }
+
     partial void OnSelectedTabChanged(AppointmentTab value)
     {
         OnPropertyChanged(nameof(IsManageTab));
@@ -677,6 +731,7 @@ public partial class AppointmentDetailViewModel : ObservableObject
     {
         OnPropertyChanged(nameof(HasNotesError));
         OnPropertyChanged(nameof(HasNoSessionNotes));
+        OnPropertyChanged(nameof(ShowNoNotesMessage));
     }
 
     partial void OnIsLoadingChanged(bool value) => OnPropertyChanged(nameof(IsNotLoading));
@@ -691,9 +746,15 @@ public partial class AppointmentDetailViewModel : ObservableObject
     {
         OnPropertyChanged(nameof(HasSessionNotes));
         OnPropertyChanged(nameof(HasNoSessionNotes));
+        OnPropertyChanged(nameof(ShowNotesList));
+        OnPropertyChanged(nameof(ShowNoNotesMessage));
     }
 
-    partial void OnIsLoadingNotesChanged(bool value) => OnPropertyChanged(nameof(HasNoSessionNotes));
+    partial void OnIsLoadingNotesChanged(bool value)
+    {
+        OnPropertyChanged(nameof(HasNoSessionNotes));
+        OnPropertyChanged(nameof(ShowNoNotesMessage));
+    }
 
     partial void OnAppointmentChanged(AppointmentDetail? value)
     {

@@ -216,6 +216,63 @@ public class AppointmentTabTests
         Assert.False(vm.HasNoSessionNotes);
     }
 
+    // ── Notes sub-tabs ────────────────────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Reading notes and writing one are two halves of the card, and never both on screen: stacking them made it
+    /// taller than the viewport, which put the Add button under the floating tab bar.
+    /// </summary>
+    [Fact]
+    public void ReadingAndWritingAreNeverBothOnScreen()
+    {
+        var vm = ViewModel(isProvider: true);
+        vm.Notes = [new NoteEntity { Content = "Worked on deadlifts." }];
+
+        Assert.True(vm.IsCurrentNotesTab);
+        Assert.True(vm.ShowNotesList);
+        Assert.False(vm.IsAddNoteTab);
+
+        vm.SelectNotesTabCommand.Execute("Add");
+
+        Assert.True(vm.IsAddNoteTab);
+        Assert.False(vm.ShowNotesList);
+        Assert.False(vm.ShowNoNotesMessage);
+    }
+
+    /// <summary>Reading is the default: it is the commoner reason to open the section.</summary>
+    [Fact]
+    public void ReadingIsTheHalfTheyLandOn() =>
+        Assert.Equal(AppointmentNotesTab.Current, ViewModel(isProvider: true).SelectedNotesTab);
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("Nonsense")]
+    public void AnUnrecognisedNotesTabNameIsIgnored(string? name)
+    {
+        var vm = ViewModel(isProvider: true);
+        vm.SelectNotesTabCommand.Execute("Add");
+
+        vm.SelectNotesTabCommand.Execute(name);
+
+        Assert.Equal(AppointmentNotesTab.Add, vm.SelectedNotesTab);
+    }
+
+    /// <summary>
+    /// The empty-notes line belongs to the reading half only — on the form it would sit above the field the
+    /// provider is about to fill, saying there is nothing there.
+    /// </summary>
+    [Fact]
+    public void TheEmptyNotesLineBelongsToTheReadingHalf()
+    {
+        var vm = ViewModel(isProvider: true);
+
+        Assert.True(vm.ShowNoNotesMessage);
+
+        vm.SelectNotesTabCommand.Execute("Add");
+        Assert.False(vm.ShowNoNotesMessage);
+    }
+
     [Fact]
     public void TheNotesEmptyStateGoesAwayOnceThereAreNotes()
     {

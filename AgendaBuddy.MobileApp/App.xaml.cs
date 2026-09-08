@@ -103,8 +103,16 @@ public partial class App : Application
 
             if (Shell.Current.CurrentPage?.BindingContext is ViewModels.AppointmentDetailViewModel appointment)
             {
-                appointment.SelectTabCommand.Execute(tab);
-                Console.WriteLine($"DEV TAB: selected {appointment.SelectedTab}");
+                // "Notes/Add" reaches a section's own inner tab, which is otherwise unreachable: the Notes card
+                // is itself split in two, and neither half is addressable by navigation.
+                var parts = tab.Split('/', 2);
+                appointment.SelectTabCommand.Execute(parts[0]);
+
+                if (parts.Length == 2)
+                    appointment.SelectNotesTabCommand.Execute(parts[1]);
+
+                Console.WriteLine(
+                    $"DEV TAB: selected {appointment.SelectedTab}/{appointment.SelectedNotesTab}");
             }
         }
         catch (Exception exception)
