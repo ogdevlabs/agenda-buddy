@@ -42,6 +42,33 @@ public class RequestRescheduleCommandHandler(
             return Result.Fail<AppointmentEntity>(exception.Message);
         }
 
+        // ⚠️ A proposed time has to sit inside the provider's working week, for the same reason booking one does:
+        // otherwise the calendar is enforced on the way in and ignored on the way to a new slot, and a session
+        // could be moved onto a day the provider had closed. Same shared predicate as the booking handler, so all
+        // three — what is offered, what is booked, what is rescheduled to — cannot disagree.
+        //
+        // The proposal keeps the session's own length, matching AppointmentEntity's own reschedule maths: End
+        // follows Start by the span it had before, falling back to the service duration.
+        var provider = await providerService.FindProvidersAsync(
+            SupportTools<ProviderEntity>.FilterByEmail(appointment.EmailProvider));
+
+        if (provider is not null)
+        {
+            var originalStart = appointment.Start.ToUniversalTime();
+            var originalEnd = appointment.End.ToUniversalTime();
+            var length = originalEnd > originalStart
+                ? originalEnd - originalStart
+                : TimeSpan.FromMinutes(appointment.ServiceDurationMinutes ?? 60);
+
+            if (!AvailabilityCalculator.IsWithinWorkingHours(
+                    provider, request.ProposedStartUtc, request.ProposedStartUtc.Add(length)))
+            {
+                await FailAsync(request.Identifier);
+                return Result.Fail<AppointmentEntity>(
+                    $"{appointment.EmailProvider} is not available then. Pick a time from their calendar.");
+            }
+        }
+
         if (!await bookingService.RecordRescheduleProposalAsync(
                 request.Identifier, request.ProposedStartUtc, request.RequestedByEmail, nowUtc))
         {

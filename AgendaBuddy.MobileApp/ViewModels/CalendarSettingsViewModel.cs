@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using AgendaBuddy.Library.Tools;
 using AgendaBuddy.MobileApp.Infrastructure;
 using AgendaBuddy.MobileApp.Models;
 using AgendaBuddy.MobileApp.Services;
@@ -235,7 +236,12 @@ public partial class CalendarSettingsViewModel : ObservableObject
             }
             else
             {
-                rows.Add(new WorkDayRow(day, fallback.StartHour, fallback.EndHour, isClosed: false));
+                // Unconfigured, so the default decides — and the default is a working week. Read from
+                // AvailabilityCalculator rather than restated here, so the screen cannot show a week the
+                // server's availability does not honour.
+                rows.Add(new WorkDayRow(
+                    day, fallback.StartHour, fallback.EndHour,
+                    isClosed: !AvailabilityCalculator.IsOpenByDefault(day)));
             }
         }
 

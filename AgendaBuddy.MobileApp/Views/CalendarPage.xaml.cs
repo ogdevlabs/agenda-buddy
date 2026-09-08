@@ -36,7 +36,15 @@ public partial class CalendarPage : ContentPage
         await Shell.Current.GoToAsync(
             AppointmentNavigation.Route, AppointmentNavigation.BuildQuery(appointment));
 
-    private async void OnCalendarSettingsClicked(object? sender, EventArgs e)
+    /// <summary>
+    /// Opens the provider's working-week and time-off settings.
+    /// </summary>
+    /// <remarks>
+    /// A <c>Tapped</c> handler rather than <c>Clicked</c>: the affordance is a labelled Border row now, not the
+    /// 40x40 gear button it replaces — that one sat between the two week-navigation chevrons with no label, read as
+    /// a third arrow, and providers were not finding it.
+    /// </remarks>
+    private async void OnCalendarSettingsTapped(object? sender, TappedEventArgs e)
     {
         // Returning re-triggers OnAppearing, so the calendar reloads against the saved window.
         await Shell.Current.GoToAsync("calendarSettings");
