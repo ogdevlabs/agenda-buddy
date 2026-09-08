@@ -70,6 +70,30 @@ public static class AvailabilityCalculator
     /// <summary>Used when a provider has no timezone recorded — their behaviour before the field existed.</summary>
     public const string FallbackTimeZoneId = "UTC";
 
+    /// <summary>
+    /// Whether a provider who has configured nothing for <paramref name="day"/> is open on it.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Monday to Friday.</b> Until 2026-09-08 an unconfigured weekday inherited the single legacy pair for
+    /// <i>every</i> day of the week, so a provider who had never opened the calendar settings screen was offered
+    /// to customers on Saturday and Sunday — the one default nobody asks for. A working week is the safer
+    /// assumption in both directions: a provider who does work weekends can say so, whereas one who does not had
+    /// no way to discover they were being booked into them.
+    /// </para>
+    /// <para>
+    /// ⚠️ <b>This is the DEFAULT only.</b> An explicit <see cref="WorkDayHours"/> entry always wins, in both
+    /// directions — a provider who opens Saturday is open on Saturday, and one who closes Wednesday is closed.
+    /// </para>
+    /// <para>
+    /// It lives here, in <c>AgendaBuddy.Library</c>, because both sides need the same answer: this is what the
+    /// server generates availability from, and what <c>CalendarSettingsViewModel</c> seeds its seven rows with.
+    /// Two copies would drift into a screen that shows a week the calendar does not honour.
+    /// </para>
+    /// </remarks>
+    public static bool IsOpenByDefault(DayOfWeek day) =>
+        day is not (DayOfWeek.Saturday or DayOfWeek.Sunday);
+
     /// <summary>Spacing between candidate start times.</summary>
     public const int SlotStepMinutes = 60;
 
@@ -206,10 +230,10 @@ public static class AvailabilityCalculator
     /// bookable on exactly the hours they had.
     /// </para>
     /// <para>
-    /// <b>Only an explicitly closed day returns <c>null</c>.</b> An entry with unusable hours falls through to
-    /// the fallback rather than closing the day, because "0 to 0" is far more likely to be a bad write than a
-    /// deliberate closure — and a provider silently unbookable is worse than one bookable on standard hours.
-    /// Saying "closed" takes the flag.
+    /// <b>An explicitly closed day returns <c>null</c>, and so does an unconfigured weekend day</b> —
+    /// see <see cref="IsOpenByDefault"/>. An entry with unusable hours falls through to the fallback rather than
+    /// closing the day, because "0 to 0" is far more likely to be a bad write than a deliberate closure, and a
+    /// provider silently unbookable is worse than one bookable on standard hours. Saying "closed" takes the flag.
     /// </para>
     /// </remarks>
     internal static (int OpeningHour, int ClosingHour)? ResolveHours(ProviderEntity provider, DayOfWeek day)
@@ -223,7 +247,64 @@ public static class AvailabilityCalculator
             if (forDay.DescribesAWindow) return (forDay.StartHour!.Value, forDay.EndHour!.Value);
         }
 
+        // Nothing usable configured for this weekday. The legacy single pair describes hours, never WHICH days —
+        // so inheriting it for all seven made every provider bookable at weekends by default. A weekend day with
+        // no entry of its own is closed; a provider who works Saturdays says so with an entry.
+        if (!IsOpenByDefault(day)) return null;
+
         return ResolveHours(provider);
+    }
+
+    /// <summary>
+    /// Whether a session over <c>[startUtc, endUtc)</c> falls entirely inside <paramref name="provider"/>'s
+    /// working hours for the day it starts on, and not on a date they have taken off.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⚠️ <b>This is the enforcement half of the same rule <see cref="GetAvailability"/> offers, and it exists
+    /// because there was none.</b> The availability listing honoured the work week correctly while
+    /// <c>POST /api/v1/booking/appointments</c> validated only "in the future", "no overlap" and "a service this
+    /// provider offers" — so a Saturday a provider had explicitly closed, or 03:00 on a Monday, was accepted with
+    /// <c>201 Created</c>. A listing that a write does not enforce is a suggestion.
+    /// </para>
+    /// <para>
+    /// It deliberately shares <see cref="ResolveHours(ProviderEntity, DayOfWeek)"/> with the generator rather
+    /// than restating the tiers, so what is offered and what is accepted cannot disagree — which is the actual
+    /// invariant, more than either answer on its own.
+    /// </para>
+    /// <para>
+    /// Judged on the <b>provider's</b> local clock and on the local date of the START, so a session may not run
+    /// past closing into the next day. It does not consider existing appointments or time-off blocks; the booking
+    /// handler checks overlap separately, and <see cref="CalendarBlockEntity"/> blocks are the caller's to apply.
+    /// </para>
+    /// </remarks>
+    public static bool IsWithinWorkingHours(ProviderEntity provider, DateTime startUtc, DateTime endUtc)
+    {
+        ArgumentNullException.ThrowIfNull(provider);
+
+        // A zero- or negative-length session describes no interval, so there is nothing to place inside a window.
+        if (endUtc <= startUtc) return false;
+
+        var zone = ResolveZone(provider.TimeZoneId);
+        var localStart = TimeZoneInfo.ConvertTimeFromUtc(startUtc.ToUniversalTime(), zone);
+        var localEnd = TimeZoneInfo.ConvertTimeFromUtc(endUtc.ToUniversalTime(), zone);
+
+        var hours = ResolveHours(provider, localStart.DayOfWeek);
+        if (hours is null) return false;
+
+        var (openingHour, closingHour) = hours.Value;
+        var localDate = localStart.Date;
+
+        // A day marked off blocks its whole date, matching the generator — otherwise a date the calendar shows
+        // as unavailable would still accept a booking.
+        var daysOff = (provider.AppointmentEntities ?? [])
+            .Where(appointment => appointment.DayOff)
+            .Select(appointment => TimeZoneInfo.ConvertTimeFromUtc(appointment.Start.ToUniversalTime(), zone).Date);
+
+        if (daysOff.Contains(localDate)) return false;
+
+        return localStart >= localDate.AddHours(openingHour)
+               && localEnd <= localDate.AddHours(closingHour);
     }
 
     /// <summary>

@@ -69,8 +69,27 @@ public partial class WorkDayRow : ObservableObject
         ? "Closed"
         : IsValid ? $"{Format(StartHour)} – {Format(EndHour)}" : "Invalid";
 
-    /// <summary>Hours are only editable on an open day.</summary>
-    public bool IsOpen => !IsClosed;
+    /// <summary>
+    /// The inverse of <see cref="IsClosed"/> — what the row's Open/Closed switch binds to.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>This needs a SETTER, and not having one is what made closing a day impossible.</b>
+    /// <c>CalendarSettingsPage</c> binds <c>Switch.IsToggled</c> here, and <c>IsToggled</c> is a two-way
+    /// binding: with a getter only, the switch moved visually while the write back was silently dropped, so
+    /// <see cref="IsClosed"/> never changed. Saving then sent every day as open, the server dutifully stored
+    /// "open every day", and reopening the screen showed the weekend enabled again — which read as the save not
+    /// persisting when in fact the closure never reached the view model at all.
+    /// <para>
+    /// Inverting into <see cref="IsClosed"/> rather than holding a second flag keeps one source of truth:
+    /// <c>IsClosed</c> is what the wire and the entity carry, and two independent booleans would be free to
+    /// disagree.
+    /// </para>
+    /// </remarks>
+    public bool IsOpen
+    {
+        get => !IsClosed;
+        set => IsClosed = !value;
+    }
 
     public static string Format(int hour) => hour == 24 ? "24:00" : $"{hour:00}:00";
 

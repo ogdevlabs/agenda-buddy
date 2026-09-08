@@ -86,9 +86,15 @@ public class AvailabilityCalculatorTimeZoneTest
         var localDates = slots
             .Select(slot => TimeZoneInfo.ConvertTimeFromUtc(slot, TimeZoneInfo.FindSystemTimeZoneById(zone)).Date)
             .Distinct()
-            .Count();
+            .ToList();
 
-        Assert.Equal(7, localDates);
+        // FIVE, not seven: an unconfigured provider works Monday to Friday (AvailabilityCalculator's
+        // IsOpenByDefault), so a seven-day window contains one weekend. What this test is about is WHOSE days
+        // the window walks, not how many are open — so the assertion that carries it is that every offered date
+        // is a weekday in the provider's OWN zone.
+        Assert.Equal(5, localDates.Count);
+        Assert.All(localDates, date =>
+            Assert.True(AvailabilityCalculator.IsOpenByDefault(date.DayOfWeek), $"{date:d} is a weekend date."));
     }
 
     // No zone recorded must behave exactly as before the field existed, so existing providers are unaffected.

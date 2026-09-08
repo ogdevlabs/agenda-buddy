@@ -66,16 +66,28 @@ public class CalendarSettingsViewModelTests
         Assert.Equal(DayOfWeek.Sunday, vm.Days[^1].Day);
     }
 
+    /// <summary>
+    /// ⚠️ <b>An unconfigured week is a WORKING week — Monday to Friday open, the weekend closed.</b>
+    /// </summary>
+    /// <remarks>
+    /// It used to open all seven, because the legacy single pair describes hours and never which days, so every
+    /// weekday inherited it. A provider who had never opened this screen was therefore offered to customers on
+    /// Saturday and Sunday, with nothing telling them so. The rule comes from
+    /// <c>AvailabilityCalculator.IsOpenByDefault</c>, which is also what the server generates availability from —
+    /// so this screen cannot show a week the calendar does not honour.
+    /// </remarks>
     [Fact]
-    public void BeforeAnythingLoadsEveryDayIsTheStandardEightToFive()
+    public void BeforeAnythingLoadsTheWeekIsMondayToFridayWithTheWeekendClosed()
     {
         var vm = Build(Api(WorkHours.Default));
 
         Assert.All(vm.Days, day =>
         {
+            // The hours are seeded on every row, closed or not, so re-opening a day does not mean re-entering
+            // them — the same reason IsClosed is kept separate from the hours in the first place.
             Assert.Equal(8, day.StartHour);
             Assert.Equal(17, day.EndHour);
-            Assert.False(day.IsClosed);
+            Assert.Equal(day.Day is DayOfWeek.Saturday or DayOfWeek.Sunday, day.IsClosed);
         });
     }
 

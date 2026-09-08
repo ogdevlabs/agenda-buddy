@@ -182,12 +182,27 @@ public class AvailabilityCalculatorTest
         Assert.All(slots, s => Assert.True(s < NowUtc.Date.AddDays(expectedDays + 1)));
     }
 
+    /// <summary>
+    /// The ceiling window is honoured in full — every WORKING day inside it yields slots.
+    /// </summary>
+    /// <remarks>
+    /// Not 90 dates: an unconfigured provider works Monday to Friday, so a 90-day window holds roughly 64. The
+    /// point of this test is that nothing truncates the window short of <c>MaxDays</c>, so it asserts the span
+    /// reaches the far end rather than counting dates — a count would have to be recomputed for every calendar
+    /// alignment and would fail on a different <c>NowUtc</c> for no real reason.
+    /// </remarks>
     [Fact]
     public void NinetyDaysIsAcceptedInFull()
     {
         var slots = AvailabilityCalculator.GetAvailability(Provider(), NowUtc, days: 90);
 
-        Assert.Equal(90, slots.Select(s => s.Date).Distinct().Count());
+        var dates = slots.Select(s => s.Date).Distinct().ToList();
+
+        Assert.All(dates, date => Assert.True(AvailabilityCalculator.IsOpenByDefault(date.DayOfWeek)));
+        // The last working day of a 90-day window is within the final weekend of it, so the span has to reach
+        // at least day 85 — anything less means the window was cut short.
+        Assert.True(dates.Max() >= NowUtc.Date.AddDays(85),
+            $"the window stopped at {dates.Max():d}, short of the 90 days requested");
     }
 
     // A service saved without a duration must still be bookable, not silently yield an empty calendar.

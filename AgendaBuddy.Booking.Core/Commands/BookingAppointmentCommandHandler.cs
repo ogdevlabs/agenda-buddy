@@ -34,6 +34,27 @@ public class BookingAppointmentCommandHandler(
             return Result.Fail<AppointmentEntity>(
                 $"This time overlaps with an existing appointment for {appointmentEntity.EmailProvider}.");
 
+        // Read once and reuse: the working-hours check and the service check both need it, and it is also what
+        // decides whether this provider exists at all.
+        var provider = await providerService.FindProvidersAsync(
+            SupportTools<ProviderEntity>.FilterByEmail(appointmentEntity.EmailProvider));
+
+        // ⚠️ The provider's declared working week is ENFORCED here, not merely offered by
+        // GET /api/v1/calendar/availability. Without this, a day a provider had explicitly closed — or 03:00 on
+        // an open one — was accepted with 201 Created: the listing honoured the week and the write ignored it, so
+        // the calendar was a suggestion rather than a rule. Uses AvailabilityCalculator's own resolution, so what
+        // is offered and what is accepted cannot drift apart.
+        //
+        // Guarded on the provider being found so the not-found path below is untouched: it fails further down,
+        // after the appointment is written, and changing that is a separate concern from this check.
+        if (provider is not null
+            && !AvailabilityCalculator.IsWithinWorkingHours(
+                provider, appointmentEntity.Start, appointmentEntity.End))
+        {
+            return Result.Fail<AppointmentEntity>(
+                $"{appointmentEntity.EmailProvider} is not available then. Pick a time from their calendar.");
+        }
+
         // A named service has to be one this provider actually offers. Checked BEFORE any write, unlike
         // the provider lookup further down, which happens after the appointment has already been
         // persisted to its own collection -- validating there would leave an orphan behind.
@@ -43,9 +64,6 @@ public class BookingAppointmentCommandHandler(
         // enforces choosing one; this stops an unmatched or invented name being stored.
         if (!string.IsNullOrWhiteSpace(appointmentEntity.ServiceName))
         {
-            var provider = await providerService.FindProvidersAsync(
-                SupportTools<ProviderEntity>.FilterByEmail(appointmentEntity.EmailProvider));
-
             var service = provider?.ServiceEntities?.FirstOrDefault(s =>
                 string.Equals(s.Name, appointmentEntity.ServiceName, StringComparison.OrdinalIgnoreCase));
 
