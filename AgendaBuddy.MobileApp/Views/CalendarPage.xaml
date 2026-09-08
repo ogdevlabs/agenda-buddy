@@ -35,8 +35,10 @@
             <!-- Header -->
             <Grid Grid.Row="0"
                   BackgroundColor="White"
-                  Padding="20,16,20,12">
-                <Grid ColumnDefinitions="*,Auto">
+                  Padding="20,16,20,12"
+                  RowDefinitions="Auto,Auto"
+                  RowSpacing="12">
+                <Grid Grid.Row="0" ColumnDefinitions="*,Auto">
                     <!-- Month & Year -->
                     <VerticalStackLayout Grid.Column="0" Spacing="2">
                         <Label Text="{Binding MonthYear}"
@@ -47,18 +49,10 @@
                                FontSize="13"
                                TextColor="{StaticResource iOSGray}" />
                     </VerticalStackLayout>
-                    <!-- Nav arrows, plus the provider's own calendar-hours settings -->
+                    <!-- Week navigation only. The calendar-hours entry point is the labelled row below: a bare
+                         gear glyph beside two chevrons is three unlabelled icons in a cluster, and providers were
+                         not finding it. -->
                     <HorizontalStackLayout Grid.Column="1" Spacing="4" VerticalOptions="Center">
-                        <controls:SafeButton Text="&#x2699;"
-                                Clicked="OnCalendarSettingsClicked"
-                                IsVisible="{Binding IsProvider}"
-                                BackgroundColor="Transparent"
-                                TextColor="{StaticResource iOSBlue}"
-                                FontSize="18"
-                                WidthRequest="40"
-                                HeightRequest="40"
-                                Padding="2"
-                                AutomationId="CalendarSettingsButton" />
                         <controls:SafeButton Text="&#x276E;"
                                 Command="{Binding PreviousPageCommand}"
                                 IsEnabled="{Binding CanGoBack}"
@@ -79,6 +73,44 @@
                                 Padding="2" />
                     </HorizontalStackLayout>
                 </Grid>
+
+                <!--
+                    Manage calendar — the provider's way into their working week and time off.
+
+                    A LABELLED, full-width row, not the 40x40 gear this replaces. That gear sat between the two
+                    week-navigation chevrons at 18pt with no label, so it read as a third arrow and providers were
+                    not finding it at all — which matters more than it looks, because it is the only way to close a
+                    day and therefore the only way to stop being booked at weekends.
+
+                    Provider-only: a customer has no working week to manage, and the row would lead to a screen
+                    that refuses them.
+                -->
+                <Border Grid.Row="1"
+                        IsVisible="{Binding IsProvider}"
+                        AutomationId="ManageCalendarButton"
+                        BackgroundColor="{StaticResource PrimarySubtle}"
+                        Stroke="{StaticResource Primary}"
+                        StrokeThickness="1"
+                        Padding="14,11">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="12" />
+                    </Border.StrokeShape>
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnCalendarSettingsTapped" />
+                    </Border.GestureRecognizers>
+                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
+                        <Label Grid.Column="0" Text="&#x2699;" FontSize="17"
+                               TextColor="{StaticResource Primary}" VerticalOptions="Center" />
+                        <VerticalStackLayout Grid.Column="1" Spacing="1" VerticalOptions="Center">
+                            <Label Text="Manage calendar" FontSize="15" FontAttributes="Bold"
+                                   TextColor="{StaticResource Primary}" />
+                            <Label Text="Working days, hours and time off" FontSize="12"
+                                   TextColor="{StaticResource TextMuted}" />
+                        </VerticalStackLayout>
+                        <Label Grid.Column="2" Text="&#x276F;" FontSize="14"
+                               TextColor="{StaticResource Primary}" VerticalOptions="Center" />
+                    </Grid>
+                </Border>
             </Grid>
 
             <!-- Day selector strip -->
