@@ -6,6 +6,7 @@ using Xunit;
 
 namespace AgendaBuddy.MobileApp.Tests.ViewModels;
 
+[Collection(nameof(Infrastructure.CultureSensitiveCollection))]
 public class AddServiceViewModelTests
 {
     private const string Email = "provider@example.com";

@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:strings="clr-namespace:AgendaBuddy.MobileApp.Resources.Strings"
              xmlns:infrastructure="clr-namespace:AgendaBuddy.MobileApp.Infrastructure"
              xmlns:controls="clr-namespace:AgendaBuddy.MobileApp.Controls"
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
              x:Class="AgendaBuddy.MobileApp.Views.LoginPage"
-             Title="Sign In"
+             Title="{x:Static strings:AppResources.Xaml_SignIn}"
              BackgroundColor="{StaticResource BackgroundDark}"
              Shell.NavBarIsVisible="False">
 
@@ -48,21 +49,21 @@
                                Style="{StaticResource TitleLarge}"
                                HorizontalOptions="Center" />
 
-                        <Label Text="Your scheduling companion"
+                        <Label Text="{x:Static strings:AppResources.Xaml_YourSchedulingCompanion}"
                                Style="{StaticResource BodySecondary}"
                                HorizontalOptions="Center"
                                Margin="0,4,0,0" />
                     </VerticalStackLayout>
 
                     <!-- Email field -->
-                    <Label Text="Email"
+                    <Label Text="{x:Static strings:AppResources.Xaml_Email}"
                            Style="{StaticResource Caption}"
                            FontAttributes="Bold"
                            TextColor="{StaticResource TextSecondary}"
                            Margin="4,0,0,0" />
                     <Frame Style="{StaticResource InputFrame}">
                         <Entry x:Name="EmailEntry"
-                               Placeholder="you@example.com"
+                               Placeholder="{x:Static strings:AppResources.Example_Email}"
                                Keyboard="Email"
                                Text="{Binding Email}"
                                Style="{StaticResource InputStyle}"
@@ -70,14 +71,14 @@
                     </Frame>
 
                     <!-- Password field -->
-                    <Label Text="Password"
+                    <Label Text="{x:Static strings:AppResources.Xaml_Password}"
                            Style="{StaticResource Caption}"
                            FontAttributes="Bold"
                            TextColor="{StaticResource TextSecondary}"
                            Margin="4,8,0,0" />
                     <Frame Style="{StaticResource InputFrame}">
                         <Entry x:Name="PasswordEntry"
-                               Placeholder="Enter your password"
+                               Placeholder="{x:Static strings:AppResources.Xaml_EnterYourPassword}"
                                IsPassword="True"
                                Text="{Binding Password}"
                                Style="{StaticResource InputStyle}"
@@ -96,7 +97,7 @@
 
                     <!-- Sign in button + activity indicator -->
                     <Grid Margin="0,16,0,0">
-                        <controls:SafeButton Text="Sign In"
+                        <controls:SafeButton Text="{x:Static strings:AppResources.Xaml_SignIn}"
                                 Style="{StaticResource PrimaryButton}"
                                 Command="{Binding SignInCommand}"
                                 IsVisible="{Binding IsLoading, Converter={StaticResource InvertedBoolConverter}}"
@@ -112,7 +113,7 @@
                     <Label HorizontalOptions="Center" Margin="0,16,0,0">
                         <Label.FormattedText>
                             <FormattedString>
-                                <Span Text="Forgot password?"
+                                <Span Text="{x:Static strings:AppResources.Xaml_ForgotPassword_c3d181e2}"
                                       TextColor="{StaticResource Primary}"
                                       FontAttributes="Bold"
                                       FontSize="14">
@@ -128,10 +129,10 @@
                     <Label HorizontalOptions="Center" Margin="0,8,0,0">
                         <Label.FormattedText>
                             <FormattedString>
-                                <Span Text="Don't have an account? "
+                                <Span Text="{x:Static strings:AppResources.Xaml_DonTHaveAnAccount}"
                                       TextColor="{StaticResource TextMuted}"
                                       FontSize="14" />
-                                <Span Text="Create Account"
+                                <Span Text="{x:Static strings:AppResources.Xaml_CreateAccount}"
                                       TextColor="{StaticResource Primary}"
                                       FontAttributes="Bold"
                                       FontSize="14">

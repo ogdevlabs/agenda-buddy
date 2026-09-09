@@ -1,5 +1,7 @@
 using AgendaBuddy.Library.Entities;
 using AgendaBuddy.MobileApp.Infrastructure;
+using AgendaBuddy.MobileApp.Resources.Strings;
+using System.Globalization;
 using Xunit;
 
 namespace AgendaBuddy.MobileApp.Tests.Infrastructure;
@@ -8,8 +10,12 @@ namespace AgendaBuddy.MobileApp.Tests.Infrastructure;
 /// The per-type glyph, accent and date banding. Testable at all because none of it mentions a MAUI type — the
 /// same reason <c>Routing/</c> exists.
 /// </summary>
-public class NotificationVisualsTests
+public class NotificationVisualsTests : IDisposable
 {
+    private readonly CultureInfo? _originalCulture = AppResources.Culture;
+
+    public void Dispose() => AppResources.Culture = _originalCulture;
+
     public static TheoryData<NotificationType> EveryType()
     {
         var data = new TheoryData<NotificationType>();
@@ -125,6 +131,21 @@ public class NotificationVisualsTests
         var now = new DateTime(2026, 9, 6, 9, 0, 0, DateTimeKind.Unspecified);
         var longAgo = now.AddDays(-30);
 
-        Assert.Equal(longAgo.ToString("MMMM d"), NotificationVisuals.Section(longAgo, now));
+        Assert.Equal(longAgo.ToString("MMMM d", AppResources.CurrentCulture), NotificationVisuals.Section(longAgo, now));
+    }
+
+    [Theory]
+    [InlineData("en", "Today", "Yesterday", "Thursday", "August 7")]
+    [InlineData("es-MX", "Hoy", "Ayer", "jueves", "agosto 7")]
+    public void DateBandsUseTheSelectedCulture(
+        string cultureName, string today, string yesterday, string weekday, string date)
+    {
+        AppResources.Culture = new CultureInfo(cultureName);
+        var now = new DateTime(2026, 9, 6, 12, 0, 0, DateTimeKind.Unspecified);
+
+        Assert.Equal(today, NotificationVisuals.Section(now, now));
+        Assert.Equal(yesterday, NotificationVisuals.Section(now.AddDays(-1), now));
+        Assert.Equal(weekday, NotificationVisuals.Section(now.AddDays(-3), now));
+        Assert.Equal(date, NotificationVisuals.Section(now.AddDays(-30), now));
     }
 }

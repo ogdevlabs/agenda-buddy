@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using AgendaBuddy.MobileApp.Infrastructure;
 using AgendaBuddy.MobileApp.Models;
+using AgendaBuddy.MobileApp.Resources.Strings;
 using AgendaBuddy.MobileApp.Services;
 
 namespace AgendaBuddy.MobileApp.ViewModels;
@@ -91,18 +92,18 @@ public partial class BookAppointmentViewModel : ObservableObject
     public bool IsFullyBooked => HasSelectedService && Picker.IsFullyBooked;
 
     public string SelectedServiceLabel => SelectedService is null
-        ? "Choose a service"
+        ? AppResources.GetString("Book_ChooseService")
         : $"{SelectedService.Name} · {SelectedService.DurationLabel}";
 
     /// <summary>The chosen slot on this device's clock — never the raw UTC value.</summary>
     public string SelectedSlotLabel => Picker.SelectedSlot is null
         ? string.Empty
-        : $"Selected: {Picker.SelectedSlotLabel}";
+        : AppResources.Format("Book_SelectedSlot", Picker.SelectedSlotLabel);
 
     /// <summary>Prompt shown on the confirm bar before a slot is chosen, so the bar is never a bare button.</summary>
     public string ConfirmPrompt => SelectedService is null
-        ? "Choose a service to see available times"
-        : Picker.SelectedSlot is null ? "Choose a date and time" : string.Empty;
+        ? AppResources.GetString("Book_ChooseServiceForTimes")
+        : Picker.SelectedSlot is null ? AppResources.GetString("Book_ChooseDateAndTime") : string.Empty;
 
     public bool ShowConfirmPrompt => Picker.SelectedSlot is null;
 
@@ -120,7 +121,7 @@ public partial class BookAppointmentViewModel : ObservableObject
     /// <summary>Long-form date, e.g. "Saturday 5 September".</summary>
     public string SummaryDate => Picker.SelectedSlot is null
         ? string.Empty
-        : $"{Picker.SelectedSlot.LocalStart:dddd d MMMM}";
+        : Picker.SelectedSlot.LocalStart.ToString("dddd d MMMM", AppResources.CurrentCulture);
 
     /// <summary>
     /// Start and end on this device's clock. The end is derived from the service's own duration — the same
@@ -133,13 +134,13 @@ public partial class BookAppointmentViewModel : ObservableObject
             if (Picker.SelectedSlot is null || SelectedService is null) return string.Empty;
             var start = Picker.SelectedSlot.LocalStart;
             var end = start.AddMinutes(SelectedService.DurationMinutes ?? DefaultDurationMinutes);
-            return $"{start:h:mm tt} – {end:h:mm tt}";
+            return $"{start.ToString("t", AppResources.CurrentCulture)} – {end.ToString("t", AppResources.CurrentCulture)}";
         }
     }
 
     public string SummaryDuration => SelectedService is null
         ? string.Empty
-        : $"{SelectedService.DurationMinutes ?? DefaultDurationMinutes} min";
+        : RuntimeText.Duration(SelectedService.DurationMinutes ?? DefaultDurationMinutes);
 
     /// <summary>
     /// Names the zone the times above are expressed in. A time with no zone is ambiguous the moment the
@@ -209,7 +210,7 @@ public partial class BookAppointmentViewModel : ObservableObject
         }
         catch (Exception)
         {
-            ErrorMessage = "Could not load this provider's services. Check your connection and try again.";
+            ErrorMessage = AppResources.GetString("Error_LoadProviderServices");
         }
         finally
         {
@@ -287,13 +288,13 @@ public partial class BookAppointmentViewModel : ObservableObject
             {
                 // Most likely someone took the slot between the fetch and the tap — the server rejects an
                 // overlap. Re-fetch so the stale slot disappears instead of being offered again.
-                ErrorMessage = "That time is no longer available. Pick another.";
+                ErrorMessage = AppResources.Error_BookingConflict;
                 await ToastNotifier.ShowAsync(ErrorMessage);
                 await RefreshAvailabilityAsync();
                 return;
             }
 
-            await ToastNotifier.ShowAsync("Appointment booked.");
+            await ToastNotifier.ShowAsync(AppResources.GetString("Action_AppointmentBooked"));
             BookingSucceeded?.Invoke(this, identifier);
         }
         catch (GatewayServiceUnavailableException ex)
@@ -303,7 +304,7 @@ public partial class BookAppointmentViewModel : ObservableObject
         }
         catch (HttpRequestException)
         {
-            ErrorMessage = "Could not reach the server. Check your connection and try again.";
+            ErrorMessage = AppResources.Error_ServerUnavailable;
             await ToastNotifier.ShowAsync(ErrorMessage);
         }
         finally

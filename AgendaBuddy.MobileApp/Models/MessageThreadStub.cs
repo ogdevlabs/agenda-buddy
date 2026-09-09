@@ -1,5 +1,7 @@
 using AgendaBuddy.Library.Avatars;
 
+using AgendaBuddy.MobileApp.Resources.Strings;
+
 namespace AgendaBuddy.MobileApp.Models;
 
 /// <summary>
@@ -47,11 +49,5 @@ public class MessageThreadStub
     /// </remarks>
     public string UnreadLabel => UnreadCount > 99 ? "99+" : UnreadCount.ToString();
 
-    private static string FormatTimeAgo(DateTime dt)
-    {
-        var diff = DateTime.Now - dt;
-        if (diff.TotalMinutes < 60) return $"{(int)diff.TotalMinutes}m ago";
-        if (diff.TotalHours < 24) return $"{(int)diff.TotalHours}h ago";
-        return $"{(int)diff.TotalDays}d ago";
-    }
+    private static string FormatTimeAgo(DateTime dt) => RuntimeText.RelativeTime(dt, DateTime.Now);
 }

@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text;
+using AgendaBuddy.MobileApp.Models;
 using AgendaBuddy.MobileApp.Services;
 using Moq;
 using Xunit;
@@ -78,7 +79,7 @@ public class ProfessionApiServiceTests
     }
 
     [Fact]
-    public async Task RemoveProfessionFromProvider_Returns409_ReturnsGuardMessage()
+    public async Task RemoveProfessionFromProvider_Returns409_CategorizesGuardMessage()
     {
         var json = """{"data":null,"errors":["Cannot remove a profession while you have active appointments."]}""";
         var sut = new ProfessionApiService(CreateFactory(HttpStatusCode.Conflict, json));
@@ -86,18 +87,21 @@ public class ProfessionApiServiceTests
         var result = await sut.RemoveProfessionFromProviderAsync("pat@test.dev", "Coaching");
 
         Assert.False(result.Success);
-        Assert.Equal("Cannot remove a profession while you have active appointments.", result.ErrorMessage);
+        Assert.Equal(MobileErrorCategory.Conflict, result.Error!.Category);
+        Assert.Equal("Remove or complete active appointments for this profession, then try again.", result.ErrorMessage);
+        Assert.Equal("Cannot remove a profession while you have active appointments.", result.Error.DiagnosticDetail);
     }
 
     [Fact]
-    public async Task RemoveProfessionFromProvider_Returns404_ReturnsNullMessage()
+    public async Task RemoveProfessionFromProvider_Returns404_ReturnsActionableMessage()
     {
         var sut = new ProfessionApiService(CreateFactory(HttpStatusCode.NotFound));
 
         var result = await sut.RemoveProfessionFromProviderAsync("pat@test.dev", "Coaching");
 
         Assert.False(result.Success);
-        Assert.Null(result.ErrorMessage);
+        Assert.Equal(MobileErrorCategory.NotFound, result.Error!.Category);
+        Assert.Equal("This profession is no longer available.", result.ErrorMessage);
     }
 
     private sealed class FakeHttpMessageHandler : HttpMessageHandler

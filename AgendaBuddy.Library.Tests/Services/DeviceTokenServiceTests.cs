@@ -26,12 +26,13 @@ public class DeviceTokenServiceTests
         _repoMock.Setup(r => r.InsertAsync(It.IsAny<DeviceTokenEntity>()))
             .Returns(Task.CompletedTask);
 
-        await _svc.UpsertAsync("new@example.com", "fcm-token-abc", "android");
+        await _svc.UpsertAsync("new@example.com", "fcm-token-abc", "android", "es-MX");
 
         _repoMock.Verify(r => r.InsertAsync(It.Is<DeviceTokenEntity>(
             e => e.UserEmail == "new@example.com"
                  && e.Token == "fcm-token-abc"
-                 && e.Platform == "android")), Times.Once);
+                 && e.Platform == "android"
+                 && e.LanguageCode == "es-MX")), Times.Once);
         _repoMock.Verify(r => r.UpdateAsync(It.IsAny<string>(), It.IsAny<DeviceTokenEntity>()), Times.Never);
     }
 
@@ -50,12 +51,13 @@ public class DeviceTokenServiceTests
         _repoMock.Setup(r => r.UpdateAsync(It.IsAny<string>(), It.IsAny<DeviceTokenEntity>()))
             .ReturnsAsync(true);
 
-        await _svc.UpsertAsync("existing@example.com", "new-token", "ios");
+        await _svc.UpsertAsync("existing@example.com", "new-token", "ios", "es-MX");
 
         _repoMock.Verify(r => r.UpdateAsync("507f1f77bcf86cd799439011", It.Is<DeviceTokenEntity>(
             e => e.UserEmail == "existing@example.com"
                  && e.Token == "new-token"
-                 && e.Platform == "ios")), Times.Once);
+                 && e.Platform == "ios"
+                 && e.LanguageCode == "es-MX")), Times.Once);
         _repoMock.Verify(r => r.InsertAsync(It.IsAny<DeviceTokenEntity>()), Times.Never);
     }
 

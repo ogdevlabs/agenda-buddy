@@ -45,7 +45,7 @@ public partial class MessagingPage : ContentPage
 
     private async void OnUnauthorizedAccess(object? sender, EventArgs e)
     {
-        _vm.ErrorMessage = "Your session expired. Please sign in again.";
+        _vm.ErrorMessage = AppResources.GetString("Session_Expired");
         await Shell.Current.GoToAsync("//login");
     }
 }

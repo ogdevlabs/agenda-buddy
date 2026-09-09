@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using AgendaBuddy.MobileApp.Infrastructure;
+using AgendaBuddy.MobileApp.Resources.Strings;
 using AgendaBuddy.MobileApp.Services;
 
 namespace AgendaBuddy.MobileApp.ViewModels;
@@ -64,7 +65,7 @@ public partial class EditProfileViewModel : ObservableObject
     public bool HasError => !string.IsNullOrEmpty(ErrorMessage);
 
     /// <summary>The effective date shown beside the two checkboxes, so a reader knows which version they accepted.</summary>
-    public string LegalEffectiveDate => LegalDocuments.EffectiveDate;
+    public string LegalEffectiveDate => AppResources.Format("Legal_ConsentVersionFormat", LegalDocuments.EffectiveDate);
 
     /// <summary>Raised on a successful save, so the view can go back to the profile.</summary>
     public event EventHandler? Saved;
@@ -112,7 +113,7 @@ public partial class EditProfileViewModel : ObservableObject
             // Not fatal: an account with no profile is the state this screen exists to repair, and a failed read
             // must still leave a usable form — otherwise the one screen that can fix the account is the screen
             // that will not open.
-            ErrorMessage = "Could not load your details. You can still enter them and save.";
+            ErrorMessage = AppResources.GetString("Error_LoadProfileDetails");
         }
         finally
         {
@@ -175,14 +176,14 @@ public partial class EditProfileViewModel : ObservableObject
         // shows for this account.
         if (string.IsNullOrWhiteSpace(FirstName) || string.IsNullOrWhiteSpace(LastName))
         {
-            ErrorMessage = "Enter your first and last name.";
+            ErrorMessage = AppResources.GetString("Validation_Name");
             await ToastNotifier.ShowAsync(ErrorMessage);
             return;
         }
 
         if (!AcceptedTerms || !AcceptedPrivacy)
         {
-            ErrorMessage = "Accept the Terms and Conditions and the Privacy Policy to continue.";
+            ErrorMessage = AppResources.GetString("Validation_Agreements");
             await ToastNotifier.ShowAsync(ErrorMessage);
             return;
         }
@@ -206,7 +207,7 @@ public partial class EditProfileViewModel : ObservableObject
 
             if (!succeeded)
             {
-                ErrorMessage = "Could not save your profile — try again.";
+                ErrorMessage = AppResources.GetString("Error_SaveProfile");
                 await ToastNotifier.ShowAsync(ErrorMessage);
                 return;
             }
@@ -219,17 +220,17 @@ public partial class EditProfileViewModel : ObservableObject
 
             if (!consentSaved)
             {
-                ErrorMessage = "Your details were saved, but your agreement was not recorded — try again.";
+                ErrorMessage = AppResources.GetString("Error_SaveConsent");
                 await ToastNotifier.ShowAsync(ErrorMessage);
                 return;
             }
 
-            await ToastNotifier.ShowAsync("Profile saved.");
+            await ToastNotifier.ShowAsync(AppResources.GetString("Action_ProfileSaved"));
             Saved?.Invoke(this, EventArgs.Empty);
         }
         catch (Exception)
         {
-            ErrorMessage = "Could not reach the server. Check your connection and try again.";
+            ErrorMessage = AppResources.Error_ServerUnavailable;
             await ToastNotifier.ShowAsync(ErrorMessage);
         }
         finally

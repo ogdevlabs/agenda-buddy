@@ -373,9 +373,11 @@ public class BookAppointmentViewModelTests
         Assert.Equal("Oscar Coach", vm.SummaryWith);
         Assert.Equal("Strength", vm.SummaryService);
         Assert.Equal("45 min", vm.SummaryDuration);
-        Assert.Equal($"{localStart:dddd d MMMM}", vm.SummaryDate);
+        Assert.Equal(localStart.ToString("dddd d MMMM", System.Globalization.CultureInfo.CurrentCulture), vm.SummaryDate);
         // End is the service's own duration past the start — the same arithmetic the booking POST uses.
-        Assert.Equal($"{localStart:h:mm tt} – {localStart.AddMinutes(45):h:mm tt}", vm.SummaryTimeRange);
+        Assert.Equal(
+            $"{localStart.ToString("t", System.Globalization.CultureInfo.CurrentCulture)} – {localStart.AddMinutes(45).ToString("t", System.Globalization.CultureInfo.CurrentCulture)}",
+            vm.SummaryTimeRange);
         Assert.False(string.IsNullOrWhiteSpace(vm.SummaryTimeZone));
     }
 

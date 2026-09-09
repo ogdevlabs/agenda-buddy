@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using AgendaBuddy.MobileApp.Resources.Strings;
 
 namespace AgendaBuddy.MobileApp.Models;
 
@@ -29,10 +30,10 @@ public partial class WorkDayRow : ObservableObject
     public DayOfWeek Day { get; }
 
     /// <summary>Full name, e.g. "Monday" — the row's own label.</summary>
-    public string DayName => Day.ToString();
+    public string DayName => AppResources.CurrentCulture.DateTimeFormat.GetDayName(Day);
 
     /// <summary>Three letters, for the compact copy-to-all confirmation.</summary>
-    public string ShortDayName => Day.ToString()[..3];
+    public string ShortDayName => AppResources.CurrentCulture.DateTimeFormat.GetAbbreviatedDayName(Day);
 
     [ObservableProperty]
     private int _startHourIndex;
@@ -62,12 +63,14 @@ public partial class WorkDayRow : ObservableObject
     public bool HasError => !IsValid;
 
     /// <summary>Named per row, so the provider is told which day is wrong rather than that something is.</summary>
-    public string ErrorMessage => IsValid ? string.Empty : $"{DayName} has to start before it ends.";
+    public string ErrorMessage => IsValid
+        ? string.Empty
+        : AppResources.Format(nameof(AppResources.Validation_DayMustStartBeforeEnd), DayName);
 
     /// <summary>What the row reads as at a glance.</summary>
     public string Summary => IsClosed
-        ? "Closed"
-        : IsValid ? $"{Format(StartHour)} – {Format(EndHour)}" : "Invalid";
+        ? AppResources.WorkDay_Closed
+        : IsValid ? $"{Format(StartHour)} – {Format(EndHour)}" : AppResources.WorkDay_Invalid;
 
     /// <summary>
     /// The inverse of <see cref="IsClosed"/> — what the row's Open/Closed switch binds to.

@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using AgendaBuddy.MobileApp.Models;
+using AgendaBuddy.MobileApp.Resources.Strings;
 using AgendaBuddy.MobileApp.Services;
 
 namespace AgendaBuddy.MobileApp.ViewModels;
@@ -35,16 +36,16 @@ public partial class CustomersViewModel : ObservableObject
     private string _errorMessage = string.Empty;
 
     [ObservableProperty]
-    private string _pageTitle = "Customers";
+    private string _pageTitle = AppResources.GetString("Contacts_CustomersTitle");
 
     [ObservableProperty]
-    private string _searchPlaceholder = "Search customers...";
+    private string _searchPlaceholder = AppResources.GetString("Contacts_CustomersSearch");
 
     [ObservableProperty]
-    private string _emptyTitle = "No customers yet";
+    private string _emptyTitle = AppResources.GetString("Contacts_CustomersEmptyTitle");
 
     [ObservableProperty]
-    private string _emptySubtitle = "Once a client books a session with you, they will appear here.";
+    private string _emptySubtitle = AppResources.GetString("Contacts_CustomersEmptySubtitle");
 
     [ObservableProperty]
     private string _searchText = string.Empty;
@@ -70,7 +71,7 @@ public partial class CustomersViewModel : ObservableObject
 
     public bool HasSelectedProfession => !string.IsNullOrWhiteSpace(SelectedProfession);
 
-    public string SelectedProfessionLabel => $"Profession: {SelectedProfession}";
+    public string SelectedProfessionLabel => AppResources.Format("Contacts_ProfessionFilter", SelectedProfession);
 
     public bool IsEmpty => !IsLoading && Customers.Count == 0 && !HasError;
 
@@ -141,17 +142,17 @@ public partial class CustomersViewModel : ObservableObject
 
         if (_session.IsCustomer)
         {
-            PageTitle = "Providers";
-            SearchPlaceholder = "Search by name, email or service...";
-            EmptyTitle = "No providers yet";
-            EmptySubtitle = "Browse and subscribe to providers to book appointments.";
+            PageTitle = AppResources.GetString("Contacts_ProvidersTitle");
+            SearchPlaceholder = AppResources.GetString("Contacts_ProvidersSearch");
+            EmptyTitle = AppResources.GetString("Contacts_ProvidersEmptyTitle");
+            EmptySubtitle = AppResources.GetString("Contacts_ProvidersEmptySubtitle");
         }
         else
         {
-            PageTitle = "Customers";
-            SearchPlaceholder = "Search customers...";
-            EmptyTitle = "No customers yet";
-            EmptySubtitle = "Once a client books a session with you, they will appear here.";
+            PageTitle = AppResources.GetString("Contacts_CustomersTitle");
+            SearchPlaceholder = AppResources.GetString("Contacts_CustomersSearch");
+            EmptyTitle = AppResources.GetString("Contacts_CustomersEmptyTitle");
+            EmptySubtitle = AppResources.GetString("Contacts_CustomersEmptySubtitle");
         }
 
         try
@@ -258,7 +259,7 @@ public partial class CustomersViewModel : ObservableObject
         }
         catch (Exception)
         {
-            ErrorMessage = "Could not reach the server. Check your connection and try again.";
+            ErrorMessage = AppResources.Error_ServerUnavailable;
             await Infrastructure.ToastNotifier.ShowAsync(ErrorMessage);
         }
         finally

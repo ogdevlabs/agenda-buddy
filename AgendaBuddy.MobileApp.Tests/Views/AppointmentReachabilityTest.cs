@@ -73,11 +73,11 @@ public class AppointmentReachabilityTest
     [Fact]
     public void TheAppointmentRouteIsRegisteredOnTheShell()
     {
-        var shell = File.ReadAllText(
-            Path.Combine(RepoRoot(), "AgendaBuddy.MobileApp", "AppShell.xaml.cs"));
+        var navigation = File.ReadAllText(
+            Path.Combine(RepoRoot(), "AgendaBuddy.MobileApp", "Infrastructure", "AppNavigation.cs"));
 
         Assert.Contains(
-            $"RegisterRoute(\"{MobileApp.Infrastructure.AppointmentNavigation.Route}\"", shell);
+            $"RegisterRoute(\"{MobileApp.Infrastructure.AppointmentNavigation.Route}\"", navigation);
     }
 
     /// <summary>

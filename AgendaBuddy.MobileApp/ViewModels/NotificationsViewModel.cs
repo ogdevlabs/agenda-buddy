@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using AgendaBuddy.MobileApp.Infrastructure;
 using AgendaBuddy.MobileApp.Models;
+using AgendaBuddy.MobileApp.Resources.Strings;
 using AgendaBuddy.MobileApp.Services;
 
 namespace AgendaBuddy.MobileApp.ViewModels;
@@ -71,8 +72,8 @@ public partial class NotificationsViewModel : ObservableObject
     /// for the filter that is on, so a filtered-empty inbox does not read as an empty one.
     /// </summary>
     public string EmptyStateMessage => ShowUnreadOnly
-        ? "Nothing unread — you're all caught up."
-        : "No notifications yet — you'll see updates about your appointments here.";
+        ? AppResources.GetString("Notification_Empty_Unread")
+        : AppResources.GetString("Notification_Empty_All");
 
     /// <summary>
     /// Whether to show the unread count at all. A real <c>bool</c> rather than XAML binding the <c>int</c>
@@ -88,10 +89,13 @@ public partial class NotificationsViewModel : ObservableObject
     /// The unread count as a phrase, so the header reads as a sentence rather than as a number and a noun that
     /// disagree with it ("1 unread" is right, "1 unread notifications" is not).
     /// </summary>
-    public string UnreadSummary => UnreadCount == 1 ? "1 unread" : $"{UnreadCount} unread";
+    public string UnreadSummary => AppResources.Format(
+        UnreadCount == 1 ? "Notification_Unread_Singular" : "Notification_Unread_Plural",
+        UnreadCount);
 
     /// <summary>Label for the filter toggle, naming what tapping it will do rather than the state it is in.</summary>
-    public string UnreadFilterLabel => ShowUnreadOnly ? "Show all" : "Unread only";
+    public string UnreadFilterLabel => AppResources.GetString(
+        ShowUnreadOnly ? "Notification_Filter_All" : "Notification_Filter_Unread");
 
     public NotificationsViewModel(
         INotificationApiService notificationApiService,
@@ -126,7 +130,7 @@ public partial class NotificationsViewModel : ObservableObject
         {
             // Real failure (network, timeout, malformed response, a non-2xx from the route) — surface it
             // through the error banner rather than masking it with an empty inbox.
-            ErrorMessage = "Could not load notifications. Check your connection and try again.";
+            ErrorMessage = AppResources.GetString("Notification_LoadFailure");
         }
         finally
         {
@@ -244,12 +248,13 @@ public partial class NotificationsViewModel : ObservableObject
 
     /// <summary>What the bulk action reports back. Names the count, because "done" is not the same as "12 done".</summary>
     internal static string MarkAllReadConfirmation(long marked) =>
-        marked == 1 ? "1 notification marked as read" : $"{marked} notifications marked as read";
+        AppResources.Format(
+            marked == 1 ? "Notification_MarkAll_Singular" : "Notification_MarkAll_Plural",
+            marked);
 
-    internal const string MarkAllReadFailureMessage =
-        "Could not mark your notifications read. Check your connection and try again.";
+    internal static string MarkAllReadFailureMessage => AppResources.GetString("Notification_MarkAll_Failure");
 
-    internal const string NothingToMarkMessage = "Nothing left to mark as read.";
+    internal static string NothingToMarkMessage => AppResources.GetString("Notification_MarkAll_None");
 
     /// <summary>
     /// Expands or collapses a row. Expanding an unread one starts the read timer — reading is what marking

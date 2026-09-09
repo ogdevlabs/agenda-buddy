@@ -58,6 +58,7 @@ public class PushNotificationService
     private readonly ISecureStorageService _secureStorage;
     private readonly NotificationBadgeViewModel? _badge;
     private readonly IInAppAlertService? _alerts;
+    private readonly ILanguageCoordinator? _languageCoordinator;
 
     /// <summary>
     /// The key the server puts the appointment identifier under.
@@ -90,12 +91,14 @@ public class PushNotificationService
         IHttpClientFactory httpClientFactory,
         ISecureStorageService secureStorage,
         NotificationBadgeViewModel? badge = null,
-        IInAppAlertService? alerts = null)
+        IInAppAlertService? alerts = null,
+        ILanguageCoordinator? languageCoordinator = null)
     {
         _httpClientFactory = httpClientFactory;
         _secureStorage = secureStorage;
         _badge = badge;
         _alerts = alerts;
+        _languageCoordinator = languageCoordinator;
     }
 
     public async Task InitializeAsync()
@@ -317,6 +320,18 @@ public class PushNotificationService
 #pragma warning restore CS0162
     }
 
+    /// <summary>Refreshes this device's registration after its language changes.</summary>
+    public async Task RefreshRegistrationAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_registeredToken))
+        {
+            await RegisterTokenAsync();
+            return;
+        }
+
+        await PostTokenAsync(_registeredToken, CurrentPlatform());
+    }
+
     /// <summary>
     /// Tells the server to stop pushing to this device for the signed-in account.
     /// </summary>
@@ -355,7 +370,12 @@ public class PushNotificationService
         try
         {
             var client = _httpClientFactory.CreateClient("AgendaBuddyApi");
-            var body = new { token, platform };
+            var body = new
+            {
+                token,
+                platform,
+                languageCode = _languageCoordinator?.CurrentCode ?? AppLanguages.DefaultCode
+            };
             var json = JsonSerializer.Serialize(body);
             using var content = new StringContent(json, Encoding.UTF8, "application/json");
             var response = await client.PostAsync("device-token", content);

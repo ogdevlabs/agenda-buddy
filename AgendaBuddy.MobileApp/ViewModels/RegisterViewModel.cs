@@ -64,13 +64,13 @@ public partial class RegisterViewModel : ObservableObject
     {
         if (Password != ConfirmPassword)
         {
-            ErrorMessage = "Passwords do not match.";
+            ErrorMessage = AppResources.GetString("Validation_PasswordsMatch");
             return;
         }
 
         if (Password.Length < 8)
         {
-            ErrorMessage = "Password must be at least 8 characters.";
+            ErrorMessage = AppResources.GetString("Validation_PasswordLength");
             return;
         }
 
@@ -83,7 +83,7 @@ public partial class RegisterViewModel : ObservableObject
             var success = await _authService.RegisterAsync(Email, Password, role);
             if (!success)
             {
-                ErrorMessage = "Registration failed. This email may already be in use.";
+                ErrorMessage = AppResources.GetString("Error_RegistrationConflict");
                 return;
             }
 
@@ -116,15 +116,14 @@ public partial class RegisterViewModel : ObservableObject
                 // The account exists and the caller is signed in, so this is recoverable rather than fatal
                 // — but say so, because the parts of the app that need the profile will fail until it is
                 // created from the Account screen.
-                ErrorMessage = "Your account was created, but we could not save your profile details. "
-                             + "Add them from Account to finish setting up.";
+                ErrorMessage = AppResources.GetString("Error_ProfileAfterRegistration");
             }
 
             RegistrationSucceeded?.Invoke(this, EventArgs.Empty);
         }
         catch (HttpRequestException)
         {
-            ErrorMessage = "Could not reach the server. Check your connection and try again.";
+            ErrorMessage = AppResources.Error_ServerUnavailable;
         }
         finally
         {

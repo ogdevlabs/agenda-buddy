@@ -48,11 +48,11 @@ public partial class ForgotPasswordViewModel : ObservableObject
             // same either way.
             IsSubmitted = succeeded;
             if (!succeeded)
-                ErrorMessage = "Could not reach the server. Check your connection and try again.";
+                ErrorMessage = AppResources.Error_ServerUnavailable;
         }
         catch (HttpRequestException)
         {
-            ErrorMessage = "Could not reach the server. Check your connection and try again.";
+            ErrorMessage = AppResources.Error_ServerUnavailable;
         }
         finally
         {

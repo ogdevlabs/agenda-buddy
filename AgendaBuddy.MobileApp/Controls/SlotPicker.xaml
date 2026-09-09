@@ -15,6 +15,7 @@
 -->
 <ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:strings="clr-namespace:AgendaBuddy.MobileApp.Resources.Strings"
              x:Class="AgendaBuddy.MobileApp.Controls.SlotPicker"
              x:Name="Root">
 
@@ -24,7 +25,7 @@
         <VerticalStackLayout IsVisible="{Binding IsLoading}" Spacing="8" Padding="0,12">
             <ActivityIndicator IsRunning="{Binding IsLoading}" Color="{StaticResource Primary}"
                                HorizontalOptions="Center" AutomationId="SlotPickerBusyIndicator" />
-            <Label Text="Loading available times…" FontSize="13" HorizontalOptions="Center"
+            <Label Text="{x:Static strings:AppResources.Xaml_LoadingAvailableTimes}" FontSize="13" HorizontalOptions="Center"
                    TextColor="{StaticResource TextMuted}" />
         </VerticalStackLayout>
 
@@ -44,7 +45,7 @@
 
         <!-- DATE. A horizontal scroller of cards, one per date with room. -->
         <VerticalStackLayout Spacing="8" IsVisible="{Binding HasBookableDates}">
-            <Label Text="PICK A DATE" FontSize="11" TextColor="{StaticResource TextMuted}"
+            <Label Text="{x:Static strings:AppResources.Xaml_PICKADATE}" FontSize="11" TextColor="{StaticResource TextMuted}"
                    CharacterSpacing="1.5" />
 
             <ScrollView Orientation="Horizontal" HorizontalScrollBarVisibility="Never">
@@ -101,7 +102,7 @@
 
         <!-- TIME. Wrapping chips for the chosen date. -->
         <VerticalStackLayout Spacing="8" IsVisible="{Binding HasTimes}">
-            <Label Text="PICK A TIME" FontSize="11" TextColor="{StaticResource TextMuted}"
+            <Label Text="{x:Static strings:AppResources.Xaml_PICKATIME}" FontSize="11" TextColor="{StaticResource TextMuted}"
                    CharacterSpacing="1.5" />
 
             <FlexLayout Wrap="Wrap" BindableLayout.ItemsSource="{Binding TimesForSelectedDate}">

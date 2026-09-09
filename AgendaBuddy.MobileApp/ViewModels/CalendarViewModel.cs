@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using AgendaBuddy.MobileApp.Models;
+using AgendaBuddy.MobileApp.Resources.Strings;
 using AgendaBuddy.MobileApp.Services;
 
 namespace AgendaBuddy.MobileApp.ViewModels;
@@ -77,7 +78,7 @@ public partial class CalendarViewModel : ObservableObject
         {
             // Real failure (network, timeout, malformed response, ambiguous write, etc.) — surface it
             // through ErrorMessage rather than masking it with fabricated data.
-            ErrorMessage = "Could not load the calendar. Check your connection and try again.";
+            ErrorMessage = AppResources.GetString("Error_LoadCalendar");
         }
         finally
         {
@@ -114,8 +115,8 @@ public partial class CalendarViewModel : ObservableObject
         // Update header labels
         var startDate = DateTime.Today.AddDays(_pageIndex * PageSize);
         var endDate = startDate.AddDays(Days.Count - 1);
-        MonthYear = startDate.ToString("MMMM yyyy");
-        WeekLabel = $"{startDate:MMM d} — {endDate:MMM d}";
+        MonthYear = startDate.ToString("MMMM yyyy", AppResources.CurrentCulture);
+        WeekLabel = $"{startDate.ToString("MMM d", AppResources.CurrentCulture)} — {endDate.ToString("MMM d", AppResources.CurrentCulture)}";
 
         // Auto-select today or first day
         var today = Days.FirstOrDefault(d => d.IsToday) ?? Days.FirstOrDefault();

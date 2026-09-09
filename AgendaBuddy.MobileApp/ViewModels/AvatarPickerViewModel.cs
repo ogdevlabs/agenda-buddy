@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.Input;
 using AgendaBuddy.Library.Avatars;
 using AgendaBuddy.MobileApp.Infrastructure;
 using AgendaBuddy.MobileApp.Models;
+using AgendaBuddy.MobileApp.Resources.Strings;
 using AgendaBuddy.MobileApp.Services;
 
 namespace AgendaBuddy.MobileApp.ViewModels;
@@ -104,7 +105,7 @@ public partial class AvatarPickerViewModel : ObservableObject
                 // The grid is still usable without knowing the current mark — it just opens with nothing ringed.
                 // Refusing to draw 24 local images because one request failed would be the worse answer.
                 stored = string.Empty;
-                ErrorMessage = "Could not read your current avatar. Choosing one will still save.";
+                ErrorMessage = AppResources.GetString("Error_LoadAvatar");
             }
 
             // An unknown stored id (a row from a build with a larger catalogue) resolves to the email-derived
@@ -149,7 +150,7 @@ public partial class AvatarPickerViewModel : ObservableObject
 
             if (!succeeded)
             {
-                ErrorMessage = "Could not save your avatar — try again.";
+                ErrorMessage = AppResources.GetString("Error_SaveAvatar");
                 await ToastNotifier.ShowAsync(ErrorMessage);
                 return;
             }
@@ -160,12 +161,12 @@ public partial class AvatarPickerViewModel : ObservableObject
             // profile read — dropping the cached name forces the next read, which carries the new id with it.
             _brandHeader?.InvalidateName();
 
-            await ToastNotifier.ShowAsync("Avatar updated.");
+            await ToastNotifier.ShowAsync(AppResources.GetString("Action_AvatarUpdated"));
             Saved?.Invoke(this, EventArgs.Empty);
         }
         catch (Exception)
         {
-            ErrorMessage = "Could not reach the server. Check your connection and try again.";
+            ErrorMessage = AppResources.Error_ServerUnavailable;
             await ToastNotifier.ShowAsync(ErrorMessage);
         }
         finally

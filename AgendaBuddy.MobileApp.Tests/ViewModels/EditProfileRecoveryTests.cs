@@ -1,3 +1,5 @@
+using System.Globalization;
+using AgendaBuddy.MobileApp.Resources.Strings;
 using AgendaBuddy.MobileApp.Services;
 using AgendaBuddy.MobileApp.ViewModels;
 using Moq;
@@ -28,9 +30,20 @@ namespace AgendaBuddy.MobileApp.Tests.ViewModels;
 /// them.
 /// </para>
 /// </remarks>
-public class EditProfileRecoveryTests
+public class EditProfileRecoveryTests : IDisposable
 {
     private const string Email = "stranded@example.com";
+    private readonly CultureInfo? _originalCulture = AppResources.Culture;
+
+    public EditProfileRecoveryTests()
+    {
+        AppResources.Culture = new CultureInfo("en");
+    }
+
+    public void Dispose()
+    {
+        AppResources.Culture = _originalCulture;
+    }
 
     private static EditProfileViewModel Create(
         bool isProvider,

@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:strings="clr-namespace:AgendaBuddy.MobileApp.Resources.Strings"
              xmlns:controls="clr-namespace:AgendaBuddy.MobileApp.Controls"
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
              x:Class="AgendaBuddy.MobileApp.Views.ServicesPage"
-             Title="My Services"
+             Title="{x:Static strings:AppResources.Xaml_MyServices_9f59525f}"
              BackgroundColor="{StaticResource BackgroundPage}"
              Shell.NavBarIsVisible="False"
              NavigationPage.HasNavigationBar="False">
@@ -24,7 +25,7 @@
         <Grid Grid.Row="1" RowDefinitions="Auto,Auto,*,Auto" Padding="20,12,20,16" RowSpacing="12">
 
             <Grid Grid.Row="0" ColumnDefinitions="Auto,*">
-                <Label Grid.Column="1" Text="My Services" FontSize="22" FontAttributes="Bold"
+                <Label Grid.Column="1" Text="{x:Static strings:AppResources.Xaml_MyServices_9f59525f}" FontSize="22" FontAttributes="Bold"
                        TextColor="{StaticResource TextPrimary}" VerticalOptions="Center" Margin="8,0,0,0" />
             </Grid>
 
@@ -33,7 +34,7 @@
                 <Frame Style="{StaticResource ErrorBannerStyle}" IsVisible="{Binding HasError}">
                     <Grid ColumnDefinitions="*,Auto">
                         <Label Grid.Column="0" Text="{Binding ErrorMessage}" TextColor="{StaticResource Error}" FontSize="14" />
-                        <controls:SafeButton Grid.Column="1" Text="Retry" Command="{Binding LoadCommand}"
+                        <controls:SafeButton Grid.Column="1" Text="{x:Static strings:AppResources.Xaml_Retry}" Command="{Binding LoadCommand}"
                                 BackgroundColor="{StaticResource Error}" TextColor="White" CornerRadius="16"
                                 FontSize="13" Padding="12,6" HeightRequest="36" />
                     </Grid>
@@ -46,8 +47,8 @@
 
             <VerticalStackLayout Grid.Row="2" IsVisible="{Binding IsEmpty}" HorizontalOptions="Center"
                                  VerticalOptions="Start" Spacing="6" Padding="40">
-                <Label Text="No services yet" FontSize="18" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" />
-                <Label Text="Tap Add a Service to create your first one." FontSize="14" TextColor="{StaticResource TextMuted}"
+                <Label Text="{x:Static strings:AppResources.Xaml_NoServicesYet}" FontSize="18" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" />
+                <Label Text="{x:Static strings:AppResources.Xaml_TapAddAServiceToCreateYourFirstOne}" FontSize="14" TextColor="{StaticResource TextMuted}"
                        HorizontalTextAlignment="Center" />
             </VerticalStackLayout>
 
@@ -65,7 +66,7 @@
                                         <Label Text="{Binding Description}" FontSize="13" TextColor="{StaticResource TextSecondary}" />
                                         <Label Text="{Binding FeeLabel}" FontSize="13" TextColor="{StaticResource TextMuted}" />
                                         <Label Text="{Binding DurationLabel}" FontSize="13" TextColor="{StaticResource TextMuted}" />
-                                        <Label Text="Inactive" FontSize="12" FontAttributes="Bold" TextColor="{StaticResource Error}"
+                                        <Label Text="{x:Static strings:AppResources.Xaml_Inactive}" FontSize="12" FontAttributes="Bold" TextColor="{StaticResource Error}"
                                                IsVisible="{Binding IsActive, Converter={StaticResource InvertedBoolConverter}}" />
                                     </VerticalStackLayout>
                                     <HorizontalStackLayout Grid.Column="1" Spacing="4">
@@ -75,7 +76,7 @@
                                                 FontSize="13"
                                                 Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.ToggleEditCommand}"
                                                 CommandParameter="{Binding .}" />
-                                        <controls:SafeButton Text="Remove"
+                                        <controls:SafeButton Text="{x:Static strings:AppResources.Xaml_Remove}"
                                                 BackgroundColor="Transparent"
                                                 TextColor="{StaticResource Error}"
                                                 FontSize="13"
@@ -87,19 +88,19 @@
 
                                 <VerticalStackLayout Spacing="8" IsVisible="{Binding IsEditing}">
                                     <Frame Style="{StaticResource InputFrame}" Margin="0">
-                                        <Entry Text="{Binding Description}" Placeholder="Description" Style="{StaticResource InputStyle}" />
+                                        <Entry Text="{Binding Description}" Placeholder="{x:Static strings:AppResources.Xaml_Description}" Style="{StaticResource InputStyle}" />
                                     </Frame>
                                     <Frame Style="{StaticResource InputFrame}" Margin="0">
-                                        <Entry Text="{Binding Fee}" Placeholder="Fee" Keyboard="Numeric" Style="{StaticResource InputStyle}" />
+                                        <Entry Text="{Binding Fee}" Placeholder="{x:Static strings:AppResources.Xaml_Fee}" Keyboard="Numeric" Style="{StaticResource InputStyle}" />
                                     </Frame>
                                     <Frame Style="{StaticResource InputFrame}" Margin="0">
-                                        <Entry Text="{Binding DurationMinutes}" Placeholder="Duration (minutes)" Keyboard="Numeric" Style="{StaticResource InputStyle}" />
+                                        <Entry Text="{Binding DurationMinutes}" Placeholder="{x:Static strings:AppResources.Xaml_DurationMinutes}" Keyboard="Numeric" Style="{StaticResource InputStyle}" />
                                     </Frame>
                                     <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
                                         <Switch Grid.Column="0" IsToggled="{Binding IsActive}" />
-                                        <Label Grid.Column="1" Text="Active (visible to customers)" FontSize="13" VerticalOptions="Center" TextColor="{StaticResource TextSecondary}" />
+                                        <Label Grid.Column="1" Text="{x:Static strings:AppResources.Xaml_ActiveVisibleToCustomers}" FontSize="13" VerticalOptions="Center" TextColor="{StaticResource TextSecondary}" />
                                     </Grid>
-                                    <controls:SafeButton Text="Save"
+                                    <controls:SafeButton Text="{x:Static strings:AppResources.General_Save}"
                                             Style="{StaticResource PrimaryButton}"
                                             FontSize="13"
                                             HeightRequest="40"
@@ -113,7 +114,7 @@
             </CollectionView>
 
             <controls:SafeButton Grid.Row="3"
-                    Text="Add a Service"
+                    Text="{x:Static strings:AppResources.Xaml_AddAService}"
                     Style="{StaticResource PrimaryButton}"
                     HeightRequest="48"
                     Clicked="OnAddServiceClicked"

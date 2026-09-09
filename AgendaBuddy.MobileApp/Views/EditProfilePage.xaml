@@ -10,10 +10,11 @@
 -->
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:strings="clr-namespace:AgendaBuddy.MobileApp.Resources.Strings"
              xmlns:controls="clr-namespace:AgendaBuddy.MobileApp.Controls"
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
              x:Class="AgendaBuddy.MobileApp.Views.EditProfilePage"
-             Title="Edit profile"
+             Title="{x:Static strings:AppResources.Xaml_EditProfile}"
              BackgroundColor="{StaticResource BackgroundPage}"
              Shell.NavBarIsVisible="False">
 
@@ -28,12 +29,12 @@
         <ScrollView Grid.Row="1">
             <VerticalStackLayout Padding="20,16,20,24" Spacing="14">
 
-                <Label Text="Edit profile" Style="{StaticResource TitleMedium}" />
+                <Label Text="{x:Static strings:AppResources.Xaml_EditProfile}" Style="{StaticResource TitleMedium}" />
 
                 <Frame Style="{StaticResource CardCompact}" Margin="0">
                     <VerticalStackLayout Spacing="12">
 
-                        <Label Text="Personal information" Style="{StaticResource Overline}" />
+                        <Label Text="{x:Static strings:AppResources.Xaml_PersonalInformation}" Style="{StaticResource Overline}" />
 
                         <!--
                             Every field carries a LABEL above it, not only a placeholder. A placeholder disappears
@@ -42,25 +43,25 @@
                             nothing saying which was which. It is also the field's accessibility name.
                         -->
                         <VerticalStackLayout Spacing="4">
-                            <Label Text="First name" FontSize="12.5" TextColor="{StaticResource TextSecondary}" />
+                            <Label Text="{x:Static strings:AppResources.Xaml_FirstName}" FontSize="12.5" TextColor="{StaticResource TextSecondary}" />
                             <Frame Style="{StaticResource InputFrame}" Margin="0">
-                                <Entry Text="{Binding FirstName}" Placeholder="First name"
+                                <Entry Text="{Binding FirstName}" Placeholder="{x:Static strings:AppResources.Xaml_FirstName}"
                                        Style="{StaticResource InputStyle}" AutomationId="ProfileFirstNameEntry" />
                             </Frame>
                         </VerticalStackLayout>
 
                         <VerticalStackLayout Spacing="4">
-                            <Label Text="Last name" FontSize="12.5" TextColor="{StaticResource TextSecondary}" />
+                            <Label Text="{x:Static strings:AppResources.Xaml_LastName}" FontSize="12.5" TextColor="{StaticResource TextSecondary}" />
                             <Frame Style="{StaticResource InputFrame}" Margin="0">
-                                <Entry Text="{Binding LastName}" Placeholder="Last name"
+                                <Entry Text="{Binding LastName}" Placeholder="{x:Static strings:AppResources.Xaml_LastName}"
                                        Style="{StaticResource InputStyle}" AutomationId="ProfileLastNameEntry" />
                             </Frame>
                         </VerticalStackLayout>
 
                         <VerticalStackLayout Spacing="4">
-                            <Label Text="Phone (optional)" FontSize="12.5" TextColor="{StaticResource TextSecondary}" />
+                            <Label Text="{x:Static strings:AppResources.Xaml_PhoneOptional}" FontSize="12.5" TextColor="{StaticResource TextSecondary}" />
                             <Frame Style="{StaticResource InputFrame}" Margin="0">
-                                <Entry Text="{Binding PhoneNumber}" Placeholder="Phone (optional)" Keyboard="Telephone"
+                                <Entry Text="{Binding PhoneNumber}" Placeholder="{x:Static strings:AppResources.Xaml_PhoneOptional}" Keyboard="Telephone"
                                        Style="{StaticResource InputStyle}" AutomationId="ProfilePhoneEntry" />
                             </Frame>
                         </VerticalStackLayout>
@@ -68,7 +69,7 @@
                         <!-- Disabled, not hidden. IsEnabled=false is what stops the keyboard opening on tap; the
                              muted background is what makes it read as fixed rather than as a broken field. -->
                         <VerticalStackLayout Spacing="4">
-                            <Label Text="Email" FontSize="12.5" TextColor="{StaticResource TextSecondary}" />
+                            <Label Text="{x:Static strings:AppResources.Xaml_Email}" FontSize="12.5" TextColor="{StaticResource TextSecondary}" />
                             <Frame Style="{StaticResource InputFrame}" Margin="0"
                                    BackgroundColor="{StaticResource Divider}">
                                 <Entry Text="{Binding Email}" IsEnabled="False"
@@ -78,7 +79,7 @@
                             </Frame>
                         </VerticalStackLayout>
 
-                        <Label Text="Your email address cannot be changed — it is what identifies your account."
+                        <Label Text="{x:Static strings:AppResources.Xaml_YourEmailAddressCannotBeChangedItIsWhatIdentifiesYourAccount}"
                                FontSize="12" TextColor="{StaticResource TextMuted}" />
 
                     </VerticalStackLayout>
@@ -87,7 +88,7 @@
                 <Frame Style="{StaticResource CardCompact}" Margin="0">
                     <VerticalStackLayout Spacing="12">
 
-                        <Label Text="Agreements" Style="{StaticResource Overline}" />
+                        <Label Text="{x:Static strings:AppResources.Xaml_Agreements}" Style="{StaticResource Overline}" />
 
                         <!-- Checkbox and a tappable document name on the same row: the label opens the document,
                              so nobody has to leave this screen to find out what they are agreeing to. -->
@@ -104,8 +105,8 @@
                                 </Label.GestureRecognizers>
                                 <Label.FormattedText>
                                     <FormattedString>
-                                        <Span Text="I accept the " />
-                                        <Span Text="Terms and Conditions"
+                                        <Span Text="{x:Static strings:AppResources.Xaml_IAcceptThe}" />
+                                        <Span Text="{x:Static strings:AppResources.Xaml_TermsAndConditions}"
                                               TextColor="{StaticResource Primary}"
                                               TextDecorations="Underline" />
                                     </FormattedString>
@@ -126,8 +127,8 @@
                                 </Label.GestureRecognizers>
                                 <Label.FormattedText>
                                     <FormattedString>
-                                        <Span Text="I accept the " />
-                                        <Span Text="Privacy Policy"
+                                        <Span Text="{x:Static strings:AppResources.Xaml_IAcceptThe}" />
+                                        <Span Text="{x:Static strings:AppResources.Xaml_PrivacyPolicy}"
                                               TextColor="{StaticResource Primary}"
                                               TextDecorations="Underline" />
                                     </FormattedString>
@@ -135,7 +136,7 @@
                             </Label>
                         </Grid>
 
-                        <Label Text="{Binding LegalEffectiveDate, StringFormat='Version effective {0}'}"
+                           <Label Text="{Binding LegalEffectiveDate}"
                                FontSize="12" TextColor="{StaticResource TextMuted}"
                                AutomationId="LegalEffectiveDateLabel" />
 
@@ -152,7 +153,7 @@
         <!-- Pinned. Disabled until both names are filled and both boxes are ticked — a disabled button next to
              two unticked boxes says what is missing without a message. -->
         <Grid Grid.Row="2" Padding="20,12,20,20" BackgroundColor="{StaticResource BackgroundPage}">
-            <controls:SafeButton Text="Save"
+            <controls:SafeButton Text="{x:Static strings:AppResources.General_Save}"
                     Style="{StaticResource PrimaryButton}"
                     Command="{Binding SaveCommand}"
                     IsVisible="{Binding IsSaving, Converter={StaticResource InvertedBoolConverter}}"

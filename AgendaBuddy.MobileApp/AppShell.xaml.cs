@@ -1,7 +1,6 @@
 #if MOBILE
-using AgendaBuddy.MobileApp.Infrastructure;
 using AgendaBuddy.MobileApp.Services;
-using AgendaBuddy.MobileApp.Views;
+using AgendaBuddy.MobileApp.Resources.Strings;
 
 namespace AgendaBuddy.MobileApp;
 
@@ -13,38 +12,13 @@ public partial class AppShell : Shell
     {
         InitializeComponent();
         _session = session;
-
-        Microsoft.Maui.Controls.Routing.RegisterRoute("messageThread", typeof(MessageThreadPage));
-        Microsoft.Maui.Controls.Routing.RegisterRoute("appointmentDetail", typeof(AppointmentDetailPage));
-        Microsoft.Maui.Controls.Routing.RegisterRoute("report", typeof(ProviderReportPage));
-        Microsoft.Maui.Controls.Routing.RegisterRoute("payment", typeof(PaymentPage));
-        Microsoft.Maui.Controls.Routing.RegisterRoute("book", typeof(BookAppointmentPage));
-        Microsoft.Maui.Controls.Routing.RegisterRoute("services", typeof(ServicesPage));
-        Microsoft.Maui.Controls.Routing.RegisterRoute("addService", typeof(AddServicePage));
-        Microsoft.Maui.Controls.Routing.RegisterRoute("calendarSettings", typeof(CalendarSettingsPage));
-        Microsoft.Maui.Controls.Routing.RegisterRoute("reschedule", typeof(ReschedulePage));
-        Microsoft.Maui.Controls.Routing.RegisterRoute("timeOff", typeof(TimeOffPage));
-        // Reached from MorePage now that they are no longer tabs of their own.
-        Microsoft.Maui.Controls.Routing.RegisterRoute("notifications", typeof(NotificationsPage));
-        Microsoft.Maui.Controls.Routing.RegisterRoute("professions", typeof(ProfessionsPage));
-
-        // Profile, and the screens it opens. Replaces the old "account" route: the Account screen's contents moved
-        // under Profile, which additionally carries the avatar, language and the two legal documents.
-        Microsoft.Maui.Controls.Routing.RegisterRoute("profile", typeof(ProfilePage));
-        Microsoft.Maui.Controls.Routing.RegisterRoute("editProfile", typeof(EditProfilePage));
-        Microsoft.Maui.Controls.Routing.RegisterRoute("avatarPicker", typeof(AvatarPickerPage));
-        Microsoft.Maui.Controls.Routing.RegisterRoute("language", typeof(LanguagePage));
-        Microsoft.Maui.Controls.Routing.RegisterRoute("terms", typeof(TermsPage));
-        Microsoft.Maui.Controls.Routing.RegisterRoute("privacy", typeof(PrivacyPage));
-
-        JwtDelegatingHandler.UnauthorizedAccess += async (_, _) =>
-            await Shell.Current.GoToAsync("//login");
     }
 
     public async Task UpdateForRoleAsync()
     {
         await _session.RefreshAsync();
-        ContactsTab.Title = _session.IsCustomer ? "Providers" : "Customers";
+        ContactsTab.Title = AppResources.GetString(
+            _session.IsCustomer ? "Shell_ContactsProviders" : "Shell_ContactsCustomers");
     }
 
     public static async Task NavigateToAppointmentAsync(string appointmentId)

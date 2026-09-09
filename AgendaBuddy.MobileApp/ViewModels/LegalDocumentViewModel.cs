@@ -38,7 +38,7 @@ public partial class LegalDocumentViewModel : ObservableObject
     public void Show(LegalDocument document, string publishedUrl)
     {
         Title = document.Title;
-        EffectiveDate = $"Effective {document.EffectiveDate}";
+        EffectiveDate = document.EffectiveDateText;
         Summary = document.Summary;
         Clauses = document.Clauses;
         PublishedUrl = publishedUrl;

@@ -69,7 +69,7 @@ public partial class MessageThreadViewModel : ObservableObject
         }
         catch (Exception)
         {
-            ErrorMessage = "Could not load thread. Check your connection and try again.";
+            ErrorMessage = AppResources.GetString("Error_LoadThread");
         }
         finally
         {
@@ -117,7 +117,8 @@ public partial class MessageThreadViewModel : ObservableObject
         // to be rejected loses nothing but tells the sender their text was fine right up until it was not.
         if (body.Length > Routing.MessagingRouteBuilder.MaxBodyLength)
         {
-            ErrorMessage = $"That message is too long — {Routing.MessagingRouteBuilder.MaxBodyLength} characters maximum.";
+            ErrorMessage = AppResources.Format(
+                "Validation_MessageLength", Routing.MessagingRouteBuilder.MaxBodyLength);
             await Infrastructure.ToastNotifier.ShowAsync(ErrorMessage);
             return;
         }

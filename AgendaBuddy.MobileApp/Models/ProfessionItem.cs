@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using AgendaBuddy.MobileApp.Resources.Strings;
 
 namespace AgendaBuddy.MobileApp.Models;
 
@@ -7,6 +8,8 @@ namespace AgendaBuddy.MobileApp.Models;
 public partial class ProfessionItem : ObservableObject
 {
     public string Name { get; set; } = string.Empty;
+
+    public string DisplayName => ProfessionDisplayNames.Get(Name);
 
     [ObservableProperty]
     private bool _isSelected;

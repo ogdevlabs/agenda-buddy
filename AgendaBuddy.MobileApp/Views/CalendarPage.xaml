@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:strings="clr-namespace:AgendaBuddy.MobileApp.Resources.Strings"
              xmlns:controls="clr-namespace:AgendaBuddy.MobileApp.Controls"
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
              x:Class="AgendaBuddy.MobileApp.Views.CalendarPage"
              x:Name="ThisPage"
-             Title="Calendar"
+             Title="{x:Static strings:AppResources.Xaml_Calendar}"
              BackgroundColor="#F2F2F7"
              Shell.NavBarIsVisible="False">
 
@@ -102,9 +103,9 @@
                         <Label Grid.Column="0" Text="&#x2699;" FontSize="17"
                                TextColor="{StaticResource Primary}" VerticalOptions="Center" />
                         <VerticalStackLayout Grid.Column="1" Spacing="1" VerticalOptions="Center">
-                            <Label Text="Manage calendar" FontSize="15" FontAttributes="Bold"
+                            <Label Text="{x:Static strings:AppResources.Xaml_ManageCalendar}" FontSize="15" FontAttributes="Bold"
                                    TextColor="{StaticResource Primary}" />
-                            <Label Text="Working days, hours and time off" FontSize="12"
+                            <Label Text="{x:Static strings:AppResources.Xaml_WorkingDaysHoursAndTimeOff}" FontSize="12"
                                    TextColor="{StaticResource TextMuted}" />
                         </VerticalStackLayout>
                         <Label Grid.Column="2" Text="&#x276F;" FontSize="14"
@@ -259,7 +260,7 @@
                     <VerticalStackLayout IsVisible="{Binding HasAvailableSlots}"
                                          Padding="20,16,20,0"
                                          Spacing="10">
-                        <Label Text="Available"
+                        <Label Text="{x:Static strings:AppResources.Xaml_Available}"
                                FontSize="13"
                                FontAttributes="Bold"
                                TextColor="{StaticResource iOSGray}"
@@ -291,12 +292,12 @@
                                          HorizontalOptions="Center"
                                          Margin="0,60"
                                          IsVisible="{Binding SelectedDayIsEmpty}">
-                        <Label Text="No Events"
+                        <Label Text="{x:Static strings:AppResources.Xaml_NoEvents}"
                                FontSize="20"
                                FontAttributes="Bold"
                                TextColor="{StaticResource iOSLabel}"
                                HorizontalOptions="Center" />
-                        <Label Text="Nothing scheduled for this day."
+                        <Label Text="{x:Static strings:AppResources.Xaml_NothingScheduledForThisDay}"
                                FontSize="15"
                                TextColor="{StaticResource iOSGray}"
                                HorizontalOptions="Center" />

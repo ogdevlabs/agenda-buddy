@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using AgendaBuddy.MobileApp.Infrastructure;
 using AgendaBuddy.MobileApp.Models;
+using AgendaBuddy.MobileApp.Resources.Strings;
 using AgendaBuddy.MobileApp.Services;
 
 namespace AgendaBuddy.MobileApp.ViewModels;
@@ -121,7 +122,7 @@ public partial class TimeOffViewModel : ObservableObject
     {
         get
         {
-            if (!IsRangeValid) return "The block has to end after it starts.";
+            if (!IsRangeValid) return AppResources.GetString("TimeOff_InvalidRange");
 
             var (start, end) = Range;
 
@@ -129,13 +130,13 @@ public partial class TimeOffViewModel : ObservableObject
             {
                 var days = (end.Date - start.Date).Days;
                 return days == 1
-                    ? $"{start:dddd d MMMM} · all day"
-                    : $"{start:ddd d MMM} to {end.AddDays(-1):ddd d MMM} · {days} days";
+                    ? $"{start.ToString("dddd d MMMM", AppResources.CurrentCulture)} · {AppResources.GetString("TimeOff_AllDay")}"
+                    : $"{start.ToString("ddd d MMM", AppResources.CurrentCulture)} – {end.AddDays(-1).ToString("ddd d MMM", AppResources.CurrentCulture)} · {AppResources.Format("TimeOff_Days", days)}";
             }
 
             return start.Date == end.Date
-                ? $"{start:dddd d MMMM} · {start:h:mm tt} – {end:h:mm tt}"
-                : $"{start:ddd d MMM, h:mm tt} – {end:ddd d MMM, h:mm tt}";
+                ? $"{start.ToString("dddd d MMMM", AppResources.CurrentCulture)} · {start.ToString("t", AppResources.CurrentCulture)} – {end.ToString("t", AppResources.CurrentCulture)}"
+                : $"{start.ToString("g", AppResources.CurrentCulture)} – {end.ToString("g", AppResources.CurrentCulture)}";
         }
     }
 
@@ -154,10 +155,8 @@ public partial class TimeOffViewModel : ObservableObject
     public string ConflictMessage => ConflictCount switch
     {
         null or 0 => string.Empty,
-        1 => "1 booked session falls inside this range. Blocking it will not cancel that session — move or "
-             + "cancel it yourself.",
-        _ => $"{ConflictCount} booked sessions fall inside this range. Blocking it will not cancel them — move "
-             + "or cancel them yourself."
+           1 => AppResources.GetString("TimeOff_OneConflict"),
+           _ => AppResources.Format("TimeOff_ManyConflicts", ConflictCount)
     };
 
     [RelayCommand]
@@ -180,7 +179,7 @@ public partial class TimeOffViewModel : ObservableObject
         {
             // Never an empty list on failure: showing "no time off" for a failed read tells the provider their
             // calendar is open when it may not be.
-            ErrorMessage = "Could not load your time off. Check your connection and try again.";
+            ErrorMessage = AppResources.GetString("Error_LoadTimeOff");
         }
         finally
         {
@@ -236,12 +235,12 @@ public partial class TimeOffViewModel : ObservableObject
 
             if (!result.Succeeded)
             {
-                ErrorMessage = result.ErrorMessage ?? "Could not save this time off. Try again.";
+                ErrorMessage = result.ErrorMessage ?? AppResources.GetString("Error_SaveTimeOff");
                 await ToastNotifier.ShowAsync(ErrorMessage);
                 return;
             }
 
-            await ToastNotifier.ShowAsync("Time off saved.");
+            await ToastNotifier.ShowAsync(AppResources.GetString("Action_TimeOffSaved"));
             Reason = string.Empty;
             ConflictCount = null;
             await LoadAsync();
@@ -271,12 +270,12 @@ public partial class TimeOffViewModel : ObservableObject
 
             if (!result.Succeeded)
             {
-                ErrorMessage = result.ErrorMessage ?? "Could not remove this time off. Try again.";
+                ErrorMessage = result.ErrorMessage ?? AppResources.GetString("Error_RemoveTimeOff");
                 await ToastNotifier.ShowAsync(ErrorMessage);
                 return;
             }
 
-            await ToastNotifier.ShowAsync("Time off removed. Those hours are bookable again.");
+            await ToastNotifier.ShowAsync(AppResources.GetString("Action_TimeOffRemoved"));
             await LoadAsync();
         }
         catch (GatewayServiceUnavailableException exception)

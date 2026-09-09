@@ -1,5 +1,6 @@
 using System.Globalization;
 using AgendaBuddy.MobileApp.Models;
+using AgendaBuddy.MobileApp.Resources.Strings;
 using AgendaBuddy.MobileApp.Services;
 using Xunit;
 
@@ -46,7 +47,7 @@ public class ProviderAvailabilityGroupingTests
         Assert.Equal(utc, slot.StartUtc);
         Assert.Equal(DateTimeKind.Utc, slot.StartUtc.Kind);
         Assert.Equal(utc.ToLocalTime(), slot.LocalStart);
-        Assert.Equal(utc.ToLocalTime().ToString("h:mm tt"), slot.Label);
+        Assert.Equal(utc.ToLocalTime().ToString("t", AppResources.Culture), slot.Label);
     }
 
     // The defect this grouping fixes: behind UTC, a small-hours UTC slot belongs to the PREVIOUS local

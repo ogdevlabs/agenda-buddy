@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using AgendaBuddy.Library.Entities;
 using AgendaBuddy.MobileApp.Infrastructure;
+using AgendaBuddy.MobileApp.Resources.Strings;
 using AgendaBuddy.MobileApp.Services;
 
 namespace AgendaBuddy.MobileApp.ViewModels;
@@ -76,15 +77,15 @@ public partial class PaymentViewModel : ObservableObject
                 return string.Empty;
 
             if (IsNonCharging)
-                return "Payment recorded (not yet charged)";
+                return AppResources.Payment_RecordedNotCharged;
 
             return Payment.Status switch
             {
-                PaymentStatus.Succeeded => "Paid",
-                PaymentStatus.Pending => "Payment pending",
-                PaymentStatus.Failed => "Payment failed",
-                PaymentStatus.Refunded => "Refunded",
-                _ => Payment.Status.ToString()
+                PaymentStatus.Succeeded => AppResources.Payment_Paid,
+                PaymentStatus.Pending => AppResources.Payment_Pending,
+                PaymentStatus.Failed => AppResources.Payment_Failed,
+                PaymentStatus.Refunded => AppResources.Payment_Refunded,
+                _ => AppResources.Payment_StatusUnknown
             };
         }
     }
@@ -114,7 +115,7 @@ public partial class PaymentViewModel : ObservableObject
         }
         catch (HttpRequestException)
         {
-            ErrorMessage = "Could not load payment details — check your connection and try again.";
+            ErrorMessage = AppResources.GetString("Error_LoadPayment");
         }
         finally
         {
@@ -128,7 +129,7 @@ public partial class PaymentViewModel : ObservableObject
     {
         if (!decimal.TryParse(PayAmountInput, out var amount) || amount <= 0)
         {
-            PayErrorMessage = "Enter an amount greater than zero.";
+            PayErrorMessage = AppResources.GetString("Validation_PositiveAmount");
             return;
         }
 
@@ -140,13 +141,13 @@ public partial class PaymentViewModel : ObservableObject
             var created = await _bookingApiService.CreatePaymentAsync(AppointmentId, amount, currency: null);
             if (created is null)
             {
-                PayErrorMessage = "Could not record this payment — try again.";
+                PayErrorMessage = AppResources.GetString("Error_RecordPayment");
                 await ToastNotifier.ShowAsync(PayErrorMessage);
                 return;
             }
 
             Payment = created;
-            await ToastNotifier.ShowAsync("Payment recorded.");
+            await ToastNotifier.ShowAsync(AppResources.GetString("Action_PaymentRecorded"));
         }
         catch (GatewayServiceUnavailableException ex)
         {
@@ -155,7 +156,7 @@ public partial class PaymentViewModel : ObservableObject
         }
         catch (HttpRequestException)
         {
-            PayErrorMessage = "Could not record this payment — check your connection and try again.";
+            PayErrorMessage = AppResources.GetString("Error_RecordPaymentConnection");
             await ToastNotifier.ShowAsync(PayErrorMessage);
         }
         finally

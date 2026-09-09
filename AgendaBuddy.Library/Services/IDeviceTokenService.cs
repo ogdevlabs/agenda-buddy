@@ -11,7 +11,7 @@ public interface IDeviceTokenService
     /// token — and every notification for A, subject and body included, was pushed to a device A no longer
     /// controls.
     /// </remarks>
-    Task UpsertAsync(string userEmail, string token, string platform);
+    Task UpsertAsync(string userEmail, string token, string platform, string languageCode = "en");
 
     Task<DeviceTokenEntity?> GetByEmailAsync(string userEmail);
 

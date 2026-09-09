@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using AgendaBuddy.Library.Entities;
 using AgendaBuddy.MobileApp.Infrastructure;
+using AgendaBuddy.MobileApp.Resources.Strings;
 
 namespace AgendaBuddy.MobileApp.Models;
 
@@ -58,8 +59,10 @@ public partial class NotificationSummary : ObservableObject
     /// <summary>Whether this row opens a date band, and so draws the header above its card.</summary>
     public bool StartsSection => !string.IsNullOrEmpty(SectionHeader);
 
-    /// <summary>The bold first line. Falls back to the type when a producer wrote no subject.</summary>
-    public string Title => string.IsNullOrWhiteSpace(Subject) ? TypeLabel : Subject;
+    /// <summary>The bold first line. Known types use privacy-safe local copy; unknown legacy rows stay readable.</summary>
+    public string Title => IsKnownType
+        ? AppResources.GetString($"Notification_Title_{Type}")
+        : string.IsNullOrWhiteSpace(Subject) ? TypeLabel : Subject;
 
     /// <summary>
     /// The inverse of <see cref="IsRead"/>, as a property the view can bind.
@@ -80,8 +83,13 @@ public partial class NotificationSummary : ObservableObject
     /// <summary>The glyph for this notification's kind, beside (never instead of) <see cref="TypeLabel"/>.</summary>
     public string Glyph => NotificationVisuals.Glyph(Type);
 
-    /// <summary>The grey second line.</summary>
-    public string Message => Body;
+    /// <summary>The grey second line. A user's message is content, not interface copy, and is never translated.</summary>
+    public string Message => Type switch
+    {
+        NotificationType.MessageReceived => Body,
+        _ when IsKnownType => AppResources.GetString($"Notification_Body_{Type}"),
+        _ => Body
+    };
 
     /// <summary>Whether this notification names an appointment at all.</summary>
     public bool HasAppointment => !string.IsNullOrWhiteSpace(AppointmentIdentifier);
@@ -104,29 +112,16 @@ public partial class NotificationSummary : ObservableObject
     /// the two types the live producers emit most (<see cref="NotificationType.AppointmentRequested"/> and
     /// <see cref="NotificationType.MessageReceived"/>) labelled a booking request "Info".
     /// </summary>
-    public string TypeLabel => Type switch
-    {
-        NotificationType.AppointmentRequested => "Requested",
-        NotificationType.AppointmentBooked => "Booked",
-        NotificationType.AppointmentUpdated => "Updated",
-        NotificationType.AppointmentCancelled => "Cancelled",
-        NotificationType.AppointmentCompleted => "Completed",
-        NotificationType.MessageReceived => "Message",
-        NotificationType.PasswordResetRequested => "Security",
-        NotificationType.EmailConfirmationRequested => "Security",
-        NotificationType.AppointmentRescheduled => "Rescheduled",
-        NotificationType.RescheduleRequested => "New time asked",
-        NotificationType.RescheduleApproved => "New time agreed",
-        NotificationType.RescheduleDeclined => "New time declined",
-        _ => "Info"
-    };
+    public string TypeLabel => IsKnownType
+        ? AppResources.GetString($"Notification_Label_{Type}")
+        : AppResources.GetString("Notification_Label_Unknown");
 
     /// <summary>
     /// Local time, not UTC. <c>CreatedAt</c> arrives as a UTC instant and the reader is on their own clock, so
     /// comparing it against <c>DateTime.Now</c> without converting reports a fresh notification as hours old
     /// for anyone west of UTC and negative for anyone east.
     /// </summary>
-    public string TimeAgo => FormatTimeAgo(LocalCreatedAt);
+    public string TimeAgo => FormatTimeAgo(LocalCreatedAt, DateTime.Now);
 
     /// <summary>
     /// <see cref="CreatedAt"/> on the reader's own clock, for anything that renders an actual time.
@@ -142,16 +137,18 @@ public partial class NotificationSummary : ObservableObject
 
     partial void OnSectionHeaderChanged(string value) => OnPropertyChanged(nameof(StartsSection));
 
-    private static string FormatTimeAgo(DateTime localTime)
+    internal static string FormatTimeAgo(DateTime localTime, DateTime localNow)
     {
-        var diff = DateTime.Now - localTime;
+        var diff = localNow - localTime;
 
         // Clock skew between device and server can put a just-written notification marginally in the future.
-        if (diff < TimeSpan.Zero) return "now";
+        if (diff < TimeSpan.Zero) return AppResources.GetString("Notification_Time_Now");
 
-        if (diff.TotalMinutes < 1) return "now";
-        if (diff.TotalMinutes < 60) return $"{(int)diff.TotalMinutes}m ago";
-        if (diff.TotalHours < 24) return $"{(int)diff.TotalHours}h ago";
-        return $"{(int)diff.TotalDays}d ago";
+        if (diff.TotalMinutes < 1) return AppResources.GetString("Notification_Time_Now");
+        if (diff.TotalMinutes < 60) return AppResources.Format("Notification_Time_MinutesAgo", (int)diff.TotalMinutes);
+        if (diff.TotalHours < 24) return AppResources.Format("Notification_Time_HoursAgo", (int)diff.TotalHours);
+        return AppResources.Format("Notification_Time_DaysAgo", (int)diff.TotalDays);
     }
+
+    private bool IsKnownType => Enum.IsDefined(Type);
 }

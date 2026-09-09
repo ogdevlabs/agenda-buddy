@@ -2,6 +2,7 @@
 using AgendaBuddy.Library.Entities;
 using AgendaBuddy.MobileApp.Infrastructure;
 using AgendaBuddy.MobileApp.Models;
+using AgendaBuddy.MobileApp.Resources.Strings;
 using AgendaBuddy.MobileApp.ViewModels;
 
 namespace AgendaBuddy.MobileApp.Views;
@@ -120,11 +121,11 @@ public partial class AppointmentDetailPage : ContentPage
                 // The confirmation NAMES the session rather than asking a bare "are you sure?". Cancelled is
                 // terminal (ADR-037), so this is the last chance to notice it is the wrong appointment.
                 var cancelChoice = await DisplayActionSheetAsync(
-                    $"Cancel {SessionDescription()}?",
-                    "Keep it",
+                    AppResources.Format("Appointment_CancelPrompt", SessionDescription()),
+                    AppResources.GetString("Appointment_KeepAction"),
                     null,
-                    "Cancel appointment");
-                if (cancelChoice == "Cancel appointment")
+                    AppResources.GetString("Appointment_CancelAction"));
+                if (cancelChoice == AppResources.GetString("Appointment_CancelAction"))
                 {
                     var cancelled = await _viewModel.ExecuteCancelAsync();
                     if (cancelled)
@@ -210,7 +211,7 @@ public partial class AppointmentDetailPage : ContentPage
 
     private void OnUnauthorizedAccess(object? sender, EventArgs e)
     {
-        _viewModel.ErrorMessage = "Your session expired. Any unsaved changes were not saved.";
+        _viewModel.ErrorMessage = AppResources.GetString("Session_ExpiredUnsaved");
     }
 }
 #endif

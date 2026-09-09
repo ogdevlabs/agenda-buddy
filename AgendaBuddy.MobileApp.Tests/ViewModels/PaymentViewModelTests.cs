@@ -1,5 +1,6 @@
 using AgendaBuddy.Library.Entities;
 using AgendaBuddy.MobileApp.Infrastructure;
+using AgendaBuddy.MobileApp.Resources.Strings;
 using AgendaBuddy.MobileApp.Services;
 using AgendaBuddy.MobileApp.ViewModels;
 using Moq;
@@ -9,8 +10,16 @@ namespace AgendaBuddy.MobileApp.Tests.ViewModels;
 
 // ux-review.md finding 1 / PRD Requirement 12 / AC13: the payment screen's copy does not claim a
 // local_-prefixed payment has been charged — never "Paid".
-public class PaymentViewModelTests
+[Collection(nameof(Infrastructure.CultureSensitiveCollection))]
+public class PaymentViewModelTests : IDisposable
 {
+    private readonly System.Globalization.CultureInfo? _originalCulture = AppResources.Culture;
+
+    public PaymentViewModelTests() =>
+        AppResources.Culture = new System.Globalization.CultureInfo("en");
+
+    public void Dispose() => AppResources.Culture = _originalCulture;
+
     private static PaymentEntity LocalIntentPayment(PaymentStatus status = PaymentStatus.Succeeded) => new(
         "a1", "prov@example.com", "alice@example.com", 50m)
     {
@@ -65,6 +74,42 @@ public class PaymentViewModelTests
 
         Assert.Equal("Paid", vm.StatusMessage);
         Assert.False(vm.IsNonCharging);
+    }
+
+    [Fact]
+    public void StatusMessage_LocalizesEveryPaymentState()
+    {
+        var original = AppResources.Culture;
+
+        try
+        {
+            AppResources.Culture = new System.Globalization.CultureInfo("es-MX");
+
+            foreach (var status in Enum.GetValues<PaymentStatus>())
+            {
+                var service = new Mock<IBookingApiService>();
+                var vm = new PaymentViewModel(service.Object)
+                {
+                    Payment = new PaymentEntity
+                    {
+                        Status = status,
+                        StripePaymentIntentId = "pi_123"
+                    }
+                };
+
+                Assert.False(string.IsNullOrWhiteSpace(vm.StatusMessage));
+                Assert.NotEqual(status.ToString(), vm.StatusMessage);
+            }
+
+            Assert.Equal("Pagado", new PaymentViewModel(new Mock<IBookingApiService>().Object)
+            {
+                Payment = RealChargedPayment()
+            }.StatusMessage);
+        }
+        finally
+        {
+            AppResources.Culture = original;
+        }
     }
 
     // GetAppointmentPaymentQuery answers 404 ("no payment recorded yet") the same way a genuine failure

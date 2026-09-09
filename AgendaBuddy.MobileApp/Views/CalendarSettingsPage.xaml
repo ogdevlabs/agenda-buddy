@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:strings="clr-namespace:AgendaBuddy.MobileApp.Resources.Strings"
              xmlns:controls="clr-namespace:AgendaBuddy.MobileApp.Controls"
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
              x:Class="AgendaBuddy.MobileApp.Views.CalendarSettingsPage"
              x:Name="ThisPage"
-             Title="Calendar Settings"
+             Title="{x:Static strings:AppResources.Xaml_CalendarSettings}"
              BackgroundColor="{StaticResource BackgroundPage}"
              Shell.NavBarIsVisible="False"
              NavigationPage.HasNavigationBar="False">
@@ -21,7 +22,7 @@
         <Grid Grid.Row="1" RowDefinitions="Auto,Auto,*,Auto" Padding="20,12,20,16" RowSpacing="12">
 
             <Grid Grid.Row="0" ColumnDefinitions="Auto,*">
-                <Label Grid.Column="1" Text="Calendar Settings" FontSize="22" FontAttributes="Bold"
+                <Label Grid.Column="1" Text="{x:Static strings:AppResources.Xaml_CalendarSettings}" FontSize="22" FontAttributes="Bold"
                        TextColor="{StaticResource TextPrimary}" VerticalOptions="Center" Margin="8,0,0,0" />
             </Grid>
 
@@ -42,12 +43,12 @@
                     <Frame CornerRadius="16" BackgroundColor="White" BorderColor="{StaticResource BorderLight}"
                            HasShadow="True" Padding="16">
                         <VerticalStackLayout Spacing="12">
-                            <Label Text="YOUR WORKING WEEK" FontSize="11" TextColor="{StaticResource TextMuted}"
+                            <Label Text="{x:Static strings:AppResources.Xaml_YOURWORKINGWEEK}" FontSize="11" TextColor="{StaticResource TextMuted}"
                                    TextTransform="Uppercase" CharacterSpacing="1.5" />
-                            <Label Text="Customers can only book inside these windows. Times are on your own device's clock, and each day can differ."
+                            <Label Text="{x:Static strings:AppResources.Xaml_CustomersCanOnlyBookInsideTheseWindowsTimesAreOnYourOwnDeviceSClockAndEachDayCanDiffer}"
                                    FontSize="13" TextColor="{StaticResource TextSecondary}" />
 
-                            <controls:SafeButton Text="Copy first open day to all"
+                            <controls:SafeButton Text="{x:Static strings:AppResources.Xaml_CopyFirstOpenDayToAll}"
                                     BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
                                     FontSize="13" HorizontalOptions="Start" Padding="0"
                                     Command="{Binding CopyFirstDayToAllCommand}"
@@ -89,7 +90,7 @@
                                                            Margin="0">
                                                         <Picker ItemsSource="{Binding Source={x:Reference ThisPage}, Path=BindingContext.StartHourOptions}"
                                                                 SelectedIndex="{Binding StartHourIndex}"
-                                                                Title="Starts"
+                                                                Title="{x:Static strings:AppResources.Xaml_Starts}"
                                                                 TextColor="{StaticResource TextPrimary}"
                                                                 AutomationId="WorkDayStartHourPicker" />
                                                     </Frame>
@@ -97,7 +98,7 @@
                                                            Margin="0">
                                                         <Picker ItemsSource="{Binding Source={x:Reference ThisPage}, Path=BindingContext.EndHourOptions}"
                                                                 SelectedIndex="{Binding EndHourIndex}"
-                                                                Title="Ends"
+                                                                Title="{x:Static strings:AppResources.Xaml_Ends}"
                                                                 TextColor="{StaticResource TextPrimary}"
                                                                 AutomationId="WorkDayEndHourPicker" />
                                                     </Frame>
@@ -121,7 +122,7 @@
                                    AutomationId="CalendarWeekSummary" />
 
                             <!-- Warned about, not blocked: a provider may genuinely be shutting up shop. -->
-                            <Label Text="Nobody can book you while every day is closed."
+                            <Label Text="{x:Static strings:AppResources.Xaml_NobodyCanBookYouWhileEveryDayIsClosed}"
                                    IsVisible="{Binding IsFullyClosed}"
                                    FontSize="12" TextColor="{StaticResource Error}"
                                    AutomationId="FullyClosedWarning" />
@@ -133,11 +134,11 @@
                     <Frame CornerRadius="16" BackgroundColor="White" BorderColor="{StaticResource BorderLight}"
                            HasShadow="True" Padding="16">
                         <VerticalStackLayout Spacing="8">
-                            <Label Text="TIME OFF" FontSize="11" TextColor="{StaticResource TextMuted}"
+                            <Label Text="{x:Static strings:AppResources.Xaml_TimeOffOverline}" FontSize="11" TextColor="{StaticResource TextMuted}"
                                    TextTransform="Uppercase" CharacterSpacing="1.5" />
-                            <Label Text="Holiday, travel or anything personal. Blocks a range of hours or whole days, whatever your working week says."
+                            <Label Text="{x:Static strings:AppResources.Xaml_HolidayTravelOrAnythingPersonalBlocksARangeOfHoursOrWholeDaysWhateverYourWorkingWeekSays}"
                                    FontSize="13" TextColor="{StaticResource TextSecondary}" />
-                            <controls:SafeButton Text="Manage time off"
+                            <controls:SafeButton Text="{x:Static strings:AppResources.Xaml_ManageTimeOff}"
                                     Style="{StaticResource SecondaryButton}"
                                     Clicked="OnTimeOffClicked"
                                     AutomationId="ManageTimeOffButton" />
@@ -148,7 +149,7 @@
             </ScrollView>
 
             <Grid Grid.Row="3">
-                <controls:SafeButton Text="Save Working Week"
+                <controls:SafeButton Text="{x:Static strings:AppResources.Xaml_SaveWorkingWeek}"
                         Style="{StaticResource PrimaryButton}"
                         HeightRequest="48"
                         Command="{Binding SaveCommand}"

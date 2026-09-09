@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:strings="clr-namespace:AgendaBuddy.MobileApp.Resources.Strings"
              xmlns:controls="clr-namespace:AgendaBuddy.MobileApp.Controls"
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
              x:Class="AgendaBuddy.MobileApp.Views.MessagingPage"
-             Title="Messages"
+             Title="{x:Static strings:AppResources.Xaml_Messages}"
              BackgroundColor="#F2F2F7"
              Shell.NavBarIsVisible="False">
 
@@ -28,7 +29,7 @@
                   Padding="20,16,20,12"
                   ColumnDefinitions="*,Auto">
                 <Label Grid.Column="0"
-                       Text="Messages"
+                       Text="{x:Static strings:AppResources.Xaml_Messages}"
                        FontSize="34"
                        FontAttributes="Bold"
                        TextColor="{StaticResource iOSLabel}"
@@ -37,7 +38,7 @@
                 <!-- This tab can only ever list threads that already exist, so without a way out to the
                      contact list neither side could say anything first. -->
                 <controls:SafeButton Grid.Column="1"
-                        Text="New"
+                        Text="{x:Static strings:AppResources.Xaml_New}"
                         BackgroundColor="#E0F2FE"
                         TextColor="#0369A1"
                         CornerRadius="10"
@@ -66,7 +67,7 @@
                            FontSize="14"
                            VerticalOptions="Center" />
                     <controls:SafeButton Grid.Column="1"
-                            Text="Retry"
+                            Text="{x:Static strings:AppResources.Xaml_Retry}"
                             Command="{Binding LoadCommand}"
                             BackgroundColor="Transparent"
                             TextColor="{StaticResource iOSBlue}"
@@ -90,12 +91,12 @@
                                  HorizontalOptions="Center"
                                  Spacing="8"
                                  Padding="40">
-                <Label Text="No Messages"
+                <Label Text="{x:Static strings:AppResources.Xaml_NoMessages}"
                        FontSize="20"
                        FontAttributes="Bold"
                        TextColor="{StaticResource iOSLabel}"
                        HorizontalOptions="Center" />
-                <Label Text="Tap New to message someone you have booked with."
+                <Label Text="{x:Static strings:AppResources.Xaml_TapNewToMessageSomeoneYouHaveBookedWith}"
                        FontSize="15"
                        TextColor="{StaticResource iOSGray}"
                        HorizontalTextAlignment="Center" />

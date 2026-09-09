@@ -1,3 +1,5 @@
+using AgendaBuddy.MobileApp.Resources.Strings;
+
 namespace AgendaBuddy.MobileApp.Models;
 
 /// <summary>
@@ -21,5 +23,5 @@ public sealed record AvailabilitySlot(DateTime StartUtc)
     public DateTime LocalStart { get; } = StartUtc.ToLocalTime();
 
     /// <summary>Wall-clock time as this device reads it.</summary>
-    public string Label => LocalStart.ToString("h:mm tt");
+    public string Label => LocalStart.ToString("t", AppResources.CurrentCulture);
 }

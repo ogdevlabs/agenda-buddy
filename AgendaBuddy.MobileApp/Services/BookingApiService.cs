@@ -149,7 +149,7 @@ public class BookingApiService : IBookingApiService
             Content = new StringContent(body, Encoding.UTF8, "application/json")
         };
 
-        return await SendAppointmentActionAsync(client, request, ct);
+        return await SendAppointmentActionAsync(client, request, MobileOperation.AppointmentAction, ct);
     }
 
     public Task<AppointmentActionResult> RescheduleAsync(
@@ -157,6 +157,7 @@ public class BookingApiService : IBookingApiService
         PostAppointmentActionAsync(
             BookingRouteBuilder.RescheduleAppointment(identifier),
             BookingRouteBuilder.BuildReschedulePayload(newStartUtc),
+            MobileOperation.Booking,
             ct);
 
     public Task<AppointmentActionResult> RequestRescheduleAsync(
@@ -164,6 +165,7 @@ public class BookingApiService : IBookingApiService
         PostAppointmentActionAsync(
             BookingRouteBuilder.RequestReschedule(identifier),
             BookingRouteBuilder.BuildReschedulePayload(proposedStartUtc),
+            MobileOperation.Booking,
             ct);
 
     public Task<AppointmentActionResult> AnswerRescheduleAsync(
@@ -171,10 +173,11 @@ public class BookingApiService : IBookingApiService
         PostAppointmentActionAsync(
             BookingRouteBuilder.AnswerReschedule(identifier),
             BookingRouteBuilder.BuildAnswerReschedulePayload(approve),
+            MobileOperation.Booking,
             ct);
 
     private async Task<AppointmentActionResult> PostAppointmentActionAsync(
-        RouteSpec route, object payload, CancellationToken ct)
+        RouteSpec route, object payload, MobileOperation operation, CancellationToken ct)
     {
         var client = _httpClientFactory.CreateClient("AgendaBuddyApi");
         using var request = new HttpRequestMessage(route.Method, route.Path)
@@ -183,7 +186,7 @@ public class BookingApiService : IBookingApiService
                 JsonSerializer.Serialize(payload, JsonOptions), Encoding.UTF8, "application/json")
         };
 
-        return await SendAppointmentActionAsync(client, request, ct);
+        return await SendAppointmentActionAsync(client, request, operation, ct);
     }
 
     /// <summary>
@@ -202,7 +205,7 @@ public class BookingApiService : IBookingApiService
     /// </para>
     /// </remarks>
     private static async Task<AppointmentActionResult> SendAppointmentActionAsync(
-        HttpClient client, HttpRequestMessage request, CancellationToken ct)
+        HttpClient client, HttpRequestMessage request, MobileOperation operation, CancellationToken ct)
     {
         try
         {
@@ -213,14 +216,14 @@ public class BookingApiService : IBookingApiService
             // status, so it is worded as one rather than as a refusal.
             var failedService = await response.TryReadFailedServiceAsync(ct);
             if (failedService is not null)
-                return new AppointmentActionResult(false, GatewayErrorMapper.Describe(failedService));
+                return AppointmentActionResult.Unreachable(operation, failedService);
 
             return AppointmentActionResult.Refused(
-                response.StatusCode, await ReadRefusalMessageAsync(response, ct));
+                operation, response.StatusCode, await ReadRefusalMessageAsync(response, ct));
         }
         catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException)
         {
-            return AppointmentActionResult.Unreachable();
+            return AppointmentActionResult.Unreachable(operation, exception.Message);
         }
     }
 

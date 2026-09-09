@@ -2,6 +2,8 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using AgendaBuddy.MobileApp.Infrastructure;
+using AgendaBuddy.MobileApp.Resources.Strings;
+using AgendaBuddy.MobileApp.Services;
 
 namespace AgendaBuddy.MobileApp.ViewModels;
 
@@ -13,43 +15,40 @@ public partial class LanguageOption : ObservableObject
     public required AppLanguage Language { get; init; }
 
     public string Code => Language.Code;
-    public string Name => Language.Name;
+    public string Name => Code == AppLanguages.DefaultCode
+        ? AppResources.Language_EnglishName
+        : AppResources.Language_SpanishName;
     public string NativeName => Language.NativeName;
     public bool IsAvailable => Language.IsAvailable;
 
-    /// <summary>The row's secondary line — either the language's own name, or why it cannot be picked.</summary>
-    public string Detail => IsAvailable ? NativeName : $"{NativeName} — coming soon";
+    /// <summary>The language's own name, so a reader can find it regardless of the current app language.</summary>
+    public string Detail => NativeName;
 
     [ObservableProperty]
     private bool _isSelected;
 }
 
-/// <summary>
-/// The app's language.
-/// </summary>
-/// <remarks>
-/// <para>
-/// ⚠️ <b>This screen currently reports a language rather than changing one.</b> There is no resource-string
-/// infrastructure in this app — every user-facing string is a literal in XAML or a view model — so selecting
-/// Spanish cannot be honoured, and storing the preference would make the app claim a setting it ignores. Tapping
-/// it says so instead.
-/// </para>
-/// <para>
-/// Spanish is listed and marked unavailable rather than omitted: it is the language this product's market will
-/// look for first, and a screen listing only English answers "is Spanish coming?" with silence, which reads as no.
-/// </para>
-/// </remarks>
+/// <summary>The app's language.</summary>
 public partial class LanguageViewModel : ObservableObject
 {
+    private readonly ILanguageCoordinator? _languageCoordinator;
+    private readonly ILanguageShellService? _languageShell;
+
+    public LanguageViewModel(
+        ILanguageCoordinator? languageCoordinator = null,
+        ILanguageShellService? languageShell = null)
+    {
+        _languageCoordinator = languageCoordinator;
+        _languageShell = languageShell;
+        _selectedCode = languageCoordinator?.CurrentCode ?? AppLanguages.DefaultCode;
+    }
+
     public ObservableCollection<LanguageOption> Languages { get; } = [];
 
     [ObservableProperty]
     private string _selectedCode = AppLanguages.DefaultCode;
 
-    /// <summary>The explanatory line under the list, shown always — the limitation is the screen's main fact.</summary>
-    public string Notice =>
-        "The app is currently available in English only. Spanish is planned; when it ships you will be able to "
-        + "switch here.";
+    public string Notice => AppResources.GetString("Language_Notice");
 
     [RelayCommand]
     private void Load()
@@ -66,14 +65,7 @@ public partial class LanguageViewModel : ObservableObject
         ApplySelection();
     }
 
-    /// <summary>
-    /// Picks a language, or explains why it cannot be picked.
-    /// </summary>
-    /// <remarks>
-    /// An unavailable option is <b>refused rather than stored</b>. Recording a preference nothing honours is worse
-    /// than refusing it: the user would see Spanish ticked and an English app, and conclude the app is broken
-    /// rather than that the language is not ready.
-    /// </remarks>
+    /// <summary>Picks and persists one of the languages this build supports.</summary>
     [RelayCommand]
     private async Task SelectAsync(LanguageOption? option)
     {
@@ -81,12 +73,16 @@ public partial class LanguageViewModel : ObservableObject
 
         if (!AppLanguages.IsSelectable(option.Code))
         {
-            await ToastNotifier.ShowAsync($"{option.Name} is not available yet.");
+            await ToastNotifier.ShowAsync(AppResources.Format("Language_NotAvailable", option.Name));
             return;
         }
 
-        SelectedCode = option.Code;
+        var changed = _languageCoordinator?.Select(option.Code) ?? true;
+        SelectedCode = _languageCoordinator?.CurrentCode ?? option.Code;
         ApplySelection();
+
+        if (changed && _languageShell is not null)
+            await _languageShell.RebuildAsync();
     }
 
     private void ApplySelection()

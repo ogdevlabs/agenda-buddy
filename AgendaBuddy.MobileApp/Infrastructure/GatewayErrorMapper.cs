@@ -1,3 +1,5 @@
+using AgendaBuddy.MobileApp.Resources.Strings;
+
 namespace AgendaBuddy.MobileApp.Infrastructure;
 
 /// <summary>
@@ -8,26 +10,16 @@ namespace AgendaBuddy.MobileApp.Infrastructure;
 /// </summary>
 public static class GatewayErrorMapper
 {
-    public const string GenericMessage = "Could not reach the server. Check your connection and try again.";
-
-    private static readonly Dictionary<string, string> DisplayNames = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ["booking"] = "Booking",
-        ["calendar"] = "Calendar",
-        ["customer"] = "Customers",
-        ["provider"] = "Providers",
-        ["services"] = "Services",
-        ["profession"] = "Professions",
-        ["identity"] = "Account",
-    };
+    public static string GenericMessage => AppResources.GetString("Gateway_GenericError");
 
     public static string Describe(string? failedService)
     {
         if (string.IsNullOrWhiteSpace(failedService))
             return GenericMessage;
 
-        return DisplayNames.TryGetValue(failedService, out var displayName)
-            ? $"{displayName} is unavailable right now. Try again."
-            : GenericMessage;
+        var displayName = RuntimeText.GatewayService(failedService);
+        return string.IsNullOrEmpty(displayName)
+            ? GenericMessage
+            : AppResources.Format("Gateway_ServiceUnavailable", displayName);
     }
 }

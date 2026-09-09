@@ -1,4 +1,6 @@
+using System.Globalization;
 using AgendaBuddy.MobileApp.Infrastructure;
+using AgendaBuddy.MobileApp.Resources.Strings;
 using AgendaBuddy.MobileApp.ViewModels;
 using Xunit;
 
@@ -14,8 +16,15 @@ namespace AgendaBuddy.MobileApp.Tests.Infrastructure;
 /// rather than a generic list — a policy that claims things the app does not do is as much a defect as one that
 /// omits things it does.
 /// </remarks>
-public class LegalDocumentsTest
+[Collection(nameof(CultureSensitiveCollection))]
+public class LegalDocumentsTest : IDisposable
 {
+    private readonly CultureInfo? _originalCulture = AppResources.Culture;
+
+    public LegalDocumentsTest() => AppResources.Culture = new CultureInfo("en-US");
+
+    public void Dispose() => AppResources.Culture = _originalCulture;
+
     public static TheoryData<LegalDocument> BothDocuments() => new()
     {
         LegalDocuments.Terms,
@@ -29,6 +38,40 @@ public class LegalDocumentsTest
         Assert.False(string.IsNullOrWhiteSpace(document.Title));
         Assert.False(string.IsNullOrWhiteSpace(document.Summary));
         Assert.Equal(LegalDocuments.EffectiveDate, document.EffectiveDate);
+        Assert.False(string.IsNullOrWhiteSpace(document.EffectiveDateText));
+    }
+
+    [Theory]
+    [InlineData("en-US")]
+    [InlineData("es-MX")]
+    public void BothCulturesHaveTenCompleteOrderedClausesWithTheSameStructure(string cultureName)
+    {
+        AppResources.Culture = new CultureInfo(cultureName);
+
+        foreach (var document in new[] { LegalDocuments.Terms, LegalDocuments.Privacy })
+        {
+            Assert.Equal(10, document.Clauses.Count);
+            Assert.Equal(
+                Enumerable.Range(1, 10).Select(number => $"{number}."),
+                document.Clauses.Select(clause => clause.Heading.Split(' ', 2)[0]));
+            Assert.All(document.Clauses, clause =>
+            {
+                Assert.False(string.IsNullOrWhiteSpace(clause.Heading));
+                Assert.False(string.IsNullOrWhiteSpace(clause.Body));
+            });
+        }
+    }
+
+    [Fact]
+    public void EnglishAndSpanishDocumentsHaveIdenticalOrderedStructure()
+    {
+        var english = DocumentsFor("en-US");
+        var spanish = DocumentsFor("es-MX");
+
+        Assert.Equal(english.Select(document => document.Clauses.Count), spanish.Select(document => document.Clauses.Count));
+        Assert.Equal(
+            english.SelectMany(document => document.Clauses).Select(ClauseNumber),
+            spanish.SelectMany(document => document.Clauses).Select(ClauseNumber));
     }
 
     /// <summary>
@@ -78,6 +121,34 @@ public class LegalDocumentsTest
     [InlineData("appointment")]
     public void ThePrivacyPolicyNamesWhatTheAppActuallyCollects(string subject)
     {
+        Assert.Contains(subject, LegalDocuments.Privacy.ToPlainText(), StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Theory]
+    [InlineData("correo electrónico")]
+    [InlineData("nombre")]
+    [InlineData("teléfono")]
+    [InlineData("servicios")]
+    [InlineData("disponibilidad")]
+    [InlineData("citas")]
+    [InlineData("mensajes")]
+    [InlineData("notas")]
+    [InlineData("zona horaria")]
+    [InlineData("token")]
+    [InlineData("ubicación")]
+    [InlineData("contactos")]
+    [InlineData("fotos")]
+    [InlineData("publicidad")]
+    [InlineData("alojamiento en la nube")]
+    [InlineData("bases de datos")]
+    [InlineData("procesador de pagos")]
+    [InlineData("auditoría")]
+    [InlineData("eliminar tu cuenta")]
+    [InlineData("menores de edad")]
+    public void SpanishPrivacyPolicyPreservesEveryRequiredDisclosure(string subject)
+    {
+        AppResources.Culture = new CultureInfo("es-MX");
+
         Assert.Contains(subject, LegalDocuments.Privacy.ToPlainText(), StringComparison.OrdinalIgnoreCase);
     }
 
@@ -131,6 +202,51 @@ public class LegalDocumentsTest
         Assert.NotEqual(LegalDocuments.TermsUrl, LegalDocuments.PrivacyUrl);
     }
 
+    [Fact]
+    public void EffectiveDateAndVersionStayAlignedAcrossBothDocuments()
+    {
+        Assert.Equal(
+            LegalDocuments.Version,
+            LegalDocuments.EffectiveDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+
+        foreach (var cultureName in new[] { "en-US", "es-MX" })
+        {
+            var documents = DocumentsFor(cultureName);
+            Assert.All(documents, document => Assert.Equal(LegalDocuments.EffectiveDate, document.EffectiveDate));
+            Assert.Single(documents.Select(document => document.EffectiveDateText).Distinct());
+        }
+    }
+
+    [Fact]
+    public void ToPlainTextUsesTheSelectedCulture()
+    {
+        var english = DocumentsFor("en-US")[0].ToPlainText();
+        var spanish = DocumentsFor("es-MX")[0].ToPlainText();
+
+        Assert.StartsWith("Terms and Conditions", english, StringComparison.Ordinal);
+        Assert.Contains("Effective Tuesday, September 8, 2026", english, StringComparison.Ordinal);
+        Assert.StartsWith("Términos y condiciones", spanish, StringComparison.Ordinal);
+        Assert.Contains("Vigente desde el martes, 8 de septiembre de 2026", spanish, StringComparison.Ordinal);
+        Assert.NotEqual(english, spanish);
+    }
+
+    [Fact]
+    public void CultureSwitchReconstructsDocumentsInsteadOfCachingEnglishInstances()
+    {
+        AppResources.Culture = new CultureInfo("en-US");
+        var englishTerms = LegalDocuments.Terms;
+        var englishPrivacy = LegalDocuments.Privacy;
+
+        AppResources.Culture = new CultureInfo("es-MX");
+        var spanishTerms = LegalDocuments.Terms;
+        var spanishPrivacy = LegalDocuments.Privacy;
+
+        Assert.NotSame(englishTerms, spanishTerms);
+        Assert.NotSame(englishPrivacy, spanishPrivacy);
+        Assert.NotEqual(englishTerms.Title, spanishTerms.Title);
+        Assert.NotEqual(englishPrivacy.Title, spanishPrivacy.Title);
+    }
+
     // ── the view model both pages share ────────────────────────────────────────────────────────────
 
     [Fact]
@@ -143,7 +259,7 @@ public class LegalDocumentsTest
         Assert.Equal(LegalDocuments.Terms.Title, vm.Title);
         Assert.Equal(LegalDocuments.Terms.Clauses.Count, vm.Clauses.Count);
         Assert.Equal(LegalDocuments.TermsUrl, vm.PublishedUrl);
-        Assert.Contains(LegalDocuments.EffectiveDate, vm.EffectiveDate, StringComparison.Ordinal);
+        Assert.Equal(LegalDocuments.Terms.EffectiveDateText, vm.EffectiveDate);
     }
 
     [Fact]
@@ -173,4 +289,12 @@ public class LegalDocumentsTest
         Assert.Equal(LegalDocuments.Privacy.Title, vm.Title);
         Assert.Equal(LegalDocuments.Privacy.Clauses, vm.Clauses);
     }
+
+    private static LegalDocument[] DocumentsFor(string cultureName)
+    {
+        AppResources.Culture = new CultureInfo(cultureName);
+        return [LegalDocuments.Terms, LegalDocuments.Privacy];
+    }
+
+    private static string ClauseNumber(LegalClause clause) => clause.Heading.Split(' ', 2)[0];
 }

@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:strings="clr-namespace:AgendaBuddy.MobileApp.Resources.Strings"
              xmlns:controls="clr-namespace:AgendaBuddy.MobileApp.Controls"
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
              x:Class="AgendaBuddy.MobileApp.Views.AddServicePage"
-             Title="Add a Service"
+             Title="{x:Static strings:AppResources.Xaml_AddAService}"
              BackgroundColor="{StaticResource BackgroundPage}"
              Shell.NavBarIsVisible="False"
              NavigationPage.HasNavigationBar="False">
@@ -24,7 +25,7 @@
         <Grid Grid.Row="1" RowDefinitions="Auto,Auto,*,Auto" Padding="20,12,20,16" RowSpacing="12">
 
             <Grid Grid.Row="0" ColumnDefinitions="Auto,*">
-                <Label Grid.Column="1" Text="Add a Service" FontSize="22" FontAttributes="Bold"
+                <Label Grid.Column="1" Text="{x:Static strings:AppResources.Xaml_AddAService}" FontSize="22" FontAttributes="Bold"
                        TextColor="{StaticResource TextPrimary}" VerticalOptions="Center" Margin="8,0,0,0" />
             </Grid>
 
@@ -44,9 +45,9 @@
                    HasShadow="True" Padding="16" VerticalOptions="Start"
                    IsVisible="{Binding HasNoProfessions}">
                 <VerticalStackLayout Spacing="8" HorizontalOptions="Center">
-                    <Label Text="Add a profession first" FontSize="16" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" HorizontalTextAlignment="Center" />
-                    <Label Text="A service must be offered under one of your professions." FontSize="13" TextColor="{StaticResource TextMuted}" HorizontalTextAlignment="Center" />
-                    <controls:SafeButton Text="Choose a Profession"
+                    <Label Text="{x:Static strings:AppResources.Xaml_AddAProfessionFirst}" FontSize="16" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" HorizontalTextAlignment="Center" />
+                    <Label Text="{x:Static strings:AppResources.Xaml_AServiceMustBeOfferedUnderOneOfYourProfessions}" FontSize="13" TextColor="{StaticResource TextMuted}" HorizontalTextAlignment="Center" />
+                    <controls:SafeButton Text="{x:Static strings:AppResources.Xaml_ChooseAProfession}"
                             Style="{StaticResource SecondaryButton}"
                             HeightRequest="44"
                             Clicked="OnProfessionsClicked"
@@ -57,29 +58,30 @@
             <ScrollView Grid.Row="2" IsVisible="{Binding HasNoProfessions, Converter={StaticResource InvertedBoolConverter}}">
                 <VerticalStackLayout Spacing="10">
                     <Frame Style="{StaticResource InputFrame}" Margin="0">
-                        <Picker ItemsSource="{Binding AvailableProfessions}"
-                                SelectedItem="{Binding ProfessionName}"
-                                Title="Profession"
+                        <Picker ItemsSource="{Binding AvailableProfessionItems}"
+                            ItemDisplayBinding="{Binding DisplayName}"
+                            SelectedItem="{Binding SelectedProfession}"
+                                Title="{x:Static strings:AppResources.Xaml_Profession}"
                                 TextColor="{StaticResource TextPrimary}"
                                 AutomationId="NewServiceProfessionPicker" />
                     </Frame>
                     <Frame Style="{StaticResource InputFrame}" Margin="0">
-                        <Entry Text="{Binding ServiceName}" Placeholder="Service name" Style="{StaticResource InputStyle}" AutomationId="NewServiceNameEntry" />
+                        <Entry Text="{Binding ServiceName}" Placeholder="{x:Static strings:AppResources.Xaml_ServiceName}" Style="{StaticResource InputStyle}" AutomationId="NewServiceNameEntry" />
                     </Frame>
                     <Frame Style="{StaticResource InputFrame}" Margin="0">
-                        <Entry Text="{Binding Description}" Placeholder="Description" Style="{StaticResource InputStyle}" AutomationId="NewServiceDescriptionEntry" />
+                        <Entry Text="{Binding Description}" Placeholder="{x:Static strings:AppResources.Xaml_Description}" Style="{StaticResource InputStyle}" AutomationId="NewServiceDescriptionEntry" />
                     </Frame>
                     <Frame Style="{StaticResource InputFrame}" Margin="0">
-                        <Entry Text="{Binding Fee}" Placeholder="Fee (optional)" Keyboard="Numeric" Style="{StaticResource InputStyle}" AutomationId="NewServiceFeeEntry" />
+                        <Entry Text="{Binding Fee}" Placeholder="{x:Static strings:AppResources.Xaml_FeeOptional}" Keyboard="Numeric" Style="{StaticResource InputStyle}" AutomationId="NewServiceFeeEntry" />
                     </Frame>
                     <Frame Style="{StaticResource InputFrame}" Margin="0">
-                        <Entry Text="{Binding DurationMinutes}" Placeholder="Duration in minutes (optional)" Keyboard="Numeric" Style="{StaticResource InputStyle}" AutomationId="NewServiceDurationEntry" />
+                        <Entry Text="{Binding DurationMinutes}" Placeholder="{x:Static strings:AppResources.Xaml_DurationInMinutesOptional}" Keyboard="Numeric" Style="{StaticResource InputStyle}" AutomationId="NewServiceDurationEntry" />
                     </Frame>
                 </VerticalStackLayout>
             </ScrollView>
 
             <Grid Grid.Row="3" IsVisible="{Binding HasNoProfessions, Converter={StaticResource InvertedBoolConverter}}">
-                <controls:SafeButton Text="Add Service"
+                <controls:SafeButton Text="{x:Static strings:AppResources.Xaml_AddService}"
                         Style="{StaticResource PrimaryButton}"
                         HeightRequest="48"
                         Command="{Binding AddServiceCommand}"

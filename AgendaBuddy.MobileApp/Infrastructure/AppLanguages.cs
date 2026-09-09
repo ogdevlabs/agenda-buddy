@@ -34,14 +34,14 @@ public record AppLanguage(string Code, string Name, string NativeName, bool IsAv
 /// </remarks>
 public static class AppLanguages
 {
-    /// <summary>The language this build is written in, and the only selectable one.</summary>
+    /// <summary>The neutral fallback language.</summary>
     public const string DefaultCode = "en";
 
     /// <summary>Every language the menu shows, in the order it shows them.</summary>
     public static readonly IReadOnlyList<AppLanguage> All =
     [
         new("en", "English", "English", IsAvailable: true),
-        new("es", "Spanish", "Español", IsAvailable: false)
+        new("es-MX", "Spanish", "Español", IsAvailable: true)
     ];
 
     /// <summary>

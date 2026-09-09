@@ -306,6 +306,10 @@
           "platform": {
             "type": "string",
             "nullable": true
+          },
+          "languageCode": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false

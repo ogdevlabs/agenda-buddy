@@ -159,7 +159,7 @@ public class IdentityPersistenceTest(ServiceHostFixture<IdentityAnchor> host, Cr
 
         var request = new HttpRequestMessage(HttpMethod.Post, "/device-token")
         {
-            Content = JsonContent.Create(new { Token, Platform }),
+            Content = JsonContent.Create(new { Token, Platform, LanguageCode = "es-ES" }),
             Headers =
             {
                 Authorization = new AuthenticationHeaderValue(
@@ -181,7 +181,35 @@ public class IdentityPersistenceTest(ServiceHostFixture<IdentityAnchor> host, Cr
         Assert.Equal(Email, stored.UserEmail);
         Assert.Equal(Token, stored.Token);
         Assert.Equal(Platform, stored.Platform);
+        Assert.Equal("es-MX", stored.LanguageCode);
         Assert.True(stored.RegisteredAt > DateTime.UtcNow.AddMinutes(-1));
         Assert.True(stored.UpdatedAt > DateTime.UtcNow.AddMinutes(-1));
+    }
+
+    [Fact]
+    public async Task ADeviceTokenRegistrationWithoutLanguageCode_DefaultsToEnglish()
+    {
+        using var service = host.StartService();
+        var email = $"legacy-device-{Guid.NewGuid():N}@example.com";
+
+        var request = new HttpRequestMessage(HttpMethod.Post, "/device-token")
+        {
+            Content = JsonContent.Create(new { Token = "legacy-client-token", Platform = "android" }),
+            Headers =
+            {
+                Authorization = new AuthenticationHeaderValue(
+                    "Bearer", _tokens.CreateToken(email, TokenFactory.CustomerRole)),
+            },
+        };
+
+        var response = await service.Client.SendAsync(request);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var stored = await service.Database.GetCollection<DeviceTokenEntity>("device_tokens")
+            .Find(Builders<DeviceTokenEntity>.Filter.Eq(d => d.UserEmail, email))
+            .SingleOrDefaultAsync();
+
+        Assert.NotNull(stored);
+        Assert.Equal("en", stored.LanguageCode);
     }
 }

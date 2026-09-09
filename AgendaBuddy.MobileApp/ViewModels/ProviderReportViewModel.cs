@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using AgendaBuddy.Library.Entities;
 using AgendaBuddy.MobileApp.Infrastructure;
+using AgendaBuddy.MobileApp.Resources.Strings;
 using AgendaBuddy.MobileApp.Services;
 
 namespace AgendaBuddy.MobileApp.ViewModels;
@@ -41,8 +42,8 @@ public partial class ProviderReportViewModel : ObservableObject
         // The real reason text (Library/Services/ReportingService.RevenueUnavailable) already ends
         // with a period — TrimEnd avoids doubling it while still guaranteeing exactly one.
         { RevenueAvailable: false } =>
-            $"Revenue isn't available yet — {Report.RevenueUnavailableReason?.TrimEnd('.')}.",
-        _ => "Revenue is available."
+            AppResources.Format("Report_RevenueUnavailable", Report.RevenueUnavailableReason?.TrimEnd('.')),
+        _ => AppResources.GetString("Report_RevenueAvailable")
     };
 
     public ProviderReportViewModel(IProviderApiService providerApiService)
@@ -60,7 +61,7 @@ public partial class ProviderReportViewModel : ObservableObject
         {
             var result = await _providerApiService.GetReportAsync();
             if (result is null)
-                ErrorMessage = "Could not load your report — try again.";
+                ErrorMessage = AppResources.GetString("Error_LoadReport");
             else
                 Report = result;
         }
@@ -70,7 +71,7 @@ public partial class ProviderReportViewModel : ObservableObject
         }
         catch (HttpRequestException)
         {
-            ErrorMessage = "Could not load your report — check your connection and try again.";
+            ErrorMessage = AppResources.GetString("Error_LoadReportConnection");
         }
         finally
         {

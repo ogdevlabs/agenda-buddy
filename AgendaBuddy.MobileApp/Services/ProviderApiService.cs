@@ -405,11 +405,11 @@ public class ProviderApiService : IProviderApiService
 
             // The server names WHICH weekday is unusable, and a bool cannot carry that.
             return AppointmentActionResult.Refused(
-                response.StatusCode, await ReadServerMessageAsync(response, ct));
+                MobileOperation.WorkWeek, response.StatusCode, await ReadServerMessageAsync(response, ct));
         }
         catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException)
         {
-            return AppointmentActionResult.Unreachable();
+            return AppointmentActionResult.Unreachable(MobileOperation.WorkWeek, exception.Message);
         }
     }
 

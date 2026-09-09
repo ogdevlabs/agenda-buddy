@@ -23,8 +23,11 @@ public class PushNotificationServiceTests
         factory.Setup(f => f.CreateClient("AgendaBuddyApi")).Returns(httpClient);
 
         var storage = new Mock<ISecureStorageService>();
+        var language = new Mock<ILanguageCoordinator>();
+        language.SetupGet(l => l.CurrentCode).Returns("es-MX");
 
-        var sut = new PushNotificationService(factory.Object, storage.Object);
+        var sut = new PushNotificationService(
+            factory.Object, storage.Object, languageCoordinator: language.Object);
 
         await sut.PostTokenAsync("fcm-token-xyz", "android");
 
@@ -36,6 +39,19 @@ public class PushNotificationServiceTests
         using var doc = JsonDocument.Parse(handler.LastRequestBody!);
         Assert.Equal("fcm-token-xyz", doc.RootElement.GetProperty("token").GetString());
         Assert.Equal("android", doc.RootElement.GetProperty("platform").GetString());
+        Assert.Equal("es-MX", doc.RootElement.GetProperty("languageCode").GetString());
+    }
+
+    [Fact]
+    public async Task PostTokenAsync_WithNoLanguageCoordinator_DefaultsToEnglish()
+    {
+        var handler = new TestableHttpMessageHandler(HttpStatusCode.OK);
+        var sut = ServiceWith(handler);
+
+        await sut.PostTokenAsync("fcm-token-xyz", "ios");
+
+        using var doc = JsonDocument.Parse(handler.LastRequestBody!);
+        Assert.Equal("en", doc.RootElement.GetProperty("languageCode").GetString());
     }
 
     [Fact]
@@ -278,6 +294,26 @@ public class PushNotificationServiceTests
         Assert.NotNull(handler.LastRequestBody);
         using var doc = JsonDocument.Parse(handler.LastRequestBody!);
         Assert.Equal("rotated-token", doc.RootElement.GetProperty("token").GetString());
+        Assert.Equal("en", doc.RootElement.GetProperty("languageCode").GetString());
+    }
+
+    [Fact]
+    public async Task RefreshRegistrationAsync_RepostsTheAcceptedTokenWithTheCurrentLanguage()
+    {
+        var handler = new TestableHttpMessageHandler(HttpStatusCode.OK);
+        var currentCode = "en";
+        var language = new Mock<ILanguageCoordinator>();
+        language.SetupGet(l => l.CurrentCode).Returns(() => currentCode);
+        var sut = ServiceWith(handler, language.Object);
+
+        await sut.PostTokenAsync("registered-token", "android");
+        currentCode = "es-MX";
+
+        await sut.RefreshRegistrationAsync();
+
+        using var doc = JsonDocument.Parse(handler.LastRequestBody!);
+        Assert.Equal("registered-token", doc.RootElement.GetProperty("token").GetString());
+        Assert.Equal("es-MX", doc.RootElement.GetProperty("languageCode").GetString());
     }
 
     [Theory]
@@ -378,13 +414,18 @@ public class PushNotificationServiceTests
             PushPayloadKeys.Subject,
             PushPayloadKeys.Body);
 
-    private static PushNotificationService ServiceWith(HttpMessageHandler handler)
+    private static PushNotificationService ServiceWith(
+        HttpMessageHandler handler,
+        ILanguageCoordinator? languageCoordinator = null)
     {
         var httpClient = new HttpClient(handler) { BaseAddress = new Uri("https://localhost/") };
         var factory = new Mock<IHttpClientFactory>();
         factory.Setup(f => f.CreateClient("AgendaBuddyApi")).Returns(httpClient);
 
-        return new PushNotificationService(factory.Object, Mock.Of<ISecureStorageService>());
+        return new PushNotificationService(
+            factory.Object,
+            Mock.Of<ISecureStorageService>(),
+            languageCoordinator: languageCoordinator);
     }
 
     private static ArrivalRecordingPushNotificationService ArrivalRecorder(

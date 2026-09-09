@@ -48,9 +48,9 @@ public class ManageCalendarEntryPointTest
             .Where(t => t is not null)
             .ToList();
 
-        Assert.Contains("Manage calendar", text);
+        Assert.Contains("{x:Static strings:AppResources.Xaml_ManageCalendar}", text);
         // The subtitle says what is behind it, so "manage" is not left to mean anything.
-        Assert.Contains(text, t => t!.Contains("Working days", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains("{x:Static strings:AppResources.Xaml_WorkingDaysHoursAndTimeOff}", text);
     }
 
     /// <summary>

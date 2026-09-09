@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using AgendaBuddy.Library.Entities;
+using AgendaBuddy.MobileApp.Resources.Strings;
 
 namespace AgendaBuddy.MobileApp.Models;
 
@@ -25,6 +26,10 @@ public partial class ServiceItem : ObservableObject
     /// doesn't have); null only on services created before this field existed.</summary>
     public string? ProfessionName { get; set; }
 
+    public string? ProfessionDisplayName => ProfessionName is null
+        ? null
+        : ProfessionDisplayNames.Get(ProfessionName);
+
     [ObservableProperty]
     private bool _isEditing;
 
@@ -32,7 +37,11 @@ public partial class ServiceItem : ObservableObject
     [ObservableProperty]
     private bool _isSelected;
 
-    public string FeeLabel => Fee is null ? "No fee set" : $"{Fee:C} ({FeeType})";
+    public string FeeLabel => Fee is null
+        ? AppResources.GetString("Fee_NoFeeSet")
+        : AppResources.Format("Fee_WithType", RuntimeText.Currency(Fee.Value), RuntimeText.FeeType(FeeType));
 
-    public string DurationLabel => DurationMinutes is null ? "No duration set" : $"{DurationMinutes} min";
+    public string DurationLabel => DurationMinutes is null
+        ? AppResources.GetString("Fee_NoDurationSet")
+        : RuntimeText.Duration(DurationMinutes.Value);
 }

@@ -1,0 +1,969 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+  <data name="General_Cancel" xml:space="preserve">
+    <value>Cancelar</value>
+  </data>
+  <data name="General_Save" xml:space="preserve">
+    <value>Guardar</value>
+  </data>
+  <data name="Legal_EffectiveDateFormat" xml:space="preserve"><value>Vigente desde el {0:D}</value></data>
+  <data name="Legal_ConsentVersionFormat" xml:space="preserve"><value>Versión vigente desde el {0:D}</value></data>
+  <data name="General_OK" xml:space="preserve"><value>Aceptar</value></data>
+  <data name="Account_DeactivatePrompt" xml:space="preserve"><value>¿Desactivar tu cuenta? Los clientes dejarán de verte y conservaremos tus datos.</value></data>
+  <data name="Account_KeepAction" xml:space="preserve"><value>Conservar mi cuenta</value></data>
+  <data name="Account_DeactivateAction" xml:space="preserve"><value>Desactivar</value></data>
+  <data name="Account_DeletePrompt" xml:space="preserve"><value>¿Eliminar tu cuenta de forma permanente? Esta acción no se puede deshacer.</value></data>
+  <data name="Account_DeleteAction" xml:space="preserve"><value>Eliminar mi cuenta</value></data>
+  <data name="Account_DeleteConfirmationWord" xml:space="preserve"><value>ELIMINAR</value></data>
+  <data name="Account_ConfirmDeletionTitle" xml:space="preserve"><value>Confirmar eliminación</value></data>
+  <data name="Account_ConfirmDeletionMessage" xml:space="preserve"><value>Escribe {0} para confirmar. Eliminaremos tu perfil y borraremos tus datos de los registros de otras personas.</value></data>
+  <data name="Account_DeleteConfirmAction" xml:space="preserve"><value>Eliminar</value></data>
+  <data name="Account_DeactivatedTitle" xml:space="preserve"><value>Cuenta desactivada</value></data>
+  <data name="Account_DeactivatedMessage" xml:space="preserve"><value>Tu cuenta de profesional se desactivó.</value></data>
+  <data name="Appointment_CancelPrompt" xml:space="preserve"><value>¿Cancelar {0}?</value></data>
+  <data name="Appointment_KeepAction" xml:space="preserve"><value>No cancelar</value></data>
+  <data name="Appointment_CancelAction" xml:space="preserve"><value>Cancelar cita</value></data>
+  <data name="Legal_Terms_Title" xml:space="preserve"><value>Términos y condiciones</value></data>
+  <data name="Legal_Terms_Summary" xml:space="preserve"><value>Estos términos rigen el uso de {0}, una aplicación de agenda que conecta a profesionales independientes con sus clientes. Al crear una cuenta o usar la aplicación, aceptas estos términos. Si no estás de acuerdo, no uses la aplicación.</value></data>
+  <data name="Legal_Terms_Clause01_Heading" xml:space="preserve"><value>1. Tu cuenta</value></data>
+  <data name="Legal_Terms_Clause01_Body" xml:space="preserve"><value>Debes proporcionar información correcta al registrarte y mantener tu contraseña en secreto. Eres responsable de todo lo que se haga mediante tu cuenta. Una persona, una cuenta. Debes tener la edad suficiente para celebrar un contrato en el lugar donde vives.</value></data>
+  <data name="Legal_Terms_Clause02_Heading" xml:space="preserve"><value>2. Qué hace el servicio</value></data>
+  <data name="Legal_Terms_Clause02_Body" xml:space="preserve"><value>{0} permite que los profesionales publiquen su disponibilidad y sus servicios, y que los clientes soliciten, reserven, reprogramen y cancelen citas. Proporcionamos la herramienta de agenda. No somos parte de ninguna cita, no empleamos a los profesionales y no supervisamos, recomendamos ni garantizamos ningún servicio prestado mediante la aplicación.</value></data>
+  <data name="Legal_Terms_Clause03_Heading" xml:space="preserve"><value>3. Citas, cancelación y pago</value></data>
+  <data name="Legal_Terms_Clause03_Body" xml:space="preserve"><value>Una cita es un acuerdo entre el profesional y el cliente. La cancelación está sujeta al plazo de cancelación de la aplicación y a las condiciones que el profesional te comunique por separado. Cuando se realiza un pago, un proveedor de pagos externo lo procesa conforme a sus propios términos; no almacenamos los datos de tu tarjeta.</value></data>
+  <data name="Legal_Terms_Clause04_Heading" xml:space="preserve"><value>4. Uso aceptable</value></data>
+  <data name="Legal_Terms_Clause04_Body" xml:space="preserve"><value>No uses la aplicación para acosar o suplantar a alguien, enviar publicidad no solicitada, recopilar información de otras personas, infringir la ley ni interferir con el servicio, investigarlo o sobrecargarlo. No intentes acceder a datos que no te pertenecen.</value></data>
+  <data name="Legal_Terms_Clause05_Heading" xml:space="preserve"><value>5. Tu contenido</value></data>
+  <data name="Legal_Terms_Clause05_Body" xml:space="preserve"><value>Conservas la propiedad de lo que ingresas en la aplicación: tu perfil, tus servicios, tus mensajes y tus notas. Nos otorgas únicamente el permiso necesario para almacenarlo y mostrarlo a las personas a quienes lo diriges.</value></data>
+  <data name="Legal_Terms_Clause06_Heading" xml:space="preserve"><value>6. Suspensión y eliminación</value></data>
+  <data name="Legal_Terms_Clause06_Body" xml:space="preserve"><value>Puedes eliminar tu cuenta en cualquier momento desde la pantalla Perfil. Podemos suspender o cerrar una cuenta que incumpla estos términos. Al eliminar tu cuenta, se eliminan tu perfil y tu correo electrónico de los registros de las personas con quienes tuviste relación; no se elimina el registro de las citas que esas personas hayan tenido.</value></data>
+  <data name="Legal_Terms_Clause07_Heading" xml:space="preserve"><value>7. Disponibilidad y exención de responsabilidad</value></data>
+  <data name="Legal_Terms_Clause07_Body" xml:space="preserve"><value>La aplicación se proporciona tal como está. No prometemos que funcionará sin interrupciones ni errores, y no garantizamos que un profesional respetará una reserva ni que un cliente asistirá. Conserva una copia de cualquier información que no puedas permitirte perder.</value></data>
+  <data name="Legal_Terms_Clause08_Heading" xml:space="preserve"><value>8. Limitación de responsabilidad</value></data>
+  <data name="Legal_Terms_Clause08_Body" xml:space="preserve"><value>En la medida permitida por la ley, no somos responsables por pérdidas indirectas o consecuentes, lucro cesante ni por lo que resulte de un servicio que un profesional haya prestado o dejado de prestar. Nada de lo aquí dispuesto limita una responsabilidad que legalmente no pueda limitarse.</value></data>
+  <data name="Legal_Terms_Clause09_Heading" xml:space="preserve"><value>9. Cambios a estos términos</value></data>
+  <data name="Legal_Terms_Clause09_Body" xml:space="preserve"><value>Podemos actualizar estos términos. Si un cambio es sustancial, te pediremos que aceptes la nueva versión en la aplicación antes de continuar usándola. La fecha de entrada en vigor indicada arriba identifica la versión que estás leyendo.</value></data>
+  <data name="Legal_Terms_Clause10_Heading" xml:space="preserve"><value>10. Contacto</value></data>
+  <data name="Legal_Terms_Clause10_Body" xml:space="preserve"><value>Preguntas sobre estos términos: {1}.</value></data>
+  <data name="Legal_Privacy_Title" xml:space="preserve"><value>Política de privacidad</value></data>
+  <data name="Legal_Privacy_Summary" xml:space="preserve"><value>Esta política explica qué datos recopila {0}, por qué los recopila, quién puede verlos y qué puedes hacer al respecto. Se aplica a la aplicación y al servicio que la sustenta.</value></data>
+  <data name="Legal_Privacy_Clause01_Heading" xml:space="preserve"><value>1. Qué recopilamos</value></data>
+  <data name="Legal_Privacy_Clause01_Body" xml:space="preserve"><value>Datos de la cuenta que nos proporcionas: tu correo electrónico, nombre y apellido y, de manera opcional, tu número de teléfono. Contenido que creas: tus servicios, disponibilidad, citas, mensajes y notas. Datos técnicos necesarios para operar la aplicación: la zona horaria de tu dispositivo y un token de notificaciones push si permites las notificaciones. No recopilamos tu ubicación, tus contactos ni tus fotos.</value></data>
+  <data name="Legal_Privacy_Clause02_Heading" xml:space="preserve"><value>2. Para qué usamos tus datos</value></data>
+  <data name="Legal_Privacy_Clause02_Body" xml:space="preserve"><value>Para crear y proteger tu cuenta, mostrar tu disponibilidad a las personas que deseas que la vean, programar citas y enviarte recordatorios, permitir que tú y la otra parte puedan intercambiar mensajes y notificarte sobre asuntos relacionados con tus reservas. No vendemos tus datos ni los usamos para publicidad.</value></data>
+  <data name="Legal_Privacy_Clause03_Heading" xml:space="preserve"><value>3. Quién puede verlos</value></data>
+  <data name="Legal_Privacy_Clause03_Body" xml:space="preserve"><value>Un profesional puede ver el nombre, correo electrónico, número de teléfono e historial de citas de los clientes que reservan con ese profesional o se suscriben a sus servicios. Un cliente puede ver el perfil público, los servicios y los horarios disponibles de un profesional. Nadie más puede ver tus datos, salvo los proveedores de servicios indicados a continuación y nuestro personal cuando necesite acceder para operar el servicio o darte soporte.</value></data>
+  <data name="Legal_Privacy_Clause04_Heading" xml:space="preserve"><value>4. Proveedores de servicios que usamos</value></data>
+  <data name="Legal_Privacy_Clause04_Body" xml:space="preserve"><value>Servicios de alojamiento en la nube y almacenamiento de bases de datos; un proveedor de correo electrónico para enviar confirmaciones y restablecimientos de contraseña; un proveedor de notificaciones push para enviar notificaciones a tu dispositivo; y un procesador de pagos cuando se realiza un pago. Cada proveedor recibe únicamente lo necesario para realizar su función.</value></data>
+  <data name="Legal_Privacy_Clause05_Heading" xml:space="preserve"><value>5. Durante cuánto tiempo conservamos tus datos</value></data>
+  <data name="Legal_Privacy_Clause05_Body" xml:space="preserve"><value>Mientras exista tu cuenta. Cuando eliminas tu cuenta, eliminamos tu perfil y quitamos tu nombre, correo electrónico y número de teléfono de los registros de las personas con quienes tuviste relación, para conservar su propio historial de citas sin identificarte. Los registros de auditoría y seguridad se conservan por un periodo limitado y no contienen tu correo electrónico.</value></data>
+  <data name="Legal_Privacy_Clause06_Heading" xml:space="preserve"><value>6. Tus opciones</value></data>
+  <data name="Legal_Privacy_Clause06_Body" xml:space="preserve"><value>Puedes editar tu nombre y número de teléfono, cambiar tu avatar y desactivar las notificaciones push en el sistema operativo en cualquier momento. Puedes eliminar tu cuenta desde la pantalla Perfil y la eliminación entra en vigor de inmediato. No puedes cambiar tu correo electrónico porque este identifica tu cuenta.</value></data>
+  <data name="Legal_Privacy_Clause07_Heading" xml:space="preserve"><value>7. Tus derechos</value></data>
+  <data name="Legal_Privacy_Clause07_Body" xml:space="preserve"><value>Según el lugar donde vivas, puedes tener derecho a acceder a tus datos, corregirlos, exportarlos o eliminarlos, y a oponerte a la forma en que los usamos. Al eliminar tu cuenta, ejerces directamente el derecho de eliminación. Para cualquier otra solicitud, escríbenos y te responderemos.</value></data>
+  <data name="Legal_Privacy_Clause08_Heading" xml:space="preserve"><value>8. Seguridad</value></data>
+  <data name="Legal_Privacy_Clause08_Body" xml:space="preserve"><value>Las contraseñas se almacenan mediante hash, nunca como texto sin formato. El tráfico entre la aplicación y el servicio se cifra durante la transmisión. El acceso a los datos de producción se limita a las personas que lo necesitan. Ningún sistema es completamente seguro; avísanos de inmediato si crees que alguien ha usado indebidamente tu cuenta.</value></data>
+  <data name="Legal_Privacy_Clause09_Heading" xml:space="preserve"><value>9. Menores de edad</value></data>
+  <data name="Legal_Privacy_Clause09_Body" xml:space="preserve"><value>La aplicación no está dirigida a menores de edad. No crees una cuenta si no has alcanzado la edad en la que puedes aceptar esta política en el lugar donde vives.</value></data>
+  <data name="Legal_Privacy_Clause10_Heading" xml:space="preserve"><value>10. Cambios y contacto</value></data>
+  <data name="Legal_Privacy_Clause10_Body" xml:space="preserve"><value>Actualizaremos esta política cuando cambien nuestras prácticas, y la fecha de entrada en vigor indicada arriba identifica la versión que estás leyendo. Preguntas, solicitudes o quejas: {1}.</value></data>
+  <data name="Error_ActionRejected" xml:space="preserve"><value>No se pudo completar la acción. Intenta de nuevo.</value></data>
+  <data name="Error_AppointmentNotFound" xml:space="preserve"><value>Esta cita ya no está disponible.</value></data>
+  <data name="Error_BookingConflict" xml:space="preserve"><value>Ese horario ya no está disponible. Elige otro.</value></data>
+  <data name="Error_CalendarBlockConflict" xml:space="preserve"><value>Hay sesiones reservadas en este horario. Revísalas antes de bloquearlo.</value></data>
+  <data name="Error_CalendarBlockNotFound" xml:space="preserve"><value>Este periodo de tiempo no disponible ya no existe.</value></data>
+  <data name="Error_Forbidden" xml:space="preserve"><value>No tienes permiso para hacer eso.</value></data>
+  <data name="Error_ProfessionNotFound" xml:space="preserve"><value>Esta profesión ya no está disponible.</value></data>
+  <data name="Error_ProfessionRemovalConflict" xml:space="preserve"><value>Elimina o completa las citas activas de esta profesión e intenta de nuevo.</value></data>
+  <data name="Error_ServerUnavailable" xml:space="preserve"><value>No pudimos comunicarnos con el servidor. Revisa tu conexión e intenta de nuevo.</value></data>
+  <data name="Error_Validation" xml:space="preserve"><value>Revisa la información que ingresaste e intenta de nuevo.</value></data>
+  <data name="Error_AddService" xml:space="preserve"><value>No pudimos agregar este servicio. Intenta de nuevo.</value></data>
+  <data name="Error_AppointmentUnavailable" xml:space="preserve"><value>No encontramos esta cita. Es posible que se haya eliminado.</value></data>
+  <data name="Error_CancelAppointment" xml:space="preserve"><value>No pudimos cancelar esta cita. Revisa tu conexión e intenta de nuevo.</value></data>
+  <data name="Error_DeactivateAccount" xml:space="preserve"><value>No pudimos desactivar tu cuenta. Intenta de nuevo.</value></data>
+  <data name="Error_DeleteAccount" xml:space="preserve"><value>No pudimos eliminar tu cuenta. No se eliminó nada. Intenta de nuevo.</value></data>
+  <data name="Error_InvalidCredentials" xml:space="preserve"><value>El correo o la contraseña no son válidos. Intenta de nuevo.</value></data>
+  <data name="Error_LoadAppointment" xml:space="preserve"><value>No pudimos cargar la cita. Intenta de nuevo.</value></data>
+  <data name="Error_LoadAppointmentConnection" xml:space="preserve"><value>No pudimos cargar la cita. Revisa tu conexión e intenta de nuevo.</value></data>
+  <data name="Error_LoadAppointments" xml:space="preserve"><value>No pudimos cargar las citas. Revisa tu conexión e intenta de nuevo.</value></data>
+  <data name="Error_LoadAvatar" xml:space="preserve"><value>No pudimos leer tu avatar actual. Aun así puedes elegir uno y guardarlo.</value></data>
+  <data name="Error_LoadCalendar" xml:space="preserve"><value>No pudimos cargar el calendario. Revisa tu conexión e intenta de nuevo.</value></data>
+  <data name="Error_LoadCalendarHours" xml:space="preserve"><value>No pudimos cargar el horario de tu calendario. Revisa tu conexión e intenta de nuevo.</value></data>
+  <data name="Error_LoadMessages" xml:space="preserve"><value>No pudimos cargar los mensajes. Revisa tu conexión e intenta de nuevo.</value></data>
+  <data name="Error_LoadNotes" xml:space="preserve"><value>No pudimos cargar las notas. Revisa tu conexión e intenta de nuevo.</value></data>
+  <data name="Error_LoadPayment" xml:space="preserve"><value>No pudimos cargar los detalles del pago. Revisa tu conexión e intenta de nuevo.</value></data>
+  <data name="Error_LoadProfessionCatalog" xml:space="preserve"><value>No pudimos cargar las profesiones. Revisa tu conexión e intenta de nuevo.</value></data>
+  <data name="Error_LoadProfessions" xml:space="preserve"><value>No pudimos cargar tus profesiones. Revisa tu conexión e intenta de nuevo.</value></data>
+  <data name="Error_LoadProfile" xml:space="preserve"><value>No pudimos cargar tu perfil. Revisa tu conexión e intenta de nuevo.</value></data>
+  <data name="Error_LoadProfileDetails" xml:space="preserve"><value>No pudimos cargar tus datos. Puedes ingresarlos y guardarlos de todos modos.</value></data>
+  <data name="Error_LoadProviderServices" xml:space="preserve"><value>No pudimos cargar los servicios de este profesional. Revisa tu conexión e intenta de nuevo.</value></data>
+  <data name="Error_LoadReport" xml:space="preserve"><value>No pudimos cargar tu reporte. Intenta de nuevo.</value></data>
+  <data name="Error_LoadReportConnection" xml:space="preserve"><value>No pudimos cargar tu reporte. Revisa tu conexión e intenta de nuevo.</value></data>
+  <data name="Error_LoadServices" xml:space="preserve"><value>No pudimos cargar tus servicios. Revisa tu conexión e intenta de nuevo.</value></data>
+  <data name="Error_LoadThread" xml:space="preserve"><value>No pudimos cargar la conversación. Revisa tu conexión e intenta de nuevo.</value></data>
+  <data name="Error_LoadTimeOff" xml:space="preserve"><value>No pudimos cargar tu tiempo no disponible. Revisa tu conexión e intenta de nuevo.</value></data>
+  <data name="Error_LoadThisAppointment" xml:space="preserve"><value>No pudimos cargar esta cita. Revisa tu conexión e intenta de nuevo.</value></data>
+  <data name="Error_MessageForbidden" xml:space="preserve"><value>Solo puedes enviar mensajes a personas con quienes tienes una suscripción.</value></data>
+  <data name="Error_MessageRejected" xml:space="preserve"><value>No pudimos enviar el mensaje. Intenta de nuevo.</value></data>
+  <data name="Error_MessageUnavailable" xml:space="preserve"><value>No pudimos enviar el mensaje. Revisa tu conexión e intenta de nuevo.</value></data>
+  <data name="Error_ProfileAfterRegistration" xml:space="preserve"><value>Tu cuenta se creó, pero no pudimos guardar los datos de tu perfil. Agrégalos desde Cuenta para terminar la configuración.</value></data>
+  <data name="Error_RecordPayment" xml:space="preserve"><value>No pudimos registrar este pago. Intenta de nuevo.</value></data>
+  <data name="Error_RecordPaymentConnection" xml:space="preserve"><value>No pudimos registrar este pago. Revisa tu conexión e intenta de nuevo.</value></data>
+  <data name="Error_RegistrationConflict" xml:space="preserve"><value>No pudimos registrarte. Es posible que este correo ya esté en uso.</value></data>
+  <data name="Error_RemoveService" xml:space="preserve"><value>No pudimos eliminar este servicio. Intenta de nuevo.</value></data>
+  <data name="Error_ResetLink" xml:space="preserve"><value>Este enlace para restablecer la contraseña no es válido o ya venció.</value></data>
+  <data name="Error_SaveAvatar" xml:space="preserve"><value>No pudimos guardar tu avatar. Intenta de nuevo.</value></data>
+  <data name="Error_SaveConsent" xml:space="preserve"><value>Tus datos se guardaron, pero no pudimos registrar tu aceptación. Intenta de nuevo.</value></data>
+  <data name="Error_SaveNote" xml:space="preserve"><value>No pudimos guardar la nota. Revisa tu conexión e intenta de nuevo.</value></data>
+  <data name="Error_SaveProfile" xml:space="preserve"><value>No pudimos guardar tu perfil. Intenta de nuevo.</value></data>
+  <data name="Error_SaveProfessions" xml:space="preserve"><value>No pudimos guardar tus profesiones. Intenta de nuevo.</value></data>
+  <data name="Error_StatusUpdate" xml:space="preserve"><value>No se pudo actualizar el estado</value></data>
+  <data name="Error_StatusUpdateConnection" xml:space="preserve"><value>No se pudo actualizar el estado. Revisa tu conexión e intenta de nuevo.</value></data>
+  <data name="Error_UpdateService" xml:space="preserve"><value>No pudimos actualizar este servicio. Intenta de nuevo.</value></data>
+  <data name="Error_AnswerReschedule" xml:space="preserve"><value>No pudimos responder esta solicitud. Es posible que se haya retirado.</value></data>
+  <data name="Error_CancelAppointmentRetry" xml:space="preserve"><value>No pudimos cancelar esta cita. Intenta de nuevo.</value></data>
+  <data name="Error_ChangeAppointment" xml:space="preserve"><value>No pudimos cambiar esta cita. Intenta de nuevo.</value></data>
+  <data name="Error_RemoveProfession" xml:space="preserve"><value>No pudimos eliminar esta profesión. Intenta de nuevo.</value></data>
+  <data name="Error_RemoveTimeOff" xml:space="preserve"><value>No pudimos eliminar este tiempo no disponible. Intenta de nuevo.</value></data>
+  <data name="Error_SaveCalendar" xml:space="preserve"><value>No pudimos guardar tu calendario. Intenta de nuevo.</value></data>
+  <data name="Error_SaveTimeOff" xml:space="preserve"><value>No pudimos guardar este tiempo no disponible. Intenta de nuevo.</value></data>
+  <data name="Session_Expired" xml:space="preserve"><value>Tu sesión venció. Inicia sesión de nuevo.</value></data>
+  <data name="Session_ExpiredMessage" xml:space="preserve"><value>Tu sesión venció. El mensaje que estabas escribiendo no se envió. Inicia sesión de nuevo.</value></data>
+  <data name="Session_ExpiredUnsaved" xml:space="preserve"><value>Tu sesión venció. Los cambios sin guardar no se guardaron.</value></data>
+  <data name="Validation_Agreements" xml:space="preserve"><value>Acepta los Términos y condiciones y la Política de privacidad para continuar.</value></data>
+  <data name="Validation_MessageLength" xml:space="preserve"><value>El mensaje es demasiado largo. El máximo es de {0} caracteres.</value></data>
+  <data name="Validation_Name" xml:space="preserve"><value>Ingresa tu nombre y apellido.</value></data>
+  <data name="Validation_PasswordLength" xml:space="preserve"><value>La contraseña debe tener al menos 8 caracteres.</value></data>
+  <data name="Validation_PasswordsMatch" xml:space="preserve"><value>Las contraseñas no coinciden.</value></data>
+  <data name="Validation_PositiveAmount" xml:space="preserve"><value>Ingresa un monto mayor que cero.</value></data>
+  <data name="Action_ProfessionRemoved" xml:space="preserve"><value>Profesión eliminada.</value></data>
+  <data name="Action_ProfessionsSaved" xml:space="preserve"><value>Profesiones guardadas.</value></data>
+  <data name="Action_ProfileDeletedCredentialRemaining" xml:space="preserve"><value>Tus datos se eliminaron, pero no pudimos quitar tu inicio de sesión. Inicia sesión una vez más y vuelve a eliminar la cuenta para terminar.</value></data>
+  <data name="Language_EnglishName" xml:space="preserve">
+    <value>Inglés</value>
+  </data>
+  <data name="Language_SpanishName" xml:space="preserve">
+    <value>Español</value>
+  </data>
+  <data name="Language_Title" xml:space="preserve">
+    <value>Idioma</value>
+  </data>
+  <data name="Payment_Failed" xml:space="preserve">
+    <value>El pago falló</value>
+  </data>
+  <data name="Payment_Paid" xml:space="preserve">
+    <value>Pagado</value>
+  </data>
+  <data name="Payment_Pending" xml:space="preserve">
+    <value>Pago pendiente</value>
+  </data>
+  <data name="Payment_RecordedNotCharged" xml:space="preserve">
+    <value>Pago registrado (aún no cobrado)</value>
+  </data>
+  <data name="Payment_Refunded" xml:space="preserve">
+    <value>Reembolsado</value>
+  </data>
+  <data name="Payment_StatusUnknown" xml:space="preserve">
+    <value>Estado del pago no disponible</value>
+  </data>
+  <data name="Validation_DayMustStartBeforeEnd" xml:space="preserve">
+    <value>El horario del {0} debe comenzar antes de terminar.</value>
+  </data>
+  <data name="WorkDay_Closed" xml:space="preserve">
+    <value>Cerrado</value>
+  </data>
+  <data name="WorkDay_Invalid" xml:space="preserve">
+    <value>No válido</value>
+  </data>
+  <data name="Accessibility_Date" xml:space="preserve"><value>{0:dddd d 'de' MMMM}</value></data>
+  <data name="Accessibility_DateSelected" xml:space="preserve"><value>{0:dddd d 'de' MMMM}, seleccionada</value></data>
+  <data name="Accessibility_Time" xml:space="preserve"><value>{0}</value></data>
+  <data name="Accessibility_TimeSelected" xml:space="preserve"><value>{0}, seleccionada</value></data>
+  <data name="AppointmentStatus_Booked" xml:space="preserve"><value>Reservada</value></data>
+  <data name="AppointmentStatus_Cancelled" xml:space="preserve"><value>Cancelada</value></data>
+  <data name="AppointmentStatus_Completed" xml:space="preserve"><value>Completada</value></data>
+  <data name="AppointmentStatus_Confirmed" xml:space="preserve"><value>Confirmada</value></data>
+  <data name="AppointmentStatus_Requested" xml:space="preserve"><value>Solicitada</value></data>
+  <data name="AppointmentStatus_RescheduleRequested" xml:space="preserve"><value>Nuevo horario solicitado</value></data>
+  <data name="AppointmentStatus_Unknown" xml:space="preserve"><value>Estado no disponible</value></data>
+  <data name="Duration_OneMinute" xml:space="preserve"><value>{0} min</value></data>
+  <data name="Duration_ManyMinutes" xml:space="preserve"><value>{0} min</value></data>
+  <data name="Fee_NoFeeSet" xml:space="preserve"><value>Sin precio</value></data>
+  <data name="Fee_NoDurationSet" xml:space="preserve"><value>Sin duración</value></data>
+  <data name="Fee_WithType" xml:space="preserve"><value>{0} ({1})</value></data>
+  <data name="FeeType_Fixed" xml:space="preserve"><value>Fija</value></data>
+  <data name="FeeType_Hourly" xml:space="preserve"><value>Por hora</value></data>
+  <data name="FeeType_Subscription" xml:space="preserve"><value>Suscripción</value></data>
+  <data name="FeeType_Unknown" xml:space="preserve"><value>Precio</value></data>
+  <data name="Gateway_ServiceUnavailable" xml:space="preserve"><value>No se puede acceder a {0} en este momento. Inténtalo de nuevo.</value></data>
+  <data name="Gateway_GenericError" xml:space="preserve"><value>No se pudo conectar con el servidor. Revisa tu conexión e inténtalo de nuevo.</value></data>
+  <data name="GatewayService_Account" xml:space="preserve"><value>tu cuenta</value></data>
+  <data name="GatewayService_Booking" xml:space="preserve"><value>las reservas</value></data>
+  <data name="GatewayService_Calendar" xml:space="preserve"><value>el calendario</value></data>
+  <data name="GatewayService_Customers" xml:space="preserve"><value>los clientes</value></data>
+  <data name="GatewayService_Professions" xml:space="preserve"><value>las profesiones</value></data>
+  <data name="GatewayService_Providers" xml:space="preserve"><value>los profesionales</value></data>
+  <data name="GatewayService_Services" xml:space="preserve"><value>los servicios</value></data>
+  <data name="Profession_001" xml:space="preserve"><value>Contabilidad</value></data>
+  <data name="Profession_002" xml:space="preserve"><value>Adicciones</value></data>
+  <data name="Profession_003" xml:space="preserve"><value>Inteligencia artificial</value></data>
+  <data name="Profession_004" xml:space="preserve"><value>Adiestramiento de mascotas</value></data>
+  <data name="Profession_005" xml:space="preserve"><value>Antienvejecimiento</value></data>
+  <data name="Profession_006" xml:space="preserve"><value>Tecnología acuícola</value></data>
+  <data name="Profession_007" xml:space="preserve"><value>Arquitectura</value></data>
+  <data name="Profession_008" xml:space="preserve"><value>Arte</value></data>
+  <data name="Profession_009" xml:space="preserve"><value>Cuidados para la vida diaria</value></data>
+  <data name="Profession_010" xml:space="preserve"><value>Experiencia de participantes</value></data>
+  <data name="Profession_011" xml:space="preserve"><value>Automatización</value></data>
+  <data name="Profession_012" xml:space="preserve"><value>Automotriz</value></data>
+  <data name="Profession_013" xml:space="preserve"><value>Belleza</value></data>
+  <data name="Profession_014" xml:space="preserve"><value>Bitcoin</value></data>
+  <data name="Profession_015" xml:space="preserve"><value>Fisicoculturismo</value></data>
+  <data name="Profession_016" xml:space="preserve"><value>Boxeo</value></data>
+  <data name="Profession_017" xml:space="preserve"><value>Negocios</value></data>
+  <data name="Profession_018" xml:space="preserve"><value>Cannabis</value></data>
+  <data name="Profession_019" xml:space="preserve"><value>Planeación de carrera</value></data>
+  <data name="Profession_020" xml:space="preserve"><value>Gestión del cambio</value></data>
+  <data name="Profession_021" xml:space="preserve"><value>Beneficencia y organizaciones sin fines de lucro</value></data>
+  <data name="Profession_022" xml:space="preserve"><value>Quiropráctica</value></data>
+  <data name="Profession_023" xml:space="preserve"><value>Coaching</value></data>
+  <data name="Profession_024" xml:space="preserve"><value>Comedia</value></data>
+  <data name="Profession_025" xml:space="preserve"><value>Comunicación</value></data>
+  <data name="Profession_026" xml:space="preserve"><value>Construcción</value></data>
+  <data name="Profession_027" xml:space="preserve"><value>Creación de contenido</value></data>
+  <data name="Profession_028" xml:space="preserve"><value>Orientación</value></data>
+  <data name="Profession_029" xml:space="preserve"><value>Criptomonedas</value></data>
+  <data name="Profession_030" xml:space="preserve"><value>Cultura</value></data>
+  <data name="Profession_031" xml:space="preserve"><value>Ciberseguridad</value></data>
+  <data name="Profession_032" xml:space="preserve"><value>Danza</value></data>
+  <data name="Profession_033" xml:space="preserve"><value>Datos</value></data>
+  <data name="Profession_034" xml:space="preserve"><value>Diversidad, equidad e inclusión</value></data>
+  <data name="Profession_035" xml:space="preserve"><value>Venta sin inventario</value></data>
+  <data name="Profession_036" xml:space="preserve"><value>Comercio electrónico</value></data>
+  <data name="Profession_037" xml:space="preserve"><value>Economía</value></data>
+  <data name="Profession_038" xml:space="preserve"><value>Educación</value></data>
+  <data name="Profession_039" xml:space="preserve"><value>Electricidad</value></data>
+  <data name="Profession_040" xml:space="preserve"><value>Energía</value></data>
+  <data name="Profession_041" xml:space="preserve"><value>Gestión de activos empresariales</value></data>
+  <data name="Profession_042" xml:space="preserve"><value>Entretenimiento</value></data>
+  <data name="Profession_043" xml:space="preserve"><value>Emprendimiento</value></data>
+  <data name="Profession_044" xml:space="preserve"><value>Medio ambiente</value></data>
+  <data name="Profession_045" xml:space="preserve"><value>Eventos</value></data>
+  <data name="Profession_046" xml:space="preserve"><value>Fe y espiritualidad</value></data>
+  <data name="Profession_047" xml:space="preserve"><value>Familia</value></data>
+  <data name="Profession_048" xml:space="preserve"><value>Moda</value></data>
+  <data name="Profession_049" xml:space="preserve"><value>Modelaje de moda</value></data>
+  <data name="Profession_050" xml:space="preserve"><value>Cine y televisión</value></data>
+  <data name="Profession_051" xml:space="preserve"><value>Finanzas</value></data>
+  <data name="Profession_052" xml:space="preserve"><value>Armas de fuego</value></data>
+  <data name="Profession_053" xml:space="preserve"><value>Alimentos y bebidas</value></data>
+  <data name="Profession_054" xml:space="preserve"><value>Idiomas extranjeros</value></data>
+  <data name="Profession_055" xml:space="preserve"><value>Franquicias</value></data>
+  <data name="Profession_056" xml:space="preserve"><value>Videojuegos</value></data>
+  <data name="Profession_057" xml:space="preserve"><value>Jardinería</value></data>
+  <data name="Profession_058" xml:space="preserve"><value>Gobierno</value></data>
+  <data name="Profession_059" xml:space="preserve"><value>Diseño gráfico</value></data>
+  <data name="Profession_060" xml:space="preserve"><value>Salud</value></data>
+  <data name="Profession_061" xml:space="preserve"><value>Salud y bienestar</value></data>
+  <data name="Profession_062" xml:space="preserve"><value>Atención médica</value></data>
+  <data name="Profession_063" xml:space="preserve"><value>Tecnología para la salud</value></data>
+  <data name="Profession_064" xml:space="preserve"><value>Educación superior</value></data>
+  <data name="Profession_065" xml:space="preserve"><value>Hotelería y hospitalidad</value></data>
+  <data name="Profession_066" xml:space="preserve"><value>Recursos humanos</value></data>
+  <data name="Profession_067" xml:space="preserve"><value>Seguros</value></data>
+  <data name="Profession_068" xml:space="preserve"><value>Propiedad intelectual (PI)</value></data>
+  <data name="Profession_069" xml:space="preserve"><value>Entrevistas de trabajo</value></data>
+  <data name="Profession_070" xml:space="preserve"><value>Gestión de tierras</value></data>
+  <data name="Profession_071" xml:space="preserve"><value>Servicios jurídicos</value></data>
+  <data name="Profession_072" xml:space="preserve"><value>LGBTQ+</value></data>
+  <data name="Profession_073" xml:space="preserve"><value>Aprendizaje automático</value></data>
+  <data name="Profession_074" xml:space="preserve"><value>Mercadotecnia</value></data>
+  <data name="Profession_075" xml:space="preserve"><value>Mecánica</value></data>
+  <data name="Profession_076" xml:space="preserve"><value>Ingeniería mecánica</value></data>
+  <data name="Profession_077" xml:space="preserve"><value>Medios</value></data>
+  <data name="Profession_078" xml:space="preserve"><value>Meditación</value></data>
+  <data name="Profession_079" xml:space="preserve"><value>Salud mental</value></data>
+  <data name="Profession_080" xml:space="preserve"><value>Sector militar</value></data>
+  <data name="Profession_081" xml:space="preserve"><value>Atención plena</value></data>
+  <data name="Profession_082" xml:space="preserve"><value>Artes marciales mixtas</value></data>
+  <data name="Profession_083" xml:space="preserve"><value>Música</value></data>
+  <data name="Profession_084" xml:space="preserve"><value>Redes profesionales</value></data>
+  <data name="Profession_085" xml:space="preserve"><value>Crianza</value></data>
+  <data name="Profession_086" xml:space="preserve"><value>Artes escénicas</value></data>
+  <data name="Profession_087" xml:space="preserve"><value>Farmacia</value></data>
+  <data name="Profession_088" xml:space="preserve"><value>Filosofía</value></data>
+  <data name="Profession_089" xml:space="preserve"><value>Producción de podcasts</value></data>
+  <data name="Profession_090" xml:space="preserve"><value>Desarrollo de productos</value></data>
+  <data name="Profession_091" xml:space="preserve"><value>Gestión de productos</value></data>
+  <data name="Profession_092" xml:space="preserve"><value>Administración de propiedades</value></data>
+  <data name="Profession_093" xml:space="preserve"><value>Clarividencia</value></data>
+  <data name="Profession_094" xml:space="preserve"><value>Psicología</value></data>
+  <data name="Profession_095" xml:space="preserve"><value>Oratoria</value></data>
+  <data name="Profession_096" xml:space="preserve"><value>Bienes raíces</value></data>
+  <data name="Profession_097" xml:space="preserve"><value>Relaciones</value></data>
+  <data name="Profession_098" xml:space="preserve"><value>Comercio minorista</value></data>
+  <data name="Profession_099" xml:space="preserve"><value>Ventas</value></data>
+  <data name="Profession_100" xml:space="preserve"><value>Superación personal</value></data>
+  <data name="Profession_101" xml:space="preserve"><value>Salud sexual</value></data>
+  <data name="Profession_102" xml:space="preserve"><value>Redes sociales</value></data>
+  <data name="Profession_103" xml:space="preserve"><value>Ingeniería de software</value></data>
+  <data name="Profession_104" xml:space="preserve"><value>Espiritualidad</value></data>
+  <data name="Profession_105" xml:space="preserve"><value>Deportes</value></data>
+  <data name="Profession_106" xml:space="preserve"><value>Empresas emergentes</value></data>
+  <data name="Profession_107" xml:space="preserve"><value>Cadena de suministro</value></data>
+  <data name="Profession_108" xml:space="preserve"><value>Ingeniería de sistemas</value></data>
+  <data name="Profession_109" xml:space="preserve"><value>Adquisición de talento</value></data>
+  <data name="Profession_110" xml:space="preserve"><value>Tarot</value></data>
+  <data name="Profession_111" xml:space="preserve"><value>Tecnología</value></data>
+  <data name="Profession_112" xml:space="preserve"><value>Operaciones bursátiles</value></data>
+  <data name="Profession_113" xml:space="preserve"><value>Viajes</value></data>
+  <data name="Profession_114" xml:space="preserve"><value>Creación de videos</value></data>
+  <data name="Profession_115" xml:space="preserve"><value>Escritura</value></data>
+  <data name="RelativeTime_DaysAgo" xml:space="preserve"><value>hace {0} d</value></data>
+  <data name="RelativeTime_HoursAgo" xml:space="preserve"><value>hace {0} h</value></data>
+  <data name="RelativeTime_MinutesAgo" xml:space="preserve"><value>hace {0} min</value></data>
+  <data name="RelativeTime_Now" xml:space="preserve"><value>ahora</value></data>
+  <data name="Role_Customer" xml:space="preserve"><value>Cliente</value></data>
+  <data name="Role_Provider" xml:space="preserve"><value>Profesional</value></data>
+  <data name="Shell_ContactsCustomers" xml:space="preserve"><value>Clientes</value></data>
+  <data name="Shell_ContactsProviders" xml:space="preserve"><value>Profesionales</value></data>
+  <data name="Action_AccountDeleted" xml:space="preserve"><value>Tu cuenta fue eliminada.</value></data>
+  <data name="Action_AppointmentBooked" xml:space="preserve"><value>Cita reservada.</value></data>
+  <data name="Action_AppointmentCancelled" xml:space="preserve"><value>Cita cancelada.</value></data>
+  <data name="Action_AvatarUpdated" xml:space="preserve"><value>Avatar actualizado.</value></data>
+  <data name="Action_CalendarSaved" xml:space="preserve"><value>Calendario guardado.</value></data>
+  <data name="Action_NoteAdded" xml:space="preserve"><value>Nota agregada.</value></data>
+  <data name="Action_PaymentRecorded" xml:space="preserve"><value>Pago registrado.</value></data>
+  <data name="Action_ProfileSaved" xml:space="preserve"><value>Perfil guardado.</value></data>
+  <data name="Action_ServiceAdded" xml:space="preserve"><value>Servicio agregado.</value></data>
+  <data name="Action_ServiceRemoved" xml:space="preserve"><value>Servicio eliminado.</value></data>
+  <data name="Action_ServiceUpdated" xml:space="preserve"><value>Servicio actualizado.</value></data>
+  <data name="Action_TimeOffRemoved" xml:space="preserve"><value>Tiempo no disponible eliminado. Esas horas vuelven a estar disponibles.</value></data>
+  <data name="Action_TimeOffSaved" xml:space="preserve"><value>Tiempo no disponible guardado.</value></data>
+  <data name="Action_NewTimeApproved" xml:space="preserve"><value>Nuevo horario aprobado. La sesión fue reprogramada.</value></data>
+  <data name="Action_NewTimeDeclined" xml:space="preserve"><value>Nuevo horario rechazado. La sesión conserva su horario.</value></data>
+  <data name="Action_NewTimeRequested" xml:space="preserve"><value>Nuevo horario solicitado. Tu profesional responderá.</value></data>
+  <data name="Action_SessionRescheduled" xml:space="preserve"><value>Sesión reprogramada. Se notificó al cliente.</value></data>
+  <data name="Action_StatusUpdated" xml:space="preserve"><value>Cita {0}.</value></data>
+  <data name="Appointment_CancelClosed" xml:space="preserve"><value>El plazo para cancelar terminó el {0:ddd d 'de' MMM 'a las' H:mm}. Envía un mensaje a tu profesional.</value></data>
+  <data name="Appointment_CancelDeadline" xml:space="preserve"><value>Puedes cancelar sin costo hasta el {0:ddd d 'de' MMM, H:mm}.</value></data>
+  <data name="Appointment_MovedFrom" xml:space="preserve"><value>Horario anterior: {0:ddd d 'de' MMM, H:mm}</value></data>
+  <data name="Appointment_TimeAndDuration" xml:space="preserve"><value>{0} · {1}</value></data>
+  <data name="Book_ChooseDateAndTime" xml:space="preserve"><value>Elige una fecha y hora</value></data>
+  <data name="Book_ChooseService" xml:space="preserve"><value>Elige un servicio</value></data>
+  <data name="Book_ChooseServiceForTimes" xml:space="preserve"><value>Elige un servicio para ver horarios disponibles</value></data>
+  <data name="Book_SelectedSlot" xml:space="preserve"><value>Seleccionado: {0}</value></data>
+  <data name="Calendar_ClosedDaysSummary" xml:space="preserve"><value>Cerrado: {0} · {1} horas disponibles por semana.</value></data>
+  <data name="Calendar_ClosedEveryDay" xml:space="preserve"><value>Cerrado todos los días; nadie puede reservar contigo.</value></data>
+  <data name="Calendar_CopyHoursDone" xml:space="preserve"><value>El horario del {0} se copió a todos los días abiertos.</value></data>
+  <data name="Calendar_OpenAtLeastOneDay" xml:space="preserve"><value>Abre al menos un día primero.</value></data>
+  <data name="Calendar_OpenEveryDay" xml:space="preserve"><value>Abierto todos los días, {0} horas disponibles por semana.</value></data>
+  <data name="Calendar_OpenEveryDayOneHour" xml:space="preserve"><value>Abierto todos los días, 1 hora disponible por semana.</value></data>
+  <data name="Calendar_ClosedDaysOneHour" xml:space="preserve"><value>Cerrado: {0} · 1 hora disponible por semana.</value></data>
+  <data name="Calendar_WeekInvalid" xml:space="preserve"><value>Algunos horarios terminan antes de comenzar.</value></data>
+  <data name="Contacts_CustomersEmptySubtitle" xml:space="preserve"><value>Cuando un cliente reserve una sesión contigo, aparecerá aquí.</value></data>
+  <data name="Contacts_CustomersEmptyTitle" xml:space="preserve"><value>Aún no hay clientes</value></data>
+  <data name="Contacts_CustomersSearch" xml:space="preserve"><value>Buscar clientes...</value></data>
+  <data name="Contacts_CustomersTitle" xml:space="preserve"><value>Clientes</value></data>
+  <data name="Contacts_ProfessionFilter" xml:space="preserve"><value>Profesión: {0}</value></data>
+  <data name="Contacts_ProvidersEmptySubtitle" xml:space="preserve"><value>Explora y suscríbete a profesionales para reservar citas.</value></data>
+  <data name="Contacts_ProvidersEmptyTitle" xml:space="preserve"><value>Aún no hay profesionales</value></data>
+  <data name="Contacts_ProvidersSearch" xml:space="preserve"><value>Buscar por nombre, correo o servicio...</value></data>
+  <data name="Contacts_ProvidersTitle" xml:space="preserve"><value>Profesionales</value></data>
+  <data name="Dashboard_EmptyCustomerSubtitle" xml:space="preserve"><value>Reserva una sesión con un profesional y aparecerá aquí.</value></data>
+  <data name="Dashboard_EmptyCustomerTitle" xml:space="preserve"><value>Aún no hay reservas</value></data>
+  <data name="Dashboard_EmptyProviderSubtitle" xml:space="preserve"><value>Consulta tu calendario para ver las próximas sesiones.</value></data>
+  <data name="Dashboard_EmptyProviderTitle" xml:space="preserve"><value>No hay citas</value></data>
+  <data name="Dashboard_GoodAfternoon" xml:space="preserve"><value>Buenas tardes</value></data>
+  <data name="Dashboard_GoodEvening" xml:space="preserve"><value>Buenas noches</value></data>
+  <data name="Dashboard_GoodMorning" xml:space="preserve"><value>Buenos días</value></data>
+  <data name="Dashboard_SectionUpcoming" xml:space="preserve"><value>Próximas sesiones</value></data>
+  <data name="Dashboard_Sessions" xml:space="preserve"><value>Sesiones</value></data>
+  <data name="Dashboard_Today" xml:space="preserve"><value>Hoy</value></data>
+  <data name="Dashboard_Upcoming" xml:space="preserve"><value>Próximas</value></data>
+  <data name="Language_NotAvailable" xml:space="preserve"><value>{0} aún no está disponible.</value></data>
+  <data name="Language_Notice" xml:space="preserve"><value>Elige el idioma que AgendaMe usa en este dispositivo.</value></data>
+  <data name="Example_Email" xml:space="preserve"><value>tu@ejemplo.com</value></data>
+  <data name="Example_LastName" xml:space="preserve"><value>Cliente</value></data>
+  <data name="Message_MaxLength" xml:space="preserve"><value>El mensaje es demasiado largo; el máximo es de {0} caracteres.</value></data>
+  <data name="Report_RevenueAvailable" xml:space="preserve"><value>Los ingresos están disponibles.</value></data>
+  <data name="Report_RevenueUnavailable" xml:space="preserve"><value>Los ingresos aún no están disponibles: {0}.</value></data>
+  <data name="Reschedule_CustomerExplanation" xml:space="preserve"><value>Elige un horario disponible de tu profesional. Podrá aprobarlo o rechazarlo; mientras responde, la sesión conserva su horario actual.</value></data>
+  <data name="Reschedule_CurrentTime" xml:space="preserve"><value>Actualmente: {0:dddd d 'de' MMMM 'a las' H:mm}</value></data>
+  <data name="Reschedule_MoveSession" xml:space="preserve"><value>Mover sesión</value></data>
+  <data name="Reschedule_ProviderExplanation" xml:space="preserve"><value>Elige un nuevo horario entre tus espacios disponibles. Se notificará al cliente que la sesión cambió.</value></data>
+  <data name="Reschedule_RequestTitle" xml:space="preserve"><value>Solicitar otro horario</value></data>
+  <data name="Reschedule_RescheduleTitle" xml:space="preserve"><value>Reprogramar sesión</value></data>
+  <data name="Reschedule_SendRequest" xml:space="preserve"><value>Enviar solicitud</value></data>
+  <data name="Reschedule_SessionMoved" xml:space="preserve"><value>Sesión reprogramada. Se notificó al cliente.</value></data>
+  <data name="Reschedule_RequestSent" xml:space="preserve"><value>Solicitud enviada. Tu profesional responderá.</value></data>
+  <data name="TimeOff_AllDay" xml:space="preserve"><value>todo el día</value></data>
+  <data name="TimeOff_Days" xml:space="preserve"><value>{0} días</value></data>
+  <data name="TimeOff_InvalidRange" xml:space="preserve"><value>El bloqueo debe terminar después de comenzar.</value></data>
+  <data name="TimeOff_OneConflict" xml:space="preserve"><value>Hay 1 sesión reservada dentro de este periodo. Bloquearlo no cancelará la sesión; muévela o cancélala.</value></data>
+  <data name="TimeOff_ManyConflicts" xml:space="preserve"><value>Hay {0} sesiones reservadas dentro de este periodo. Bloquearlo no las cancelará; muévelas o cancélalas.</value></data>
+  <data name="Xaml_1CHOOSEASERVICE" xml:space="preserve">
+    <value>1 · ELIGE UN SERVICIO</value>
+  </data>
+  <data name="Xaml_2CHOOSEADATEANDTIME" xml:space="preserve">
+    <value>2 · ELIGE UNA FECHA Y HORA</value>
+  </data>
+  <data name="Xaml_Account" xml:space="preserve">
+    <value>Cuenta</value>
+  </data>
+  <data name="Xaml_ActiveVisibleToCustomers" xml:space="preserve">
+    <value>Cuenta activa (visible para clientes)</value>
+  </data>
+  <data name="Xaml_AddANote" xml:space="preserve">
+    <value>Agregar una nota</value>
+  </data>
+  <data name="Xaml_AddANoteAboutThisSession" xml:space="preserve">
+    <value>Agrega una nota sobre esta sesión...</value>
+  </data>
+  <data name="Xaml_AddAProfessionFirst" xml:space="preserve">
+    <value>Primero agrega una profesión</value>
+  </data>
+  <data name="Xaml_AddAService" xml:space="preserve">
+    <value>Agregar un servicio</value>
+  </data>
+  <data name="Xaml_AddNote" xml:space="preserve">
+    <value>Agregar nota</value>
+  </data>
+  <data name="Xaml_AddService" xml:space="preserve">
+    <value>Agregar servicio</value>
+  </data>
+  <data name="Xaml_AgendaBuddyHasNoLivePaymentGatewayConfiguredRecordingAPaymentHereDoesNotMoveRealMoney" xml:space="preserve">
+    <value>AgendaMe no tiene configurada una pasarela de pago real; registrar un pago aquí no transfiere dinero.</value>
+  </data>
+  <data name="Xaml_Agreements" xml:space="preserve">
+    <value>Acuerdos</value>
+  </data>
+  <data name="Xaml_AlreadyHaveAnAccount" xml:space="preserve">
+    <value>¿Ya tienes una cuenta? </value>
+  </data>
+  <data name="Xaml_Amount" xml:space="preserve">
+    <value>Monto</value>
+  </data>
+  <data name="Xaml_Appointment" xml:space="preserve">
+    <value>Cita</value>
+  </data>
+  <data name="Xaml_ApproveNewTime" xml:space="preserve">
+    <value>Aprobar nuevo horario</value>
+  </data>
+  <data name="Xaml_AServiceMustBeOfferedUnderOneOfYourProfessions" xml:space="preserve">
+    <value>Cada servicio debe corresponder a una de tus profesiones.</value>
+  </data>
+  <data name="Xaml_AtLeast8Characters" xml:space="preserve">
+    <value>Al menos 8 caracteres</value>
+  </data>
+  <data name="Xaml_Available" xml:space="preserve">
+    <value>Disponible</value>
+  </data>
+  <data name="Xaml_BackTo" xml:space="preserve">
+    <value>Volver a </value>
+  </data>
+  <data name="Xaml_BlockAHolidayATripOrAFewHoursForSomethingPersonalCustomersSimplyWillNotSeeThoseTimesAsAvailable" xml:space="preserve">
+    <value>Bloquea vacaciones, un viaje o algunas horas para asuntos personales. Los clientes no verán esos horarios como disponibles.</value>
+  </data>
+  <data name="Xaml_BLOCKSOMETIME" xml:space="preserve">
+    <value>BLOQUEAR TIEMPO</value>
+  </data>
+  <data name="Xaml_BlockThisTime" xml:space="preserve">
+    <value>Bloquear horario</value>
+  </data>
+  <data name="Xaml_Book" xml:space="preserve">
+    <value>Reservar</value>
+  </data>
+  <data name="Xaml_BookAppointment" xml:space="preserve">
+    <value>Reservar cita</value>
+  </data>
+  <data name="Xaml_Calendar" xml:space="preserve">
+    <value>Calendario</value>
+  </data>
+  <data name="Xaml_CalendarSettings" xml:space="preserve">
+    <value>Configuración del calendario</value>
+  </data>
+  <data name="Xaml_ChangeAvatar" xml:space="preserve">
+    <value>Cambiar avatar</value>
+  </data>
+  <data name="Xaml_ChangePassword" xml:space="preserve">
+    <value>Cambiar contraseña</value>
+  </data>
+  <data name="Xaml_CheckForBookedSessions" xml:space="preserve">
+    <value>Revisar citas reservadas</value>
+  </data>
+  <data name="Xaml_ChooseAProfession" xml:space="preserve">
+    <value>Elegir una profesión</value>
+  </data>
+  <data name="Xaml_ChooseAvatar" xml:space="preserve">
+    <value>Elegir avatar</value>
+  </data>
+  <data name="Xaml_Clear" xml:space="preserve">
+    <value>Borrar</value>
+  </data>
+  <data name="Xaml_Confirm" xml:space="preserve">
+    <value>Confirmar</value>
+  </data>
+  <data name="Xaml_ConfirmBooking" xml:space="preserve">
+    <value>Confirmar cita</value>
+  </data>
+  <data name="Xaml_ConfirmPassword" xml:space="preserve">
+    <value>Confirmar contraseña</value>
+  </data>
+  <data name="Xaml_ContinueToMyServices" xml:space="preserve">
+    <value>Ir a Mis servicios</value>
+  </data>
+  <data name="Xaml_CopyFirstOpenDayToAll" xml:space="preserve">
+    <value>Copiar primer horario a todos</value>
+  </data>
+  <data name="Xaml_CreateAccount" xml:space="preserve">
+    <value>Crear cuenta</value>
+  </data>
+  <data name="Xaml_CurrentNotes" xml:space="preserve">
+    <value>Notas actuales</value>
+  </data>
+  <data name="Xaml_CustomersCanOnlyBookInsideTheseWindowsTimesAreOnYourOwnDeviceSClockAndEachDayCanDiffer" xml:space="preserve">
+    <value>Los clientes solo pueden reservar dentro de estos horarios. Las horas usan el reloj de tu dispositivo y cada día puede ser diferente.</value>
+  </data>
+  <data name="Xaml_Dashboard" xml:space="preserve">
+    <value>Inicio</value>
+  </data>
+  <data name="Xaml_DeactivateAccount" xml:space="preserve">
+    <value>Desactivar cuenta</value>
+  </data>
+  <data name="Xaml_DeactivatingHidesYouFromCustomersAndKeepsYourDataDeletingRemovesIt" xml:space="preserve">
+    <value>Desactivar oculta tu perfil a los clientes y conserva tus datos. Eliminar los borra.</value>
+  </data>
+  <data name="Xaml_Decline" xml:space="preserve">
+    <value>Rechazar</value>
+  </data>
+  <data name="Xaml_DeleteAccount" xml:space="preserve">
+    <value>Eliminar cuenta</value>
+  </data>
+  <data name="Xaml_DeletingYourAccountIsPermanentYourProfileIsRemovedAndYourNameEmailAndPhoneNumberAreErasedFromTheRecordsOfPeopleYouDealtWith" xml:space="preserve">
+    <value>Eliminar tu cuenta es permanente. Se elimina tu perfil y se borran tu nombre, correo electrónico y teléfono de los registros de las personas con quienes trataste.</value>
+  </data>
+  <data name="Xaml_Description" xml:space="preserve">
+    <value>Descripción</value>
+  </data>
+  <data name="Xaml_DonTHaveAnAccount" xml:space="preserve">
+    <value>¿No tienes una cuenta? </value>
+  </data>
+  <data name="Xaml_DurationInMinutesOptional" xml:space="preserve">
+    <value>Duración en minutos (opcional)</value>
+  </data>
+  <data name="Xaml_DurationMinutes" xml:space="preserve">
+    <value>Duración (minutos)</value>
+  </data>
+  <data name="Xaml_EditProfile" xml:space="preserve">
+    <value>Editar perfil</value>
+  </data>
+  <data name="Xaml_Email" xml:space="preserve">
+    <value>Correo electrónico</value>
+  </data>
+  <data name="Xaml_Ends" xml:space="preserve">
+    <value>Termina</value>
+  </data>
+  <data name="Xaml_EndsAt" xml:space="preserve">
+    <value>Termina a las</value>
+  </data>
+  <data name="Xaml_EnterYourAccountEmailAndWeLlStartAPasswordReset" xml:space="preserve">
+    <value>Ingresa el correo de tu cuenta para iniciar el restablecimiento de contraseña.</value>
+  </data>
+  <data name="Xaml_EnterYourPassword" xml:space="preserve">
+    <value>Ingresa tu contraseña</value>
+  </data>
+  <data name="Xaml_EnterYourResetCode" xml:space="preserve">
+    <value>Ingresa tu código de restablecimiento</value>
+  </data>
+  <data name="Xaml_Fee" xml:space="preserve">
+    <value>Precio</value>
+  </data>
+  <data name="Xaml_FeeOptional" xml:space="preserve">
+    <value>Precio (opcional)</value>
+  </data>
+  <data name="Xaml_FinishSettingUpYourProfileAddYourName" xml:space="preserve">
+    <value>Termina de configurar tu perfil: agrega tu nombre.</value>
+  </data>
+  <data name="Xaml_FirstName" xml:space="preserve">
+    <value>Nombre</value>
+  </data>
+  <data name="Xaml_FirstName_fe8083f8" xml:space="preserve">
+    <value>Nombre</value>
+  </data>
+  <data name="Xaml_ForgotPassword" xml:space="preserve">
+    <value>Olvidé mi contraseña</value>
+  </data>
+  <data name="Xaml_ForgotPassword_c3d181e2" xml:space="preserve">
+    <value>¿Olvidaste tu contraseña?</value>
+  </data>
+  <data name="Xaml_From" xml:space="preserve">
+    <value>Desde</value>
+  </data>
+  <data name="Xaml_HolidayTravelOrAnythingPersonalBlocksARangeOfHoursOrWholeDaysWhateverYourWorkingWeekSays" xml:space="preserve">
+    <value>Vacaciones, viajes o asuntos personales. Bloquea un horario o días completos, sin importar tu semana laboral.</value>
+  </data>
+  <data name="Xaml_HolidayTravelPersonal" xml:space="preserve">
+    <value>Vacaciones, viaje, asuntos personales…</value>
+  </data>
+  <data name="Xaml_Hours" xml:space="preserve">
+    <value>Horario</value>
+  </data>
+  <data name="Xaml_IAcceptThe" xml:space="preserve">
+    <value>Acepto: </value>
+  </data>
+  <data name="Xaml_IAmA" xml:space="preserve">
+    <value>Soy...</value>
+  </data>
+  <data name="Xaml_IBookServices" xml:space="preserve">
+    <value>Reservo servicios</value>
+  </data>
+  <data name="Xaml_IfThatEmailHasAnAccountAResetLinkHasBeenSent" xml:space="preserve">
+    <value>Si existe una cuenta con ese correo, se envió un enlace de restablecimiento.</value>
+  </data>
+  <data name="Xaml_IHaveAResetCode" xml:space="preserve">
+    <value>Tengo un código de restablecimiento</value>
+  </data>
+  <data name="Xaml_Inactive" xml:space="preserve">
+    <value>Cuenta inactiva</value>
+  </data>
+  <data name="Xaml_IOfferServices" xml:space="preserve">
+    <value>Ofrezco servicios</value>
+  </data>
+  <data name="Xaml_Last" xml:space="preserve">
+    <value>Última</value>
+  </data>
+  <data name="Xaml_LastName" xml:space="preserve">
+    <value>Apellido</value>
+  </data>
+  <data name="Xaml_LastName_6a4108c8" xml:space="preserve">
+    <value>Apellido</value>
+  </data>
+  <data name="Xaml_Legal" xml:space="preserve">
+    <value>Información legal</value>
+  </data>
+  <data name="Xaml_LoadingAvailableTimes" xml:space="preserve">
+    <value>Cargando horarios disponibles…</value>
+  </data>
+  <data name="Xaml_Manage" xml:space="preserve">
+    <value>Administrar</value>
+  </data>
+  <data name="Xaml_ManageCalendar" xml:space="preserve">
+    <value>Administrar calendario</value>
+  </data>
+  <data name="Xaml_ManageTimeOff" xml:space="preserve">
+    <value>Administrar tiempo no disponible</value>
+  </data>
+  <data name="Xaml_MarkAllRead" xml:space="preserve">
+    <value>Marcar todo como leído</value>
+  </data>
+  <data name="Xaml_MarkAsRead" xml:space="preserve">
+    <value>Marcar como leído</value>
+  </data>
+  <data name="Xaml_Message" xml:space="preserve">
+    <value>Mensaje</value>
+  </data>
+  <data name="Xaml_Messages" xml:space="preserve">
+    <value>Mensajes</value>
+  </data>
+  <data name="Xaml_More" xml:space="preserve">
+    <value>Más</value>
+  </data>
+  <data name="Xaml_MyBusiness" xml:space="preserve">
+    <value>Mi negocio</value>
+  </data>
+  <data name="Xaml_MyServices" xml:space="preserve">
+    <value>Mis servicios</value>
+  </data>
+  <data name="Xaml_MyServices_9f59525f" xml:space="preserve">
+    <value>Mis servicios</value>
+  </data>
+  <data name="Xaml_NamePhoneAndTheAgreementsYouHaveAccepted" xml:space="preserve">
+    <value>Nombre, teléfono y acuerdos que aceptaste</value>
+  </data>
+  <data name="Xaml_New" xml:space="preserve">
+    <value>Nuevo</value>
+  </data>
+  <data name="Xaml_NewPassword" xml:space="preserve">
+    <value>Nueva contraseña</value>
+  </data>
+  <data name="Xaml_NoAvailability" xml:space="preserve">
+    <value>Sin disponibilidad</value>
+  </data>
+  <data name="Xaml_NobodyCanBookYouWhileEveryDayIsClosed" xml:space="preserve">
+    <value>Nadie puede reservar contigo mientras todos los días estén cerrados.</value>
+  </data>
+  <data name="Xaml_NoEvents" xml:space="preserve">
+    <value>Sin eventos</value>
+  </data>
+  <data name="Xaml_NoMessages" xml:space="preserve">
+    <value>Sin mensajes</value>
+  </data>
+  <data name="Xaml_NoNotesOnThisSessionYet" xml:space="preserve">
+    <value>Aún no hay notas para esta sesión.</value>
+  </data>
+  <data name="Xaml_NoPaymentRecordedYet" xml:space="preserve">
+    <value>Aún no hay pagos registrados</value>
+  </data>
+  <data name="Xaml_NoProfessionsFound" xml:space="preserve">
+    <value>No se encontraron profesiones.</value>
+  </data>
+  <data name="Xaml_NoServicesYet" xml:space="preserve">
+    <value>Aún no hay servicios</value>
+  </data>
+  <data name="Xaml_Notes" xml:space="preserve">
+    <value>Notas</value>
+  </data>
+  <data name="Xaml_NOTESFROMCUSTOMER" xml:space="preserve">
+    <value>NOTAS DEL CLIENTE</value>
+  </data>
+  <data name="Xaml_NothingBookableYet" xml:space="preserve">
+    <value>Aún no hay nada disponible para reservar</value>
+  </data>
+  <data name="Xaml_NothingScheduledForThisDay" xml:space="preserve">
+    <value>No hay nada programado para este día.</value>
+  </data>
+  <data name="Xaml_Notifications" xml:space="preserve">
+    <value>Notificaciones</value>
+  </data>
+  <data name="Xaml_NoTimeOffBooked" xml:space="preserve">
+    <value>No has bloqueado tiempo</value>
+  </data>
+  <data name="Xaml_Password" xml:space="preserve">
+    <value>Contraseña</value>
+  </data>
+  <data name="Xaml_PasteTheCodeFromTheResetRequest" xml:space="preserve">
+    <value>Pega el código de la solicitud de restablecimiento</value>
+  </data>
+  <data name="Xaml_Payment" xml:space="preserve">
+    <value>Pago</value>
+  </data>
+  <data name="Xaml_PersonalInformation" xml:space="preserve">
+    <value>Información personal</value>
+  </data>
+  <data name="Xaml_Phone" xml:space="preserve">
+    <value>Teléfono</value>
+  </data>
+  <data name="Xaml_PhoneOptional" xml:space="preserve">
+    <value>Teléfono (opcional)</value>
+  </data>
+  <data name="Xaml_PICKADATE" xml:space="preserve">
+    <value>ELIGE UNA FECHA</value>
+  </data>
+  <data name="Xaml_PickAMarkAbstractRatherThanAFaceSoNothingAboutYouIsAssumed" xml:space="preserve">
+    <value>Elige un símbolo abstracto en lugar de un rostro, para no asumir nada sobre ti.</value>
+  </data>
+  <data name="Xaml_PICKATIME" xml:space="preserve">
+    <value>ELIGE UNA HORA</value>
+  </data>
+  <data name="Xaml_PrivacyPolicy" xml:space="preserve">
+    <value>Política de privacidad</value>
+  </data>
+  <data name="Xaml_Profession" xml:space="preserve">
+    <value>Profesión</value>
+  </data>
+  <data name="Xaml_Professions" xml:space="preserve">
+    <value>Profesiones</value>
+  </data>
+  <data name="Xaml_Profile" xml:space="preserve">
+    <value>Perfil</value>
+  </data>
+  <data name="Xaml_ReasonOnlyYouSeeThis" xml:space="preserve">
+    <value>Motivo (solo tú lo ves)</value>
+  </data>
+  <data name="Xaml_RecordPayment" xml:space="preserve">
+    <value>Registrar pago</value>
+  </data>
+  <data name="Xaml_ReEnterYourPassword" xml:space="preserve">
+    <value>Vuelve a ingresar tu contraseña</value>
+  </data>
+  <data name="Xaml_Remove" xml:space="preserve">
+    <value>Eliminar</value>
+  </data>
+  <data name="Xaml_Report" xml:space="preserve">
+    <value>Reporte</value>
+  </data>
+  <data name="Xaml_RequestANewTime" xml:space="preserve">
+    <value>Solicitar otro horario</value>
+  </data>
+  <data name="Xaml_Reschedule" xml:space="preserve">
+    <value>Reprogramar</value>
+  </data>
+  <data name="Xaml_ResetCode" xml:space="preserve">
+    <value>Código de restablecimiento</value>
+  </data>
+  <data name="Xaml_ResetPassword" xml:space="preserve">
+    <value>Restablecer contraseña</value>
+  </data>
+  <data name="Xaml_ResetYourPassword" xml:space="preserve">
+    <value>Restablece tu contraseña</value>
+  </data>
+  <data name="Xaml_Retry" xml:space="preserve">
+    <value>Reintentar</value>
+  </data>
+  <data name="Xaml_SaveAvatar" xml:space="preserve">
+    <value>Guardar avatar</value>
+  </data>
+  <data name="Xaml_SaveProfessions" xml:space="preserve">
+    <value>Guardar profesiones</value>
+  </data>
+  <data name="Xaml_SaveWorkingWeek" xml:space="preserve">
+    <value>Guardar semana laboral</value>
+  </data>
+  <data name="Xaml_SearchProfessions" xml:space="preserve">
+    <value>Buscar profesiones</value>
+  </data>
+  <data name="Xaml_SendResetLink" xml:space="preserve">
+    <value>Enviar enlace</value>
+  </data>
+  <data name="Xaml_ServiceName" xml:space="preserve">
+    <value>Nombre del servicio</value>
+  </data>
+  <data name="Xaml_Services" xml:space="preserve">
+    <value>Servicios</value>
+  </data>
+  <data name="Xaml_SignIn" xml:space="preserve">
+    <value>Iniciar sesión</value>
+  </data>
+  <data name="Xaml_SignOut" xml:space="preserve">
+    <value>Cerrar sesión</value>
+  </data>
+  <data name="Xaml_SignOut_c8753a18" xml:space="preserve">
+    <value>Cerrar sesión</value>
+  </data>
+  <data name="Xaml_StartManagingYourSchedule" xml:space="preserve">
+    <value>Empieza a administrar tu agenda</value>
+  </data>
+  <data name="Xaml_Starts" xml:space="preserve">
+    <value>Comienza</value>
+  </data>
+  <data name="Xaml_StartsAt" xml:space="preserve">
+    <value>Comienza a las</value>
+  </data>
+  <data name="Xaml_TapAddAServiceToCreateYourFirstOne" xml:space="preserve">
+    <value>Toca Agregar un servicio para crear el primero.</value>
+  </data>
+  <data name="Xaml_TapNewToMessageSomeoneYouHaveBookedWith" xml:space="preserve">
+    <value>Toca Nuevo para escribirle a alguien con quien tengas una cita.</value>
+  </data>
+  <data name="Xaml_TermsAndConditions" xml:space="preserve">
+    <value>Términos y condiciones</value>
+  </data>
+  <data name="Xaml_ThisProviderHasNoFreeSlotsForThatServiceInTheNext90Days" xml:space="preserve">
+    <value>Este profesional no tiene horarios disponibles para ese servicio en los próximos 90 días.</value>
+  </data>
+  <data name="Xaml_ThisProviderHasNotPublishedAnyServicesYouCanBook" xml:space="preserve">
+    <value>Este profesional no ha publicado servicios que puedas reservar.</value>
+  </data>
+  <data name="Xaml_TimeOff" xml:space="preserve">
+    <value>Tiempo no disponible</value>
+  </data>
+  <data name="Xaml_TimeOffOverline" xml:space="preserve">
+    <value>TIEMPO NO DISPONIBLE</value>
+  </data>
+  <data name="Xaml_To" xml:space="preserve">
+    <value>Hasta</value>
+  </data>
+  <data name="Xaml_TypeAMessage" xml:space="preserve">
+    <value>Escribe un mensaje...</value>
+  </data>
+  <data name="Xaml_UPCOMINGTIMEOFF" xml:space="preserve">
+    <value>PRÓXIMO TIEMPO NO DISPONIBLE</value>
+  </data>
+  <data name="Xaml_ViewAppointment" xml:space="preserve">
+    <value>Ver cita</value>
+  </data>
+  <data name="Xaml_WholeDays" xml:space="preserve">
+    <value>Días completos</value>
+  </data>
+  <data name="Xaml_With" xml:space="preserve">
+    <value> con </value>
+  </data>
+  <data name="Xaml_WorkingDaysHoursAndTimeOff" xml:space="preserve">
+    <value>Días laborables, horarios y tiempo no disponible</value>
+  </data>
+  <data name="Xaml_YouHavenTSelectedAnyProfessionsYet" xml:space="preserve">
+    <value>Aún no has seleccionado ninguna profesión.</value>
+  </data>
+  <data name="Xaml_YourEmailAddressCannotBeChangedItIsWhatIdentifiesYourAccount" xml:space="preserve">
+    <value>Tu correo electrónico no puede cambiarse porque identifica tu cuenta.</value>
+  </data>
+  <data name="Xaml_YourProfessions" xml:space="preserve">
+    <value>Tus profesiones</value>
+  </data>
+  <data name="Xaml_YourReport" xml:space="preserve">
+    <value>Tu reporte</value>
+  </data>
+  <data name="Xaml_YourSchedulingCompanion" xml:space="preserve">
+    <value>Tu asistente de agenda</value>
+  </data>
+  <data name="Xaml_YOURWORKINGWEEK" xml:space="preserve">
+    <value>TU SEMANA LABORAL</value>
+  </data>
+  <data name="Notification_Label_AppointmentBooked" xml:space="preserve"><value>Reservada</value></data>
+  <data name="Notification_Label_AppointmentUpdated" xml:space="preserve"><value>Actualizada</value></data>
+  <data name="Notification_Label_AppointmentCancelled" xml:space="preserve"><value>Cancelada</value></data>
+  <data name="Notification_Label_AppointmentCompleted" xml:space="preserve"><value>Completada</value></data>
+  <data name="Notification_Label_PasswordResetRequested" xml:space="preserve"><value>Seguridad</value></data>
+  <data name="Notification_Label_EmailConfirmationRequested" xml:space="preserve"><value>Seguridad</value></data>
+  <data name="Notification_Label_AppointmentRequested" xml:space="preserve"><value>Solicitada</value></data>
+  <data name="Notification_Label_MessageReceived" xml:space="preserve"><value>Mensaje</value></data>
+  <data name="Notification_Label_AppointmentRescheduled" xml:space="preserve"><value>Reprogramada</value></data>
+  <data name="Notification_Label_RescheduleRequested" xml:space="preserve"><value>Cambio solicitado</value></data>
+  <data name="Notification_Label_RescheduleApproved" xml:space="preserve"><value>Cambio aprobado</value></data>
+  <data name="Notification_Label_RescheduleDeclined" xml:space="preserve"><value>Cambio rechazado</value></data>
+  <data name="Notification_Label_Unknown" xml:space="preserve"><value>Información</value></data>
+  <data name="Notification_Title_AppointmentBooked" xml:space="preserve"><value>Cita reservada</value></data>
+  <data name="Notification_Title_AppointmentUpdated" xml:space="preserve"><value>Cita actualizada</value></data>
+  <data name="Notification_Title_AppointmentCancelled" xml:space="preserve"><value>Cita cancelada</value></data>
+  <data name="Notification_Title_AppointmentCompleted" xml:space="preserve"><value>Cita completada</value></data>
+  <data name="Notification_Title_PasswordResetRequested" xml:space="preserve"><value>Restablecimiento de contraseña solicitado</value></data>
+  <data name="Notification_Title_EmailConfirmationRequested" xml:space="preserve"><value>Confirma tu correo electrónico</value></data>
+  <data name="Notification_Title_AppointmentRequested" xml:space="preserve"><value>Nueva solicitud de cita</value></data>
+  <data name="Notification_Title_MessageReceived" xml:space="preserve"><value>Nuevo mensaje</value></data>
+  <data name="Notification_Title_AppointmentRescheduled" xml:space="preserve"><value>Cita reprogramada</value></data>
+  <data name="Notification_Title_RescheduleRequested" xml:space="preserve"><value>Nuevo horario solicitado</value></data>
+  <data name="Notification_Title_RescheduleApproved" xml:space="preserve"><value>Nuevo horario aprobado</value></data>
+  <data name="Notification_Title_RescheduleDeclined" xml:space="preserve"><value>Nuevo horario rechazado</value></data>
+  <data name="Notification_Body_AppointmentBooked" xml:space="preserve"><value>Se reservó una cita.</value></data>
+  <data name="Notification_Body_AppointmentUpdated" xml:space="preserve"><value>Se actualizó una cita.</value></data>
+  <data name="Notification_Body_AppointmentCancelled" xml:space="preserve"><value>Se canceló una cita.</value></data>
+  <data name="Notification_Body_AppointmentCompleted" xml:space="preserve"><value>Se completó una cita.</value></data>
+  <data name="Notification_Body_PasswordResetRequested" xml:space="preserve"><value>Se solicitó restablecer la contraseña de tu cuenta.</value></data>
+  <data name="Notification_Body_EmailConfirmationRequested" xml:space="preserve"><value>Confirma tu correo electrónico.</value></data>
+  <data name="Notification_Body_AppointmentRequested" xml:space="preserve"><value>Tienes una nueva solicitud de cita.</value></data>
+  <data name="Notification_Body_MessageReceived" xml:space="preserve"><value>Recibiste un nuevo mensaje.</value></data>
+  <data name="Notification_Body_AppointmentRescheduled" xml:space="preserve"><value>Una cita tiene un nuevo horario.</value></data>
+  <data name="Notification_Body_RescheduleRequested" xml:space="preserve"><value>Se solicitó un nuevo horario para una cita.</value></data>
+  <data name="Notification_Body_RescheduleApproved" xml:space="preserve"><value>Se aprobó el horario solicitado para la cita.</value></data>
+  <data name="Notification_Body_RescheduleDeclined" xml:space="preserve"><value>Se rechazó el horario solicitado para la cita.</value></data>
+  <data name="Notification_Time_Now" xml:space="preserve"><value>ahora</value></data>
+  <data name="Notification_Time_MinutesAgo" xml:space="preserve"><value>hace {0} min</value></data>
+  <data name="Notification_Time_HoursAgo" xml:space="preserve"><value>hace {0} h</value></data>
+  <data name="Notification_Time_DaysAgo" xml:space="preserve"><value>hace {0} d</value></data>
+  <data name="Notification_Date_Today" xml:space="preserve"><value>Hoy</value></data>
+  <data name="Notification_Date_Yesterday" xml:space="preserve"><value>Ayer</value></data>
+  <data name="Notification_Empty_Unread" xml:space="preserve"><value>No tienes notificaciones sin leer.</value></data>
+  <data name="Notification_Empty_All" xml:space="preserve"><value>Aún no tienes notificaciones. Aquí verás novedades sobre tus citas.</value></data>
+  <data name="Notification_Unread_Singular" xml:space="preserve"><value>{0} sin leer</value></data>
+  <data name="Notification_Unread_Plural" xml:space="preserve"><value>{0} sin leer</value></data>
+  <data name="Notification_Filter_All" xml:space="preserve"><value>Mostrar todas</value></data>
+  <data name="Notification_Filter_Unread" xml:space="preserve"><value>Solo sin leer</value></data>
+  <data name="Notification_LoadFailure" xml:space="preserve"><value>No se pudieron cargar las notificaciones. Revisa tu conexión e inténtalo de nuevo.</value></data>
+  <data name="Notification_MarkAll_Singular" xml:space="preserve"><value>Se marcó {0} notificación como leída</value></data>
+  <data name="Notification_MarkAll_Plural" xml:space="preserve"><value>Se marcaron {0} notificaciones como leídas</value></data>
+  <data name="Notification_MarkAll_Failure" xml:space="preserve"><value>No se pudieron marcar tus notificaciones como leídas. Revisa tu conexión e inténtalo de nuevo.</value></data>
+  <data name="Notification_MarkAll_None" xml:space="preserve"><value>No queda nada por marcar como leído.</value></data>
+</root>

@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:strings="clr-namespace:AgendaBuddy.MobileApp.Resources.Strings"
              xmlns:infrastructure="clr-namespace:AgendaBuddy.MobileApp.Infrastructure"
              xmlns:controls="clr-namespace:AgendaBuddy.MobileApp.Controls"
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
              x:Class="AgendaBuddy.MobileApp.Views.RegisterPage"
-             Title="Create Account"
+             Title="{x:Static strings:AppResources.Xaml_CreateAccount}"
              BackgroundColor="{StaticResource BackgroundDark}"
              Shell.NavBarIsVisible="False">
 
@@ -44,11 +45,11 @@
                                    VerticalOptions="Center" />
                         </Frame>
 
-                        <Label Text="Create Account"
+                        <Label Text="{x:Static strings:AppResources.Xaml_CreateAccount}"
                                Style="{StaticResource TitleLarge}"
                                HorizontalOptions="Center" />
 
-                        <Label Text="Start managing your schedule"
+                        <Label Text="{x:Static strings:AppResources.Xaml_StartManagingYourSchedule}"
                                Style="{StaticResource BodySecondary}"
                                HorizontalOptions="Center"
                                Margin="0,4,0,0" />
@@ -57,7 +58,7 @@
                     <!-- Name. Required: it is what the other party sees on a booking. -->
                     <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
                         <VerticalStackLayout Grid.Column="0">
-                            <Label Text="First Name"
+                            <Label Text="{x:Static strings:AppResources.Xaml_FirstName_fe8083f8}"
                                    Style="{StaticResource Caption}"
                                    FontAttributes="Bold"
                                    TextColor="{StaticResource TextSecondary}"
@@ -70,13 +71,13 @@
                             </Frame>
                         </VerticalStackLayout>
                         <VerticalStackLayout Grid.Column="1">
-                            <Label Text="Last Name"
+                            <Label Text="{x:Static strings:AppResources.Xaml_LastName_6a4108c8}"
                                    Style="{StaticResource Caption}"
                                    FontAttributes="Bold"
                                    TextColor="{StaticResource TextSecondary}"
                                    Margin="4,0,0,0" />
                             <Frame Style="{StaticResource InputFrame}">
-                                <Entry Placeholder="Client"
+                                <Entry Placeholder="{x:Static strings:AppResources.Example_LastName}"
                                        Text="{Binding LastName}"
                                        Style="{StaticResource InputStyle}"
                                        AutomationId="RegisterLastNameEntry" />
@@ -85,13 +86,13 @@
                     </Grid>
 
                     <!-- Email -->
-                    <Label Text="Email"
+                    <Label Text="{x:Static strings:AppResources.Xaml_Email}"
                            Style="{StaticResource Caption}"
                            FontAttributes="Bold"
                            TextColor="{StaticResource TextSecondary}"
                            Margin="4,8,0,0" />
                     <Frame Style="{StaticResource InputFrame}">
-                        <Entry Placeholder="you@example.com"
+                        <Entry Placeholder="{x:Static strings:AppResources.Example_Email}"
                                Keyboard="Email"
                                Text="{Binding Email}"
                                Style="{StaticResource InputStyle}"
@@ -100,7 +101,7 @@
 
                     <!-- Phone. Optional, and labelled so, but asked for here because it is the only
                          fallback channel when a session is about to be missed. -->
-                    <Label Text="Phone (optional)"
+                    <Label Text="{x:Static strings:AppResources.Xaml_PhoneOptional}"
                            Style="{StaticResource Caption}"
                            FontAttributes="Bold"
                            TextColor="{StaticResource TextSecondary}"
@@ -114,13 +115,13 @@
                     </Frame>
 
                     <!-- Password -->
-                    <Label Text="Password"
+                    <Label Text="{x:Static strings:AppResources.Xaml_Password}"
                            Style="{StaticResource Caption}"
                            FontAttributes="Bold"
                            TextColor="{StaticResource TextSecondary}"
                            Margin="4,8,0,0" />
                     <Frame Style="{StaticResource InputFrame}">
-                        <Entry Placeholder="At least 8 characters"
+                        <Entry Placeholder="{x:Static strings:AppResources.Xaml_AtLeast8Characters}"
                                IsPassword="True"
                                Text="{Binding Password}"
                                Style="{StaticResource InputStyle}"
@@ -128,13 +129,13 @@
                     </Frame>
 
                     <!-- Confirm Password -->
-                    <Label Text="Confirm Password"
+                    <Label Text="{x:Static strings:AppResources.Xaml_ConfirmPassword}"
                            Style="{StaticResource Caption}"
                            FontAttributes="Bold"
                            TextColor="{StaticResource TextSecondary}"
                            Margin="4,8,0,0" />
                     <Frame Style="{StaticResource InputFrame}">
-                        <Entry Placeholder="Re-enter your password"
+                        <Entry Placeholder="{x:Static strings:AppResources.Xaml_ReEnterYourPassword}"
                                IsPassword="True"
                                Text="{Binding ConfirmPassword}"
                                Style="{StaticResource InputStyle}"
@@ -142,7 +143,7 @@
                     </Frame>
 
                     <!-- Role selection (segmented style) -->
-                    <Label Text="I am a..."
+                    <Label Text="{x:Static strings:AppResources.Xaml_IAmA}"
                            Style="{StaticResource Caption}"
                            FontAttributes="Bold"
                            TextColor="{StaticResource TextSecondary}"
@@ -162,7 +163,7 @@
                                              IsChecked="{Binding IsProvider}"
                                              TextColor="{StaticResource Primary}"
                                              AutomationId="ProviderRadio" />
-                                <Label Text="I offer services"
+                                <Label Text="{x:Static strings:AppResources.Xaml_IOfferServices}"
                                        FontSize="11"
                                        TextColor="{StaticResource TextMuted}"
                                        HorizontalOptions="Center" />
@@ -181,7 +182,7 @@
                                 <RadioButton Content="Customer"
                                              TextColor="{StaticResource TextPrimary}"
                                              AutomationId="CustomerRadio" />
-                                <Label Text="I book services"
+                                <Label Text="{x:Static strings:AppResources.Xaml_IBookServices}"
                                        FontSize="11"
                                        TextColor="{StaticResource TextMuted}"
                                        HorizontalOptions="Center" />
@@ -200,7 +201,7 @@
 
                     <!-- Register button + activity indicator -->
                     <Grid Margin="0,16,0,0">
-                        <controls:SafeButton Text="Create Account"
+                        <controls:SafeButton Text="{x:Static strings:AppResources.Xaml_CreateAccount}"
                                 Style="{StaticResource PrimaryButton}"
                                 Command="{Binding RegisterCommand}"
                                 IsVisible="{Binding IsLoading, Converter={StaticResource InvertedBoolConverter}}"
@@ -216,10 +217,10 @@
                     <Label HorizontalOptions="Center" Margin="0,16,0,0">
                         <Label.FormattedText>
                             <FormattedString>
-                                <Span Text="Already have an account? "
+                                <Span Text="{x:Static strings:AppResources.Xaml_AlreadyHaveAnAccount}"
                                       TextColor="{StaticResource TextMuted}"
                                       FontSize="14" />
-                                <Span Text="Sign In"
+                                <Span Text="{x:Static strings:AppResources.Xaml_SignIn}"
                                       TextColor="{StaticResource Primary}"
                                       FontAttributes="Bold"
                                       FontSize="14">

@@ -10,6 +10,7 @@ namespace AgendaBuddy.MobileApp.Tests.ViewModels;
 /// The catalog is ~120 professions. It is rendered as collapsible letter sections, closed by default, so
 /// the page opens on about two dozen lines instead of a wall of names.
 /// </summary>
+[Collection(nameof(Infrastructure.CultureSensitiveCollection))]
 public class ProfessionsCatalogGroupingTests
 {
     private static IUserSessionService Session(bool isProvider)

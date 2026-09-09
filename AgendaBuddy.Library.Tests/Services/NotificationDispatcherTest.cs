@@ -106,21 +106,61 @@ public class NotificationDispatcherTest
     [Fact]
     public void EveryNotificationTypeHasItsOwnLockScreenSafeWording()
     {
-        var seen = new HashSet<string>(StringComparer.Ordinal);
+        var english = new HashSet<string>(StringComparer.Ordinal);
+        var spanish = new HashSet<string>(StringComparer.Ordinal);
 
         foreach (var type in Enum.GetValues<NotificationType>())
         {
-            var (title, body) = NotificationDispatcher.DisplayText(type);
+            var (title, body) = NotificationDispatcher.DisplayText(type, "en");
+            var (spanishTitle, spanishBody) = NotificationDispatcher.DisplayText(type, "es-MX");
 
             Assert.False(string.IsNullOrWhiteSpace(title));
             Assert.False(string.IsNullOrWhiteSpace(body));
-            seen.Add(title);
+            Assert.False(string.IsNullOrWhiteSpace(spanishTitle));
+            Assert.False(string.IsNullOrWhiteSpace(spanishBody));
+            Assert.NotEqual(title, spanishTitle);
+            Assert.NotEqual(body, spanishBody);
+            english.Add(title);
+            spanish.Add(spanishTitle);
         }
 
         // The two auth types deliberately share one wording ("Security alert"), so the distinct count is
         // members minus one. Every other type must be distinguishable on the lock screen, or a cancellation and
         // a reschedule read identically to somebody deciding whether to open the app.
-        Assert.Equal(Enum.GetValues<NotificationType>().Length - 1, seen.Count);
+        Assert.Equal(Enum.GetValues<NotificationType>().Length - 1, english.Count);
+        Assert.Equal(Enum.GetValues<NotificationType>().Length - 1, spanish.Count);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("fr-FR")]
+    [InlineData("espresso")]
+    public void MissingOrUnsupportedLocaleDefaultsToEnglish(string? locale)
+    {
+        Assert.Equal(
+            NotificationDispatcher.DisplayText(NotificationType.MessageReceived, "en"),
+            NotificationDispatcher.DisplayText(NotificationType.MessageReceived, locale));
+    }
+
+    [Fact]
+    public async Task PushUsesTheRegisteredDevicesLocale()
+    {
+        _deviceTokens.Setup(d => d.GetByEmailAsync(It.IsAny<string>()))
+            .ReturnsAsync(new DeviceTokenEntity
+            {
+                UserEmail = "r@example.com",
+                Token = "device-token",
+                Platform = "android",
+                LanguageCode = "es-MX"
+            });
+
+        await _dispatcher.DispatchAsync(Notification(NotificationType.MessageReceived));
+
+        var expected = NotificationDispatcher.DisplayText(NotificationType.MessageReceived, "es-MX");
+        _push.Verify(p => p.SendAsync(
+            "device-token", expected.Title, expected.Body,
+            It.IsAny<IReadOnlyDictionary<string, string>?>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     // An undeclared type must not fall back to anything content-bearing.

@@ -1,3 +1,5 @@
+using AgendaBuddy.MobileApp.Resources.Strings;
+
 namespace AgendaBuddy.MobileApp.Models;
 
 /// <summary>
@@ -37,15 +39,15 @@ public sealed record CalendarBlock(string Identifier, DateTime Start, DateTime E
         get
         {
             if (IsAllDay && End.Date == Start.Date.AddDays(1))
-                return $"{Start:ddd d MMM} · all day";
+                return $"{Start.ToString("ddd d MMM", AppResources.CurrentCulture)} · {AppResources.GetString("TimeOff_AllDay")}";
 
             if (IsAllDay)
-                return $"{Start:ddd d MMM} – {End.AddDays(-1):ddd d MMM} · all day";
+                return $"{Start.ToString("ddd d MMM", AppResources.CurrentCulture)} – {End.AddDays(-1).ToString("ddd d MMM", AppResources.CurrentCulture)} · {AppResources.GetString("TimeOff_AllDay")}";
 
             if (IsMultiDay)
-                return $"{Start:ddd d MMM, h:mm tt} – {End:ddd d MMM, h:mm tt}";
+                return $"{Start.ToString("g", AppResources.CurrentCulture)} – {End.ToString("g", AppResources.CurrentCulture)}";
 
-            return $"{Start:ddd d MMM} · {Start:h:mm tt} – {End:h:mm tt}";
+            return $"{Start.ToString("ddd d MMM", AppResources.CurrentCulture)} · {Start.ToString("t", AppResources.CurrentCulture)} – {End.ToString("t", AppResources.CurrentCulture)}";
         }
     }
 }

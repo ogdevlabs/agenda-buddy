@@ -12,9 +12,11 @@ public interface IProfessionApiService
 
     Task<bool> AddProfessionsToProviderAsync(string email, List<string> professionNames, CancellationToken ct = default);
 
-    /// <summary>On failure, <see cref="ProfessionRemovalResult.ErrorMessage"/> carries the server's
-    /// reason when one was given (e.g. the active-appointments guard) — null for a generic failure.</summary>
+    /// <summary>On failure, the visible message is localized and the server detail is diagnostic only.</summary>
     Task<ProfessionRemovalResult> RemoveProfessionFromProviderAsync(string email, string professionName, CancellationToken ct = default);
 }
 
-public sealed record ProfessionRemovalResult(bool Success, string? ErrorMessage);
+public sealed record ProfessionRemovalResult(bool Success, MobileError? Error)
+{
+    public string? ErrorMessage => Error?.Message;
+}

@@ -9,29 +9,20 @@ namespace AgendaBuddy.MobileApp.Tests.Infrastructure;
 /// </summary>
 public class AppLanguagesTest
 {
-    /// <summary>
-    /// Spanish is listed and marked unavailable rather than omitted: it is the language this product's market will
-    /// look for first, and a screen listing only English answers "is Spanish coming?" with silence.
-    /// </summary>
     [Fact]
-    public void SpanishIsListedAsATargetLanguage()
+    public void SpanishIsListedAsAnAvailableLanguage()
     {
-        var spanish = Assert.Single(AppLanguages.All.Where(language => language.Code == "es"));
+        var spanish = Assert.Single(AppLanguages.All, language => language.Code == "es-MX");
 
         Assert.Equal("Spanish", spanish.Name);
         Assert.Equal("Español", spanish.NativeName);
+        Assert.True(spanish.IsAvailable);
     }
 
-    /// <summary>
-    /// ⚠️ <b>Spanish must stay unavailable until something actually localises the app.</b> There is no
-    /// resource-string infrastructure here — every user-facing string is a literal in XAML or a view model — so
-    /// flipping this flag would make the app offer a language it renders in English. This test fails the moment
-    /// somebody flips it without doing the work.
-    /// </summary>
     [Fact]
-    public void SpanishIsNotYetSelectable()
+    public void SpanishIsSelectable()
     {
-        Assert.False(AppLanguages.IsSelectable("es"));
+        Assert.True(AppLanguages.IsSelectable("es-MX"));
     }
 
     [Fact]
@@ -42,9 +33,9 @@ public class AppLanguagesTest
     }
 
     [Fact]
-    public void ExactlyOneLanguageIsAvailable()
+    public void BothLanguagesAreAvailable()
     {
-        Assert.Single(AppLanguages.All.Where(language => language.IsAvailable));
+        Assert.Equal(2, AppLanguages.All.Count(language => language.IsAvailable));
     }
 
     /// <summary>An unknown code is not available, so a value stored by a future build cannot be honoured here.</summary>
@@ -72,22 +63,17 @@ public class AppLanguagesTest
         Assert.Equal(AppLanguages.DefaultCode, AppLanguages.Resolve(code).Code);
     }
 
-    /// <summary>
-    /// ⚠️ <b>An unavailable language is refused, not stored.</b> Recording a preference nothing honours is worse
-    /// than refusing it — the user would see Spanish ticked and an English app, and conclude the app is broken
-    /// rather than that the language is not ready.
-    /// </summary>
     [Fact]
-    public async Task SelectingAnUnavailableLanguageDoesNotChangeTheSelection()
+    public async Task SelectingSpanishChangesTheSelection()
     {
         var vm = new LanguageViewModel();
         vm.LoadCommand.Execute(null);
-        var spanish = vm.Languages.Single(language => language.Code == "es");
+        var spanish = vm.Languages.Single(language => language.Code == "es-MX");
 
         await vm.SelectCommand.ExecuteAsync(spanish);
 
-        Assert.Equal("en", vm.SelectedCode);
-        Assert.False(spanish.IsSelected);
+        Assert.Equal("es-MX", vm.SelectedCode);
+        Assert.True(spanish.IsSelected);
     }
 
     [Fact]
@@ -99,7 +85,7 @@ public class AppLanguagesTest
 
         var english = vm.Languages.Single(language => language.Code == "en");
         Assert.True(english.IsSelected);
-        Assert.Single(vm.Languages.Where(language => language.IsSelected));
+        Assert.Single(vm.Languages, language => language.IsSelected);
     }
 
     [Fact]
@@ -113,15 +99,14 @@ public class AppLanguagesTest
         Assert.Equal(AppLanguages.All.Count, vm.Languages.Count);
     }
 
-    /// <summary>An unavailable row has to say why, or it just looks like a row that does not work.</summary>
     [Fact]
-    public void AnUnavailableRowSaysItIsComingRatherThanJustFailingToRespond()
+    public void SpanishRowUsesItsNativeName()
     {
         var vm = new LanguageViewModel();
         vm.LoadCommand.Execute(null);
 
-        var spanish = vm.Languages.Single(language => language.Code == "es");
+        var spanish = vm.Languages.Single(language => language.Code == "es-MX");
 
-        Assert.Contains("coming soon", spanish.Detail, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal("Español", spanish.Detail);
     }
 }

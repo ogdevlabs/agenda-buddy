@@ -41,7 +41,7 @@ public partial class ResetPasswordConfirmViewModel : ObservableObject
     {
         if (NewPassword.Length < 8)
         {
-            ErrorMessage = "Password must be at least 8 characters.";
+            ErrorMessage = AppResources.GetString("Validation_PasswordLength");
             return;
         }
 
@@ -54,11 +54,11 @@ public partial class ResetPasswordConfirmViewModel : ObservableObject
             if (succeeded)
                 ResetSucceeded?.Invoke(this, EventArgs.Empty);
             else
-                ErrorMessage = "That reset link is invalid or has expired.";
+                ErrorMessage = AppResources.GetString("Error_ResetLink");
         }
         catch (HttpRequestException)
         {
-            ErrorMessage = "Could not reach the server. Check your connection and try again.";
+            ErrorMessage = AppResources.Error_ServerUnavailable;
         }
         finally
         {
