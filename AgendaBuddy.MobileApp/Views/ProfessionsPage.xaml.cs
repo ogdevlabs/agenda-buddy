@@ -20,6 +20,11 @@ public partial class ProfessionsPage : ContentPage
         _viewModel.LoadCommand.Execute(null);
     }
 
+    private void OnProfessionSearchSubmitted(object? sender, EventArgs e)
+    {
+        ProfessionSearchBar.Unfocus();
+    }
+
     private async void OnContinueToServicesClicked(object? sender, EventArgs e)
     {
         await Shell.Current.GoToAsync("services");

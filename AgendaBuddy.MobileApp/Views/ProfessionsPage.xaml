@@ -8,6 +8,7 @@
              x:Name="ThisPage"
              Title="{x:Static strings:AppResources.Xaml_Professions}"
              BackgroundColor="{StaticResource BackgroundPage}"
+             HideSoftInputOnTapped="True"
              Shell.NavBarIsVisible="False">
 
     <ContentPage.Resources>
@@ -71,9 +72,12 @@
                 <BoxView HeightRequest="0.5" Color="{StaticResource BorderLight}" IsVisible="{Binding IsProvider}" />
 
                 <!-- Catalog search -->
-                <SearchBar Text="{Binding SearchText}" Placeholder="{x:Static strings:AppResources.Xaml_SearchProfessions}"
+                <SearchBar x:Name="ProfessionSearchBar"
+                           Text="{Binding SearchText}" Placeholder="{x:Static strings:AppResources.Xaml_SearchProfessions}"
                            BackgroundColor="White" TextColor="{StaticResource TextPrimary}"
                            PlaceholderColor="{StaticResource TextMuted}" CancelButtonColor="{StaticResource Primary}"
+                           ReturnType="Search"
+                           SearchButtonPressed="OnProfessionSearchSubmitted"
                            AutomationId="ProfessionSearchBar" />
 
             </VerticalStackLayout>
