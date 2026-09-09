@@ -1,4 +1,5 @@
 using System.Text.Json;
+using AgendaBuddy.Library.Services;
 using AgendaBuddy.MobileApp.Routing;
 using Xunit;
 
@@ -54,5 +55,34 @@ public class MessagingRouteBuilderTests
 
         Assert.Equal(HttpMethod.Post, route.Method);
         Assert.Equal("api/v1/messages/m1/read", route.Path);
+    }
+
+    [Fact]
+    public void MarkThreadRead_BuildsPostByCounterpartEmail()
+    {
+        var route = MessagingRouteBuilder.MarkThreadRead("alice@example.com");
+
+        Assert.Equal(HttpMethod.Post, route.Method);
+        Assert.Equal("api/v1/messages/thread/alice@example.com/read", route.Path);
+    }
+
+    // Three segments against MarkRead's two, so the routes cannot shadow each other however Minimal API
+    // orders them.
+    [Fact]
+    public void MarkThreadRead_CannotCollideWithMarkRead()
+    {
+        var thread = MessagingRouteBuilder.MarkThreadRead("alice@example.com").Path;
+        var single = MessagingRouteBuilder.MarkRead("m1").Path;
+
+        Assert.Equal(4, thread.Split('/').Length - 2);
+        Assert.NotEqual(thread.Split('/').Length, single.Split('/').Length);
+    }
+
+    // The compose box, the send handler and the route all cap the body, and they must agree — the client
+    // constant is what stops a message being sent only to be refused.
+    [Fact]
+    public void MaxBodyLength_MatchesTheServersCap()
+    {
+        Assert.Equal(MessageService.MaxBodyLength, MessagingRouteBuilder.MaxBodyLength);
     }
 }

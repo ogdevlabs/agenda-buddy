@@ -160,20 +160,30 @@
                                                FontSize="13"
                                                TextColor="{StaticResource iOSGray}"
                                                HorizontalOptions="End" />
-                                        <!-- Unread badge -->
-                                        <Grid IsVisible="{Binding HasUnread}"
-                                              HorizontalOptions="End">
-                                            <BoxView CornerRadius="10"
-                                                     WidthRequest="22"
-                                                     HeightRequest="22"
-                                                     Color="{StaticResource iOSBlue}" />
-                                            <Label Text="{Binding UnreadCount}"
+                                        <!--
+                                            The pill GROWS with its label rather than being a fixed 22pt circle
+                                            the text is clipped by: a thread with 252 unread rendered as a
+                                            cropped "252". UnreadLabel caps the text itself at "99+", so the
+                                            pill never has to be wide enough for four digits.
+                                        -->
+                                        <Border IsVisible="{Binding HasUnread}"
+                                                HorizontalOptions="End"
+                                                BackgroundColor="{StaticResource iOSBlue}"
+                                                StrokeThickness="0"
+                                                Stroke="Transparent"
+                                                Padding="7,2"
+                                                MinimumWidthRequest="22"
+                                                MinimumHeightRequest="22">
+                                            <Border.StrokeShape>
+                                                <RoundRectangle CornerRadius="11" />
+                                            </Border.StrokeShape>
+                                            <Label Text="{Binding UnreadLabel}"
                                                    FontSize="12"
                                                    FontAttributes="Bold"
                                                    TextColor="White"
                                                    HorizontalOptions="Center"
                                                    VerticalOptions="Center" />
-                                        </Grid>
+                                        </Border>
                                     </VerticalStackLayout>
                                 </Grid>
 

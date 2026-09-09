@@ -1,0 +1,36 @@
+meta {
+  name: 5 Mark thread read
+  type: http
+  seq: 5
+}
+post {
+  url: {{gatewayUrl}}/api/v1/messages/thread/{{customerEmail}}/read
+  body: none
+}
+tests {
+  test("200 with the number of messages marked", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody()).to.be.a("number");
+  });
+}
+docs {
+  **The whole conversation in one write.** Opening a thread marks everything the counterpart sent read,
+  and the client used to do that with one request — and one server-side read-then-replace — per message,
+  so a thread with 250 unread messages was 250 sequential round trips behind a spinner.
+
+  Keyed on the **counterpart's email**, exactly like `2 Get thread`: the server derives `thread_id` by
+  sorting both addresses, so the caller always supplies one side and a thread between two other people
+  has no representation in this URL space.
+
+  Three path segments, so it cannot collide with the two-segment `{{messageId}}/read` route.
+
+  **No ownership guard and no subscription check, deliberately.** The caller's own `sub` claim is one
+  side of the derived thread id *and* the `recipient_email` in the update filter, so this can only ever
+  clear rows addressed to the caller — there is no address in the request to substitute. Same reasoning
+  as `8-Notifications/4 Mark all read`.
+
+  `200 OK` with a bare integer: the count, so a client can word "nothing left to mark" differently from
+  "could not reach the server" — those are indistinguishable if both arrive as `0`. An unknown
+  counterpart is `200` with `0`, not `404`: answering differently would report whether a conversation
+  exists.
+}

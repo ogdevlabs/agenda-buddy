@@ -20,4 +20,16 @@ public interface IMessagingApiService
     Task<MessageSendResult> SendMessageAsync(string recipientEmail, string body, CancellationToken ct = default);
 
     Task<MessageSummary?> MarkReadAsync(string id, CancellationToken ct = default);
+
+    /// <summary>
+    /// Marks every message the counterpart sent in this thread as read, in one request, and answers how many
+    /// changed — or <c>null</c> when the server could not be reached.
+    /// </summary>
+    /// <remarks>
+    /// <c>long?</c> rather than <c>long</c> for the same reason <c>GetUnreadCountAsync</c> is: a caller cannot
+    /// word "the server was not reached" and "there was nothing left to mark" differently if both arrive as 0.
+    /// Replaces a per-message loop that issued one request — and one server-side read-then-replace — for every
+    /// unread message in the thread.
+    /// </remarks>
+    Task<long?> MarkThreadReadAsync(string counterpartEmail, CancellationToken ct = default);
 }

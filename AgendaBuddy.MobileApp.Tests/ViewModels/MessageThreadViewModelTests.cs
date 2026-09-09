@@ -1,4 +1,5 @@
 using AgendaBuddy.MobileApp.Models;
+using AgendaBuddy.MobileApp.Routing;
 using AgendaBuddy.MobileApp.Services;
 using AgendaBuddy.MobileApp.ViewModels;
 using Moq;
@@ -128,6 +129,103 @@ public class MessageThreadViewModelTests
         Assert.Empty(vm.ErrorMessage);
         Assert.Empty(vm.NewMessageBody);
         Assert.Empty(vm.Messages);
+    }
+
+    // Opening a thread marks its unread set read in ONE request. The previous loop issued one request — and
+    // one server-side read-then-replace — per unread message, all awaited before the spinner cleared, so a
+    // busy thread left the screen looking frozen for as many round trips as it had unread messages.
+    [Fact]
+    public async Task LoadThreadAsync_MarksTheWholeThreadReadInOneRequest()
+    {
+        var incoming = Enumerable.Range(0, 40)
+            .Select(i => new MessageSummary
+            {
+                Id = $"m{i}",
+                SenderEmail = "alice@example.com",
+                RecipientEmail = "me@example.com",
+                Body = $"msg {i}",
+                IsRead = false
+            })
+            .ToList();
+
+        var service = new Mock<IMessagingApiService>();
+        service.Setup(s => s.GetThreadAsync("alice@example.com", It.IsAny<CancellationToken>()))
+               .ReturnsAsync(incoming);
+        service.Setup(s => s.MarkThreadReadAsync("alice@example.com", It.IsAny<CancellationToken>()))
+               .ReturnsAsync(40);
+
+        var vm = new MessageThreadViewModel(service.Object) { RecipientEmail = "alice@example.com" };
+
+        await vm.LoadThreadCommand.ExecuteAsync(null);
+
+        service.Verify(s => s.MarkThreadReadAsync("alice@example.com", It.IsAny<CancellationToken>()), Times.Once);
+        service.Verify(s => s.MarkReadAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        Assert.All(vm.Messages, m => Assert.True(m.IsRead));
+    }
+
+    // A refusal leaves the rows unread, so the badge cannot drift from what a reload reports.
+    [Fact]
+    public async Task LoadThreadAsync_ServerCouldNotBeReached_LeavesTheRowsUnread()
+    {
+        var incoming = new List<MessageSummary>
+        {
+            new() { Id = "m1", SenderEmail = "alice@example.com", Body = "hi", IsRead = false }
+        };
+
+        var service = new Mock<IMessagingApiService>();
+        service.Setup(s => s.GetThreadAsync("alice@example.com", It.IsAny<CancellationToken>()))
+               .ReturnsAsync(incoming);
+        service.Setup(s => s.MarkThreadReadAsync("alice@example.com", It.IsAny<CancellationToken>()))
+               .ReturnsAsync((long?)null);
+
+        var vm = new MessageThreadViewModel(service.Object) { RecipientEmail = "alice@example.com" };
+
+        await vm.LoadThreadCommand.ExecuteAsync(null);
+
+        Assert.All(vm.Messages, m => Assert.False(m.IsRead));
+    }
+
+    // Nothing unread means no write at all — the same rule the notifications mark-read follows.
+    [Fact]
+    public async Task LoadThreadAsync_NothingUnread_DoesNotWrite()
+    {
+        var incoming = new List<MessageSummary>
+        {
+            new() { Id = "m1", SenderEmail = "alice@example.com", Body = "hi", IsRead = true }
+        };
+
+        var service = new Mock<IMessagingApiService>();
+        service.Setup(s => s.GetThreadAsync("alice@example.com", It.IsAny<CancellationToken>()))
+               .ReturnsAsync(incoming);
+
+        var vm = new MessageThreadViewModel(service.Object) { RecipientEmail = "alice@example.com" };
+
+        await vm.LoadThreadCommand.ExecuteAsync(null);
+
+        service.Verify(
+            s => s.MarkThreadReadAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    // Refused in the handler, and the text is KEPT so it can be shortened rather than lost.
+    [Fact]
+    public async Task SendAsync_BodyOverTheCap_IsRefusedAndTheTextIsKept()
+    {
+        var service = new Mock<IMessagingApiService>();
+        var tooLong = new string('a', MessagingRouteBuilder.MaxBodyLength + 1);
+
+        var vm = new MessageThreadViewModel(service.Object)
+        {
+            RecipientEmail = "alice@example.com",
+            NewMessageBody = tooLong
+        };
+
+        await vm.SendCommand.ExecuteAsync(null);
+
+        Assert.Contains("too long", vm.ErrorMessage, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(tooLong, vm.NewMessageBody);
+        service.Verify(
+            s => s.SendMessageAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            Times.Never);
     }
 
     // ---------------------------------------------------------------------------

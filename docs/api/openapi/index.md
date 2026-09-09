@@ -82,6 +82,7 @@ Derived from the committed `*.json` specs in this directory (2026-09-08).
 - `GET    /api/v1/messages`
 - `POST   /api/v1/messages`
 - `GET    /api/v1/messages/thread/{counterpartEmail}`
+- `POST   /api/v1/messages/thread/{counterpartEmail}/read`
 - `POST   /api/v1/messages/{id}/read`
 - `GET    /api/v1/notifications`
 - `GET    /api/v1/notifications/unread-count`

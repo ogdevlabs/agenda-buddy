@@ -66,6 +66,14 @@ public class MessageModule : ICarterModule
                 if (string.Equals(caller, request.RecipientEmail, StringComparison.OrdinalIgnoreCase))
                     return TypedResults.BadRequest("You cannot message yourself.");
 
+                // Refused, never truncated: a message silently cut in half is worse than one that was not
+                // sent, because the sender is told it arrived. Nothing else caps this — the store accepted a
+                // 62,000-character body, and the thread view renders every body as wrapped text in a 280pt
+                // bubble.
+                if (request.Body.Length > MessageService.MaxBodyLength)
+                    return TypedResults.BadRequest(
+                        $"body must be {MessageService.MaxBodyLength} characters or fewer.");
+
                 // A subscription is required in BOTH directions. The provider directory is browsable by
                 // design so customers can find someone to book, but browsable must not imply messageable —
                 // otherwise every provider's inbox becomes a cold-outreach target and the directory becomes
@@ -117,7 +125,12 @@ public class MessageModule : ICarterModule
                 string id, ClaimsPrincipal user, IMessageService service, IRepository<MessageEntity> repository) =>
             {
                 var caller = user.FindFirstValue(ClaimTypes.NameIdentifier);
-                var message = await repository.FindOneAsync(new BsonDocument("_id", new ObjectId(id)));
+
+                // A malformed id answers like a missing one. `new ObjectId(id)` throws on anything that is not
+                // 24 hex characters, which made a typo a 500 rather than the 403 every other unknown id gets.
+                if (!ObjectId.TryParse(id, out var objectId)) return TypedResults.Forbid();
+
+                var message = await repository.FindOneAsync(new BsonDocument("_id", objectId));
 
                 // A missing message and someone else's answer identically — the same rule the notes routes follow, so
                 // this cannot be used to enumerate message ids.
@@ -128,6 +141,30 @@ public class MessageModule : ICarterModule
                 return TypedResults.NoContent();
             })
             .WithName("MarkMessageRead")
+            .RequireAuthorization();
+
+        // The whole thread in one write. Opening a conversation marks everything the counterpart sent read, and
+        // the client did that with one request — and one read-then-replace — per message, so a thread with 250
+        // unread messages was 250 sequential round trips behind a spinner.
+        //
+        // No ownership guard and no subscription check are needed: the caller's own claim is one side of the
+        // thread id AND the recipient in the update filter, so this can only ever clear rows addressed to the
+        // caller. There is no address in the request to substitute — the same reasoning as the notifications
+        // read-all route.
+        messages.MapPost("/thread/{counterpartEmail}/read",
+                async Task<Results<Ok<int>, ForbidHttpResult>> (
+                    string counterpartEmail, ClaimsPrincipal user, IMessageService service) =>
+                {
+                    var caller = user.FindFirstValue(ClaimTypes.NameIdentifier);
+                    if (caller is null) return TypedResults.Forbid();
+
+                    var marked = await service.MarkThreadReadAsync(caller, counterpartEmail);
+
+                    // The count, so the client can word "nothing left to mark" differently from "could not
+                    // reach the server" — a caller cannot tell those apart if both arrive as 0.
+                    return TypedResults.Ok((int)marked);
+                })
+            .WithName("MarkMessageThreadRead")
             .RequireAuthorization();
     }
     /// <summary>

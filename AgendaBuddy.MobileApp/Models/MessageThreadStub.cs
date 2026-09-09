@@ -37,6 +37,16 @@ public class MessageThreadStub
     public string TimeAgo => FormatTimeAgo(LastMessageAt);
     public bool HasUnread => UnreadCount > 0;
 
+    /// <summary>
+    /// The unread count as the badge draws it, capped at <c>99+</c>.
+    /// </summary>
+    /// <remarks>
+    /// A raw count is unbounded and the badge is a small pill, so a busy thread rendered a clipped "252". The
+    /// exact number past 99 tells the reader nothing they act on differently — the same reason the header's
+    /// notification bell caps.
+    /// </remarks>
+    public string UnreadLabel => UnreadCount > 99 ? "99+" : UnreadCount.ToString();
+
     private static string FormatTimeAgo(DateTime dt)
     {
         var diff = DateTime.Now - dt;

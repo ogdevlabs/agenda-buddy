@@ -26,7 +26,10 @@ docs {
   There is **no sender field** in the request. The sender is the caller's `sub` claim, which is the
   cheapest guarantee that no future change trusts one from the body.
 
-  Other refusals: `400` for a missing `recipientEmail` or `body`, and `400` for messaging yourself.
+  Other refusals: `400` for a missing `recipientEmail` or `body`, `400` for messaging yourself, and
+  `400` for a `body` over **4000 characters** — refused, never truncated, because a message silently cut
+  in half is worse than one that was not sent: the sender is told it arrived. The compose box caps at the
+  same number so a client does not send one to be refused.
 
   `201 Created` returns the stored `MessageEntity`, with the server-derived `threadId`. Sending also
   dispatches a `MessageReceived` notification to the recipient — in-app inbox **and** push,
