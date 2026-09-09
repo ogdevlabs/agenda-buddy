@@ -4,6 +4,14 @@ All notable changes to this project are documented in this file, in [Keep a Chan
 
 ## [Unreleased]
 
+## [0.18.0] - 2026-09-09
+
+### Added
+
+- Providers can dismiss the profession-search keyboard by tapping outside the field or pressing the keyboard's
+  Search action. The query and selected professions remain intact, and the pinned Save action becomes reachable
+  again on iOS.
+
 ## [0.17.0] - 2026-09-09
 
 ### Added
@@ -411,7 +419,8 @@ All notable changes to this project are documented in this file, in [Keep a Chan
 - A `null` `EmailProvider` on `POST /appointments` passes both Validot and the ownership guard, then throws downstream during provider lookup, surfacing as an unhandled 500 rather than a 400 — `agenda-buddy-cy2`.
 - Mapster is approved (ADR-049) for this line of work but has zero call sites yet.
 
-[Unreleased]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.17.0...HEAD
+[Unreleased]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.18.0...HEAD
+[0.18.0]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.17.0...v0.18.0
 [0.17.0]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.16.0...v0.17.0
 [0.16.0]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.15.0...v0.16.0
 [0.15.0]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.14.0...v0.15.0
