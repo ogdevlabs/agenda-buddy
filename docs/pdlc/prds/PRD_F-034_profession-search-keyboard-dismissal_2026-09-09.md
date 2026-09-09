@@ -3,7 +3,7 @@
 **Feature ID:** F-034
 **Beads:** `agenda-buddy-26r`
 **Date:** 2026-09-09
-**Status:** Complete — pending Ship
+**Status:** Shipped in `v0.18.0` via PR #152
 
 ## Problem
 
