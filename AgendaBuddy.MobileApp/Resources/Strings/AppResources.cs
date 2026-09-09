@@ -8,8 +8,13 @@ public static class AppResources
     private static readonly ResourceManager ResourceManager = new(
         "AgendaBuddy.MobileApp.Resources.Strings.AppResources",
         typeof(AppResources).Assembly);
+    private static readonly AsyncLocal<CultureInfo?> LocalCulture = new();
 
-    public static CultureInfo? Culture { get; set; }
+    public static CultureInfo? Culture
+    {
+        get => LocalCulture.Value;
+        set => LocalCulture.Value = value;
+    }
 
     public static CultureInfo CurrentCulture => Culture ?? CultureInfo.CurrentCulture;
 
