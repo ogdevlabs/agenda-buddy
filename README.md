@@ -1,6 +1,8 @@
-# Agenda Buddy
+# AgendaMe
 
-Scheduling and appointment management platform for independent service providers — fitness coaches, tutors, therapists, software instructors, and anyone who offers personalized one-to-one sessions. Agenda Buddy replaces the juggle of calendar apps, contact spreadsheets, and direct messaging with a single place to manage your service catalog, client roster, bookings, and communications — reachable from a real mobile client, not just an API.
+AgendaMe is a scheduling and appointment management platform for independent service providers — fitness coaches, tutors, therapists, software instructors, and anyone who offers personalized one-to-one sessions. It replaces the juggle of calendar apps, contact spreadsheets, and direct messaging with one place to manage a service catalog, client roster, bookings, and communications through a native mobile app.
+
+The repository and .NET projects retain the `AgendaBuddy` name; `AgendaMe` is the user-facing product name.
 
 ---
 
@@ -11,11 +13,11 @@ Scheduling and appointment management platform for independent service providers
 | **Identity & Auth** | JWT RS256 authentication, per-IP rate limiting and self-clearing lockout on login/register, single-use refresh-token rotation |
 | **Provider onboarding** | Sign up, define a profession, add services, and accept bookings |
 | **Customer onboarding** | Sign up, discover providers, and subscribe to one |
-| **Appointment lifecycle** | Book, update, cancel — status transitions (`Requested`→`Booked`→`Completed`) are **server-owned**, applied through a dedicated route, never client-asserted |
-| **Calendar & availability** | Provider sets available hours; customers can only book genuinely open slots; both routes are ownership-guarded |
+| **Appointment lifecycle** | Request, book, reschedule, complete, and soft-cancel appointments; status transitions are **server-owned**, never client-asserted |
+| **Calendar & availability** | Providers configure per-weekday hours and time off; authenticated customers can see free slots while appointment details remain owner-only |
 | **Session notes** | Provider attaches private notes to each appointment — visible only to the provider |
-| **Provider–customer messaging** | In-app messaging, threaded, with a mark-read flow |
-| **Notifications** | In-app notification list (storage-only today — nothing yet triggers a `SendAsync`) |
+| **Provider–customer messaging** | Subscription-gated, MongoDB-backed threaded messaging with per-message and per-thread mark-read flows |
+| **Notifications** | Best-effort in-app, email, and push delivery; unread badge/filtering plus per-item and bulk mark-read flows |
 | **Reporting dashboard** | Booking volume and completion counts; revenue is explicitly reported as unavailable rather than approximated (an appointment doesn't record which service it's for) |
 | **Payments** | Non-charging by default (a recording gateway); real Stripe payment intents only when `Payments:Stripe:ApiKey` is configured |
 | **Mobile client (iOS + Android)** | .NET MAUI app that reaches every capability above through a single Gateway address, with no fabricated fallback data |
@@ -39,7 +41,7 @@ Profession   — profession/category seed data (anonymous reference data)
 Gateway      — YARP reverse proxy; the mobile client's only address
 ```
 
-All domain entities and services live in a shared **`Library`** project consumed by every microservice (`Library.ServerAuth` holds JWT validation and ownership guards). Business logic flows through **`EventAndCommands`** (CQRS via MediatR): API handlers dispatch commands/queries to handlers, which call Library services and persist audit events to a MongoDB EventStore. **Kafka** provides async provider-to-customer messaging via per-provider topics.
+Shared entities, repositories, and domain services live in `AgendaBuddy.Library`; `AgendaBuddy.Library.ServerAuth` holds JWT validation and ownership guards. Six domain services use a four-project Clean Architecture split: thin `*.Api` endpoint modules dispatch MediatR commands and queries to `*.Core`, contracts live in `*.Domain`, and `*.Infrastructure` is intentionally empty until needed. Identity deliberately remains a direct-service exception. `AgendaBuddy.EventAndCommands` now contains only the shared audit EventStore kernel, not domain handlers. Messaging and notification fan-out are synchronous and in-process; there is no message broker.
 
 The **Gateway** is the one thing that changed the shape of this diagram: `MobileApp` does not call the seven domain services directly. It calls the Gateway, which forwards `api/v1/{service}/**` to the matching destination via an explicit route allowlist — resolved live from Aspire service discovery, so a backend's dynamic port reassignment never needs the Gateway to restart. The Gateway has no business logic and does not validate the caller's JWT — it forwards it byte-for-byte, so the destination authenticates and authorizes exactly as it would a direct call.
 
@@ -62,12 +64,12 @@ The **Gateway** is the one thing that changed the shape of this diagram: `Mobile
      └──────────────────┬────────────────────────────┘
                         │
           ┌─────────────▼──────────────┐
-          │   EventAndCommands (CQRS)  │
-          │   MediatR · EventStore     │
+          │  Service *.Core handlers  │
+          │  MediatR · audit writes   │
           └─────────────┬──────────────┘
                         │
           ┌─────────────▼──────────────┐
-          │   MongoDB  +  Kafka        │
+          │          MongoDB           │
           └────────────────────────────┘
 ```
 
@@ -84,12 +86,12 @@ Every service (and the Gateway) calls `AddServiceDefaults()` exactly once, which
 | Orchestration | .NET Aspire 13 — hosting-only (`AgendaBuddy.AppHost` + `AgendaBuddy.ServiceDefaults`) |
 | Gateway | YARP reverse proxy |
 | Database | MongoDB (MongoDB.Driver **pinned at 2.25.0** — do not add `Aspire.MongoDB.Driver`, see `CLAUDE.md`) |
-| Messaging | Kafka (Confluent) + MediatR (CQRS) |
+| Messaging | MongoDB-backed messaging + synchronous in-process notification dispatch |
 | Caching | `IDistributedCache` — cache-aside pattern, 5-min TTL |
 | Auth | JWT RS256 — `AddAgendaBuddyAuthentication()`, keys via Aspire secret parameters |
 | Payments | Stripe.net — non-charging recording gateway by default |
 | Mobile | .NET MAUI (iOS + Android), routed through the Gateway |
-| Testing | xUnit — **867 tests** across three separate suites (see [Build & test](#build--test)) |
+| Testing | xUnit across three separate suites; no single command runs all of them (see [Build & test](#build--test)) |
 | Infrastructure | Aspire AppHost (primary) · Docker Compose (legacy fallback) · GitHub Actions CI |
 | Observability | OpenTelemetry → Aspire dashboard, with a PII-redacting span processor |
 
@@ -101,22 +103,24 @@ Every service (and the Gateway) calls `AddServiceDefaults()` exactly once, which
 agenda-buddy/
 ├── AgendaBuddy.AppHost/        # Aspire composition root — declares every resource, local vs. cloud shape
 ├── AgendaBuddy.ServiceDefaults/# OpenTelemetry, health/liveness, service discovery, HTTP resilience
-├── Library/                    # Shared entities, services, repository, tools
-├── Library.ServerAuth/         # JWT validation, ownership guards
-├── EventAndCommands/           # CQRS: commands, queries, handlers, EventStore
-├── Kafka/                      # KafkaClient — topic creation (Confluent)
-├── Booking/, Calendar/, Customer/, Provider/, Services/, Profession/, Identity/
-│                                # seven independent microservices
-├── Gateway/                    # YARP reverse proxy — MobileApp's only base address
-├── MobileApp/                  # .NET MAUI client (iOS + Android)
+├── AgendaBuddy.Library/        # Shared entities, services, repositories, tools
+├── AgendaBuddy.Library.ServerAuth/ # JWT validation and ownership guards
+├── AgendaBuddy.EventAndCommands/   # EventStore and audit infrastructure
+├── AgendaBuddy.{Domain}.Api/   # HTTP endpoint and DI wiring for six split services
+├── AgendaBuddy.{Domain}.Core/  # MediatR handlers for those services
+├── AgendaBuddy.{Domain}.Domain/# Per-service commands, queries, DTOs and envelopes
+├── AgendaBuddy.{Domain}.Infrastructure/ # Intentionally empty until needed
+├── AgendaBuddy.Identity/       # Direct IdentityService-based auth service
+├── AgendaBuddy.Gateway/        # YARP reverse proxy; MobileApp's only backend address
+├── AgendaBuddy.MobileApp/      # .NET MAUI client (iOS + Android)
 ├── *.Tests/                    # xUnit test projects mirroring each service
 ├── AgendaBuddy.IntegrationTests/ # real services over HTTP against a MongoDB Testcontainer
-├── MobileApp.Tests/             # MobileApp tests under a net10.0 fallback TFM (no Maui bootstrap needed)
+├── AgendaBuddy.MobileApp.Tests/ # Mobile tests under a net10.0 fallback TFM
 ├── bruno/agenda-buddy/          # Bruno API collection (hits the 7 services directly, bypassing the Gateway)
 ├── docs/api/openapi/            # generated OpenAPI specs — regenerate with scripts/generate-openapi.sh
 ├── compose/                     # Docker Compose data fixtures
 ├── docs/pdlc/                   # PDLC memory: CONSTITUTION, OVERVIEW, ROADMAP, STATE, episodes
-└── docker-compose.yml           # legacy Kafka + Zookeeper + Schema Registry + services
+└── docker-compose.yml           # incomplete legacy fallback; AppHost is authoritative
 ```
 
 ---
@@ -126,18 +130,18 @@ agenda-buddy/
 ### Prerequisites
 
 - [.NET 10 SDK](https://dotnet.microsoft.com/download)
-- **A running container runtime — [Docker Desktop](https://www.docker.com/products/docker-desktop), Podman, or Rancher Desktop.** This is a hard requirement for the local path, not a convenience: the AppHost starts MongoDB and Kafka as containers. Nothing runs locally without it. *(No Aspire workload install is needed — Aspire ships as NuGet packages, so `dotnet restore` is the only other prerequisite. If you're on Rancher Desktop, `docker` lives at `~/.rd/bin`, not on `PATH` — `export PATH="$HOME/.rd/bin:$PATH"` first.)*
+- **A running container runtime — [Docker Desktop](https://www.docker.com/products/docker-desktop), Podman, or Rancher Desktop.** The AppHost provisions MongoDB as a container. *(No Aspire workload install is needed — Aspire ships as NuGet packages, so `dotnet restore` is the only other prerequisite. If you're on Rancher Desktop, `docker` lives at `~/.rd/bin`, not on `PATH` — `export PATH="$HOME/.rd/bin:$PATH"` first.)*
 - To run the mobile client: the MAUI workload (`dotnet workload install maui`) and, for iOS, Xcode + a simulator.
 
 ### Run locally
 
-One command starts everything — MongoDB, Kafka, all seven API services, and the Gateway:
+One command starts MongoDB, all seven API services, and the Gateway:
 
 ```bash
 dotnet run --project AgendaBuddy.AppHost
 ```
 
-The Aspire dashboard opens with all ten resources, their health, logs, traces, and metrics. `Ctrl+C` stops everything (see the shutdown gotcha below).
+The Aspire dashboard opens with the resource graph, health, logs, traces, and metrics. `Ctrl+C` stops the AppHost (see the shutdown gotcha below).
 
 To also launch the mobile app against this stack, in an iOS simulator, with the Gateway's address auto-discovered:
 
@@ -186,7 +190,7 @@ You do **not** need to set a MongoDB connection string: the AppHost injects it.
 
 ### Troubleshooting the first run
 
-**"Docker is not running" / the resources never leave `Starting`.** The most common first-run failure by a wide margin. Start Docker Desktop (or `podman machine start` / Rancher Desktop) and re-run. The AppHost cannot provision MongoDB or Kafka without it.
+**"Docker is not running" / the resources never leave `Starting`.** Start Docker Desktop (or `podman machine start` / Rancher Desktop) and re-run. The AppHost cannot provision MongoDB without it.
 
 **Every service sits in `Waiting` forever, with nothing logged.** A service is only scheduled once its parameters resolve and the resources it waits for are healthy — neither of which is reported as an error, which is what makes this silent. Two causes, both diagnosable from the dashboard's parameter resources:
 
@@ -198,7 +202,7 @@ docker volume ls | grep mongodb-data          # find it: agendabuddy.apphost-<ha
 docker volume rm <name>                       # destroys local dev data only
 ```
 
-**A service fails immediately with `No MongoDB connection string found. Set one of: …`.** You are running that service directly (`dotnet run --project Booking`) rather than through the AppHost. Either start the AppHost instead, or export the connection string yourself:
+**A service fails immediately with `No MongoDB connection string found. Set one of: …`.** You are running that service directly (`dotnet run --project AgendaBuddy.Booking.Api`) rather than through the AppHost. Either start the AppHost instead, or export the connection string yourself:
 
 ```bash
 export ConnectionStrings__mongodb='mongodb://localhost:27017'
@@ -206,7 +210,7 @@ export ConnectionStrings__mongodb='mongodb://localhost:27017'
 
 The committed Atlas credential has been removed from every `appsettings*.json` (it is **still recoverable from git history and still valid — rotation is a human-only action**, see [ISSUE-002](docs/issues/ISSUE-002-atlas-credential-rotation.md)), and the keys were intentionally left in place as empty slots. So a standalone or Compose run now fails fast with that message instead of silently connecting to a shared cluster.
 
-**Shutting down leaves orphaned processes.** `SIGTERM` on the AppHost has repeatedly left every service process running after the AppHost itself exits (a known, recurring gotcha — not fixed, worked around). If `dotnet run --project Booking` fails with "address already in use" after a `Ctrl-C`, find and kill the orphans:
+**Shutting down leaves orphaned processes.** `SIGTERM` on the AppHost has repeatedly left every service process running after the AppHost itself exits (a known, recurring gotcha — not fixed, worked around). If `dotnet run --project AgendaBuddy.Booking.Api` fails with "address already in use" after a `Ctrl-C`, find and kill the orphans:
 
 ```bash
 pkill -f "agenda-buddy/.*bin/Debug"
@@ -214,18 +218,18 @@ pkill -f "agenda-buddy/.*bin/Debug"
 
 ### Talking to the app: only through the Gateway
 
-`MobileApp` is the only client, and it reaches the backend through the Gateway, and **only** the Gateway. If you're testing with `curl` or Bruno, do the same — prefix every route with `api/v1/{service}`, hit the Gateway's dashboard-reported port, and expect a `gateway-no-route` 404 on anything outside its allowlist. The `bruno/agenda-buddy/` collection deliberately bypasses the Gateway (it hits each service's own port) for lower-level contract testing — see its `Local (Aspire AppHost)` environment for the per-service ports, and remember that a route the Gateway doesn't route is still directly reachable there.
+`MobileApp` is the only client, and it reaches the backend through the Gateway, and **only** the Gateway. For `curl` or Bruno, prefix every route with `api/v1/{service}` and use `http://localhost:6080` during an AppHost run. The `bruno/agenda-buddy/` collection follows that path for application requests; only its health folder calls services directly because `/health` and `/alive` are deliberately outside the Gateway allowlist.
 
 ### Ports
 
-The AppHost assigns host ports **dynamically** — services no longer bind the old hardcoded `localhost:603x`. Read the actual URL for a service (or the Gateway) from the dashboard. Two consequences:
+The AppHost assigns all seven service host ports dynamically. The Gateway is the deliberate exception: its local host port is pinned to `6080` so the mobile client and Bruno have one stable address. Read direct service URLs from the dashboard only when diagnosing a service or running the Bruno health requests. Two consequences:
 
 - Two people (or two branches) can run the stack simultaneously without colliding.
 - `scripts/seed/seed-mongo.sh` hardcodes `mongo:27017` and needs the assigned port to work. It also targets `ProviderDb` and `CustomerDb`, which no service reads. **Neither is fixed here** — treat that script as stale.
 
-### Docker Compose (retained, superseded)
+### Docker Compose (legacy and incomplete)
 
-`docker-compose.yml` and `docker-compose.override.yml` still work and are kept deliberately, so reverting the Aspire migration is a single `git revert` with no loss of capability. They are no longer the recommended path — they provide no health model, no telemetry, no connection-string injection, and **no Gateway** (the mobile app cannot reach anything through Compose):
+The Compose files are retained as an incomplete legacy fallback. Only Identity is active; several old service entries are commented out, the broker containers are dead configuration, and there is no Gateway. Use the AppHost for a working full stack.
 
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.override.yml up -d
@@ -251,18 +255,14 @@ The Aspire dashboard exposes environment variables, configuration, logs, and tra
 
 ### Deploying to the cloud
 
-**Capability added, not yet exercised.** With the roadmap's planned features shipped, cloud
-deployment wiring is now in place: the AppHost's resource graph, an `azd`/Aspire publisher for
-the Container Apps environment/registry/container apps, and a Terraform layer
-(`infra/terraform/`) for the identity and secrets bootstrap `azd` itself has no opinion about.
-The known cloud-ingress-topology bug (every backend service getting public ingress while the
-Gateway got none) is fixed — only the Gateway is externally reachable now, matching the
-architecture since it shipped. **No deployment has actually been run from this repository yet**
-— see [DECISIONS.md](docs/pdlc/memory/DECISIONS.md) (ADR-035, ADR-058) and
-[docs/pdlc/memory/DEPLOYMENTS.md](docs/pdlc/memory/DEPLOYMENTS.md) for current status.
-**Rotating the Atlas credential does not wait for this** — a fresh, uncompromised cluster is used
-for the new deployment instead; the original compromised credential remains separately tracked
-in [ISSUE-002](docs/issues/ISSUE-002-atlas-credential-rotation.md).
+The dev Azure environment is deployed through `azure.yaml`, `.github/workflows/deploy.yml`, and the
+Terraform bootstrap in `infra/terraform/`. A successful `main` pipeline automatically redeploys relevant
+backend changes; an hourly drift workflow compares the deployed SHA with `main` and repairs missed path-filter
+deployments. Only the Gateway has public ingress. See [docs/deployment.md](docs/deployment.md) and
+[DEPLOYMENTS.md](docs/pdlc/memory/DEPLOYMENTS.md) for the current runbook and evidence.
+
+The original Atlas credential committed in git history remains a separate human-owned rotation risk; see
+[ISSUE-002](docs/issues/ISSUE-002-atlas-credential-rotation.md).
 
 → **[docs/deployment.md](docs/deployment.md)** for the full procedure, what is verified, and the list of gaps between this and a production posture.
 
@@ -273,17 +273,17 @@ dotnet restore
 dotnet build --no-restore
 ```
 
-Three separate test commands — **no single command runs all 867 tests**:
+Three separate test commands — no single command runs all suites:
 
 ```bash
-# Backend unit — 468 tests, 13 projects (12 test projects + Gateway itself)
+# Backend tests across the backend solution filter
 dotnet test agenda-buddy-backend.slnf --collect:"XPlat Code Coverage"
 
-# Integration — 234 tests, real services over HTTP against a MongoDB Testcontainer (needs a container runtime)
-dotnet test AgendaBuddy.IntegrationTests/AgendaBuddy.IntegrationTests.csproj
+# Integration tests: real services over HTTP against a MongoDB Testcontainer
+dotnet test AgendaBuddy.IntegrationTests/AgendaBuddy.IntegrationTests.csproj /p:MobileWorkloads=false
 
-# Mobile — 165 tests (158 passing, 7 skipped), no Maui workload needed
-dotnet test MobileApp.Tests/MobileApp.Tests.csproj /p:MobileWorkloads=false
+# Mobile tests; live-Identity acceptance tests skip when the service is unavailable
+dotnet test AgendaBuddy.MobileApp.Tests/AgendaBuddy.MobileApp.Tests.csproj /p:MobileWorkloads=false
 ```
 
 `agenda-buddy-backend.slnf` is the solution minus MobileApp and `AgendaBuddy.IntegrationTests` (the latter is excluded so the unit gate stays Docker-free) — CI runs it as the fast loop. The Integration project has a `ProjectReference` to `MobileApp.csproj`, so always pass `/p:MobileWorkloads=false` when restoring or building it directly, or it pulls in MAUI's android/ios TargetFrameworks and fails on a machine with no MAUI workloads installed.
@@ -312,30 +312,19 @@ The connection string is resolved in this order, first non-empty winning: `Conne
 - **Repository pattern** — all DB access via `IRepository<T>` / `MongoDbRepository<T>`; no raw MongoDB queries outside the repository. `FindOneAndUpdateAsync` is the only partial-update primitive and never upserts
 - **Cache-aside** — `CacheAside` extension on `IDistributedCache` (semaphore-guarded) used for all read-heavy queries. ⚠️ No cache invalidation exists anywhere yet — a provider who finishes onboarding can be absent from discovery for up to 5 minutes
 - **Ownership guard** — `OwnershipGuard.AssertOwner(user, email)` enforces that callers can only mutate their own resources; throws `ForbiddenException` (403) on violation, mapped centrally
-- **CQRS** — all mutations go through MediatR command handlers in `EventAndCommands`; every result is persisted to the EventStore (audit trail)
+- **CQRS** — six domain services dispatch to MediatR handlers in their own `*.Core` projects; command results are persisted to the shared EventStore audit trail
 - **Server-owned state transitions** — appointment status changes only through `AppointmentEntity.TransitionTo`, applied via a dedicated route; `PUT` ignores a client-asserted status
 - **Explicit route allowlist, never a catch-all** — the Gateway's `_routeSpecs` is the single source of truth for what the mobile client can reach; a backend route invisible here is invisible to the app, with nothing failing loudly
-- **Per-provider Kafka topics** — each provider gets a dedicated topic derived from their email prefix
+- **Best-effort notification fan-out** — producers call `INotificationDispatcher`; inbox, email, and push failures are isolated, with no broker, outbox, or retry
 
 ---
 
 ## Roadmap
 
-15 features shipped as of `v0.5.0`. See [docs/pdlc/memory/ROADMAP.md](docs/pdlc/memory/ROADMAP.md) for the full backlog with descriptions, and [docs/pdlc/memory/OVERVIEW.md](docs/pdlc/memory/OVERVIEW.md) for what's actually live today.
-
-| ID | Feature | Status | Version |
-|----|---------|--------|---------|
-| F-001–F-012 | Core platform: auth, onboarding, appointment lifecycle, availability, notifications, messaging, notes, reporting, payments, .NET 10 upgrade, mobile app scaffold | ✅ Shipped | pre-tracking |
-| F-013 | Aspire orchestration (AppHost, dynamic ports, health/telemetry) | ✅ Shipped | `v0.1.0` |
-| F-016 | Public-endpoint security (auth on PII reads, IDOR fixes, pagination, integration-test harness) | ✅ Shipped | `v0.2.0` |
-| F-021 | Identity hardening (atomic refresh, rate limiting, lockout, HSTS ordering) | ✅ Shipped | `v0.3.0` |
-| F-014 | Wired six previously-unreachable capabilities to routes; server-owned appointment status | ✅ Shipped | `v0.4.0` |
-| F-015 | Gateway + mobile contract — `MobileApp` actually reaches the backend now | ✅ Shipped | `v0.5.0` |
-| F-017 | Container/CI hardening, automated security scan gate | 🔵 Planned | next |
-| F-018–F-020 | Full Clean Architecture refactor (staged: harness → pilot on Booking → rollout) | 🔵 Planned | — |
-| F-022–F-025 | Password reset, token revocation, data-subject rights, booking slot-overlap correctness | 🔵 Planned | — |
-
-**Known, tracked gaps:** the Atlas credential in git history is unrotated (P0, human-only — [ISSUE-002](docs/issues/ISSUE-002-atlas-credential-rotation.md), not blocking cloud deployment since a fresh cluster is used instead); cloud deployment wiring exists but has never been run (see "Deploying to the cloud" above); three Dockerfiles publish `net10.0` onto a `dotnet/runtime:8.0` base and cannot run (F-017).
+The detailed feature history and current backlog live in [ROADMAP.md](docs/pdlc/memory/ROADMAP.md); operational
+state lives in [STATE.md](docs/pdlc/memory/STATE.md). Beads is the durable source for open work (`bd ready`,
+`bd list --status=open`). Keeping the full feature table in one place avoids this README becoming a second,
+stale roadmap.
 
 ---
 

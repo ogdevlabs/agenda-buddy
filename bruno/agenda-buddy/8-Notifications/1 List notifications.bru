@@ -22,6 +22,7 @@ docs {
   The body is a `NotificationEntity` array — `id`, `recipientEmail`, `subject`, `body`, `type`,
   `appointmentIdentifier`, `createdAt`, `isRead`. ⚠️ `type` is the **integer** of
   `NotificationType`: 0 Booked · 1 Updated · 2 Cancelled · 3 Completed · 4 PasswordResetRequested ·
-  5 EmailConfirmationRequested · 6 Requested · 7 MessageReceived. The enum is append-only because the
-  integer is what is persisted.
+  5 EmailConfirmationRequested · 6 AppointmentRequested · 7 MessageReceived · 8 AppointmentRescheduled ·
+  9 RescheduleRequested · 10 RescheduleApproved · 11 RescheduleDeclined. The enum is append-only because
+  the integer is what is persisted.
 }

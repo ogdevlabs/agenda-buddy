@@ -24,16 +24,16 @@ the collection name to read it there.
 ## Steps to get started
 
 1. **Start the backend.** From the repo root: `dotnet run --project AgendaBuddy.AppHost` (starts MongoDB,
-   Kafka, all 7 services, and the Gateway — 8 processes). See the repo's `CLAUDE.md` for first-run secrets
+    all 7 services, and the Gateway — 8 processes). See the repo's `CLAUDE.md` for first-run secrets
    setup if this is a new machine.
 2. **Open this collection in Bruno** (`bruno/agenda-buddy/`) and pick an environment — top-right dropdown:
-   - **Local (Aspire AppHost)** — matches step 1. Aspire assigns every port dynamically, so fill in
-     `gatewayUrl` yourself each run (the Aspire dashboard lists it) — and the seven `*Url` variables too,
-     but only if you need `7-Health`.
+    - **Local (Aspire AppHost)** — matches step 1. `gatewayUrl` is already the pinned local address
+       `http://localhost:6080`. Aspire assigns the seven service ports dynamically, so fill their `*Url`
+       variables from the dashboard only if you need `7-Health`.
    - **Local (standalone)** — for running one service at a time with `dotnet run --project <Service>
-     --no-launch-profile`, using each service's fixed `appsettings.json` port. `gatewayUrl` still needs
-     filling in by hand even here — the Gateway has no fixed port of its own, only ever running under the
-     AppHost.
+       --no-launch-profile`, using each service's fixed `appsettings.json` port. Application requests in this
+       collection still require the Gateway, so use the AppHost environment for those; the standalone URLs are
+       useful for direct health and service diagnostics.
 3. **Run `0-Auth/2 Login`** (register first with `0-Auth/1 Register` if you don't have an account). This
    captures `accessToken`/`refreshToken` into the environment automatically. Nearly every route requires
    this JWT — without it you get `401` on everything except the two `Profession` reads.

@@ -28,9 +28,11 @@ tests {
   });
 }
 docs {
-  Registration is **anonymous, unverified and unrate-limited** — which is exactly why F-016 role-gated
-  `GET /api/v1/customers` (ADR-026): authenticating it alone would have let anyone self-register as a
-  Provider and page the whole customer table. F-021 adds the rate limiter.
+  Registration is **anonymous and does not require prior email verification** — which is exactly why F-016
+  role-gated `GET /api/v1/customers` (ADR-026): authenticating it alone would have let anyone self-register
+  as a Provider and page the whole customer table. Identity applies the same per-IP BCrypt rate-limit policy
+  to register and login when `Security:RateLimiting:Enabled` is on; the local AppHost deliberately leaves
+  that deployment control off.
 
   `role` must be `Provider` or `Customer` — there is no admin role, which is why
   `POST /api/v1/professions` was **deleted** rather than role-gated (ADR-025).

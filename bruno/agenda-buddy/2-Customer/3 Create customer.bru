@@ -15,6 +15,6 @@ body:json {
   }
 }
 docs {
-  ⚠️ A `400` carrying a Kafka error means no broker is running — this handler creates a per-customer
-  Kafka topic.
+  Requires the `Customer` role and an `email` matching the caller's `sub` claim. Profile creation writes
+  MongoDB and dispatches through MediatR in-process; it has no broker or topic-creation dependency.
 }

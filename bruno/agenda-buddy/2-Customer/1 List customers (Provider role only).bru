@@ -19,8 +19,9 @@ docs {
   **Requires the `Provider` role, not merely a token** (ADR-026, threat T-003). A `Customer`-role token
   gets `403` here by design — log in as a Provider.
 
-  Why role-gated when the others are only authenticated: registration is anonymous and unrate-limited, so
-  authentication alone would let anyone self-register as a Provider and page the entire customer table.
+  Why role-gated when the others are only authenticated: registration is anonymous and lets callers choose
+  the Provider role, so authentication alone would let a newly created account page the entire customer
+  table. The per-IP BCrypt limiter reduces request volume when enabled; it does not establish authorization.
   **Pagination bounds the response, not the extraction.**
 
   ⚠️ **Known limitation, accepted:** this still returns *full* `CustomerEntity` records — including
