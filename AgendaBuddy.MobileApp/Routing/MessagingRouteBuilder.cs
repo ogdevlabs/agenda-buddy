@@ -28,4 +28,21 @@ public static class MessagingRouteBuilder
     /// </summary>
     public static RouteSpec MarkRead(string id) =>
         new(HttpMethod.Post, $"api/v1/messages/{id}/read");
+
+    /// <summary>
+    /// Marks a whole conversation read in one request — <c>POST /api/v1/messages/thread/{counterpartEmail}/read</c>,
+    /// keyed on the counterpart's email for the same reason <see cref="Thread"/> is. No body; answers the number
+    /// of messages it changed.
+    /// </summary>
+    /// <remarks>
+    /// Three segments, so it cannot collide with the two-segment <see cref="MarkRead"/> pattern.
+    /// </remarks>
+    public static RouteSpec MarkThreadRead(string counterpartEmail) =>
+        new(HttpMethod.Post, $"api/v1/messages/thread/{counterpartEmail}/read");
+
+    /// <summary>
+    /// The longest body the server accepts (<c>MessageService.MaxBodyLength</c>). Declared here so the compose
+    /// box can stop a message the server would refuse, rather than sending it and reporting a failure.
+    /// </summary>
+    public const int MaxBodyLength = 4000;
 }

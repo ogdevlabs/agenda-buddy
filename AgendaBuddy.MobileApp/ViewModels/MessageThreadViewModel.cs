@@ -78,31 +78,50 @@ public partial class MessageThreadViewModel : ObservableObject
     }
 
     /// <summary>
-    /// Marks every unread message the OTHER party sent as read via the real endpoint
-    /// (<c>POST /api/v1/messages/{id}/read</c>) — opening a thread is the point at which those messages
-    /// have actually been seen. Best-effort: a failed mark-read here does not block viewing the thread.
+    /// Marks every unread message the OTHER party sent as read — opening a thread is the point at which those
+    /// messages have actually been seen. Best-effort: a failed mark-read here does not block viewing the thread.
     /// </summary>
+    /// <remarks>
+    /// ONE request for the whole thread (<c>POST /api/v1/messages/thread/{counterpart}/read</c>), not one per
+    /// message. The per-message loop issued a sequential request — and a server-side read-then-replace — for
+    /// every unread message, all of it awaited before <c>IsLoading</c> cleared: a thread with 250 unread
+    /// messages left the spinner up for 250 round trips, which on a real network is the screen appearing to
+    /// hang.
+    /// <para>
+    /// The local flags are only flipped once the server confirms, so the unread count cannot drift from what a
+    /// reload reports — the same rule <c>NotificationsViewModel</c> follows.
+    /// </para>
+    /// </remarks>
     private async Task MarkIncomingUnreadAsync()
     {
-        var unread = Messages.Where(m => !m.IsRead && string.Equals(m.SenderEmail, RecipientEmail, StringComparison.OrdinalIgnoreCase)).ToList();
+        var unread = Messages
+            .Where(m => !m.IsRead
+                        && string.Equals(m.SenderEmail, RecipientEmail, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        if (unread.Count == 0) return;
+
+        var marked = await _messagingService.MarkThreadReadAsync(RecipientEmail);
+        if (marked is null) return;
+
         foreach (var message in unread)
-        {
-            try
-            {
-                await _messagingService.MarkReadAsync(message.Id);
-                message.IsRead = true;
-            }
-            catch (Exception)
-            {
-                // Best-effort — the thread already loaded successfully; leave this one to retry next open.
-            }
-        }
+            message.IsRead = true;
     }
 
     [RelayCommand(CanExecute = nameof(CanSend))]
     private async Task SendAsync()
     {
         var body = NewMessageBody;
+
+        // Refused here as well as at the route, because the message is kept in the box for editing: sending it
+        // to be rejected loses nothing but tells the sender their text was fine right up until it was not.
+        if (body.Length > Routing.MessagingRouteBuilder.MaxBodyLength)
+        {
+            ErrorMessage = $"That message is too long — {Routing.MessagingRouteBuilder.MaxBodyLength} characters maximum.";
+            await Infrastructure.ToastNotifier.ShowAsync(ErrorMessage);
+            return;
+        }
+
         NewMessageBody = string.Empty;
 
         try

@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using AgendaBuddy.Library.Entities;
+using AgendaBuddy.Library.Services;
 using MongoDB.Bson;
 using MongoDB.Driver;
 
@@ -84,6 +85,7 @@ public class MessagingAndNotificationsTest(ServiceHostFixture<CustomerAnchor> ho
     [InlineData("POST", "api/v1/messages")]
     [InlineData("GET", "api/v1/messages/thread/coach@example.com")]
     [InlineData("POST", "api/v1/messages/000000000000000000000000/read")]
+    [InlineData("POST", "api/v1/messages/thread/coach@example.com/read")]
     [InlineData("GET", "api/v1/notifications")]
     [InlineData("POST", "api/v1/notifications/000000000000000000000000/read")]
     public async Task AC8_EveryMessageAndNotificationRoute_RefusesAnAnonymousCaller(string method, string path)
@@ -481,4 +483,151 @@ public class MessagingAndNotificationsTest(ServiceHostFixture<CustomerAnchor> ho
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         }
     }
+
+    /// <summary>
+    /// A thread reads oldest-first, and only a real database proves it.
+    /// </summary>
+    /// <remarks>
+    /// The sort has to happen in the query. Without it the driver answers in natural order — which is
+    /// insertion order right up until something deletes a document, so the defect is invisible to a mocked
+    /// repository and to any test that seeds in the order it expects back. These are seeded deliberately
+    /// out of order.
+    /// </remarks>
+    [Fact]
+    public async Task AThreadIsReturnedOldestFirstWhateverOrderItWasStoredIn()
+    {
+        using var service = host.StartService("Production");
+
+        var threadId = $"{Caller}::{Counterpart}";
+        var baseTime = new DateTime(2026, 3, 1, 9, 0, 0, DateTimeKind.Utc);
+
+        // Inserted newest-first, so a missing sort returns them backwards.
+        await service.Database.GetCollection<MessageEntity>("messages").InsertManyAsync(
+        [
+            Message(threadId, "third", baseTime.AddMinutes(20)),
+            Message(threadId, "first", baseTime),
+            Message(threadId, "second", baseTime.AddMinutes(10))
+        ]);
+
+        var response = await service.Client.SendAsync(Authorised(
+            HttpMethod.Get, $"api/v1/messages/thread/{Counterpart}", Caller));
+
+        var messages = await response.Content.ReadFromJsonAsync<List<MessageEntity>>(HarnessJson.Options);
+
+        Assert.Equal(["first", "second", "third"], messages!.Select(m => m.Body));
+    }
+
+    /// <summary>
+    /// Marking a thread read is ONE write covering every message the caller received, and it touches nothing
+    /// the caller sent and nothing in anybody else's thread.
+    /// </summary>
+    [Fact]
+    public async Task MarkingAThreadReadClearsOnlyWhatTheCallerReceived()
+    {
+        using var service = host.StartService("Production");
+        await SeedOtherPeoplesDataAsync(service);
+
+        var messages = service.Database.GetCollection<MessageEntity>("messages");
+        var threadId = $"{Caller}::{Counterpart}";
+
+        // Two the caller received, one the caller sent.
+        await messages.InsertManyAsync(
+        [
+            Message(threadId, "incoming one", DateTime.UtcNow.AddMinutes(-3)),
+            Message(threadId, "incoming two", DateTime.UtcNow.AddMinutes(-2)),
+            Message(threadId, "mine", DateTime.UtcNow.AddMinutes(-1), sender: Caller, recipient: Counterpart)
+        ]);
+
+        var response = await service.Client.SendAsync(Authorised(
+            HttpMethod.Post, $"api/v1/messages/thread/{Counterpart}/read", Caller));
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(2, await response.Content.ReadFromJsonAsync<int>(HarnessJson.Options));
+
+        var stored = await messages.Find(FilterDefinition<MessageEntity>.Empty).ToListAsync();
+
+        Assert.All(stored.Where(m => m.RecipientEmail == Caller), m => Assert.True(m.IsRead));
+        // The caller's own message, and both outsiders', are untouched.
+        Assert.All(stored.Where(m => m.RecipientEmail != Caller), m => Assert.False(m.IsRead));
+    }
+
+    /// <summary>Nothing unread answers 200 with 0 — a real result, not an error.</summary>
+    [Fact]
+    public async Task MarkingAThreadWithNothingUnreadAnswersZero()
+    {
+        using var service = host.StartService("Production");
+
+        var response = await service.Client.SendAsync(Authorised(
+            HttpMethod.Post, $"api/v1/messages/thread/{Counterpart}/read", Caller));
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(0, await response.Content.ReadFromJsonAsync<int>(HarnessJson.Options));
+    }
+
+    /// <summary>
+    /// An over-long body is refused, never truncated: a message silently cut in half is worse than one that
+    /// was not sent, because the sender is told it arrived.
+    /// </summary>
+    [Fact]
+    public async Task AMessageBodyOverTheCapIsRefusedAndNotStored()
+    {
+        using var service = host.StartService("Production");
+        await SeedSubscriptionAsync(service);
+
+        var response = await service.Client.SendAsync(Authorised(
+            HttpMethod.Post, "api/v1/messages", Caller,
+            new { recipientEmail = Counterpart, body = new string('a', MessageService.MaxBodyLength + 1) }));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        var stored = await service.Database.GetCollection<MessageEntity>("messages")
+            .CountDocumentsAsync(FilterDefinition<MessageEntity>.Empty);
+        Assert.Equal(0, stored);
+    }
+
+    /// <summary>A body exactly at the cap is accepted — the boundary is inclusive.</summary>
+    [Fact]
+    public async Task AMessageBodyExactlyAtTheCapIsAccepted()
+    {
+        using var service = host.StartService("Production");
+        await SeedSubscriptionAsync(service);
+
+        var response = await service.Client.SendAsync(Authorised(
+            HttpMethod.Post, "api/v1/messages", Caller,
+            new { recipientEmail = Counterpart, body = new string('a', MessageService.MaxBodyLength) }));
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+    }
+
+    /// <summary>
+    /// A malformed message id answers like an unknown one. <c>new ObjectId(id)</c> throws on anything that is
+    /// not 24 hex characters, so a typo used to be a 500 rather than the 403 every other unknown id gets.
+    /// </summary>
+    [Fact]
+    public async Task MarkingAMessageReadWithAMalformedIdIsRefusedNotAServerError()
+    {
+        using var service = host.StartService("Production");
+
+        var response = await service.Client.SendAsync(Authorised(
+            HttpMethod.Post, "api/v1/messages/not-an-object-id/read", Caller));
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    private static MessageEntity Message(
+        string threadId,
+        string body,
+        DateTime sentAtUtc,
+        string? sender = null,
+        string? recipient = null) =>
+        new()
+        {
+            Id = ObjectId.GenerateNewId(),
+            SenderEmail = sender ?? Counterpart,
+            RecipientEmail = recipient ?? Caller,
+            Body = body,
+            SentAt = sentAtUtc,
+            ThreadId = threadId,
+            IsRead = false
+        };
 }

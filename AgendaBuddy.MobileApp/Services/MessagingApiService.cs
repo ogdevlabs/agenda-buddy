@@ -132,6 +132,32 @@ public class MessagingApiService : IMessagingApiService
         return MessageSendResult.Sent(JsonSerializer.Deserialize<MessageSummary>(json, JsonOptions));
     }
 
+    /// <summary>
+    /// Marks the whole thread read in one request.
+    /// </summary>
+    /// <remarks>
+    /// <c>null</c> means the request did not get an answer, which is why every failure path returns it rather
+    /// than 0 — 0 is a real result meaning "nothing was unread".
+    /// </remarks>
+    public async Task<long?> MarkThreadReadAsync(string counterpartEmail, CancellationToken ct = default)
+    {
+        try
+        {
+            var client = _httpClientFactory.CreateClient("AgendaBuddyApi");
+            var route = MessagingRouteBuilder.MarkThreadRead(counterpartEmail);
+            var response = await client.PostAsync(route.Path, null, ct);
+
+            if (!response.IsSuccessStatusCode) return null;
+
+            var json = await response.Content.ReadAsStringAsync(ct);
+            return long.TryParse(json.Trim(), out var marked) ? marked : null;
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
+
     // The real route (Customer/Program.cs, messages.MapPost("/{id}/read", ...)) answers
     // 204 No Content, not the updated entity. See NotificationApiService.MarkReadAsync for the identical
     // reasoning.
