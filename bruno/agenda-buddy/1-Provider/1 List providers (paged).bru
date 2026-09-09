@@ -36,8 +36,8 @@ docs {
   2. **Returns `{data: {items, totalCount, page, pageSize}, errors: []}`**, not a bare array. `204` for
      empty is retired — an empty page is `200` with `data.items: []`. F-020-T11 added the outer
      `DataResponse<T>` envelope (`data`/`errors`), following ADR-049's Booking precedent.
-  3. **`items` are `ProviderSummary`**, never full entities: no `appointmentEntities`, no
-     `subscribedCustomerCollection`, no `kafkaTopic`, no `_id`. The list is homogeneous even for the
+    3. **`items` are `ProviderSummary`**, never full entities: no `appointmentEntities`, no
+      `subscribedCustomerCollection`, no audit fields, no `_id`. The list is homogeneous even for the
      owning provider — use `2 Get provider by email` to see your own full record.
 
   `items[].professions` (2026-08-29) is the provider's own Professions

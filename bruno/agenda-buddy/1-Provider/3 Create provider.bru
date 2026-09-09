@@ -23,6 +23,6 @@ docs {
 
   Try it with a `Customer`-role token, or with someone else's email — both give `403`.
 
-  ⚠️ A `400` with a Kafka error means no Kafka broker is running: this handler creates a per-provider
-  Kafka topic. Start the AppHost, or expect the 400.
+  Profile creation writes MongoDB and dispatches through MediatR in-process. There is no broker or topic
+  creation dependency, so an unavailable message broker cannot block signup.
 }

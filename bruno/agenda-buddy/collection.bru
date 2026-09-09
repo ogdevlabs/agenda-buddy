@@ -38,20 +38,19 @@ docs {
   ## Which environment to pick
 
   - **Local (standalone)** — fixed ports from each service's `appsettings.json` for the seven `*Url`
-    (health-check) variables: `dotnet run --project Provider --no-launch-profile`, etc. **`gatewayUrl`
-    still needs to be filled in by hand even here** — the Gateway has no `appsettings.json` /
-    `launchSettings.json` of its own yet, so it only ever runs under the AppHost with a dynamic port,
-    regardless of which environment you picked.
+    (health-check) variables: `dotnet run --project AgendaBuddy.Provider.Api --no-launch-profile`, etc.
+    Application requests still need the Gateway; use the AppHost environment for those.
   - **Local (Aspire AppHost)** — `dotnet run --project AgendaBuddy.AppHost` starts everything, but
-    **Aspire assigns every port dynamically**, so you must fill `gatewayUrl` (and, only if you need
-    `7-Health`, the seven `*Url` variables) in yourself each run — the dashboard lists them. Also note:
+    the Gateway's local host address is pinned to `http://localhost:6080`. Only the seven direct service
+    ports are dynamic; fill their `*Url` variables from the dashboard if you need `7-Health`. Also note:
     Aspire does **not** run the services as `Development`, so Swagger UI is unavailable there.
 
   ## Regenerating the OpenAPI specs
 
-      ./scripts/generate-openapi.sh              # all seven
-      ./scripts/generate-openapi.sh Provider     # just one
+      REGENERATE_OPENAPI_BASELINES=1 dotnet test AgendaBuddy.IntegrationTests \
+        /p:MobileWorkloads=false --filter FullyQualifiedName~OpenApiSpecBaselineWriter
 
-  Writes `docs/api/openapi/<Service>.json` plus a browsable `index.md`. Safe to run any time — it uses
-  a throwaway keypair and a disposable Mongo container, and touches no real data.
+  That command writes the committed, byte-deterministic baselines. `./scripts/generate-openapi.sh` remains
+  useful for reading live specs or refreshing `index.md`, but it formats JSON differently and must not be
+  used to regenerate the committed baseline files.
 }
