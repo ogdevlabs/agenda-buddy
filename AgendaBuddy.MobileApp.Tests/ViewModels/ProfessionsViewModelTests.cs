@@ -6,6 +6,7 @@ using Xunit;
 
 namespace AgendaBuddy.MobileApp.Tests.ViewModels;
 
+[Collection(nameof(Infrastructure.CultureSensitiveCollection))]
 public class ProfessionsViewModelTests
 {
     private static IUserSessionService CreateSession(bool isProvider, string email = "pat@test.dev")
@@ -120,19 +121,22 @@ public class ProfessionsViewModelTests
     }
 
     [Fact]
-    public async Task RemoveCurrentAsync_GuardFailure_SurfacesServerMessage()
+    public async Task RemoveCurrentAsync_GuardFailure_ShowsActionableLocalizedMessage()
     {
         var catalog = new List<ProfessionItem> { new() { Name = "Coaching" } };
         var api = CreateApi(catalog, ["Coaching"]);
         api.Setup(a => a.RemoveProfessionFromProviderAsync("pat@test.dev", "Coaching", It.IsAny<CancellationToken>()))
-           .ReturnsAsync(new ProfessionRemovalResult(false, "Cannot remove a profession while you have active appointments."));
+           .ReturnsAsync(new ProfessionRemovalResult(false, new MobileError(
+               MobileOperation.ProfessionRemoval,
+               MobileErrorCategory.Conflict,
+               "Cannot remove a profession while you have active appointments.")));
         var vm = new ProfessionsViewModel(api.Object, CreateSession(isProvider: true));
         await vm.LoadCommand.ExecuteAsync(null);
 
         await vm.RemoveCurrentCommand.ExecuteAsync("Coaching");
 
         Assert.True(vm.HasError);
-        Assert.Equal("Cannot remove a profession while you have active appointments.", vm.ErrorMessage);
+        Assert.Equal("Remove or complete active appointments for this profession, then try again.", vm.ErrorMessage);
         Assert.Contains("Coaching", vm.CurrentProfessions);
     }
 }

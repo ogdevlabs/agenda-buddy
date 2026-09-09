@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:strings="clr-namespace:AgendaBuddy.MobileApp.Resources.Strings"
              xmlns:controls="clr-namespace:AgendaBuddy.MobileApp.Controls"
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
              x:Class="AgendaBuddy.MobileApp.Views.CustomersPage"
@@ -110,7 +111,7 @@
                        FontAttributes="Bold"
                        TextColor="{StaticResource Primary}"
                        VerticalOptions="Center" />
-                <controls:SafeButton Text="Clear"
+                <controls:SafeButton Text="{x:Static strings:AppResources.Xaml_Clear}"
                         BackgroundColor="Transparent"
                         TextColor="{StaticResource iOSBlue}"
                         FontSize="13"
@@ -144,7 +145,7 @@
                            VerticalOptions="Center"
                            AutomationId="ErrorLabel" />
                     <controls:SafeButton Grid.Column="1"
-                            Text="Retry"
+                            Text="{x:Static strings:AppResources.Xaml_Retry}"
                             Command="{Binding LoadCommand}"
                             BackgroundColor="Transparent"
                             TextColor="{StaticResource iOSBlue}"
@@ -261,14 +262,14 @@
                                     <BoxView HeightRequest="0.5" Color="{StaticResource iOSGray5}" />
 
                                     <Grid ColumnDefinitions="70,*" ColumnSpacing="0" Margin="0,6,0,0">
-                                        <Label Grid.Column="0" Text="Email"
+                                        <Label Grid.Column="0" Text="{x:Static strings:AppResources.Xaml_Email}"
                                                FontSize="13" TextColor="{StaticResource iOSGray}" />
                                         <Label Grid.Column="1" Text="{Binding Email}"
                                                FontSize="15" TextColor="{StaticResource iOSLabel}"
                                                AutomationId="CustomerEmail" />
                                     </Grid>
                                     <Grid ColumnDefinitions="70,*" ColumnSpacing="0">
-                                        <Label Grid.Column="0" Text="Phone"
+                                        <Label Grid.Column="0" Text="{x:Static strings:AppResources.Xaml_Phone}"
                                                FontSize="13" TextColor="{StaticResource iOSGray}" />
                                         <Label Grid.Column="1" Text="{Binding Phone}"
                                                FontSize="15" TextColor="{StaticResource iOSLabel}" />
@@ -277,7 +278,7 @@
                                     <!-- Provider-specific fields -->
                                     <Grid ColumnDefinitions="70,*" ColumnSpacing="0"
                                           IsVisible="{Binding IsProvider}">
-                                        <Label Grid.Column="0" Text="Hours"
+                                        <Label Grid.Column="0" Text="{x:Static strings:AppResources.Xaml_Hours}"
                                                FontSize="13" TextColor="{StaticResource iOSGray}" />
                                         <Label Grid.Column="1" Text="{Binding Availability}"
                                                FontSize="15" FontAttributes="Bold"
@@ -285,7 +286,7 @@
                                     </Grid>
                                     <Grid ColumnDefinitions="70,*" ColumnSpacing="0"
                                           IsVisible="{Binding IsProvider}">
-                                        <Label Grid.Column="0" Text="Services"
+                                        <Label Grid.Column="0" Text="{x:Static strings:AppResources.Xaml_Services}"
                                                FontSize="13" TextColor="{StaticResource iOSGray}" />
                                         <Label Grid.Column="1" Text="{Binding LastSession}"
                                                FontSize="14" TextColor="{StaticResource iOSGray}"
@@ -295,7 +296,7 @@
                                     <!-- Provider actions -->
                                     <HorizontalStackLayout Spacing="8" Margin="0,8,0,0"
                                                            IsVisible="{Binding IsProvider}">
-                                        <controls:SafeButton Text="Book"
+                                        <controls:SafeButton Text="{x:Static strings:AppResources.Xaml_Book}"
                                                 BackgroundColor="{StaticResource iOSPurple}"
                                                 TextColor="White"
                                                 CornerRadius="10"
@@ -318,7 +319,7 @@
                                                 Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.ToggleSubscriptionCommand}"
                                                 CommandParameter="{Binding .}"
                                                 AutomationId="SubscribeToggleButton" />
-                                        <controls:SafeButton Text="Message"
+                                        <controls:SafeButton Text="{x:Static strings:AppResources.Xaml_Message}"
                                                 BackgroundColor="#E0F2FE"
                                                 TextColor="#0369A1"
                                                 CornerRadius="10"
@@ -335,7 +336,7 @@
                                     <!-- Customer actions (provider's own contact list — book a session with a known customer) -->
                                     <HorizontalStackLayout Spacing="8" Margin="0,8,0,0"
                                                            IsVisible="{Binding IsProvider, Converter={StaticResource InvertedBoolConverter}}">
-                                        <controls:SafeButton Text="Book"
+                                        <controls:SafeButton Text="{x:Static strings:AppResources.Xaml_Book}"
                                                 BackgroundColor="{StaticResource iOSBlue}"
                                                 TextColor="White"
                                                 CornerRadius="10"
@@ -346,7 +347,7 @@
                                                 Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.BookCommand}"
                                                 CommandParameter="{Binding .}"
                                                 AutomationId="BookCustomerButton" />
-                                        <controls:SafeButton Text="Message"
+                                        <controls:SafeButton Text="{x:Static strings:AppResources.Xaml_Message}"
                                                 BackgroundColor="#E0F2FE"
                                                 TextColor="#0369A1"
                                                 CornerRadius="10"
@@ -363,7 +364,7 @@
                                     <!-- Customer-specific -->
                                     <Grid ColumnDefinitions="70,*" ColumnSpacing="0"
                                           IsVisible="{Binding IsProvider, Converter={StaticResource InvertedBoolConverter}}">
-                                        <Label Grid.Column="0" Text="Last"
+                                        <Label Grid.Column="0" Text="{x:Static strings:AppResources.Xaml_Last}"
                                                FontSize="13" TextColor="{StaticResource iOSGray}" />
                                         <Label Grid.Column="1" Text="{Binding LastSession}"
                                                FontSize="15" FontAttributes="Bold"

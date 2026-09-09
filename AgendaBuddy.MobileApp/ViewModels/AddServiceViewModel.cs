@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using AgendaBuddy.Library.Entities;
 using AgendaBuddy.MobileApp.Infrastructure;
 using AgendaBuddy.MobileApp.Models;
+using AgendaBuddy.MobileApp.Resources.Strings;
 using AgendaBuddy.MobileApp.Services;
 
 namespace AgendaBuddy.MobileApp.ViewModels;
@@ -23,6 +24,13 @@ public partial class AddServiceViewModel : ObservableObject
 
     [ObservableProperty]
     private List<string> _availableProfessions = new();
+
+    public List<ProfessionItem> AvailableProfessionItems => AvailableProfessions
+        .Select(name => new ProfessionItem { Name = name })
+        .ToList();
+
+    [ObservableProperty]
+    private ProfessionItem? _selectedProfession;
 
     [ObservableProperty]
     private bool _isLoading;
@@ -82,11 +90,11 @@ public partial class AddServiceViewModel : ObservableObject
         try
         {
             AvailableProfessions = await _professionApiService.GetProviderProfessionsAsync(_session.Email);
-            ProfessionName = AvailableProfessions.FirstOrDefault();
+            SelectedProfession = AvailableProfessionItems.FirstOrDefault();
         }
         catch (Exception)
         {
-            ErrorMessage = "Could not load your professions. Check your connection and try again.";
+            ErrorMessage = AppResources.GetString("Error_LoadProfessions");
         }
         finally
         {
@@ -117,18 +125,18 @@ public partial class AddServiceViewModel : ObservableObject
             var succeeded = await _servicesApiService.AddServicesAsync(_session.Email, new List<ServiceItem> { newItem });
             if (!succeeded)
             {
-                ErrorMessage = "Could not add this service — try again.";
+                ErrorMessage = AppResources.GetString("Error_AddService");
                 await ToastNotifier.ShowAsync(ErrorMessage);
                 return;
             }
 
             Reset();
-            await ToastNotifier.ShowAsync("Service added.");
+            await ToastNotifier.ShowAsync(AppResources.GetString("Action_ServiceAdded"));
             Added?.Invoke(this, EventArgs.Empty);
         }
         catch (Exception)
         {
-            ErrorMessage = "Could not reach the server. Check your connection and try again.";
+            ErrorMessage = AppResources.Error_ServerUnavailable;
             await ToastNotifier.ShowAsync(ErrorMessage);
         }
         finally
@@ -154,5 +162,11 @@ public partial class AddServiceViewModel : ObservableObject
 
     partial void OnIsLoadingChanged(bool value) => OnPropertyChanged(nameof(HasNoProfessions));
 
-    partial void OnAvailableProfessionsChanged(List<string> value) => OnPropertyChanged(nameof(HasNoProfessions));
+    partial void OnAvailableProfessionsChanged(List<string> value)
+    {
+        OnPropertyChanged(nameof(HasNoProfessions));
+        OnPropertyChanged(nameof(AvailableProfessionItems));
+    }
+
+    partial void OnSelectedProfessionChanged(ProfessionItem? value) => ProfessionName = value?.Name;
 }

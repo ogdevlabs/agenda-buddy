@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using AgendaBuddy.Library.Entities;
+using AgendaBuddy.MobileApp.Resources.Strings;
 
 namespace AgendaBuddy.MobileApp.Models;
 
@@ -21,7 +22,8 @@ public partial class AppointmentSummary : ObservableObject
     public int? ServiceDurationMinutes { get; set; }
 
     /// <summary>"45 min", or a dash when the appointment predates service selection.</summary>
-    public string DurationLabel => ServiceDurationMinutes is null ? "—" : $"{ServiceDurationMinutes} min";
+    public string DurationLabel => ServiceDurationMinutes is null ? "—" : RuntimeText.Duration(ServiceDurationMinutes.Value);
+    public string StatusLabel => RuntimeText.AppointmentStatus(Status);
     public string CustomerNotes { get; set; } = string.Empty;
 
     /// <summary>The counterpart this session is with, from the reader's side.</summary>

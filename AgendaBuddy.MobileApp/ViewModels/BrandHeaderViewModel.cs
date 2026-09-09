@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using AgendaBuddy.MobileApp.Services;
+using AgendaBuddy.MobileApp.Resources.Strings;
 
 namespace AgendaBuddy.MobileApp.ViewModels;
 
@@ -175,12 +176,7 @@ public partial class BrandHeaderViewModel : ObservableObject
         }
     }
 
-    private static string FormatRole(string role) => role.ToLowerInvariant() switch
-    {
-        "provider" => "Provider",
-        "customer" => "Customer",
-        _ => string.Empty,
-    };
+    private static string FormatRole(string role) => RuntimeText.Role(role);
 
     partial void OnDisplayNameChanged(string value) => OnPropertyChanged(nameof(HasUser));
 

@@ -1,5 +1,3 @@
-using System.Net;
-
 namespace AgendaBuddy.MobileApp.Models;
 
 /// <summary>
@@ -22,23 +20,15 @@ namespace AgendaBuddy.MobileApp.Models;
 /// </remarks>
 /// <param name="Succeeded">Whether the appointment actually changed.</param>
 /// <param name="ErrorMessage">Why not, worded for the reader. <c>null</c> on success.</param>
-public sealed record AppointmentActionResult(bool Succeeded, string? ErrorMessage)
+public sealed record AppointmentActionResult(bool Succeeded, MobileError? Error)
 {
-    /// <summary>Shown when the request never got an answer — the only case a connection is implicated in.</summary>
-    internal const string UnreachableMessage = "Could not reach the server. Check your connection and try again.";
-
-    /// <summary>Shown for a <c>403</c>: the action was not this caller's to take.</summary>
-    internal const string NotPermittedMessage = "You do not have permission to do that.";
-
-    /// <summary>Shown for a <c>404</c>. The appointment is gone, so retrying will not help.</summary>
-    internal const string NotFoundMessage = "This appointment is no longer available.";
-
-    /// <summary>Shown for a refusal the server did not narrate.</summary>
-    internal const string RejectedMessage = "That could not be done. Try again.";
+    public string? ErrorMessage => Error?.Message;
 
     public static AppointmentActionResult Done() => new(true, null);
 
-    public static AppointmentActionResult Unreachable() => new(false, UnreachableMessage);
+    public static AppointmentActionResult Unreachable(
+        MobileOperation operation = MobileOperation.AppointmentAction, string? diagnosticDetail = null) =>
+        new(false, MobileError.Unavailable(operation, diagnosticDetail));
 
     /// <summary>
     /// Words a refusal, preferring the server's own explanation.
@@ -48,15 +38,7 @@ public sealed record AppointmentActionResult(bool Succeeded, string? ErrorMessag
     /// answered, already completed — and the server's message is the only place the specifics exist. Falling back
     /// to a generic string for a 409 would throw away the one thing the reader needs.
     /// </remarks>
-    public static AppointmentActionResult Refused(HttpStatusCode status, string? serverMessage = null)
-    {
-        if (!string.IsNullOrWhiteSpace(serverMessage)) return new(false, serverMessage.Trim());
-
-        return status switch
-        {
-            HttpStatusCode.Forbidden => new(false, NotPermittedMessage),
-            HttpStatusCode.NotFound => new(false, NotFoundMessage),
-            _ => new(false, RejectedMessage)
-        };
-    }
+    public static AppointmentActionResult Refused(
+        MobileOperation operation, System.Net.HttpStatusCode status, string? diagnosticDetail = null) =>
+        new(false, MobileError.FromStatus(operation, status, diagnosticDetail));
 }

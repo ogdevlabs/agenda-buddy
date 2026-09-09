@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:strings="clr-namespace:AgendaBuddy.MobileApp.Resources.Strings"
              xmlns:controls="clr-namespace:AgendaBuddy.MobileApp.Controls"
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
              xmlns:System="clr-namespace:System;assembly=netstandard"
              x:Class="AgendaBuddy.MobileApp.Views.DashboardPage"
-             Title="Dashboard"
+             Title="{x:Static strings:AppResources.Xaml_Dashboard}"
              BackgroundColor="#F2F2F7"
              Shell.NavBarIsVisible="False">
 
@@ -126,7 +127,7 @@
                                        VerticalOptions="Center"
                                        AutomationId="ErrorBanner" />
                                 <controls:SafeButton Grid.Column="1"
-                                        Text="Retry"
+                                        Text="{x:Static strings:AppResources.Xaml_Retry}"
                                         Command="{Binding LoadCommand}"
                                         BackgroundColor="Transparent"
                                         TextColor="{StaticResource iOSBlue}"
@@ -302,7 +303,7 @@
                        Padding="0"
                        HeightRequest="44"
                        IsVisible="{Binding IsProvider}">
-                    <controls:SafeButton Text="Your Report"
+                    <controls:SafeButton Text="{x:Static strings:AppResources.Xaml_YourReport}"
                             BackgroundColor="Transparent"
                             TextColor="{StaticResource iOSBlue}"
                             FontSize="15"
@@ -321,7 +322,7 @@
                        HasShadow="False"
                        Padding="0"
                        HeightRequest="44">
-                    <controls:SafeButton Text="Sign Out"
+                    <controls:SafeButton Text="{x:Static strings:AppResources.Xaml_SignOut}"
                             BackgroundColor="Transparent"
                             TextColor="{StaticResource iOSRed}"
                             FontSize="15"

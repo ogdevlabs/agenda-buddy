@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:strings="clr-namespace:AgendaBuddy.MobileApp.Resources.Strings"
              xmlns:infrastructure="clr-namespace:AgendaBuddy.MobileApp.Infrastructure"
              xmlns:controls="clr-namespace:AgendaBuddy.MobileApp.Controls"
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
              x:Class="AgendaBuddy.MobileApp.Views.NotificationsPage"
-             Title="Notifications"
+             Title="{x:Static strings:AppResources.Xaml_Notifications}"
              BackgroundColor="{StaticResource BackgroundPage}"
              Shell.NavBarIsVisible="False">
 
@@ -29,7 +30,7 @@
                   Padding="20,16,20,10"
                   ColumnDefinitions="*,Auto">
                 <Label Grid.Column="0"
-                       Text="Notifications"
+                       Text="{x:Static strings:AppResources.Xaml_Notifications}"
                        FontSize="26"
                        FontAttributes="Bold"
                        TextColor="{StaticResource TextPrimary}"
@@ -76,7 +77,7 @@
                         FontSize="13"
                         FontAttributes="Bold" />
                 <controls:SafeButton Grid.Column="2"
-                        Text="Mark all read"
+                        Text="{x:Static strings:AppResources.Xaml_MarkAllRead}"
                         Command="{Binding MarkAllReadCommand}"
                         IsVisible="{Binding HasUnread}"
                         IsEnabled="{Binding CanMarkAllRead}"
@@ -109,7 +110,7 @@
                            FontSize="13.5"
                            VerticalOptions="Center" />
                     <controls:SafeButton Grid.Column="1"
-                            Text="Retry"
+                            Text="{x:Static strings:AppResources.Xaml_Retry}"
                             Command="{Binding LoadCommand}"
                             BackgroundColor="Transparent"
                             BorderWidth="0"
@@ -245,7 +246,7 @@
                                                         identifier, and a button that navigates nowhere is worse
                                                         than no button.
                                                     -->
-                                                    <controls:SafeButton Text="View appointment"
+                                                    <controls:SafeButton Text="{x:Static strings:AppResources.Xaml_ViewAppointment}"
                                                             Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.ViewAppointmentCommand}"
                                                             CommandParameter="{Binding .}"
                                                             IsVisible="{Binding CanOpenAppointment}"
@@ -264,7 +265,7 @@
                                                         only way to clear one row was to wait, and the only
                                                         deliberate control was the all-or-nothing bulk action.
                                                     -->
-                                                    <controls:SafeButton Text="Mark as read"
+                                                    <controls:SafeButton Text="{x:Static strings:AppResources.Xaml_MarkAsRead}"
                                                             Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.MarkReadCommand}"
                                                             CommandParameter="{Binding .}"
                                                             IsVisible="{Binding IsUnread}"

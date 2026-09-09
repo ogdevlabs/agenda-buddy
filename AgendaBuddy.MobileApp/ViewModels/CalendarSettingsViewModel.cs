@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using AgendaBuddy.Library.Tools;
 using AgendaBuddy.MobileApp.Infrastructure;
 using AgendaBuddy.MobileApp.Models;
+using AgendaBuddy.MobileApp.Resources.Strings;
 using AgendaBuddy.MobileApp.Services;
 
 namespace AgendaBuddy.MobileApp.ViewModels;
@@ -84,16 +85,20 @@ public partial class CalendarSettingsViewModel : ObservableObject
     {
         get
         {
-            if (!IsWeekValid) return "Some days do not open before they close.";
+            if (!IsWeekValid) return AppResources.GetString("Calendar_WeekInvalid");
 
             var closed = Days.Where(day => day.IsClosed).Select(day => day.ShortDayName).ToList();
             var openHours = Days.Where(day => !day.IsClosed).Sum(day => day.EndHour - day.StartHour);
 
             return closed.Count switch
             {
-                0 => $"Open every day, {openHours} bookable hours a week.",
-                7 => "Closed every day — no one can book you.",
-                _ => $"Closed {string.Join(", ", closed)} · {openHours} bookable hours a week."
+                0 => openHours == 1
+                    ? AppResources.GetString("Calendar_OpenEveryDayOneHour")
+                    : AppResources.Format("Calendar_OpenEveryDay", openHours),
+                7 => AppResources.GetString("Calendar_ClosedEveryDay"),
+                _ => openHours == 1
+                    ? AppResources.Format("Calendar_ClosedDaysOneHour", string.Join(", ", closed))
+                    : AppResources.Format("Calendar_ClosedDaysSummary", string.Join(", ", closed), openHours)
             };
         }
     }
@@ -124,7 +129,7 @@ public partial class CalendarSettingsViewModel : ObservableObject
             var hours = await _providerApiService.GetWorkHoursAsync(_session.Email);
             if (hours is null)
             {
-                ErrorMessage = "Could not load your calendar hours. Check your connection and try again.";
+                ErrorMessage = AppResources.GetString("Error_LoadCalendarHours");
                 return;
             }
 
@@ -133,7 +138,7 @@ public partial class CalendarSettingsViewModel : ObservableObject
         }
         catch (Exception)
         {
-            ErrorMessage = "Could not load your calendar hours. Check your connection and try again.";
+            ErrorMessage = AppResources.GetString("Error_LoadCalendarHours");
         }
         finally
         {
@@ -157,17 +162,17 @@ public partial class CalendarSettingsViewModel : ObservableObject
             if (!result.Succeeded)
             {
                 // The server names which weekday it refused, which cannot be reconstructed here.
-                ErrorMessage = result.ErrorMessage ?? "Could not save your calendar — try again.";
+                ErrorMessage = result.ErrorMessage ?? AppResources.GetString("Error_SaveCalendar");
                 await ToastNotifier.ShowAsync(ErrorMessage);
                 return;
             }
 
-            await ToastNotifier.ShowAsync("Calendar saved.");
+            await ToastNotifier.ShowAsync(AppResources.GetString("Action_CalendarSaved"));
             Saved?.Invoke(this, EventArgs.Empty);
         }
         catch (Exception)
         {
-            ErrorMessage = "Could not reach the server. Check your connection and try again.";
+            ErrorMessage = AppResources.Error_ServerUnavailable;
             await ToastNotifier.ShowAsync(ErrorMessage);
         }
         finally
@@ -189,7 +194,7 @@ public partial class CalendarSettingsViewModel : ObservableObject
         var source = Days.FirstOrDefault(day => !day.IsClosed);
         if (source is null)
         {
-            await ToastNotifier.ShowAsync("Open at least one day first.");
+            await ToastNotifier.ShowAsync(AppResources.GetString("Calendar_OpenAtLeastOneDay"));
             return;
         }
 
@@ -200,8 +205,7 @@ public partial class CalendarSettingsViewModel : ObservableObject
         }
 
         NotifyWeekChanged();
-        await ToastNotifier.ShowAsync(
-            $"{source.ShortDayName}'s hours copied to every open day.");
+        await ToastNotifier.ShowAsync(AppResources.Format("Calendar_CopyHoursDone", source.ShortDayName));
     }
 
     /// <summary>

@@ -20,6 +20,9 @@ public class DeviceTokenEntity
     [Required]
     public string Platform { get; set; } = string.Empty;
 
+    [BsonElement("language_code")]
+    public string? LanguageCode { get; set; }
+
     [BsonElement("registered_at")]
     [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
     public DateTime RegisteredAt { get; set; } = DateTime.UtcNow;

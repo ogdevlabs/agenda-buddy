@@ -12,11 +12,12 @@
 -->
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:strings="clr-namespace:AgendaBuddy.MobileApp.Resources.Strings"
              xmlns:controls="clr-namespace:AgendaBuddy.MobileApp.Controls"
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
              x:Class="AgendaBuddy.MobileApp.Views.TimeOffPage"
              x:Name="ThisPage"
-             Title="Time Off"
+             Title="{x:Static strings:AppResources.Xaml_TimeOff}"
              BackgroundColor="{StaticResource BackgroundPage}"
              Shell.NavBarIsVisible="False"
              NavigationPage.HasNavigationBar="False">
@@ -32,7 +33,7 @@
         <Grid Grid.Row="1" RowDefinitions="Auto,Auto,*,Auto" Padding="20,12,20,16" RowSpacing="12">
 
             <Grid Grid.Row="0" ColumnDefinitions="Auto,*">
-                <Label Grid.Column="1" Text="Time Off" FontSize="22" FontAttributes="Bold"
+                <Label Grid.Column="1" Text="{x:Static strings:AppResources.Xaml_TimeOff}" FontSize="22" FontAttributes="Bold"
                        TextColor="{StaticResource TextPrimary}" VerticalOptions="Center" Margin="8,0,0,0" />
             </Grid>
 
@@ -56,11 +57,11 @@
                         <Frame CornerRadius="16" BackgroundColor="White"
                                BorderColor="{StaticResource BorderLight}" HasShadow="True" Padding="16">
                             <VerticalStackLayout Spacing="12">
-                                <Label Text="BLOCK SOME TIME" FontSize="11"
+                                <Label Text="{x:Static strings:AppResources.Xaml_BLOCKSOMETIME}" FontSize="11"
                                        TextColor="{StaticResource TextMuted}" CharacterSpacing="1.5" />
 
                                 <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
-                                    <Label Grid.Column="0" Text="Whole days" FontSize="14"
+                                    <Label Grid.Column="0" Text="{x:Static strings:AppResources.Xaml_WholeDays}" FontSize="14"
                                            VerticalOptions="Center"
                                            TextColor="{StaticResource TextPrimary}" />
                                     <Switch Grid.Column="1" IsToggled="{Binding IsAllDay}"
@@ -70,7 +71,7 @@
 
                                 <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
                                     <VerticalStackLayout Grid.Column="0" Spacing="4">
-                                        <Label Text="From" FontSize="13"
+                                        <Label Text="{x:Static strings:AppResources.Xaml_From}" FontSize="13"
                                                TextColor="{StaticResource TextMuted}" />
                                         <Frame Style="{StaticResource InputFrame}" Margin="0">
                                             <DatePicker Date="{Binding StartDate}"
@@ -79,7 +80,7 @@
                                         </Frame>
                                     </VerticalStackLayout>
                                     <VerticalStackLayout Grid.Column="1" Spacing="4">
-                                        <Label Text="To" FontSize="13"
+                                        <Label Text="{x:Static strings:AppResources.Xaml_To}" FontSize="13"
                                                TextColor="{StaticResource TextMuted}" />
                                         <Frame Style="{StaticResource InputFrame}" Margin="0">
                                             <DatePicker Date="{Binding EndDate}"
@@ -94,7 +95,7 @@
                                 <Grid ColumnDefinitions="*,*" ColumnSpacing="10"
                                       IsVisible="{Binding ShowTimePickers}">
                                     <VerticalStackLayout Grid.Column="0" Spacing="4">
-                                        <Label Text="Starts at" FontSize="13"
+                                        <Label Text="{x:Static strings:AppResources.Xaml_StartsAt}" FontSize="13"
                                                TextColor="{StaticResource TextMuted}" />
                                         <Frame Style="{StaticResource InputFrame}" Margin="0">
                                             <TimePicker Time="{Binding StartTime}"
@@ -103,7 +104,7 @@
                                         </Frame>
                                     </VerticalStackLayout>
                                     <VerticalStackLayout Grid.Column="1" Spacing="4">
-                                        <Label Text="Ends at" FontSize="13"
+                                        <Label Text="{x:Static strings:AppResources.Xaml_EndsAt}" FontSize="13"
                                                TextColor="{StaticResource TextMuted}" />
                                         <Frame Style="{StaticResource InputFrame}" Margin="0">
                                             <TimePicker Time="{Binding EndTime}"
@@ -114,10 +115,10 @@
                                 </Grid>
 
                                 <VerticalStackLayout Spacing="4">
-                                    <Label Text="Reason (only you see this)" FontSize="13"
+                                    <Label Text="{x:Static strings:AppResources.Xaml_ReasonOnlyYouSeeThis}" FontSize="13"
                                            TextColor="{StaticResource TextMuted}" />
                                     <Frame Style="{StaticResource InputFrame}" Margin="0">
-                                        <Entry Text="{Binding Reason}" Placeholder="Holiday, travel, personal…"
+                                        <Entry Text="{Binding Reason}" Placeholder="{x:Static strings:AppResources.Xaml_HolidayTravelPersonal}"
                                                MaxLength="200"
                                                TextColor="{StaticResource TextPrimary}"
                                                AutomationId="TimeOffReasonEntry" />
@@ -130,7 +131,7 @@
 
                                 <!-- What blocking this range would cost, BEFORE saving. Without it the provider
                                      meets a refusal they could have seen coming. -->
-                                <controls:SafeButton Text="Check for booked sessions"
+                                <controls:SafeButton Text="{x:Static strings:AppResources.Xaml_CheckForBookedSessions}"
                                         BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
                                         FontSize="13" HorizontalOptions="Start" Padding="0"
                                         Command="{Binding CheckConflictsCommand}"
@@ -147,7 +148,7 @@
                         </Frame>
 
                         <!-- EXISTING. -->
-                        <Label Text="UPCOMING TIME OFF" FontSize="11"
+                        <Label Text="{x:Static strings:AppResources.Xaml_UPCOMINGTIMEOFF}" FontSize="11"
                                TextColor="{StaticResource TextMuted}" CharacterSpacing="1.5"
                                IsVisible="{Binding HasBlocks}" />
 
@@ -167,7 +168,7 @@
                                                        FontSize="12"
                                                        TextColor="{StaticResource TextMuted}" />
                                             </VerticalStackLayout>
-                                            <controls:SafeButton Grid.Column="1" Text="Remove"
+                                            <controls:SafeButton Grid.Column="1" Text="{x:Static strings:AppResources.Xaml_Remove}"
                                                     BackgroundColor="Transparent"
                                                     TextColor="{StaticResource Error}"
                                                     FontSize="13" Padding="8,4"
@@ -185,10 +186,10 @@
                                BorderColor="{StaticResource BorderLight}" CornerRadius="12"
                                HasShadow="False" Padding="16">
                             <VerticalStackLayout Spacing="4">
-                                <Label Text="No time off booked" FontSize="14" FontAttributes="Bold"
+                                <Label Text="{x:Static strings:AppResources.Xaml_NoTimeOffBooked}" FontSize="14" FontAttributes="Bold"
                                        TextColor="{StaticResource TextPrimary}"
                                        AutomationId="TimeOffEmptyState" />
-                                <Label Text="Block a holiday, a trip, or a few hours for something personal. Customers simply will not see those times as available."
+                                <Label Text="{x:Static strings:AppResources.Xaml_BlockAHolidayATripOrAFewHoursForSomethingPersonalCustomersSimplyWillNotSeeThoseTimesAsAvailable}"
                                        FontSize="13" TextColor="{StaticResource TextMuted}" />
                             </VerticalStackLayout>
                         </Frame>
@@ -198,7 +199,7 @@
             </RefreshView>
 
             <Grid Grid.Row="3">
-                <controls:SafeButton Text="Block this time"
+                <controls:SafeButton Text="{x:Static strings:AppResources.Xaml_BlockThisTime}"
                         Style="{StaticResource PrimaryButton}"
                         HeightRequest="48"
                         Command="{Binding SaveCommand}"

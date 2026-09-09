@@ -241,22 +241,24 @@ public class CalendarSettingsViewModelTests
     }
 
     /// <summary>
-    /// The server names WHICH weekday it refused, and that message has to reach the banner — it cannot be
-    /// reconstructed here.
+    /// The server detail stays diagnostic while the banner uses localized validation copy.
     /// </summary>
     [Fact]
-    public async Task ARejectedSaveShowsTheServersOwnReason()
+    public async Task ARejectedSaveShowsLocalizedValidationCopy()
     {
         var vm = Build(Api(
             WorkHours.Default,
             saveResult: new AppointmentActionResult(
-                false, "These days do not describe a usable window: Wednesday.")));
+                false, new MobileError(
+                    MobileOperation.WorkWeek,
+                    MobileErrorCategory.Validation,
+                    "These days do not describe a usable window: Wednesday."))));
 
         await vm.LoadCommand.ExecuteAsync(null);
         await vm.SaveCommand.ExecuteAsync(null);
 
         Assert.True(vm.HasError);
-        Assert.Contains("Wednesday", vm.ErrorMessage);
+        Assert.Equal("Check the information you entered and try again.", vm.ErrorMessage);
     }
 
     [Fact]

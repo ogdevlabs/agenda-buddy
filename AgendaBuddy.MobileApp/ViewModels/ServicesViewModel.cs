@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using AgendaBuddy.MobileApp.Infrastructure;
 using AgendaBuddy.MobileApp.Models;
+using AgendaBuddy.MobileApp.Resources.Strings;
 using AgendaBuddy.MobileApp.Services;
 
 namespace AgendaBuddy.MobileApp.ViewModels;
@@ -51,7 +52,7 @@ public partial class ServicesViewModel : ObservableObject
         }
         catch (Exception)
         {
-            ErrorMessage = "Could not load your services. Check your connection and try again.";
+            ErrorMessage = AppResources.GetString("Error_LoadServices");
         }
         finally
         {
@@ -72,17 +73,17 @@ public partial class ServicesViewModel : ObservableObject
             var succeeded = await _servicesApiService.UpdateServicesAsync(_session.Email, new List<ServiceItem> { service });
             if (!succeeded)
             {
-                ErrorMessage = "Could not update this service — try again.";
+                ErrorMessage = AppResources.GetString("Error_UpdateService");
                 await ToastNotifier.ShowAsync(ErrorMessage);
                 return;
             }
 
             service.IsEditing = false;
-            await ToastNotifier.ShowAsync("Service updated.");
+            await ToastNotifier.ShowAsync(AppResources.GetString("Action_ServiceUpdated"));
         }
         catch (Exception)
         {
-            ErrorMessage = "Could not reach the server. Check your connection and try again.";
+            ErrorMessage = AppResources.Error_ServerUnavailable;
             await ToastNotifier.ShowAsync(ErrorMessage);
         }
     }
@@ -101,17 +102,17 @@ public partial class ServicesViewModel : ObservableObject
             var succeeded = await _servicesApiService.RemoveServiceAsync(_session.Email, service.Name);
             if (!succeeded)
             {
-                ErrorMessage = "Could not remove this service — try again.";
+                ErrorMessage = AppResources.GetString("Error_RemoveService");
                 await ToastNotifier.ShowAsync(ErrorMessage);
                 return;
             }
 
             Services = Services.Where(s => s.Name != service.Name).ToList();
-            await ToastNotifier.ShowAsync("Service removed.");
+            await ToastNotifier.ShowAsync(AppResources.GetString("Action_ServiceRemoved"));
         }
         catch (Exception)
         {
-            ErrorMessage = "Could not reach the server. Check your connection and try again.";
+            ErrorMessage = AppResources.Error_ServerUnavailable;
             await ToastNotifier.ShowAsync(ErrorMessage);
         }
         finally

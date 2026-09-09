@@ -1,4 +1,5 @@
 using AgendaBuddy.MobileApp.Infrastructure;
+using AgendaBuddy.MobileApp.Resources.Strings;
 using Xunit;
 
 namespace AgendaBuddy.MobileApp.Tests.Infrastructure;
@@ -6,8 +7,16 @@ namespace AgendaBuddy.MobileApp.Tests.Infrastructure;
 // ux-review.md finding 2 / PRD Requirement 12 / AC13: the gateway's failedService cluster id maps to
 // a human-readable display name, never the raw cluster id, with a generic fallback for a network
 // error that never reached the gateway or an unrecognized id.
-public class GatewayErrorMapperTests
+[Collection(nameof(CultureSensitiveCollection))]
+public class GatewayErrorMapperTests : IDisposable
 {
+    private readonly System.Globalization.CultureInfo? _originalCulture = AppResources.Culture;
+
+    public GatewayErrorMapperTests() =>
+        AppResources.Culture = new System.Globalization.CultureInfo("en");
+
+    public void Dispose() => AppResources.Culture = _originalCulture;
+
     [Theory]
     [InlineData("booking", "Booking is unavailable right now. Try again.")]
     [InlineData("calendar", "Calendar is unavailable right now. Try again.")]

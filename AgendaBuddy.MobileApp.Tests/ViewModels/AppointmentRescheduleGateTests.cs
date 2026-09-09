@@ -1,5 +1,6 @@
 using AgendaBuddy.Library.Entities;
 using AgendaBuddy.MobileApp.Models;
+using AgendaBuddy.MobileApp.Resources.Strings;
 using AgendaBuddy.MobileApp.Services;
 using AgendaBuddy.MobileApp.ViewModels;
 using Moq;
@@ -23,10 +24,18 @@ namespace AgendaBuddy.MobileApp.Tests.ViewModels;
 /// enforcement.
 /// </para>
 /// </remarks>
-public class AppointmentRescheduleGateTests
+[Collection("CultureSensitiveCollection")]
+public class AppointmentRescheduleGateTests : IDisposable
 {
+    private readonly System.Globalization.CultureInfo? _originalCulture = AppResources.Culture;
+
     private const string Provider = "coach@example.com";
     private const string Customer = "me@example.com";
+
+    public AppointmentRescheduleGateTests() =>
+        AppResources.Culture = new System.Globalization.CultureInfo("en");
+
+    public void Dispose() => AppResources.Culture = _originalCulture;
 
     private static Mock<IUserSessionService> Session(bool isProvider)
     {

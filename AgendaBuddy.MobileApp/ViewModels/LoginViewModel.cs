@@ -41,11 +41,11 @@ public partial class LoginViewModel : ObservableObject
             if (success)
                 LoginSucceeded?.Invoke(this, EventArgs.Empty);
             else
-                ErrorMessage = "Invalid email or password. Please try again.";
+                ErrorMessage = AppResources.GetString("Error_InvalidCredentials");
         }
         catch (HttpRequestException)
         {
-            ErrorMessage = "Could not reach the server. Check your connection and try again.";
+            ErrorMessage = AppResources.Error_ServerUnavailable;
         }
         finally
         {

@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using System.Xml.Linq;
 using Xunit;
 
 namespace AgendaBuddy.MobileApp.Tests;
@@ -74,6 +75,36 @@ public class ReleaseConfigurationTest
     public void InfoPlist_AnswersTheExportComplianceQuestion()
     {
         Assert.Contains("ITSAppUsesNonExemptEncryption", Plist());
+    }
+
+    [Fact]
+    public void IosDeclaresEverySelectableApplicationLanguage()
+    {
+        var plist = XDocument.Load(Path.Combine(
+            RepositoryRoot(), "AgendaBuddy.MobileApp", "Platforms", "iOS", "Info.plist"));
+        var key = plist.Descendants("key").SingleOrDefault(element => element.Value == "CFBundleLocalizations");
+
+        Assert.NotNull(key);
+        var values = ((XElement?)key!.NextNode)!.Elements("string").Select(element => element.Value).ToList();
+        Assert.Equal(["en", "es-MX"], values);
+    }
+
+    [Fact]
+    public void AndroidDeclaresEverySelectableApplicationLanguage()
+    {
+        var root = Path.Combine(RepositoryRoot(), "AgendaBuddy.MobileApp", "Platforms", "Android");
+        var android = XNamespace.Get("http://schemas.android.com/apk/res/android");
+        var manifest = XDocument.Load(Path.Combine(root, "AndroidManifest.xml"));
+
+        Assert.Equal("@xml/locales_config",
+            manifest.Root!.Element("application")!.Attribute(android + "localeConfig")?.Value);
+
+        var config = XDocument.Load(Path.Combine(root, "Resources", "xml", "locales_config.xml"));
+        var locales = config.Root!.Elements("locale")
+            .Select(element => element.Attribute(android + "name")?.Value)
+            .ToList();
+
+        Assert.Equal(["en", "es-MX"], locales);
     }
 
     /// <summary>

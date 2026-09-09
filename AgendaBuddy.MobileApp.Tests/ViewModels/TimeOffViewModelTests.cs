@@ -288,16 +288,19 @@ public class TimeOffViewModelTests
     }
 
     [Fact]
-    public async Task ARejectedSaveShowsTheServersOwnReason()
+    public async Task ARejectedSaveShowsAnActionableConflictMessage()
     {
-        var vm = Build(Api(saveResult: new AppointmentActionResult(false, "3 booked sessions fall inside this range.")));
+        var vm = Build(Api(saveResult: new AppointmentActionResult(false, new MobileError(
+            MobileOperation.CalendarBlock,
+            MobileErrorCategory.Conflict,
+            "3 booked sessions fall inside this range."))));
         vm.StartDate = Monday;
         vm.EndDate = Monday;
 
         await vm.SaveCommand.ExecuteAsync(null);
 
         Assert.True(vm.HasError);
-        Assert.Contains("3 booked sessions", vm.ErrorMessage);
+        Assert.Equal("Booked sessions fall inside this time. Review them before blocking it.", vm.ErrorMessage);
     }
 
     [Fact]
@@ -336,7 +339,10 @@ public class TimeOffViewModelTests
     {
         var vm = Build(Api(
             blocks: [new CalendarBlock("abc", Monday, Monday.AddDays(1), null)],
-            removeResult: new AppointmentActionResult(false, "No such block for this provider.")));
+            removeResult: new AppointmentActionResult(false, new MobileError(
+                MobileOperation.CalendarBlock,
+                MobileErrorCategory.NotFound,
+                "No such block for this provider."))));
 
         await vm.LoadCommand.ExecuteAsync(null);
         await vm.RemoveCommand.ExecuteAsync(vm.Blocks[0]);
@@ -404,8 +410,8 @@ public class TimeOffViewModelTests
         var block = new CalendarBlock("a", Monday.AddHours(13), Monday.AddHours(17), "Dentist");
 
         Assert.False(block.IsAllDay);
-        Assert.Contains("1:00 PM", block.RangeLabel);
-        Assert.Contains("5:00 PM", block.RangeLabel);
+        Assert.Contains(Monday.AddHours(13).ToString("t", System.Globalization.CultureInfo.CurrentCulture), block.RangeLabel);
+        Assert.Contains(Monday.AddHours(17).ToString("t", System.Globalization.CultureInfo.CurrentCulture), block.RangeLabel);
         Assert.True(block.HasReason);
     }
 

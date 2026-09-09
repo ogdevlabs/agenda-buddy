@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:strings="clr-namespace:AgendaBuddy.MobileApp.Resources.Strings"
              xmlns:controls="clr-namespace:AgendaBuddy.MobileApp.Controls"
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
              x:Class="AgendaBuddy.MobileApp.Views.AppointmentDetailPage"
-             Title="Appointment"
+             Title="{x:Static strings:AppResources.Xaml_Appointment}"
              BackgroundColor="{StaticResource BackgroundPage}"
              Shell.NavBarIsVisible="False">
 
@@ -59,7 +60,7 @@
                            VerticalOptions="Center"
                            AutomationId="ErrorBanner" />
                     <controls:SafeButton Grid.Column="1"
-                            Text="Retry"
+                            Text="{x:Static strings:AppResources.Xaml_Retry}"
                             Command="{Binding LoadCommand}"
                             BackgroundColor="{StaticResource Error}"
                             TextColor="White"
@@ -165,7 +166,7 @@
                         <!-- Stays OUTSIDE the tabs: the customer's note is context for the session, not one of
                              the things you can do about it. -->
                         <VerticalStackLayout Spacing="8">
-                            <Label Text="NOTES FROM CUSTOMER"
+                            <Label Text="{x:Static strings:AppResources.Xaml_NOTESFROMCUSTOMER}"
                                    FontSize="11"
                                    TextColor="{StaticResource TextMuted}"
                                    TextTransform="Uppercase"
@@ -201,7 +202,7 @@
                                     <Setter Property="BorderColor" Value="{StaticResource Primary}" />
                                 </DataTrigger>
                             </Frame.Triggers>
-                            <Label Text="Manage" FontSize="14" HorizontalTextAlignment="Center"
+                            <Label Text="{x:Static strings:AppResources.Xaml_Manage}" FontSize="14" HorizontalTextAlignment="Center"
                                    VerticalOptions="Center" Padding="0,12"
                                    TextColor="{StaticResource TextPrimary}"
                                    AutomationId="ManageTabButton">
@@ -227,7 +228,7 @@
                                     <Setter Property="BorderColor" Value="{StaticResource Primary}" />
                                 </DataTrigger>
                             </Frame.Triggers>
-                            <Label Text="Notes" FontSize="14" HorizontalTextAlignment="Center"
+                            <Label Text="{x:Static strings:AppResources.Xaml_Notes}" FontSize="14" HorizontalTextAlignment="Center"
                                    VerticalOptions="Center" Padding="0,12"
                                    TextColor="{StaticResource TextPrimary}"
                                    AutomationId="NotesTabButton">
@@ -266,13 +267,13 @@
                              answer from the proposer, so offering it to them would be two buttons that both 409. -->
                         <VerticalStackLayout Spacing="14"
                                              IsVisible="{Binding ShowRescheduleAnswerButtons}">
-                            <controls:SafeButton Text="Approve new time"
+                            <controls:SafeButton Text="{x:Static strings:AppResources.Xaml_ApproveNewTime}"
                                     Style="{StaticResource SuccessButton}"
                                     HeightRequest="60"
                                     Command="{Binding ApproveRescheduleCommand}"
                                     IsEnabled="{Binding IsNotLoading}"
                                     AutomationId="ApproveRescheduleButton" />
-                            <controls:SafeButton Text="Decline"
+                            <controls:SafeButton Text="{x:Static strings:AppResources.Xaml_Decline}"
                                     Style="{StaticResource DangerButton}"
                                     HeightRequest="60"
                                     Command="{Binding DeclineRescheduleCommand}"
@@ -282,7 +283,7 @@
 
                         <!-- Confirm: the provider accepting a REQUEST, so it only ever applies to a Requested
                              session and never sits beside Reschedule or Complete, which are for a Booked one. -->
-                        <controls:SafeButton Text="Confirm"
+                        <controls:SafeButton Text="{x:Static strings:AppResources.Xaml_Confirm}"
                                 Style="{StaticResource SuccessButton}"
                                 HeightRequest="60"
                                 Command="{Binding ConfirmCommand}"
@@ -299,7 +300,7 @@
                              The provider MOVES a session; a customer ASKS, and their button is below, because
                              the calendar belongs to the provider — that asymmetry is the product decision, not
                              a permissions accident. -->
-                        <controls:SafeButton Text="Reschedule"
+                        <controls:SafeButton Text="{x:Static strings:AppResources.Xaml_Reschedule}"
                                 Style="{StaticResource WarningButton}"
                                 HeightRequest="60"
                                 Command="{Binding RescheduleCommand}"
@@ -315,7 +316,7 @@
                         <!-- The customer's counterpart to Reschedule. Full width because a customer has no
                              Complete to sit beside: Complete is a claim about work delivered, which is the
                              provider's to make. -->
-                        <controls:SafeButton Text="Request a new time"
+                        <controls:SafeButton Text="{x:Static strings:AppResources.Xaml_RequestANewTime}"
                                 Style="{StaticResource WarningButton}"
                                 HeightRequest="60"
                                 Command="{Binding RequestNewTimeCommand}"
@@ -325,7 +326,7 @@
 
                         <!-- Cancel. A provider may cancel at any notice; a customer only outside the 24-hour
                              window, and inside it the button is replaced by the reason rather than greyed. -->
-                        <controls:SafeButton Text="Cancel"
+                        <controls:SafeButton Text="{x:Static strings:AppResources.General_Cancel}"
                                 Style="{StaticResource DangerButton}"
                                 HeightRequest="60"
                                 Command="{Binding CancelCommand}"
@@ -386,7 +387,7 @@
                                             <Setter Property="BorderColor" Value="{StaticResource Primary}" />
                                         </DataTrigger>
                                     </Frame.Triggers>
-                                    <Label Text="Current notes" FontSize="13" HorizontalTextAlignment="Center"
+                                    <Label Text="{x:Static strings:AppResources.Xaml_CurrentNotes}" FontSize="13" HorizontalTextAlignment="Center"
                                            VerticalOptions="Center" Padding="0,10"
                                            TextColor="{StaticResource TextPrimary}"
                                            AutomationId="CurrentNotesTabButton">
@@ -413,7 +414,7 @@
                                             <Setter Property="BorderColor" Value="{StaticResource Primary}" />
                                         </DataTrigger>
                                     </Frame.Triggers>
-                                    <Label Text="Add a note" FontSize="13" HorizontalTextAlignment="Center"
+                                    <Label Text="{x:Static strings:AppResources.Xaml_AddANote}" FontSize="13" HorizontalTextAlignment="Center"
                                            VerticalOptions="Center" Padding="0,10"
                                            TextColor="{StaticResource TextPrimary}"
                                            AutomationId="AddNoteTabButton">
@@ -455,7 +456,7 @@
 
                             <!-- Empty state: a notes tab with nothing in it should say so rather than look
                                  broken. -->
-                            <Label Text="No notes on this session yet."
+                            <Label Text="{x:Static strings:AppResources.Xaml_NoNotesOnThisSessionYet}"
                                    IsVisible="{Binding ShowNoNotesMessage}"
                                    FontSize="13" TextColor="{StaticResource TextMuted}"
                                    AutomationId="NoSessionNotesLabel" />
@@ -476,14 +477,14 @@
                                          underneath it. An Editor scrolls internally, so a longer note still fits;
                                          what must not need scrolling is the button. -->
                                     <Editor Text="{Binding NewNoteContent}"
-                                            Placeholder="Add a note about this session..."
+                                            Placeholder="{x:Static strings:AppResources.Xaml_AddANoteAboutThisSession}"
                                             HeightRequest="64"
                                             AutoSize="Disabled"
                                             FontSize="15"
                                             TextColor="{StaticResource TextPrimary}"
                                             AutomationId="NewNoteEntry" />
                                 </Frame>
-                                <controls:SafeButton Text="Add note"
+                                <controls:SafeButton Text="{x:Static strings:AppResources.Xaml_AddNote}"
                                         Style="{StaticResource PrimaryButton}"
                                         HeightRequest="52"
                                         Command="{Binding AddNoteCommand}"

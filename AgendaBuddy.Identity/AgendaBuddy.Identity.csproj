@@ -33,6 +33,7 @@
     <ItemGroup>
         <!-- F-016 AC-2: the integration harness asserts on internal helpers. -->
         <InternalsVisibleTo Include="AgendaBuddy.IntegrationTests" />
+        <InternalsVisibleTo Include="AgendaBuddy.Identity.Tests" />
     </ItemGroup>
 
 </Project>

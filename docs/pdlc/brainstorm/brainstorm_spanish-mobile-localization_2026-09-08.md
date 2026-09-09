@@ -1,11 +1,12 @@
 ---
 feature: spanish-mobile-localization
 date: 2026-09-08
-status: brainstorm-complete
+status: inception-complete
 last-updated: 2026-09-08T00:00:00Z
-approved-by: pending
-approved-date: pending
-prd: pending
+approved-by: user — full autonomous implementation requested
+approved-date: 2026-09-08
+prd: docs/pdlc/prds/PRD_F-033_spanish-mobile-localization_2026-09-08.md
+architecture: docs/pdlc/design/spanish-mobile-localization/ARCHITECTURE.md
 ---
 
 # Brainstorm Log: Spanish Mobile Localization

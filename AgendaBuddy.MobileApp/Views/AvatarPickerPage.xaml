@@ -11,11 +11,12 @@
 -->
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:strings="clr-namespace:AgendaBuddy.MobileApp.Resources.Strings"
              xmlns:controls="clr-namespace:AgendaBuddy.MobileApp.Controls"
              xmlns:models="clr-namespace:AgendaBuddy.MobileApp.Models"
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
              x:Class="AgendaBuddy.MobileApp.Views.AvatarPickerPage"
-             Title="Choose avatar"
+             Title="{x:Static strings:AppResources.Xaml_ChooseAvatar}"
              BackgroundColor="{StaticResource BackgroundPage}"
              Shell.NavBarIsVisible="False">
 
@@ -30,7 +31,7 @@
         <VerticalStackLayout Grid.Row="1" Padding="20,16,20,12" Spacing="10">
             <controls:Avatar Size="96" Source="{Binding PreviewAsset}" HorizontalOptions="Center"
                              AutomationId="AvatarPreview" />
-            <Label Text="Pick a mark. Abstract rather than a face, so nothing about you is assumed."
+            <Label Text="{x:Static strings:AppResources.Xaml_PickAMarkAbstractRatherThanAFaceSoNothingAboutYouIsAssumed}"
                    FontSize="12.5"
                    TextColor="{StaticResource TextMuted}"
                    HorizontalTextAlignment="Center" />
@@ -75,7 +76,7 @@
         </CollectionView>
 
         <Grid Grid.Row="3" Padding="20,12,20,20" BackgroundColor="{StaticResource BackgroundPage}">
-            <controls:SafeButton Text="Save avatar"
+            <controls:SafeButton Text="{x:Static strings:AppResources.Xaml_SaveAvatar}"
                     Style="{StaticResource PrimaryButton}"
                     Command="{Binding SaveCommand}"
                     IsVisible="{Binding IsSaving, Converter={StaticResource InvertedBoolConverter}}"

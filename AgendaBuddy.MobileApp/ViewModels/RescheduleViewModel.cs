@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using AgendaBuddy.MobileApp.Infrastructure;
 using AgendaBuddy.MobileApp.Models;
+using AgendaBuddy.MobileApp.Resources.Strings;
 using AgendaBuddy.MobileApp.Services;
 
 namespace AgendaBuddy.MobileApp.ViewModels;
@@ -67,16 +68,17 @@ public partial class RescheduleViewModel : ObservableObject
     /// </summary>
     public bool IsProviderMovingIt => _session.IsProvider;
 
-    public string Title => IsProviderMovingIt ? "Reschedule session" : "Request a new time";
+    public string Title => AppResources.GetString(
+        IsProviderMovingIt ? "Reschedule_RescheduleTitle" : "Reschedule_RequestTitle");
 
     public string Explanation => IsProviderMovingIt
-        ? "Pick a new time from your own free slots. The customer will be notified that the session moved."
-        : "Pick a time your provider has free. They will approve or decline it, and until they answer the "
-          + "session stays where it is.";
+                ? AppResources.GetString("Reschedule_ProviderExplanation")
+                : AppResources.GetString("Reschedule_CustomerExplanation");
 
-    public string CurrentTimeLabel => $"Currently {CurrentStart:dddd d MMMM 'at' h:mm tt}";
+    public string CurrentTimeLabel => AppResources.Format("Reschedule_CurrentTime", CurrentStart);
 
-    public string SubmitLabel => IsProviderMovingIt ? "Move session" : "Send request";
+    public string SubmitLabel => AppResources.GetString(
+        IsProviderMovingIt ? "Reschedule_MoveSession" : "Reschedule_SendRequest");
 
     public bool CanSubmit => Picker.SelectedStartUtc is not null && !IsSubmitting;
 
@@ -119,7 +121,7 @@ public partial class RescheduleViewModel : ObservableObject
 
             if (!result.Succeeded)
             {
-                ErrorMessage = result.ErrorMessage ?? "That could not be done. Try again.";
+                ErrorMessage = result.ErrorMessage ?? AppResources.Error_ActionRejected;
                 await ToastNotifier.ShowAsync(ErrorMessage);
 
                 // Most likely somebody took the slot between the fetch and the tap. Re-read so the stale slot
@@ -128,9 +130,9 @@ public partial class RescheduleViewModel : ObservableObject
                 return;
             }
 
-            await ToastNotifier.ShowAsync(IsProviderMovingIt
-                ? "Session moved. The customer has been notified."
-                : "Request sent. Your provider will answer.");
+            await ToastNotifier.ShowAsync(AppResources.GetString(IsProviderMovingIt
+                ? "Reschedule_SessionMoved"
+                : "Reschedule_RequestSent"));
 
             Completed?.Invoke(this, EventArgs.Empty);
         }

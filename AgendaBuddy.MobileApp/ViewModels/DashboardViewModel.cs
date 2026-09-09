@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using AgendaBuddy.MobileApp.Models;
+using AgendaBuddy.MobileApp.Resources.Strings;
 using AgendaBuddy.MobileApp.Services;
 
 namespace AgendaBuddy.MobileApp.ViewModels;
@@ -73,15 +74,16 @@ public partial class DashboardViewModel : ObservableObject
     public bool IsProvider => _session.IsProvider;
     public bool IsCustomer => _session.IsCustomer;
 
-    public string SectionTitle => "Upcoming Sessions";
-    public string PrimaryStatLabel => "Today";
-    public string PrimaryStatCaption => IsCustomer ? "" : "Sessions";
-    public string SecondaryStatLabel => "Upcoming";
+    public string SectionTitle => AppResources.GetString("Dashboard_SectionUpcoming");
+    public string PrimaryStatLabel => AppResources.GetString("Dashboard_Today");
+    public string PrimaryStatCaption => IsCustomer ? "" : AppResources.GetString("Dashboard_Sessions");
+    public string SecondaryStatLabel => AppResources.GetString("Dashboard_Upcoming");
     public string SecondaryStatCaption => "";
-    public string EmptyStateTitle => IsCustomer ? "Nothing Booked Yet" : "No Appointments";
+    public string EmptyStateTitle => AppResources.GetString(
+        IsCustomer ? "Dashboard_EmptyCustomerTitle" : "Dashboard_EmptyProviderTitle");
     public string EmptyStateSubtitle => IsCustomer
-        ? "Book a session with a provider and it will show up here."
-        : "Check your calendar for upcoming sessions.";
+        ? AppResources.GetString("Dashboard_EmptyCustomerSubtitle")
+        : AppResources.GetString("Dashboard_EmptyProviderSubtitle");
 
     public event EventHandler? AppointmentsLoaded;
 
@@ -100,9 +102,9 @@ public partial class DashboardViewModel : ObservableObject
         _signedInUser = signedInUser;
         Greeting = DateTime.Now.Hour switch
         {
-            < 12 => "Good morning",
-            < 17 => "Good afternoon",
-            _ => "Good evening"
+            < 12 => AppResources.GetString("Dashboard_GoodMorning"),
+            < 17 => AppResources.GetString("Dashboard_GoodAfternoon"),
+            _ => AppResources.GetString("Dashboard_GoodEvening")
         };
     }
 
@@ -143,9 +145,9 @@ public partial class DashboardViewModel : ObservableObject
 
         Greeting = DateTime.Now.Hour switch
         {
-            < 12 => "Good morning",
-            < 17 => "Good afternoon",
-            _ => "Good evening"
+            < 12 => AppResources.GetString("Dashboard_GoodMorning"),
+            < 17 => AppResources.GetString("Dashboard_GoodAfternoon"),
+            _ => AppResources.GetString("Dashboard_GoodEvening")
         };
 
         // Idempotent and cached per account, so this is a no-op once the name is known.
@@ -177,7 +179,7 @@ public partial class DashboardViewModel : ObservableObject
         {
             // Real failure (network, timeout, malformed response, ambiguous write, etc.) — surface it
             // through the error banner rather than masking it with fabricated data.
-            ErrorMessage = "Could not load appointments. Check your connection and try again.";
+            ErrorMessage = AppResources.GetString("Error_LoadAppointments");
 
             // The banner deliberately says nothing technical, which means a genuine fault -- a parse error, a
             // null reference -- is indistinguishable from a dropped connection to anyone reading the screen.

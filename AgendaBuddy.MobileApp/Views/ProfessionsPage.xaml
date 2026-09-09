@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:strings="clr-namespace:AgendaBuddy.MobileApp.Resources.Strings"
              xmlns:controls="clr-namespace:AgendaBuddy.MobileApp.Controls"
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
              x:Class="AgendaBuddy.MobileApp.Views.ProfessionsPage"
              x:Name="ThisPage"
-             Title="Professions"
+             Title="{x:Static strings:AppResources.Xaml_Professions}"
              BackgroundColor="{StaticResource BackgroundPage}"
              Shell.NavBarIsVisible="False">
 
@@ -36,27 +37,27 @@
 
                 <!-- Your Professions (provider only) -->
                 <VerticalStackLayout Spacing="8" IsVisible="{Binding IsProvider}">
-                    <Label Text="Your Professions" FontSize="13" FontAttributes="Bold" TextColor="{StaticResource TextMuted}" />
+                    <Label Text="{x:Static strings:AppResources.Xaml_YourProfessions}" FontSize="13" FontAttributes="Bold" TextColor="{StaticResource TextMuted}" />
 
-                    <Label Text="You haven't selected any professions yet." IsVisible="{Binding CurrentProfessions, Converter={toolkit:IsListNullOrEmptyConverter}}"
+                    <Label Text="{x:Static strings:AppResources.Xaml_YouHavenTSelectedAnyProfessionsYet}" IsVisible="{Binding CurrentProfessions, Converter={toolkit:IsListNullOrEmptyConverter}}"
                            TextColor="{StaticResource TextMuted}" FontSize="13" />
 
                     <!-- Bounded: a provider with many professions must not squeeze the catalog out of the star row. -->
                     <ScrollView MaximumHeightRequest="108"
                                 IsVisible="{Binding CurrentProfessions, Converter={toolkit:IsListNotNullOrEmptyConverter}}">
-                        <FlexLayout Wrap="Wrap" BindableLayout.ItemsSource="{Binding CurrentProfessions}">
+                        <FlexLayout Wrap="Wrap" BindableLayout.ItemsSource="{Binding CurrentProfessionItems}">
                             <BindableLayout.ItemTemplate>
                                 <DataTemplate>
                                     <Frame CornerRadius="16" BackgroundColor="{StaticResource Primary}" HasShadow="False"
                                            Padding="12,6" Margin="0,0,8,8">
                                         <HorizontalStackLayout Spacing="6">
-                                            <Label Text="{Binding}" TextColor="White" FontSize="13" VerticalOptions="Center" />
+                                            <Label Text="{Binding DisplayName}" TextColor="White" FontSize="13" VerticalOptions="Center" />
                                             <Label Text="&#x2715;" TextColor="White" FontSize="11" VerticalOptions="Center"
                                                    AutomationId="RemoveProfessionChip">
                                                 <Label.GestureRecognizers>
                                                     <TapGestureRecognizer
                                                         Command="{Binding Source={x:Reference ThisPage}, Path=BindingContext.RemoveCurrentCommand}"
-                                                        CommandParameter="{Binding}" />
+                                                        CommandParameter="{Binding Name}" />
                                                 </Label.GestureRecognizers>
                                             </Label>
                                         </HorizontalStackLayout>
@@ -70,14 +71,14 @@
                 <BoxView HeightRequest="0.5" Color="{StaticResource BorderLight}" IsVisible="{Binding IsProvider}" />
 
                 <!-- Catalog search -->
-                <SearchBar Text="{Binding SearchText}" Placeholder="Search professions"
+                <SearchBar Text="{Binding SearchText}" Placeholder="{x:Static strings:AppResources.Xaml_SearchProfessions}"
                            BackgroundColor="White" TextColor="{StaticResource TextPrimary}"
                            PlaceholderColor="{StaticResource TextMuted}" CancelButtonColor="{StaticResource Primary}"
                            AutomationId="ProfessionSearchBar" />
 
             </VerticalStackLayout>
 
-            <Label Grid.Row="1" Text="No professions found." IsVisible="{Binding IsEmpty}"
+            <Label Grid.Row="1" Text="{x:Static strings:AppResources.Xaml_NoProfessionsFound}" IsVisible="{Binding IsEmpty}"
                    TextColor="{StaticResource TextMuted}" HorizontalOptions="Center" VerticalOptions="Start" Margin="0,40" />
 
             <!--
@@ -123,7 +124,7 @@
                                     <Label Grid.Column="0" Text="{Binding Profession.IsSelected, Converter={toolkit:BoolToObjectConverter TrueObject='&#x2713;', FalseObject='&#x25CB;'}}"
                                            TextColor="{StaticResource Primary}" FontSize="16" WidthRequest="24"
                                            IsVisible="{Binding Source={x:Reference ThisPage}, Path=BindingContext.IsProvider}" />
-                                    <Label Grid.Column="1" Text="{Binding Profession.Name}" FontSize="15" TextColor="{StaticResource TextPrimary}" />
+                                    <Label Grid.Column="1" Text="{Binding Profession.DisplayName}" FontSize="15" TextColor="{StaticResource TextPrimary}" />
                                 </Grid>
                             </Frame>
 
@@ -135,7 +136,7 @@
             <VerticalStackLayout Grid.Row="2" Spacing="10">
 
                 <Grid IsVisible="{Binding IsProvider}">
-                    <controls:SafeButton Text="Save Professions"
+                    <controls:SafeButton Text="{x:Static strings:AppResources.Xaml_SaveProfessions}"
                             Style="{StaticResource PrimaryButton}"
                             HeightRequest="48"
                             Command="{Binding SaveSelectionCommand}"
@@ -145,7 +146,7 @@
                                         Color="{StaticResource Primary}" HorizontalOptions="Center" />
                 </Grid>
 
-                <controls:SafeButton Text="Continue to My Services"
+                <controls:SafeButton Text="{x:Static strings:AppResources.Xaml_ContinueToMyServices}"
                         Style="{StaticResource SecondaryButton}"
                         HeightRequest="48"
                         IsVisible="{Binding HasAnyProfession}"

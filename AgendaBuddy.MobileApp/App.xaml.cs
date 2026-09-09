@@ -1,4 +1,6 @@
 #if MOBILE
+using System.Globalization;
+using AgendaBuddy.MobileApp.Infrastructure;
 using AgendaBuddy.MobileApp.Services;
 using AgendaBuddy.MobileApp.ViewModels;
 
@@ -6,31 +8,43 @@ namespace AgendaBuddy.MobileApp;
 
 public partial class App : Application
 {
-    private readonly AppShell _shell;
+    private readonly IServiceProvider _services;
+    private readonly ILanguageCoordinator _languageCoordinator;
     private readonly NotificationBadgeViewModel _notificationBadge;
 
 #if DEBUG
     private readonly IAuthService _authService;
 
-    public App(AppShell shell, NotificationBadgeViewModel notificationBadge, IAuthService authService)
+    public App(
+        IServiceProvider services,
+        ILanguageCoordinator languageCoordinator,
+        NotificationBadgeViewModel notificationBadge,
+        IAuthService authService)
     {
         InitializeComponent();
-        _shell = shell;
+        _services = services;
+        _languageCoordinator = languageCoordinator;
         _notificationBadge = notificationBadge;
         _authService = authService;
+        InitializeLanguageAndNavigation();
     }
 #else
-    public App(AppShell shell, NotificationBadgeViewModel notificationBadge)
+    public App(
+        IServiceProvider services,
+        ILanguageCoordinator languageCoordinator,
+        NotificationBadgeViewModel notificationBadge)
     {
         InitializeComponent();
-        _shell = shell;
+        _services = services;
+        _languageCoordinator = languageCoordinator;
         _notificationBadge = notificationBadge;
+        InitializeLanguageAndNavigation();
     }
 #endif
 
     protected override Window CreateWindow(IActivationState? activationState)
     {
-        var window = new Window(_shell);
+        var window = new Window(_services.GetRequiredService<AppShell>());
 
         // The unread count otherwise only refreshes when MorePage appears — the one screen that shows it. A
         // notification arriving while the app sat on another tab, or while it was backgrounded, left the badge
@@ -42,6 +56,18 @@ public partial class App : Application
 #endif
 
         return window;
+    }
+
+    private void InitializeLanguageAndNavigation()
+    {
+        _languageCoordinator.Initialize(CultureInfo.CurrentUICulture);
+        JwtDelegatingHandler.UnauthorizedAccess += OnUnauthorizedAccess;
+    }
+
+    private static async void OnUnauthorizedAccess(object? sender, EventArgs eventArgs)
+    {
+        if (Shell.Current is not null)
+            await Shell.Current.GoToAsync("//login");
     }
 
 #if DEBUG
@@ -84,6 +110,9 @@ public partial class App : Application
                 : $"DEV SIGN-IN: refused for {email} — check the password and that the backend is reachable");
 
             if (!signedIn) return;
+
+            if (Shell.Current is AppShell shell)
+                await shell.UpdateForRoleAsync();
 
             // MAUI_DEV_ROUTE lets a launch land on any tab or page, so a screen other than the dashboard can be
             // inspected without tapping through to it. Defaults to the dashboard, which is where a real sign-in

@@ -1,4 +1,5 @@
 using AgendaBuddy.Library.Entities;
+using AgendaBuddy.MobileApp.Resources.Strings;
 
 namespace AgendaBuddy.MobileApp.Infrastructure;
 
@@ -106,10 +107,10 @@ public static class NotificationVisuals
         var day = localCreatedAt.Date;
         var today = localNow.Date;
 
-        if (day >= today) return "Today";
-        if (day == today.AddDays(-1)) return "Yesterday";
-        if (day > today.AddDays(-WeekdayNamingWindowDays)) return localCreatedAt.ToString("dddd");
+        if (day >= today) return AppResources.GetString("Notification_Date_Today");
+        if (day == today.AddDays(-1)) return AppResources.GetString("Notification_Date_Yesterday");
+        if (day > today.AddDays(-WeekdayNamingWindowDays)) return localCreatedAt.ToString("dddd", AppResources.CurrentCulture);
 
-        return localCreatedAt.ToString("MMMM d");
+        return localCreatedAt.ToString("MMMM d", AppResources.CurrentCulture);
     }
 }

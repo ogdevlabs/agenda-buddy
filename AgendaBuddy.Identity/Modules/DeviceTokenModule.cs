@@ -23,7 +23,11 @@ public class DeviceTokenModule : ICarterModule
             if (string.IsNullOrWhiteSpace(email))
                 return Results.Unauthorized();
 
-            await svc.UpsertAsync(email, request.Token, request.Platform);
+            await svc.UpsertAsync(
+                email,
+                request.Token,
+                request.Platform,
+                NormalizeLanguageCode(request.LanguageCode));
             return Results.Ok();
         }).RequireAuthorization().WithName("RegisterDeviceToken");
 
@@ -42,5 +46,14 @@ public class DeviceTokenModule : ICarterModule
             await svc.DeleteByEmailAsync(email);
             return Results.NoContent();
         }).RequireAuthorization().WithName("UnregisterDeviceToken");
+    }
+
+    internal static string NormalizeLanguageCode(string? languageCode)
+    {
+        var normalized = languageCode?.Trim();
+        return string.Equals(normalized, "es", StringComparison.OrdinalIgnoreCase)
+               || normalized?.StartsWith("es-", StringComparison.OrdinalIgnoreCase) == true
+            ? "es-MX"
+            : "en";
     }
 }

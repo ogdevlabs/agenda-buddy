@@ -4,7 +4,7 @@
 	     reachable from the emulator. See Resources/xml/network_security_config.xml for why this is not
 	     usesCleartextTraffic="true". A Release build ships the same config; every non-loopback host stays
 	     HTTPS-only, so this is not a downgrade for a real user. -->
-	<application android:allowBackup="true" android:icon="@mipmap/appicon" android:roundIcon="@mipmap/appicon_round" android:supportsRtl="true" android:networkSecurityConfig="@xml/network_security_config">
+	<application android:allowBackup="true" android:icon="@mipmap/appicon" android:roundIcon="@mipmap/appicon_round" android:supportsRtl="true" android:networkSecurityConfig="@xml/network_security_config" android:localeConfig="@xml/locales_config">
 		<!-- The channel every push is posted on. Without this metadata a message that names no channel lands
 		     on the one the Firebase SDK auto-creates, labelled "Miscellaneous" — a name the user cannot
 		     recognise and an importance nothing here chose. The value must equal PushChannel.Id, which is

@@ -1,4 +1,5 @@
 #if MOBILE
+using AgendaBuddy.MobileApp.Resources.Strings;
 using AgendaBuddy.MobileApp.ViewModels;
 
 namespace AgendaBuddy.MobileApp.Views;
@@ -48,11 +49,11 @@ public partial class ProfilePage : ContentPage
     private async void OnDeactivateClicked(object? sender, EventArgs e)
     {
         var choice = await DisplayActionSheetAsync(
-            "Deactivate your account? Customers will no longer see you, and your data is kept.",
-            "Keep my account",
+            AppResources.GetString("Account_DeactivatePrompt"),
+            AppResources.GetString("Account_KeepAction"),
             null,
-            "Deactivate");
-        if (choice == "Deactivate")
+            AppResources.GetString("Account_DeactivateAction"));
+        if (choice == AppResources.GetString("Account_DeactivateAction"))
             _viewModel.DeactivateCommand.Execute(null);
     }
 
@@ -67,23 +68,24 @@ public partial class ProfilePage : ContentPage
     private async void OnDeleteAccountClicked(object? sender, EventArgs e)
     {
         var choice = await DisplayActionSheetAsync(
-            "Delete your account permanently? This cannot be undone.",
-            "Keep my account",
+            AppResources.GetString("Account_DeletePrompt"),
+            AppResources.GetString("Account_KeepAction"),
             null,
-            "Delete my account");
+            AppResources.GetString("Account_DeleteAction"));
 
-        if (choice != "Delete my account")
+        if (choice != AppResources.GetString("Account_DeleteAction"))
             return;
 
+        var confirmationWord = AppResources.GetString("Account_DeleteConfirmationWord");
         var typed = await DisplayPromptAsync(
-            "Confirm deletion",
-            "Type DELETE to confirm. Your profile will be removed and your details erased from other people's records.",
-            accept: "Delete",
-            cancel: "Cancel",
-            placeholder: "DELETE",
-            maxLength: 6);
+            AppResources.GetString("Account_ConfirmDeletionTitle"),
+            AppResources.Format("Account_ConfirmDeletionMessage", confirmationWord),
+            accept: AppResources.GetString("Account_DeleteConfirmAction"),
+            cancel: AppResources.General_Cancel,
+            placeholder: confirmationWord,
+            maxLength: confirmationWord.Length);
 
-        if (!string.Equals(typed?.Trim(), "DELETE", StringComparison.Ordinal))
+        if (!string.Equals(typed?.Trim(), confirmationWord, StringComparison.OrdinalIgnoreCase))
             return;
 
         _viewModel.DeleteAccountCommand.Execute(null);
@@ -91,7 +93,10 @@ public partial class ProfilePage : ContentPage
 
     private async void OnDeactivationSucceeded(object? sender, EventArgs e)
     {
-        await DisplayAlertAsync("Account deactivated", "Your provider account has been deactivated.", "OK");
+        await DisplayAlertAsync(
+            AppResources.GetString("Account_DeactivatedTitle"),
+            AppResources.GetString("Account_DeactivatedMessage"),
+            AppResources.GetString("General_OK"));
         await GoToLoginAsync();
     }
 

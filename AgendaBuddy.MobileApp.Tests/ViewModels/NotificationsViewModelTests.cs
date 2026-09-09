@@ -1,14 +1,20 @@
 using AgendaBuddy.Library.Entities;
 using AgendaBuddy.MobileApp.Models;
+using AgendaBuddy.MobileApp.Resources.Strings;
 using AgendaBuddy.MobileApp.Services;
 using AgendaBuddy.MobileApp.ViewModels;
 using Moq;
+using System.Globalization;
 using Xunit;
 
 namespace AgendaBuddy.MobileApp.Tests.ViewModels;
 
-public class NotificationsViewModelTests
+public class NotificationsViewModelTests : IDisposable
 {
+    private readonly CultureInfo? _originalCulture = AppResources.Culture;
+
+    public void Dispose() => AppResources.Culture = _originalCulture;
+
     private static Mock<IUserSessionService> CreateMockSession(string email = "sarah.mitchell@agendabuddy.dev", string role = "Provider")
     {
         var session = new Mock<IUserSessionService>();
@@ -70,6 +76,126 @@ public class NotificationsViewModelTests
         new() { Id = "n2", Type = NotificationType.AppointmentUpdated, Subject = "Appointment confirmed", Body = "Updated", IsRead = true },
         new() { Id = "n3", Type = NotificationType.AppointmentCancelled, Subject = "Appointment cancelled", Body = "Cancelled", IsRead = false }
     ];
+
+    public static TheoryData<NotificationType, string> EveryTypeAndCulture()
+    {
+        var data = new TheoryData<NotificationType, string>();
+        foreach (var type in Enum.GetValues<NotificationType>())
+        {
+            data.Add(type, "en");
+            data.Add(type, "es-MX");
+        }
+
+        return data;
+    }
+
+    [Theory]
+    [MemberData(nameof(EveryTypeAndCulture))]
+    public void EveryTypeHasLocalizedPrivacySafePresentation(NotificationType type, string cultureName)
+    {
+        AppResources.Culture = new CultureInfo(cultureName);
+        var row = new NotificationSummary
+        {
+            Type = type,
+            Subject = "someone@example.com sent backend English",
+            Body = "Private backend detail"
+        };
+
+        Assert.False(string.IsNullOrWhiteSpace(row.TypeLabel));
+        Assert.NotEqual(row.Subject, row.Title);
+        if (type == NotificationType.MessageReceived)
+            Assert.Equal("Private backend detail", row.Message);
+        else
+            Assert.NotEqual(row.Body, row.Message);
+    }
+
+    [Theory]
+    [MemberData(
+        nameof(AgendaBuddy.MobileApp.Tests.Infrastructure.NotificationVisualsTests.EveryType),
+        MemberType = typeof(AgendaBuddy.MobileApp.Tests.Infrastructure.NotificationVisualsTests))]
+    public void EveryTypeChangesPresentationBetweenEnglishAndSpanish(NotificationType type)
+    {
+        var row = new NotificationSummary { Type = type, Body = "Authored message" };
+
+        AppResources.Culture = new CultureInfo("en");
+        var english = (row.TypeLabel, row.Title);
+        AppResources.Culture = new CultureInfo("es-MX");
+        var spanish = (row.TypeLabel, row.Title);
+
+        Assert.NotEqual(english, spanish);
+    }
+
+    [Fact]
+    public void ChangingAppCultureChangesComputedPresentationOnTheSameRow()
+    {
+        var row = new NotificationSummary { Type = NotificationType.AppointmentRequested };
+
+        AppResources.Culture = new CultureInfo("en");
+        var english = (row.TypeLabel, row.Title, row.Message);
+        AppResources.Culture = new CultureInfo("es-MX");
+        var spanish = (row.TypeLabel, row.Title, row.Message);
+
+        Assert.NotEqual(english, spanish);
+    }
+
+    [Fact]
+    public void MessageBodyRemainsExactlyAsTheAuthorWroteIt()
+    {
+        const string authored = "¿Nos vemos el viernes a las 4?";
+        var row = new NotificationSummary { Type = NotificationType.MessageReceived, Body = authored };
+
+        AppResources.Culture = new CultureInfo("en");
+        Assert.Equal(authored, row.Message);
+        AppResources.Culture = new CultureInfo("es-MX");
+        Assert.Equal(authored, row.Message);
+    }
+
+    [Fact]
+    public void UnknownLegacyTypePreservesItsSubjectAndBody()
+    {
+        var row = new NotificationSummary
+        {
+            Type = (NotificationType)9999,
+            Subject = "Legacy subject",
+            Body = "Legacy body"
+        };
+
+        AppResources.Culture = new CultureInfo("es-MX");
+
+        Assert.Equal("Legacy subject", row.Title);
+        Assert.Equal("Legacy body", row.Message);
+        Assert.Equal("Información", row.TypeLabel);
+    }
+
+    [Theory]
+    [InlineData("en", "now", "12m ago", "3h ago", "4d ago")]
+    [InlineData("es-MX", "ahora", "hace 12 min", "hace 3 h", "hace 4 d")]
+    public void RelativeTimeUsesTheSelectedCulture(
+        string cultureName, string nowText, string minutes, string hours, string days)
+    {
+        AppResources.Culture = new CultureInfo(cultureName);
+        var now = new DateTime(2026, 9, 9, 12, 0, 0, DateTimeKind.Local);
+
+        Assert.Equal(nowText, NotificationSummary.FormatTimeAgo(now.AddSeconds(-20), now));
+        Assert.Equal(minutes, NotificationSummary.FormatTimeAgo(now.AddMinutes(-12), now));
+        Assert.Equal(hours, NotificationSummary.FormatTimeAgo(now.AddHours(-3), now));
+        Assert.Equal(days, NotificationSummary.FormatTimeAgo(now.AddDays(-4), now));
+    }
+
+    [Theory]
+    [InlineData("en", "2 unread", "Unread only", "2 notifications marked as read")]
+    [InlineData("es-MX", "2 sin leer", "Solo sin leer", "Se marcaron 2 notificaciones como leídas")]
+    public void InboxSummaryFilterAndActionUseTheSelectedCulture(
+        string cultureName, string summary, string filter, string action)
+    {
+        AppResources.Culture = new CultureInfo(cultureName);
+        var vm = CreateViewModel(CreateService(), out _);
+        vm.UnreadCount = 2;
+
+        Assert.Equal(summary, vm.UnreadSummary);
+        Assert.Equal(filter, vm.UnreadFilterLabel);
+        Assert.Equal(action, NotificationsViewModel.MarkAllReadConfirmation(2));
+    }
 
     [Fact]
     public async Task LoadAsync_Success_SetsNotificationsAndUnreadCount()

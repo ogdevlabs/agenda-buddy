@@ -19,15 +19,13 @@ namespace AgendaBuddy.MobileApp.Models;
 public sealed record MessageSendResult(bool Succeeded, MessageSummary? Message, string? ErrorMessage)
 {
     /// <summary>Shown for a <c>403</c>. States the rule, because the rule is the reason.</summary>
-    internal const string NotPermittedMessage =
-        "You can only message people you have a subscription with.";
+    internal static string NotPermittedMessage => AppResources.GetString("Error_MessageForbidden");
 
     /// <summary>Shown when the request never got an answer, which is the only case a connection is implicated in.</summary>
-    internal const string UnreachableMessage =
-        "Could not send message. Check your connection and try again.";
+    internal static string UnreachableMessage => AppResources.GetString("Error_MessageUnavailable");
 
     /// <summary>Shown for any other refusal — an empty body, or messaging yourself.</summary>
-    internal const string RejectedMessage = "Could not send message. Try again.";
+    internal static string RejectedMessage => AppResources.GetString("Error_MessageRejected");
 
     public static MessageSendResult Sent(MessageSummary? message) => new(true, message, null);
 

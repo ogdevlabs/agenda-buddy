@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:strings="clr-namespace:AgendaBuddy.MobileApp.Resources.Strings"
              xmlns:controls="clr-namespace:AgendaBuddy.MobileApp.Controls"
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
              x:Class="AgendaBuddy.MobileApp.Views.BookAppointmentPage"
              x:Name="ThisPage"
-             Title="Book Appointment"
+             Title="{x:Static strings:AppResources.Xaml_BookAppointment}"
              BackgroundColor="{StaticResource BackgroundPage}"
              Shell.NavBarIsVisible="False">
 
@@ -48,9 +49,9 @@
                     <Frame CornerRadius="20" BackgroundColor="White" BorderColor="#E2E8F0" HasShadow="True"
                            Padding="20" IsVisible="{Binding HasNoServices}">
                         <VerticalStackLayout Spacing="6" HorizontalOptions="Center">
-                            <Label Text="Nothing bookable yet" FontSize="16" FontAttributes="Bold"
+                            <Label Text="{x:Static strings:AppResources.Xaml_NothingBookableYet}" FontSize="16" FontAttributes="Bold"
                                    TextColor="{StaticResource TextPrimary}" HorizontalTextAlignment="Center" />
-                            <Label Text="This provider has not published any services you can book."
+                            <Label Text="{x:Static strings:AppResources.Xaml_ThisProviderHasNotPublishedAnyServicesYouCanBook}"
                                    FontSize="13" TextColor="{StaticResource TextMuted}" HorizontalTextAlignment="Center" />
                         </VerticalStackLayout>
                     </Frame>
@@ -59,7 +60,7 @@
                     <Frame CornerRadius="20" BackgroundColor="White" BorderColor="#E2E8F0" HasShadow="True"
                            Padding="20" IsVisible="{Binding HasServices}">
                         <VerticalStackLayout Spacing="10">
-                            <Label Text="1 · CHOOSE A SERVICE" FontSize="11" TextColor="{StaticResource TextMuted}"
+                            <Label Text="{x:Static strings:AppResources.Xaml_1CHOOSEASERVICE}" FontSize="11" TextColor="{StaticResource TextMuted}"
                                    CharacterSpacing="1.5" />
 
                             <CollectionView ItemsSource="{Binding Services}" SelectionMode="None"
@@ -121,9 +122,9 @@
                     <Frame CornerRadius="20" BackgroundColor="White" BorderColor="#E2E8F0" HasShadow="True"
                            Padding="20" IsVisible="{Binding IsFullyBooked}">
                         <VerticalStackLayout Spacing="6" HorizontalOptions="Center">
-                            <Label Text="No availability" FontSize="16" FontAttributes="Bold"
+                            <Label Text="{x:Static strings:AppResources.Xaml_NoAvailability}" FontSize="16" FontAttributes="Bold"
                                    TextColor="{StaticResource TextPrimary}" HorizontalTextAlignment="Center" />
-                            <Label Text="This provider has no free slots for that service in the next 90 days."
+                            <Label Text="{x:Static strings:AppResources.Xaml_ThisProviderHasNoFreeSlotsForThatServiceInTheNext90Days}"
                                    FontSize="13" TextColor="{StaticResource TextMuted}" HorizontalTextAlignment="Center" />
                         </VerticalStackLayout>
                     </Frame>
@@ -135,7 +136,7 @@
                     <Frame CornerRadius="20" BackgroundColor="White" BorderColor="#E2E8F0" HasShadow="True"
                            Padding="20" IsVisible="{Binding HasSelectedService}">
                         <VerticalStackLayout Spacing="10">
-                            <Label Text="2 · CHOOSE A DATE AND TIME" FontSize="11"
+                            <Label Text="{x:Static strings:AppResources.Xaml_2CHOOSEADATEANDTIME}" FontSize="11"
                                    TextColor="{StaticResource TextMuted}" CharacterSpacing="1.5" />
 
                             <controls:SlotPicker BindingContext="{Binding Picker}" />
@@ -206,7 +207,7 @@
                                 <FormattedString>
                                     <Span Text="{Binding SummaryService}" FontAttributes="Bold"
                                           TextColor="{StaticResource TextPrimary}" />
-                                    <Span Text=" with " />
+                                    <Span Text="{x:Static strings:AppResources.Xaml_With}" />
                                     <Span Text="{Binding SummaryWith}" TextColor="{StaticResource TextPrimary}" />
                                     <Span Text="  ·  " />
                                     <Span Text="{Binding SummaryPrice}" FontAttributes="Bold"
@@ -221,7 +222,7 @@
                     </VerticalStackLayout>
 
                     <Grid>
-                        <controls:SafeButton Text="Confirm Booking"
+                        <controls:SafeButton Text="{x:Static strings:AppResources.Xaml_ConfirmBooking}"
                                 Style="{StaticResource PrimaryButton}"
                                 Command="{Binding BookCommand}"
                                 IsVisible="{Binding IsBooking, Converter={StaticResource InvertedBoolConverter}}"

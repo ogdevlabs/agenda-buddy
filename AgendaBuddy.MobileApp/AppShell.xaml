@@ -3,6 +3,7 @@
        xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
        xmlns:views="clr-namespace:AgendaBuddy.MobileApp.Views"
        xmlns:infrastructure="clr-namespace:AgendaBuddy.MobileApp.Infrastructure"
+    xmlns:strings="clr-namespace:AgendaBuddy.MobileApp.Resources.Strings"
        x:Class="AgendaBuddy.MobileApp.AppShell"
        Title="{x:Static infrastructure:AppBrand.Name}">
 
@@ -27,29 +28,29 @@
         Shell.TabBarIsVisible="False" />
 
     <TabBar>
-        <Tab Title="Dashboard" Icon="dashboard_icon.png">
+        <Tab Title="{x:Static strings:AppResources.Xaml_Dashboard}" Icon="dashboard_icon.png">
             <ShellContent
                 Route="dashboard"
                 ContentTemplate="{DataTemplate views:DashboardPage}" />
         </Tab>
-        <Tab Title="Calendar" Icon="calendar_icon.png">
+        <Tab Title="{x:Static strings:AppResources.Xaml_Calendar}" Icon="calendar_icon.png">
             <ShellContent
                 Route="calendar"
                 ContentTemplate="{DataTemplate views:CalendarPage}" />
         </Tab>
-        <Tab x:Name="ContactsTab" Title="Customers" Icon="customers_icon.png">
+        <Tab x:Name="ContactsTab" Title="{x:Static strings:AppResources.Shell_ContactsCustomers}" Icon="customers_icon.png">
             <ShellContent
                 Route="customers"
                 ContentTemplate="{DataTemplate views:CustomersPage}" />
         </Tab>
-        <Tab Title="Messages" Icon="messages_icon.png">
+        <Tab Title="{x:Static strings:AppResources.Xaml_Messages}" Icon="messages_icon.png">
             <ShellContent
                 Route="messages"
                 ContentTemplate="{DataTemplate views:MessagingPage}" />
         </Tab>
         <!-- Five tabs, deliberately: a sixth makes Shell generate its own overflow "More" list, which
              carries none of the app's chrome. MorePage pushes Notifications and Account instead. -->
-        <Tab Title="More">
+        <Tab Title="{x:Static strings:AppResources.Xaml_More}">
             <ShellContent
                 Route="more"
                 ContentTemplate="{DataTemplate views:MorePage}" />

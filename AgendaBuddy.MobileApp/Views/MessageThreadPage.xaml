@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:strings="clr-namespace:AgendaBuddy.MobileApp.Resources.Strings"
              xmlns:controls="clr-namespace:AgendaBuddy.MobileApp.Controls"
              xmlns:routing="clr-namespace:AgendaBuddy.MobileApp.Routing"
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
@@ -105,7 +106,7 @@
                            HasShadow="False">
                         <!-- Capped at the source as well as in the handler and at the route: the keyboard
                              simply stops, which is the only one of the three the sender sees before sending. -->
-                        <Entry Placeholder="Type a message..."
+                        <Entry Placeholder="{x:Static strings:AppResources.Xaml_TypeAMessage}"
                                Text="{Binding NewMessageBody}"
                                MaxLength="{x:Static routing:MessagingRouteBuilder.MaxBodyLength}"
                                ReturnType="Send"

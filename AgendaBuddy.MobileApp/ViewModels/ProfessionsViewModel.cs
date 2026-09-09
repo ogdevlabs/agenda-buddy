@@ -52,6 +52,9 @@ public partial class ProfessionsViewModel : ObservableObject
     public bool IsEmpty => !IsLoading && FilteredCatalog.Count == 0 && !HasError;
     public bool HasSelectionChanges => IsProvider && _catalog.Any(p => p.IsSelected && !CurrentProfessions.Contains(p.Name));
     public bool HasAnyProfession => IsProvider && CurrentProfessions.Count > 0;
+    public List<ProfessionItem> CurrentProfessionItems => CurrentProfessions
+        .Select(name => new ProfessionItem { Name = name, IsSelected = true })
+        .ToList();
 
     public ProfessionsViewModel(IProfessionApiService professionApiService, IUserSessionService session)
     {
@@ -82,7 +85,7 @@ public partial class ProfessionsViewModel : ObservableObject
         }
         catch (Exception)
         {
-            ErrorMessage = "Could not load professions. Check your connection and try again.";
+            ErrorMessage = AppResources.GetString("Error_LoadProfessionCatalog");
         }
         finally
         {
@@ -120,18 +123,18 @@ public partial class ProfessionsViewModel : ObservableObject
             var succeeded = await _professionApiService.AddProfessionsToProviderAsync(_session.Email, newlySelected);
             if (!succeeded)
             {
-                ErrorMessage = "Could not save your professions — try again.";
+                ErrorMessage = AppResources.GetString("Error_SaveProfessions");
                 await ToastNotifier.ShowAsync(ErrorMessage);
                 return;
             }
 
             CurrentProfessions = CurrentProfessions.Concat(newlySelected).ToList();
             NotifySelectionChanged();
-            await ToastNotifier.ShowAsync("Professions saved.");
+            await ToastNotifier.ShowAsync(AppResources.GetString("Action_ProfessionsSaved"));
         }
         catch (Exception)
         {
-            ErrorMessage = "Could not reach the server. Check your connection and try again.";
+            ErrorMessage = AppResources.Error_ServerUnavailable;
             await ToastNotifier.ShowAsync(ErrorMessage);
         }
         finally
@@ -151,7 +154,7 @@ public partial class ProfessionsViewModel : ObservableObject
             var result = await _professionApiService.RemoveProfessionFromProviderAsync(_session.Email, professionName);
             if (!result.Success)
             {
-                ErrorMessage = result.ErrorMessage ?? "Could not remove this profession — try again.";
+                ErrorMessage = result.ErrorMessage ?? AppResources.GetString("Error_RemoveProfession");
                 await ToastNotifier.ShowAsync(ErrorMessage);
                 return;
             }
@@ -161,11 +164,11 @@ public partial class ProfessionsViewModel : ObservableObject
             if (catalogItem is not null)
                 catalogItem.IsSelected = false;
             NotifySelectionChanged();
-            await ToastNotifier.ShowAsync("Profession removed.");
+            await ToastNotifier.ShowAsync(AppResources.GetString("Action_ProfessionRemoved"));
         }
         catch (Exception)
         {
-            ErrorMessage = "Could not reach the server. Check your connection and try again.";
+            ErrorMessage = AppResources.Error_ServerUnavailable;
             await ToastNotifier.ShowAsync(ErrorMessage);
         }
         finally
@@ -201,7 +204,7 @@ public partial class ProfessionsViewModel : ObservableObject
     {
         FilteredCatalog = string.IsNullOrWhiteSpace(SearchText)
             ? _catalog
-            : _catalog.Where(p => p.Name.Contains(SearchText, StringComparison.OrdinalIgnoreCase)).ToList();
+            : _catalog.Where(p => p.DisplayName.Contains(SearchText, StringComparison.CurrentCultureIgnoreCase)).ToList();
 
         RebuildCatalogRows();
     }
@@ -220,7 +223,7 @@ public partial class ProfessionsViewModel : ObservableObject
         foreach (var group in groups)
         {
             var expanded = searching || _expandedLetters.Contains(group.Key);
-            var members = group.OrderBy(p => p.Name, StringComparer.CurrentCultureIgnoreCase).ToList();
+            var members = group.OrderBy(p => p.DisplayName, StringComparer.CurrentCultureIgnoreCase).ToList();
 
             rows.Add(ProfessionCatalogRow.ForHeader(group.Key, members.Count, expanded));
 
@@ -237,7 +240,7 @@ public partial class ProfessionsViewModel : ObservableObject
     /// </summary>
     private static string LetterOf(ProfessionItem item)
     {
-        var name = item.Name;
+        var name = item.DisplayName;
         if (string.IsNullOrEmpty(name))
             return "#";
 
@@ -253,5 +256,9 @@ public partial class ProfessionsViewModel : ObservableObject
 
     partial void OnFilteredCatalogChanged(List<ProfessionItem> value) => OnPropertyChanged(nameof(IsEmpty));
 
-    partial void OnCurrentProfessionsChanged(List<string> value) => OnPropertyChanged(nameof(HasAnyProfession));
+    partial void OnCurrentProfessionsChanged(List<string> value)
+    {
+        OnPropertyChanged(nameof(HasAnyProfession));
+        OnPropertyChanged(nameof(CurrentProfessionItems));
+    }
 }

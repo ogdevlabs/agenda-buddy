@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:strings="clr-namespace:AgendaBuddy.MobileApp.Resources.Strings"
              xmlns:controls="clr-namespace:AgendaBuddy.MobileApp.Controls"
              x:Class="AgendaBuddy.MobileApp.Views.MorePage"
-             Title="More"
+             Title="{x:Static strings:AppResources.Xaml_More}"
              BackgroundColor="{StaticResource BackgroundPage}"
              Shell.NavBarIsVisible="False">
 
@@ -20,7 +21,7 @@
         <ScrollView Grid.Row="1">
             <VerticalStackLayout Padding="20,16,20,24" Spacing="16">
 
-                <Label Text="More" FontSize="22" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" />
+                <Label Text="{x:Static strings:AppResources.Xaml_More}" FontSize="22" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" />
 
                 <Frame Style="{StaticResource CardCompact}" Padding="0" Margin="0">
                     <VerticalStackLayout Spacing="0">
@@ -32,7 +33,7 @@
                             </Grid.GestureRecognizers>
                             <Image Grid.Column="0" Source="notifications_icon.png"
                                    WidthRequest="22" HeightRequest="22" VerticalOptions="Center" />
-                            <Label Grid.Column="1" Text="Notifications" FontSize="16"
+                            <Label Grid.Column="1" Text="{x:Static strings:AppResources.Xaml_Notifications}" FontSize="16"
                                    TextColor="{StaticResource TextPrimary}" VerticalOptions="Center" />
                             <!--
                                 The unread badge. This row is the only route to Notifications now that it is
@@ -69,7 +70,7 @@
                             </Grid.GestureRecognizers>
                             <Image Grid.Column="0" Source="customers_icon.png"
                                    WidthRequest="22" HeightRequest="22" VerticalOptions="Center" />
-                            <Label Grid.Column="1" Text="Profile" FontSize="16"
+                            <Label Grid.Column="1" Text="{x:Static strings:AppResources.Xaml_Profile}" FontSize="16"
                                    TextColor="{StaticResource TextPrimary}" VerticalOptions="Center" />
                             <Label Grid.Column="2" Text="&#x276F;" FontSize="14"
                                    TextColor="{StaticResource TextMuted}" VerticalOptions="Center" />

@@ -51,7 +51,7 @@ public partial class MessagingViewModel : ObservableObject
         {
             // Real failure (network, timeout, malformed response, ambiguous write, etc.) — surface it
             // through the error banner rather than masking it with fabricated data.
-            ErrorMessage = "Could not load messages. Check your connection and try again.";
+            ErrorMessage = AppResources.GetString("Error_LoadMessages");
         }
         finally
         {

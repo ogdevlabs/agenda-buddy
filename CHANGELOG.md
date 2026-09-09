@@ -4,6 +4,32 @@ All notable changes to this project are documented in this file, in [Keep a Chan
 
 ## [Unreleased]
 
+## [0.17.0] - 2026-09-09
+
+### Added
+
+- Complete English and Latin-American Spanish (`es-MX`) localization for the AgendaMe mobile app: 591 paired
+  resource keys, persisted device-local language selection, immediate Shell reconstruction, and OS app-language
+  declarations for iOS and Android.
+- Localized display names for all 115 seeded professions while preserving canonical API identities.
+- Localized in-app and lock-screen notification presentation for all 12 notification types; device-token
+  registration now carries an optional locale with backward-compatible English fallback.
+- Resource-backed English/Spanish Terms and Privacy Policy, plus structural parity, disclosure, XAML-literal,
+  profession-map, and resource-completeness tests.
+
+### Changed
+
+- Mobile errors, dates, times, currency, weekdays, status labels, counts, accessibility copy, and role-dependent
+  navigation now render from the active culture instead of hardcoded English.
+- App navigation routes and the static unauthorized-session handler initialize once outside the transient Shell,
+  allowing safe language changes without duplicate handlers or losing the signed-in session.
+
+### Known Issues
+
+- Qualified legal and native Latin-American Spanish review is still pending in
+  `docs/legal/SPANISH_LEGAL_REVIEW.md`; release was explicitly authorized with this risk disclosed and tracked as
+  `agenda-buddy-hff`.
+
 ### Changed
 
 - **F-031**: a change to the **deploy machinery itself** now triggers a dev deploy —
@@ -385,7 +411,10 @@ All notable changes to this project are documented in this file, in [Keep a Chan
 - A `null` `EmailProvider` on `POST /appointments` passes both Validot and the ownership guard, then throws downstream during provider lookup, surfacing as an unhandled 500 rather than a 400 — `agenda-buddy-cy2`.
 - Mapster is approved (ADR-049) for this line of work but has zero call sites yet.
 
-[Unreleased]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.14.0...HEAD
+[Unreleased]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.17.0...HEAD
+[0.17.0]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.16.0...v0.17.0
+[0.16.0]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.15.0...v0.16.0
+[0.15.0]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.14.0...v0.15.0
 [0.14.0]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.13.0...v0.14.0
 [0.13.0]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.12.0...v0.13.0
 [0.12.0]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.11.0...v0.12.0

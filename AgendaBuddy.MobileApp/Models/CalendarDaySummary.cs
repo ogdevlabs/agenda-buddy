@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using AgendaBuddy.MobileApp.Resources.Strings;
 
 namespace AgendaBuddy.MobileApp.Models;
 
@@ -25,9 +26,9 @@ public partial class CalendarDaySummary : ObservableObject
     [ObservableProperty]
     private bool _isSelected;
 
-    public string DayOfWeek => DateTime.TryParse(Date, out var dt) ? dt.ToString("ddd") : "";
-    public string DayNumber => DateTime.TryParse(Date, out var dt) ? dt.Day.ToString() : "";
-    public string MonthDay => DateTime.TryParse(Date, out var dt) ? dt.ToString("MMM d") : Date;
+    public string DayOfWeek => DateTime.TryParse(Date, out var dt) ? dt.ToString("ddd", AppResources.CurrentCulture) : "";
+    public string DayNumber => DateTime.TryParse(Date, out var dt) ? dt.Day.ToString(AppResources.CurrentCulture) : "";
+    public string MonthDay => DateTime.TryParse(Date, out var dt) ? dt.ToString("MMM d", AppResources.CurrentCulture) : Date;
     public bool IsToday => DateTime.TryParse(Date, out var dt) && dt.Date == DateTime.Today;
     public bool HasBookings => BookedSlots.Count > 0;
     public bool ShowSlots => IsExpanded && HasBookings;
@@ -46,7 +47,7 @@ public partial class CalendarDaySummary : ObservableObject
 public sealed record BookedSlot(string Label, int? DurationMinutes, AppointmentDetail Appointment)
 {
     /// <summary>e.g. "45 min". Empty when the session has no recorded length.</summary>
-    public string DurationLabel => DurationMinutes is { } minutes ? $"{minutes} min" : string.Empty;
+    public string DurationLabel => DurationMinutes is { } minutes ? RuntimeText.Duration(minutes) : string.Empty;
 
     public bool HasDuration => DurationMinutes.HasValue;
 

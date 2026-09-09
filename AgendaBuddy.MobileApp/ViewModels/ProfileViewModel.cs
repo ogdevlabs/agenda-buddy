@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using AgendaBuddy.MobileApp.Infrastructure;
+using AgendaBuddy.MobileApp.Resources.Strings;
 using AgendaBuddy.MobileApp.Services;
 
 namespace AgendaBuddy.MobileApp.ViewModels;
@@ -168,7 +169,7 @@ public partial class ProfileViewModel : ObservableObject
             }
             catch (Exception)
             {
-                ErrorMessage = "Could not load your profile. Check your connection and try again.";
+                ErrorMessage = AppResources.GetString("Error_LoadProfile");
             }
         }
         finally
@@ -203,7 +204,7 @@ public partial class ProfileViewModel : ObservableObject
         }
         catch (Exception)
         {
-            await ToastNotifier.ShowAsync("Could not reach the server. Check your connection and try again.");
+            await ToastNotifier.ShowAsync(AppResources.Error_ServerUnavailable);
         }
     }
 
@@ -222,13 +223,13 @@ public partial class ProfileViewModel : ObservableObject
             }
             else
             {
-                ErrorMessage = "Could not deactivate your account — try again.";
+                ErrorMessage = AppResources.GetString("Error_DeactivateAccount");
                 await ToastNotifier.ShowAsync(ErrorMessage);
             }
         }
         catch (Exception)
         {
-            ErrorMessage = "Could not reach the server. Check your connection and try again.";
+            ErrorMessage = AppResources.Error_ServerUnavailable;
             await ToastNotifier.ShowAsync(ErrorMessage);
         }
         finally
@@ -280,7 +281,7 @@ public partial class ProfileViewModel : ObservableObject
 
             if (!profileDeleted)
             {
-                ErrorMessage = "Could not delete your account. Nothing has been removed — try again.";
+                ErrorMessage = AppResources.GetString("Error_DeleteAccount");
                 await ToastNotifier.ShowAsync(ErrorMessage);
                 return;
             }
@@ -296,12 +297,11 @@ public partial class ProfileViewModel : ObservableObject
                 // credential left behind is a sign-in that reaches nothing — and only the user can tell us it
                 // happened.
                 await ToastNotifier.ShowAsync(
-                    "Your data was deleted, but your sign-in could not be removed. Sign in once more and delete "
-                    + "again to finish.");
+                    AppResources.GetString("Action_ProfileDeletedCredentialRemaining"));
             }
             else
             {
-                await ToastNotifier.ShowAsync("Your account has been deleted.");
+                await ToastNotifier.ShowAsync(AppResources.GetString("Action_AccountDeleted"));
             }
 
             AccountDeleted?.Invoke(this, EventArgs.Empty);

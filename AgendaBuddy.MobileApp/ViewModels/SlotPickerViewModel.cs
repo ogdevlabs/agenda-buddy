@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using AgendaBuddy.MobileApp.Models;
+using AgendaBuddy.MobileApp.Resources.Strings;
 using AgendaBuddy.MobileApp.Services;
 
 namespace AgendaBuddy.MobileApp.ViewModels;
@@ -89,7 +90,7 @@ public partial class SlotPickerViewModel : ObservableObject
     /// <summary>The chosen slot on this device's clock — never the raw UTC value.</summary>
     public string SelectedSlotLabel => SelectedSlot is null
         ? string.Empty
-        : $"{SelectedSlot.LocalStart:ddd d MMM, h:mm tt}";
+        : SelectedSlot.LocalStart.ToString("ddd d MMM, t", AppResources.CurrentCulture);
 
     /// <summary>
     /// The instant to send back to the server, untouched. <c>null</c> until something is chosen.

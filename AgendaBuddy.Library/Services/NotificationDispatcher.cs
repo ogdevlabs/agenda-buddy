@@ -78,7 +78,7 @@ public class NotificationDispatcher(
         if (!string.IsNullOrWhiteSpace(notification.AppointmentIdentifier))
             data[PushPayloadKeys.AppointmentIdentifier] = notification.AppointmentIdentifier;
 
-        var (title, body) = DisplayText(notification.Type);
+        var (title, body) = DisplayText(notification.Type, device.LanguageCode);
 
         return await pushSender.SendAsync(device.Token, title, body, data, cancellationToken);
     }
@@ -107,7 +107,16 @@ public class NotificationDispatcher(
     /// to the recipient rather than broadcast to a screen. T-002 is specifically about what the OS displays.
     /// </para>
     /// </remarks>
-    public static (string Title, string Body) DisplayText(NotificationType type) => type switch
+    public static (string Title, string Body) DisplayText(NotificationType type, string? languageCode = null)
+    {
+        var normalized = languageCode?.Trim();
+        return string.Equals(normalized, "es", StringComparison.OrdinalIgnoreCase)
+               || normalized?.StartsWith("es-", StringComparison.OrdinalIgnoreCase) == true
+            ? DisplayTextEsMx(type)
+            : DisplayTextEn(type);
+    }
+
+    private static (string Title, string Body) DisplayTextEn(NotificationType type) => type switch
     {
         NotificationType.AppointmentRequested =>
             ("Appointment request", "Someone has requested an appointment. Open the app for details."),
@@ -138,6 +147,35 @@ public class NotificationDispatcher(
         // A type nobody has written display text for still says nothing about its content. The safe answer is
         // the default, not the producer's string.
         _ => ("Notification", "You have a new notification. Open the app for details.")
+    };
+
+    private static (string Title, string Body) DisplayTextEsMx(NotificationType type) => type switch
+    {
+        NotificationType.AppointmentRequested =>
+            ("Solicitud de cita", "Alguien solicitó una cita. Abre la app para ver los detalles."),
+        NotificationType.AppointmentBooked =>
+            ("Cita confirmada", "Se confirmó una cita. Abre la app para ver los detalles."),
+        NotificationType.AppointmentUpdated =>
+            ("Cita actualizada", "Una cita cambió. Abre la app para ver los detalles."),
+        NotificationType.AppointmentCancelled =>
+            ("Cita cancelada", "Se canceló una cita. Abre la app para ver los detalles."),
+        NotificationType.AppointmentCompleted =>
+            ("Cita completada", "Una cita se marcó como completada. Abre la app para ver los detalles."),
+        NotificationType.MessageReceived =>
+            ("Nuevo mensaje", "Tienes un mensaje nuevo. Abre la app para leerlo."),
+        NotificationType.AppointmentRescheduled =>
+            ("Cita reprogramada", "Una cita cambió de horario. Abre la app para ver los detalles."),
+        NotificationType.RescheduleRequested =>
+            ("Nuevo horario solicitado", "Alguien solicitó cambiar una cita. Abre la app para responder."),
+        NotificationType.RescheduleApproved =>
+            ("Nuevo horario aprobado", "Se aprobó cambiar una cita. Abre la app para ver los detalles."),
+        NotificationType.RescheduleDeclined =>
+            ("Nuevo horario rechazado", "Se rechazó cambiar una cita. Abre la app para ver los detalles."),
+        NotificationType.PasswordResetRequested =>
+            ("Alerta de seguridad", "Hay una actualización de seguridad en tu cuenta. Abre la app para ver los detalles."),
+        NotificationType.EmailConfirmationRequested =>
+            ("Alerta de seguridad", "Hay una actualización de seguridad en tu cuenta. Abre la app para ver los detalles."),
+        _ => ("Notificación", "Tienes una notificación nueva. Abre la app para ver los detalles.")
     };
 
     /// <summary>

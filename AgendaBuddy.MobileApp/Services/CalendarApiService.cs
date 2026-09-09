@@ -1,6 +1,7 @@
 using System.Text.Json;
 using AgendaBuddy.Library.Entities;
 using AgendaBuddy.MobileApp.Models;
+using AgendaBuddy.MobileApp.Resources.Strings;
 using AgendaBuddy.MobileApp.Routing;
 
 namespace AgendaBuddy.MobileApp.Services;
@@ -77,7 +78,8 @@ public class CalendarApiService : ICalendarApiService
             result.Add(new CalendarDaySummary
             {
                 Date = date.ToString("yyyy-MM-dd"),
-                AvailableSlots = slotsByDate[date].OrderBy(s => s).Select(s => s.ToString("h:mm tt")).ToList(),
+                AvailableSlots = slotsByDate[date].OrderBy(s => s)
+                    .Select(s => s.ToString("t", AppResources.CurrentCulture)).ToList(),
                 BookedSlots = bookedByDate[date]
                     .OrderBy(a => a.ScheduledAt)
                     .Select(a => new BookedSlot(
@@ -85,7 +87,7 @@ public class CalendarApiService : ICalendarApiService
                         // counterpart's real name, and the dashboard shows it -- so the calendar was the one
                         // surface still identifying somebody by their email. Falls back to the address when the
                         // directory could not be read, which is what every row showed before.
-                        $"{a.ScheduledAt:h:mm tt} — {(string.IsNullOrWhiteSpace(a.DisplayName) ? a.ContactEmail : a.DisplayName)}",
+                        $"{a.ScheduledAt.ToString("t", AppResources.CurrentCulture)} — {(string.IsNullOrWhiteSpace(a.DisplayName) ? a.ContactEmail : a.DisplayName)}",
 
                         // The appointment's own recorded length, which has been on the wire all along and was
                         // simply never read here.

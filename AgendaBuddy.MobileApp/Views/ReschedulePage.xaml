@@ -8,10 +8,11 @@
 -->
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:strings="clr-namespace:AgendaBuddy.MobileApp.Resources.Strings"
              xmlns:controls="clr-namespace:AgendaBuddy.MobileApp.Controls"
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
              x:Class="AgendaBuddy.MobileApp.Views.ReschedulePage"
-             Title="Reschedule"
+             Title="{x:Static strings:AppResources.Xaml_Reschedule}"
              BackgroundColor="{StaticResource BackgroundPage}"
              Shell.NavBarIsVisible="False"
              NavigationPage.HasNavigationBar="False">

@@ -123,14 +123,14 @@ public class CalendarBlockApiService(
 
                 var failedService = await response.TryReadFailedServiceAsync(ct);
                 if (failedService is not null)
-                    return new AppointmentActionResult(false, GatewayErrorMapper.Describe(failedService));
+                    return AppointmentActionResult.Unreachable(MobileOperation.CalendarBlock, failedService);
 
                 return AppointmentActionResult.Refused(
-                    response.StatusCode, await ReadMessageAsync(response, ct));
+                    MobileOperation.CalendarBlock, response.StatusCode, await ReadMessageAsync(response, ct));
             }
             catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException)
             {
-                return AppointmentActionResult.Unreachable();
+                return AppointmentActionResult.Unreachable(MobileOperation.CalendarBlock, exception.Message);
             }
         }
     }

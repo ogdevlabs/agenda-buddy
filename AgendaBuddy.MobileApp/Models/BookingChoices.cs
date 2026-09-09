@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using AgendaBuddy.MobileApp.Resources.Strings;
 
 namespace AgendaBuddy.MobileApp.Models;
 
@@ -19,18 +20,18 @@ public partial class DateChoice : ObservableObject
     [ObservableProperty]
     private bool _isSelected;
 
-    public string DayName => Date.ToString("ddd").ToUpperInvariant();
+    public string DayName => Date.ToString("ddd", AppResources.CurrentCulture).ToUpper(AppResources.CurrentCulture);
 
-    public string DayNumber => Date.ToString("dd");
+    public string DayNumber => Date.ToString("dd", AppResources.CurrentCulture);
 
-    public string MonthName => Date.ToString("MMM");
+    public string MonthName => Date.ToString("MMM", AppResources.CurrentCulture);
 
     /// <summary>
     /// Spoken description. Selection is announced as well as coloured, so the state is not carried by
     /// colour alone.
     /// </summary>
     public string AccessibilityLabel =>
-        $"{Date:dddd d MMMM}{(IsSelected ? ", selected" : "")}";
+        AppResources.Format(IsSelected ? "Accessibility_DateSelected" : "Accessibility_Date", Date);
 
     partial void OnIsSelectedChanged(bool value) => OnPropertyChanged(nameof(AccessibilityLabel));
 }
@@ -59,7 +60,8 @@ public partial class SlotChoice : ObservableObject
 
     public string Label => Slot.Label;
 
-    public string AccessibilityLabel => $"{Label}{(IsSelected ? ", selected" : "")}";
+    public string AccessibilityLabel => AppResources.Format(
+        IsSelected ? "Accessibility_TimeSelected" : "Accessibility_Time", Label);
 
     partial void OnIsSelectedChanged(bool value) => OnPropertyChanged(nameof(AccessibilityLabel));
 }

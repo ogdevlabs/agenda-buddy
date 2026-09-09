@@ -86,7 +86,8 @@ public class ProfessionApiService : IProfessionApiService
             return new ProfessionRemovalResult(true, null);
 
         var json = await response.Content.ReadAsStringAsync(ct);
-        return new ProfessionRemovalResult(false, ParseFirstError(json));
+        return new ProfessionRemovalResult(false, MobileError.FromStatus(
+            MobileOperation.ProfessionRemoval, response.StatusCode, ParseFirstError(json)));
     }
 
     private static List<string> ParseStringList(string json)

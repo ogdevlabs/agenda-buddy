@@ -67,8 +67,8 @@ public class ShellRouteRegistrationTest
                 routes.Add(route);
         }
 
-        var shellCode = File.ReadAllText(Path.Combine(MobileAppRoot(), "AppShell.xaml.cs"));
-        foreach (var match in RegisterRouteName.Matches(shellCode).Cast<Match>())
+        var navigationCode = File.ReadAllText(Path.Combine(MobileAppRoot(), "Infrastructure", "AppNavigation.cs"));
+        foreach (var match in RegisterRouteName.Matches(navigationCode).Cast<Match>())
             routes.Add(match.Groups["route"].Value);
 
         return routes;

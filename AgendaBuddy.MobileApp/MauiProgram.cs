@@ -97,6 +97,9 @@ public static class MauiProgram
 
         // User session (singleton — decoded JWT cached across pages)
         builder.Services.AddSingleton<IUserSessionService, UserSessionService>();
+        builder.Services.AddSingleton<ILanguagePreferenceStore, MauiLanguagePreferenceStore>();
+        builder.Services.AddSingleton<ILanguageCoordinator, LanguageCoordinator>();
+        builder.Services.AddSingleton<ILanguageShellService, LanguageShellService>();
 
         // API services
         builder.Services.AddTransient<IAuthService, AuthService>();
@@ -179,8 +182,8 @@ public static class MauiProgram
         builder.Services.AddTransient<ForgotPasswordPage>();
         builder.Services.AddTransient<ResetPasswordConfirmPage>();
 
-        // Shell
-        builder.Services.AddSingleton<AppShell>();
+        AppNavigation.RegisterRoutes();
+        builder.Services.AddTransient<AppShell>();
 
         return builder.Build();
     }

@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using AgendaBuddy.Library.Entities;
 using AgendaBuddy.MobileApp.Infrastructure;
 using AgendaBuddy.MobileApp.Models;
+using AgendaBuddy.MobileApp.Resources.Strings;
 using AgendaBuddy.MobileApp.Services;
 
 namespace AgendaBuddy.MobileApp.ViewModels;
@@ -244,7 +245,7 @@ public partial class AppointmentDetailViewModel : ObservableObject
     public bool WasRescheduled => Appointment?.PreviousStart is not null;
 
     public string PreviousTimeLabel => Appointment?.PreviousStart is { } previous
-        ? $"Moved from {previous:ddd d MMM, h:mm tt}"
+        ? AppResources.Format("Appointment_MovedFrom", previous)
         : string.Empty;
 
     // ── Cancellation, and its notice period ───────────────────────────────────────────────────────────
@@ -286,8 +287,7 @@ public partial class AppointmentDetailViewModel : ObservableObject
         && DateTime.Now >= Appointment.CustomerCancellationDeadline;
 
     public string CancellationClosedMessage =>
-        $"Cancellations closed {Appointment?.CustomerCancellationDeadline:ddd d MMM 'at' h:mm tt}. "
-        + "Message your provider to ask.";
+        AppResources.Format("Appointment_CancelClosed", Appointment?.CustomerCancellationDeadline);
 
     /// <summary>
     /// Shown to a customer while cancelling is still possible, so the deadline is not discovered by being
@@ -297,7 +297,7 @@ public partial class AppointmentDetailViewModel : ObservableObject
         ShowCancelButton && !_session.IsProvider;
 
     public string CancellationDeadlineMessage =>
-        $"Free to cancel until {Appointment?.CustomerCancellationDeadline:ddd d MMM, h:mm tt}.";
+        AppResources.Format("Appointment_CancelDeadline", Appointment?.CustomerCancellationDeadline);
 
     /// <summary>
     /// Keeps the notes list out of the layout entirely when there are none. An empty CollectionView still
@@ -332,9 +332,9 @@ public partial class AppointmentDetailViewModel : ObservableObject
         get
         {
             if (Appointment is null) return string.Empty;
-            var time = Appointment.ScheduledAt.ToString("h:mm tt");
+            var time = Appointment.ScheduledAt.ToString("t", AppResources.CurrentCulture);
             return Appointment.ServiceDurationMinutes is { } minutes
-                ? $"{time} · {minutes} min"
+                ? AppResources.Format("Appointment_TimeAndDuration", time, RuntimeText.Duration(minutes))
                 : time;
         }
     }
@@ -364,7 +364,7 @@ public partial class AppointmentDetailViewModel : ObservableObject
             var result = await _bookingApiService.GetAppointmentAsync(AppointmentId);
             if (result is null)
             {
-                ErrorMessage = "Could not load appointment — try again.";
+                ErrorMessage = AppResources.GetString("Error_LoadAppointment");
             }
             else
             {
@@ -373,7 +373,7 @@ public partial class AppointmentDetailViewModel : ObservableObject
         }
         catch (HttpRequestException)
         {
-            ErrorMessage = "Could not load appointment — check your connection and try again.";
+            ErrorMessage = AppResources.GetString("Error_LoadAppointmentConnection");
         }
         finally
         {
@@ -398,7 +398,7 @@ public partial class AppointmentDetailViewModel : ObservableObject
             // the id is all that travels. Not a cancellation: cancelling is a soft delete, so a cancelled
             // appointment still loads and shows its Cancelled status.
             if (Appointment is null)
-                ErrorMessage = "This appointment could not be found. It may have been removed.";
+                ErrorMessage = AppResources.GetString("Error_AppointmentUnavailable");
         }
         catch (HttpRequestException)
         {
@@ -407,7 +407,7 @@ public partial class AppointmentDetailViewModel : ObservableObject
             // A failed request is a different statement from "no longer available", and saying the wrong one
             // sends the reader to check the wrong thing.
             if (Appointment is null)
-                ErrorMessage = "Could not load this appointment. Check your connection and try again.";
+                ErrorMessage = AppResources.GetString("Error_LoadThisAppointment");
         }
         finally
         {
@@ -464,14 +464,14 @@ public partial class AppointmentDetailViewModel : ObservableObject
                 // The server's own wording, which for the case a customer will actually hit names the
                 // cancellation deadline. Only the server holds the authoritative clock, so this cannot be
                 // reconstructed here -- and "try again" would be advice that never works.
-                ErrorMessage = cancelled.ErrorMessage ?? "Could not cancel this appointment — try again.";
+                ErrorMessage = cancelled.ErrorMessage ?? AppResources.GetString("Error_CancelAppointmentRetry");
                 await ToastNotifier.ShowAsync(ErrorMessage);
                 return false;
             }
 
             Appointment.Status = AppointmentStatus.Cancelled;
             OnPropertyChanged(nameof(Appointment));
-            await ToastNotifier.ShowAsync("Appointment cancelled.");
+            await ToastNotifier.ShowAsync(AppResources.GetString("Action_AppointmentCancelled"));
             return true;
         }
         catch (GatewayServiceUnavailableException ex)
@@ -482,7 +482,7 @@ public partial class AppointmentDetailViewModel : ObservableObject
         }
         catch (HttpRequestException)
         {
-            ErrorMessage = "Could not cancel this appointment — check your connection and try again.";
+            ErrorMessage = AppResources.GetString("Error_CancelAppointment");
             await ToastNotifier.ShowAsync(ErrorMessage);
             return false;
         }
@@ -517,14 +517,14 @@ public partial class AppointmentDetailViewModel : ObservableObject
 
             if (!result.Succeeded)
             {
-                ErrorMessage = result.ErrorMessage ?? "Could not change this appointment. Try again.";
+                ErrorMessage = result.ErrorMessage ?? AppResources.GetString("Error_ChangeAppointment");
                 await ToastNotifier.ShowAsync(ErrorMessage);
                 return false;
             }
 
             await ToastNotifier.ShowAsync(_session.IsProvider
-                ? "Session rescheduled. The customer has been notified."
-                : "New time requested. Your provider will answer.");
+                ? AppResources.GetString("Action_SessionRescheduled")
+                : AppResources.GetString("Action_NewTimeRequested"));
 
             // Re-read rather than patching in memory: the server decides where the session ended up and whether
             // a proposal is now outstanding, and guessing either would put the page out of step with the truth.
@@ -566,16 +566,15 @@ public partial class AppointmentDetailViewModel : ObservableObject
 
             if (!result.Succeeded)
             {
-                ErrorMessage = result.ErrorMessage
-                    ?? "Could not answer this request. It may have been withdrawn.";
+                ErrorMessage = result.ErrorMessage ?? AppResources.GetString("Error_AnswerReschedule");
                 await ToastNotifier.ShowAsync(ErrorMessage);
                 await LoadAsync();
                 return false;
             }
 
             await ToastNotifier.ShowAsync(approve
-                ? "New time approved. The session has moved."
-                : "New time declined. The session stays as it was.");
+                ? AppResources.GetString("Action_NewTimeApproved")
+                : AppResources.GetString("Action_NewTimeDeclined"));
 
             await LoadAsync();
             return true;
@@ -608,7 +607,7 @@ public partial class AppointmentDetailViewModel : ObservableObject
         }
         catch (Exception)
         {
-            NotesErrorMessage = "Could not load notes. Check your connection and try again.";
+            NotesErrorMessage = AppResources.GetString("Error_LoadNotes");
         }
         finally
         {
@@ -632,18 +631,18 @@ public partial class AppointmentDetailViewModel : ObservableObject
                 // Back to the list, so the note the provider just wrote is what they see. Staying on an empty
                 // form gives no evidence it was saved.
                 SelectedNotesTab = AppointmentNotesTab.Current;
-                await ToastNotifier.ShowAsync("Note added.");
+                await ToastNotifier.ShowAsync(AppResources.GetString("Action_NoteAdded"));
             }
             else
             {
-                NotesErrorMessage = "Could not save the note. Check your connection and try again.";
+                NotesErrorMessage = AppResources.GetString("Error_SaveNote");
                 NewNoteContent = content;
                 await ToastNotifier.ShowAsync(NotesErrorMessage);
             }
         }
         catch (Exception)
         {
-            NotesErrorMessage = "Could not save the note. Check your connection and try again.";
+            NotesErrorMessage = AppResources.GetString("Error_SaveNote");
             NewNoteContent = content;
             await ToastNotifier.ShowAsync(NotesErrorMessage);
         }
@@ -662,13 +661,14 @@ public partial class AppointmentDetailViewModel : ObservableObject
             if (updated is null)
             {
                 // API returned non-success (e.g., 400 for invalid status).
-                ErrorMessage = "Status update failed";
+                ErrorMessage = AppResources.GetString("Error_StatusUpdate");
                 await ToastNotifier.ShowAsync(ErrorMessage);
             }
             else
             {
                 Appointment = updated;
-                await ToastNotifier.ShowAsync($"Appointment {status.ToString().ToLowerInvariant()}.");
+                await ToastNotifier.ShowAsync(AppResources.Format(
+                    "Action_StatusUpdated", RuntimeText.AppointmentStatus(status).ToLower(AppResources.CurrentCulture)));
             }
         }
         catch (GatewayServiceUnavailableException ex)
@@ -679,7 +679,7 @@ public partial class AppointmentDetailViewModel : ObservableObject
         }
         catch (HttpRequestException)
         {
-            ErrorMessage = "Status update failed — check your connection and try again.";
+            ErrorMessage = AppResources.GetString("Error_StatusUpdateConnection");
             await ToastNotifier.ShowAsync(ErrorMessage);
         }
         finally

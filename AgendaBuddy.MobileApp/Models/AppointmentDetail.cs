@@ -1,4 +1,5 @@
 using AgendaBuddy.Library.Entities;
+using AgendaBuddy.MobileApp.Resources.Strings;
 
 namespace AgendaBuddy.MobileApp.Models;
 
@@ -15,6 +16,7 @@ public class AppointmentDetail
     public string ContactPhone { get; set; } = string.Empty;
     public DateTime ScheduledAt { get; set; }
     public AppointmentStatus Status { get; set; }
+    public string StatusLabel => RuntimeText.AppointmentStatus(Status);
     public string ServiceId { get; set; } = string.Empty;
     public string ServiceName { get; set; } = string.Empty;
 

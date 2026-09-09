@@ -1,4 +1,5 @@
 using AgendaBuddy.MobileApp.Models;
+using AgendaBuddy.MobileApp.Resources.Strings;
 using AgendaBuddy.MobileApp.Services;
 using AgendaBuddy.MobileApp.ViewModels;
 using Moq;
@@ -10,10 +11,18 @@ namespace AgendaBuddy.MobileApp.Tests.ViewModels;
 /// The header decorates every page, so it has to render something for every session state — including the
 /// ones where no profile exists and the ones where the network is gone.
 /// </summary>
-public class BrandHeaderViewModelTests
+[Collection("CultureSensitiveCollection")]
+public class BrandHeaderViewModelTests : IDisposable
 {
+    private readonly System.Globalization.CultureInfo? _originalCulture = AppResources.Culture;
+
     private const string ProviderEmail = "coach@example.com";
     private const string CustomerEmail = "client@example.com";
+
+    public BrandHeaderViewModelTests() =>
+        AppResources.Culture = new System.Globalization.CultureInfo("en");
+
+    public void Dispose() => AppResources.Culture = _originalCulture;
 
     private static Mock<IUserSessionService> Session(string email, string role)
     {

@@ -3,7 +3,7 @@ namespace AgendaBuddy.Library.Services;
 public class DeviceTokenService(IRepository<DeviceTokenEntity> repository) : IDeviceTokenService
 {
     /// <inheritdoc/>
-    public async Task UpsertAsync(string userEmail, string token, string platform)
+    public async Task UpsertAsync(string userEmail, string token, string platform, string languageCode = "en")
     {
         var existing = await GetByEmailAsync(userEmail);
         var now = DateTime.UtcNow;
@@ -12,6 +12,7 @@ public class DeviceTokenService(IRepository<DeviceTokenEntity> repository) : IDe
         {
             existing.Token = token;
             existing.Platform = platform;
+            existing.LanguageCode = languageCode;
             existing.UpdatedAt = now;
             await repository.UpdateAsync(existing.Id, existing);
         }
@@ -22,6 +23,7 @@ public class DeviceTokenService(IRepository<DeviceTokenEntity> repository) : IDe
                 UserEmail = userEmail,
                 Token = token,
                 Platform = platform,
+                LanguageCode = languageCode,
                 RegisteredAt = now,
                 UpdatedAt = now
             });

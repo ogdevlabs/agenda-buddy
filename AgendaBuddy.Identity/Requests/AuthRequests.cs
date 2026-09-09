@@ -32,7 +32,8 @@ public record TokenResponse(string AccessToken, string RefreshToken, string? Ema
 
 public record RegisterDeviceTokenRequest(
     [Required] string Token,
-    [Required] string Platform
+    [Required] string Platform,
+    string? LanguageCode = null
 );
 
 public record PasswordResetRequestRequest(

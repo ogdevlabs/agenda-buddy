@@ -9,10 +9,11 @@
 -->
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:strings="clr-namespace:AgendaBuddy.MobileApp.Resources.Strings"
              xmlns:controls="clr-namespace:AgendaBuddy.MobileApp.Controls"
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
              x:Class="AgendaBuddy.MobileApp.Views.ProfilePage"
-             Title="Profile"
+             Title="{x:Static strings:AppResources.Xaml_Profile}"
              BackgroundColor="{StaticResource BackgroundPage}"
              Shell.NavBarIsVisible="False">
 
@@ -67,7 +68,7 @@
                                HorizontalTextAlignment="Center"
                                AutomationId="ProfileRoleLabel" />
 
-                        <Button Text="Change avatar"
+                        <Button Text="{x:Static strings:AppResources.Xaml_ChangeAvatar}"
                                 BackgroundColor="Transparent"
                                 BorderColor="{StaticResource BrandAccent}"
                                 BorderWidth="1"
@@ -83,7 +84,7 @@
                         <!-- An account with no name is the half-created state registration can leave behind, and
                              Edit profile is the only thing that repairs it. Saying so beats showing an email
                              address where a name goes. -->
-                        <Label Text="Finish setting up your profile — add your name."
+                        <Label Text="{x:Static strings:AppResources.Xaml_FinishSettingUpYourProfileAddYourName}"
                                IsVisible="{Binding NeedsProfileSetup}"
                                FontSize="12.5"
                                TextColor="{StaticResource BrandAccent}"
@@ -98,7 +99,7 @@
                 </Frame>
 
                 <!-- Account -->
-                <Label Text="Account" Style="{StaticResource Overline}" Margin="4,4,0,0" />
+                <Label Text="{x:Static strings:AppResources.Xaml_Account}" Style="{StaticResource Overline}" Margin="4,4,0,0" />
 
                 <Frame Style="{StaticResource CardCompact}" Padding="0" Margin="0">
                     <VerticalStackLayout Spacing="0">
@@ -109,8 +110,8 @@
                                 <TapGestureRecognizer Tapped="OnEditProfileTapped" />
                             </Grid.GestureRecognizers>
                             <VerticalStackLayout Grid.Column="0" Spacing="2">
-                                <Label Text="Edit profile" FontSize="16" TextColor="{StaticResource TextPrimary}" />
-                                <Label Text="Name, phone, and the agreements you have accepted"
+                                <Label Text="{x:Static strings:AppResources.Xaml_EditProfile}" FontSize="16" TextColor="{StaticResource TextPrimary}" />
+                                <Label Text="{x:Static strings:AppResources.Xaml_NamePhoneAndTheAgreementsYouHaveAccepted}"
                                        FontSize="12" TextColor="{StaticResource TextMuted}" />
                             </VerticalStackLayout>
                             <Label Grid.Column="1" Text="&#x276F;" FontSize="14"
@@ -124,7 +125,7 @@
                             <Grid.GestureRecognizers>
                                 <TapGestureRecognizer Tapped="OnLanguageTapped" />
                             </Grid.GestureRecognizers>
-                            <Label Grid.Column="0" Text="Language" FontSize="16"
+                            <Label Grid.Column="0" Text="{x:Static strings:AppResources.Language_Title}" FontSize="16"
                                    TextColor="{StaticResource TextPrimary}" VerticalOptions="Center" />
                             <Label Grid.Column="1" Text="{Binding LanguageLabel}" FontSize="14"
                                    TextColor="{StaticResource TextMuted}" VerticalOptions="Center"
@@ -140,7 +141,7 @@
                             <Grid.GestureRecognizers>
                                 <TapGestureRecognizer Tapped="OnChangePasswordTapped" />
                             </Grid.GestureRecognizers>
-                            <Label Grid.Column="0" Text="Change password" FontSize="16"
+                            <Label Grid.Column="0" Text="{x:Static strings:AppResources.Xaml_ChangePassword}" FontSize="16"
                                    TextColor="{StaticResource TextPrimary}" VerticalOptions="Center" />
                             <Label Grid.Column="1" Text="&#x276F;" FontSize="14"
                                    TextColor="{StaticResource TextMuted}" VerticalOptions="Center" />
@@ -151,7 +152,7 @@
 
                 <!-- Provider-only. Rows rather than a second screen: everything else here is identical for both
                      roles, and two parallel profile screens would drift. -->
-                <Label Text="My business" Style="{StaticResource Overline}" Margin="4,4,0,0"
+                <Label Text="{x:Static strings:AppResources.Xaml_MyBusiness}" Style="{StaticResource Overline}" Margin="4,4,0,0"
                        IsVisible="{Binding IsProvider}" />
 
                 <Frame Style="{StaticResource CardCompact}" Padding="0" Margin="0"
@@ -163,7 +164,7 @@
                             <Grid.GestureRecognizers>
                                 <TapGestureRecognizer Tapped="OnServicesTapped" />
                             </Grid.GestureRecognizers>
-                            <Label Grid.Column="0" Text="My services" FontSize="16"
+                            <Label Grid.Column="0" Text="{x:Static strings:AppResources.Xaml_MyServices}" FontSize="16"
                                    TextColor="{StaticResource TextPrimary}" VerticalOptions="Center" />
                             <Label Grid.Column="1" Text="&#x276F;" FontSize="14"
                                    TextColor="{StaticResource TextMuted}" VerticalOptions="Center" />
@@ -176,7 +177,7 @@
                             <Grid.GestureRecognizers>
                                 <TapGestureRecognizer Tapped="OnProfessionsTapped" />
                             </Grid.GestureRecognizers>
-                            <Label Grid.Column="0" Text="Professions" FontSize="16"
+                            <Label Grid.Column="0" Text="{x:Static strings:AppResources.Xaml_Professions}" FontSize="16"
                                    TextColor="{StaticResource TextPrimary}" VerticalOptions="Center" />
                             <Label Grid.Column="1" Text="&#x276F;" FontSize="14"
                                    TextColor="{StaticResource TextMuted}" VerticalOptions="Center" />
@@ -186,7 +187,7 @@
                 </Frame>
 
                 <!-- Legal -->
-                <Label Text="Legal" Style="{StaticResource Overline}" Margin="4,4,0,0" />
+                <Label Text="{x:Static strings:AppResources.Xaml_Legal}" Style="{StaticResource Overline}" Margin="4,4,0,0" />
 
                 <Frame Style="{StaticResource CardCompact}" Padding="0" Margin="0">
                     <VerticalStackLayout Spacing="0">
@@ -196,7 +197,7 @@
                             <Grid.GestureRecognizers>
                                 <TapGestureRecognizer Tapped="OnTermsTapped" />
                             </Grid.GestureRecognizers>
-                            <Label Grid.Column="0" Text="Terms and Conditions" FontSize="16"
+                            <Label Grid.Column="0" Text="{x:Static strings:AppResources.Xaml_TermsAndConditions}" FontSize="16"
                                    TextColor="{StaticResource TextPrimary}" VerticalOptions="Center" />
                             <Label Grid.Column="1" Text="&#x276F;" FontSize="14"
                                    TextColor="{StaticResource TextMuted}" VerticalOptions="Center" />
@@ -209,7 +210,7 @@
                             <Grid.GestureRecognizers>
                                 <TapGestureRecognizer Tapped="OnPrivacyTapped" />
                             </Grid.GestureRecognizers>
-                            <Label Grid.Column="0" Text="Privacy Policy" FontSize="16"
+                            <Label Grid.Column="0" Text="{x:Static strings:AppResources.Xaml_PrivacyPolicy}" FontSize="16"
                                    TextColor="{StaticResource TextPrimary}" VerticalOptions="Center" />
                             <Label Grid.Column="1" Text="&#x276F;" FontSize="14"
                                    TextColor="{StaticResource TextMuted}" VerticalOptions="Center" />
@@ -219,27 +220,27 @@
                 </Frame>
 
                 <!-- Ending actions, deliberately outside the cards above and last. -->
-                <controls:SafeButton Text="Sign out"
+                <controls:SafeButton Text="{x:Static strings:AppResources.Xaml_SignOut_c8753a18}"
                         Style="{StaticResource SecondaryButton}"
                         Margin="0,8,0,0"
                         Command="{Binding LogoutCommand}"
                         AutomationId="ProfileLogoutButton" />
 
-                <controls:SafeButton Text="Deactivate account"
+                <controls:SafeButton Text="{x:Static strings:AppResources.Xaml_DeactivateAccount}"
                         Style="{StaticResource SecondaryButton}"
                         IsVisible="{Binding IsProvider}"
                         Clicked="OnDeactivateClicked"
                         IsEnabled="{Binding IsDeactivating, Converter={StaticResource InvertedBoolConverter}}"
                         AutomationId="DeactivateAccountButton" />
 
-                <Label Text="Deactivating hides you from customers and keeps your data. Deleting removes it."
+                <Label Text="{x:Static strings:AppResources.Xaml_DeactivatingHidesYouFromCustomersAndKeepsYourDataDeletingRemovesIt}"
                        IsVisible="{Binding IsProvider}"
                        FontSize="12"
                        TextColor="{StaticResource TextMuted}"
                        HorizontalTextAlignment="Center" />
 
                 <Grid Margin="0,8,0,0">
-                    <controls:SafeButton Text="Delete account"
+                    <controls:SafeButton Text="{x:Static strings:AppResources.Xaml_DeleteAccount}"
                             Style="{StaticResource DangerButton}"
                             Clicked="OnDeleteAccountClicked"
                             IsVisible="{Binding IsDeleting, Converter={StaticResource InvertedBoolConverter}}"
@@ -248,7 +249,7 @@
                                        Color="{StaticResource Error}" HorizontalOptions="Center" />
                 </Grid>
 
-                <Label Text="Deleting your account is permanent. Your profile is removed and your name, email and phone number are erased from the records of people you dealt with."
+                <Label Text="{x:Static strings:AppResources.Xaml_DeletingYourAccountIsPermanentYourProfileIsRemovedAndYourNameEmailAndPhoneNumberAreErasedFromTheRecordsOfPeopleYouDealtWith}"
                        FontSize="12"
                        TextColor="{StaticResource TextMuted}"
                        HorizontalTextAlignment="Center" />
