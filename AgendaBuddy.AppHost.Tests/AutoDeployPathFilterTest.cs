@@ -597,10 +597,14 @@ public class AutoDeployPathFilterTest
     {
         var deploy = Workflow("deploy.yml");
 
-        Assert.Contains("__UNCONFIGURED__", deploy, StringComparison.Ordinal);
-        Assert.Contains("stripe_api_key", deploy, StringComparison.Ordinal);
-        Assert.Contains("stripe_webhook_secret", deploy, StringComparison.Ordinal);
-        Assert.Contains("else \"\"", deploy, StringComparison.Ordinal);
+        const string sentinelAssignment =
+            "                  parameters[param] = (\n" +
+            "                      \"__UNCONFIGURED__\"\n" +
+            "                      if param in {\"stripe_api_key\", \"stripe_webhook_secret\"}\n" +
+            "                      else \"\"\n" +
+            "                  )";
+
+        Assert.Contains(sentinelAssignment, deploy, StringComparison.Ordinal);
     }
 
     // ── A deploy without a provision recovers the provisioning outputs ─────────────────────────────

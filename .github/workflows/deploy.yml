@@ -253,14 +253,13 @@ jobs:
                       print(f"::error::{secret} is missing from {vault}.")
                       sys.exit(1)
                   print(f"::warning::{secret} is not set in {vault} - continuing without it.")
-                  # Empty rather than omitted: the parameter IS declared in the Cloud app model, and azd
-                  # prompts (or fails under --no-prompt) for a declared parameter with no value. Empty is
-                  # exactly what EmailOptions/PushOptions read as "not configured".
-                    parameters[param] = (
+                  # Supply every declared parameter: mail/push use empty values, while Stripe needs a
+                  # non-empty sentinel because Azure Container Apps rejects empty secret values.
+                  parameters[param] = (
                       "__UNCONFIGURED__"
                       if param in {"stripe_api_key", "stripe_webhook_secret"}
                       else ""
-                    )
+                  )
                   continue
               # az strips no trailing newline of its own, but tsv output appends one.
               value = result.stdout.rstrip("\n")
