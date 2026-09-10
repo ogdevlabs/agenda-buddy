@@ -72,6 +72,7 @@ public static class MauiProgram
 
         // Secure storage abstraction
         builder.Services.AddTransient<ISecureStorageService, MauiSecureStorageService>();
+        builder.Services.AddTransient<IPendingRegistrationStore, PendingRegistrationStore>();
 
         // HTTP client with named client and JWT delegating handler
         builder.Services.AddTransient<JwtDelegatingHandler>();
@@ -130,6 +131,7 @@ public static class MauiProgram
         builder.Services.AddSingleton<NotificationBadgeViewModel>();
         builder.Services.AddTransient<LoginViewModel>();
         builder.Services.AddTransient<RegisterViewModel>();
+        builder.Services.AddTransient<EmailVerificationViewModel>();
         builder.Services.AddTransient<DashboardViewModel>();
         builder.Services.AddTransient<AppointmentDetailViewModel>();
         builder.Services.AddTransient<RescheduleViewModel>();
@@ -158,6 +160,7 @@ public static class MauiProgram
         // Views
         builder.Services.AddTransient<LoginPage>();
         builder.Services.AddTransient<RegisterPage>();
+        builder.Services.AddTransient<EmailVerificationPage>();
         builder.Services.AddTransient<DashboardPage>();
         builder.Services.AddTransient<CalendarPage>();
         builder.Services.AddTransient<CalendarSettingsPage>();

@@ -58,7 +58,7 @@ public class IdentityRefreshRotationTest : IDisposable
     public async Task Rotation_ChangesOnlyTheRefreshToken()
     {
         // AC-1.
-        var registered = await _svc.RegisterAsync(Email, Password, "Provider");
+        var registered = await IdentityTestSession.RegisterConfirmedAsync(_svc, Email, Password, "Provider");
         var before = await Stored();
         var (id, hash, role, mustReset, oldTokenHash) =
             (before.Id, before.PasswordHash, before.Role, before.MustResetPassword, before.RefreshToken!.Hash);
@@ -80,7 +80,7 @@ public class IdentityRefreshRotationTest : IDisposable
         // AC-2 — the criterion the old design made unexpressible. A MongoException is used because
         // that is what IsMongoDown catches, so this reproduces the *handled* path: the caller sees a
         // 503, and the question is whether the account is still there afterwards.
-        var registered = await _svc.RegisterAsync(Email, Password, "Provider");
+        var registered = await IdentityTestSession.RegisterConfirmedAsync(_svc, Email, Password, "Provider");
         var before = await Stored();
         var (hash, role, tokenHash) = (before.PasswordHash, before.Role, before.RefreshToken!.Hash);
 
@@ -107,7 +107,7 @@ public class IdentityRefreshRotationTest : IDisposable
     {
         // AC-3. Single use is preserved by the old hash being part of the update *filter*, not by a
         // prior delete: the update matches only while the old hash is still stored.
-        var registered = await _svc.RegisterAsync(Email, Password, "Provider");
+        var registered = await IdentityTestSession.RegisterConfirmedAsync(_svc, Email, Password, "Provider");
         var first = await _svc.RefreshAsync(registered!.RefreshToken);
 
         await Assert.ThrowsAsync<UnauthorizedException>(() => _svc.RefreshAsync(registered.RefreshToken));
@@ -122,7 +122,7 @@ public class IdentityRefreshRotationTest : IDisposable
         // AC-4: locking stops new passwords being tried, but an attacker already
         // holding a refresh token would keep minting access tokens for the 24 hours it lives unless
         // the lock is part of the rotation filter.
-        var registered = await _svc.RegisterAsync(Email, Password, "Provider");
+        var registered = await IdentityTestSession.RegisterConfirmedAsync(_svc, Email, Password, "Provider");
         await Lock();
 
         await Assert.ThrowsAsync<UnauthorizedException>(() => _svc.RefreshAsync(registered!.RefreshToken));
@@ -136,7 +136,7 @@ public class IdentityRefreshRotationTest : IDisposable
     [Fact]
     public async Task T104_Rotation_ResumesOnceTheLockExpires()
     {
-        var registered = await _svc.RegisterAsync(Email, Password, "Provider");
+        var registered = await IdentityTestSession.RegisterConfirmedAsync(_svc, Email, Password, "Provider");
         await Lock();
 
         _clock.Advance(TimeSpan.FromMinutes(16));
@@ -149,7 +149,7 @@ public class IdentityRefreshRotationTest : IDisposable
     {
         // AC-11's rotation half. A whole-document replacement is what the defect was; asserting the
         // *shape* of the write is what stops it coming back as a "simpler" refactor.
-        var registered = await _svc.RegisterAsync(Email, Password, "Provider");
+        var registered = await IdentityTestSession.RegisterConfirmedAsync(_svc, Email, Password, "Provider");
         await _svc.RefreshAsync(registered!.RefreshToken);
 
         Assert.Equal(0, _repo.WholeDocumentReplacements);

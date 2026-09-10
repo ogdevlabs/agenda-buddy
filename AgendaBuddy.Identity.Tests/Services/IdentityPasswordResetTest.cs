@@ -81,7 +81,7 @@ public class IdentityPasswordResetTest : IDisposable
     [Fact]
     public async Task ConfirmPasswordReset_WithAValidToken_SetsTheNewPasswordAndEndsExistingSessions()
     {
-        await _svc.RegisterAsync(Email, Password, "Provider");
+        await IdentityTestSession.ConfirmRegistrationAsync(_svc, Email, Password, "Provider");
         await _svc.LoginAsync(Email, Password); // establishes a refresh_token — must not survive a reset
         var token = await _svc.RequestPasswordResetAsync(Email);
 
@@ -112,7 +112,7 @@ public class IdentityPasswordResetTest : IDisposable
     [Fact]
     public async Task ConfirmPasswordReset_WithAWrongToken_IsRejectedAndChangesNothing()
     {
-        await _svc.RegisterAsync(Email, Password, "Provider");
+        await IdentityTestSession.ConfirmRegistrationAsync(_svc, Email, Password, "Provider");
         await _svc.RequestPasswordResetAsync(Email);
 
         await Assert.ThrowsAsync<UnauthorizedException>(
@@ -160,7 +160,7 @@ public class IdentityPasswordResetTest : IDisposable
     [Fact]
     public async Task Login_ForAnAccountFlaggedForForcedReset_IsBlockedRatherThanIssuingASession()
     {
-        await _svc.RegisterAsync(Email, Password, "Provider");
+        await IdentityTestSession.ConfirmRegistrationAsync(_svc, Email, Password, "Provider");
         await _repo.FindOneAndUpdateAsync(
             new BsonDocument("email", Email),
             new BsonDocument("$set", new BsonDocument("must_reset_password", true)));

@@ -18,6 +18,11 @@
         Shell.TabBarIsVisible="False" />
 
     <ShellContent
+        Route="emailVerification"
+        ContentTemplate="{DataTemplate views:EmailVerificationPage}"
+        Shell.TabBarIsVisible="False" />
+
+    <ShellContent
         Route="forgotPassword"
         ContentTemplate="{DataTemplate views:ForgotPasswordPage}"
         Shell.TabBarIsVisible="False" />

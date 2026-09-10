@@ -66,10 +66,8 @@ public class CredentialEntity
 
     /// <summary>
     /// True once the account holder has confirmed ownership of their registered email address.
-    /// Not gated on for login (ADR-052: no email provider is configured, so this is logged for
-    /// local development the same way a password-reset token is) — an informational/UX signal, not
-    /// an access control. Every account created before this field existed deserializes to false,
-    /// same tradeoff as <see cref="MustResetPassword"/>'s migration-stub default.
+    /// Identity does not issue a session while this is false. Non-production credentials created
+    /// before verification enforcement are reset at rollout rather than silently grandfathered.
     /// </summary>
     [BsonElement("email_verified")]
     [BsonIgnoreIfDefault]

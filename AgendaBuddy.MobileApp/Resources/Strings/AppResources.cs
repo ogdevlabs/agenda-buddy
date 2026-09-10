@@ -20,6 +20,9 @@ public static class AppResources
 
     public static string General_Cancel => GetString(nameof(General_Cancel));
     public static string General_Save => GetString(nameof(General_Save));
+    public static string EmailVerification_Title => GetString(nameof(EmailVerification_Title));
+    public static string EmailVerification_Heading => GetString(nameof(EmailVerification_Heading));
+    public static string EmailVerification_Resend => GetString(nameof(EmailVerification_Resend));
     public static string Error_ActionRejected => GetString(nameof(Error_ActionRejected));
     public static string Error_AppointmentNotFound => GetString(nameof(Error_AppointmentNotFound));
     public static string Error_BookingConflict => GetString(nameof(Error_BookingConflict));

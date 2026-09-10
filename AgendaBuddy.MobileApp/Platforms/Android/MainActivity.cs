@@ -11,6 +11,15 @@ namespace AgendaBuddy.MobileApp;
     [Intent.ActionView],
     Categories = [Intent.CategoryDefault, Intent.CategoryBrowsable],
     DataScheme = "agendame")]
+#if ANDROID_EMAIL_VERIFICATION_APP_LINKS
+[IntentFilter(
+    [Intent.ActionView],
+    Categories = [Intent.CategoryDefault, Intent.CategoryBrowsable],
+    DataScheme = "https",
+    DataHost = "agendame.app",
+    DataPathPrefix = "/confirm-email",
+    AutoVerify = true)]
+#endif
 public class MainActivity : MauiAppCompatActivity
 {
     protected override void OnCreate(Bundle? savedInstanceState)

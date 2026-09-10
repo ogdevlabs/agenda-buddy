@@ -43,8 +43,8 @@ public class IdentityAccountDeletionTest
 
     private async Task<string> RegisterAsync(string email = Email)
     {
-        var tokens = await _svc.RegisterAsync(email, Password, "Customer");
-        return tokens!.AccessToken;
+        var tokens = await IdentityTestSession.RegisterConfirmedAsync(_svc, email, Password, "Customer");
+        return tokens.AccessToken;
     }
 
     [Fact]

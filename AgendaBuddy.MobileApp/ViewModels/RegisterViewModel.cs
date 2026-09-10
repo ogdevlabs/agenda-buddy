@@ -7,8 +7,7 @@ namespace AgendaBuddy.MobileApp.ViewModels;
 public partial class RegisterViewModel : ObservableObject
 {
     private readonly IAuthService _authService;
-    private readonly IProviderApiService _providerApiService;
-    private readonly ICustomerApiService _customerApiService;
+    private readonly IPendingRegistrationStore? _pendingRegistrationStore;
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(RegisterCommand))]
@@ -52,11 +51,11 @@ public partial class RegisterViewModel : ObservableObject
     public RegisterViewModel(
         IAuthService authService,
         IProviderApiService providerApiService,
-        ICustomerApiService customerApiService)
+        ICustomerApiService customerApiService,
+        IPendingRegistrationStore? pendingRegistrationStore = null)
     {
         _authService = authService;
-        _providerApiService = providerApiService;
-        _customerApiService = customerApiService;
+        _pendingRegistrationStore = pendingRegistrationStore;
     }
 
     [RelayCommand(CanExecute = nameof(CanRegister))]
@@ -87,39 +86,17 @@ public partial class RegisterViewModel : ObservableObject
                 return;
             }
 
-            // Registering only creates an Identity credential. Without the matching domain record a
-            // provider cannot pass the profession gate and a customer cannot subscribe to anyone — the
-            // repository never upserts, so both writes answer 404 against a profile that does not exist.
-            // Done here, straight after register, because Identity is deliberately decoupled from the
-            // domain services and has no way to create either record itself.
-            var phone = string.IsNullOrWhiteSpace(PhoneNumber) ? null : PhoneNumber.Trim();
-            var profileCreated = IsProvider
-                ? await _providerApiService.CreateProfileAsync(Email, FirstName.Trim(), LastName.Trim(), phone)
-                : await _customerApiService.CreateProfileAsync(Email, FirstName.Trim(), LastName.Trim(), phone);
-
-            // A provider's availability window is generated in their own zone, and until now that zone was
-            // only ever recorded when they happened to open Account — so a provider who never did kept UTC
-            // hours, and every slot offered to their customers was wrong by their offset. Recorded here
-            // instead, at the one moment we know a provider profile has just come into existence.
-            //
-            // Its own try/catch and never awaited for correctness: the profile is the thing that had to be
-            // created, and a zone that can be re-synced on the next Account load must not be the reason
-            // registration reports a failure.
-            if (profileCreated && IsProvider)
+            if (_pendingRegistrationStore is not null)
             {
-                try { await _providerApiService.SyncTimeZoneAsync(Email); }
-                catch (Exception) { /* re-synced on the next Account load */ }
+                await _pendingRegistrationStore.SaveAsync(new PendingRegistration(
+                    Email.Trim(),
+                    FirstName.Trim(),
+                    LastName.Trim(),
+                    string.IsNullOrWhiteSpace(PhoneNumber) ? null : PhoneNumber.Trim(),
+                    role));
             }
 
-            if (!profileCreated)
-            {
-                // The account exists and the caller is signed in, so this is recoverable rather than fatal
-                // — but say so, because the parts of the app that need the profile will fail until it is
-                // created from the Account screen.
-                ErrorMessage = AppResources.GetString("Error_ProfileAfterRegistration");
-            }
-
-            RegistrationSucceeded?.Invoke(this, EventArgs.Empty);
+            VerificationPending?.Invoke(Email.Trim());
         }
         catch (HttpRequestException)
         {
@@ -140,7 +117,7 @@ public partial class RegisterViewModel : ObservableObject
         && !string.IsNullOrWhiteSpace(Password)
         && !string.IsNullOrWhiteSpace(ConfirmPassword);
 
-    public event EventHandler? RegistrationSucceeded;
+    public event Action<string>? VerificationPending;
 
     partial void OnErrorMessageChanged(string value) => OnPropertyChanged(nameof(HasError));
 }

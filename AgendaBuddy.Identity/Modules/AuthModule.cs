@@ -37,7 +37,7 @@ public class AuthModule : ICarterModule
             try
             {
                 var result = await svc.RegisterAsync(req.Email, req.Password, req.Role);
-                return Results.Created("/api/v1/auth/register", new { accessToken = result!.AccessToken, refreshToken = result.RefreshToken });
+                return Results.Accepted(value: new { status = "pending_verification" });
             }
             catch (AuthValidationException ex) { return Results.BadRequest(new { error = "validation_error", message = ex.Message }); }
             catch (ConflictException ex) { return Results.Conflict(new { error = "conflict", message = ex.Message }); }
@@ -52,6 +52,7 @@ public class AuthModule : ICarterModule
                 return Results.Ok(new { accessToken = result!.AccessToken, refreshToken = result.RefreshToken });
             }
             catch (UnauthorizedException) { return Results.Unauthorized(); }
+            catch (EmailVerificationRequiredException ex) { return Results.Problem(detail: ex.Message, statusCode: 403, title: "email_verification_required"); }
             catch (PasswordResetRequiredException ex) { return Results.Problem(detail: ex.Message, statusCode: 403, title: "password_reset_required"); }
             catch (ServiceUnavailableException ex) { return Results.Problem(detail: ex.Message, statusCode: 503, title: "service_unavailable"); }
         }).WithName("Login");
@@ -138,18 +139,35 @@ public class AuthModule : ICarterModule
             catch (ServiceUnavailableException ex) { return Results.Problem(detail: ex.Message, statusCode: 503, title: "service_unavailable"); }
         }).RequireAuthorization().WithName("DeleteAccount");
 
-        // Not required for login (see CredentialEntity.EmailVerified's own remarks) — confirms
-        // ownership of the registered address, an informational/UX signal only.
         auth.MapPost("/register/confirm", async (EmailConfirmRequest req, IdentityService svc) =>
         {
             try
             {
-                await svc.ConfirmEmailAsync(req.Email, req.Token);
+                await svc.ConfirmEmailAsync(req.Token);
                 return Results.NoContent();
             }
             catch (UnauthorizedException ex) { return Results.Problem(detail: ex.Message, statusCode: 401, title: "unauthorized"); }
             catch (ServiceUnavailableException ex) { return Results.Problem(detail: ex.Message, statusCode: 503, title: "service_unavailable"); }
         }).WithName("ConfirmEmail");
+
+        var resendVerification = auth.MapPost("/register/verification", async (
+            EmailVerificationRequest req,
+            IdentityService svc) =>
+        {
+            try
+            {
+                await svc.RequestEmailVerificationAsync(req.Email);
+            }
+            catch (ServiceUnavailableException ex)
+            {
+                return Results.Problem(detail: ex.Message, statusCode: 503, title: "service_unavailable");
+            }
+
+            return Results.Accepted();
+        }).WithName("RequestEmailVerification");
+
+        if (rateLimiting.Enabled)
+            resendVerification.RequireRateLimiting(RateLimitingOptions.PolicyName);
     }
 
     /// <summary>The bearer token from the Authorization header, or <c>null</c> when the header is absent or not one.</summary>

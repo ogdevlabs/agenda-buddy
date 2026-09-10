@@ -40,7 +40,7 @@ public class IdentityTokenRevocationTest : IDisposable
     [Fact]
     public async Task Logout_WithAnAccessToken_RevokesItsJti()
     {
-        var tokens = await _svc.RegisterAsync(Email, Password, "Provider");
+        var tokens = await IdentityTestSession.RegisterConfirmedAsync(_svc, Email, Password, "Provider");
 
         await _svc.LogoutAsync(tokens!.RefreshToken, tokens.AccessToken);
 
@@ -50,7 +50,7 @@ public class IdentityTokenRevocationTest : IDisposable
     [Fact]
     public async Task Logout_WithNoAccessToken_RevokesNothing()
     {
-        var tokens = await _svc.RegisterAsync(Email, Password, "Provider");
+        var tokens = await IdentityTestSession.RegisterConfirmedAsync(_svc, Email, Password, "Provider");
 
         await _svc.LogoutAsync(tokens!.RefreshToken);
 
@@ -60,7 +60,7 @@ public class IdentityTokenRevocationTest : IDisposable
     [Fact]
     public async Task Logout_WithAGarbageAccessToken_DoesNotThrowAndRevokesNothing()
     {
-        var tokens = await _svc.RegisterAsync(Email, Password, "Provider");
+        var tokens = await IdentityTestSession.RegisterConfirmedAsync(_svc, Email, Password, "Provider");
 
         await _svc.LogoutAsync(tokens!.RefreshToken, "not-a-real-jwt");
 

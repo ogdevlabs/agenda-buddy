@@ -73,6 +73,14 @@ public partial class App : Application
     protected override void OnAppLinkRequestReceived(Uri uri)
     {
         base.OnAppLinkRequestReceived(uri);
+        var confirmation = EmailConfirmationLink.Parse(uri);
+        if (confirmation.IsValid)
+        {
+            _ = Shell.Current.GoToAsync(
+                $"//emailVerification?token={Uri.EscapeDataString(confirmation.Token!)}");
+            return;
+        }
+
         _ = HandlePaymentCallbackAsync(PaymentOnboardingCallback.Parse(uri));
     }
 
