@@ -22,6 +22,9 @@ All notable changes to this project are documented in this file, in [Keep a Chan
 - Dev user-data reset now reuses the existing `dev-env-stop.yml` workflow and allows Azure Container Apps up to
   15 minutes to drain replicas before failing closed. The first live reset proved the original fixed 12-attempt
   window was too short: six replica records still existed when it expired, so no data was deleted.
+- Global reset cutoffs are written to both `agenda_buddy` and `IdentityDb`, matching the database each service's
+  authentication middleware reads. Independent post-reset verification caught the missing Identity cutoff before
+  release tagging; all user documents had already been removed successfully.
 
 ## [0.19.2] - 2026-09-10
 

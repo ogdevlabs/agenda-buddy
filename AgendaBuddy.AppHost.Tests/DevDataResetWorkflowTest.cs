@@ -71,6 +71,6 @@ public class DevDataResetWorkflowTest
 
         Assert.Contains("__all_tokens_before__", workflow, StringComparison.Ordinal);
         Assert.Contains("revoked_before", workflow, StringComparison.Ordinal);
-        Assert.Contains("replaceOne", workflow, StringComparison.Ordinal);
+        Assert.Equal(2, workflow.Split("replaceOne", StringSplitOptions.None).Length - 1);
     }
 }
