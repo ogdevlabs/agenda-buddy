@@ -36,9 +36,10 @@ public class DevDataResetWorkflowTest
 
         Assert.Contains("uses: ./.github/workflows/dev-env-stop.yml", workflow, StringComparison.Ordinal);
         Assert.Contains("action: start", workflow, StringComparison.Ordinal);
-        Assert.Contains("az containerapp replica list", workflow, StringComparison.Ordinal);
-        Assert.Contains("drain_deadline=$((SECONDS + 900))", workflow, StringComparison.Ordinal);
-        Assert.Contains("15 minutes after the stop operation", workflow, StringComparison.Ordinal);
+        Assert.Contains("needs: drain", workflow, StringComparison.Ordinal);
+        Assert.Equal(4, workflow.Split("wait-for-container-app-drain.sh", StringSplitOptions.None).Length - 1);
+        Assert.Equal(5, workflow.Split("uses: azure/login@v2", StringSplitOptions.None).Length - 1);
+        Assert.Contains("did not drain within 16 minutes", workflow, StringComparison.Ordinal);
         Assert.Contains("refusing to purge", workflow, StringComparison.Ordinal);
         Assert.Contains("always()", workflow, StringComparison.Ordinal);
         Assert.Contains("start_after", workflow, StringComparison.Ordinal);
