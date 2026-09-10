@@ -256,7 +256,11 @@ jobs:
                   # Empty rather than omitted: the parameter IS declared in the Cloud app model, and azd
                   # prompts (or fails under --no-prompt) for a declared parameter with no value. Empty is
                   # exactly what EmailOptions/PushOptions read as "not configured".
-                  parameters[param] = ""
+                    parameters[param] = (
+                      "__UNCONFIGURED__"
+                      if param in {"stripe_api_key", "stripe_webhook_secret"}
+                      else ""
+                    )
                   continue
               # az strips no trailing newline of its own, but tsv output appends one.
               value = result.stdout.rstrip("\n")

@@ -37,7 +37,7 @@ public sealed class PaymentWebhookModule : ICarterModule
         CancellationToken cancellationToken)
     {
         var secret = configuration["Payments:Stripe:WebhookSecret"];
-        if (string.IsNullOrWhiteSpace(secret)) return Results.NotFound();
+        if (!PaymentGatewayFactory.IsConfigured(secret)) return Results.NotFound();
 
         using var reader = new StreamReader(request.Body);
         var payload = await reader.ReadToEndAsync(cancellationToken);

@@ -35,6 +35,8 @@ public enum PaymentGatewayMode
 /// </remarks>
 public static class PaymentGatewayFactory
 {
+    public const string UnconfiguredParameterValue = "__UNCONFIGURED__";
+
     /// <summary>
     /// The configuration key holding the Stripe secret. <b>It must never appear in
     /// <c>appsettings.json</c></b> — it is a live payment credential, and `ISSUE-002` is this project's
@@ -48,11 +50,15 @@ public static class PaymentGatewayFactory
     {
         ArgumentNullException.ThrowIfNull(configuration);
 
-        if (!string.IsNullOrWhiteSpace(configuration[ApiKeyConfigurationKey])) return PaymentGatewayMode.Stripe;
+        if (IsConfigured(configuration[ApiKeyConfigurationKey])) return PaymentGatewayMode.Stripe;
         return string.Equals(configuration["Security:Local"], "true", StringComparison.OrdinalIgnoreCase)
             ? PaymentGatewayMode.Recording
             : PaymentGatewayMode.Unconfigured;
     }
+
+    public static bool IsConfigured(string? value) =>
+        !string.IsNullOrWhiteSpace(value)
+        && !string.Equals(value, UnconfiguredParameterValue, StringComparison.Ordinal);
 
     /// <summary>Builds the gateway <paramref name="configuration"/> selects.</summary>
     public static IPaymentGateway Create(IConfiguration configuration) =>

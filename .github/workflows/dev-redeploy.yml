@@ -144,7 +144,7 @@ jobs:
 
   restore:
     needs: [window, deploy]
-    if: ${{ needs.window.outputs.start_after == 'true' }}
+    if: ${{ always() && needs.window.outputs.start_after == 'true' }}
     uses: ./.github/workflows/dev-env-power.yml
     with:
       action: start
@@ -169,7 +169,14 @@ jobs:
               echo "- provision: skipped (application code only). A changed secret or parameter does NOT"
               echo "  reach the container apps on this path — re-run with provision: true for that."
             fi
-            if [ "${{ needs.window.outputs.start_after }}" = "true" ]; then
+            if [ "${{ needs.deploy.result }}" != "success" ]; then
+              echo "- deployment failed; no claim is made that new code reached dev."
+              if [ "${{ needs.window.outputs.start_after }}" = "true" ]; then
+                echo "- restore attempted: ${{ needs.restore.result }}"
+              else
+                echo "- environment remains stopped, matching the outside-hours schedule."
+              fi
+            elif [ "${{ needs.window.outputs.start_after }}" = "true" ]; then
               echo "- restarted: ${{ needs.restore.result }} (inside 09:00–17:00 Mexico City, weekday)"
             else
               echo "- **left stopped on purpose** — outside 09:00–17:00 Mexico City on a weekday."

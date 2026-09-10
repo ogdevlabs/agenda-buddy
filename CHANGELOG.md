@@ -4,6 +4,15 @@ All notable changes to this project are documented in this file, in [Keep a Chan
 
 ## [Unreleased]
 
+## [0.19.1] - 2026-09-10
+
+### Fixed
+
+- Optional Stripe secrets now use a nonempty fail-closed sentinel because Azure Container Apps rejects empty
+  secret values. A deployment without Stripe remains healthy while financial operations stay unavailable.
+- Dev redeploy restoration now runs after a failed deployment when the schedule requires the environment to be
+  active, and the workflow report no longer claims failed code reached dev.
+
 ## [0.19.0] - 2026-09-10
 
 ### Added

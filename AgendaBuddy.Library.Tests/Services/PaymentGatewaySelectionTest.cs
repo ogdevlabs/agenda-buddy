@@ -78,6 +78,20 @@ public class PaymentGatewaySelectionTest
     }
 
     [Fact]
+    public void DeploymentSentinel_UsesFailClosedGateway()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                [PaymentGatewayFactory.ApiKeyConfigurationKey] = PaymentGatewayFactory.UnconfiguredParameterValue
+            })
+            .Build();
+
+        Assert.Equal(PaymentGatewayMode.Unconfigured, PaymentGatewayFactory.ModeFor(configuration));
+        Assert.IsType<UnconfiguredPaymentGateway>(PaymentGatewayFactory.Create(configuration));
+    }
+
+    [Fact]
     public void ALocalRunIsNotWarnedAbout()
     {
         Assert.Null(PaymentGatewayFactory.RecordingModeWarning(ConfigurationWith(null), isLocalRun: true));
