@@ -26,6 +26,8 @@ public class ServiceEntity
 
     [BsonElement("feeType")] public FeeType FeeType { get; set; }
 
+    [BsonElement("currency")] public string Currency { get; set; } = "usd";
+
     [BsonElement("isActive")] public bool IsActive { get; set; } = true;
 
     /// <summary>The session length this service books for, in minutes. Additive field (2026-08-28) — a

@@ -29,6 +29,8 @@ public static class AppNavigation
         Microsoft.Maui.Controls.Routing.RegisterRoute("language", typeof(LanguagePage));
         Microsoft.Maui.Controls.Routing.RegisterRoute("terms", typeof(TermsPage));
         Microsoft.Maui.Controls.Routing.RegisterRoute("privacy", typeof(PrivacyPage));
+        Microsoft.Maui.Controls.Routing.RegisterRoute("customerPaymentMethod", typeof(CustomerPaymentMethodPage));
+        Microsoft.Maui.Controls.Routing.RegisterRoute("providerPayout", typeof(ProviderPayoutPage));
     }
 }
 #endif

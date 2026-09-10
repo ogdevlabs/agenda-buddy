@@ -41,10 +41,17 @@ public partial class ProviderReportViewModel : ObservableObject
         null => string.Empty,
         // The real reason text (Library/Services/ReportingService.RevenueUnavailable) already ends
         // with a period — TrimEnd avoids doubling it while still guaranteeing exactly one.
-        { RevenueAvailable: false } =>
-            AppResources.Format("Report_RevenueUnavailable", Report.RevenueUnavailableReason?.TrimEnd('.')),
+        { RevenueAvailable: false } => AppResources.GetString("Report_RevenueUnavailableNoPricing"),
         _ => AppResources.GetString("Report_RevenueAvailable")
     };
+
+    public string TotalBookingsText => AppResources.Format("Report_TotalBookings", Report?.TotalBookings ?? 0);
+    public string CompletedAppointmentsText => AppResources.Format(
+        "Report_CompletedAppointments", Report?.CompletedAppointments ?? 0);
+    public string CancelledAppointmentsText => AppResources.Format(
+        "Report_CancelledAppointments", Report?.CancelledAppointments ?? 0);
+    public string UniqueCustomersText => AppResources.Format(
+        "Report_UniqueCustomers", Report?.UniqueCustomers ?? 0);
 
     public ProviderReportViewModel(IProviderApiService providerApiService)
     {
@@ -85,5 +92,9 @@ public partial class ProviderReportViewModel : ObservableObject
     {
         OnPropertyChanged(nameof(HasReport));
         OnPropertyChanged(nameof(RevenueMessage));
+        OnPropertyChanged(nameof(TotalBookingsText));
+        OnPropertyChanged(nameof(CompletedAppointmentsText));
+        OnPropertyChanged(nameof(CancelledAppointmentsText));
+        OnPropertyChanged(nameof(UniqueCustomersText));
     }
 }

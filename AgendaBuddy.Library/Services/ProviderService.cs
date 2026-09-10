@@ -124,6 +124,38 @@ public class ProviderService(IRepository<ProviderEntity> providerRepository) : I
             new BsonDocument("$set", new BsonDocument("is_active", isActive)));
     }
 
+    public async Task<ProviderEntity?> SetConnectedAccountAsync(string providerEmail, string accountId)
+    {
+        return await providerRepository.FindOneAndUpdateAsync(
+            new BsonDocument("email", providerEmail),
+            new BsonDocument("$set", new BsonDocument("stripe_connected_account_id", accountId)));
+    }
+
+    public async Task<ProviderEntity?> SetPayoutStateAsync(string providerEmail, ProviderPayoutState state)
+    {
+        return await providerRepository.FindOneAndUpdateAsync(
+            new BsonDocument("email", providerEmail),
+            new BsonDocument("$set", new BsonDocument
+            {
+                { "stripe_charges_enabled", state.ChargesEnabled },
+                { "stripe_payouts_enabled", state.PayoutsEnabled },
+                { "stripe_disabled_reason", state.DisabledReason is null ? BsonNull.Value : state.DisabledReason }
+            }));
+    }
+
+    public async Task<ProviderEntity?> SetPayoutStateByConnectedAccountAsync(
+        string accountId, ProviderPayoutState state)
+    {
+        return await providerRepository.FindOneAndUpdateAsync(
+            new BsonDocument("stripe_connected_account_id", accountId),
+            new BsonDocument("$set", new BsonDocument
+            {
+                { "stripe_charges_enabled", state.ChargesEnabled },
+                { "stripe_payouts_enabled", state.PayoutsEnabled },
+                { "stripe_disabled_reason", state.DisabledReason is null ? BsonNull.Value : state.DisabledReason }
+            }));
+    }
+
     public async Task<ProviderEntity?> SubscribeCustomerAsync(string providerEmail, string customerEmail)
     {
         return await providerRepository.FindOneAndUpdateAsync(

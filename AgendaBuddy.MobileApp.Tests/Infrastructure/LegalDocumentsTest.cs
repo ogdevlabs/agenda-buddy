@@ -152,6 +152,27 @@ public class LegalDocumentsTest : IDisposable
         Assert.Contains(subject, LegalDocuments.Privacy.ToPlainText(), StringComparison.OrdinalIgnoreCase);
     }
 
+    [Theory]
+    [InlineData("Stripe")]
+    [InlineData("off-session hold")]
+    [InlineData("90%")]
+    [InlineData("10%")]
+    [InlineData("full hold is released")]
+    public void EnglishTermsDiscloseMarketplacePaymentRules(string subject) =>
+        Assert.Contains(subject, LegalDocuments.Terms.ToPlainText(), StringComparison.OrdinalIgnoreCase);
+
+    [Theory]
+    [InlineData("Stripe")]
+    [InlineData("método de pago")]
+    [InlineData("90%")]
+    [InlineData("10%")]
+    [InlineData("toda la retención")]
+    public void SpanishTermsDiscloseMarketplacePaymentRules(string subject)
+    {
+        AppResources.Culture = new CultureInfo("es-MX");
+        Assert.Contains(subject, LegalDocuments.Terms.ToPlainText(), StringComparison.OrdinalIgnoreCase);
+    }
+
     /// <summary>
     /// Deletion is the erasure right this app exercises directly, so the policy has to say what deleting does —
     /// including that the counterparty's records survive with the identity stripped, which is the part a reader
@@ -224,9 +245,9 @@ public class LegalDocumentsTest : IDisposable
         var spanish = DocumentsFor("es-MX")[0].ToPlainText();
 
         Assert.StartsWith("Terms and Conditions", english, StringComparison.Ordinal);
-        Assert.Contains("Effective Tuesday, September 8, 2026", english, StringComparison.Ordinal);
+        Assert.Contains("Effective Wednesday, September 9, 2026", english, StringComparison.Ordinal);
         Assert.StartsWith("Términos y condiciones", spanish, StringComparison.Ordinal);
-        Assert.Contains("Vigente desde el martes, 8 de septiembre de 2026", spanish, StringComparison.Ordinal);
+        Assert.Contains("Vigente desde el miércoles, 9 de septiembre de 2026", spanish, StringComparison.Ordinal);
         Assert.NotEqual(english, spanish);
     }
 

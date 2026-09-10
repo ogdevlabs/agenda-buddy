@@ -76,4 +76,28 @@ public class CustomerEntity
 
     [BsonElement("appointment_identifier_collection")]
     public List<string>? AppointmentCollection { get; set; } = [];
+
+    [BsonElement("stripe_customer_id")]
+    [BsonIgnoreIfNull]
+    public string? StripeCustomerId { get; set; }
+
+    [BsonElement("stripe_default_payment_method_id")]
+    [BsonIgnoreIfNull]
+    public string? StripeDefaultPaymentMethodId { get; set; }
+
+    [BsonElement("payment_method_label")]
+    [BsonIgnoreIfNull]
+    public string? PaymentMethodLabel { get; set; }
+
+    [BsonElement("payment_method_type")]
+    [BsonIgnoreIfNull]
+    public string? PaymentMethodType { get; set; }
+
+    [BsonElement("payment_method_brand")]
+    [BsonIgnoreIfNull]
+    public string? PaymentMethodBrand { get; set; }
+
+    [BsonElement("payment_method_last4")]
+    [BsonIgnoreIfNull]
+    public string? PaymentMethodLast4 { get; set; }
 }

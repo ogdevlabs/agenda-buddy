@@ -112,6 +112,7 @@ public static class MauiProgram
         builder.Services.AddTransient<IProviderApiService, ProviderApiService>();
         builder.Services.AddTransient<IServicesApiService, ServicesApiService>();
         builder.Services.AddTransient<IProfessionApiService, ProfessionApiService>();
+        builder.Services.AddTransient<IPaymentAccountApiService, PaymentAccountApiService>();
 
         // The in-app banner. Registered before PushNotificationService only for readability -- what matters is
         // that it exists at all: neither platform draws a notification banner while the app is in the
@@ -152,6 +153,7 @@ public static class MauiProgram
         builder.Services.AddTransient<LegalDocumentViewModel>();
         builder.Services.AddTransient<ForgotPasswordViewModel>();
         builder.Services.AddTransient<ResetPasswordConfirmViewModel>();
+        builder.Services.AddTransient<PaymentAccountViewModel>();
 
         // Views
         builder.Services.AddTransient<LoginPage>();
@@ -178,6 +180,8 @@ public static class MauiProgram
         builder.Services.AddTransient<LanguagePage>();
         builder.Services.AddTransient<TermsPage>();
         builder.Services.AddTransient<PrivacyPage>();
+        builder.Services.AddTransient<CustomerPaymentMethodPage>();
+        builder.Services.AddTransient<ProviderPayoutPage>();
         builder.Services.AddTransient<MorePage>();
         builder.Services.AddTransient<ForgotPasswordPage>();
         builder.Services.AddTransient<ResetPasswordConfirmPage>();

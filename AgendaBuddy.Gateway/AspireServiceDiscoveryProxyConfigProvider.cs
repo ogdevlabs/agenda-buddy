@@ -67,6 +67,7 @@ public sealed class AspireServiceDiscoveryProxyConfigProvider : IProxyConfigProv
     private static readonly (string ServiceName, string RouteId, string PathPattern)[] _routeSpecs =
     [
         ("booking", "booking", "/api/v1/booking/{**catch-all}"),
+        ("booking", "payments-callbacks", "/api/v1/payments/{**catch-all}"),
         ("calendar", "calendar", "/api/v1/calendar/{**catch-all}"),
         ("customer", "customer", "/api/v1/customers/{**catch-all}"),
         ("provider", "provider", "/api/v1/providers/{**catch-all}"),

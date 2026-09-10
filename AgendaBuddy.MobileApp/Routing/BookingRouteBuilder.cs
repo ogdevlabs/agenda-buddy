@@ -121,11 +121,4 @@ public static class BookingRouteBuilder
 
     public static RouteSpec GetPayment(string identifier) =>
         new(HttpMethod.Get, $"api/v1/booking/appointments/{identifier}/payment");
-
-    public static RouteSpec CreatePayment(string identifier) =>
-        new(HttpMethod.Post, $"api/v1/booking/appointments/{identifier}/payment");
-
-    /// <summary>Payload shape Booking's <c>PaymentRequest(decimal Amount, string? Currency)</c> binds.</summary>
-    public static object BuildPaymentPayload(decimal amount, string? currency) =>
-        new { amount, currency };
 }

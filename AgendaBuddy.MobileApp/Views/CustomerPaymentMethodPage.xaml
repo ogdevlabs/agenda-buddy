@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:controls="clr-namespace:AgendaBuddy.MobileApp.Controls"
+             xmlns:strings="clr-namespace:AgendaBuddy.MobileApp.Resources.Strings"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             x:Class="AgendaBuddy.MobileApp.Views.CustomerPaymentMethodPage"
+             Title="{x:Static strings:AppResources.PaymentAccount_CustomerTitle}"
+             BackgroundColor="{StaticResource BackgroundPage}"
+             Shell.NavBarIsVisible="False">
+    <ContentPage.Resources>
+        <toolkit:InvertedBoolConverter x:Key="InvertedBoolConverter" />
+    </ContentPage.Resources>
+    <Grid RowDefinitions="Auto,*">
+        <controls:BrandHeader Grid.Row="0" />
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Padding="20,18,20,28" Spacing="16">
+                <Label Text="{x:Static strings:AppResources.PaymentAccount_CustomerTitle}" Style="{StaticResource TitleMedium}" />
+                <Label Text="{x:Static strings:AppResources.PaymentAccount_CustomerExplanation}"
+                       Style="{StaticResource BodySecondary}" />
+                <Frame Style="{StaticResource CardCompact}">
+                    <VerticalStackLayout Spacing="8">
+                        <Label Text="{Binding Status}" FontSize="16" FontAttributes="Bold"
+                               TextColor="{StaticResource TextPrimary}" AutomationId="PaymentMethodStatus" />
+                        <Label Text="{Binding DisplayLabel}" FontSize="13" TextColor="{StaticResource TextMuted}" />
+                        <Label Text="{x:Static strings:AppResources.PaymentAccount_CustomerMethods}"
+                               FontSize="12" TextColor="{StaticResource TextMuted}" />
+                    </VerticalStackLayout>
+                </Frame>
+                <controls:SafeButton Text="{x:Static strings:AppResources.PaymentAccount_CustomerAction}"
+                                     Style="{StaticResource PrimaryButton}"
+                                     Command="{Binding BeginSetupCommand}"
+                                     IsEnabled="{Binding IsLoading, Converter={StaticResource InvertedBoolConverter}}"
+                                     AutomationId="BeginPaymentSetupButton" />
+                <ActivityIndicator IsRunning="{Binding IsLoading}" IsVisible="{Binding IsLoading}" />
+            </VerticalStackLayout>
+        </ScrollView>
+    </Grid>
+</ContentPage>

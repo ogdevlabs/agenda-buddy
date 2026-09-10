@@ -70,6 +70,31 @@ public partial class App : Application
             await Shell.Current.GoToAsync("//login");
     }
 
+    protected override void OnAppLinkRequestReceived(Uri uri)
+    {
+        base.OnAppLinkRequestReceived(uri);
+        _ = HandlePaymentCallbackAsync(PaymentOnboardingCallback.Parse(uri));
+    }
+
+    private async Task HandlePaymentCallbackAsync(PaymentOnboardingCallback callback)
+    {
+        switch (callback.Kind)
+        {
+            case PaymentOnboardingCallbackKind.CustomerCompleted when !string.IsNullOrWhiteSpace(callback.SessionId):
+                await _services.GetRequiredService<IPaymentAccountApiService>()
+                    .CompleteCustomerSetupAsync(callback.SessionId);
+                await Shell.Current.GoToAsync("customerPaymentMethod");
+                break;
+            case PaymentOnboardingCallbackKind.CustomerCancelled:
+                await Shell.Current.GoToAsync("customerPaymentMethod");
+                break;
+            case PaymentOnboardingCallbackKind.ProviderCompleted:
+            case PaymentOnboardingCallbackKind.ProviderRefresh:
+                await Shell.Current.GoToAsync("providerPayout");
+                break;
+        }
+    }
+
 #if DEBUG
     /// <summary>
     /// Signs in at launch using credentials supplied in the environment, for local verification.

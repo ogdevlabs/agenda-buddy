@@ -8,7 +8,6 @@ public partial class XamlLocalizationGuardTest
     private static readonly HashSet<string> LocaleNeutralLiterals =
     [
         "  ·  ",
-        "0.00",
         "555 123 4567",
         "Casey"
     ];

@@ -1,4 +1,5 @@
 using Android.App;
+using Android.Content;
 using Android.Content.PM;
 using Android.OS;
 using AgendaBuddy.MobileApp.Infrastructure;
@@ -6,12 +7,29 @@ using AgendaBuddy.MobileApp.Infrastructure;
 namespace AgendaBuddy.MobileApp;
 
 [Activity(Theme = "@style/Maui.SplashTheme", MainLauncher = true, LaunchMode = LaunchMode.SingleTop, ConfigurationChanges = ConfigChanges.ScreenSize | ConfigChanges.Orientation | ConfigChanges.UiMode | ConfigChanges.ScreenLayout | ConfigChanges.SmallestScreenSize | ConfigChanges.Density)]
+[IntentFilter(
+    [Intent.ActionView],
+    Categories = [Intent.CategoryDefault, Intent.CategoryBrowsable],
+    DataScheme = "agendame")]
 public class MainActivity : MauiAppCompatActivity
 {
     protected override void OnCreate(Bundle? savedInstanceState)
     {
         base.OnCreate(savedInstanceState);
         CreateNotificationChannel();
+        HandlePaymentLink(Intent);
+    }
+
+    protected override void OnNewIntent(Intent? intent)
+    {
+        base.OnNewIntent(intent);
+        HandlePaymentLink(intent);
+    }
+
+    private static void HandlePaymentLink(Intent? intent)
+    {
+        if (intent?.DataString is { } value && Uri.TryCreate(value, UriKind.Absolute, out var uri))
+            Microsoft.Maui.Controls.Application.Current?.SendOnAppLinkRequestReceived(uri);
     }
 
     /// <summary>

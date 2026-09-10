@@ -12,6 +12,7 @@ public class CancelAppointmentCommandHandler(
     IMediator mediator,
     IProviderService providerService,
     IBookingService bookingService,
+    IPaymentService paymentService,
     IEventStore eventStore,
     INotificationDispatcher notificationDispatcher) : IRequestHandler<CancelAppointmentCommand, Result<AppointmentEntity>>
 {
@@ -29,6 +30,16 @@ public class CancelAppointmentCommandHandler(
         var nowUtc = DateTime.UtcNow;
         var cancelledByCustomer = appointmentEntity is not null && string.Equals(
             request.CancelledByEmail, appointmentEntity.EmailCustomer, StringComparison.OrdinalIgnoreCase);
+
+        var cancellable = appointmentEntity?.AppointmentStatus is AppointmentStatus.Requested
+            or AppointmentStatus.Booked or AppointmentStatus.RescheduleRequested;
+        if (appointmentEntity is not null && cancellable && !cancelledByCustomer
+            && !await paymentService.ReleaseOrRefundAsync(appointmentIdentifier))
+        {
+            await AuditFailure(appointmentEntity);
+            return Result.Fail<AppointmentEntity>(
+                "The customer payment hold could not be released. The appointment was not cancelled; try again.");
+        }
 
         if (appointmentEntity != null)
             if (await SearchAndCancelAppointment(appointmentIdentifier, cancelledByCustomer, nowUtc))
@@ -66,19 +77,7 @@ public class CancelAppointmentCommandHandler(
                 return Result.Ok(appointmentEntity);
             }
 
-        var failEvent = new Event
-        {
-            Id = ObjectId.GenerateNewId(),
-            TimeStamp = DateTime.UtcNow,
-            Status = "Failed",
-            Type = "CancelAppointmentCommand",
-            Data = JsonSerializer.Serialize(appointmentEntity ?? new AppointmentEntity
-            {
-                EmailProvider = "",
-                EmailCustomer = ""
-            })
-        };
-        await eventStore.SaveAsync(failEvent);
+        await AuditFailure(appointmentEntity);
 
         // The refusal a customer will actually hit is the notice period, and it needs its own wording with the
         // deadline in it -- "error when trying to cancel" tells them nothing they can act on. Distinguished after
@@ -94,6 +93,20 @@ public class CancelAppointmentCommandHandler(
         return Result.Fail<AppointmentEntity>(
             $"Error when trying to cancel appointment identifier: {appointmentIdentifier}");
     }
+
+    private async Task AuditFailure(AppointmentEntity? appointmentEntity) =>
+        await eventStore.SaveAsync(new Event
+        {
+            Id = ObjectId.GenerateNewId(),
+            TimeStamp = DateTime.UtcNow,
+            Status = "Failed",
+            Type = "CancelAppointmentCommand",
+            Data = JsonSerializer.Serialize(appointmentEntity ?? new AppointmentEntity
+            {
+                EmailProvider = "",
+                EmailCustomer = ""
+            })
+        });
 
     /// <summary>
     /// Cancels the appointment in both places it is stored: the <c>appointments</c> collection and the

@@ -11,7 +11,7 @@ public class BookingAppointmentCommandHandlerTest
     public async Task Handle_NullRequest_ThrowsArgumentNullException()
     {
         var handler = new BookingAppointmentCommandHandler(
-            Mock.Of<IMediator>(), null!, null!, Mock.Of<IEventStore>(), null!, Mock.Of<INotificationDispatcher>());
+            Mock.Of<IMediator>(), null!, null!, Mock.Of<IEventStore>(), null!, null!, Mock.Of<INotificationDispatcher>());
 
         await Assert.ThrowsAsync<ArgumentNullException>(() => handler.Handle(null!, CancellationToken.None));
     }

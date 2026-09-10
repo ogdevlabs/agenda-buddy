@@ -29,6 +29,15 @@ public class BookingCorrectnessTest(ServiceHostFixture<BookingAnchor> host, Cryp
                 FirstName = "Correctness",
                 LastName = "Provider",
                 Email = ProviderEmail,
+                WorkWeek = Enum.GetValues<DayOfWeek>()
+                    .Select(day => new WorkDayHours
+                    {
+                        Day = day,
+                        StartHour = 8,
+                        EndHour = 17,
+                        IsClosed = false
+                    })
+                    .ToList()
             });
 
     private HttpRequestMessage BookRequest(DateTime start, DateTime end) =>

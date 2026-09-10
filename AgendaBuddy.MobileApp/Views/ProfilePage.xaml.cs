@@ -43,6 +43,12 @@ public partial class ProfilePage : ContentPage
 
     private async void OnPrivacyTapped(object? sender, EventArgs e) => await Shell.Current.GoToAsync("privacy");
 
+    private async void OnPaymentMethodTapped(object? sender, EventArgs e) =>
+        await Shell.Current.GoToAsync("customerPaymentMethod");
+
+    private async void OnPayoutAccountTapped(object? sender, EventArgs e) =>
+        await Shell.Current.GoToAsync("providerPayout");
+
     private void OnChangePasswordTapped(object? sender, EventArgs e) =>
         _viewModel.RequestPasswordChangeCommand.Execute(null);
 

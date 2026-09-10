@@ -25,11 +25,9 @@ public partial class RegisterPage : ContentPage
             await appShell.UpdateForRoleAsync();
 
         await Shell.Current.GoToAsync("//dashboard");
-
-        // A new Provider has no Professions/Services yet — route into that setup next rather
-        // than leaving a Dashboard with nothing to show. A Customer has no such prerequisite.
-        if (_vm.IsProvider)
-            await Shell.Current.GoToAsync("professions");
+        await Shell.Current.GoToAsync(_vm.IsProvider
+            ? "providerPayout?onboarding=true"
+            : "customerPaymentMethod?onboarding=true");
     }
 
     private async void OnSignInTapped(object? sender, EventArgs e)

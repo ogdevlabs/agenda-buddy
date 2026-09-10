@@ -9,8 +9,7 @@ using MongoDB.Driver;
 namespace AgendaBuddy.IntegrationTests.Harness;
 
 /// <summary>
-/// Appointment status is the server's, and a
-/// payment is recorded against the appointment's real participants without charging anyone.
+/// Appointment status is server-owned and drives the payment authorization, capture, and release lifecycle.
 /// </summary>
 [Collection(HarnessCollection.Name)]
 public class PaymentsAndStatusTest(ServiceHostFixture<BookingAnchor> host, CryptoSessionFixture crypto)
@@ -27,7 +26,10 @@ public class PaymentsAndStatusTest(ServiceHostFixture<BookingAnchor> host, Crypt
         AppointmentStatus status = AppointmentStatus.Requested,
         DateTime? startUtc = null)
     {
-        var service = host.StartService("Production");
+        var service = host.StartService("Production", new Dictionary<string, string>
+        {
+            ["Security:Local"] = "true"
+        });
 
         // The default is a fixed past date, which suits every test about the cancel/status MECHANISM. The
         // customer's notice period is the one rule that cannot be expressed against a fixed date -- "more than
@@ -86,7 +88,6 @@ public class PaymentsAndStatusTest(ServiceHostFixture<BookingAnchor> host, Crypt
 
     [Theory]
     [InlineData("POST", "api/v1/booking/appointments/appointment-status/status")]
-    [InlineData("POST", "api/v1/booking/appointments/appointment-status/payment")]
     [InlineData("GET", "api/v1/booking/appointments/appointment-status/payment")]
     public async Task AC8_EveryStatusAndPaymentRoute_RefusesAnAnonymousCaller(string method, string path)
     {
@@ -401,124 +402,134 @@ public class PaymentsAndStatusTest(ServiceHostFixture<BookingAnchor> host, Crypt
     // ── Payments ────────────────────────────────────────────────────────────────────────────────────
 
     [Fact]
-    public async Task AC6_AC17_APaymentIsRecorded_WithoutChargingAnyone()
+    public async Task ClientSuppliedPaymentRoute_IsRemoved()
     {
         using var service = await StartWithAnAppointmentAsync();
 
         var response = await service.Client.SendAsync(Authorised(
             HttpMethod.Post, $"api/v1/booking/appointments/{Appointment}/payment",
-            Customer, TokenFactory.CustomerRole, new { amount = 50m, currency = "gbp" }));
+            Customer, TokenFactory.CustomerRole, new { amount = 1m, currency = "usd" }));
 
-        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
-
-        // DataResponse<T> envelope -- the payment is under .data, not the response root.
-        var payment = (await response.Content.ReadFromJsonAsync<DataResponse<PaymentEntity>>(HarnessJson.Options))!.Data;
-        Assert.Equal(PaymentStatus.Succeeded, payment!.Status);
-
-        // The proof that nothing was charged, and it is in the STORED DATA rather than only in a log: Stripe
-        // ids begin `pi_`, so `local_` is permanently identifiable as a payment that moved no money. A UI that
-        // renders this as "Paid" is lying to a provider about their income.
-        Assert.StartsWith(RecordingPaymentGateway.LocalIntentPrefix, payment.StripePaymentIntentId);
-
-        // Both participants come from the STORED APPOINTMENT, never the request body.
-        Assert.Equal(Provider, payment.ProviderEmail);
-        Assert.Equal(Customer, payment.CustomerEmail);
-        Assert.Equal(50m, payment.Amount);
-    }
-
-    [Fact]
-    public async Task T205_ParticipantsComeFromTheAppointment_NotTheRequest()
-    {
-        using var service = await StartWithAnAppointmentAsync();
-
-        var response = await service.Client.SendAsync(Authorised(
-            HttpMethod.Post, $"api/v1/booking/appointments/{Appointment}/payment",
-            Customer, TokenFactory.CustomerRole,
-            new
-            {
-                amount = 1m,
-                currency = "gbp",
-                // A caller trying to record a payment against somebody else. PaymentRequest has no such
-                // fields, so these are ignored rather than validated — there is nothing to trust.
-                providerEmail = Stranger,
-                customerEmail = Stranger
-            }));
-
-        var payment = (await response.Content.ReadFromJsonAsync<DataResponse<PaymentEntity>>(HarnessJson.Options))!.Data;
-
-        Assert.Equal(Provider, payment!.ProviderEmail);
-        Assert.Equal(Customer, payment.CustomerEmail);
-    }
-
-    [Fact]
-    public async Task T205_AnAppointmentCannotBeChargedTwice()
-    {
-        using var service = await StartWithAnAppointmentAsync();
-
-        var first = await service.Client.SendAsync(Authorised(
-            HttpMethod.Post, $"api/v1/booking/appointments/{Appointment}/payment",
-            Customer, TokenFactory.CustomerRole, new { amount = 50m, currency = "gbp" }));
-        var second = await service.Client.SendAsync(Authorised(
-            HttpMethod.Post, $"api/v1/booking/appointments/{Appointment}/payment",
-            Customer, TokenFactory.CustomerRole, new { amount = 50m, currency = "gbp" }));
-
-        Assert.Equal(HttpStatusCode.Created, first.StatusCode);
-        Assert.Equal(HttpStatusCode.Conflict, second.StatusCode);
-        Assert.Equal(1, await service.Database.GetCollection<PaymentEntity>("payments")
-            .CountDocumentsAsync(Builders<PaymentEntity>.Filter.Empty));
-    }
-
-    [Fact]
-    public async Task T205_AStrangerCanNeitherPayNorRead()
-    {
-        using var service = await StartWithAnAppointmentAsync();
-
-        var pay = await service.Client.SendAsync(Authorised(
-            HttpMethod.Post, $"api/v1/booking/appointments/{Appointment}/payment",
-            Stranger, TokenFactory.CustomerRole, new { amount = 50m, currency = "gbp" }));
-        var read = await service.Client.SendAsync(Authorised(
-            HttpMethod.Get, $"api/v1/booking/appointments/{Appointment}/payment",
-            Stranger, TokenFactory.CustomerRole));
-
-        Assert.Equal(HttpStatusCode.Forbidden, pay.StatusCode);
-        Assert.Equal(HttpStatusCode.Forbidden, read.StatusCode);
+        Assert.Equal(HttpStatusCode.MethodNotAllowed, response.StatusCode);
         Assert.Equal(0, await service.Database.GetCollection<PaymentEntity>("payments")
             .CountDocumentsAsync(Builders<PaymentEntity>.Filter.Empty));
     }
 
     [Fact]
-    public async Task BothParticipantsCanReadThePayment()
+    public async Task CustomerSetup_PersistsOnlyTokenizedMaskedPaymentData()
     {
         using var service = await StartWithAnAppointmentAsync();
-
-        await service.Client.SendAsync(Authorised(
-            HttpMethod.Post, $"api/v1/booking/appointments/{Appointment}/payment",
-            Customer, TokenFactory.CustomerRole, new { amount = 50m, currency = "gbp" }));
-
-        foreach (var (subject, role) in new[] { (Provider, TokenFactory.ProviderRole), (Customer, TokenFactory.CustomerRole) })
+        await service.Database.GetCollection<CustomerEntity>("customers").InsertOneAsync(new CustomerEntity
         {
-            var read = await service.Client.SendAsync(Authorised(
-                HttpMethod.Get, $"api/v1/booking/appointments/{Appointment}/payment", subject, role));
+            Id = ObjectId.GenerateNewId(),
+            Email = Customer,
+            FirstName = "Status",
+            LastName = "Customer"
+        });
 
-            Assert.Equal(HttpStatusCode.OK, read.StatusCode);
-        }
+        var response = await service.Client.SendAsync(Authorised(
+            HttpMethod.Post, "api/v1/booking/payments/customer/setup",
+            Customer, TokenFactory.CustomerRole));
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var stored = await service.Database.GetCollection<CustomerEntity>("customers")
+            .Find(Builders<CustomerEntity>.Filter.Eq(customer => customer.Email, Customer)).SingleAsync();
+        Assert.StartsWith("cus_local_", stored.StripeCustomerId);
+        Assert.StartsWith("pm_local_", stored.StripeDefaultPaymentMethodId);
+        Assert.Equal("Visa", stored.PaymentMethodBrand);
+        Assert.Equal("4242", stored.PaymentMethodLast4);
+        Assert.DoesNotContain(stored.ToBsonDocument().Names,
+            name => name.Contains("number", StringComparison.OrdinalIgnoreCase)
+                    || name.Contains("cvc", StringComparison.OrdinalIgnoreCase));
     }
 
-    [Theory]
-    [InlineData(0)]
-    [InlineData(-50)]
-    public async Task ANonPositiveAmountIsRejected(decimal amount)
+    [Fact]
+    public async Task ProviderOnboarding_PersistsConnectedAccountReadiness()
     {
-        // ⚠️ This is the ONLY validation the amount gets, and it is not enough. An
-        // appointment does not record which service it was booked for, so there is no price to check against
-        // and a customer can pay 0.01 for a 50 session. Accepted, documented, and it matters a great deal to
-        // whoever first configures a real Stripe key.
         using var service = await StartWithAnAppointmentAsync();
 
         var response = await service.Client.SendAsync(Authorised(
-            HttpMethod.Post, $"api/v1/booking/appointments/{Appointment}/payment",
-            Customer, TokenFactory.CustomerRole, new { amount, currency = "gbp" }));
+            HttpMethod.Post, "api/v1/booking/payments/provider/onboarding",
+            Provider, TokenFactory.ProviderRole));
 
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var stored = await service.Database.GetCollection<ProviderEntity>("providers")
+            .Find(Builders<ProviderEntity>.Filter.Eq(provider => provider.Email, Provider)).SingleAsync();
+        Assert.StartsWith("acct_local_", stored.StripeConnectedAccountId);
+        Assert.True(stored.StripeChargesEnabled);
+        Assert.True(stored.StripePayoutsEnabled);
+    }
+
+    [Fact]
+    public async Task ProviderConfirmation_AuthorizesTenPercentFee_ThenCompletionCaptures()
+    {
+        using var service = await StartWithAnAppointmentAsync();
+        var appointments = service.Database.GetCollection<AppointmentEntity>("appointments");
+        await appointments.UpdateOneAsync(
+            Builders<AppointmentEntity>.Filter.Eq(appointment => appointment.Identifier, Appointment),
+            Builders<AppointmentEntity>.Update
+                .Set(appointment => appointment.PaymentAmountMinor, 10001)
+                .Set(appointment => appointment.PaymentCurrency, "usd"));
+        await service.Database.GetCollection<CustomerEntity>("customers").InsertOneAsync(new CustomerEntity
+        {
+            Id = ObjectId.GenerateNewId(),
+            Email = Customer,
+            StripeCustomerId = "cus_local_customer",
+            StripeDefaultPaymentMethodId = "pm_local_card"
+        });
+        await service.Database.GetCollection<ProviderEntity>("providers").UpdateOneAsync(
+            Builders<ProviderEntity>.Filter.Eq(provider => provider.Email, Provider),
+            Builders<ProviderEntity>.Update
+                .Set(provider => provider.StripeConnectedAccountId, "acct_local_provider")
+                .Set(provider => provider.StripeChargesEnabled, true)
+                .Set(provider => provider.StripePayoutsEnabled, true));
+
+        var booked = await service.Client.SendAsync(Authorised(
+            HttpMethod.Post, $"api/v1/booking/appointments/{Appointment}/status",
+            Provider, TokenFactory.ProviderRole, new { status = "Booked" }));
+
+        Assert.Equal(HttpStatusCode.OK, booked.StatusCode);
+        var payment = await service.Database.GetCollection<PaymentEntity>("payments")
+            .Find(Builders<PaymentEntity>.Filter.Eq(value => value.AppointmentIdentifier, Appointment)).SingleAsync();
+        Assert.Equal(PaymentStatus.Authorized, payment.Status);
+        Assert.Equal(1000, payment.ApplicationFeeMinor);
+        Assert.Equal(9001, payment.ProviderAmountMinor);
+        Assert.StartsWith(RecordingPaymentGateway.LocalIntentPrefix, payment.StripePaymentIntentId);
+
+        var completed = await service.Client.SendAsync(Authorised(
+            HttpMethod.Post, $"api/v1/booking/appointments/{Appointment}/status",
+            Provider, TokenFactory.ProviderRole, new { status = "Completed" }));
+
+        Assert.Equal(HttpStatusCode.OK, completed.StatusCode);
+        payment = await service.Database.GetCollection<PaymentEntity>("payments")
+            .Find(Builders<PaymentEntity>.Filter.Eq(value => value.AppointmentIdentifier, Appointment)).SingleAsync();
+        Assert.Equal(PaymentStatus.Succeeded, payment.Status);
+        Assert.NotNull(payment.CapturedAt);
+    }
+
+    [Fact]
+    public async Task ProviderCancellation_ReleasesTheWholeAuthorizationBeforeCancelling()
+    {
+        using var service = await StartWithAnAppointmentAsync(AppointmentStatus.Booked);
+        await service.Database.GetCollection<PaymentEntity>("payments").InsertOneAsync(new PaymentEntity(
+            Appointment, Provider, Customer, 100m)
+        {
+            Id = ObjectId.GenerateNewId(),
+            AmountMinor = 10000,
+            ProviderAmountMinor = 9000,
+            ApplicationFeeMinor = 1000,
+            StripePaymentIntentId = "local_authorized",
+            Status = PaymentStatus.Authorized
+        });
+
+        var response = await service.Client.SendAsync(Authorised(
+            HttpMethod.Delete, "api/v1/booking/appointments/", Provider, TokenFactory.ProviderRole,
+            new { identifier = Appointment, emailProvider = Provider, emailCustomer = Customer }));
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+        var payment = await service.Database.GetCollection<PaymentEntity>("payments")
+            .Find(Builders<PaymentEntity>.Filter.Eq(value => value.AppointmentIdentifier, Appointment)).SingleAsync();
+        Assert.Equal(PaymentStatus.Cancelled, payment.Status);
+        Assert.Equal(AppointmentStatus.Cancelled, (await StoredAsync(service)).AppointmentStatus);
     }
 }

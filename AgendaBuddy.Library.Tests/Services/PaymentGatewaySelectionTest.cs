@@ -22,7 +22,8 @@ public class PaymentGatewaySelectionTest
         new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
-                [PaymentGatewayFactory.ApiKeyConfigurationKey] = apiKey
+                [PaymentGatewayFactory.ApiKeyConfigurationKey] = apiKey,
+                ["Security:Local"] = "true"
             })
             .Build();
 
@@ -68,6 +69,15 @@ public class PaymentGatewaySelectionTest
     }
 
     [Fact]
+    public void DeploymentWithoutKey_UsesFailClosedGateway()
+    {
+        var configuration = new ConfigurationBuilder().AddInMemoryCollection().Build();
+
+        Assert.Equal(PaymentGatewayMode.Unconfigured, PaymentGatewayFactory.ModeFor(configuration));
+        Assert.IsType<UnconfiguredPaymentGateway>(PaymentGatewayFactory.Create(configuration));
+    }
+
+    [Fact]
     public void ALocalRunIsNotWarnedAbout()
     {
         Assert.Null(PaymentGatewayFactory.RecordingModeWarning(ConfigurationWith(null), isLocalRun: true));
@@ -88,11 +98,12 @@ public class PaymentGatewaySelectionTest
         // moved no money. A UI that says "Paid" on it is lying to a provider about their income.
         var gateway = new RecordingPaymentGateway();
 
-        var intentId = await gateway.CreatePaymentIntentAsync(50m, "gbp", "Appointment a7f3");
+        var authorization = await gateway.AuthorizeAsync(new PaymentAuthorizationRequest(
+            5000, "gbp", "cus_local", "pm_local", "acct_local", 500, "Appointment a7f3", "a7f3:1"));
 
-        Assert.StartsWith(RecordingPaymentGateway.LocalIntentPrefix, intentId);
-        Assert.True(await gateway.ConfirmPaymentIntentAsync(intentId));
-        Assert.True(await gateway.RefundPaymentIntentAsync(intentId));
+        Assert.StartsWith(RecordingPaymentGateway.LocalIntentPrefix, authorization.PaymentIntentId);
+        Assert.Equal("requires_capture", authorization.Status);
+        Assert.True(await gateway.RefundPaymentIntentAsync(authorization.PaymentIntentId));
     }
 
     [Fact]
@@ -100,9 +111,11 @@ public class PaymentGatewaySelectionTest
     {
         var gateway = new RecordingPaymentGateway();
 
-        var first = await gateway.CreatePaymentIntentAsync(50m, "gbp", "one");
-        var second = await gateway.CreatePaymentIntentAsync(50m, "gbp", "two");
+        var request = new PaymentAuthorizationRequest(
+            5000, "gbp", "cus_local", "pm_local", "acct_local", 500, "Appointment", "a7f3:1");
+        var first = await gateway.AuthorizeAsync(request);
+        var second = await gateway.AuthorizeAsync(request);
 
-        Assert.NotEqual(first, second);
+        Assert.NotEqual(first.PaymentIntentId, second.PaymentIntentId);
     }
 }

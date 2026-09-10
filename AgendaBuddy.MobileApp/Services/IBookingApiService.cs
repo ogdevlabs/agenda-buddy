@@ -78,5 +78,4 @@ public interface IBookingApiService
     // ── Payments ───────────────────────────────────────────────────────────────────────────────────────
 
     Task<PaymentEntity?> GetPaymentAsync(string identifier, CancellationToken ct = default);
-    Task<PaymentEntity?> CreatePaymentAsync(string identifier, decimal amount, string? currency, CancellationToken ct = default);
 }

@@ -1,4 +1,5 @@
 using AgendaBuddy.Library.Configuration;
+using AgendaBuddy.Booking.Api.Payments;
 
 namespace AgendaBuddy.Booking.Extensions;
 
@@ -76,6 +77,8 @@ public static class ServiceCollectionExtension
         // services take only their repository plus (for payments) the gateway.
         serviceCollection.AddScoped<INoteService, NoteService>();
         serviceCollection.AddScoped<IPaymentService, PaymentService>();
+        serviceCollection.AddScoped<PaymentAccountService>();
+        serviceCollection.AddSingleton<StripeWebhookEventStore>();
 
         // NON-CHARGING unless a Stripe key is configured, and the key is
         // never in appsettings.json — it is an Aspire secret parameter, as the JWT keys are. Singleton because

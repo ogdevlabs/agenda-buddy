@@ -64,4 +64,4 @@ public record NoteRequest(string Content);
 /// charges; it matters a great deal to whoever first configures a real Stripe key.
 /// </para>
 /// </remarks>
-public record PaymentRequest(decimal Amount, string? Currency);
+public record CompletePaymentSetupRequest(string SessionId);

@@ -114,6 +114,68 @@
         }
       }
     },
+    "/api/v1/booking/payments/account": {
+      "get": {
+        "tags": [
+          "BookingAPI"
+        ],
+        "operationId": "GetPaymentAccountStatus",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/booking/payments/customer/setup": {
+      "post": {
+        "tags": [
+          "BookingAPI"
+        ],
+        "operationId": "BeginCustomerPaymentSetup",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/booking/payments/customer/setup/complete": {
+      "post": {
+        "tags": [
+          "BookingAPI"
+        ],
+        "operationId": "CompleteCustomerPaymentSetup",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompletePaymentSetupRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/booking/payments/provider/onboarding": {
+      "post": {
+        "tags": [
+          "BookingAPI"
+        ],
+        "operationId": "BeginProviderPayoutOnboarding",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/booking/appointments/{identifier}/status": {
       "post": {
         "tags": [
@@ -516,67 +578,6 @@
       }
     },
     "/api/v1/booking/appointments/{identifier}/payment": {
-      "post": {
-        "tags": [
-          "BookingAPI"
-        ],
-        "operationId": "PayForAppointment",
-        "parameters": [
-          {
-            "name": "identifier",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/PaymentRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "description": "Created",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PaymentEntityDataResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found"
-          },
-          "409": {
-            "description": "Conflict",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "string"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "string"
-                }
-              }
-            }
-          }
-        }
-      },
       "get": {
         "tags": [
           "BookingAPI"
@@ -668,6 +669,28 @@
             "nullable": true
           },
           "serviceDurationMinutes": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "serviceFee": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "serviceFeeType": {
+            "$ref": "#/components/schemas/FeeType"
+          },
+          "paymentAmountMinor": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "paymentCurrency": {
+            "type": "string",
+            "nullable": true
+          },
+          "pricingVersion": {
             "type": "integer",
             "format": "int32",
             "nullable": true
@@ -782,6 +805,25 @@
           }
         },
         "additionalProperties": false
+      },
+      "CompletePaymentSetupRequest": {
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "FeeType": {
+        "enum": [
+          0,
+          1,
+          2
+        ],
+        "type": "integer",
+        "format": "int32"
       },
       "NoteEntity": {
         "required": [
@@ -935,6 +977,26 @@
             "type": "number",
             "format": "double"
           },
+          "amountMinor": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "providerAmountMinor": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "applicationFeeMinor": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "feeBasisPoints": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "authorizationAttempt": {
+            "type": "integer",
+            "format": "int32"
+          },
           "currency": {
             "type": "string",
             "nullable": true
@@ -949,6 +1011,21 @@
           "createdAt": {
             "type": "string",
             "format": "date-time"
+          },
+          "authorizedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "capturedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "lastExternalEventAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -973,26 +1050,16 @@
         },
         "additionalProperties": false
       },
-      "PaymentRequest": {
-        "type": "object",
-        "properties": {
-          "amount": {
-            "type": "number",
-            "format": "double"
-          },
-          "currency": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
       "PaymentStatus": {
         "enum": [
           0,
           1,
           2,
-          3
+          3,
+          4,
+          5,
+          6,
+          7
         ],
         "type": "integer",
         "format": "int32"

@@ -35,25 +35,13 @@ public partial class PaymentViewModel : ObservableObject
     [ObservableProperty]
     private bool _hasLoaded;
 
-    [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(PayCommand))]
-    private string _payAmountInput = string.Empty;
-
-    [ObservableProperty]
-    private string _payErrorMessage = string.Empty;
-
-    [ObservableProperty]
-    private bool _isPaying;
-
     public string AppointmentId { get; set; } = string.Empty;
 
     public bool HasError => !string.IsNullOrEmpty(ErrorMessage);
 
     public bool HasPayment => Payment is not null;
 
-    public bool ShowPayForm => HasLoaded && !HasPayment && !HasError;
-
-    public bool HasPayError => !string.IsNullOrEmpty(PayErrorMessage);
+    public bool ShowNoPayment => HasLoaded && !HasPayment && !HasError;
 
     /// <summary>
     /// True when the payment's Stripe intent id is <c>local_</c>-prefixed — <c>AgendaBuddy.Library.Services.
@@ -85,6 +73,10 @@ public partial class PaymentViewModel : ObservableObject
                 PaymentStatus.Pending => AppResources.Payment_Pending,
                 PaymentStatus.Failed => AppResources.Payment_Failed,
                 PaymentStatus.Refunded => AppResources.Payment_Refunded,
+                PaymentStatus.Authorized => AppResources.GetString("Payment_Authorized"),
+                PaymentStatus.Cancelled => AppResources.GetString("Payment_Cancelled"),
+                PaymentStatus.RequiresAction => AppResources.GetString("Payment_RequiresAction"),
+                PaymentStatus.Disputed => AppResources.GetString("Payment_Disputed"),
                 _ => AppResources.Payment_StatusUnknown
             };
         }
@@ -124,64 +116,19 @@ public partial class PaymentViewModel : ObservableObject
         }
     }
 
-    [RelayCommand(CanExecute = nameof(CanPay))]
-    private async Task PayAsync()
-    {
-        if (!decimal.TryParse(PayAmountInput, out var amount) || amount <= 0)
-        {
-            PayErrorMessage = AppResources.GetString("Validation_PositiveAmount");
-            return;
-        }
-
-        IsPaying = true;
-        PayErrorMessage = string.Empty;
-
-        try
-        {
-            var created = await _bookingApiService.CreatePaymentAsync(AppointmentId, amount, currency: null);
-            if (created is null)
-            {
-                PayErrorMessage = AppResources.GetString("Error_RecordPayment");
-                await ToastNotifier.ShowAsync(PayErrorMessage);
-                return;
-            }
-
-            Payment = created;
-            await ToastNotifier.ShowAsync(AppResources.GetString("Action_PaymentRecorded"));
-        }
-        catch (GatewayServiceUnavailableException ex)
-        {
-            PayErrorMessage = GatewayErrorMapper.Describe(ex.FailedService);
-            await ToastNotifier.ShowAsync(PayErrorMessage);
-        }
-        catch (HttpRequestException)
-        {
-            PayErrorMessage = AppResources.GetString("Error_RecordPaymentConnection");
-            await ToastNotifier.ShowAsync(PayErrorMessage);
-        }
-        finally
-        {
-            IsPaying = false;
-        }
-    }
-
-    private bool CanPay() => !string.IsNullOrWhiteSpace(PayAmountInput);
-
     partial void OnErrorMessageChanged(string value)
     {
         OnPropertyChanged(nameof(HasError));
-        OnPropertyChanged(nameof(ShowPayForm));
+        OnPropertyChanged(nameof(ShowNoPayment));
     }
 
-    partial void OnHasLoadedChanged(bool value) => OnPropertyChanged(nameof(ShowPayForm));
-
-    partial void OnPayErrorMessageChanged(string value) => OnPropertyChanged(nameof(HasPayError));
+    partial void OnHasLoadedChanged(bool value) => OnPropertyChanged(nameof(ShowNoPayment));
 
     partial void OnPaymentChanged(PaymentEntity? value)
     {
         OnPropertyChanged(nameof(HasPayment));
         OnPropertyChanged(nameof(StatusMessage));
         OnPropertyChanged(nameof(IsNonCharging));
-        OnPropertyChanged(nameof(ShowPayForm));
+        OnPropertyChanged(nameof(ShowNoPayment));
     }
 }

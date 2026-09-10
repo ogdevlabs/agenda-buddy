@@ -25,6 +25,7 @@ Delivery records, one per shipped feature. Permanent — episodes are never arch
 | 015 | data-subject-rights | 2026-08-27 | [EPISODE_data-subject-rights_2026-08-27.md](EPISODE_data-subject-rights_2026-08-27.md) | #85 | Shipped (`v0.15.0`) |
 | 016 | spanish-mobile-localization | 2026-09-09 | [EPISODE_spanish-mobile-localization_2026-09-09.md](EPISODE_spanish-mobile-localization_2026-09-09.md) | #151 | Shipped (`v0.17.0`) |
 | 017 | profession-search-keyboard-dismissal | 2026-09-09 | [EPISODE_profession-search-keyboard-dismissal_2026-09-09.md](EPISODE_profession-search-keyboard-dismissal_2026-09-09.md) | #152 | Shipped (`v0.18.0`) |
+| 018 | marketplace-payments | 2026-09-09 | [EPISODE_marketplace-payments_2026-09-09.md](EPISODE_marketplace-payments_2026-09-09.md) | pending | Draft |
 
 **Naming:** `EPISODE_<feature-slug>_<YYYY-MM-DD>.md`, where the date is when the episode was opened, not
 when the feature shipped — 002 opened 2026-08-18 and its ship gate closed 2026-08-22.

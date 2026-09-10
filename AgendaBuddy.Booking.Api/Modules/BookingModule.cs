@@ -106,6 +106,7 @@ public class BookingModule : ICarterModule
         // ── Appointment status, session notes, payments ───────────────────────────────────────────
         //
         const string ProviderRole = "Provider";
+        const string CustomerRole = "Customer";
         //
         // Every route here is authenticated, ownership-guarded, and role-checked
         // where a role distinction exists — five routes in this solution once returned PII to anonymous
@@ -114,6 +115,71 @@ public class BookingModule : ICarterModule
         // Status is SERVER-OWNED: the PUT above ignores the field, and this is
         // the only way to change it. The transition runs through AppointmentEntity.TransitionTo, so Book() and
         // Complete() — dead code until now — hold the rules.
+
+        booking.MapGet("/payments/account",
+                async (ClaimsPrincipal user, PaymentAccountService paymentAccounts) =>
+                {
+                    var email = OwnershipGuard.ResolveCallerEmail(user);
+                    if (email is null) return Results.Forbid();
+
+                    var status = await paymentAccounts.GetStatusAsync(email, user.IsInRole(ProviderRole));
+                    return status is null ? Results.NotFound() : Results.Ok(status);
+                })
+            .WithName("GetPaymentAccountStatus")
+            .RequireAuthorization();
+
+        booking.MapPost("/payments/customer/setup",
+            async (ClaimsPrincipal user, HttpRequest request, PaymentAccountService paymentAccounts) =>
+                {
+                    try { OwnershipGuard.AssertRole(user, CustomerRole); }
+                    catch (ForbiddenException) { return Results.Forbid(); }
+
+                    var email = OwnershipGuard.ResolveCallerEmail(user);
+                    if (email is null) return Results.Forbid();
+
+                    var publicOrigin = $"{request.Scheme}://{request.Host}";
+                    var successUrl = $"{publicOrigin}/api/v1/payments/customer/return"
+                        + "?session_id={CHECKOUT_SESSION_ID}";
+                    var cancelUrl = $"{publicOrigin}/api/v1/payments/customer/cancel";
+                    var link = await paymentAccounts.BeginCustomerSetupAsync(email, successUrl, cancelUrl);
+                    return link is null ? Results.NotFound() : Results.Ok(link);
+                })
+            .WithName("BeginCustomerPaymentSetup")
+            .RequireAuthorization();
+
+        booking.MapPost("/payments/customer/setup/complete",
+                async (ClaimsPrincipal user, CompletePaymentSetupRequest request,
+                    PaymentAccountService paymentAccounts) =>
+                {
+                    try { OwnershipGuard.AssertRole(user, CustomerRole); }
+                    catch (ForbiddenException) { return Results.Forbid(); }
+
+                    var email = OwnershipGuard.ResolveCallerEmail(user);
+                    if (email is null || string.IsNullOrWhiteSpace(request.SessionId)) return Results.BadRequest();
+                    var status = await paymentAccounts.CompleteCustomerSetupAsync(email, request.SessionId);
+                    return status is null ? Results.NotFound() : Results.Ok(status);
+                })
+            .WithName("CompleteCustomerPaymentSetup")
+            .RequireAuthorization();
+
+        booking.MapPost("/payments/provider/onboarding",
+            async (ClaimsPrincipal user, HttpRequest request, PaymentAccountService paymentAccounts) =>
+                {
+                    try { OwnershipGuard.AssertRole(user, ProviderRole); }
+                    catch (ForbiddenException) { return Results.Forbid(); }
+
+                    var email = OwnershipGuard.ResolveCallerEmail(user);
+                    if (email is null) return Results.Forbid();
+
+                    var publicOrigin = $"{request.Scheme}://{request.Host}";
+                    var returnUrl = $"{publicOrigin}/api/v1/payments/provider/return";
+                    var refreshUrl = $"{publicOrigin}/api/v1/payments/provider/refresh";
+                    var link = await paymentAccounts.BeginProviderOnboardingAsync(email, returnUrl, refreshUrl);
+                    return link is null ? Results.NotFound() : Results.Ok(link);
+                })
+            .WithName("BeginProviderPayoutOnboarding")
+            .RequireAuthorization();
+
         booking.MapPost("/appointments/{identifier}/status",
                 async Task<Results<Ok<DataResponse<AppointmentStatusResponse>>, ForbidHttpResult, NotFound, Conflict<string>, BadRequest<string>>> (
                     string identifier,
@@ -158,7 +224,7 @@ public class BookingModule : ICarterModule
                             new ChangeAppointmentStatusCommand { Identifier = identifier, TargetStatus = target },
                             cancellationToken);
 
-                        if (result.IsFailed) return TypedResults.NotFound();
+                        if (result.IsFailed) return TypedResults.Conflict(result.Errors[0].Message);
                     }
                     catch (InvalidOperationException ex)
                     {
@@ -434,54 +500,6 @@ public class BookingModule : ICarterModule
                     catch (KeyNotFoundException) { return TypedResults.Forbid(); }
                 })
             .WithName("DeleteAppointmentNote")
-            .RequireAuthorization();
-
-        // ── Payments ────────────────────────────────────────────────────────────────────────────────────────
-        //
-        // Both participant emails come from the STORED APPOINTMENT, never from the body, so a caller
-        // cannot record a payment against someone else. A second charge for the same appointment answers 409.
-        //
-        // ⚠️ RESIDUAL, ACCEPTED: `amount` is client-supplied and there is nothing to validate it against, because an
-        // appointment does not record which service it was booked for. With the default non-charging gateway a wrong
-        // amount corrupts a record; with a real Stripe key it would be a real underpayment.
-        booking.MapPost("/appointments/{identifier}/payment",
-                async Task<Results<Created<DataResponse<PaymentEntity>>, ForbidHttpResult, NotFound, Conflict<string>, BadRequest<string>>> (
-                    string identifier, ClaimsPrincipal user, PaymentRequest request,
-                    BookingService bookingService, IMediator mediator, CancellationToken cancellationToken) =>
-                {
-                    if (request is null || request.Amount <= 0)
-                        return TypedResults.BadRequest("amount must be greater than zero.");
-
-                    var appointment = await bookingService.SearchAppointmentAsync(identifier);
-                    if (appointment is null) return TypedResults.NotFound();
-
-                    try { OwnershipGuard.AssertOwnerAny(user, appointment.EmailProvider, appointment.EmailCustomer); }
-                    catch (ForbiddenException) { return TypedResults.Forbid(); }
-
-                    try
-                    {
-                        var result = await mediator.Send(
-                            new PayForAppointmentCommand
-                            {
-                                Identifier = identifier,
-                                ProviderEmail = appointment.EmailProvider,
-                                CustomerEmail = appointment.EmailCustomer,
-                                Amount = request.Amount,
-                                Currency = string.IsNullOrWhiteSpace(request.Currency) ? "usd" : request.Currency
-                            },
-                            cancellationToken);
-
-                        return TypedResults.Created(
-                            $"/api/v1/booking/appointments/{identifier}/payment", DataResponse<PaymentEntity>.Ok(result.Value));
-                    }
-                    catch (InvalidOperationException ex)
-                    {
-                        // 409 rather than 400: the request is well-formed, it
-                        // conflicts with the current state (already paid).
-                        return TypedResults.Conflict(ex.Message);
-                    }
-                })
-            .WithName("PayForAppointment")
             .RequireAuthorization();
 
         booking.MapGet("/appointments/{identifier}/payment",

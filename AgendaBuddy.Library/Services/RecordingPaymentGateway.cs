@@ -29,10 +29,33 @@ public sealed class RecordingPaymentGateway : IPaymentGateway
     /// </summary>
     public const string LocalIntentPrefix = "local_";
 
-    public Task<string> CreatePaymentIntentAsync(decimal amount, string currency, string description) =>
-        Task.FromResult(LocalIntentPrefix + Convert.ToHexString(RandomNumberGenerator.GetBytes(8)).ToLowerInvariant());
+    public Task<CustomerSetupSession> CreateCustomerSetupSessionAsync(
+        string email, string? customerId, string successUrl, string cancelUrl)
+    {
+        var id = customerId ?? $"cus_local_{Token()}";
+        var sessionId = $"cs_local_{Token()}";
+        return Task.FromResult(new CustomerSetupSession(id, sessionId, successUrl, true));
+    }
 
-    public Task<bool> ConfirmPaymentIntentAsync(string paymentIntentId) => Task.FromResult(true);
+    public Task<SavedPaymentMethod> CompleteCustomerSetupAsync(string sessionId, string customerId) =>
+        Task.FromResult(new SavedPaymentMethod($"pm_local_{Token()}", "card", "Visa", "4242"));
+
+    public Task<ProviderOnboardingSession> CreateProviderOnboardingSessionAsync(
+        string email, string? accountId, string returnUrl, string refreshUrl) =>
+        Task.FromResult(new ProviderOnboardingSession(accountId ?? $"acct_local_{Token()}", returnUrl, true));
+
+    public Task<ProviderPayoutState> GetProviderPayoutStateAsync(string accountId) =>
+        Task.FromResult(new ProviderPayoutState(true, true, null));
+
+    public Task<PaymentAuthorizationResult> AuthorizeAsync(PaymentAuthorizationRequest request) =>
+        Task.FromResult(new PaymentAuthorizationResult(
+            LocalIntentPrefix + Token(), "requires_capture", DateTime.UtcNow.AddDays(7)));
+
+    public Task<bool> CaptureAsync(string paymentIntentId, string idempotencyKey) => Task.FromResult(true);
+
+    public Task<bool> CancelPaymentIntentAsync(string paymentIntentId) => Task.FromResult(true);
 
     public Task<bool> RefundPaymentIntentAsync(string paymentIntentId) => Task.FromResult(true);
+
+    private static string Token() => Convert.ToHexString(RandomNumberGenerator.GetBytes(8)).ToLowerInvariant();
 }
