@@ -71,10 +71,7 @@ jobs:
 
   stop:
     needs: guard
-    uses: ./.github/workflows/dev-env-power.yml
-    with:
-      action: stop
-      environment: dev
+    uses: ./.github/workflows/dev-env-stop.yml
     secrets: inherit
 
   purge:
@@ -105,7 +102,9 @@ jobs:
             echo "::error::No dev container apps found in $RESOURCE_GROUP."
             exit 1
           fi
-          for attempt in {1..12}; do
+          drain_started=$SECONDS
+          drain_deadline=$((SECONDS + 900))
+          while true; do
             running=0
             for app in "${apps[@]}"; do
               replicas=$(az containerapp replica list --name "$app" --resource-group "$RESOURCE_GROUP" \
@@ -113,11 +112,11 @@ jobs:
               running=$((running + replicas))
             done
             if [ "$running" -eq 0 ]; then break; fi
-            if [ "$attempt" -eq 12 ]; then
-              echo "::error::$running dev replicas remain after the stop operation; refusing to purge."
+            if [ "$SECONDS" -ge "$drain_deadline" ]; then
+              echo "::error::$running dev replicas remain 15 minutes after the stop operation; refusing to purge."
               exit 1
             fi
-            echo "Waiting for $running dev replicas to terminate (attempt $attempt/12)."
+            echo "Waiting for $running dev replicas to terminate ($((SECONDS - drain_started))s elapsed)."
             sleep 10
           done
 

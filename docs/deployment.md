@@ -429,8 +429,10 @@ To run it:
 4. Type the exact confirmation `DELETE DEV USER DATA`.
 5. Run the workflow and verify the stop, purge and report jobs are green.
 
-The workflow stops all eight Container Apps and waits until every replica has terminated before touching MongoDB.
-It then calls `deleteMany({})` on every non-system collection in both databases, with one exception: the seeded
+The workflow reuses `dev-env-stop.yml`, then waits up to 15 minutes for every replica to terminate before touching
+MongoDB. Azure Container Apps can take several minutes to remove replica records after `minReplicas` reaches zero;
+reaching the deadline still fails closed without deleting data. It then calls `deleteMany({})` on every non-system
+collection in both databases, with one exception: the seeded
 `professions` reference catalogue is preserved. Collections and indexes are also preserved, so uniqueness, TTL and
 payment constraints remain in place after the reset. The workflow verifies that every targeted collection is empty
 before reporting success.

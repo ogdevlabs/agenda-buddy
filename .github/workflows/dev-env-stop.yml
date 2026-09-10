@@ -10,6 +10,13 @@ name: Dev environment — stop
 # wired to a button.
 
 on:
+  workflow_call:
+    inputs:
+      environment:
+        description: "Environment to stop"
+        required: false
+        default: dev
+        type: string
   workflow_dispatch:
     inputs:
       environment:

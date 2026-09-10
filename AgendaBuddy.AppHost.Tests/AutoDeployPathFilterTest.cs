@@ -445,8 +445,10 @@ public class AutoDeployPathFilterTest
     public void TheRedeploySequenceStopsDeploysAndRestores()
     {
         var redeploy = Workflow("dev-redeploy.yml");
+        var stop = Workflow("dev-env-stop.yml");
 
-        Assert.Contains("action: stop", redeploy, StringComparison.Ordinal);
+        Assert.Contains("uses: ./.github/workflows/dev-env-stop.yml", redeploy, StringComparison.Ordinal);
+        Assert.Contains("action: stop", stop, StringComparison.Ordinal);
         Assert.Contains("action: start", redeploy, StringComparison.Ordinal);
         Assert.Contains("uses: ./.github/workflows/deploy.yml", redeploy, StringComparison.Ordinal);
         // The restore is conditional on the schedule's own window, not unconditional: starting the

@@ -17,6 +17,12 @@ All notable changes to this project are documented in this file, in [Keep a Chan
   cutoff. A dev data reset immediately rejects every pre-reset access token instead of waiting for its one-hour
   expiry; users registered after the reset receive valid new tokens.
 
+### Fixed
+
+- Dev user-data reset now reuses the existing `dev-env-stop.yml` workflow and allows Azure Container Apps up to
+  15 minutes to drain replicas before failing closed. The first live reset proved the original fixed 12-attempt
+  window was too short: six replica records still existed when it expired, so no data was deleted.
+
 ## [0.19.2] - 2026-09-10
 
 ### Fixed
