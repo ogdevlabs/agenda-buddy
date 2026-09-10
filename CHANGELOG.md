@@ -4,6 +4,8 @@ All notable changes to this project are documented in this file, in [Keep a Chan
 
 ## [Unreleased]
 
+## [0.20.0] - 2026-09-10
+
 ### Added
 
 - A guarded, manual, dev-only workflow can invalidate all registered development users after an incompatible

@@ -5,7 +5,7 @@
      Claude reads this file at the start of every session to auto-resume from the last checkpoint.
      If this file is missing or empty, PDLC will prompt you to run /pdlc init. -->
 
-**Last updated:** 2026-09-10T12:10:00Z
+**Last updated:** 2026-09-10T17:10:00Z
 
 ---
 
@@ -18,6 +18,12 @@ Idle
 ## Current Feature
 
 none
+
+_**Dev user-data reset SHIPPED** as `v0.20.0` via PRs #157–#160. The main-only workflow reuses the canonical
+dev stop operation, waits for actual replica drain with refreshed Azure OIDC sessions, clears all user documents
+while preserving the 115-profession catalogue and MongoDB indexes, writes global JWT cutoffs to both databases,
+verifies the result, and restores dev according to schedule. Live reset and independent Atlas verification passed;
+Stripe sandbox objects remain external and deliberately untouched._
 
 _Construction complete on `feat/agenda-buddy-jaq-marketplace-payments`. Stripe Connect customer/provider
 onboarding, immutable pricing, manual authorization, 90/10 destination-charge allocation, completion capture,
