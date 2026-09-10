@@ -414,6 +414,41 @@ registers the real sender, because a project id cannot mint a token and a creden
 Concurrency shares `deploy.yml`'s `deploy-dev` group with `cancel-in-progress: false`, so a manual
 dispatch and an automatic run cannot overlap and a half-applied run is never cancelled.
 
+## Resetting all dev user data
+
+Use the manual **Dev environment - reset all user data** workflow after a development-only account or onboarding
+contract changes in a way that makes existing users invalid. It is intentionally hardcoded to the `dev` GitHub
+Environment, `rg-agenda-buddy-dev`, `kv-agbuddy-dev`, `agenda_buddy` and `IdentityDb`; it accepts no environment
+input and refuses dispatches from branches other than `main`.
+
+To run it:
+
+1. Open **Actions > Dev environment - reset all user data > Run workflow**.
+2. Select the `main` branch.
+3. Enter a reason for the audit summary.
+4. Type the exact confirmation `DELETE DEV USER DATA`.
+5. Run the workflow and verify the stop, purge and report jobs are green.
+
+The workflow stops all eight Container Apps and waits until every replica has terminated before touching MongoDB.
+It then calls `deleteMany({})` on every non-system collection in both databases, with one exception: the seeded
+`professions` reference catalogue is preserved. Collections and indexes are also preserved, so uniqueness, TTL and
+payment constraints remain in place after the reset. The workflow verifies that every targeted collection is empty
+before reporting success.
+
+Deleting Identity credentials immediately invalidates refresh tokens, but an already-issued access JWT would
+otherwise remain valid for up to 60 minutes. The reset therefore writes a durable global cutoff document to
+`agenda_buddy.revoked_tokens`; all services reject tokens issued at or before that cutoff, while users who register
+after the reset receive valid new tokens. Legacy tokens without an `iat` claim also fail once a cutoff exists.
+
+The environment restarts only when all deletion checks pass and the weekday 09:00-17:00 Mexico City schedule says
+dev should be running. A failed purge remains stopped for investigation. Outside that window a successful reset also
+remains stopped, matching normal cost-control behavior.
+
+This workflow deletes AgendaMe data only. It does **not** delete Stripe sandbox Customers, PaymentIntents or Express
+accounts. Those become orphaned because their AgendaMe IDs are gone; delete or replace the Stripe sandbox separately
+when the external test records must also be discarded. It also does not delete infrastructure, Key Vault secrets,
+MongoDB databases, collections or indexes.
+
 ## Before this is production
 
 This gets a working staging deployment. It is **not** a production posture, and the gaps are

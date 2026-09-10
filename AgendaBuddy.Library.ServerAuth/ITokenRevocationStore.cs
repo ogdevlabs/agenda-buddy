@@ -7,5 +7,5 @@ public interface ITokenRevocationStore
 {
     Task RevokeAsync(string jti, DateTimeOffset expiresAtUtc);
 
-    Task<bool> IsRevokedAsync(string jti);
+    Task<bool> IsRevokedAsync(string jti, DateTimeOffset? issuedAtUtc = null);
 }

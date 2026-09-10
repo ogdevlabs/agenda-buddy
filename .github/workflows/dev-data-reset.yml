@@ -1,0 +1,218 @@
+name: Dev environment - reset all user data
+
+# Destructive maintenance for schema/onboarding changes that invalidate every dev account.
+# This workflow is deliberately dev-only and manual. It preserves MongoDB collections and indexes,
+# but deletes every document except the seeded profession catalogue. Stripe sandbox objects are external
+# records and are not deleted here; remove the sandbox separately when those records must also be discarded.
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: "Type DELETE DEV USER DATA"
+        required: true
+        type: string
+      reason:
+        description: "Why this reset is required (written to the run summary)"
+        required: true
+        type: string
+
+permissions:
+  id-token: write
+  contents: read
+
+# Serialize against the normal stop -> deploy -> restore sequence. A direct deploy.yml dispatch must not
+# be started while this maintenance workflow is running.
+concurrency:
+  group: redeploy-dev
+  cancel-in-progress: false
+
+jobs:
+  guard:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Require the exact destructive confirmation
+        env:
+          CONFIRMATION: ${{ inputs.confirmation }}
+          DISPATCH_REF: ${{ github.ref }}
+        run: |
+          set -euo pipefail
+          if [ "$DISPATCH_REF" != "refs/heads/main" ]; then
+            echo "::error::This destructive workflow must be dispatched from the main branch."
+            exit 1
+          fi
+          if [ "$CONFIRMATION" != "DELETE DEV USER DATA" ]; then
+            echo "::error::Confirmation must be exactly: DELETE DEV USER DATA"
+            exit 1
+          fi
+
+  # Keep this calculation aligned with dev-env-schedule.yml and dev-redeploy.yml. The environment is restored
+  # only after a fully successful purge and only when it should currently be running.
+  window:
+    runs-on: ubuntu-24.04
+    outputs:
+      start_after: ${{ steps.window.outputs.start_after }}
+    steps:
+      - name: Would the schedule have dev running now?
+        id: window
+        run: |
+          set -euo pipefail
+          now_utc_h=$(date -u +%-H)
+          dow=$(date -u +%u)
+          local_h=$(( (now_utc_h - 6 + 24) % 24 ))
+          local_dow=$dow
+          if [ "$now_utc_h" -lt 6 ]; then local_dow=$(( (dow + 5) % 7 + 1 )); fi
+
+          if [ "$local_dow" -le 5 ] && [ "$local_h" -ge 9 ] && [ "$local_h" -lt 17 ]; then
+            echo "start_after=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "start_after=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  stop:
+    needs: guard
+    uses: ./.github/workflows/dev-env-power.yml
+    with:
+      action: stop
+      environment: dev
+    secrets: inherit
+
+  purge:
+    needs: stop
+    runs-on: ubuntu-24.04
+    environment: dev
+    outputs:
+      cutoff: ${{ steps.purge.outputs.cutoff }}
+    steps:
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Delete user data and revoke existing access tokens
+        id: purge
+        env:
+          KEY_VAULT_NAME: kv-agbuddy-dev
+          RESOURCE_GROUP: rg-agenda-buddy-dev
+          RESET_REASON: ${{ inputs.reason }}
+        run: |
+          set -euo pipefail
+
+          mapfile -t apps < <(az containerapp list --resource-group "$RESOURCE_GROUP" --query "[].name" -o tsv)
+          if [ "${#apps[@]}" -eq 0 ]; then
+            echo "::error::No dev container apps found in $RESOURCE_GROUP."
+            exit 1
+          fi
+          for attempt in {1..12}; do
+            running=0
+            for app in "${apps[@]}"; do
+              replicas=$(az containerapp replica list --name "$app" --resource-group "$RESOURCE_GROUP" \
+                --query "length(@)" -o tsv)
+              running=$((running + replicas))
+            done
+            if [ "$running" -eq 0 ]; then break; fi
+            if [ "$attempt" -eq 12 ]; then
+              echo "::error::$running dev replicas remain after the stop operation; refusing to purge."
+              exit 1
+            fi
+            echo "Waiting for $running dev replicas to terminate (attempt $attempt/12)."
+            sleep 10
+          done
+
+          agenda_uri=$(az keyvault secret show --vault-name "$KEY_VAULT_NAME" \
+            --name agenda-buddy-connection --query value -o tsv)
+          identity_uri=$(az keyvault secret show --vault-name "$KEY_VAULT_NAME" \
+            --name identity-db-connection --query value -o tsv)
+          echo "::add-mask::$agenda_uri"
+          echo "::add-mask::$identity_uri"
+
+          cutoff=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          echo "cutoff=$cutoff" >> "$GITHUB_OUTPUT"
+
+          agenda_result=$(docker run --rm mongo:7.0 mongosh "$agenda_uri" --quiet --eval '
+            const target = db.getSiblingDB("agenda_buddy");
+            const preserved = new Set(["professions"]);
+            const collections = target.getCollectionNames()
+              .filter(name => !name.startsWith("system.") && !preserved.has(name));
+            let deleted = 0;
+            for (const name of collections) {
+              const result = target.getCollection(name).deleteMany({});
+              deleted += result.deletedCount;
+              print(`${name}: deleted ${result.deletedCount}`);
+            }
+            target.getCollection("revoked_tokens").replaceOne(
+              { _id: "__all_tokens_before__" },
+              { _id: "__all_tokens_before__", revoked_before: new Date() },
+              { upsert: true });
+            const remaining = collections.reduce(
+              (count, name) => count + (name === "revoked_tokens"
+                ? target.getCollection(name).countDocuments({ _id: { $ne: "__all_tokens_before__" } })
+                : target.getCollection(name).countDocuments({})), 0);
+            if (remaining !== 0) throw new Error(`${remaining} agenda_buddy user documents remain`);
+            print(`agenda_buddy: deleted ${deleted}; preserved professions; wrote global token cutoff`);
+          ')
+
+          identity_result=$(docker run --rm mongo:7.0 mongosh "$identity_uri" --quiet --eval '
+            const target = db.getSiblingDB("IdentityDb");
+            const collections = target.getCollectionNames().filter(name => !name.startsWith("system."));
+            let deleted = 0;
+            for (const name of collections) {
+              const result = target.getCollection(name).deleteMany({});
+              deleted += result.deletedCount;
+              print(`${name}: deleted ${result.deletedCount}`);
+            }
+            const remaining = collections.reduce(
+              (count, name) => count + target.getCollection(name).countDocuments({}), 0);
+            if (remaining !== 0) throw new Error(`${remaining} IdentityDb documents remain`);
+            print(`IdentityDb: deleted ${deleted}`);
+          ')
+
+          {
+            echo "### Dev user-data reset"
+            echo
+            echo "- reason: $RESET_REASON"
+            echo "- cutoff: $cutoff"
+            echo "- agenda_buddy: all user collections empty; profession catalogue preserved"
+            echo "- IdentityDb: all collections empty"
+            echo "- pre-reset access tokens: revoked by global cutoff"
+            echo "- Stripe sandbox objects: unchanged; delete the sandbox separately if required"
+            echo
+            echo '```text'
+            printf '%s\n' "$agenda_result" "$identity_result"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  restore:
+    needs: [window, stop, purge]
+    if: ${{ always() && needs.purge.result == 'success' && needs.window.outputs.start_after == 'true' }}
+    uses: ./.github/workflows/dev-env-power.yml
+    with:
+      action: start
+      environment: dev
+    secrets: inherit
+
+  report:
+    needs: [window, stop, purge, restore]
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Report final state
+        env:
+          REASON: ${{ inputs.reason }}
+        run: |
+          {
+            echo "### Dev data-reset result"
+            echo
+            echo "- reason: $REASON"
+            echo "- stop: ${{ needs.stop.result }}"
+            echo "- purge: ${{ needs.purge.result }}"
+            if [ "${{ needs.purge.result }}" != "success" ]; then
+              echo "- environment remains stopped because the purge did not complete cleanly"
+            elif [ "${{ needs.window.outputs.start_after }}" = "true" ]; then
+              echo "- scheduled restore: ${{ needs.restore.result }}"
+            else
+              echo "- environment remains stopped, matching the outside-hours schedule"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

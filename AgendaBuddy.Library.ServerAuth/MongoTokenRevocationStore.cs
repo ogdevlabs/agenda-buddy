@@ -12,6 +12,8 @@ namespace AgendaBuddy.Library.Security;
 /// </summary>
 public class MongoTokenRevocationStore : ITokenRevocationStore
 {
+    public const string GlobalCutoffDocumentId = "__all_tokens_before__";
+
     private const string CollectionName = "revoked_tokens";
     private readonly IMongoCollection<BsonDocument> _collection;
 
@@ -49,9 +51,15 @@ public class MongoTokenRevocationStore : ITokenRevocationStore
             new ReplaceOptions { IsUpsert = true });
     }
 
-    public async Task<bool> IsRevokedAsync(string jti)
+    public async Task<bool> IsRevokedAsync(string jti, DateTimeOffset? issuedAtUtc = null)
     {
-        var filter = Builders<BsonDocument>.Filter.Eq("_id", jti);
+        var individual = Builders<BsonDocument>.Filter.Eq("_id", jti);
+        var global = issuedAtUtc is null
+            ? Builders<BsonDocument>.Filter.Eq("_id", GlobalCutoffDocumentId)
+            : Builders<BsonDocument>.Filter.And(
+                Builders<BsonDocument>.Filter.Eq("_id", GlobalCutoffDocumentId),
+                Builders<BsonDocument>.Filter.Gte("revoked_before", issuedAtUtc.Value.UtcDateTime));
+        var filter = Builders<BsonDocument>.Filter.Or(individual, global);
         var match = await _collection.Find(filter).FirstOrDefaultAsync();
         return match is not null;
     }
