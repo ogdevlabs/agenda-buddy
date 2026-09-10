@@ -162,10 +162,16 @@ jobs:
               deleted += result.deletedCount;
               print(`${name}: deleted ${result.deletedCount}`);
             }
+            target.getCollection("revoked_tokens").replaceOne(
+              { _id: "__all_tokens_before__" },
+              { _id: "__all_tokens_before__", revoked_before: new Date() },
+              { upsert: true });
             const remaining = collections.reduce(
-              (count, name) => count + target.getCollection(name).countDocuments({}), 0);
+              (count, name) => count + (name === "revoked_tokens"
+                ? target.getCollection(name).countDocuments({ _id: { $ne: "__all_tokens_before__" } })
+                : target.getCollection(name).countDocuments({})), 0);
             if (remaining !== 0) throw new Error(`${remaining} IdentityDb documents remain`);
-            print(`IdentityDb: deleted ${deleted}`);
+            print(`IdentityDb: deleted ${deleted}; wrote global token cutoff`);
           ')
 
           {
@@ -175,7 +181,7 @@ jobs:
             echo "- cutoff: $cutoff"
             echo "- agenda_buddy: all user collections empty; profession catalogue preserved"
             echo "- IdentityDb: all collections empty"
-            echo "- pre-reset access tokens: revoked by global cutoff"
+            echo "- pre-reset access tokens: revoked by global cutoffs in both databases"
             echo "- Stripe sandbox objects: unchanged; delete the sandbox separately if required"
             echo
             echo '```text'

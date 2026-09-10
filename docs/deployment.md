@@ -438,9 +438,10 @@ payment constraints remain in place after the reset. The workflow verifies that 
 before reporting success.
 
 Deleting Identity credentials immediately invalidates refresh tokens, but an already-issued access JWT would
-otherwise remain valid for up to 60 minutes. The reset therefore writes a durable global cutoff document to
-`agenda_buddy.revoked_tokens`; all services reject tokens issued at or before that cutoff, while users who register
-after the reset receive valid new tokens. Legacy tokens without an `iat` claim also fail once a cutoff exists.
+otherwise remain valid for up to 60 minutes. The reset therefore writes the same durable global cutoff document to
+`agenda_buddy.revoked_tokens` and `IdentityDb.revoked_tokens`; every service rejects tokens issued at or before
+that cutoff, while users who register after the reset receive valid new tokens. Legacy tokens without an `iat`
+claim also fail once a cutoff exists.
 
 The environment restarts only when all deletion checks pass and the weekday 09:00-17:00 Mexico City schedule says
 dev should be running. A failed purge remains stopped for investigation. Outside that window a successful reset also
