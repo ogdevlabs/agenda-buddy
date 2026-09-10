@@ -4,14 +4,14 @@ using AgendaBuddy.Identity.Services;
 using AgendaBuddy.Identity.Tests.Helpers;
 using AgendaBuddy.Library.Entities;
 using AgendaBuddy.Library.Services;
+using Microsoft.Extensions.Options;
 using Xunit;
 
 namespace AgendaBuddy.Identity.Tests.Services;
 
 /// <summary>
-/// Registration now issues a single-use email-confirmation token (mirroring the password-reset token
-/// pattern) so an account holder can prove ownership of the address they registered. Not gated on for
-/// login (ADR-052: no email provider is configured) — see CredentialEntity.EmailVerified's own remarks.
+/// Registration issues a single-use email-confirmation token so an account holder can prove ownership
+/// before Identity creates an authenticated session.
 /// </summary>
 [Collection("Sequential")]
 public class IdentityEmailConfirmationTest : IDisposable
@@ -66,11 +66,33 @@ public class IdentityEmailConfirmationTest : IDisposable
     }
 
     [Fact]
+    public async Task Register_SendsBilingualEmailWithTwoConfirmationButtons()
+    {
+        var sender = new RecordingEmailSender();
+        var svc = new IdentityService(
+            _repo,
+            _clock,
+            emailSender: sender,
+            emailOptions: Options.Create(new EmailOptions { AppLinkBaseUrl = "https://agendame.app" }));
+
+        var result = await svc.RegisterAsync(Email, Password, "Provider");
+
+        Assert.Equal("Confirm your email / Confirma tu correo", sender.Subject);
+        Assert.Contains("Welcome to AgendaMe", sender.Text);
+        Assert.Contains("Bienvenido a AgendaMe", sender.Text);
+        Assert.Contains("Confirm email", sender.Html);
+        Assert.Contains("Confirmar correo", sender.Html);
+        var link = $"https://agendame.app/confirm-email?token={Uri.EscapeDataString(result.EmailVerificationToken)}";
+        Assert.Equal(2, sender.Html.Split(link, StringSplitOptions.None).Length - 1);
+        Assert.DoesNotContain(Email, sender.Html, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public async Task ConfirmEmail_WithAValidToken_SetsEmailVerifiedAndClearsTheToken()
     {
         var result = await _svc.RegisterAsync(Email, Password, "Provider");
 
-        await _svc.ConfirmEmailAsync(Email, result!.EmailVerificationToken!);
+        await _svc.ConfirmEmailAsync(result.EmailVerificationToken);
 
         var stored = await Stored();
         Assert.True(stored.EmailVerified);
@@ -78,9 +100,14 @@ public class IdentityEmailConfirmationTest : IDisposable
     }
 
     [Fact]
-    public async Task ConfirmEmail_DoesNotAffectLogin_EitherBeforeOrAfterConfirmation()
+    public async Task Login_IsBlockedUntilEmailIsConfirmed()
     {
-        await _svc.RegisterAsync(Email, Password, "Provider");
+        var result = await _svc.RegisterAsync(Email, Password, "Provider");
+
+        await Assert.ThrowsAsync<EmailVerificationRequiredException>(
+            () => _svc.LoginAsync(Email, Password));
+
+        await _svc.ConfirmEmailAsync(result.EmailVerificationToken);
 
         Assert.NotNull(await _svc.LoginAsync(Email, Password));
     }
@@ -91,7 +118,7 @@ public class IdentityEmailConfirmationTest : IDisposable
         await _svc.RegisterAsync(Email, Password, "Provider");
 
         await Assert.ThrowsAsync<UnauthorizedException>(
-            () => _svc.ConfirmEmailAsync(Email, "not-the-real-token"));
+            () => _svc.ConfirmEmailAsync("not-the-real-token"));
 
         Assert.False((await Stored()).EmailVerified);
     }
@@ -104,17 +131,44 @@ public class IdentityEmailConfirmationTest : IDisposable
         _clock.Advance(TimeSpan.FromHours(24) + TimeSpan.FromMinutes(1));
 
         await Assert.ThrowsAsync<UnauthorizedException>(
-            () => _svc.ConfirmEmailAsync(Email, result!.EmailVerificationToken!));
+            () => _svc.ConfirmEmailAsync(result.EmailVerificationToken));
     }
 
     [Fact]
     public async Task ConfirmEmail_IsSingleUse_ASecondAttemptWithTheSameTokenIsRejected()
     {
         var result = await _svc.RegisterAsync(Email, Password, "Provider");
-        await _svc.ConfirmEmailAsync(Email, result!.EmailVerificationToken!);
+        await _svc.ConfirmEmailAsync(result.EmailVerificationToken);
 
         await Assert.ThrowsAsync<UnauthorizedException>(
-            () => _svc.ConfirmEmailAsync(Email, result.EmailVerificationToken!));
+            () => _svc.ConfirmEmailAsync(result.EmailVerificationToken));
+    }
+
+    [Fact]
+    public async Task Resend_RotatesTheTokenAndInvalidatesTheOriginalLink()
+    {
+        var sender = new RecordingEmailSender();
+        var svc = new IdentityService(_repo, _clock, emailSender: sender);
+        var registration = await svc.RegisterAsync(Email, Password, "Provider");
+
+        await svc.RequestEmailVerificationAsync(Email);
+
+        Assert.NotNull(sender.Token);
+        Assert.NotEqual(registration.EmailVerificationToken, sender.Token);
+        await Assert.ThrowsAsync<UnauthorizedException>(
+            () => svc.ConfirmEmailAsync(registration.EmailVerificationToken));
+        await svc.ConfirmEmailAsync(sender.Token!);
+    }
+
+    [Fact]
+    public async Task Resend_ForUnknownAddressReturnsWithoutSending()
+    {
+        var sender = new RecordingEmailSender();
+        var svc = new IdentityService(_repo, _clock, emailSender: sender);
+
+        await svc.RequestEmailVerificationAsync("unknown@example.com");
+
+        Assert.Equal(0, sender.SendCount);
     }
 
     private sealed class RecordingNotificationService : INotificationService
@@ -138,5 +192,42 @@ public class IdentityEmailConfirmationTest : IDisposable
         public Task MarkReadAsync(string notificationId) => Task.CompletedTask;
 
         public Task<long> MarkAllReadAsync(string recipientEmail) => Task.FromResult(0L);
+    }
+
+    private sealed class RecordingEmailSender : IEmailSender
+    {
+        public string Subject { get; private set; } = string.Empty;
+        public string Text { get; private set; } = string.Empty;
+        public string Html { get; private set; } = string.Empty;
+        public string? Token { get; private set; }
+        public int SendCount { get; private set; }
+
+        public Task<bool> SendAsync(
+            string toAddress,
+            string subject,
+            string body,
+            CancellationToken cancellationToken = default) => Task.FromResult(true);
+
+        public Task<bool> SendAsync(
+            string toAddress,
+            string subject,
+            string body,
+            string htmlBody,
+            CancellationToken cancellationToken = default)
+        {
+            SendCount++;
+            Subject = subject;
+            Text = body;
+            Html = htmlBody;
+            var marker = "confirm-email?token=";
+            var start = body.IndexOf(marker, StringComparison.Ordinal);
+            if (start >= 0)
+            {
+                start += marker.Length;
+                var end = body.IndexOfAny(['\r', '\n'], start);
+                Token = Uri.UnescapeDataString(end < 0 ? body[start..] : body[start..end]);
+            }
+            return Task.FromResult(true);
+        }
     }
 }

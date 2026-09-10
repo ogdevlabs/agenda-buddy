@@ -37,13 +37,13 @@ public class IdentityServiceTest : IDisposable
     // --- Register ---
 
     [Fact]
-    public async Task Register_ValidRequest_ReturnsTokenPair()
+    public async Task Register_ValidRequest_ReturnsConfirmationTokenWithoutCreatingASession()
     {
         var result = await _svc.RegisterAsync("user@example.com", "password123", "Provider");
 
-        Assert.NotNull(result);
-        Assert.False(string.IsNullOrWhiteSpace(result.AccessToken));
-        Assert.False(string.IsNullOrWhiteSpace(result.RefreshToken));
+        Assert.False(string.IsNullOrWhiteSpace(result.EmailVerificationToken));
+        var stored = Assert.Single(await _repo.GetAllAsync());
+        Assert.Null(stored.RefreshToken);
     }
 
     [Fact]
@@ -78,11 +78,12 @@ public class IdentityServiceTest : IDisposable
     }
 
     [Fact]
-    public async Task Register_AccessToken_HasCorrectClaims()
+    public async Task Login_AccessToken_HasCorrectClaims()
     {
-        var result = await _svc.RegisterAsync("claims@example.com", "password123", "Provider");
+        var result = await IdentityTestSession.RegisterConfirmedAsync(
+            _svc, "claims@example.com", "password123", "Provider");
 
-        var claims = DecodeToken(result!.AccessToken);
+        var claims = DecodeToken(result.AccessToken);
         Assert.Equal("claims@example.com", GetClaim(claims, JwtRegisteredClaimNames.Sub));
         Assert.Equal("agenda-buddy-identity", GetClaim(claims, JwtRegisteredClaimNames.Iss));
         Assert.False(string.IsNullOrWhiteSpace(GetClaim(claims, JwtRegisteredClaimNames.Jti)));
@@ -90,48 +91,38 @@ public class IdentityServiceTest : IDisposable
     }
 
     [Fact]
-    public async Task Register_AccessToken_SignedWithRs256()
+    public async Task Login_AccessToken_SignedWithRs256()
     {
-        var result = await _svc.RegisterAsync("rsa@example.com", "password123", "Provider");
+        var result = await IdentityTestSession.RegisterConfirmedAsync(
+            _svc, "rsa@example.com", "password123", "Provider");
 
         var handler = new JwtSecurityTokenHandler();
-        var jwt = handler.ReadJwtToken(result!.AccessToken);
+        var jwt = handler.ReadJwtToken(result.AccessToken);
         Assert.Equal("RS256", jwt.Header.Alg);
     }
 
     [Fact]
-    public async Task Register_AccessToken_Expires60MinFromClock()
+    public async Task Login_AccessToken_Expires60MinFromClock()
     {
-        var result = await _svc.RegisterAsync("exp@example.com", "password123", "Provider");
+        var result = await IdentityTestSession.RegisterConfirmedAsync(
+            _svc, "exp@example.com", "password123", "Provider");
 
         var handler = new JwtSecurityTokenHandler();
-        var jwt = handler.ReadJwtToken(result!.AccessToken);
+        var jwt = handler.ReadJwtToken(result.AccessToken);
         var expectedExp = _clock.UtcNow.AddMinutes(60);
         Assert.Equal(expectedExp, jwt.ValidTo, TimeSpan.FromSeconds(5));
     }
 
     [Fact]
-    public async Task Register_RefreshToken_StoredAsHash_NotPlaintext()
+    public async Task Login_RefreshToken_StoredAsHash_NotPlaintext_AndExpiresIn24Hours()
     {
-        var result = await _svc.RegisterAsync("hash@example.com", "password123", "Provider");
+        var result = await IdentityTestSession.RegisterConfirmedAsync(
+            _svc, "hash@example.com", "password123", "Provider");
 
         var all = await _repo.GetAllAsync();
         var stored = System.Linq.Enumerable.First(all, e => e.Email == "hash@example.com");
-
-        // The stored hash must NOT equal the opaque token
-        Assert.NotEqual(result!.RefreshToken, stored.RefreshToken!.Hash);
-        // But SHA-256 of the opaque token must match the stored hash
-        var expectedHash = IdentityService.HashToken(result.RefreshToken);
-        Assert.Equal(expectedHash, stored.RefreshToken.Hash);
-    }
-
-    [Fact]
-    public async Task Register_RefreshToken_ExpiresIn24Hours()
-    {
-        await _svc.RegisterAsync("ttl@example.com", "password123", "Provider");
-
-        var all = await _repo.GetAllAsync();
-        var stored = System.Linq.Enumerable.First(all, e => e.Email == "ttl@example.com");
+        Assert.NotEqual(result.RefreshToken, stored.RefreshToken!.Hash);
+        Assert.Equal(IdentityService.HashToken(result.RefreshToken), stored.RefreshToken.Hash);
         Assert.Equal(_clock.UtcNow.AddHours(24), stored.RefreshToken!.Expiry);
     }
 
@@ -152,8 +143,8 @@ public class IdentityServiceTest : IDisposable
     [Fact]
     public async Task Login_ValidCredentials_ReturnsTokenPair()
     {
-        await _svc.RegisterAsync("login@example.com", "password123", "Provider");
-        var result = await _svc.LoginAsync("login@example.com", "password123");
+        var result = await IdentityTestSession.RegisterConfirmedAsync(
+            _svc, "login@example.com", "password123", "Provider");
 
         Assert.NotNull(result);
         Assert.False(string.IsNullOrWhiteSpace(result.AccessToken));
@@ -179,8 +170,9 @@ public class IdentityServiceTest : IDisposable
     [Fact]
     public async Task Refresh_ValidToken_ReturnsNewTokenPair()
     {
-        var reg = await _svc.RegisterAsync("refresh@example.com", "password123", "Provider");
-        var result = await _svc.RefreshAsync(reg!.RefreshToken);
+        var reg = await IdentityTestSession.RegisterConfirmedAsync(
+            _svc, "refresh@example.com", "password123", "Provider");
+        var result = await _svc.RefreshAsync(reg.RefreshToken);
 
         Assert.NotNull(result);
         Assert.False(string.IsNullOrWhiteSpace(result.AccessToken));
@@ -188,10 +180,32 @@ public class IdentityServiceTest : IDisposable
     }
 
     [Fact]
+    public async Task Refresh_UnverifiedCredentialWithALegacyToken_IsRejected()
+    {
+        const string rawToken = "legacy-unverified-refresh-token";
+        await _repo.InsertAsync(new AgendaBuddy.Library.Entities.CredentialEntity
+        {
+            Id = MongoDB.Bson.ObjectId.GenerateNewId().ToString(),
+            Email = "unverified-refresh@example.com",
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("password123", workFactor: 12),
+            Role = "Customer",
+            EmailVerified = false,
+            RefreshToken = new AgendaBuddy.Library.Entities.RefreshTokenDocument
+            {
+                Hash = IdentityService.HashToken(rawToken),
+                Expiry = _clock.UtcNow.AddHours(24)
+            }
+        });
+
+        await Assert.ThrowsAsync<UnauthorizedException>(() => _svc.RefreshAsync(rawToken));
+    }
+
+    [Fact]
     public async Task Refresh_TokenUsedTwice_SecondCallThrowsUnauthorizedException()
     {
-        var reg = await _svc.RegisterAsync("refresh2@example.com", "password123", "Provider");
-        await _svc.RefreshAsync(reg!.RefreshToken);
+        var reg = await IdentityTestSession.RegisterConfirmedAsync(
+            _svc, "refresh2@example.com", "password123", "Provider");
+        await _svc.RefreshAsync(reg.RefreshToken);
         await Assert.ThrowsAsync<UnauthorizedException>(() =>
             _svc.RefreshAsync(reg.RefreshToken));
     }
@@ -199,7 +213,8 @@ public class IdentityServiceTest : IDisposable
     [Fact]
     public async Task Refresh_ExpiredToken_ThrowsUnauthorizedException()
     {
-        var reg = await _svc.RegisterAsync("refresh3@example.com", "password123", "Provider");
+        var reg = await IdentityTestSession.RegisterConfirmedAsync(
+            _svc, "refresh3@example.com", "password123", "Provider");
 
         // Advance clock past expiry
         var futureRepo = new InMemoryCredentialRepository();
@@ -210,7 +225,7 @@ public class IdentityServiceTest : IDisposable
         // Re-insert the credential with our base repo state
         // (Simpler: just use an expired sub-doc directly)
         await Assert.ThrowsAsync<UnauthorizedException>(() =>
-            futureSvc.RefreshAsync(reg!.RefreshToken));
+            futureSvc.RefreshAsync(reg.RefreshToken));
     }
 
     // --- Logout ---
@@ -218,8 +233,9 @@ public class IdentityServiceTest : IDisposable
     [Fact]
     public async Task Logout_ValidToken_SetsRefreshTokenToNull()
     {
-        var reg = await _svc.RegisterAsync("logout@example.com", "password123", "Provider");
-        await _svc.LogoutAsync(reg!.RefreshToken);
+        var reg = await IdentityTestSession.RegisterConfirmedAsync(
+            _svc, "logout@example.com", "password123", "Provider");
+        await _svc.LogoutAsync(reg.RefreshToken);
 
         var all = await _repo.GetAllAsync();
         var stored = System.Linq.Enumerable.First(all, e => e.Email == "logout@example.com");
@@ -229,8 +245,9 @@ public class IdentityServiceTest : IDisposable
     [Fact]
     public async Task Logout_AlreadyLoggedOut_DoesNotThrow()
     {
-        var reg = await _svc.RegisterAsync("logout2@example.com", "password123", "Provider");
-        await _svc.LogoutAsync(reg!.RefreshToken);
+        var reg = await IdentityTestSession.RegisterConfirmedAsync(
+            _svc, "logout2@example.com", "password123", "Provider");
+        await _svc.LogoutAsync(reg.RefreshToken);
         // Second logout must be idempotent
         await _svc.LogoutAsync(reg.RefreshToken);
     }

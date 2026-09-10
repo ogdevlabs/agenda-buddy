@@ -36,6 +36,35 @@ public class LoginViewModelTests
         Assert.Equal(string.Empty, vm.ErrorMessage);
     }
 
+    [Fact]
+    public async Task FirstVerifiedLoginCreatesPendingProviderProfileAndClearsDraft()
+    {
+        var auth = new Mock<IAuthService>();
+        auth.Setup(s => s.LoginAsync("test@example.com", "password123", default))
+            .ReturnsAsync(true);
+        var pending = new Mock<IPendingRegistrationStore>();
+        pending.Setup(s => s.GetAsync()).ReturnsAsync(new PendingRegistration(
+            "test@example.com", "Ada", "Lovelace", "+15550100", "Provider"));
+        var provider = new Mock<IProviderApiService>();
+        provider.Setup(p => p.CreateProfileAsync(
+                "test@example.com", "Ada", "Lovelace", "+15550100", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+        provider.Setup(p => p.SyncTimeZoneAsync(
+                "test@example.com", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+        var viewModel = new LoginViewModel(
+            auth.Object, pending.Object, provider.Object, Mock.Of<ICustomerApiService>())
+        {
+            Email = "test@example.com",
+            Password = "password123"
+        };
+
+        await viewModel.SignInCommand.ExecuteAsync(null);
+
+        Assert.Equal("Provider", viewModel.CompletedOnboardingRole);
+        pending.Verify(s => s.Clear(), Times.Once);
+    }
+
     // -------------------------------------------------------------------------
     // Test 2: invalid credentials → event NOT raised, ErrorMessage set
     // -------------------------------------------------------------------------

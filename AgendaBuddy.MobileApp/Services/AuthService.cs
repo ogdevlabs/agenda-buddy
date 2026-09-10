@@ -14,6 +14,8 @@ public class AuthService : IAuthService
 
     internal const string RefreshTokenKey = "refresh_token";
 
+    public bool EmailVerificationRequired { get; private set; }
+
     public AuthService(
         IHttpClientFactory httpClientFactory,
         ISecureStorageService secureStorage,
@@ -26,6 +28,7 @@ public class AuthService : IAuthService
 
     public async Task<bool> LoginAsync(string email, string password, CancellationToken ct = default)
     {
+        EmailVerificationRequired = false;
         var client = _httpClientFactory.CreateClient("AgendaBuddyApiNoAuth");
 
         var route = AuthRouteBuilder.Login();
@@ -33,7 +36,16 @@ public class AuthService : IAuthService
         var response = await client.PostAsJsonAsync(route.Path, payload, ct);
 
         if (!response.IsSuccessStatusCode)
+        {
+            if (response.StatusCode == System.Net.HttpStatusCode.Forbidden)
+            {
+                var problem = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: ct);
+                EmailVerificationRequired = problem.TryGetProperty("title", out var title)
+                    && string.Equals(
+                        title.GetString(), "email_verification_required", StringComparison.Ordinal);
+            }
             return false;
+        }
 
         var loginResponse = await response.Content.ReadFromJsonAsync<LoginResponse>(
             new JsonSerializerOptions { PropertyNameCaseInsensitive = true },
@@ -51,6 +63,22 @@ public class AuthService : IAuthService
         return true;
     }
 
+    public async Task<bool> ConfirmEmailAsync(string token, CancellationToken ct = default)
+    {
+        var client = _httpClientFactory.CreateClient("AgendaBuddyApiNoAuth");
+        var route = AuthRouteBuilder.ConfirmEmail();
+        var response = await client.PostAsJsonAsync(route.Path, new { token }, ct);
+        return response.IsSuccessStatusCode;
+    }
+
+    public async Task<bool> RequestEmailVerificationAsync(string email, CancellationToken ct = default)
+    {
+        var client = _httpClientFactory.CreateClient("AgendaBuddyApiNoAuth");
+        var route = AuthRouteBuilder.RequestEmailVerification();
+        var response = await client.PostAsJsonAsync(route.Path, new { email }, ct);
+        return response.IsSuccessStatusCode;
+    }
+
     public async Task<bool> RegisterAsync(string email, string password, string role, CancellationToken ct = default)
     {
         var client = _httpClientFactory.CreateClient("AgendaBuddyApiNoAuth");
@@ -61,19 +89,6 @@ public class AuthService : IAuthService
 
         if (!response.IsSuccessStatusCode)
             return false;
-
-        var loginResponse = await response.Content.ReadFromJsonAsync<LoginResponse>(
-            new JsonSerializerOptions { PropertyNameCaseInsensitive = true },
-            cancellationToken: ct);
-
-        if (loginResponse is null || string.IsNullOrEmpty(loginResponse.AccessToken))
-            return false;
-
-        await _secureStorage.SetAsync(JwtDelegatingHandler.JwtKey, loginResponse.AccessToken);
-        await _secureStorage.SetAsync(RefreshTokenKey, loginResponse.RefreshToken);
-
-        if (_pushNotificationService is not null)
-            await _pushNotificationService.InitializeAsync();
 
         return true;
     }

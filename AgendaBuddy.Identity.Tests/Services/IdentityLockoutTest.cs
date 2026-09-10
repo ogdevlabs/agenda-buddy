@@ -111,7 +111,7 @@ public class IdentityLockoutTest : IDisposable
         // service it sits beside. Asserted through the counter: the increment only happens on the
         // verify-failed path, so a locked attempt leaving the counter untouched proves the short
         // circuit fired first.
-        await _svc.RegisterAsync(Email, Password, "Provider");
+        await IdentityTestSession.ConfirmRegistrationAsync(_svc, Email, Password, "Provider");
         await FailUntilLocked();
 
         var attemptsWhenLocked = (await Stored()).FailedAttempts;
@@ -129,7 +129,7 @@ public class IdentityLockoutTest : IDisposable
         // AC-8. Password reset does not exist yet, so a lock that needed clearing would leave a real provider with
         // no way back into their own business — and would let an attacker strand one deliberately.
         // "Unlocked" is therefore the absence of a future value, which costs no write and needs no job.
-        await _svc.RegisterAsync(Email, Password, "Provider");
+        await IdentityTestSession.ConfirmRegistrationAsync(_svc, Email, Password, "Provider");
         await FailUntilLocked();
 
         var writesWhileLocked = _repo.AppliedUpdates.Count;
@@ -148,7 +148,7 @@ public class IdentityLockoutTest : IDisposable
     {
         // AC-10, and it is one write rather than two: the refresh-token rotation login already
         // performed now carries the reset, so the success path adds no extra round trip.
-        await _svc.RegisterAsync(Email, Password, "Provider");
+        await IdentityTestSession.ConfirmRegistrationAsync(_svc, Email, Password, "Provider");
         await Assert.ThrowsAsync<UnauthorizedException>(() => _svc.LoginAsync(Email, "wrong-password"));
         Assert.Equal(1, (await Stored()).FailedAttempts);
 
@@ -167,7 +167,7 @@ public class IdentityLockoutTest : IDisposable
     {
         // AC-8's read half, stated separately because it is the property that removes the need for a
         // sweeper: a stale lock_until is indistinguishable from no lock to every reader.
-        await _svc.RegisterAsync(Email, Password, "Provider");
+        await IdentityTestSession.ConfirmRegistrationAsync(_svc, Email, Password, "Provider");
         var stored = await Stored();
         stored.LockUntil = _clock.UtcNow.AddMinutes(-1);
         _repo.AppliedUpdates.Clear();

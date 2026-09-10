@@ -58,6 +58,31 @@ public class AuthServiceTests
         storage.Verify(s => s.SetAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
     }
 
+    [Fact]
+    public async Task LoginAsync_UnverifiedEmail_ExposesVerificationRequiredWithoutStoringTokens()
+    {
+        var storage = new Mock<ISecureStorageService>();
+        var factory = CreateFactory(
+            HttpStatusCode.Forbidden,
+            """{"title":"email_verification_required","status":403}""");
+        var sut = new AuthService(factory, storage.Object);
+
+        Assert.False(await sut.LoginAsync("user@example.com", "password123"));
+        Assert.True(sut.EmailVerificationRequired);
+        storage.Verify(s => s.SetAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task RegisterAsync_PendingVerification_DoesNotStoreSessionTokens()
+    {
+        var storage = new Mock<ISecureStorageService>();
+        var factory = CreateFactory(HttpStatusCode.Accepted, """{"status":"pending_verification"}""");
+        var sut = new AuthService(factory, storage.Object);
+
+        Assert.True(await sut.RegisterAsync("user@example.com", "password123", "Customer"));
+        storage.Verify(s => s.SetAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+    }
+
     // ---------------------------------------------------------------------------
     // LogoutAsync calls the server-side logout endpoint (in addition to
     // clearing local storage), carrying the stored refresh token so Identity can invalidate it.

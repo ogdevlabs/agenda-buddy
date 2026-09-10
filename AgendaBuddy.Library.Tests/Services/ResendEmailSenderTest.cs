@@ -50,6 +50,18 @@ public class ResendEmailSenderTest
         Assert.Contains(Token, handler.LastBody);
     }
 
+    [Fact]
+    public async Task WithHtmlBody_PostsTextAndHtmlAlternatives()
+    {
+        var handler = new RecordingHandler(HttpStatusCode.OK);
+
+        await Sut(new EmailOptions { ApiKey = "re_test" }, handler)
+            .SendAsync("someone@example.com", "Confirm", "Plain fallback", "<strong>Confirm email</strong>");
+
+        Assert.Contains("\"text\":\"Plain fallback\"", handler.LastBody);
+        Assert.Contains("\"html\":\"\\u003Cstrong\\u003EConfirm email\\u003C/strong\\u003E\"", handler.LastBody);
+    }
+
     /// <summary>
     /// The default sender is the product's own verified domain, not Resend's sandbox address.
     /// </summary>

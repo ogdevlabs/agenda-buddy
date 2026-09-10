@@ -13,21 +13,13 @@ public partial class RegisterPage : ContentPage
         _vm = vm;
         BindingContext = vm;
 
-        vm.RegistrationSucceeded += OnRegistrationSucceeded;
+        vm.VerificationPending += OnVerificationPending;
     }
 
-    private async void OnRegistrationSucceeded(object? sender, EventArgs e)
+    private async void OnVerificationPending(string email)
     {
-        // Unlike LoginPage, a freshly-registered session was never seen by UpdateForRoleAsync —
-        // without this, the Contacts tab keeps AppShell.xaml's XAML-default "Customers" title even
-        // for a new Provider (or vice versa), until the next full login.
-        if (Shell.Current is AppShell appShell)
-            await appShell.UpdateForRoleAsync();
-
-        await Shell.Current.GoToAsync("//dashboard");
-        await Shell.Current.GoToAsync(_vm.IsProvider
-            ? "providerPayout?onboarding=true"
-            : "customerPaymentMethod?onboarding=true");
+        await Shell.Current.GoToAsync(
+            $"//emailVerification?email={Uri.EscapeDataString(email)}");
     }
 
     private async void OnSignInTapped(object? sender, EventArgs e)

@@ -239,6 +239,8 @@ report_backend() {
     printf '    %-12s http://localhost:%s\n' "$svc" "$port"
   done <<< "$PORTS"
   printf '    %-12s http://localhost:%s\n' "gateway" "$GATEWAY_PORT"
+  printf '    %-12s GATEWAY_URL=http://localhost:%s ./scripts/local-email.sh <email> --open-ios\n' \
+    "local email" "$GATEWAY_PORT"
   dash="$(grep -ao 'https://localhost:[0-9]*/login?t=[0-9a-f]*' "$APPHOST_LOG" 2>/dev/null | tail -1 || true)"
   if [ -n "$dash" ]; then
     printf '    %-12s %s\n' "dashboard" "$dash"
@@ -376,18 +378,6 @@ if [ "$run_app" = "1" ]; then
     fi
   fi
 
-  cat <<EOF
-
-==> NOTE — the app now points at the gateway ($gateway_url), but most routes still 404.
-    F-015-T12 fixed the base address: AgendaBuddy.MobileApp/Infrastructure/ApiBaseUrlResolver.cs reads
-    MAUI_API_BASE_URL (set above) ahead of the ApiBaseUrl config key and its fallback. That fallback
-    is now the Gateway's PINNED local address (AgendaBuddy.Library/LocalGatewayAddress.cs), so
-    launching the app WITHOUT this script also reaches the backend — it previously named 6036, which
-    is Identity's standalone port and dead under the AppHost. Still outstanding: every mobile path is missing the api/v1/ prefix the
-    backend actually serves (F-015-T07, Planned). Until that lands, the ViewModels still fall back
-    to AgendaBuddy.MobileApp/Services/SeedDataProvider.cs for most calls.
-    Details: docs/pdlc/context/01-api-surface.md, docs/pdlc/context/16-mobile-client.md
-EOF
 fi
 
 if [ "$started_apphost" = "1" ]; then

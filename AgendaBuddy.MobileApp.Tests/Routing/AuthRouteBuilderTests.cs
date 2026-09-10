@@ -27,6 +27,17 @@ public class AuthRouteBuilderTests
         Assert.Equal("api/v1/auth/register", route.Path);
     }
 
+    [Fact]
+    public void EmailVerificationRoutesBuildPosts()
+    {
+        Assert.Equal(
+            new RouteSpec(HttpMethod.Post, "api/v1/auth/register/confirm"),
+            AuthRouteBuilder.ConfirmEmail());
+        Assert.Equal(
+            new RouteSpec(HttpMethod.Post, "api/v1/auth/register/verification"),
+            AuthRouteBuilder.RequestEmailVerification());
+    }
+
     // AuthService.LogoutAsync calls this in addition to clearing local storage,
     // matching AgendaBuddy.Identity/Program.cs:196's `POST api/v1/auth/logout`.
     [Fact]

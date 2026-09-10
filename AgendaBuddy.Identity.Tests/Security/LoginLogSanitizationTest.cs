@@ -76,8 +76,8 @@ public class LoginLogSanitizationTest : IDisposable
     [Fact]
     public async Task Login_ValidCredentials_DoesNotLogPassword()
     {
-        await _svc.RegisterAsync(TestEmail, TestPassword, TestRole);
-        var result = await _svc.LoginAsync(TestEmail, TestPassword);
+        var result = await IdentityTestSession.RegisterConfirmedAsync(
+            _svc, TestEmail, TestPassword, TestRole);
 
         Assert.NotNull(result);
 
@@ -92,8 +92,8 @@ public class LoginLogSanitizationTest : IDisposable
     [Fact]
     public async Task Login_ValidCredentials_DoesNotLogAccessToken()
     {
-        await _svc.RegisterAsync(TestEmail, TestPassword, TestRole);
-        var result = await _svc.LoginAsync(TestEmail, TestPassword);
+        var result = await IdentityTestSession.RegisterConfirmedAsync(
+            _svc, TestEmail, TestPassword, TestRole);
 
         Assert.NotNull(result);
 
@@ -108,8 +108,8 @@ public class LoginLogSanitizationTest : IDisposable
     [Fact]
     public async Task Login_ValidCredentials_DoesNotLogRefreshToken()
     {
-        await _svc.RegisterAsync(TestEmail, TestPassword, TestRole);
-        var result = await _svc.LoginAsync(TestEmail, TestPassword);
+        var result = await IdentityTestSession.RegisterConfirmedAsync(
+            _svc, TestEmail, TestPassword, TestRole);
 
         Assert.NotNull(result);
 
@@ -128,7 +128,7 @@ public class LoginLogSanitizationTest : IDisposable
         // line, so an account lost that way left no trace of ever having existed. Identity does not use
         // the EventStore (putting credential-shaped documents into the
         // collection every other service writes to is its own problem), so logs are the record.
-        var registered = await _svc.RegisterAsync(TestEmail, TestPassword, TestRole);
+        var registered = await IdentityTestSession.RegisterConfirmedAsync(_svc, TestEmail, TestPassword, TestRole);
         var rotated = await _svc.RefreshAsync(registered!.RefreshToken);
 
         // Two wrong passwords reach the threshold this test configured, so the lock is applied.
@@ -158,7 +158,7 @@ public class LoginLogSanitizationTest : IDisposable
     {
         // AC-16, second half, and the reason D-8 chose a hash prefix over anything truncated:
         // "aud…@example.com" is still an identifier for a cluster of this size.
-        var registered = await _svc.RegisterAsync(TestEmail, TestPassword, TestRole);
+        var registered = await IdentityTestSession.RegisterConfirmedAsync(_svc, TestEmail, TestPassword, TestRole);
         await _svc.RefreshAsync(registered!.RefreshToken);
         await Assert.ThrowsAsync<UnauthorizedException>(() => _svc.LoginAsync(TestEmail, "wrong"));
         await Assert.ThrowsAsync<UnauthorizedException>(() => _svc.LoginAsync(TestEmail, "wrong"));

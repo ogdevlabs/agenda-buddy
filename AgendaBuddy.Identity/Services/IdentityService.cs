@@ -45,7 +45,7 @@ public class IdentityService(
     private static readonly string DummyHash =
         BCrypt.Net.BCrypt.HashPassword(Guid.Empty.ToString(), workFactor: 12);
 
-    public async Task<TokenResponse?> RegisterAsync(string email, string password, string role)
+    public async Task<RegistrationResponse> RegisterAsync(string email, string password, string role)
     {
         email = email.ToLowerInvariant();
 
@@ -71,7 +71,6 @@ public class IdentityService(
             throw new ConflictException("An account with this email already exists.");
 
         var hash = BCrypt.Net.BCrypt.HashPassword(password, workFactor: 12);
-        var (accessToken, refreshOpaque, refreshHash) = GenerateTokenPair(email, role);
         var (verificationOpaque, verificationHash) = CreateRefreshToken();
         var verificationExpiry = clock.UtcNow.Add(EmailVerificationTokenLifetime);
 
@@ -82,11 +81,6 @@ public class IdentityService(
             PasswordHash = hash,
             Role = role,
             MustResetPassword = false,
-            RefreshToken = new RefreshTokenDocument
-            {
-                Hash = refreshHash,
-                Expiry = clock.UtcNow.AddHours(24)
-            },
             EmailVerified = false,
             EmailVerificationToken = new EmailVerificationTokenDocument
             {
@@ -123,25 +117,58 @@ public class IdentityService(
                 appointmentIdentifier: string.Empty));
         }
 
-        // The in-app notification above cannot carry the token — it is only readable once signed in, and it
-        // is stored, which a bearer credential should not be. Email is the one channel that reaches the
-        // address being proven.
-        if (emailSender is not null)
-        {
-            await emailSender.SendAsync(email, "Confirm your email address", BuildConfirmationEmail(verificationOpaque));
-        }
+        await SendConfirmationEmailAsync(email, verificationOpaque);
 
-        return new TokenResponse(accessToken, refreshOpaque, verificationOpaque);
+        return new RegistrationResponse(verificationOpaque);
     }
 
     /// <summary>
-    /// Consumes a single-use email-confirmation token. Not required for login (see
-    /// <see cref="CredentialEntity.EmailVerified"/>'s own remarks) — this only flips that flag.
+    /// Rotates the confirmation token for an unverified account. Unknown and already-verified addresses
+    /// return identically so this unauthenticated recovery path cannot enumerate accounts.
     /// </summary>
-    public async Task ConfirmEmailAsync(string email, string token)
+    public async Task RequestEmailVerificationAsync(string email)
     {
         email = email.ToLowerInvariant();
-        var account = AccountReference(email);
+        var (verificationOpaque, verificationHash) = CreateRefreshToken();
+        var verificationExpiry = clock.UtcNow.Add(EmailVerificationTokenLifetime);
+
+        CredentialEntity? credential;
+        try
+        {
+            credential = await repository.FindOneAndUpdateAsync(
+                new BsonDocument
+                {
+                    { "email", email },
+                    { "email_verified", false }
+                },
+                new BsonDocument(
+                    "$set",
+                    new BsonDocument(
+                        "email_verification_token",
+                        new BsonDocument
+                        {
+                            { "hash", verificationHash },
+                            { "expiry", verificationExpiry }
+                        })));
+        }
+        catch (Exception ex) when (IsMongoDown(ex))
+        {
+            throw new ServiceUnavailableException();
+        }
+
+        if (credential is null) return;
+
+        _log.LogInformation(
+            "credential.email-confirmation-requested for {Account}: expires {Expiry:O}",
+            AccountReference(email), verificationExpiry);
+        await SendConfirmationEmailAsync(email, verificationOpaque);
+    }
+
+    /// <summary>
+    /// Consumes a single-use email-confirmation token before Identity will issue a session.
+    /// </summary>
+    public async Task ConfirmEmailAsync(string token)
+    {
         var presentedHash = HashToken(token);
         var now = clock.UtcNow;
 
@@ -150,7 +177,6 @@ public class IdentityService(
         {
             var filter = new BsonDocument
             {
-                { "email", email },
                 { "email_verification_token.hash", presentedHash },
                 { "email_verification_token.expiry", new BsonDocument("$gt", now) }
             };
@@ -171,7 +197,8 @@ public class IdentityService(
         if (credential is null)
             throw new UnauthorizedException("This confirmation link is invalid or has expired.");
 
-        _log.LogInformation("credential.email-confirmed ok for {Account}", account);
+        _log.LogInformation(
+            "credential.email-confirmed ok for {Account}", AccountReference(credential.Email));
     }
 
     /// <summary>
@@ -231,6 +258,12 @@ public class IdentityService(
         {
             await CountFailedAttemptAsync(email, account);
             throw new UnauthorizedException();
+        }
+
+        if (!credential.EmailVerified)
+        {
+            _log.LogInformation("credential.login-blocked email-unverified for {Account}", account);
+            throw new EmailVerificationRequiredException();
         }
 
         // The password is correct, but the account is flagged for a forced reset — a migration-seeded
@@ -331,6 +364,7 @@ public class IdentityService(
             {
                 { "refresh_token.hash", presentedHash },
                 { "refresh_token.expiry", new BsonDocument("$gt", now) },
+                { "email_verified", true },
                 { "$or", NotLocked(now) }
             };
 
@@ -663,17 +697,53 @@ public class IdentityService(
         new() { { "hash", hash }, { "expiry", expiry } };
 
     /// <summary>
-    /// Confirmation message. A link when a base URL is configured, otherwise the bare code to paste into the
-    /// app -- the mobile client has no deep-link handler yet (agenda-buddy-20j), so the code has to work on
-    /// its own.
+    /// Bilingual confirmation message. Both actions use the same verified HTTPS app link.
     /// </summary>
-    private string BuildConfirmationEmail(string token) =>
-        string.IsNullOrWhiteSpace(_email.AppLinkBaseUrl)
-            ? $"Welcome to AgendaMe.\n\nConfirm your email address with this code:\n\n{token}\n\n"
-              + "It expires in 24 hours. If you did not create an account, ignore this message."
-            : $"Welcome to AgendaMe.\n\nConfirm your email address:\n\n"
-              + $"{_email.AppLinkBaseUrl!.TrimEnd('/')}/confirm-email?token={token}\n\n"
-              + "The link expires in 24 hours. If you did not create an account, ignore this message.";
+    private EmailContent BuildConfirmationEmail(string token)
+    {
+        var baseUrl = string.IsNullOrWhiteSpace(_email.AppLinkBaseUrl)
+                ? "https://agendame.app"
+                : _email.AppLinkBaseUrl.TrimEnd('/');
+        var link = $"{baseUrl}/confirm-email?token={Uri.EscapeDataString(token)}";
+        var htmlLink = System.Net.WebUtility.HtmlEncode(link);
+        var text = $"Welcome to AgendaMe, please confirm your email address by clicking the button below.\n"
+                             + $"Confirm email: {link}\n\n"
+                             + "Bienvenido a AgendaMe, por favor confirma tu correo electrónico dando clic en el botón debajo.\n"
+                             + $"Confirmar correo: {link}\n\n"
+                             + "This link expires in 24 hours. / Este enlace vence en 24 horas.";
+        var html = $"""
+                        <!doctype html>
+                        <html lang="en">
+                        <body style="font-family:Arial,sans-serif;color:#17211b;line-height:1.5">
+                            <h1 style="font-size:24px">AgendaMe</h1>
+                            <p>Welcome to AgendaMe, please confirm your email address by clicking the button below.</p>
+                              <p><a href="{htmlLink}" style="display:inline-block;background:#176b4d;color:#ffffff;padding:12px 20px;text-decoration:none;border-radius:6px">Confirm email</a></p>
+                            <hr style="border:0;border-top:1px solid #d9dedb;margin:28px 0">
+                            <div lang="es">
+                                <p>Bienvenido a AgendaMe, por favor confirma tu correo electrónico dando clic en el botón debajo.</p>
+                                <p><a href="{htmlLink}" style="display:inline-block;background:#176b4d;color:#ffffff;padding:12px 20px;text-decoration:none;border-radius:6px">Confirmar correo</a></p>
+                            </div>
+                            <p style="color:#526158;font-size:14px">This link expires in 24 hours. / Este enlace vence en 24 horas.</p>
+                        </body>
+                        </html>
+                        """;
+
+        return new EmailContent(text, html);
+    }
+
+    private async Task SendConfirmationEmailAsync(string email, string token)
+    {
+        if (emailSender is null) return;
+
+        var message = BuildConfirmationEmail(token);
+        await emailSender.SendAsync(
+            email,
+            "Confirm your email / Confirma tu correo",
+            message.Text,
+            message.Html);
+    }
+
+    private sealed record EmailContent(string Text, string Html);
 
     /// <summary>
     /// Reset message. Deliberately does not state whether the address had an account -- the route answers
@@ -852,3 +922,5 @@ public class ConflictException(string message) : Exception(message);
 public class UnauthorizedException(string message = "Invalid credentials.") : Exception(message);
 public class ServiceUnavailableException() : Exception("Authentication service temporarily unavailable.");
 public class PasswordResetRequiredException() : Exception("Password reset required before login.");
+
+public class EmailVerificationRequiredException() : Exception("Email verification required before login.");

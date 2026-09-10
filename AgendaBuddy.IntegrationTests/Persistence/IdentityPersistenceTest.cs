@@ -6,13 +6,16 @@ using System.Text.Json;
 using AgendaBuddy.IntegrationTests.Harness;
 using AgendaBuddy.Identity.Services;
 using AgendaBuddy.Library.Entities;
+using AgendaBuddy.Library.Services;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using MongoDB.Bson;
 using MongoDB.Driver;
 
 namespace AgendaBuddy.IntegrationTests.Persistence;
 
 /// <summary>
-/// Identity gets tier 2 across ALL FIVE write endpoints — register, login, refresh,
+/// Identity gets tier 2 across registration, confirmation, login, refresh,
 /// logout, device-token — not just one, because it is the most security-critical write surface in the
 /// system and the original tier matrix wrongly scoped it to route-contract only.
 /// </summary>
@@ -74,7 +77,12 @@ public class IdentityPersistenceTest(ServiceHostFixture<IdentityAnchor> host, Cr
     [Fact]
     public async Task AC8_RegisterLoginRefreshLogout_EachStepPersistsAndTheNextStepReadsItBack()
     {
-        using var service = host.StartService();
+        var emailSender = new RecordingEmailSender();
+        using var service = host.StartService(configureServices: services =>
+        {
+            services.RemoveAll<IEmailSender>();
+            services.AddSingleton<IEmailSender>(emailSender);
+        });
         var originalPrivateKey = Environment.GetEnvironmentVariable(PrivateKeyEnvVar);
 
         try
@@ -88,8 +96,10 @@ public class IdentityPersistenceTest(ServiceHostFixture<IdentityAnchor> host, Cr
                 Password = Password,
                 Role = "Provider",
             });
-            Assert.Equal(HttpStatusCode.Created, registerResponse.StatusCode);
-            var (_, registerRefreshToken) = ParseTokenPair(await registerResponse.Content.ReadAsStringAsync());
+            Assert.Equal(HttpStatusCode.Accepted, registerResponse.StatusCode);
+            var registerBody = await registerResponse.Content.ReadAsStringAsync();
+            Assert.DoesNotContain("accessToken", registerBody, StringComparison.Ordinal);
+            Assert.DoesNotContain("refreshToken", registerBody, StringComparison.Ordinal);
 
             var afterRegister = await StoredCredentialAsync(service, RegisterEmail);
             Assert.NotNull(afterRegister);
@@ -97,9 +107,20 @@ public class IdentityPersistenceTest(ServiceHostFixture<IdentityAnchor> host, Cr
             Assert.Equal("Provider", afterRegister.Role);
             Assert.False(afterRegister.MustResetPassword);
             Assert.StartsWith("$2", afterRegister.PasswordHash);
-            Assert.NotNull(afterRegister.RefreshToken);
-            Assert.Equal(IdentityService.HashToken(registerRefreshToken), afterRegister.RefreshToken!.Hash);
-            Assert.True(afterRegister.RefreshToken.Expiry > DateTime.UtcNow);
+            Assert.False(afterRegister.EmailVerified);
+            Assert.Null(afterRegister.RefreshToken);
+            Assert.NotNull(emailSender.Token);
+
+            var blockedLogin = await service.Client.PostAsJsonAsync("api/v1/auth/login", new
+            {
+                Email = RegisterEmail,
+                Password = Password,
+            });
+            Assert.Equal(HttpStatusCode.Forbidden, blockedLogin.StatusCode);
+
+            var confirmResponse = await service.Client.PostAsJsonAsync(
+                "api/v1/auth/register/confirm", new { Token = emailSender.Token });
+            Assert.Equal(HttpStatusCode.NoContent, confirmResponse.StatusCode);
 
             // ── login ───────────────────────────────────────────────────────────────────────────────
             var loginResponse = await service.Client.PostAsJsonAsync("api/v1/auth/login", new
@@ -112,9 +133,8 @@ public class IdentityPersistenceTest(ServiceHostFixture<IdentityAnchor> host, Cr
 
             var afterLogin = await StoredCredentialAsync(service, RegisterEmail);
             Assert.NotNull(afterLogin);
-            // Rotated: login's stored hash is the NEW token's, and no longer register's.
             Assert.Equal(IdentityService.HashToken(loginRefreshToken), afterLogin.RefreshToken!.Hash);
-            Assert.NotEqual(IdentityService.HashToken(registerRefreshToken), afterLogin.RefreshToken.Hash);
+            Assert.True(afterLogin.EmailVerified);
             Assert.Equal(0, afterLogin.FailedAttempts);
 
             // ── refresh ─────────────────────────────────────────────────────────────────────────────
@@ -146,6 +166,34 @@ public class IdentityPersistenceTest(ServiceHostFixture<IdentityAnchor> host, Cr
         finally
         {
             Environment.SetEnvironmentVariable(PrivateKeyEnvVar, originalPrivateKey);
+        }
+    }
+
+    private sealed class RecordingEmailSender : IEmailSender
+    {
+        public string? Token { get; private set; }
+
+        public Task<bool> SendAsync(
+            string toAddress,
+            string subject,
+            string body,
+            CancellationToken cancellationToken = default) => Task.FromResult(true);
+
+        public Task<bool> SendAsync(
+            string toAddress,
+            string subject,
+            string body,
+            string htmlBody,
+            CancellationToken cancellationToken = default)
+        {
+            var marker = "confirm-email?token=";
+            var start = body.IndexOf(marker, StringComparison.Ordinal);
+            Assert.True(start >= 0);
+            start += marker.Length;
+            var end = body.IndexOfAny(['\r', '\n'], start);
+            var encoded = end < 0 ? body[start..] : body[start..end];
+            Token = Uri.UnescapeDataString(encoded);
+            return Task.FromResult(true);
         }
     }
 

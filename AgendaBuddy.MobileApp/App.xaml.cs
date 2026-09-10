@@ -73,6 +73,32 @@ public partial class App : Application
     protected override void OnAppLinkRequestReceived(Uri uri)
     {
         base.OnAppLinkRequestReceived(uri);
+#if DEBUG
+        Console.WriteLine($"APP LINK: received {uri.Scheme}://{uri.Host}{uri.AbsolutePath}");
+#endif
+        var confirmation = EmailConfirmationLink.Parse(uri);
+        if (confirmation.IsValid)
+        {
+            MainThread.BeginInvokeOnMainThread(async () =>
+            {
+                try
+                {
+                    await Shell.Current.GoToAsync(
+                        $"//emailVerification?token={Uri.EscapeDataString(confirmation.Token!)}");
+#if DEBUG
+                    Console.WriteLine("APP LINK: opened email verification");
+#endif
+                }
+                catch (Exception exception)
+                {
+#if DEBUG
+                    Console.WriteLine($"APP LINK: navigation failed: {exception}");
+#endif
+                }
+            });
+            return;
+        }
+
         _ = HandlePaymentCallbackAsync(PaymentOnboardingCallback.Parse(uri));
     }
 

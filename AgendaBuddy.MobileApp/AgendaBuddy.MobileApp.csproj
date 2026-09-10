@@ -45,6 +45,11 @@
         <SupportedOSPlatformVersion Condition="'$(TargetFramework)' == 'net10.0-android'">21.0</SupportedOSPlatformVersion>
         <!-- Allow minor Xcode version mismatches (e.g. 26.5 vs required 26.4) — forward-compatible -->
         <ValidateXcodeVersion>false</ValidateXcodeVersion>
+           <!-- Android email-confirmation App Links are disabled until a physical device and Google Play's
+               app-signing SHA-256 fingerprint are available. This is build-time configuration because intent
+               filters are compiled into AndroidManifest.xml before appsettings can be read. -->
+           <AndroidEmailVerificationAppLinksEnabled Condition="'$(AndroidEmailVerificationAppLinksEnabled)' == ''">false</AndroidEmailVerificationAppLinksEnabled>
+           <DefineConstants Condition="'$(TargetFramework)' == 'net10.0-android' AND '$(AndroidEmailVerificationAppLinksEnabled)' == 'true'">$(DefineConstants);ANDROID_EMAIL_VERIFICATION_APP_LINKS</DefineConstants>
     </PropertyGroup>
 
     <!-- Apple Developer team (Individual enrolment). Not a secret: it appears in build output and in

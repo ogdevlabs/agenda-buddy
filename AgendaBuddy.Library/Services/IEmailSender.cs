@@ -18,4 +18,13 @@ public interface IEmailSender
     /// </summary>
     /// <returns><c>true</c> when the provider accepted the message.</returns>
     Task<bool> SendAsync(string toAddress, string subject, string body, CancellationToken cancellationToken = default);
+
+    /// <summary>Sends a multipart-style message with plain-text fallback and an HTML presentation.</summary>
+    Task<bool> SendAsync(
+        string toAddress,
+        string subject,
+        string body,
+        string htmlBody,
+        CancellationToken cancellationToken = default) =>
+        SendAsync(toAddress, subject, body, cancellationToken);
 }

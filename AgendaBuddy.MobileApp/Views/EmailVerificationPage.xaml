@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:controls="clr-namespace:AgendaBuddy.MobileApp.Controls"
+             xmlns:infrastructure="clr-namespace:AgendaBuddy.MobileApp.Infrastructure"
+             xmlns:strings="clr-namespace:AgendaBuddy.MobileApp.Resources.Strings"
+             x:Class="AgendaBuddy.MobileApp.Views.EmailVerificationPage"
+             Title="{x:Static strings:AppResources.EmailVerification_Title}"
+             BackgroundColor="{StaticResource BackgroundDark}"
+             Shell.NavBarIsVisible="False">
+    <ScrollView>
+        <Grid VerticalOptions="Center" Padding="24">
+            <Frame BackgroundColor="{StaticResource BackgroundCard}"
+                   CornerRadius="24"
+                   BorderColor="Transparent"
+                   HasShadow="True"
+                   Padding="32">
+                <VerticalStackLayout Spacing="16">
+                    <Frame BackgroundColor="{StaticResource PrimarySubtle}"
+                           CornerRadius="20"
+                           WidthRequest="64"
+                           HeightRequest="64"
+                           Padding="0"
+                           HasShadow="False"
+                           BorderColor="Transparent"
+                           HorizontalOptions="Center">
+                        <Label Text="{x:Static infrastructure:AppBrand.Monogram}"
+                               FontSize="24"
+                               FontAttributes="Bold"
+                               TextColor="{StaticResource Primary}"
+                               HorizontalOptions="Center"
+                               VerticalOptions="Center" />
+                    </Frame>
+
+                    <Label Text="{x:Static strings:AppResources.EmailVerification_Heading}"
+                           Style="{StaticResource TitleLarge}"
+                           HorizontalOptions="Center" />
+                    <Label Text="{Binding StatusMessage}"
+                           Style="{StaticResource BodySecondary}"
+                           HorizontalTextAlignment="Center"
+                           AutomationId="EmailVerificationStatus" />
+                    <Frame Style="{StaticResource InputFrame}">
+                        <Entry Text="{Binding Email}"
+                               Placeholder="{x:Static strings:AppResources.Example_Email}"
+                               Keyboard="Email"
+                               Style="{StaticResource InputStyle}"
+                               AutomationId="VerificationEmailEntry" />
+                    </Frame>
+
+                    <ActivityIndicator IsRunning="{Binding IsLoading}"
+                                       IsVisible="{Binding IsLoading}"
+                                       Color="{StaticResource Primary}"
+                                       HorizontalOptions="Center" />
+
+                    <VerticalStackLayout IsVisible="{Binding ShowPendingActions}" Spacing="10">
+                        <controls:SafeButton Text="{x:Static strings:AppResources.EmailVerification_Resend}"
+                                             Style="{StaticResource SecondaryButton}"
+                                             Command="{Binding ResendCommand}"
+                                             AutomationId="ResendVerificationButton" />
+                    </VerticalStackLayout>
+
+                    <controls:SafeButton Text="{x:Static strings:AppResources.Xaml_SignIn}"
+                                         Style="{StaticResource PrimaryButton}"
+                                         Clicked="OnSignInClicked"
+                                         AutomationId="VerificationSignInButton" />
+                </VerticalStackLayout>
+            </Frame>
+        </Grid>
+    </ScrollView>
+</ContentPage>

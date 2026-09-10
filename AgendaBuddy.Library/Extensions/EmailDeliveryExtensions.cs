@@ -20,6 +20,13 @@ public static class EmailDeliveryExtensions
     {
         services.Configure<EmailOptions>(configuration.GetSection(EmailOptions.Section));
 
+        if (configuration.GetValue<bool>($"{EmailOptions.Section}:LocalCaptureEnabled"))
+        {
+            services.AddSingleton<LocalEmailSender>();
+            services.AddSingleton<IEmailSender>(provider => provider.GetRequiredService<LocalEmailSender>());
+            return services;
+        }
+
         // Named client so an outbound-email timeout cannot be confused with a service-to-service one, and so
         // the resilience defaults ServiceDefaults applies to service discovery do not retry a send.
         services.AddHttpClient(ResendEmailSender.HttpClientName,

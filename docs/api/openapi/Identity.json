@@ -212,6 +212,29 @@
           }
         }
       }
+    },
+    "/api/v1/auth/register/verification": {
+      "post": {
+        "tags": [
+          "IdentityAPI"
+        ],
+        "operationId": "RequestEmailVerification",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailVerificationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -219,11 +242,17 @@
       "EmailConfirmRequest": {
         "type": "object",
         "properties": {
-          "email": {
+          "token": {
             "type": "string",
             "nullable": true
-          },
-          "token": {
+          }
+        },
+        "additionalProperties": false
+      },
+      "EmailVerificationRequest": {
+        "type": "object",
+        "properties": {
+          "email": {
             "type": "string",
             "nullable": true
           }

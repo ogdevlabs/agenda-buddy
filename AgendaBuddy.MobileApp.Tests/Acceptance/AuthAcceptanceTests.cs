@@ -1,6 +1,5 @@
 using System.Net;
 using System.Net.Http.Json;
-using System.Text.Json;
 using Xunit;
 
 namespace AgendaBuddy.MobileApp.Tests.Acceptance;
@@ -8,7 +7,6 @@ namespace AgendaBuddy.MobileApp.Tests.Acceptance;
 [Trait("Category", "Acceptance")]
 public class AuthAcceptanceTests : IAsyncLifetime
 {
-    private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
     private readonly HttpClient _client;
     private readonly string _testEmail;
 
@@ -40,52 +38,37 @@ public class AuthAcceptanceTests : IAsyncLifetime
     }
 
     [SkippableFact]
-    public async Task RegisterProvider_ReturnsTokens()
+    public async Task RegisterProvider_ReturnsPendingVerification()
     {
         var payload = new { email = _testEmail, password = "SecurePass123!", role = "Provider" };
 
         var response = await _client.PostAsJsonAsync("api/v1/auth/register", payload);
 
-        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
-
-        var body = await response.Content.ReadFromJsonAsync<TokenResponse>(JsonOptions);
-        Assert.NotNull(body);
-        Assert.False(string.IsNullOrWhiteSpace(body.AccessToken));
-        Assert.False(string.IsNullOrWhiteSpace(body.RefreshToken));
+        Assert.Equal(HttpStatusCode.Accepted, response.StatusCode);
     }
 
     [SkippableFact]
-    public async Task RegisterCustomer_ReturnsTokens()
+    public async Task RegisterCustomer_ReturnsPendingVerification()
     {
         var payload = new { email = _testEmail, password = "SecurePass123!", role = "Customer" };
 
         var response = await _client.PostAsJsonAsync("api/v1/auth/register", payload);
 
-        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
-
-        var body = await response.Content.ReadFromJsonAsync<TokenResponse>(JsonOptions);
-        Assert.NotNull(body);
-        Assert.False(string.IsNullOrWhiteSpace(body.AccessToken));
-        Assert.False(string.IsNullOrWhiteSpace(body.RefreshToken));
+        Assert.Equal(HttpStatusCode.Accepted, response.StatusCode);
     }
 
     [SkippableFact]
-    public async Task Login_AfterRegistration_ReturnsTokens()
+    public async Task Login_BeforeEmailConfirmation_IsForbidden()
     {
         const string password = "SecurePass123!";
         var registerPayload = new { email = _testEmail, password, role = "Provider" };
         var registerResponse = await _client.PostAsJsonAsync("api/v1/auth/register", registerPayload);
-        Assert.Equal(HttpStatusCode.Created, registerResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.Accepted, registerResponse.StatusCode);
 
         var loginPayload = new { email = _testEmail, password };
         var loginResponse = await _client.PostAsJsonAsync("api/v1/auth/login", loginPayload);
 
-        Assert.Equal(HttpStatusCode.OK, loginResponse.StatusCode);
-
-        var body = await loginResponse.Content.ReadFromJsonAsync<TokenResponse>(JsonOptions);
-        Assert.NotNull(body);
-        Assert.False(string.IsNullOrWhiteSpace(body.AccessToken));
-        Assert.False(string.IsNullOrWhiteSpace(body.RefreshToken));
+        Assert.Equal(HttpStatusCode.Forbidden, loginResponse.StatusCode);
     }
 
     [SkippableFact]
@@ -103,7 +86,7 @@ public class AuthAcceptanceTests : IAsyncLifetime
     {
         var payload = new { email = _testEmail, password = "SecurePass123!", role = "Provider" };
         var first = await _client.PostAsJsonAsync("api/v1/auth/register", payload);
-        Assert.Equal(HttpStatusCode.Created, first.StatusCode);
+        Assert.Equal(HttpStatusCode.Accepted, first.StatusCode);
 
         var second = await _client.PostAsJsonAsync("api/v1/auth/register", payload);
 
@@ -129,6 +112,4 @@ public class AuthAcceptanceTests : IAsyncLifetime
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
-
-    private record TokenResponse(string AccessToken, string RefreshToken);
 }

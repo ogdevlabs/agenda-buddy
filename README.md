@@ -149,6 +149,19 @@ To also launch the mobile app against this stack, in an iOS simulator, with the 
 ./scripts/run-ios.sh
 ```
 
+Local AppHost runs capture Identity confirmation/reset emails in memory instead of sending through
+Resend. After registering, use the Gateway URL printed by `run-ios.sh` to inspect the latest message or
+open its confirmation link in the booted simulator:
+
+```bash
+GATEWAY_URL=http://localhost:<gateway-port> ./scripts/local-email.sh user@local.test
+GATEWAY_URL=http://localhost:<gateway-port> ./scripts/local-email.sh user@local.test --open-ios
+```
+
+The inbox route and `agendame://email` confirmation links exist only when the local AppHost sets both
+`Security:Local` and `Email:LocalCaptureEnabled`; cloud deployments continue to use Resend and HTTPS
+Universal Links.
+
 ### First run on a new machine — three secrets
 
 The AppHost needs three values, held in [user secrets](https://learn.microsoft.com/aspnet/core/security/app-secrets) scoped to `AgendaBuddy.AppHost`:

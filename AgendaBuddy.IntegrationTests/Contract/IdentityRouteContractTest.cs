@@ -13,25 +13,15 @@ namespace AgendaBuddy.IntegrationTests.Contract;
 /// Route chosen: <c>POST /api/v1/auth/register</c> (`AgendaBuddy.Identity/Program.cs`) — the one route in this
 /// inventory that is anonymous by design and, for a valid unique account, is not an auth-refusal.
 /// </para>
-/// <para>
-/// <b>The pinned status is 500, not 201 — run for real before writing this assertion, per this task's
-/// own instructions.</b> A valid registration reaches <c>IdentityService.RegisterAsync</c>, which mints a
-/// token pair signed with <c>JWT_PRIVATE_KEY</c> — an environment variable
-/// <see cref="Harness.CryptoSessionFixture"/> deliberately never materialises in this public repository
-/// (no private key may ever exist as a loggable/serialisable string). Every route that mints
-/// a token therefore 500s under this harness today, and that is a harness limitation, not a production
-/// defect — the exact precedent already pinned by
-/// <see cref="Harness.LogoutTest.Refresh_WithAValidUnexpiredToken_MatchesTheCredential"/> and documented
-/// in <see cref="Harness.AuthRateLimitTest"/>'s class remarks. Pinning anything else here would assert
-/// what this harness wishes were true rather than what it actually returns.
-/// </para>
+/// Registration creates a pending credential and sends confirmation email; it does not mint a session,
+/// so no private signing key is needed on this route.
 /// </remarks>
 [Collection(Harness.HarnessCollection.Name)]
 public class IdentityRouteContractTest(Harness.ServiceHostFixture<IdentityAnchor> host)
     : IClassFixture<Harness.ServiceHostFixture<IdentityAnchor>>
 {
     [Fact]
-    public async Task PostRegister_WithAValidNewAccount_Returns500_TokenSigningKeyIsNotAvailableInThisHarness()
+    public async Task PostRegister_WithAValidNewAccount_Returns202PendingVerification()
     {
         using var service = host.StartService();
 
@@ -42,7 +32,7 @@ public class IdentityRouteContractTest(Harness.ServiceHostFixture<IdentityAnchor
             Role = "Customer",
         });
 
-        Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
+        Assert.Equal(HttpStatusCode.Accepted, response.StatusCode);
     }
 
     /// <summary>

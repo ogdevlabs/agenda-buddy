@@ -12,6 +12,11 @@ public static class AuthRouteBuilder
 
     public static RouteSpec Register() => new(HttpMethod.Post, "api/v1/auth/register");
 
+    public static RouteSpec ConfirmEmail() => new(HttpMethod.Post, "api/v1/auth/register/confirm");
+
+    public static RouteSpec RequestEmailVerification() =>
+        new(HttpMethod.Post, "api/v1/auth/register/verification");
+
     /// <summary>
     /// <see cref="Infrastructure.JwtDelegatingHandler"/>'s transparent
     /// refresh-on-401 path calls this on the "AgendaBuddyApiNoAuth" client, since the access

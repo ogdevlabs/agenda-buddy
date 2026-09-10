@@ -329,6 +329,7 @@ public class InMemoryCredentialRepository : IRepository<CredentialEntity>
         {
             "email" => Compare(e.Email, condition),
             "role" => Compare(e.Role, condition),
+            "email_verified" => Compare(e.EmailVerified, condition),
             "refresh_token.hash" => Compare(e.RefreshToken?.Hash, condition),
             "refresh_token.expiry" => Compare(e.RefreshToken?.Expiry, condition),
             "reset_token.hash" => Compare(e.ResetToken?.Hash, condition),
@@ -345,6 +346,8 @@ public class InMemoryCredentialRepository : IRepository<CredentialEntity>
 
     private static bool Compare(string? actual, BsonValue condition) =>
         condition.IsBsonNull ? actual is null : actual == condition.AsString;
+
+    private static bool Compare(bool actual, BsonValue condition) => actual == condition.AsBoolean;
 
     private static bool Compare(int actual, BsonValue condition)
     {

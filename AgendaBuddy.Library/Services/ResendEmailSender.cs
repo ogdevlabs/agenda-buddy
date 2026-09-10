@@ -32,6 +32,22 @@ public class ResendEmailSender(
 
     public async Task<bool> SendAsync(
         string toAddress, string subject, string body, CancellationToken cancellationToken = default)
+        => await SendCoreAsync(toAddress, subject, body, null, cancellationToken);
+
+    public async Task<bool> SendAsync(
+        string toAddress,
+        string subject,
+        string body,
+        string htmlBody,
+        CancellationToken cancellationToken = default)
+        => await SendCoreAsync(toAddress, subject, body, htmlBody, cancellationToken);
+
+    private async Task<bool> SendCoreAsync(
+        string toAddress,
+        string subject,
+        string body,
+        string? htmlBody,
+        CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(_options.ApiKey))
         {
@@ -55,7 +71,8 @@ public class ResendEmailSender(
                     from = $"{_options.FromName} <{_options.FromAddress}>",
                     to = new[] { toAddress },
                     subject,
-                    text = body
+                    text = body,
+                    html = htmlBody
                 })
             };
             request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(

@@ -55,6 +55,7 @@ public class LogoutTest(ServiceHostFixture<IdentityAnchor> host)
                 Email = email,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword("irrelevant-for-this-test", workFactor: 12),
                 Role = "Provider",
+                EmailVerified = true,
                 RefreshToken = new RefreshTokenDocument
                 {
                     Hash = IdentityService.HashToken(rawRefreshToken),

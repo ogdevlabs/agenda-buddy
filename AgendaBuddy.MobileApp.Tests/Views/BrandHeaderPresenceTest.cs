@@ -17,6 +17,7 @@ public class BrandHeaderPresenceTest
     private static readonly string[] PagesWithoutBrandHeader =
     [
         "ForgotPasswordPage.xaml",
+        "EmailVerificationPage.xaml",
         "LoginPage.xaml",
         "RegisterPage.xaml",
         "ResetPasswordConfirmPage.xaml",
