@@ -4,6 +4,15 @@ All notable changes to this project are documented in this file, in [Keep a Chan
 
 ## [Unreleased]
 
+## [0.19.2] - 2026-09-10
+
+### Fixed
+
+- Corrected the embedded Python indentation in the deployment's optional-Stripe-secret branch, allowing the
+  fail-closed sentinel configuration to reach `azd deploy`.
+- Strengthened the workflow regression test to assert the executable sentinel block's indentation. The corrected
+  main run deployed successfully to Azure Container Apps and passed the Gateway health smoke test.
+
 ## [0.19.1] - 2026-09-10
 
 ### Fixed

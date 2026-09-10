@@ -151,6 +151,27 @@ Examples:
 3. **Merge via the GitHub web UI, or the same REST token against `PUT .../pulls/<number>/merge`** — not `gh pr merge`, and not a local `git merge --no-ff` bypass. Only fall back to a local merge + push if both of those are demonstrably attempted and fail (not just assumed to fail because `gh` did), and only with the human's explicit confirmation.
 4. Use the `.gitconfig`-configured identity (`ogdevlabs`) for every commit — never pass `-c user.name`/`user.email` overrides, and never route commits through `gh`'s identity.
 
+### Ship artifacts are tag plus GitHub Release — both are mandatory
+
+A PDLC ship is incomplete until the version exists as both an annotated git tag and a published GitHub Release.
+Pushing a tag alone does not create a GitHub Release and must never be reported as if it did.
+
+After the ship PR is green, merged, and any required post-merge deployment is verified:
+
+1. Update `CHANGELOG.md` for the version before tagging.
+2. Create an annotated `vX.Y.Z` tag on the verified merge commit and push that tag to `origin`.
+3. Create the GitHub Release through the GitHub REST API using the `ogdevlabs` git-credential token. Do not use
+  the restricted `gh` identity. The release must target the existing tag, be non-draft/non-prerelease unless the
+  release plan says otherwise, include verification evidence and a compare link, and mark the newest stable
+  version as latest.
+4. Verify independently before declaring Ship complete:
+  - `git ls-remote --tags origin refs/tags/vX.Y.Z` returns the tag;
+  - `GET /repos/ogdevlabs/agenda-buddy/releases/tags/vX.Y.Z` returns a published release;
+  - the tag resolves to the intended merge commit;
+  - the repository's latest release is the new stable version.
+5. If release publication or any verification fails, repair it in the same Ship operation. Do not close the
+  feature, mark the episode Final, or report the release shipped while either artifact is missing.
+
 **Also standing:** the Nordstrom Standards Readiness gate does not apply to this project at all (see §9, ADR-042) — do not detect, install, prompt for, or invoke it here, regardless of what a generic skill's preflight checks for.
 
 ---

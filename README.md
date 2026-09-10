@@ -261,6 +261,10 @@ backend changes; an hourly drift workflow compares the deployed SHA with `main` 
 deployments. Only the Gateway has public ingress. See [docs/deployment.md](docs/deployment.md) and
 [DEPLOYMENTS.md](docs/pdlc/memory/DEPLOYMENTS.md) for the current runbook and evidence.
 
+Stripe marketplace-payment configuration has separate [sandbox](docs/stripe/sandbox.md) and
+[production](docs/stripe/production.md) runbooks, with the integration contract summarized in
+[docs/stripe/README.md](docs/stripe/README.md).
+
 The original Atlas credential committed in git history remains a separate human-owned rotation risk; see
 [ISSUE-002](docs/issues/ISSUE-002-atlas-credential-rotation.md).
 
