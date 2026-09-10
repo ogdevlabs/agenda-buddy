@@ -3,7 +3,7 @@
 **Feature ID:** F-035
 **Beads:** `agenda-buddy-jaq`
 **Date:** 2026-09-09
-**Status:** Construction complete
+**Status:** Shipped in `v0.19.0` via PR #153
 
 ## Problem
 

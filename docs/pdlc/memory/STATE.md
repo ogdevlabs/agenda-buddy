@@ -5,19 +5,19 @@
      Claude reads this file at the start of every session to auto-resume from the last checkpoint.
      If this file is missing or empty, PDLC will prompt you to run /pdlc init. -->
 
-**Last updated:** 2026-09-09T23:35:00Z
+**Last updated:** 2026-09-10T12:10:00Z
 
 ---
 
 ## Current Phase
 
-Construction Complete
+Idle
 
 ---
 
 ## Current Feature
 
-F-035 `marketplace-payments`
+none
 
 _Construction complete on `feat/agenda-buddy-jaq-marketplace-payments`. Stripe Connect customer/provider
 onboarding, immutable pricing, manual authorization, 90/10 destination-charge allocation, completion capture,
@@ -31,6 +31,12 @@ _Ship verification complete: backend 1,144/1,144; integration 403/403; mobile 88
 live-Identity skips; iOS/Android builds, format and feature-diff secret scan green. Anonymous Stripe sandbox
 verified setup Checkout, reusable card, manual authorization and release. Connect activation requires a claimed
 Stripe account and is tracked separately as `agenda-buddy-83z`. Ready for commit, PR and green CI._
+
+_**F-035 `marketplace-payments` SHIPPED** as `v0.19.0` via PR #153. Final CI: backend, integration, mobile unit,
+iOS Release, Android Release, security, seven container publish/Trivy jobs and summary all green; Terraform and
+deploy-dev correctly skipped for this PR. Provider/customer onboarding, payment callback, Spanish payment state
+and fully translated provider report verified on an iPhone 17 Pro simulator. External Stripe Connect and physical
+wallet activation remains `agenda-buddy-83z`; deployed missing configuration fails closed._
 
 _**F-024 `data-subject-rights` SHIPPED** as `v0.15.0` — merged via the mandated PR path (REST API, no
 `gh`), episode 015. Re-verified the 2026-08-18 filing against current code before Design: the appointment

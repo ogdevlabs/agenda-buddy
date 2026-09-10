@@ -5,6 +5,7 @@
 **Date:** 2026-09-09
 **Version:** `v0.19.0`
 **PR:** #153
+**Status:** Final
 
 ## Problem
 

@@ -4,6 +4,8 @@ All notable changes to this project are documented in this file, in [Keep a Chan
 
 ## [Unreleased]
 
+## [0.19.0] - 2026-09-10
+
 ### Added
 
 - Stripe Connect marketplace payments: customer setup-mode Checkout, provider Express onboarding, manual
