@@ -25,6 +25,9 @@ All notable changes to this project are documented in this file, in [Keep a Chan
 - Global reset cutoffs are written to both `agenda_buddy` and `IdentityDb`, matching the database each service's
   authentication middleware reads. Independent post-reset verification caught the missing Identity cutoff before
   release tagging; all user documents had already been removed successfully.
+- Long replica drains now refresh Azure OIDC authentication between bounded polling slices. A live drain reached
+  zero replicas after 12 minutes, but the original login assertion expired before the final Azure query; no MongoDB
+  write ran on that failed pass.
 
 ## [0.19.2] - 2026-09-10
 

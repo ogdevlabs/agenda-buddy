@@ -74,8 +74,75 @@ jobs:
     uses: ./.github/workflows/dev-env-stop.yml
     secrets: inherit
 
-  purge:
+  drain:
     needs: stop
+    runs-on: ubuntu-24.04
+    environment: dev
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Azure login - drain slice 1
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Wait for replicas - slice 1
+        id: drain1
+        continue-on-error: true
+        run: ./scripts/wait-for-container-app-drain.sh rg-agenda-buddy-dev 240
+
+      - name: Refresh Azure login - drain slice 2
+        if: ${{ steps.drain1.outcome == 'failure' }}
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Wait for replicas - slice 2
+        id: drain2
+        if: ${{ steps.drain1.outcome == 'failure' }}
+        continue-on-error: true
+        run: ./scripts/wait-for-container-app-drain.sh rg-agenda-buddy-dev 240
+
+      - name: Refresh Azure login - drain slice 3
+        if: ${{ steps.drain2.outcome == 'failure' }}
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Wait for replicas - slice 3
+        id: drain3
+        if: ${{ steps.drain2.outcome == 'failure' }}
+        continue-on-error: true
+        run: ./scripts/wait-for-container-app-drain.sh rg-agenda-buddy-dev 240
+
+      - name: Refresh Azure login - drain slice 4
+        if: ${{ steps.drain3.outcome == 'failure' }}
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Wait for replicas - slice 4
+        id: drain4
+        if: ${{ steps.drain3.outcome == 'failure' }}
+        continue-on-error: true
+        run: ./scripts/wait-for-container-app-drain.sh rg-agenda-buddy-dev 240
+
+      - name: Require a complete drain
+        if: ${{ steps.drain4.outcome == 'failure' }}
+        run: |
+          echo "::error::Container Apps did not drain within 16 minutes; refusing to purge."
+          exit 1
+
+  purge:
+    needs: drain
     runs-on: ubuntu-24.04
     environment: dev
     outputs:
@@ -92,33 +159,9 @@ jobs:
         id: purge
         env:
           KEY_VAULT_NAME: kv-agbuddy-dev
-          RESOURCE_GROUP: rg-agenda-buddy-dev
           RESET_REASON: ${{ inputs.reason }}
         run: |
           set -euo pipefail
-
-          mapfile -t apps < <(az containerapp list --resource-group "$RESOURCE_GROUP" --query "[].name" -o tsv)
-          if [ "${#apps[@]}" -eq 0 ]; then
-            echo "::error::No dev container apps found in $RESOURCE_GROUP."
-            exit 1
-          fi
-          drain_started=$SECONDS
-          drain_deadline=$((SECONDS + 900))
-          while true; do
-            running=0
-            for app in "${apps[@]}"; do
-              replicas=$(az containerapp replica list --name "$app" --resource-group "$RESOURCE_GROUP" \
-                --query "length(@)" -o tsv)
-              running=$((running + replicas))
-            done
-            if [ "$running" -eq 0 ]; then break; fi
-            if [ "$SECONDS" -ge "$drain_deadline" ]; then
-              echo "::error::$running dev replicas remain 15 minutes after the stop operation; refusing to purge."
-              exit 1
-            fi
-            echo "Waiting for $running dev replicas to terminate ($((SECONDS - drain_started))s elapsed)."
-            sleep 10
-          done
 
           agenda_uri=$(az keyvault secret show --vault-name "$KEY_VAULT_NAME" \
             --name agenda-buddy-connection --query value -o tsv)
@@ -190,7 +233,7 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
   restore:
-    needs: [window, stop, purge]
+    needs: [window, stop, drain, purge]
     if: ${{ always() && needs.purge.result == 'success' && needs.window.outputs.start_after == 'true' }}
     uses: ./.github/workflows/dev-env-power.yml
     with:
@@ -199,7 +242,7 @@ jobs:
     secrets: inherit
 
   report:
-    needs: [window, stop, purge, restore]
+    needs: [window, stop, drain, purge, restore]
     if: always()
     runs-on: ubuntu-24.04
     steps:
@@ -212,6 +255,7 @@ jobs:
             echo
             echo "- reason: $REASON"
             echo "- stop: ${{ needs.stop.result }}"
+            echo "- drain: ${{ needs.drain.result }}"
             echo "- purge: ${{ needs.purge.result }}"
             if [ "${{ needs.purge.result }}" != "success" ]; then
               echo "- environment remains stopped because the purge did not complete cleanly"
