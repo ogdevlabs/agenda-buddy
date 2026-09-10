@@ -60,6 +60,8 @@ internal static class AppHostWiring
         // anyone who has not got one. Locally, email delivery is simply off and Identity warns at
         // startup naming the key.
         IResourceBuilder<ParameterResource>? resendApiKey = null;
+        IResourceBuilder<ParameterResource>? stripeApiKey = null;
+        IResourceBuilder<ParameterResource>? stripeWebhookSecret = null;
 
         // Push delivery. Declared in both shapes, but on different terms, and the difference is the whole
         // point.
@@ -121,6 +123,13 @@ internal static class AppHostWiring
             identityDb = mongo.AddDatabase("IdentityDb");
 
             mongoToWaitFor = mongo;
+
+            if (!string.IsNullOrWhiteSpace(builder.Configuration["Parameters:stripe-api-key"]))
+            {
+                stripeApiKey = builder.AddParameter("stripe-api-key", secret: true);
+                if (!string.IsNullOrWhiteSpace(builder.Configuration["Parameters:stripe-webhook-secret"]))
+                    stripeWebhookSecret = builder.AddParameter("stripe-webhook-secret", secret: true);
+            }
         }
         else
         {
@@ -140,14 +149,16 @@ internal static class AppHostWiring
             // Without this a deployed environment has no email delivery, which means no working
             // password reset -- the token has nowhere to go.
             resendApiKey = builder.AddParameter("resend-api-key", secret: true);
+            stripeApiKey = builder.AddParameter("stripe-api-key", secret: true);
+            stripeWebhookSecret = builder.AddParameter("stripe-webhook-secret", secret: true);
         }
-
         // spendsBcrypt: Identity's login and register are the only routes in the system that hash a
         // password — 262 ms of CPU each, measured — so it is the only service the per-IP limiter applies
         // to (ARCHITECTURE.md D-4).
         var identity = AddApi<Projects.AgendaBuddy_Identity>(
             "identity", identityDb, needsPrivateKey: true, spendsBcrypt: true, needsEmailDelivery: true);
-        var booking = AddApi<Projects.AgendaBuddy_Booking_Api>("booking", agendaDb, needsPushDelivery: true);
+        var booking = AddApi<Projects.AgendaBuddy_Booking_Api>(
+            "booking", agendaDb, needsPushDelivery: true, needsPayments: true);
         var customer = AddApi<Projects.AgendaBuddy_Customer_Api>("customer", agendaDb, needsPushDelivery: true);
         var provider = AddApi<Projects.AgendaBuddy_Provider_Api>("provider", agendaDb);
         var calendar = AddApi<Projects.AgendaBuddy_Calendar_Api>("calendar", agendaDb);
@@ -197,7 +208,8 @@ internal static class AppHostWiring
             bool needsPrivateKey = false,
             bool spendsBcrypt = false,
             bool needsEmailDelivery = false,
-            bool needsPushDelivery = false)
+            bool needsPushDelivery = false,
+            bool needsPayments = false)
             where TProject : IProjectMetadata, new()
         {
             // launchProfileName: null keeps Aspire from adopting the launch profile's
@@ -259,6 +271,11 @@ internal static class AppHostWiring
             // injected and ResendEmailSender degrades to a logged no-op.
             if (needsEmailDelivery && resendApiKey is not null)
                 service.WithEnvironment("Email__ApiKey", resendApiKey);
+
+            if (needsPayments && stripeApiKey is not null)
+                service.WithEnvironment("Payments__Stripe__ApiKey", stripeApiKey);
+            if (needsPayments && stripeWebhookSecret is not null)
+                service.WithEnvironment("Payments__Stripe__WebhookSecret", stripeWebhookSecret);
 
             // Booking and Customer are the two services that PRODUCE notifications, so they are the two that
             // need to reach FCM. Null when no credentials are configured, so nothing is injected and

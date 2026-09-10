@@ -11,15 +11,15 @@ The repository and .NET projects retain the `AgendaBuddy` name; `AgendaMe` is th
 | Feature | Description |
 |---------|-------------|
 | **Identity & Auth** | JWT RS256 authentication, per-IP rate limiting and self-clearing lockout on login/register, single-use refresh-token rotation |
-| **Provider onboarding** | Sign up, define a profession, add services, and accept bookings |
-| **Customer onboarding** | Sign up, discover providers, and subscribe to one |
+| **Provider onboarding** | Sign up, connect a Stripe payout account, define a profession, add services, and accept bookings |
+| **Customer onboarding** | Sign up, save a Stripe payment method, discover providers, and subscribe to one |
 | **Appointment lifecycle** | Request, book, reschedule, complete, and soft-cancel appointments; status transitions are **server-owned**, never client-asserted |
 | **Calendar & availability** | Providers configure per-weekday hours and time off; authenticated customers can see free slots while appointment details remain owner-only |
 | **Session notes** | Provider attaches private notes to each appointment — visible only to the provider |
 | **Provider–customer messaging** | Subscription-gated, MongoDB-backed threaded messaging with per-message and per-thread mark-read flows |
 | **Notifications** | Best-effort in-app, email, and push delivery; unread badge/filtering plus per-item and bulk mark-read flows |
-| **Reporting dashboard** | Booking volume and completion counts; revenue is explicitly reported as unavailable rather than approximated (an appointment doesn't record which service it's for) |
-| **Payments** | Non-charging by default (a recording gateway); real Stripe payment intents only when `Payments:Stripe:ApiKey` is configured |
+| **Reporting dashboard** | Localized booking volume, completion, cancellation, customer and revenue-availability metrics |
+| **Payments** | Stripe Connect destination charges: authorization on provider confirmation, 90% provider allocation, 10% AgendaMe fee, capture on completion, and full release/refund on provider cancellation. Local development can record synthetic operations; non-local missing configuration fails closed |
 | **Mobile client (iOS + Android)** | .NET MAUI app that reaches every capability above through a single Gateway address, with no fabricated fallback data |
 
 Every read route that returns personal data requires authentication and enforces ownership; list endpoints are paginated and non-owners get a projected (not full) record.

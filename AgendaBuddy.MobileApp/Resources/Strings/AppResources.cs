@@ -41,6 +41,17 @@ public static class AppResources
     public static string Payment_RecordedNotCharged => GetString(nameof(Payment_RecordedNotCharged));
     public static string Payment_Refunded => GetString(nameof(Payment_Refunded));
     public static string Payment_StatusUnknown => GetString(nameof(Payment_StatusUnknown));
+    public static string Payment_StatusCreatedOnConfirmation => GetString(nameof(Payment_StatusCreatedOnConfirmation));
+    public static string PaymentAccount_CustomerTitle => GetString(nameof(PaymentAccount_CustomerTitle));
+    public static string PaymentAccount_CustomerExplanation => GetString(nameof(PaymentAccount_CustomerExplanation));
+    public static string PaymentAccount_CustomerMethods => GetString(nameof(PaymentAccount_CustomerMethods));
+    public static string PaymentAccount_CustomerAction => GetString(nameof(PaymentAccount_CustomerAction));
+    public static string PaymentAccount_ProviderTitle => GetString(nameof(PaymentAccount_ProviderTitle));
+    public static string PaymentAccount_ProviderExplanation => GetString(nameof(PaymentAccount_ProviderExplanation));
+    public static string PaymentAccount_ProviderPrivacy => GetString(nameof(PaymentAccount_ProviderPrivacy));
+    public static string PaymentAccount_ProviderAction => GetString(nameof(PaymentAccount_ProviderAction));
+    public static string PaymentAccount_ProfileCustomerSubtitle => GetString(nameof(PaymentAccount_ProfileCustomerSubtitle));
+    public static string PaymentAccount_ProfileProviderSubtitle => GetString(nameof(PaymentAccount_ProfileProviderSubtitle));
     public static string Shell_ContactsCustomers => GetString(nameof(Shell_ContactsCustomers));
     public static string Validation_DayMustStartBeforeEnd => GetString(nameof(Validation_DayMustStartBeforeEnd));
     public static string WorkDay_Closed => GetString(nameof(WorkDay_Closed));

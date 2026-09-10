@@ -239,31 +239,6 @@ public class BookingApiServiceTests
         Assert.Null(result);
     }
 
-    [Fact]
-    public async Task CreatePayment_Returns201_DeserializesPayment()
-    {
-        var json = """
-            {"data":{"id":"64f0c2f1a1b2c3d4e5f6a7b8","appointmentIdentifier":"a1","providerEmail":"prov@example.com","customerEmail":"alice@example.com","amount":75,"currency":"usd","status":1},"errors":[]}
-            """;
-
-        var sut = new BookingApiService(CreateFactory(HttpStatusCode.Created, json), new Mock<ICalendarApiService>().Object);
-
-        var result = await sut.CreatePaymentAsync("a1", 75m, "usd");
-
-        Assert.NotNull(result);
-        Assert.Equal(75, result!.Amount);
-    }
-
-    [Fact]
-    public async Task CreatePayment_Returns409_ReturnsNull()
-    {
-        var sut = new BookingApiService(CreateFactory(HttpStatusCode.Conflict), new Mock<ICalendarApiService>().Object);
-
-        var result = await sut.CreatePaymentAsync("a1", 75m, "usd");
-
-        Assert.Null(result);
-    }
-
     // ---------------------------------------------------------------------------
     // ux-review.md finding 2 / api-contracts.md §1: a gateway-shaped failure (carrying failedService)
     // is distinguished from a plain domain 4xx (empty/non-gateway body) — the latter still just

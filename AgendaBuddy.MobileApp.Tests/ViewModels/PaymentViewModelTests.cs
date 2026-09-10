@@ -126,42 +126,7 @@ public class PaymentViewModelTests : IDisposable
 
         Assert.False(vm.HasError);
         Assert.False(vm.HasPayment);
-        Assert.True(vm.ShowPayForm);
-    }
-
-    [Fact]
-    public async Task PayAsync_ValidAmount_CreatesPaymentAndClearsPayForm()
-    {
-        var service = new Mock<IBookingApiService>();
-        service.Setup(s => s.GetPaymentAsync("a1", It.IsAny<CancellationToken>()))
-               .ReturnsAsync((PaymentEntity?)null);
-        service.Setup(s => s.CreatePaymentAsync("a1", 42m, null, It.IsAny<CancellationToken>()))
-               .ReturnsAsync(new PaymentEntity { Amount = 42m, Status = PaymentStatus.Succeeded, StripePaymentIntentId = "pi_123" });
-
-        var vm = new PaymentViewModel(service.Object) { AppointmentId = "a1" };
-        await vm.LoadCommand.ExecuteAsync(null);
-        vm.PayAmountInput = "42";
-        await vm.PayCommand.ExecuteAsync(null);
-
-        Assert.True(vm.HasPayment);
-        Assert.False(vm.ShowPayForm);
-        Assert.Equal(42, vm.Payment!.Amount);
-    }
-
-    [Fact]
-    public async Task PayAsync_NonNumericAmount_SetsPayErrorMessage_DoesNotCallService()
-    {
-        var service = new Mock<IBookingApiService>();
-        service.Setup(s => s.GetPaymentAsync("a1", It.IsAny<CancellationToken>()))
-               .ReturnsAsync((PaymentEntity?)null);
-
-        var vm = new PaymentViewModel(service.Object) { AppointmentId = "a1" };
-        await vm.LoadCommand.ExecuteAsync(null);
-        vm.PayAmountInput = "not-a-number";
-        await vm.PayCommand.ExecuteAsync(null);
-
-        Assert.True(vm.HasPayError);
-        service.Verify(s => s.CreatePaymentAsync(It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Never);
+         Assert.True(vm.ShowNoPayment);
     }
 
     [Fact]

@@ -729,6 +729,30 @@
               "type": "string"
             },
             "nullable": true
+          },
+          "stripeCustomerId": {
+            "type": "string",
+            "nullable": true
+          },
+          "stripeDefaultPaymentMethodId": {
+            "type": "string",
+            "nullable": true
+          },
+          "paymentMethodLabel": {
+            "type": "string",
+            "nullable": true
+          },
+          "paymentMethodType": {
+            "type": "string",
+            "nullable": true
+          },
+          "paymentMethodBrand": {
+            "type": "string",
+            "nullable": true
+          },
+          "paymentMethodLast4": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false

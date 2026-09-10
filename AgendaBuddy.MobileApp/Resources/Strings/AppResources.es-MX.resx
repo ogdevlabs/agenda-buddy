@@ -42,7 +42,7 @@
   <data name="Legal_Terms_Clause02_Heading" xml:space="preserve"><value>2. Qué hace el servicio</value></data>
   <data name="Legal_Terms_Clause02_Body" xml:space="preserve"><value>{0} permite que los profesionales publiquen su disponibilidad y sus servicios, y que los clientes soliciten, reserven, reprogramen y cancelen citas. Proporcionamos la herramienta de agenda. No somos parte de ninguna cita, no empleamos a los profesionales y no supervisamos, recomendamos ni garantizamos ningún servicio prestado mediante la aplicación.</value></data>
   <data name="Legal_Terms_Clause03_Heading" xml:space="preserve"><value>3. Citas, cancelación y pago</value></data>
-  <data name="Legal_Terms_Clause03_Body" xml:space="preserve"><value>Una cita es un acuerdo entre el profesional y el cliente. La cancelación está sujeta al plazo de cancelación de la aplicación y a las condiciones que el profesional te comunique por separado. Cuando se realiza un pago, un proveedor de pagos externo lo procesa conforme a sus propios términos; no almacenamos los datos de tu tarjeta.</value></data>
+  <data name="Legal_Terms_Clause03_Body" xml:space="preserve"><value>Una cita es un acuerdo entre el profesional y el cliente. Los clientes nos autorizan a guardar un método de pago con Stripe y a retener fuera de sesión el precio reservado cuando el profesional confirma. Cobramos la retención al completar el servicio: 90% del cobro bruto se asigna al profesional y 10% corresponde a la tarifa de servicio de {0}. Si el profesional cancela antes del cobro, se libera toda la retención; si cancela después, se reembolsa el pago completo y se revierten ambas asignaciones. Las cancelaciones del cliente siguen la política mostrada en la reserva. Stripe procesa pagos y cobros conforme a sus términos; nunca recibimos ni almacenamos números completos de tarjetas o cuentas bancarias.</value></data>
   <data name="Legal_Terms_Clause04_Heading" xml:space="preserve"><value>4. Uso aceptable</value></data>
   <data name="Legal_Terms_Clause04_Body" xml:space="preserve"><value>No uses la aplicación para acosar o suplantar a alguien, enviar publicidad no solicitada, recopilar información de otras personas, infringir la ley ni interferir con el servicio, investigarlo o sobrecargarlo. No intentes acceder a datos que no te pertenecen.</value></data>
   <data name="Legal_Terms_Clause05_Heading" xml:space="preserve"><value>5. Tu contenido</value></data>
@@ -60,9 +60,9 @@
   <data name="Legal_Privacy_Title" xml:space="preserve"><value>Política de privacidad</value></data>
   <data name="Legal_Privacy_Summary" xml:space="preserve"><value>Esta política explica qué datos recopila {0}, por qué los recopila, quién puede verlos y qué puedes hacer al respecto. Se aplica a la aplicación y al servicio que la sustenta.</value></data>
   <data name="Legal_Privacy_Clause01_Heading" xml:space="preserve"><value>1. Qué recopilamos</value></data>
-  <data name="Legal_Privacy_Clause01_Body" xml:space="preserve"><value>Datos de la cuenta que nos proporcionas: tu correo electrónico, nombre y apellido y, de manera opcional, tu número de teléfono. Contenido que creas: tus servicios, disponibilidad, citas, mensajes y notas. Datos técnicos necesarios para operar la aplicación: la zona horaria de tu dispositivo y un token de notificaciones push si permites las notificaciones. No recopilamos tu ubicación, tus contactos ni tus fotos.</value></data>
+  <data name="Legal_Privacy_Clause01_Body" xml:space="preserve"><value>Datos de la cuenta que nos proporcionas: correo electrónico, nombre, apellido y, de manera opcional, teléfono. Contenido que creas: servicios, disponibilidad, citas, mensajes y notas. Datos de pago que conservamos: identificadores de cliente, método de pago, intento de pago y cuenta conectada de Stripe, marca y últimos cuatro dígitos de la tarjeta, importes, tarifas, estados y fechas. Stripe recopila directamente los datos completos de tarjetas, billeteras, identidad y cuenta bancaria del profesional; no recibimos ni almacenamos números completos de tarjeta, códigos de seguridad o números de cuenta bancaria. Los datos técnicos incluyen la zona horaria y un token de notificaciones push si las permites. No recopilamos tu ubicación, contactos ni fotos.</value></data>
   <data name="Legal_Privacy_Clause02_Heading" xml:space="preserve"><value>2. Para qué usamos tus datos</value></data>
-  <data name="Legal_Privacy_Clause02_Body" xml:space="preserve"><value>Para crear y proteger tu cuenta, mostrar tu disponibilidad a las personas que deseas que la vean, programar citas y enviarte recordatorios, permitir que tú y la otra parte puedan intercambiar mensajes y notificarte sobre asuntos relacionados con tus reservas. No vendemos tus datos ni los usamos para publicidad.</value></data>
+  <data name="Legal_Privacy_Clause02_Body" xml:space="preserve"><value>Para crear y proteger tu cuenta, programar citas y recordatorios, guardar con consentimiento el método de pago del cliente, autorizar y cobrar reservas, pagar a profesionales mediante Stripe Connect, procesar cancelaciones, reembolsos y disputas, permitir la comunicación y notificar sobre reservas. No vendemos tus datos ni los usamos para publicidad.</value></data>
   <data name="Legal_Privacy_Clause03_Heading" xml:space="preserve"><value>3. Quién puede verlos</value></data>
   <data name="Legal_Privacy_Clause03_Body" xml:space="preserve"><value>Un profesional puede ver el nombre, correo electrónico, número de teléfono e historial de citas de los clientes que reservan con ese profesional o se suscriben a sus servicios. Un cliente puede ver el perfil público, los servicios y los horarios disponibles de un profesional. Nadie más puede ver tus datos, salvo los proveedores de servicios indicados a continuación y nuestro personal cuando necesite acceder para operar el servicio o darte soporte.</value></data>
   <data name="Legal_Privacy_Clause04_Heading" xml:space="preserve"><value>4. Proveedores de servicios que usamos</value></data>
@@ -178,6 +178,11 @@
   <data name="Payment_StatusUnknown" xml:space="preserve">
     <value>Estado del pago no disponible</value>
   </data>
+  <data name="Payment_Authorized" xml:space="preserve"><value>Pago autorizado</value></data>
+  <data name="Payment_Cancelled" xml:space="preserve"><value>Retención de pago liberada</value></data>
+  <data name="Payment_RequiresAction" xml:space="preserve"><value>El método de pago necesita atención</value></data>
+  <data name="Payment_Disputed" xml:space="preserve"><value>Pago en disputa</value></data>
+  <data name="Payment_StatusCreatedOnConfirmation" xml:space="preserve"><value>La retención del pago se crea automáticamente cuando el profesional confirma esta reserva.</value></data>
   <data name="Validation_DayMustStartBeforeEnd" xml:space="preserve">
     <value>El horario del {0} debe comenzar antes de terminar.</value>
   </data>
@@ -400,6 +405,32 @@
   <data name="Message_MaxLength" xml:space="preserve"><value>El mensaje es demasiado largo; el máximo es de {0} caracteres.</value></data>
   <data name="Report_RevenueAvailable" xml:space="preserve"><value>Los ingresos están disponibles.</value></data>
   <data name="Report_RevenueUnavailable" xml:space="preserve"><value>Los ingresos aún no están disponibles: {0}.</value></data>
+  <data name="Report_RevenueUnavailableNoPricing" xml:space="preserve"><value>Los ingresos aún no están disponibles porque las citas anteriores no tienen un precio registrado.</value></data>
+  <data name="Report_TotalBookings" xml:space="preserve"><value>Total de reservas: {0}</value></data>
+  <data name="Report_CompletedAppointments" xml:space="preserve"><value>Completadas: {0}</value></data>
+  <data name="Report_CancelledAppointments" xml:space="preserve"><value>Canceladas: {0}</value></data>
+  <data name="Report_UniqueCustomers" xml:space="preserve"><value>Clientes únicos: {0}</value></data>
+  <data name="PaymentAccount_CustomerTitle" xml:space="preserve"><value>Método de pago</value></data>
+  <data name="PaymentAccount_CustomerExplanation" xml:space="preserve"><value>Es obligatorio antes de solicitar una cita con costo. Tus datos de pago se ingresan de forma segura con Stripe.</value></data>
+  <data name="PaymentAccount_CustomerMethods" xml:space="preserve"><value>Las tarjetas de crédito o débito, PayPal, Apple Pay y Google Pay aparecen cuando son compatibles con tu dispositivo y región.</value></data>
+  <data name="PaymentAccount_CustomerAction" xml:space="preserve"><value>Agregar o cambiar método de pago</value></data>
+  <data name="PaymentAccount_ProviderTitle" xml:space="preserve"><value>Cuenta de cobro</value></data>
+  <data name="PaymentAccount_ProviderExplanation" xml:space="preserve"><value>Es obligatoria antes de confirmar reservas con costo. Stripe recopila de forma segura tu identidad y datos bancarios.</value></data>
+  <data name="PaymentAccount_ProviderPrivacy" xml:space="preserve"><value>Tu número de cuenta bancaria se envía directamente a Stripe y nunca se almacena aquí.</value></data>
+  <data name="PaymentAccount_ProviderAction" xml:space="preserve"><value>Configurar o revisar cobros</value></data>
+  <data name="PaymentAccount_ProfileCustomerSubtitle" xml:space="preserve"><value>Tarjetas, PayPal y billeteras compatibles</value></data>
+  <data name="PaymentAccount_ProfileProviderSubtitle" xml:space="preserve"><value>Datos bancarios y estado de cobros</value></data>
+  <data name="PaymentAccount_StatusChecking" xml:space="preserve"><value>Verificando configuración...</value></data>
+  <data name="PaymentAccount_StatusCustomerReady" xml:space="preserve"><value>Método de pago listo</value></data>
+  <data name="PaymentAccount_StatusCustomerRequired" xml:space="preserve"><value>Se requiere un método de pago</value></data>
+  <data name="PaymentAccount_StatusProviderReady" xml:space="preserve"><value>Listo para recibir pagos</value></data>
+  <data name="PaymentAccount_StatusProviderRequired" xml:space="preserve"><value>Se requiere configurar los cobros</value></data>
+  <data name="PaymentAccount_StatusUnavailable" xml:space="preserve"><value>El estado de la configuración no está disponible.</value></data>
+  <data name="PaymentAccount_ErrorLoad" xml:space="preserve"><value>No pudimos cargar la configuración de pagos. Intenta de nuevo.</value></data>
+  <data name="PaymentAccount_ErrorStart" xml:space="preserve"><value>No pudimos iniciar la configuración. Intenta de nuevo.</value></data>
+  <data name="PaymentAccount_MethodEnding" xml:space="preserve"><value>{0} terminada en {1}</value></data>
+  <data name="PaymentAccount_MethodCard" xml:space="preserve"><value>Tarjeta</value></data>
+  <data name="PaymentAccount_MethodSaved" xml:space="preserve"><value>Método de pago guardado</value></data>
   <data name="Reschedule_CustomerExplanation" xml:space="preserve"><value>Elige un horario disponible de tu profesional. Podrá aprobarlo o rechazarlo; mientras responde, la sesión conserva su horario actual.</value></data>
   <data name="Reschedule_CurrentTime" xml:space="preserve"><value>Actualmente: {0:dddd d 'de' MMMM 'a las' H:mm}</value></data>
   <data name="Reschedule_MoveSession" xml:space="preserve"><value>Mover sesión</value></data>

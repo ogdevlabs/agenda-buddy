@@ -47,17 +47,28 @@ public class MobileBookingRouteResolutionTest(ServiceHostFixture<BookingAnchor> 
 
     private async Task<ServiceHost> SeedAsync()
     {
-        var service = host.StartService("Production");
-        await service.Database.GetCollection<AppointmentEntity>("appointments").InsertOneAsync(
-            new AppointmentEntity
-            {
-                Id = ObjectId.GenerateNewId(),
-                Identifier = Appointment,
-                EmailProvider = Provider,
-                EmailCustomer = Customer,
-                Start = FutureSlot.Start(),
-                End = FutureSlot.Start(hour: 11)
-            });
+        var service = host.StartService("Production", new Dictionary<string, string>
+        {
+            ["Security:Local"] = "true"
+        });
+        var appointment = new AppointmentEntity
+        {
+            Id = ObjectId.GenerateNewId(),
+            Identifier = Appointment,
+            EmailProvider = Provider,
+            EmailCustomer = Customer,
+            Start = FutureSlot.Start(),
+            End = FutureSlot.Start(hour: 11)
+        };
+        await service.Database.GetCollection<AppointmentEntity>("appointments").InsertOneAsync(appointment);
+        await service.Database.GetCollection<ProviderEntity>("providers").InsertOneAsync(new ProviderEntity
+        {
+            Id = ObjectId.GenerateNewId(),
+            Email = Provider,
+            FirstName = "Route",
+            LastName = "Provider",
+            AppointmentEntities = [appointment]
+        });
         return service;
     }
 
@@ -125,26 +136,35 @@ public class MobileBookingRouteResolutionTest(ServiceHostFixture<BookingAnchor> 
     }
 
     [Fact]
-    public async Task CreatePayment_ResolvesAndCreates()
+    public async Task BeginCustomerPaymentSetup_ResolvesAndCreatesTokenizedMethod()
     {
         using var service = await SeedAsync();
-        var route = BookingRouteBuilder.CreatePayment(Appointment);
-        var payload = BookingRouteBuilder.BuildPaymentPayload(50m, "usd");
+        await service.Database.GetCollection<CustomerEntity>("customers").InsertOneAsync(new CustomerEntity
+        {
+            Id = ObjectId.GenerateNewId(),
+            Email = Customer,
+            FirstName = "Route",
+            LastName = "Customer"
+        });
+        var route = PaymentAccountRouteBuilder.BeginCustomerSetup();
 
         var response = await service.Client.SendAsync(MobileRouteRequests.Build(
-            route, _tokens.CreateToken(Customer, TokenFactory.CustomerRole), payload));
+            route, _tokens.CreateToken(Customer, TokenFactory.CustomerRole)));
 
-        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
     [Fact]
     public async Task GetPayment_Resolves()
     {
         using var service = await SeedAsync();
-        await service.Client.SendAsync(MobileRouteRequests.Build(
-            BookingRouteBuilder.CreatePayment(Appointment),
-            _tokens.CreateToken(Customer, TokenFactory.CustomerRole),
-            BookingRouteBuilder.BuildPaymentPayload(50m, "usd")));
+        await service.Database.GetCollection<PaymentEntity>("payments").InsertOneAsync(new PaymentEntity(
+            Appointment, Provider, Customer, 50m)
+        {
+            Id = ObjectId.GenerateNewId(),
+            Status = PaymentStatus.Authorized,
+            StripePaymentIntentId = "local_route_test"
+        });
 
         var route = BookingRouteBuilder.GetPayment(Appointment);
         var response = await service.Client.SendAsync(MobileRouteRequests.Build(

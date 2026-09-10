@@ -396,17 +396,4 @@ public class BookingApiService : IBookingApiService
         return UnwrapData<PaymentEntity>(json, EntityJsonOptions);
     }
 
-    public async Task<PaymentEntity?> CreatePaymentAsync(string identifier, decimal amount, string? currency, CancellationToken ct = default)
-    {
-        var client = _httpClientFactory.CreateClient("AgendaBuddyApi");
-        var route = BookingRouteBuilder.CreatePayment(identifier);
-        var body = JsonSerializer.Serialize(BookingRouteBuilder.BuildPaymentPayload(amount, currency), JsonOptions);
-        var response = await client.PostAsync(route.Path, new StringContent(body, Encoding.UTF8, "application/json"), ct);
-
-        if (!response.IsSuccessStatusCode)
-            return null;
-
-        var json = await response.Content.ReadAsStringAsync(ct);
-        return UnwrapData<PaymentEntity>(json, EntityJsonOptions);
-    }
 }

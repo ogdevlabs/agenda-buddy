@@ -1754,3 +1754,54 @@ A separate `workflow_run` workflow — rejected above, it duplicates the path fi
 regardless of what changed — rejected, a docs-only or mobile-only merge would spend a full Terraform+azd run and
 eight container builds for no change in deployed behaviour. Restoring the environment unconditionally —
 rejected, it silently defeats the out-of-hours cost control. Keeping the opt-in variable — rejected above.
+
+---
+
+## ADR-066 — Stripe Connect destination charges with manual capture (F-035)
+
+**Date:** 2026-09-09 · **Status:** Accepted
+
+**Context.** AgendaMe is a marketplace: a customer pays for a provider's service while the publisher retains a
+service fee. The old PaymentIntent wrapper had neither customer methods nor provider destinations and treated a
+status lookup as confirmation.
+
+**Decision.** Customers are Stripe Customers with reusable methods collected through setup-mode Checkout.
+Providers are Express connected accounts onboarded by Stripe. Provider confirmation creates an off-session,
+manual-capture destination PaymentIntent; completion captures it. `application_fee_amount` is ten percent of
+gross and the destination receives the remainder. Stripe-hosted UI owns card, wallet, PayPal, KYC and bank entry.
+
+**Consequences.** AgendaMe stores Stripe ids and masked display metadata, never raw financial credentials. The
+platform bears Stripe processing fees, refunds and disputes under destination-charge semantics. Availability of
+PayPal and wallets is capability-, country-, currency- and device-dependent.
+
+**Alternatives rejected.** Separate charges/transfers add reconciliation states with no product benefit here.
+Custom card/bank fields expand PCI and identity-verification scope. Immediate capture on confirmation is a charge,
+not the requested hold.
+
+---
+
+## ADR-067 — Provider cancellation releases the whole authorization before status mutation (F-035)
+
+**Date:** 2026-09-09 · **Status:** Accepted
+
+**Decision.** A provider cancellation cancels and verifies an uncaptured PaymentIntent before either appointment
+copy becomes Cancelled. No provider allocation or AgendaMe fee is earned. If capture already occurred, a full
+refund reverses transfer and application fee. A release failure leaves the appointment active and retryable.
+
+**Why.** Reporting cancellation before returning reserved funds would tell both parties the appointment ended
+while the customer's balance remained held. Status and money must fail in that safer direction.
+
+---
+
+## ADR-068 — Payment amounts are immutable minor-unit booking snapshots; deployed no-key mode fails closed (F-035)
+
+**Date:** 2026-09-09 · **Status:** Accepted · **Supersedes ADR-038 for non-local environments**
+
+**Decision.** Booking derives service identity, duration, fee type, ISO currency and integer minor-unit amount from
+the provider's service and snapshots them onto the appointment. Fixed and hourly fees are supported; subscription
+fees are rejected until recurring-billing policy exists. Local development may use visibly synthetic `local_`
+operations. Every non-local environment without a Stripe key resolves `UnconfiguredPaymentGateway` and refuses
+financial mutations rather than recording success.
+
+**Consequences.** A service edit cannot rewrite an agreed price, zero-decimal currencies remain representable, and
+no request can underpay by choosing an amount. Historical appointments without snapshots are not auto-charged.

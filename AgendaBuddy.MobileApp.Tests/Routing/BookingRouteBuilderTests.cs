@@ -75,22 +75,4 @@ public class BookingRouteBuilderTests
         Assert.Equal("api/v1/booking/appointments/a1/payment", route.Path);
     }
 
-    [Fact]
-    public void CreatePayment_BuildsPostByIdentifier()
-    {
-        var route = BookingRouteBuilder.CreatePayment("a1");
-
-        Assert.Equal(HttpMethod.Post, route.Method);
-        Assert.Equal("api/v1/booking/appointments/a1/payment", route.Path);
-    }
-
-    [Fact]
-    public void BuildPaymentPayload_SerializesAmountAndCurrency()
-    {
-        var payload = BookingRouteBuilder.BuildPaymentPayload(50m, "usd");
-
-        var json = JsonSerializer.Serialize(payload);
-
-        Assert.Equal("""{"amount":50,"currency":"usd"}""", json);
-    }
 }

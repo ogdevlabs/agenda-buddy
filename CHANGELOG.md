@@ -4,6 +4,23 @@ All notable changes to this project are documented in this file, in [Keep a Chan
 
 ## [Unreleased]
 
+## [0.19.0] - 2026-09-10
+
+### Added
+
+- Stripe Connect marketplace payments: customer setup-mode Checkout, provider Express onboarding, manual
+  authorization on provider confirmation, 90/10 destination-charge allocation, completion capture, cancellation
+  release/refund, and signed replay-safe webhook reconciliation.
+- English and Spanish payment-method and payout-account onboarding/Profile views with iOS and Android callback
+  links, plus complete provider-report metric translation.
+
+### Changed
+
+- Booking prices are immutable server-derived minor-unit snapshots. The caller-priced payment POST and mobile
+  amount form were removed.
+- Non-local environments without Stripe configuration now fail financial operations closed instead of storing a
+  synthetic successful payment.
+
 ## [0.18.0] - 2026-09-09
 
 ### Added

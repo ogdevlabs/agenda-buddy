@@ -42,7 +42,7 @@
   <data name="Legal_Terms_Clause02_Heading" xml:space="preserve"><value>2. What the service does</value></data>
   <data name="Legal_Terms_Clause02_Body" xml:space="preserve"><value>{0} lets providers publish their availability and services, and lets customers request, book, reschedule and cancel appointments. We provide the scheduling tool. We are not a party to any appointment, we do not employ providers, and we do not supervise, endorse or guarantee any service delivered through the app.</value></data>
   <data name="Legal_Terms_Clause03_Heading" xml:space="preserve"><value>3. Appointments, cancellation and payment</value></data>
-  <data name="Legal_Terms_Clause03_Body" xml:space="preserve"><value>An appointment is an agreement between the provider and the customer. Cancellation is subject to the app's cancellation window and to whatever the provider tells you separately. Where payment is taken it is processed by a third-party payment provider under their own terms; we do not store your card details.</value></data>
+  <data name="Legal_Terms_Clause03_Body" xml:space="preserve"><value>An appointment is an agreement between the provider and the customer. Customers authorize us to save a payment method with Stripe and place an off-session hold for the booked price when the provider confirms. We capture the hold when the service is completed: 90% of the gross charge is allocated to the provider and 10% is the {0} service fee. If the provider cancels before capture, the full hold is released; if cancellation occurs after capture, the payment is fully refunded and both allocations are reversed. Customer cancellations follow the cancellation policy shown for the booking. Stripe processes payments and payouts under its terms; we never receive or store full card or bank account numbers.</value></data>
   <data name="Legal_Terms_Clause04_Heading" xml:space="preserve"><value>4. Acceptable use</value></data>
   <data name="Legal_Terms_Clause04_Body" xml:space="preserve"><value>Do not use the app to harass anyone, to impersonate anyone, to send unsolicited marketing, to collect other people's information, to break the law, or to interfere with, probe or overload the service. Do not attempt to access data that is not yours.</value></data>
   <data name="Legal_Terms_Clause05_Heading" xml:space="preserve"><value>5. Your content</value></data>
@@ -60,9 +60,9 @@
   <data name="Legal_Privacy_Title" xml:space="preserve"><value>Privacy Policy</value></data>
   <data name="Legal_Privacy_Summary" xml:space="preserve"><value>This policy explains what {0} collects, why, who sees it, and what you can do about it. It covers the app and the service behind it.</value></data>
   <data name="Legal_Privacy_Clause01_Heading" xml:space="preserve"><value>1. What we collect</value></data>
-  <data name="Legal_Privacy_Clause01_Body" xml:space="preserve"><value>Account details you give us: your email address, your first and last name, and optionally your phone number. Content you create: your services, availability, appointments, messages and notes. Technical data needed to run the app: your device's time zone, and a push notification token if you allow notifications. We do not collect your location, your contacts, or your photos.</value></data>
+  <data name="Legal_Privacy_Clause01_Body" xml:space="preserve"><value>Account details you give us: your email address, your first and last name, and optionally your phone number. Content you create: your services, availability, appointments, messages and notes. Payment data we keep: Stripe customer, payment-method, payment-intent and connected-account identifiers, masked card brand and last four digits, amounts, fees, status and timestamps. Stripe collects full card, wallet, identity and provider bank details directly; we do not receive or store full card numbers, security codes or bank account numbers. Technical data needed to run the app includes your device's time zone and a push notification token if you allow notifications. We do not collect your location, contacts or photos.</value></data>
   <data name="Legal_Privacy_Clause02_Heading" xml:space="preserve"><value>2. Why we use it</value></data>
-  <data name="Legal_Privacy_Clause02_Body" xml:space="preserve"><value>To create and secure your account, to show your availability to the people you want to see it, to schedule and remind you about appointments, to let you and the other party message each other, and to notify you about things that concern your bookings. We do not sell your data and we do not use it for advertising.</value></data>
+  <data name="Legal_Privacy_Clause02_Body" xml:space="preserve"><value>To create and secure your account, schedule and remind you about appointments, save a customer payment method with consent, authorize and capture booked charges, pay providers through Stripe Connect, process cancellations, refunds and disputes, let both parties communicate, and notify you about bookings. We do not sell your data or use it for advertising.</value></data>
   <data name="Legal_Privacy_Clause03_Heading" xml:space="preserve"><value>3. Who sees it</value></data>
   <data name="Legal_Privacy_Clause03_Body" xml:space="preserve"><value>A provider sees the name, email, phone number and appointment history of customers who book with them or subscribe to them. A customer sees a provider's public profile, services and free times. Nobody else sees your data except the service providers below, and our own staff where they need it to operate or support the service.</value></data>
   <data name="Legal_Privacy_Clause04_Heading" xml:space="preserve"><value>4. Service providers we use</value></data>
@@ -178,6 +178,11 @@
   <data name="Payment_StatusUnknown" xml:space="preserve">
     <value>Payment status unavailable</value>
   </data>
+  <data name="Payment_Authorized" xml:space="preserve"><value>Payment authorized</value></data>
+  <data name="Payment_Cancelled" xml:space="preserve"><value>Payment hold released</value></data>
+  <data name="Payment_RequiresAction" xml:space="preserve"><value>Payment method needs attention</value></data>
+  <data name="Payment_Disputed" xml:space="preserve"><value>Payment disputed</value></data>
+  <data name="Payment_StatusCreatedOnConfirmation" xml:space="preserve"><value>The payment hold is created automatically when the provider confirms this booking.</value></data>
   <data name="Validation_DayMustStartBeforeEnd" xml:space="preserve">
     <value>{0} has to start before it ends.</value>
   </data>
@@ -400,6 +405,32 @@
   <data name="Message_MaxLength" xml:space="preserve"><value>That message is too long — {0} characters maximum.</value></data>
   <data name="Report_RevenueAvailable" xml:space="preserve"><value>Revenue is available.</value></data>
   <data name="Report_RevenueUnavailable" xml:space="preserve"><value>Revenue isn't available yet — {0}.</value></data>
+  <data name="Report_RevenueUnavailableNoPricing" xml:space="preserve"><value>Revenue isn't available yet because older appointments do not have a price snapshot.</value></data>
+  <data name="Report_TotalBookings" xml:space="preserve"><value>Total bookings: {0}</value></data>
+  <data name="Report_CompletedAppointments" xml:space="preserve"><value>Completed: {0}</value></data>
+  <data name="Report_CancelledAppointments" xml:space="preserve"><value>Cancelled: {0}</value></data>
+  <data name="Report_UniqueCustomers" xml:space="preserve"><value>Unique customers: {0}</value></data>
+  <data name="PaymentAccount_CustomerTitle" xml:space="preserve"><value>Payment method</value></data>
+  <data name="PaymentAccount_CustomerExplanation" xml:space="preserve"><value>Required before you can request a paid appointment. Your payment details are entered securely with Stripe.</value></data>
+  <data name="PaymentAccount_CustomerMethods" xml:space="preserve"><value>Credit or debit card, PayPal, Apple Pay, and Google Pay appear when supported by your device and region.</value></data>
+  <data name="PaymentAccount_CustomerAction" xml:space="preserve"><value>Add or change payment method</value></data>
+  <data name="PaymentAccount_ProviderTitle" xml:space="preserve"><value>Payout account</value></data>
+  <data name="PaymentAccount_ProviderExplanation" xml:space="preserve"><value>Required before you can confirm paid bookings. Stripe securely collects your identity and bank information.</value></data>
+  <data name="PaymentAccount_ProviderPrivacy" xml:space="preserve"><value>Your bank account number goes directly to Stripe and is never stored here.</value></data>
+  <data name="PaymentAccount_ProviderAction" xml:space="preserve"><value>Set up or review payouts</value></data>
+  <data name="PaymentAccount_ProfileCustomerSubtitle" xml:space="preserve"><value>Cards, PayPal and supported wallets</value></data>
+  <data name="PaymentAccount_ProfileProviderSubtitle" xml:space="preserve"><value>Bank details and payout readiness</value></data>
+  <data name="PaymentAccount_StatusChecking" xml:space="preserve"><value>Checking setup...</value></data>
+  <data name="PaymentAccount_StatusCustomerReady" xml:space="preserve"><value>Payment method ready</value></data>
+  <data name="PaymentAccount_StatusCustomerRequired" xml:space="preserve"><value>Payment method required</value></data>
+  <data name="PaymentAccount_StatusProviderReady" xml:space="preserve"><value>Ready to receive payments</value></data>
+  <data name="PaymentAccount_StatusProviderRequired" xml:space="preserve"><value>Payout setup required</value></data>
+  <data name="PaymentAccount_StatusUnavailable" xml:space="preserve"><value>Setup status is unavailable.</value></data>
+  <data name="PaymentAccount_ErrorLoad" xml:space="preserve"><value>Payment setup could not be loaded. Try again.</value></data>
+  <data name="PaymentAccount_ErrorStart" xml:space="preserve"><value>Setup could not be started. Try again.</value></data>
+  <data name="PaymentAccount_MethodEnding" xml:space="preserve"><value>{0} ending in {1}</value></data>
+  <data name="PaymentAccount_MethodCard" xml:space="preserve"><value>Card</value></data>
+  <data name="PaymentAccount_MethodSaved" xml:space="preserve"><value>Saved payment method</value></data>
   <data name="Reschedule_CustomerExplanation" xml:space="preserve"><value>Pick a time your provider has free. They will approve or decline it, and until they answer the session stays where it is.</value></data>
   <data name="Reschedule_CurrentTime" xml:space="preserve"><value>Currently {0:dddd d MMMM 'at' h:mm tt}</value></data>
   <data name="Reschedule_MoveSession" xml:space="preserve"><value>Move session</value></data>

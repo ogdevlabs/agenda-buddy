@@ -147,6 +147,23 @@
                                    TextColor="{StaticResource TextMuted}" VerticalOptions="Center" />
                         </Grid>
 
+                        <BoxView HeightRequest="0.5" Color="{StaticResource BorderLight}" Margin="16,0"
+                                 IsVisible="{Binding IsProvider, Converter={StaticResource InvertedBoolConverter}}" />
+
+                        <Grid ColumnDefinitions="*,Auto" Padding="16,14" ColumnSpacing="12"
+                              IsVisible="{Binding IsProvider, Converter={StaticResource InvertedBoolConverter}}"
+                              AutomationId="PaymentMethodRow">
+                            <Grid.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnPaymentMethodTapped" />
+                            </Grid.GestureRecognizers>
+                            <VerticalStackLayout Grid.Column="0" Spacing="2">
+                                <Label Text="{x:Static strings:AppResources.PaymentAccount_CustomerTitle}" FontSize="16" TextColor="{StaticResource TextPrimary}" />
+                                <Label Text="{x:Static strings:AppResources.PaymentAccount_ProfileCustomerSubtitle}" FontSize="12" TextColor="{StaticResource TextMuted}" />
+                            </VerticalStackLayout>
+                            <Label Grid.Column="1" Text="&#x276F;" FontSize="14"
+                                   TextColor="{StaticResource TextMuted}" VerticalOptions="Center" />
+                        </Grid>
+
                     </VerticalStackLayout>
                 </Frame>
 
@@ -179,6 +196,21 @@
                             </Grid.GestureRecognizers>
                             <Label Grid.Column="0" Text="{x:Static strings:AppResources.Xaml_Professions}" FontSize="16"
                                    TextColor="{StaticResource TextPrimary}" VerticalOptions="Center" />
+                            <Label Grid.Column="1" Text="&#x276F;" FontSize="14"
+                                   TextColor="{StaticResource TextMuted}" VerticalOptions="Center" />
+                        </Grid>
+
+                        <BoxView HeightRequest="0.5" Color="{StaticResource BorderLight}" Margin="16,0" />
+
+                        <Grid ColumnDefinitions="*,Auto" Padding="16,14" ColumnSpacing="12"
+                              AutomationId="PayoutAccountRow">
+                            <Grid.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnPayoutAccountTapped" />
+                            </Grid.GestureRecognizers>
+                            <VerticalStackLayout Grid.Column="0" Spacing="2">
+                                <Label Text="{x:Static strings:AppResources.PaymentAccount_ProviderTitle}" FontSize="16" TextColor="{StaticResource TextPrimary}" />
+                                <Label Text="{x:Static strings:AppResources.PaymentAccount_ProfileProviderSubtitle}" FontSize="12" TextColor="{StaticResource TextMuted}" />
+                            </VerticalStackLayout>
                             <Label Grid.Column="1" Text="&#x276F;" FontSize="14"
                                    TextColor="{StaticResource TextMuted}" VerticalOptions="Center" />
                         </Grid>

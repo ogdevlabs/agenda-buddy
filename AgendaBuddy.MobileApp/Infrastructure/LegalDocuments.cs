@@ -54,9 +54,9 @@ public static class LegalDocuments
     /// The date both documents took effect. One constant, because they were written together and a screen showing
     /// two different dates invites the question of which one is current.
     /// </summary>
-    public static readonly DateOnly EffectiveDate = new(2026, 9, 8);
+    public static readonly DateOnly EffectiveDate = new(2026, 9, 9);
 
-    public const string Version = "2026-09-08";
+    public const string Version = "2026-09-09";
 
     /// <summary>
     /// Where the Terms will be published. ⚠️ <b>The site does not exist yet</b> — the in-app document is the

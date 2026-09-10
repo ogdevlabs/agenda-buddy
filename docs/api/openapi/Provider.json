@@ -516,6 +516,28 @@
             "format": "int32",
             "nullable": true
           },
+          "serviceFee": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "serviceFeeType": {
+            "$ref": "#/components/schemas/FeeType"
+          },
+          "paymentAmountMinor": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "paymentCurrency": {
+            "type": "string",
+            "nullable": true
+          },
+          "pricingVersion": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
           "proposedStart": {
             "type": "string",
             "format": "date-time",
@@ -776,6 +798,20 @@
               "$ref": "#/components/schemas/WorkDayHours"
             },
             "nullable": true
+          },
+          "stripeConnectedAccountId": {
+            "type": "string",
+            "nullable": true
+          },
+          "stripeChargesEnabled": {
+            "type": "boolean"
+          },
+          "stripePayoutsEnabled": {
+            "type": "boolean"
+          },
+          "stripeDisabledReason": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -970,6 +1006,10 @@
           },
           "feeType": {
             "$ref": "#/components/schemas/FeeType"
+          },
+          "currency": {
+            "type": "string",
+            "nullable": true
           },
           "isActive": {
             "type": "boolean"

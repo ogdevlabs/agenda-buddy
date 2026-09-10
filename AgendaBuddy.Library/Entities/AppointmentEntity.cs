@@ -71,6 +71,26 @@ public class AppointmentEntity
     [BsonIgnoreIfNull]
     public int? ServiceDurationMinutes { get; set; }
 
+    [BsonElement("service_fee")]
+    [BsonIgnoreIfNull]
+    public decimal? ServiceFee { get; set; }
+
+    [BsonElement("service_fee_type")]
+    [BsonIgnoreIfNull]
+    public FeeType? ServiceFeeType { get; set; }
+
+    [BsonElement("payment_amount_minor")]
+    [BsonIgnoreIfNull]
+    public long? PaymentAmountMinor { get; set; }
+
+    [BsonElement("payment_currency")]
+    [BsonIgnoreIfNull]
+    public string? PaymentCurrency { get; set; }
+
+    [BsonElement("pricing_version")]
+    [BsonIgnoreIfNull]
+    public int? PricingVersion { get; set; }
+
     /// <summary>
     /// The new start time one party has proposed, UTC. Set only while
     /// <see cref="AppointmentStatus.RescheduleRequested"/>; cleared on approval and on decline.

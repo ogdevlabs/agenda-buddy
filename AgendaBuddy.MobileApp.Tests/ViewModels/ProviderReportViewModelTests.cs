@@ -1,5 +1,6 @@
 using AgendaBuddy.Library.Entities;
 using AgendaBuddy.MobileApp.Infrastructure;
+using AgendaBuddy.MobileApp.Resources.Strings;
 using AgendaBuddy.MobileApp.Services;
 using AgendaBuddy.MobileApp.ViewModels;
 using Moq;
@@ -24,7 +25,7 @@ public class ProviderReportViewModelTests
     };
 
     [Fact]
-    public async Task LoadAsync_RevenueUnavailable_RendersExactCopyWithReason()
+    public async Task LoadAsync_RevenueUnavailable_RendersLocalizedClientCopy()
     {
         var service = new Mock<IProviderApiService>();
         service.Setup(s => s.GetReportAsync(It.IsAny<CancellationToken>()))
@@ -34,11 +35,9 @@ public class ProviderReportViewModelTests
 
         await vm.LoadCommand.ExecuteAsync(null);
 
-        // The fixture's reason already ends with a period — the exact copy has exactly one, not two.
         Assert.Equal(
-            "Revenue isn't available yet — Appointments do not record which service they were booked for.",
+            "Revenue isn't available yet because older appointments do not have a price snapshot.",
             vm.RevenueMessage);
-        Assert.DoesNotContain("..", vm.RevenueMessage);
     }
 
     [Fact]
@@ -62,6 +61,32 @@ public class ProviderReportViewModelTests
         var vm = new ProviderReportViewModel(new Mock<IProviderApiService>().Object);
 
         Assert.Equal(string.Empty, vm.RevenueMessage);
+    }
+
+    [Fact]
+    public async Task SpanishCulture_LocalizesMetricsAndRevenueReason()
+    {
+        var original = AppResources.Culture;
+        try
+        {
+            AppResources.Culture = new System.Globalization.CultureInfo("es-MX");
+            var service = new Mock<IProviderApiService>();
+            service.Setup(s => s.GetReportAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(UnavailableReport());
+            var vm = new ProviderReportViewModel(service.Object);
+
+            await vm.LoadCommand.ExecuteAsync(null);
+
+            Assert.Equal("Total de reservas: 10", vm.TotalBookingsText);
+            Assert.Equal("Completadas: 6", vm.CompletedAppointmentsText);
+            Assert.Equal("Canceladas: 1", vm.CancelledAppointmentsText);
+            Assert.Equal("Clientes únicos: 4", vm.UniqueCustomersText);
+            Assert.StartsWith("Los ingresos aún no están disponibles", vm.RevenueMessage);
+        }
+        finally
+        {
+            AppResources.Culture = original;
+        }
     }
 
     [Fact]

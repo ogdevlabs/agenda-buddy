@@ -35,6 +35,8 @@ namespace AgendaBuddy.Booking.Core.Commands;
 public class ChangeAppointmentStatusCommandHandler(
     ProviderService providerService,
     BookingService bookingService,
+    CustomerService customerService,
+    IPaymentService paymentService,
     IEventStore eventStore,
     INotificationDispatcher notificationDispatcher) : IRequestHandler<ChangeAppointmentStatusCommand, Result<AppointmentEntity>>
 {
@@ -49,6 +51,24 @@ public class ChangeAppointmentStatusCommandHandler(
             return Result.Fail<AppointmentEntity>($"No appointment found with identifier {request.Identifier}");
         }
 
+        if (request.TargetStatus == AppointmentStatus.Booked && appointment.PaymentAmountMinor is > 0)
+        {
+            var provider = await providerService.FindProvidersAsync(
+                SupportTools<ProviderEntity>.FilterByEmail(appointment.EmailProvider));
+            var customer = await customerService.FindCustomerAsync(
+                SupportTools<CustomerEntity>.FilterByEmail(appointment.EmailCustomer));
+            if (provider is null || customer is null)
+                return Result.Fail<AppointmentEntity>("Payment participants could not be found.");
+
+            var payment = await paymentService.AuthorizeAsync(appointment, customer, provider);
+            if (payment.Status != PaymentStatus.Authorized)
+                return Result.Fail<AppointmentEntity>("The customer payment method could not be authorized.");
+        }
+
+        if (request.TargetStatus == AppointmentStatus.Completed
+            && !await paymentService.CaptureAsync(appointment.Identifier))
+            return Result.Fail<AppointmentEntity>("The authorized payment could not be captured.");
+
         // Throws InvalidOperationException on an illegal transition — deliberately NOT caught here.
         // AgendaBuddy.Booking.Api maps it to 409, and catching it to return Result.Fail would lose the distinction
         // between "illegal transition" (409) and "no such appointment" (this method's own Fail, 404).
@@ -59,15 +79,31 @@ public class ChangeAppointmentStatusCommandHandler(
 
         if (updated is null)
         {
+            if (request.TargetStatus == AppointmentStatus.Booked)
+                await paymentService.ReleaseOrRefundAsync(request.Identifier);
             await Audit("Failed", request, "appointment vanished between read and write");
             return Result.Fail<AppointmentEntity>($"No appointment found with identifier {request.Identifier}");
         }
 
-        await providerService.ChangeEmbeddedAppointmentStatusAsync(
+        var embedded = await providerService.ChangeEmbeddedAppointmentStatusAsync(
             appointment.EmailProvider,
             request.Identifier,
             appointment.AppointmentStatus,
             appointment.AppointmentDescription);
+        if (embedded is null)
+        {
+            if (request.TargetStatus == AppointmentStatus.Booked)
+            {
+                await paymentService.ReleaseOrRefundAsync(request.Identifier);
+                await bookingService.ChangeStatusAsync(
+                    request.Identifier,
+                    AppointmentStatus.Requested,
+                    EnumHelper<AppointmentStatus>.GetEnumDescription(AppointmentStatus.Requested));
+            }
+
+            await Audit("Failed", request, "provider embedded appointment was not updated");
+            return Result.Fail<AppointmentEntity>("The booking could not be confirmed; the payment hold was released.");
+        }
 
         await Audit("Success", request, appointment.AppointmentStatus.ToString());
 

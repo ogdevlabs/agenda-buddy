@@ -95,42 +95,18 @@
                 </VerticalStackLayout>
             </ScrollView>
 
-            <!-- No payment recorded yet — offer to record one (POST .../payment) -->
-            <ScrollView Grid.Row="1" IsVisible="{Binding ShowPayForm}">
+            <ScrollView Grid.Row="1" IsVisible="{Binding ShowNoPayment}">
                 <VerticalStackLayout Padding="24" Spacing="14">
                     <Frame CornerRadius="20"
                            BackgroundColor="White"
                            BorderColor="#E2E8F0"
                            HasShadow="True"
                            Padding="20">
-                        <VerticalStackLayout Spacing="12">
+                        <VerticalStackLayout Spacing="8">
                             <Label Text="{x:Static strings:AppResources.Xaml_NoPaymentRecordedYet}" FontSize="16" FontAttributes="Bold"
                                    TextColor="{StaticResource TextPrimary}" />
-                            <Label Text="{x:Static strings:AppResources.Xaml_AgendaBuddyHasNoLivePaymentGatewayConfiguredRecordingAPaymentHereDoesNotMoveRealMoney}"
+                            <Label Text="{x:Static strings:AppResources.Payment_StatusCreatedOnConfirmation}"
                                    FontSize="13" TextColor="{StaticResource TextMuted}" />
-
-                            <Label Text="{x:Static strings:AppResources.Xaml_Amount}" Style="{StaticResource Caption}" FontAttributes="Bold" />
-                            <Frame Style="{StaticResource InputFrame}">
-                                <Entry Text="{Binding PayAmountInput}"
-                                       Placeholder="0.00"
-                                       Keyboard="Numeric"
-                                       Style="{StaticResource InputStyle}"
-                                       AutomationId="PayAmountEntry" />
-                            </Frame>
-
-                            <Frame Style="{StaticResource ErrorBannerStyle}" IsVisible="{Binding HasPayError}">
-                                <Label Text="{Binding PayErrorMessage}" TextColor="{StaticResource Error}" FontSize="14" />
-                            </Frame>
-
-                            <Grid>
-                                <controls:SafeButton Text="{x:Static strings:AppResources.Xaml_RecordPayment}"
-                                        Style="{StaticResource PrimaryButton}"
-                                        Command="{Binding PayCommand}"
-                                        IsVisible="{Binding IsPaying, Converter={StaticResource InvertedBoolConverter}}"
-                                        AutomationId="RecordPaymentButton" />
-                                <ActivityIndicator IsRunning="{Binding IsPaying}" IsVisible="{Binding IsPaying}"
-                                                   Color="{StaticResource Primary}" HorizontalOptions="Center" />
-                            </Grid>
                         </VerticalStackLayout>
                     </Frame>
                 </VerticalStackLayout>

@@ -25,6 +25,17 @@
 		<string>en</string>
 		<string>es-MX</string>
 	</array>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.fererelabs.agendabuddy.payments</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>agendame</string>
+			</array>
+		</dict>
+	</array>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>

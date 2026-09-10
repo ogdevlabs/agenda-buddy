@@ -9,7 +9,9 @@ public enum PaymentGatewayMode
     Recording,
 
     /// <summary>Talks to Stripe. Selected only when an API key is configured.</summary>
-    Stripe
+    Stripe,
+
+    Unconfigured
 }
 
 /// <summary>
@@ -46,9 +48,10 @@ public static class PaymentGatewayFactory
     {
         ArgumentNullException.ThrowIfNull(configuration);
 
-        return string.IsNullOrWhiteSpace(configuration[ApiKeyConfigurationKey])
+        if (!string.IsNullOrWhiteSpace(configuration[ApiKeyConfigurationKey])) return PaymentGatewayMode.Stripe;
+        return string.Equals(configuration["Security:Local"], "true", StringComparison.OrdinalIgnoreCase)
             ? PaymentGatewayMode.Recording
-            : PaymentGatewayMode.Stripe;
+            : PaymentGatewayMode.Unconfigured;
     }
 
     /// <summary>Builds the gateway <paramref name="configuration"/> selects.</summary>
@@ -56,7 +59,8 @@ public static class PaymentGatewayFactory
         ModeFor(configuration) switch
         {
             PaymentGatewayMode.Stripe => new StripePaymentGateway(configuration[ApiKeyConfigurationKey]!),
-            _ => new RecordingPaymentGateway()
+            PaymentGatewayMode.Recording => new RecordingPaymentGateway(),
+            _ => new UnconfiguredPaymentGateway()
         };
 
     /// <summary>
@@ -71,10 +75,9 @@ public static class PaymentGatewayFactory
     /// </remarks>
     public static string? RecordingModeWarning(IConfiguration configuration, bool isLocalRun)
     {
-        if (isLocalRun || ModeFor(configuration) is not PaymentGatewayMode.Recording) return null;
+        if (isLocalRun || ModeFor(configuration) is PaymentGatewayMode.Stripe) return null;
 
-        return $"Payments are NOT REAL: no {ApiKeyConfigurationKey} is configured, so charges are recorded "
-               + "locally with a 'local_' intent id and no external call is made. Every payment will read "
-               + "as Succeeded without money moving.";
+        return $"Payments are unavailable: no {ApiKeyConfigurationKey} is configured. Financial operations "
+            + "fail closed; no local success record is written.";
     }
 }

@@ -71,6 +71,31 @@ public class CustomerService(IRepository<CustomerEntity> customerRepository) : I
             }));
     }
 
+    public async Task<CustomerEntity?> SetPaymentCustomerAsync(string customerEmail, string stripeCustomerId)
+    {
+        return await customerRepository.FindOneAndUpdateAsync(
+            SupportTools<CustomerEntity>.FilterByEmail(customerEmail),
+            new BsonDocument("$set", new BsonDocument("stripe_customer_id", stripeCustomerId)));
+    }
+
+    public async Task<CustomerEntity?> FindCustomerByStripeCustomerIdAsync(string stripeCustomerId) =>
+        await customerRepository.FindOneAsync(new BsonDocument("stripe_customer_id", stripeCustomerId));
+
+    public async Task<CustomerEntity?> SetPaymentMethodAsync(
+        string customerEmail, string stripeCustomerId, SavedPaymentMethod paymentMethod)
+    {
+        return await customerRepository.FindOneAndUpdateAsync(
+            SupportTools<CustomerEntity>.FilterByEmail(customerEmail),
+            new BsonDocument("$set", new BsonDocument
+            {
+                { "stripe_customer_id", stripeCustomerId },
+                { "stripe_default_payment_method_id", paymentMethod.PaymentMethodId },
+                { "payment_method_type", paymentMethod.Type },
+                { "payment_method_brand", paymentMethod.Brand is null ? BsonNull.Value : paymentMethod.Brand },
+                { "payment_method_last4", paymentMethod.Last4 is null ? BsonNull.Value : paymentMethod.Last4 }
+            }));
+    }
+
     /// <summary>
     /// A consent timestamp as BSON — an explicit null for "not accepted", not an omitted field.
     /// </summary>

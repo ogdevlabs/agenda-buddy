@@ -73,16 +73,16 @@
                            HasShadow="True"
                            Padding="20">
                         <VerticalStackLayout Spacing="10">
-                            <Label Text="{Binding Report.TotalBookings, StringFormat='Total bookings: {0}'}"
+                            <Label Text="{Binding TotalBookingsText}"
                                    FontSize="15"
                                    TextColor="{StaticResource TextPrimary}" />
-                            <Label Text="{Binding Report.CompletedAppointments, StringFormat='Completed: {0}'}"
+                            <Label Text="{Binding CompletedAppointmentsText}"
                                    FontSize="15"
                                    TextColor="{StaticResource TextPrimary}" />
-                            <Label Text="{Binding Report.CancelledAppointments, StringFormat='Cancelled: {0}'}"
+                            <Label Text="{Binding CancelledAppointmentsText}"
                                    FontSize="15"
                                    TextColor="{StaticResource TextPrimary}" />
-                            <Label Text="{Binding Report.UniqueCustomers, StringFormat='Unique customers: {0}'}"
+                            <Label Text="{Binding UniqueCustomersText}"
                                    FontSize="15"
                                    TextColor="{StaticResource TextPrimary}" />
                         </VerticalStackLayout>

@@ -77,6 +77,7 @@ public class TwoWayBindingTargetTest
         "CalendarSettingsViewModel.IsProvider",
         "CalendarViewModel.IsProvider",
         "DashboardViewModel.IsProvider",
+        "PaymentAccountViewModel.IsProvider",
         "ProfessionsViewModel.IsProvider",
         "ProfileViewModel.IsProvider",
         "TimeOffViewModel.IsProvider",

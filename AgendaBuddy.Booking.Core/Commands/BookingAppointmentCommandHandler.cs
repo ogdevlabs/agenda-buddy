@@ -16,6 +16,7 @@ public class BookingAppointmentCommandHandler(
     BookingService bookingService,
     IEventStore eventStore,
     IDateTimeProvider dateTimeProvider,
+    CustomerService customerService,
     INotificationDispatcher notificationDispatcher)
     : IRequestHandler<BookAppointmentCommand, Result<AppointmentEntity>>
 {
@@ -71,8 +72,32 @@ public class BookingAppointmentCommandHandler(
                 return Result.Fail<AppointmentEntity>(
                     $"{appointmentEntity.EmailProvider} does not offer a service named '{appointmentEntity.ServiceName}'.");
 
-            // Snapshot the length as booked, so editing the service later cannot rewrite what was agreed.
-            appointmentEntity.ServiceDurationMinutes ??= service.DurationMinutes;
+            try
+            {
+                appointmentEntity.ServiceDurationMinutes = service.DurationMinutes;
+                appointmentEntity.ServiceFee = service.Fee;
+                appointmentEntity.ServiceFeeType = service.FeeType;
+                appointmentEntity.PaymentAmountMinor = PaymentAmountCalculator.CalculateMinorUnits(service);
+                appointmentEntity.PaymentCurrency = service.Currency.ToLowerInvariant();
+                appointmentEntity.PricingVersion = 1;
+            }
+            catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or OverflowException)
+            {
+                return Result.Fail<AppointmentEntity>(ex.Message);
+            }
+        }
+
+        if (appointmentEntity.PaymentAmountMinor is > 0)
+        {
+            var customer = await customerService.FindCustomerAsync(
+                SupportTools<CustomerEntity>.FilterByEmail(appointmentEntity.EmailCustomer));
+            if (customer is null
+                || string.IsNullOrWhiteSpace(customer.StripeCustomerId)
+                || string.IsNullOrWhiteSpace(customer.StripeDefaultPaymentMethodId))
+            {
+                return Result.Fail<AppointmentEntity>(
+                    "A payment method is required before requesting this appointment.");
+            }
         }
 
         await mediator.Publish(new BookAppointmentEvent { AppointmentEntity = appointmentEntity }, cancellationToken);

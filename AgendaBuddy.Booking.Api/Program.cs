@@ -76,7 +76,9 @@ builder.Services.AddAuthorization();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddCarter(configurator: c => c.WithModule<BookingModule>());
+builder.Services.AddCarter(configurator: c => c
+    .WithModule<BookingModule>()
+    .WithModule<PaymentWebhookModule>());
 
 var app = builder.Build();
 
@@ -96,6 +98,19 @@ _ = Task.Run(async () =>
     catch (Exception ex)
     {
         app.Logger.LogWarning(ex, "Could not ensure the revoked_tokens TTL index at startup");
+    }
+});
+
+_ = Task.Run(async () =>
+{
+    try
+    {
+        await app.Services.GetRequiredService<AgendaBuddy.Booking.Api.Payments.StripeWebhookEventStore>()
+            .EnsurePaymentIndexesAsync();
+    }
+    catch (Exception ex)
+    {
+        app.Logger.LogWarning(ex, "Could not ensure the unique payment appointment index at startup");
     }
 });
 

@@ -139,4 +139,18 @@ public class ProviderEntity
     /// </remarks>
     [BsonElement("work_week")]
     public List<WorkDayHours> WorkWeek { get; set; } = [];
+
+    [BsonElement("stripe_connected_account_id")]
+    [BsonIgnoreIfNull]
+    public string? StripeConnectedAccountId { get; set; }
+
+    [BsonElement("stripe_charges_enabled")]
+    public bool StripeChargesEnabled { get; set; }
+
+    [BsonElement("stripe_payouts_enabled")]
+    public bool StripePayoutsEnabled { get; set; }
+
+    [BsonElement("stripe_disabled_reason")]
+    [BsonIgnoreIfNull]
+    public string? StripeDisabledReason { get; set; }
 }

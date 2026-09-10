@@ -323,6 +323,28 @@
             "format": "int32",
             "nullable": true
           },
+          "serviceFee": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "serviceFeeType": {
+            "$ref": "#/components/schemas/FeeType"
+          },
+          "paymentAmountMinor": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "paymentCurrency": {
+            "type": "string",
+            "nullable": true
+          },
+          "pricingVersion": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
           "proposedStart": {
             "type": "string",
             "format": "date-time",
@@ -528,6 +550,15 @@
           }
         },
         "additionalProperties": false
+      },
+      "FeeType": {
+        "enum": [
+          0,
+          1,
+          2
+        ],
+        "type": "integer",
+        "format": "int32"
       },
       "ObjectId": {
         "type": "object",
