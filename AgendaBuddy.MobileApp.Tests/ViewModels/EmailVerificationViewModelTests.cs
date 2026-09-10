@@ -1,5 +1,7 @@
 using AgendaBuddy.MobileApp.Services;
 using AgendaBuddy.MobileApp.ViewModels;
+using AgendaBuddy.MobileApp.Resources.Strings;
+using System.Globalization;
 using Moq;
 using Xunit;
 
@@ -48,5 +50,27 @@ public class EmailVerificationViewModelTests
         auth.Verify(a => a.RequestEmailVerificationAsync(
             "user@example.com", It.IsAny<CancellationToken>()), Times.Once);
         Assert.Contains("If this account", viewModel.StatusMessage, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task VerifiedStateUsesTheActiveSpanishCulture()
+    {
+        var previousCulture = AppResources.Culture;
+        try
+        {
+            AppResources.Culture = CultureInfo.GetCultureInfo("es-MX");
+            var auth = new Mock<IAuthService>();
+            auth.Setup(a => a.ConfirmEmailAsync("valid-token", It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
+            var viewModel = new EmailVerificationViewModel(auth.Object) { Token = "valid-token" };
+
+            await viewModel.ConfirmCommand.ExecuteAsync(null);
+
+            Assert.Equal("Correo confirmado. Inicia sesión para continuar.", viewModel.StatusMessage);
+        }
+        finally
+        {
+            AppResources.Culture = previousCulture;
+        }
     }
 }

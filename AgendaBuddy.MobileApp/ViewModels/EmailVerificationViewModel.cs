@@ -20,7 +20,7 @@ public partial class EmailVerificationViewModel(IAuthService authService) : Obse
     private bool _isVerified;
 
     [ObservableProperty]
-    private string _statusMessage = "Check your inbox and open the confirmation link.";
+    private string _statusMessage = AppResources.EmailVerification_Pending;
 
     public bool ShowPendingActions => !IsVerified;
 
@@ -30,17 +30,17 @@ public partial class EmailVerificationViewModel(IAuthService authService) : Obse
         if (string.IsNullOrWhiteSpace(Token)) return;
 
         IsLoading = true;
-        StatusMessage = "Checking your confirmation link...";
+        StatusMessage = AppResources.EmailVerification_Checking;
         try
         {
             IsVerified = await authService.ConfirmEmailAsync(Token);
             StatusMessage = IsVerified
-                ? "Email verified. Sign in to continue."
-                : "This confirmation link is invalid or has expired.";
+                ? AppResources.EmailVerification_Verified
+                : AppResources.EmailVerification_Invalid;
         }
         catch (HttpRequestException)
         {
-            StatusMessage = "We could not verify your email. Check your connection and try again.";
+            StatusMessage = AppResources.EmailVerification_VerifyUnavailable;
         }
         finally
         {
@@ -56,12 +56,12 @@ public partial class EmailVerificationViewModel(IAuthService authService) : Obse
         {
             var sent = await authService.RequestEmailVerificationAsync(Email.Trim());
             StatusMessage = sent
-                ? "If this account is awaiting verification, a new link has been sent."
-                : "We could not send a new link. Try again shortly.";
+                ? AppResources.EmailVerification_Resent
+                : AppResources.EmailVerification_ResendFailed;
         }
         catch (HttpRequestException)
         {
-            StatusMessage = "We could not send a new link. Check your connection and try again.";
+            StatusMessage = AppResources.EmailVerification_ResendUnavailable;
         }
         finally
         {

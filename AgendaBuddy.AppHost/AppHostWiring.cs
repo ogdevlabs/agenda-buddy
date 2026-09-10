@@ -157,6 +157,12 @@ internal static class AppHostWiring
         // to (ARCHITECTURE.md D-4).
         var identity = AddApi<Projects.AgendaBuddy_Identity>(
             "identity", identityDb, needsPrivateKey: true, spendsBcrypt: true, needsEmailDelivery: true);
+        if (deployTarget == DeploymentTarget.Local)
+        {
+            identity
+                .WithEnvironment("Email__LocalCaptureEnabled", "true")
+                .WithEnvironment("Email__AppLinkBaseUrl", "agendame://email");
+        }
         var booking = AddApi<Projects.AgendaBuddy_Booking_Api>(
             "booking", agendaDb, needsPushDelivery: true, needsPayments: true);
         var customer = AddApi<Projects.AgendaBuddy_Customer_Api>("customer", agendaDb, needsPushDelivery: true);

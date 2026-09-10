@@ -168,6 +168,20 @@ public class AuthModule : ICarterModule
 
         if (rateLimiting.Enabled)
             resendVerification.RequireRateLimiting(RateLimitingOptions.PolicyName);
+
+        var configuration = app.ServiceProvider.GetRequiredService<IConfiguration>();
+        var localEmailCapture = configuration.GetValue<bool>("Security:Local")
+            && configuration.GetValue<bool>("Email:LocalCaptureEnabled");
+        if (localEmailCapture)
+        {
+            auth.MapGet("/dev/emails/latest", (
+                string to,
+                AgendaBuddy.Library.Services.LocalEmailSender sender) =>
+            {
+                var message = sender.LatestFor(to);
+                return message is null ? Results.NotFound() : Results.Ok(message);
+            }).WithName("GetLatestLocalEmail");
+        }
     }
 
     /// <summary>The bearer token from the Authorization header, or <c>null</c> when the header is absent or not one.</summary>

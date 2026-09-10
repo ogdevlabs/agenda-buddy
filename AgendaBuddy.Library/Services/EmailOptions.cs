@@ -35,4 +35,9 @@ public class EmailOptions
     /// for the recipient to paste into the app instead of offering a link.
     /// </summary>
     public string? AppLinkBaseUrl { get; set; }
+
+    /// <summary>
+    /// Uses the in-memory development inbox instead of Resend. Set only by the local AppHost graph.
+    /// </summary>
+    public bool LocalCaptureEnabled { get; set; }
 }

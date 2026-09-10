@@ -15,6 +15,16 @@ public class EmailConfirmationLinkTests
         Assert.Equal("a+b/c=", result.Token);
     }
 
+    [Fact]
+    public void DebugBuildAcceptsTheLocalSimulatorLink()
+    {
+        var result = EmailConfirmationLink.Parse(
+            new Uri("agendame://email/confirm-email?token=a%2Bb%2Fc%3D"));
+
+        Assert.True(result.IsValid);
+        Assert.Equal("a+b/c=", result.Token);
+    }
+
     [Theory]
     [InlineData("http://agendame.app/confirm-email?token=abc")]
     [InlineData("https://evil.example/confirm-email?token=abc")]

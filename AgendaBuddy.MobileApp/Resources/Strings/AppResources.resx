@@ -1000,4 +1000,12 @@
   <data name="EmailVerification_Title" xml:space="preserve"><value>Verify email</value></data>
   <data name="EmailVerification_Heading" xml:space="preserve"><value>Verify your email</value></data>
   <data name="EmailVerification_Resend" xml:space="preserve"><value>Resend email</value></data>
+  <data name="EmailVerification_Pending" xml:space="preserve"><value>Check your inbox and open the confirmation link.</value></data>
+  <data name="EmailVerification_Checking" xml:space="preserve"><value>Checking your confirmation link...</value></data>
+  <data name="EmailVerification_Verified" xml:space="preserve"><value>Email verified. Sign in to continue.</value></data>
+  <data name="EmailVerification_Invalid" xml:space="preserve"><value>This confirmation link is invalid or has expired.</value></data>
+  <data name="EmailVerification_VerifyUnavailable" xml:space="preserve"><value>We could not verify your email. Check your connection and try again.</value></data>
+  <data name="EmailVerification_Resent" xml:space="preserve"><value>If this account is awaiting verification, a new link has been sent.</value></data>
+  <data name="EmailVerification_ResendFailed" xml:space="preserve"><value>We could not send a new link. Try again shortly.</value></data>
+  <data name="EmailVerification_ResendUnavailable" xml:space="preserve"><value>We could not send a new link. Check your connection and try again.</value></data>
 </root>

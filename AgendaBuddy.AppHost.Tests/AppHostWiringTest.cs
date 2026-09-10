@@ -263,6 +263,31 @@ public class AppHostWiringTest
         Assert.Contains("Email__ApiKey", variables.Keys);
     }
 
+    [Fact]
+    public async Task LocalTargetEnablesSimulatorEmailCaptureOnlyForIdentity()
+    {
+        var builder = BuildModel(DeploymentTarget.Local);
+        var identity = await PublishEnvironmentOf(builder, "identity");
+
+        Assert.Equal("true", Assert.Contains("Email__LocalCaptureEnabled", identity));
+        Assert.Equal("agendame://email", Assert.Contains("Email__AppLinkBaseUrl", identity));
+
+        foreach (var service in ExpectedServices.Where(name => name != "identity"))
+        {
+            var environment = await PublishEnvironmentOf(builder, service);
+            Assert.DoesNotContain("Email__LocalCaptureEnabled", environment.Keys);
+        }
+    }
+
+    [Fact]
+    public async Task CloudTargetNeverEnablesLocalEmailCapture()
+    {
+        var environment = await PublishEnvironmentOf(BuildModel(DeploymentTarget.Cloud), "identity");
+
+        Assert.DoesNotContain("Email__LocalCaptureEnabled", environment.Keys);
+        Assert.DoesNotContain("Email__AppLinkBaseUrl", environment.Keys);
+    }
+
     // ── Push delivery ───────────────────────────────────────────────────────────────────────────────
     // Push parameters are presence-gated rather than shape-gated, unlike resend-api-key: push has to be
     // testable against a local emulator, so it cannot be Cloud-only, but declaring it unconditionally would

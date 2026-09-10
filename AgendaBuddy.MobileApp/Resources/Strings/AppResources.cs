@@ -23,6 +23,14 @@ public static class AppResources
     public static string EmailVerification_Title => GetString(nameof(EmailVerification_Title));
     public static string EmailVerification_Heading => GetString(nameof(EmailVerification_Heading));
     public static string EmailVerification_Resend => GetString(nameof(EmailVerification_Resend));
+    public static string EmailVerification_Pending => GetString(nameof(EmailVerification_Pending));
+    public static string EmailVerification_Checking => GetString(nameof(EmailVerification_Checking));
+    public static string EmailVerification_Verified => GetString(nameof(EmailVerification_Verified));
+    public static string EmailVerification_Invalid => GetString(nameof(EmailVerification_Invalid));
+    public static string EmailVerification_VerifyUnavailable => GetString(nameof(EmailVerification_VerifyUnavailable));
+    public static string EmailVerification_Resent => GetString(nameof(EmailVerification_Resent));
+    public static string EmailVerification_ResendFailed => GetString(nameof(EmailVerification_ResendFailed));
+    public static string EmailVerification_ResendUnavailable => GetString(nameof(EmailVerification_ResendUnavailable));
     public static string Error_ActionRejected => GetString(nameof(Error_ActionRejected));
     public static string Error_AppointmentNotFound => GetString(nameof(Error_AppointmentNotFound));
     public static string Error_BookingConflict => GetString(nameof(Error_BookingConflict));
