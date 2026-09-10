@@ -124,9 +124,8 @@ jobs:
           fi
 
   stop:
-    uses: ./.github/workflows/dev-env-power.yml
+    uses: ./.github/workflows/dev-env-stop.yml
     with:
-      action: stop
       environment: ${{ inputs.environment }}
     secrets: inherit
 

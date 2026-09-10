@@ -4,14 +4,14 @@ namespace AgendaBuddy.AppHost.Tests;
 
 public class DevDataResetWorkflowTest
 {
-    private static string Workflow()
+    private static string Workflow(string name = "dev-data-reset.yml")
     {
         var current = new DirectoryInfo(AppContext.BaseDirectory);
         while (current is not null && !File.Exists(Path.Combine(current.FullName, "agenda-buddy.sln")))
             current = current.Parent;
 
         Assert.NotNull(current);
-        return File.ReadAllText(Path.Combine(current.FullName, ".github", "workflows", "dev-data-reset.yml"));
+        return File.ReadAllText(Path.Combine(current.FullName, ".github", "workflows", name));
     }
 
     [Fact]
@@ -34,9 +34,11 @@ public class DevDataResetWorkflowTest
     {
         var workflow = Workflow();
 
-        Assert.Contains("action: stop", workflow, StringComparison.Ordinal);
+        Assert.Contains("uses: ./.github/workflows/dev-env-stop.yml", workflow, StringComparison.Ordinal);
         Assert.Contains("action: start", workflow, StringComparison.Ordinal);
         Assert.Contains("az containerapp replica list", workflow, StringComparison.Ordinal);
+        Assert.Contains("drain_deadline=$((SECONDS + 900))", workflow, StringComparison.Ordinal);
+        Assert.Contains("15 minutes after the stop operation", workflow, StringComparison.Ordinal);
         Assert.Contains("refusing to purge", workflow, StringComparison.Ordinal);
         Assert.Contains("always()", workflow, StringComparison.Ordinal);
         Assert.Contains("start_after", workflow, StringComparison.Ordinal);
@@ -49,6 +51,17 @@ public class DevDataResetWorkflowTest
         Assert.Contains("professions", workflow, StringComparison.Ordinal);
         Assert.DoesNotContain("dropDatabase", workflow, StringComparison.Ordinal);
         Assert.DoesNotContain("drop()", workflow, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ExistingStopWorkflowIsTheSingleReusableStopEntryPoint()
+    {
+        var stop = Workflow("dev-env-stop.yml");
+        var redeploy = Workflow("dev-redeploy.yml");
+
+        Assert.Contains("workflow_call:", stop, StringComparison.Ordinal);
+        Assert.Contains("action: stop", stop, StringComparison.Ordinal);
+        Assert.Contains("uses: ./.github/workflows/dev-env-stop.yml", redeploy, StringComparison.Ordinal);
     }
 
     [Fact]
