@@ -86,6 +86,7 @@ public class IdentityServiceTest : IDisposable
         Assert.Equal("claims@example.com", GetClaim(claims, JwtRegisteredClaimNames.Sub));
         Assert.Equal("agenda-buddy-identity", GetClaim(claims, JwtRegisteredClaimNames.Iss));
         Assert.False(string.IsNullOrWhiteSpace(GetClaim(claims, JwtRegisteredClaimNames.Jti)));
+        Assert.True(long.TryParse(GetClaim(claims, JwtRegisteredClaimNames.Iat), out _));
     }
 
     [Fact]

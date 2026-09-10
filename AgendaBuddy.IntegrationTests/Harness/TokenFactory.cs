@@ -71,6 +71,10 @@ internal sealed class TokenFactory(CryptoSessionFixture crypto)
         {
             new(ClaimTypes.Role, role),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            new(
+                JwtRegisteredClaimNames.Iat,
+                DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(System.Globalization.CultureInfo.InvariantCulture),
+                ClaimValueTypes.Integer64),
         };
 
         if (subject is not null)

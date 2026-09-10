@@ -3,6 +3,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using AgendaBuddy.Library.Entities;
 using MongoDB.Bson;
+using MongoDB.Driver;
 
 namespace AgendaBuddy.IntegrationTests.Harness;
 
@@ -85,6 +86,44 @@ public class TokenRevocationTest : IClassFixture<ServiceHostFixture<CalendarAnch
             { "_id", Guid.NewGuid().ToString() },
             { "expires_at", DateTime.UtcNow.AddMinutes(30) },
         });
+
+        var response = await service.Client.SendAsync(Read(accessToken));
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task AGlobalCutoffRejectsATokenIssuedBeforeTheReset()
+    {
+        using var service = await StartWithOwnerProviderAsync();
+        var accessToken = _tokens.CreateToken(Owner, TokenFactory.ProviderRole);
+
+        var before = await service.Client.SendAsync(Read(accessToken));
+        Assert.Equal(HttpStatusCode.OK, before.StatusCode);
+
+        await service.Database.GetCollection<BsonDocument>("revoked_tokens").ReplaceOneAsync(
+            Builders<BsonDocument>.Filter.Eq("_id", "__all_tokens_before__"),
+            new BsonDocument
+            {
+                { "_id", "__all_tokens_before__" },
+                { "revoked_before", DateTime.UtcNow.AddSeconds(1) },
+            },
+            new ReplaceOptions { IsUpsert = true });
+
+        var after = await service.Client.SendAsync(Read(accessToken));
+        Assert.Equal(HttpStatusCode.Unauthorized, after.StatusCode);
+    }
+
+    [Fact]
+    public async Task AGlobalCutoffAllowsATokenIssuedAfterTheReset()
+    {
+        using var service = await StartWithOwnerProviderAsync();
+
+        await service.Database.GetCollection<BsonDocument>("revoked_tokens").InsertOneAsync(new BsonDocument
+        {
+            { "_id", "__all_tokens_before__" },
+            { "revoked_before", DateTime.UtcNow.AddMinutes(-1) },
+        });
+        var accessToken = _tokens.CreateToken(Owner, TokenFactory.ProviderRole);
 
         var response = await service.Client.SendAsync(Read(accessToken));
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);

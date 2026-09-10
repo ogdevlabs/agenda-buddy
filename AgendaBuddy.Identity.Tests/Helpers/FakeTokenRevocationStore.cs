@@ -14,5 +14,6 @@ public class FakeTokenRevocationStore : ITokenRevocationStore
         return Task.CompletedTask;
     }
 
-    public Task<bool> IsRevokedAsync(string jti) => Task.FromResult(_revoked.ContainsKey(jti));
+    public Task<bool> IsRevokedAsync(string jti, DateTimeOffset? issuedAtUtc = null) =>
+        Task.FromResult(_revoked.ContainsKey(jti));
 }

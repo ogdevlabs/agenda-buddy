@@ -713,6 +713,8 @@ public class IdentityService(
 
     private string CreateAccessToken(string privateKeyPem, string email, string role)
     {
+        var now = clock.UtcNow;
+        var issuedAt = new DateTimeOffset(DateTime.SpecifyKind(now, DateTimeKind.Utc));
         var rsa = RSA.Create();
         rsa.ImportFromPem(privateKeyPem);
         var signingKey = new RsaSecurityKey(rsa);
@@ -723,12 +725,16 @@ public class IdentityService(
             new Claim(JwtRegisteredClaimNames.Sub, email),
             new Claim(ClaimTypes.Role, role),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            new Claim(
+                JwtRegisteredClaimNames.Iat,
+                issuedAt.ToUnixTimeSeconds().ToString(System.Globalization.CultureInfo.InvariantCulture),
+                ClaimValueTypes.Integer64),
         };
 
         var token = new JwtSecurityToken(
             issuer: Issuer,
             claims: claims,
-            expires: clock.UtcNow.AddMinutes(60),
+            expires: now.AddMinutes(60),
             signingCredentials: signingCreds);
 
         return new JwtSecurityTokenHandler().WriteToken(token);

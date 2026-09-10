@@ -61,9 +61,14 @@ public static class AuthenticationExtensions
                             return;
                         }
 
+                        DateTimeOffset? issuedAt = null;
+                        var issuedAtClaim = context.Principal?.FindFirstValue(JwtRegisteredClaimNames.Iat);
+                        if (long.TryParse(issuedAtClaim, out var issuedAtSeconds))
+                            issuedAt = DateTimeOffset.FromUnixTimeSeconds(issuedAtSeconds);
+
                         var store = context.HttpContext.RequestServices
                             .GetRequiredService<ITokenRevocationStore>();
-                        if (await store.IsRevokedAsync(jti))
+                        if (await store.IsRevokedAsync(jti, issuedAt))
                             context.Fail("token_revoked");
                     },
                 };

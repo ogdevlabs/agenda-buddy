@@ -4,6 +4,19 @@ All notable changes to this project are documented in this file, in [Keep a Chan
 
 ## [Unreleased]
 
+### Added
+
+- A guarded, manual, dev-only workflow can invalidate all registered development users after an incompatible
+  account/onboarding change. It stops every Container App, waits for replicas to terminate, clears all user data
+  from `agenda_buddy` and `IdentityDb` while preserving the profession catalogue and indexes, verifies the purge,
+  and restores the environment only when its working-hours schedule requires it.
+
+### Changed
+
+- Access tokens now carry an issued-at claim, and the shared MongoDB revocation store supports a durable global
+  cutoff. A dev data reset immediately rejects every pre-reset access token instead of waiting for its one-hour
+  expiry; users registered after the reset receive valid new tokens.
+
 ## [0.19.2] - 2026-09-10
 
 ### Fixed
