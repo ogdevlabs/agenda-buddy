@@ -452,6 +452,7 @@ public class AutoDeployPathFilterTest
         // The restore is conditional on the schedule's own window, not unconditional: starting the
         // environment out of hours would defeat the cost control dev-env-schedule.yml exists for.
         Assert.Contains("start_after", redeploy, StringComparison.Ordinal);
+        Assert.Contains("always() && needs.window.outputs.start_after == 'true'", redeploy, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -583,18 +584,23 @@ public class AutoDeployPathFilterTest
     }
 
     /// <summary>
-    /// An optional secret that is absent must still be supplied to azd as an empty string, not omitted.
+    /// An optional parameter that is absent must still be supplied to azd, not omitted. Stripe secret
+    /// parameters use a nonempty sentinel because Azure Container Apps rejects an empty secret value.
     /// </summary>
     /// <remarks>
     /// The Cloud shape declares these parameters unconditionally, and <c>azd provision --no-prompt</c>
-    /// fails on a declared parameter with no value. Empty is exactly what <c>PushOptions</c> and
-    /// <c>EmailOptions</c> read as "not configured", so an environment without push credentials deploys and
-    /// simply logs that push is off.
+    /// fails on a declared parameter with no value. Existing optional non-secret values retain the empty-string
+    /// convention; Stripe uses <c>__UNCONFIGURED__</c>, which <c>PaymentGatewayFactory</c> treats as absent.
     /// </remarks>
     [Fact]
-    public void AnAbsentOptionalSecretIsSuppliedAsEmptyRatherThanOmitted()
+    public void AnAbsentOptionalParameterIsSuppliedRatherThanOmitted()
     {
-        Assert.Contains("parameters[param] = \"\"", Workflow("deploy.yml"), StringComparison.Ordinal);
+        var deploy = Workflow("deploy.yml");
+
+        Assert.Contains("__UNCONFIGURED__", deploy, StringComparison.Ordinal);
+        Assert.Contains("stripe_api_key", deploy, StringComparison.Ordinal);
+        Assert.Contains("stripe_webhook_secret", deploy, StringComparison.Ordinal);
+        Assert.Contains("else \"\"", deploy, StringComparison.Ordinal);
     }
 
     // ── A deploy without a provision recovers the provisioning outputs ─────────────────────────────
