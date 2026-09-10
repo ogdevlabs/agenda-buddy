@@ -1017,6 +1017,11 @@
             "format": "date-time",
             "nullable": true
           },
+          "authorizationExpiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
           "capturedAt": {
             "type": "string",
             "format": "date-time",
