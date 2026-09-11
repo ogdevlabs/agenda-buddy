@@ -420,6 +420,9 @@
   <data name="PaymentAccount_ProviderAction" xml:space="preserve"><value>Configurar o revisar cobros</value></data>
   <data name="PaymentAccount_ProfileCustomerSubtitle" xml:space="preserve"><value>Tarjetas, PayPal y billeteras compatibles</value></data>
   <data name="PaymentAccount_ProfileProviderSubtitle" xml:space="preserve"><value>Datos bancarios y estado de cobros</value></data>
+  <data name="PaymentAccount_DoLater" xml:space="preserve"><value>Hacerlo después</value></data>
+  <data name="PaymentAccount_StripeUnavailable" xml:space="preserve"><value>La configuración de pagos con Stripe no está disponible. Debes configurar los pagos antes de continuar.</value></data>
+  <data name="PaymentAccount_LocalSimulated" xml:space="preserve"><value>El modo de prueba local agregó una Visa simulada terminada en 4242.</value></data>
   <data name="PaymentAccount_StatusChecking" xml:space="preserve"><value>Verificando configuración...</value></data>
   <data name="PaymentAccount_StatusCustomerReady" xml:space="preserve"><value>Método de pago listo</value></data>
   <data name="PaymentAccount_StatusCustomerRequired" xml:space="preserve"><value>Se requiere un método de pago</value></data>

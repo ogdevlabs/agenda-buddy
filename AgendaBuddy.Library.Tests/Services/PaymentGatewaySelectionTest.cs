@@ -31,7 +31,8 @@ public class PaymentGatewaySelectionTest
     public void T206_WithNoConfiguredKey_TheGatewayDoesNotCharge()
     {
         Assert.Equal(PaymentGatewayMode.Recording, PaymentGatewayFactory.ModeFor(ConfigurationWith(null)));
-        Assert.IsType<RecordingPaymentGateway>(PaymentGatewayFactory.Create(ConfigurationWith(null)));
+        var gateway = Assert.IsType<RecordingPaymentGateway>(PaymentGatewayFactory.Create(ConfigurationWith(null)));
+        Assert.True(gateway.AllowsSkippingOnboarding);
     }
 
     [Theory]
@@ -74,7 +75,8 @@ public class PaymentGatewaySelectionTest
         var configuration = new ConfigurationBuilder().AddInMemoryCollection().Build();
 
         Assert.Equal(PaymentGatewayMode.Unconfigured, PaymentGatewayFactory.ModeFor(configuration));
-        Assert.IsType<UnconfiguredPaymentGateway>(PaymentGatewayFactory.Create(configuration));
+        var gateway = Assert.IsType<UnconfiguredPaymentGateway>(PaymentGatewayFactory.Create(configuration));
+        Assert.False(gateway.AllowsSkippingOnboarding);
     }
 
     [Fact]

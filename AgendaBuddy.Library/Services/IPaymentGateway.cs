@@ -15,8 +15,11 @@ public sealed record PaymentAuthorizationRequest(
     string IdempotencyKey);
 public sealed record PaymentAuthorizationResult(string PaymentIntentId, string Status, DateTime? CaptureBefore = null);
 
+public sealed class PaymentGatewayUnavailableException(string message) : InvalidOperationException(message);
+
 public interface IPaymentGateway
 {
+    bool AllowsSkippingOnboarding { get; }
     Task<CustomerSetupSession> CreateCustomerSetupSessionAsync(
         string email, string? customerId, string successUrl, string cancelUrl);
     Task<SavedPaymentMethod> CompleteCustomerSetupAsync(string sessionId, string customerId);

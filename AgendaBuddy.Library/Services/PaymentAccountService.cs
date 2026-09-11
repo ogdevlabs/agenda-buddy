@@ -6,7 +6,8 @@ public sealed record PaymentAccountStatus(
     string Status,
     string? PaymentMethodType = null,
     string? PaymentMethodBrand = null,
-    string? PaymentMethodLast4 = null);
+    string? PaymentMethodLast4 = null,
+    bool CanSkipOnboarding = false);
 
 public sealed record PaymentOnboardingLink(string Url, bool CompletedLocally);
 
@@ -32,7 +33,8 @@ public class PaymentAccountService(
             return new PaymentAccountStatus(
                 "Provider",
                 ready,
-                ready ? "Ready to receive payments" : provider.StripeDisabledReason ?? "Payout setup required");
+                ready ? "Ready to receive payments" : provider.StripeDisabledReason ?? "Payout setup required",
+                CanSkipOnboarding: gateway.AllowsSkippingOnboarding);
         }
 
         var customer = await customers.FindCustomerAsync(SupportTools<CustomerEntity>.FilterByEmail(email));
@@ -45,7 +47,8 @@ public class PaymentAccountService(
             paymentReady ? "Payment method ready" : "Payment method required",
             customer.PaymentMethodType,
             customer.PaymentMethodBrand,
-            customer.PaymentMethodLast4);
+            customer.PaymentMethodLast4,
+            gateway.AllowsSkippingOnboarding);
     }
 
     public async Task<PaymentOnboardingLink?> BeginCustomerSetupAsync(

@@ -31,6 +31,11 @@
                                      Command="{Binding BeginSetupCommand}"
                                      IsEnabled="{Binding IsLoading, Converter={StaticResource InvertedBoolConverter}}"
                                      AutomationId="BeginPayoutSetupButton" />
+                <controls:SafeButton Text="{x:Static strings:AppResources.PaymentAccount_DoLater}"
+                                     Style="{StaticResource SecondaryButton}"
+                                     Command="{Binding SkipOnboardingCommand}"
+                                     IsVisible="{Binding ShowSkip}"
+                                     AutomationId="SkipPayoutSetupButton" />
                 <ActivityIndicator IsRunning="{Binding IsLoading}" IsVisible="{Binding IsLoading}" />
             </VerticalStackLayout>
         </ScrollView>

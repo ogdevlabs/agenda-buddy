@@ -23,6 +23,8 @@ namespace AgendaBuddy.Library.Services;
 /// </remarks>
 public sealed class RecordingPaymentGateway : IPaymentGateway
 {
+    public bool AllowsSkippingOnboarding => true;
+
     /// <summary>
     /// Marks an intent id as locally generated. Stripe's ids begin <c>pi_</c>, so this cannot collide with a
     /// real one, and its presence in stored data is a permanent record that the payment was never charged.
