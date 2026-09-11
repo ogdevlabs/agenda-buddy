@@ -52,6 +52,17 @@ public class ShellRouteRegistrationTest
         Assert.Contains("addService", RegisteredRoutes());
     }
 
+    [Fact]
+    public void PasswordRecoveryUsesAbsoluteAuthRoutes()
+    {
+        var login = File.ReadAllText(Path.Combine(MobileAppRoot(), "Views", "LoginPage.xaml.cs"));
+        var forgotPassword = File.ReadAllText(
+            Path.Combine(MobileAppRoot(), "Views", "ForgotPasswordPage.xaml.cs"));
+
+        Assert.Contains("GoToAsync(\"//forgotPassword\")", login, StringComparison.Ordinal);
+        Assert.Contains("GoToAsync(\"//resetPasswordConfirm\", nav)", forgotPassword, StringComparison.Ordinal);
+    }
+
     /// <summary>
     /// Both halves of the Shell's route table: the tab/content routes declared in XAML and the pushed
     /// routes registered in code.

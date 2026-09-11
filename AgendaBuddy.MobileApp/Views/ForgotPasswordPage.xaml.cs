@@ -19,7 +19,7 @@ public partial class ForgotPasswordPage : ContentPage
     private async void OnHaveCodeTapped(object? sender, EventArgs e)
     {
         var nav = new Dictionary<string, object> { ["email"] = _viewModel.Email };
-        await Shell.Current.GoToAsync("resetPasswordConfirm", nav);
+        await Shell.Current.GoToAsync("//resetPasswordConfirm", nav);
     }
 }
 #endif
