@@ -20,6 +20,7 @@ public partial class ProviderPayoutPage : ContentPage
         BindingContext = viewModel;
         viewModel.OpenUrlRequested += OnOpenUrlRequested;
         viewModel.OnboardingCompleted += OnOnboardingCompleted;
+        viewModel.OnboardingSkipped += OnOnboardingCompleted;
     }
 
     protected override void OnAppearing()

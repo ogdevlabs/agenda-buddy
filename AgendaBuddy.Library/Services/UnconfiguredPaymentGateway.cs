@@ -2,7 +2,9 @@ namespace AgendaBuddy.Library.Services;
 
 public sealed class UnconfiguredPaymentGateway : IPaymentGateway
 {
-    private static InvalidOperationException Missing() => new(
+    public bool AllowsSkippingOnboarding => false;
+
+    private static PaymentGatewayUnavailableException Missing() => new(
         $"Payments are unavailable because {PaymentGatewayFactory.ApiKeyConfigurationKey} is not configured.");
 
     public Task<CustomerSetupSession> CreateCustomerSetupSessionAsync(

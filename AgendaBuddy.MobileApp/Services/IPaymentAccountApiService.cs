@@ -10,3 +10,7 @@ public interface IPaymentAccountApiService
     Task<PaymentAccountStatus?> CompleteCustomerSetupAsync(
         string sessionId, CancellationToken cancellationToken = default);
 }
+
+public sealed class PaymentSetupUnavailableException : Exception
+{
+}

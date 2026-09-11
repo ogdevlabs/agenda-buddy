@@ -69,6 +69,9 @@ public static class AppResources
     public static string PaymentAccount_ProviderAction => GetString(nameof(PaymentAccount_ProviderAction));
     public static string PaymentAccount_ProfileCustomerSubtitle => GetString(nameof(PaymentAccount_ProfileCustomerSubtitle));
     public static string PaymentAccount_ProfileProviderSubtitle => GetString(nameof(PaymentAccount_ProfileProviderSubtitle));
+    public static string PaymentAccount_DoLater => GetString(nameof(PaymentAccount_DoLater));
+    public static string PaymentAccount_StripeUnavailable => GetString(nameof(PaymentAccount_StripeUnavailable));
+    public static string PaymentAccount_LocalSimulated => GetString(nameof(PaymentAccount_LocalSimulated));
     public static string Shell_ContactsCustomers => GetString(nameof(Shell_ContactsCustomers));
     public static string Validation_DayMustStartBeforeEnd => GetString(nameof(Validation_DayMustStartBeforeEnd));
     public static string WorkDay_Closed => GetString(nameof(WorkDay_Closed));

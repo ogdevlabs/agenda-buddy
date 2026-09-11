@@ -7,7 +7,8 @@ namespace AgendaBuddy.MobileApp.ViewModels;
 
 public partial class PaymentAccountViewModel(
     IPaymentAccountApiService paymentAccounts,
-    IUserSessionService session) : ObservableObject
+    IUserSessionService session,
+    IInAppAlertService? alerts = null) : ObservableObject
 {
     [ObservableProperty]
     private bool _isLoading;
@@ -24,13 +25,18 @@ public partial class PaymentAccountViewModel(
     [ObservableProperty]
     private bool _isOnboarding;
 
+    [ObservableProperty]
+    private bool _canSkipOnboarding;
+
     public bool IsProvider => session.IsProvider;
     public string ActionLabel => IsProvider
         ? AppResources.PaymentAccount_ProviderAction
         : AppResources.PaymentAccount_CustomerAction;
+    public bool ShowSkip => IsOnboarding && !IsReady && CanSkipOnboarding;
 
     public event EventHandler<Uri>? OpenUrlRequested;
     public event EventHandler? OnboardingCompleted;
+    public event EventHandler? OnboardingSkipped;
 
     [RelayCommand]
     private async Task LoadAsync()
@@ -69,12 +75,23 @@ public partial class PaymentAccountViewModel(
 
             if (link.CompletedLocally)
             {
-                await LoadAsync();
+                var account = await paymentAccounts.GetStatusAsync();
+                Apply(account);
+                if (alerts is not null)
+                    await alerts.ShowAsync(AppResources.PaymentAccount_LocalSimulated);
+                if (IsOnboarding && IsReady)
+                    OnboardingCompleted?.Invoke(this, EventArgs.Empty);
                 return;
             }
 
             if (Uri.TryCreate(link.Url, UriKind.Absolute, out var uri))
                 OpenUrlRequested?.Invoke(this, uri);
+            else
+                Status = AppResources.GetString("PaymentAccount_ErrorStart");
+        }
+        catch (PaymentSetupUnavailableException)
+        {
+            Status = AppResources.PaymentAccount_StripeUnavailable;
         }
         catch (Exception)
         {
@@ -86,9 +103,17 @@ public partial class PaymentAccountViewModel(
         }
     }
 
+    [RelayCommand]
+    private void SkipOnboarding()
+    {
+        if (ShowSkip)
+            OnboardingSkipped?.Invoke(this, EventArgs.Empty);
+    }
+
     private void Apply(Models.PaymentAccountStatus? account)
     {
         IsReady = account?.IsReady == true;
+        CanSkipOnboarding = account?.CanSkipOnboarding == true;
         Status = account is null
             ? AppResources.GetString("PaymentAccount_StatusUnavailable")
             : AppResources.GetString(IsProvider
@@ -105,4 +130,10 @@ public partial class PaymentAccountViewModel(
             _ => null
         };
     }
+
+    partial void OnIsOnboardingChanged(bool value) => OnPropertyChanged(nameof(ShowSkip));
+
+    partial void OnIsReadyChanged(bool value) => OnPropertyChanged(nameof(ShowSkip));
+
+    partial void OnCanSkipOnboardingChanged(bool value) => OnPropertyChanged(nameof(ShowSkip));
 }

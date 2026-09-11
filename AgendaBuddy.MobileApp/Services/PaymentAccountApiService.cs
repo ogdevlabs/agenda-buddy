@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using System.Text.Json;
 using AgendaBuddy.MobileApp.Models;
 using AgendaBuddy.MobileApp.Routing;
 
@@ -35,7 +36,27 @@ public class PaymentAccountApiService(IHttpClientFactory httpClientFactory) : IP
     {
         var client = httpClientFactory.CreateClient("AgendaBuddyApi");
         var response = await client.PostAsync(route.Path, null, cancellationToken);
+        if (response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable &&
+            await IsPaymentSetupUnavailableAsync(response.Content, cancellationToken))
+            throw new PaymentSetupUnavailableException();
         if (!response.IsSuccessStatusCode) return null;
         return await response.Content.ReadFromJsonAsync<PaymentOnboardingLink>(cancellationToken);
+    }
+
+    private static async Task<bool> IsPaymentSetupUnavailableAsync(
+        HttpContent content, CancellationToken cancellationToken)
+    {
+        try
+        {
+            using var problem = await JsonDocument.ParseAsync(
+                await content.ReadAsStreamAsync(cancellationToken),
+                cancellationToken: cancellationToken);
+            return problem.RootElement.TryGetProperty("title", out var title) &&
+                   title.GetString() == "payment_setup_unavailable";
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
     }
 }

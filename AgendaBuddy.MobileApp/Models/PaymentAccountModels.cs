@@ -6,6 +6,7 @@ public sealed record PaymentAccountStatus(
     string Status,
     string? PaymentMethodType,
     string? PaymentMethodBrand,
-    string? PaymentMethodLast4);
+    string? PaymentMethodLast4,
+    bool CanSkipOnboarding = false);
 
 public sealed record PaymentOnboardingLink(string Url, bool CompletedLocally);

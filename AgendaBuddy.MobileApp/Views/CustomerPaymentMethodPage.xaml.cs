@@ -20,6 +20,7 @@ public partial class CustomerPaymentMethodPage : ContentPage
         BindingContext = viewModel;
         viewModel.OpenUrlRequested += OnOpenUrlRequested;
         viewModel.OnboardingCompleted += OnOnboardingCompleted;
+        viewModel.OnboardingSkipped += OnOnboardingCompleted;
     }
 
     protected override void OnAppearing()

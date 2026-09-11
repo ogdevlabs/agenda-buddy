@@ -141,8 +141,18 @@ public class BookingModule : ICarterModule
                     var successUrl = $"{publicOrigin}/api/v1/payments/customer/return"
                         + "?session_id={CHECKOUT_SESSION_ID}";
                     var cancelUrl = $"{publicOrigin}/api/v1/payments/customer/cancel";
-                    var link = await paymentAccounts.BeginCustomerSetupAsync(email, successUrl, cancelUrl);
-                    return link is null ? Results.NotFound() : Results.Ok(link);
+                    try
+                    {
+                        var link = await paymentAccounts.BeginCustomerSetupAsync(email, successUrl, cancelUrl);
+                        return link is null ? Results.NotFound() : Results.Ok(link);
+                    }
+                    catch (PaymentGatewayUnavailableException)
+                    {
+                        return Results.Problem(
+                            detail: "Stripe payment setup is not configured.",
+                            statusCode: StatusCodes.Status503ServiceUnavailable,
+                            title: "payment_setup_unavailable");
+                    }
                 })
             .WithName("BeginCustomerPaymentSetup")
             .RequireAuthorization();
@@ -174,8 +184,18 @@ public class BookingModule : ICarterModule
                     var publicOrigin = $"{request.Scheme}://{request.Host}";
                     var returnUrl = $"{publicOrigin}/api/v1/payments/provider/return";
                     var refreshUrl = $"{publicOrigin}/api/v1/payments/provider/refresh";
-                    var link = await paymentAccounts.BeginProviderOnboardingAsync(email, returnUrl, refreshUrl);
-                    return link is null ? Results.NotFound() : Results.Ok(link);
+                    try
+                    {
+                        var link = await paymentAccounts.BeginProviderOnboardingAsync(email, returnUrl, refreshUrl);
+                        return link is null ? Results.NotFound() : Results.Ok(link);
+                    }
+                    catch (PaymentGatewayUnavailableException)
+                    {
+                        return Results.Problem(
+                            detail: "Stripe payout setup is not configured.",
+                            statusCode: StatusCodes.Status503ServiceUnavailable,
+                            title: "payment_setup_unavailable");
+                    }
                 })
             .WithName("BeginProviderPayoutOnboarding")
             .RequireAuthorization();

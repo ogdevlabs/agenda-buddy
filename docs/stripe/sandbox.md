@@ -77,6 +77,11 @@ Keep the Stripe listener running in a second terminal. In the Aspire dashboard, 
 
 If AppHost started before both secrets existed, stop and restart it so its resource graph includes both parameters.
 
+Without `Parameters:stripe-api-key`, a local AppHost does not open Stripe UI: it visibly simulates a Visa ending
+in `4242` and may skip onboarding. A non-local environment without the key reports that Stripe setup is
+unavailable and does not permit bypassing onboarding. Production requires successful Stripe payment or payout
+registration. Only a configured Stripe sandbox opens hosted card or payout entry.
+
 ## 5. Verify customer payment setup
 
 1. Sign in as the Customer in the mobile app.

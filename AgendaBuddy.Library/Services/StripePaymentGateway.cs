@@ -13,6 +13,8 @@ public class StripePaymentGateway : IPaymentGateway
 {
     private readonly PaymentIntentService _intents = new();
 
+    public bool AllowsSkippingOnboarding => false;
+
     public async Task<CustomerSetupSession> CreateCustomerSetupSessionAsync(
         string email, string? customerId, string successUrl, string cancelUrl)
     {
