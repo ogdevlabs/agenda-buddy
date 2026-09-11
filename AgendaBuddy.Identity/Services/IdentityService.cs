@@ -744,34 +744,119 @@ public class IdentityService(
     {
         var link = $"agendame://email/confirm-email?token={Uri.EscapeDataString(token)}";
         var htmlLink = System.Net.WebUtility.HtmlEncode(link);
-        var text = $"Welcome to AgendaMe, please confirm your email address by clicking the button below.\n"
-                             + $"Confirm email: {link}\n\n"
-                             + $"Or enter this code in AgendaMe: {code}\n\n"
-                             + "Bienvenido a AgendaMe, por favor confirma tu correo electrónico dando clic en el botón debajo.\n"
-                             + $"Confirmar correo: {link}\n\n"
-                             + $"O ingresa este código en AgendaMe: {code}\n\n"
-                             + "The code expires in 15 minutes; the button expires in 24 hours. / "
-                             + "El código vence en 15 minutos; el botón vence en 24 horas.";
+        var text = $"""
+                    Welcome to AgendaMe!
+
+                    Thank you for signing up. To complete your registration and secure your account, verify your email address using one of the methods below.
+
+                    Option 1: Click the verification button
+                    Verify my email: {link}
+                    The verification button expires in 24 hours.
+
+                    Option 2: Enter this 6-digit verification code
+                    {code}
+                    This verification code expires in 15 minutes.
+
+                    If you did not create an AgendaMe account, please disregard this email. No further action is required.
+
+                    Thank you,
+                    The AgendaMe Team
+
+                    ------------------------------------------------------------
+
+                    ¡Bienvenido a AgendaMe!
+
+                    Gracias por registrarte. Para completar tu registro y proteger tu cuenta, verifica tu correo electrónico usando uno de los siguientes métodos.
+
+                    Opción 1: Haz clic en el botón de verificación
+                    Verificar mi correo: {link}
+                    El botón de verificación vence en 24 horas.
+
+                    Opción 2: Ingresa este código de verificación de 6 dígitos
+                    {code}
+                    Este código de verificación vence en 15 minutos.
+
+                    Si no creaste una cuenta de AgendaMe, ignora este correo. No es necesario realizar ninguna otra acción.
+
+                    Gracias,
+                    El equipo de AgendaMe
+                    """;
         var html = $"""
-                        <!doctype html>
-                        <html lang="en">
-                        <body style="font-family:Arial,sans-serif;color:#17211b;line-height:1.5">
-                            <h1 style="font-size:24px">AgendaMe</h1>
-                            <p>Welcome to AgendaMe, please confirm your email address by clicking the button below.</p>
-                              <p><a href="{htmlLink}" style="display:inline-block;background:#176b4d;color:#ffffff;padding:12px 20px;text-decoration:none;border-radius:6px">Confirm email</a></p>
-                                                        <p>Or enter this code in AgendaMe:</p>
-                                                        <p style="font-size:28px;font-weight:bold;letter-spacing:6px">{code}</p>
-                            <hr style="border:0;border-top:1px solid #d9dedb;margin:28px 0">
-                            <div lang="es">
-                                <p>Bienvenido a AgendaMe, por favor confirma tu correo electrónico dando clic en el botón debajo.</p>
-                                <p><a href="{htmlLink}" style="display:inline-block;background:#176b4d;color:#ffffff;padding:12px 20px;text-decoration:none;border-radius:6px">Confirmar correo</a></p>
-                                                                <p>O ingresa este código en AgendaMe:</p>
-                                                                <p style="font-size:28px;font-weight:bold;letter-spacing:6px">{code}</p>
-                            </div>
-                            <p style="color:#526158;font-size:14px">The code expires in 15 minutes; the button expires in 24 hours. / El código vence en 15 minutos; el botón vence en 24 horas.</p>
-                        </body>
-                        </html>
-                        """;
+                    <!doctype html>
+                    <html lang="en">
+                    <head>
+                        <meta name="viewport" content="width=device-width, initial-scale=1">
+                        <meta name="color-scheme" content="light">
+                        <title>Welcome to AgendaMe - Verify your email address</title>
+                    </head>
+                    <body style="margin:0;background:#eef2ef;color:#17211b;font-family:Verdana,Geneva,sans-serif;line-height:1.6">
+                        <div style="display:none;max-height:0;overflow:hidden;color:transparent">Verify your email address to complete your AgendaMe registration.</div>
+                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#eef2ef;padding:28px 12px">
+                            <tr>
+                                <td align="center">
+                                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:640px;background:#ffffff;border:1px solid #d6dfd9;border-radius:8px;overflow:hidden">
+                                        <tr>
+                                            <td style="background:#123f32;padding:26px 32px;color:#ffffff">
+                                                <div style="font-family:Georgia,serif;font-size:30px;font-weight:bold">Agenda<span style="color:#f2bd4d">Me</span></div>
+                                                <div style="font-size:13px;color:#dbe8e1;margin-top:4px">Your schedule. Your clients. One place.</div>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding:32px">
+                                                <div lang="en">
+                                                    <h1 style="margin:0 0 12px;font-family:Georgia,serif;font-size:25px;color:#123f32">Welcome to AgendaMe!</h1>
+                                                    <p style="margin:0 0 24px">Thank you for signing up. To complete your registration and secure your account, please verify your email address using one of the methods below.</p>
+
+                                                    <div style="border-left:4px solid #23805e;background:#f3f8f5;padding:18px 20px;margin:0 0 16px">
+                                                        <div style="font-size:12px;font-weight:bold;color:#176b4d">OPTION 1</div>
+                                                        <h2 style="margin:3px 0 14px;font-size:17px;color:#17211b">Click the verification button</h2>
+                                                        <a href="{htmlLink}" style="display:inline-block;background:#176b4d;color:#ffffff;padding:12px 20px;text-decoration:none;border-radius:6px;font-weight:bold">Verify my email</a>
+                                                        <p style="margin:12px 0 0;font-size:13px;color:#526158">The verification button expires in 24 hours.</p>
+                                                    </div>
+
+                                                    <div style="border-left:4px solid #e4a72c;background:#fff9eb;padding:18px 20px;margin:0 0 24px">
+                                                        <div style="font-size:12px;font-weight:bold;color:#85600e">OPTION 2</div>
+                                                        <h2 style="margin:3px 0 10px;font-size:17px;color:#17211b">Enter this 6-digit verification code</h2>
+                                                        <div style="font-family:'Courier New',monospace;font-size:32px;font-weight:bold;color:#123f32">{code}</div>
+                                                        <p style="margin:8px 0 0;font-size:13px;color:#6b5522">This verification code expires in 15 minutes.</p>
+                                                    </div>
+
+                                                    <p style="margin:0 0 22px;font-size:14px;color:#526158">If you did not create an AgendaMe account, please disregard this email. No further action is required.</p>
+                                                    <p style="margin:0">Thank you,<br><strong>The AgendaMe Team</strong></p>
+                                                </div>
+
+                                                <hr style="border:0;border-top:1px solid #d9dedb;margin:32px 0">
+
+                                                <div lang="es">
+                                                    <h1 style="margin:0 0 12px;font-family:Georgia,serif;font-size:25px;color:#123f32">¡Bienvenido a AgendaMe!</h1>
+                                                    <p style="margin:0 0 24px">Gracias por registrarte. Para completar tu registro y proteger tu cuenta, verifica tu correo electrónico usando uno de los siguientes métodos.</p>
+
+                                                    <div style="border-left:4px solid #23805e;background:#f3f8f5;padding:18px 20px;margin:0 0 16px">
+                                                        <div style="font-size:12px;font-weight:bold;color:#176b4d">OPCIÓN 1</div>
+                                                        <h2 style="margin:3px 0 14px;font-size:17px;color:#17211b">Haz clic en el botón de verificación</h2>
+                                                        <a href="{htmlLink}" style="display:inline-block;background:#176b4d;color:#ffffff;padding:12px 20px;text-decoration:none;border-radius:6px;font-weight:bold">Verificar mi correo</a>
+                                                        <p style="margin:12px 0 0;font-size:13px;color:#526158">El botón de verificación vence en 24 horas.</p>
+                                                    </div>
+
+                                                    <div style="border-left:4px solid #e4a72c;background:#fff9eb;padding:18px 20px;margin:0 0 24px">
+                                                        <div style="font-size:12px;font-weight:bold;color:#85600e">OPCIÓN 2</div>
+                                                        <h2 style="margin:3px 0 10px;font-size:17px;color:#17211b">Ingresa este código de verificación de 6 dígitos</h2>
+                                                        <div style="font-family:'Courier New',monospace;font-size:32px;font-weight:bold;color:#123f32">{code}</div>
+                                                        <p style="margin:8px 0 0;font-size:13px;color:#6b5522">Este código de verificación vence en 15 minutos.</p>
+                                                    </div>
+
+                                                    <p style="margin:0 0 22px;font-size:14px;color:#526158">Si no creaste una cuenta de AgendaMe, ignora este correo. No es necesario realizar ninguna otra acción.</p>
+                                                    <p style="margin:0">Gracias,<br><strong>El equipo de AgendaMe</strong></p>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                        </table>
+                    </body>
+                    </html>
+                    """;
 
         return new EmailContent(text, html);
     }
@@ -783,7 +868,7 @@ public class IdentityService(
         var message = BuildConfirmationEmail(token, code);
         await emailSender.SendAsync(
             email,
-            "Confirm your email / Confirma tu correo",
+            "Welcome to AgendaMe - Verify your email address / Bienvenido a AgendaMe - Verifica tu correo electrónico",
             message.Text,
             message.Html);
     }

@@ -119,11 +119,25 @@ public class IdentityEmailConfirmationTest : IDisposable
 
         var result = await svc.RegisterAsync(Email, Password, "Provider");
 
-        Assert.Equal("Confirm your email / Confirma tu correo", sender.Subject);
+        Assert.Equal(
+            "Welcome to AgendaMe - Verify your email address / Bienvenido a AgendaMe - Verifica tu correo electrónico",
+            sender.Subject);
         Assert.Contains("Welcome to AgendaMe", sender.Text);
         Assert.Contains("Bienvenido a AgendaMe", sender.Text);
-        Assert.Contains("Confirm email", sender.Html);
-        Assert.Contains("Confirmar correo", sender.Html);
+        Assert.Contains("Option 1: Click the verification button", sender.Text);
+        Assert.Contains("Option 2: Enter this 6-digit verification code", sender.Text);
+        Assert.Contains("Opción 1: Haz clic en el botón de verificación", sender.Text);
+        Assert.Contains("Opción 2: Ingresa este código de verificación de 6 dígitos", sender.Text);
+        Assert.Contains("expires in 15 minutes", sender.Text);
+        Assert.Contains("vence en 15 minutos", sender.Text);
+        Assert.Contains("No further action is required", sender.Text);
+        Assert.Contains("No es necesario realizar ninguna otra acción", sender.Text);
+        Assert.Contains("Verify my email", sender.Html);
+        Assert.Contains("Verificar mi correo", sender.Html);
+        Assert.Contains("OPTION 1", sender.Html);
+        Assert.Contains("OPCIÓN 1", sender.Html);
+        Assert.Contains("The AgendaMe Team", sender.Html);
+        Assert.Contains("El equipo de AgendaMe", sender.Html);
         var link = $"agendame://email/confirm-email?token={Uri.EscapeDataString(result.EmailVerificationToken)}";
         Assert.Equal(2, sender.Html.Split(link, StringSplitOptions.None).Length - 1);
         Assert.Equal(2, sender.Html.Split(result.EmailVerificationCode, StringSplitOptions.None).Length - 1);

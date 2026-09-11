@@ -11,6 +11,7 @@ public class AuthService : IAuthService
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ISecureStorageService _secureStorage;
     private readonly PushNotificationService? _pushNotificationService;
+    private readonly IBiometricAuthenticationService _biometrics;
 
     internal const string RefreshTokenKey = "refresh_token";
 
@@ -19,11 +20,13 @@ public class AuthService : IAuthService
     public AuthService(
         IHttpClientFactory httpClientFactory,
         ISecureStorageService secureStorage,
-        PushNotificationService? pushNotificationService = null)
+        PushNotificationService? pushNotificationService = null,
+        IBiometricAuthenticationService? biometrics = null)
     {
         _httpClientFactory = httpClientFactory;
         _secureStorage = secureStorage;
         _pushNotificationService = pushNotificationService;
+        _biometrics = biometrics ?? new UnavailableBiometricAuthenticationService();
     }
 
     public async Task<bool> LoginAsync(string email, string password, CancellationToken ct = default)
@@ -61,6 +64,60 @@ public class AuthService : IAuthService
             await _pushNotificationService.InitializeAsync();
 
         return true;
+    }
+
+    public async Task<bool> RestoreSessionAsync(CancellationToken ct = default)
+    {
+        var refreshToken = await _secureStorage.GetAsync(RefreshTokenKey);
+        if (string.IsNullOrWhiteSpace(refreshToken))
+            return false;
+
+        if (await _biometrics.IsAvailableAsync(ct) && !await _biometrics.AuthenticateAsync(ct))
+            return false;
+
+        try
+        {
+            var client = _httpClientFactory.CreateClient("AgendaBuddyApiNoAuth");
+            var route = AuthRouteBuilder.Refresh();
+            var response = await client.PostAsJsonAsync(route.Path, new { refreshToken }, ct);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                if (response.StatusCode is System.Net.HttpStatusCode.Unauthorized
+                    or System.Net.HttpStatusCode.Forbidden)
+                {
+                    ClearSession();
+                }
+
+                return false;
+            }
+
+            var refreshed = await response.Content.ReadFromJsonAsync<LoginResponse>(
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true },
+                cancellationToken: ct);
+            if (refreshed is null || string.IsNullOrWhiteSpace(refreshed.AccessToken)
+                                  || string.IsNullOrWhiteSpace(refreshed.RefreshToken))
+            {
+                ClearSession();
+                return false;
+            }
+
+            await _secureStorage.SetAsync(JwtDelegatingHandler.JwtKey, refreshed.AccessToken);
+            await _secureStorage.SetAsync(RefreshTokenKey, refreshed.RefreshToken);
+
+            if (_pushNotificationService is not null)
+                await _pushNotificationService.InitializeAsync();
+
+            return true;
+        }
+        catch (HttpRequestException)
+        {
+            return false;
+        }
+        catch (TaskCanceledException) when (!ct.IsCancellationRequested)
+        {
+            return false;
+        }
     }
 
     public async Task<bool> ConfirmEmailAsync(string token, CancellationToken ct = default)
@@ -142,8 +199,7 @@ public class AuthService : IAuthService
         }
         finally
         {
-            _secureStorage.Remove(JwtDelegatingHandler.JwtKey);
-            _secureStorage.Remove(RefreshTokenKey);
+            ClearSession();
         }
     }
 
@@ -189,9 +245,14 @@ public class AuthService : IAuthService
         }
         finally
         {
-            _secureStorage.Remove(JwtDelegatingHandler.JwtKey);
-            _secureStorage.Remove(RefreshTokenKey);
+            ClearSession();
         }
+    }
+
+    private void ClearSession()
+    {
+        _secureStorage.Remove(JwtDelegatingHandler.JwtKey);
+        _secureStorage.Remove(RefreshTokenKey);
     }
 
     public async Task<bool> RequestPasswordResetAsync(string email, CancellationToken ct = default)

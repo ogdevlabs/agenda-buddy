@@ -73,6 +73,87 @@ public class AuthServiceTests
     }
 
     [Fact]
+    public async Task RestoreSessionAsync_AvailableBiometricsAndValidRefresh_RotatesTokens()
+    {
+        var storage = new Mock<ISecureStorageService>();
+        storage.Setup(s => s.GetAsync(AuthService.RefreshTokenKey)).ReturnsAsync("stored-refresh");
+        storage.Setup(s => s.SetAsync(It.IsAny<string>(), It.IsAny<string>())).Returns(Task.CompletedTask);
+        var biometrics = new Mock<IBiometricAuthenticationService>();
+        biometrics.Setup(s => s.IsAvailableAsync(It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        biometrics.Setup(s => s.AuthenticateAsync(It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        var factory = CreateFactory(
+            HttpStatusCode.OK,
+            """{"accessToken":"renewed-access","refreshToken":"renewed-refresh"}""");
+
+        var restored = await new AuthService(factory, storage.Object, biometrics: biometrics.Object)
+            .RestoreSessionAsync();
+
+        Assert.True(restored);
+        biometrics.Verify(s => s.AuthenticateAsync(It.IsAny<CancellationToken>()), Times.Once);
+        storage.Verify(s => s.SetAsync(JwtDelegatingHandler.JwtKey, "renewed-access"), Times.Once);
+        storage.Verify(s => s.SetAsync(AuthService.RefreshTokenKey, "renewed-refresh"), Times.Once);
+    }
+
+    [Fact]
+    public async Task RestoreSessionAsync_NoEnrolledBiometrics_RestoresWithoutPrompt()
+    {
+        var storage = new Mock<ISecureStorageService>();
+        storage.Setup(s => s.GetAsync(AuthService.RefreshTokenKey)).ReturnsAsync("stored-refresh");
+        storage.Setup(s => s.SetAsync(It.IsAny<string>(), It.IsAny<string>())).Returns(Task.CompletedTask);
+        var biometrics = new Mock<IBiometricAuthenticationService>();
+        biometrics.Setup(s => s.IsAvailableAsync(It.IsAny<CancellationToken>())).ReturnsAsync(false);
+        var factory = CreateFactory(
+            HttpStatusCode.OK,
+            """{"accessToken":"renewed-access","refreshToken":"renewed-refresh"}""");
+
+        var restored = await new AuthService(factory, storage.Object, biometrics: biometrics.Object)
+            .RestoreSessionAsync();
+
+        Assert.True(restored);
+        biometrics.Verify(s => s.AuthenticateAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task RestoreSessionAsync_BiometricDenied_DoesNotExposeOrDeleteSession()
+    {
+        var storage = new Mock<ISecureStorageService>();
+        storage.Setup(s => s.GetAsync(AuthService.RefreshTokenKey)).ReturnsAsync("stored-refresh");
+        var biometrics = new Mock<IBiometricAuthenticationService>();
+        biometrics.Setup(s => s.IsAvailableAsync(It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        biometrics.Setup(s => s.AuthenticateAsync(It.IsAny<CancellationToken>())).ReturnsAsync(false);
+        var handler = new FakeHttpMessageHandler(HttpStatusCode.OK);
+        var client = new HttpClient(handler) { BaseAddress = new Uri("https://localhost/") };
+        var factory = new Mock<IHttpClientFactory>();
+        factory.Setup(f => f.CreateClient("AgendaBuddyApiNoAuth")).Returns(client);
+
+        var restored = await new AuthService(factory.Object, storage.Object, biometrics: biometrics.Object)
+            .RestoreSessionAsync();
+
+        Assert.False(restored);
+        Assert.Empty(handler.Requests);
+        storage.Verify(s => s.Remove(It.IsAny<string>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task RestoreSessionAsync_RejectedRefresh_ClearsExpiredSession()
+    {
+        var storage = new Mock<ISecureStorageService>();
+        storage.Setup(s => s.GetAsync(AuthService.RefreshTokenKey)).ReturnsAsync("expired-refresh");
+        var biometrics = new Mock<IBiometricAuthenticationService>();
+        biometrics.Setup(s => s.IsAvailableAsync(It.IsAny<CancellationToken>())).ReturnsAsync(false);
+
+        var restored = await new AuthService(
+                CreateFactory(HttpStatusCode.Unauthorized),
+                storage.Object,
+                biometrics: biometrics.Object)
+            .RestoreSessionAsync();
+
+        Assert.False(restored);
+        storage.Verify(s => s.Remove(JwtDelegatingHandler.JwtKey), Times.Once);
+        storage.Verify(s => s.Remove(AuthService.RefreshTokenKey), Times.Once);
+    }
+
+    [Fact]
     public async Task RegisterAsync_PendingVerification_DoesNotStoreSessionTokens()
     {
         var storage = new Mock<ISecureStorageService>();
