@@ -137,7 +137,7 @@ and consent labels. A language switch never changes consent state.
 - iOS: package Spanish satellite resources and declare `CFBundleLocalizations` for `en` and `es-MX`. The OS
   app-language setting determines process culture on launch when no in-app override exists.
 - Android: package Spanish satellite resources and add a locale config for `en` and `es-MX` so Android 13+
-  exposes AgendaMe under App Languages. API 21–32 continue through the in-app preference/coordinator.
+  exposes AgendaMe under App Languages. API 29–32 continue through the in-app preference/coordinator.
 - The in-app picker remains cross-platform and authoritative once the user makes an explicit choice.
 
 Platform APIs select a locale; they do not translate resources. Apple Translation and Google ML Kit remain

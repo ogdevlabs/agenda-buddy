@@ -196,7 +196,7 @@ Source files are guarded to match: `MauiProgram.cs:1`/`:81` and `AppShell.xaml.c
 
 ⚠️ **`PushNotificationService.RegisterTokenAsync` becomes `return;` at line 48 in the non-Firebase slice** (`#else return; #endif`), followed by `#pragma warning disable CS0162` (unreachable code) at `:51`. The tests can only ever exercise the early-return path, so the token-registration flow that ships on Android is untested.
 
-⚠️ **`SupportedOSPlatformVersion` for iOS is 18.0** (`:39`) and Android 21 (`:40`) — iOS 18 is aggressive (drops iPhone X and earlier); Android 21 is very permissive. `[unknown — outside repo]` whether that matches the target market.
+⚠️ **`SupportedOSPlatformVersion` for iOS is 18.0 and Android is 29.0.** Android 10 is now the minimum because cold-start session restoration uses the platform `BiometricManager` to distinguish enrolled biometrics from devices that need password fallback, without an incompatible AndroidX biometric dependency.
 
 ---
 

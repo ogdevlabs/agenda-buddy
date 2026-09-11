@@ -15,6 +15,8 @@
   <data name="General_Cancel" xml:space="preserve">
     <value>Cancelar</value>
   </data>
+  <data name="Biometric_Title" xml:space="preserve"><value>Desbloquear AgendaMe</value></data>
+  <data name="Biometric_Reason" xml:space="preserve"><value>Confirma tu identidad para restaurar tu sesión.</value></data>
   <data name="General_Save" xml:space="preserve">
     <value>Guardar</value>
   </data>

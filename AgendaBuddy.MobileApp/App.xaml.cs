@@ -11,8 +11,6 @@ public partial class App : Application
     private readonly IServiceProvider _services;
     private readonly ILanguageCoordinator _languageCoordinator;
     private readonly NotificationBadgeViewModel _notificationBadge;
-
-#if DEBUG
     private readonly IAuthService _authService;
 
     public App(
@@ -28,19 +26,6 @@ public partial class App : Application
         _authService = authService;
         InitializeLanguageAndNavigation();
     }
-#else
-    public App(
-        IServiceProvider services,
-        ILanguageCoordinator languageCoordinator,
-        NotificationBadgeViewModel notificationBadge)
-    {
-        InitializeComponent();
-        _services = services;
-        _languageCoordinator = languageCoordinator;
-        _notificationBadge = notificationBadge;
-        InitializeLanguageAndNavigation();
-    }
-#endif
 
     protected override Window CreateWindow(IActivationState? activationState)
     {
@@ -51,11 +36,33 @@ public partial class App : Application
         // stale until the reader happened to open the page whose whole job is telling them it changed.
         window.Resumed += (_, _) => _ = _notificationBadge.RefreshAsync();
 
-#if DEBUG
-        window.Created += (_, _) => _ = SignInFromLaunchEnvironmentAsync();
-#endif
+        window.Created += async (_, _) => await InitializeSessionAsync();
 
         return window;
+    }
+
+    private async Task InitializeSessionAsync()
+    {
+        if (await RestoreStoredSessionAsync())
+            return;
+
+#if DEBUG
+        await SignInFromLaunchEnvironmentAsync();
+#endif
+    }
+
+    private async Task<bool> RestoreStoredSessionAsync()
+    {
+        if (!await _authService.RestoreSessionAsync())
+            return false;
+
+        if (Shell.Current is AppShell shell)
+            await shell.UpdateForRoleAsync();
+
+        if (Shell.Current is not null)
+            await Shell.Current.GoToAsync("//dashboard");
+
+        return true;
     }
 
     private void InitializeLanguageAndNavigation()

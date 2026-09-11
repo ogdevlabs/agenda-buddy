@@ -19,6 +19,8 @@ public static class AppResources
     public static CultureInfo CurrentCulture => Culture ?? CultureInfo.CurrentCulture;
 
     public static string General_Cancel => GetString(nameof(General_Cancel));
+    public static string Biometric_Title => GetString(nameof(Biometric_Title));
+    public static string Biometric_Reason => GetString(nameof(Biometric_Reason));
     public static string General_Save => GetString(nameof(General_Save));
     public static string EmailVerification_Title => GetString(nameof(EmailVerification_Title));
     public static string EmailVerification_Heading => GetString(nameof(EmailVerification_Heading));
