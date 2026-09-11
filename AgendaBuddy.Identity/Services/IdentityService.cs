@@ -31,6 +31,7 @@ public class IdentityService(
     private static readonly string[] AllowedRoles = ["Provider", "Customer"];
     private static readonly TimeSpan ResetTokenLifetime = TimeSpan.FromMinutes(30);
     private static readonly TimeSpan EmailVerificationTokenLifetime = TimeSpan.FromHours(24);
+    private static readonly TimeSpan EmailVerificationCodeLifetime = TimeSpan.FromMinutes(15);
 
     /// <summary>
     /// Lockout thresholds. Both parameters are optional so the shipped defaults apply to any caller that
@@ -72,6 +73,7 @@ public class IdentityService(
 
         var hash = BCrypt.Net.BCrypt.HashPassword(password, workFactor: 12);
         var (verificationOpaque, verificationHash) = CreateRefreshToken();
+        var verificationCode = CreateEmailVerificationCode();
         var verificationExpiry = clock.UtcNow.Add(EmailVerificationTokenLifetime);
 
         var credential = new CredentialEntity
@@ -85,6 +87,8 @@ public class IdentityService(
             EmailVerificationToken = new EmailVerificationTokenDocument
             {
                 Hash = verificationHash,
+                CodeHash = HashToken(verificationCode),
+                CodeExpiry = clock.UtcNow.Add(EmailVerificationCodeLifetime),
                 Expiry = verificationExpiry
             }
         };
@@ -117,9 +121,9 @@ public class IdentityService(
                 appointmentIdentifier: string.Empty));
         }
 
-        await SendConfirmationEmailAsync(email, verificationOpaque);
+        await SendConfirmationEmailAsync(email, verificationOpaque, verificationCode);
 
-        return new RegistrationResponse(verificationOpaque);
+        return new RegistrationResponse(verificationOpaque, verificationCode);
     }
 
     /// <summary>
@@ -130,6 +134,7 @@ public class IdentityService(
     {
         email = email.ToLowerInvariant();
         var (verificationOpaque, verificationHash) = CreateRefreshToken();
+        var verificationCode = CreateEmailVerificationCode();
         var verificationExpiry = clock.UtcNow.Add(EmailVerificationTokenLifetime);
 
         CredentialEntity? credential;
@@ -148,6 +153,8 @@ public class IdentityService(
                         new BsonDocument
                         {
                             { "hash", verificationHash },
+                            { "code_hash", HashToken(verificationCode) },
+                            { "code_expiry", clock.UtcNow.Add(EmailVerificationCodeLifetime) },
                             { "expiry", verificationExpiry }
                         })));
         }
@@ -161,7 +168,7 @@ public class IdentityService(
         _log.LogInformation(
             "credential.email-confirmation-requested for {Account}: expires {Expiry:O}",
             AccountReference(email), verificationExpiry);
-        await SendConfirmationEmailAsync(email, verificationOpaque);
+        await SendConfirmationEmailAsync(email, verificationOpaque, verificationCode);
     }
 
     /// <summary>
@@ -196,6 +203,39 @@ public class IdentityService(
 
         if (credential is null)
             throw new UnauthorizedException("This confirmation link is invalid or has expired.");
+
+        _log.LogInformation(
+            "credential.email-confirmed ok for {Account}", AccountReference(credential.Email));
+    }
+
+    public async Task ConfirmEmailCodeAsync(string email, string code)
+    {
+        email = email.ToLowerInvariant();
+        var now = clock.UtcNow;
+
+        CredentialEntity? credential;
+        try
+        {
+            credential = await repository.FindOneAndUpdateAsync(
+                new BsonDocument
+                {
+                    { "email", email },
+                    { "email_verification_token.code_hash", HashToken(code) },
+                    { "email_verification_token.code_expiry", new BsonDocument("$gt", now) }
+                },
+                new BsonDocument
+                {
+                    { "$set", new BsonDocument("email_verified", true) },
+                    { "$unset", new BsonDocument("email_verification_token", 1) }
+                });
+        }
+        catch (Exception ex) when (IsMongoDown(ex))
+        {
+            throw new ServiceUnavailableException();
+        }
+
+        if (credential is null)
+            throw new UnauthorizedException("This confirmation code is invalid or has expired.");
 
         _log.LogInformation(
             "credential.email-confirmed ok for {Account}", AccountReference(credential.Email));
@@ -697,20 +737,21 @@ public class IdentityService(
         new() { { "hash", hash }, { "expiry", expiry } };
 
     /// <summary>
-    /// Bilingual confirmation message. Both actions use the same verified HTTPS app link.
+    /// Bilingual confirmation message. The app link is convenient when AgendaMe is installed; the code is
+    /// the universal fallback and is bound to the registered email at confirmation time.
     /// </summary>
-    private EmailContent BuildConfirmationEmail(string token)
+    private EmailContent BuildConfirmationEmail(string token, string code)
     {
-        var baseUrl = string.IsNullOrWhiteSpace(_email.AppLinkBaseUrl)
-                ? "https://agendame.app"
-                : _email.AppLinkBaseUrl.TrimEnd('/');
-        var link = $"{baseUrl}/confirm-email?token={Uri.EscapeDataString(token)}";
+        var link = $"agendame://email/confirm-email?token={Uri.EscapeDataString(token)}";
         var htmlLink = System.Net.WebUtility.HtmlEncode(link);
         var text = $"Welcome to AgendaMe, please confirm your email address by clicking the button below.\n"
                              + $"Confirm email: {link}\n\n"
+                             + $"Or enter this code in AgendaMe: {code}\n\n"
                              + "Bienvenido a AgendaMe, por favor confirma tu correo electrónico dando clic en el botón debajo.\n"
                              + $"Confirmar correo: {link}\n\n"
-                             + "This link expires in 24 hours. / Este enlace vence en 24 horas.";
+                             + $"O ingresa este código en AgendaMe: {code}\n\n"
+                             + "The code expires in 15 minutes; the button expires in 24 hours. / "
+                             + "El código vence en 15 minutos; el botón vence en 24 horas.";
         var html = $"""
                         <!doctype html>
                         <html lang="en">
@@ -718,12 +759,16 @@ public class IdentityService(
                             <h1 style="font-size:24px">AgendaMe</h1>
                             <p>Welcome to AgendaMe, please confirm your email address by clicking the button below.</p>
                               <p><a href="{htmlLink}" style="display:inline-block;background:#176b4d;color:#ffffff;padding:12px 20px;text-decoration:none;border-radius:6px">Confirm email</a></p>
+                                                        <p>Or enter this code in AgendaMe:</p>
+                                                        <p style="font-size:28px;font-weight:bold;letter-spacing:6px">{code}</p>
                             <hr style="border:0;border-top:1px solid #d9dedb;margin:28px 0">
                             <div lang="es">
                                 <p>Bienvenido a AgendaMe, por favor confirma tu correo electrónico dando clic en el botón debajo.</p>
                                 <p><a href="{htmlLink}" style="display:inline-block;background:#176b4d;color:#ffffff;padding:12px 20px;text-decoration:none;border-radius:6px">Confirmar correo</a></p>
+                                                                <p>O ingresa este código en AgendaMe:</p>
+                                                                <p style="font-size:28px;font-weight:bold;letter-spacing:6px">{code}</p>
                             </div>
-                            <p style="color:#526158;font-size:14px">This link expires in 24 hours. / Este enlace vence en 24 horas.</p>
+                            <p style="color:#526158;font-size:14px">The code expires in 15 minutes; the button expires in 24 hours. / El código vence en 15 minutos; el botón vence en 24 horas.</p>
                         </body>
                         </html>
                         """;
@@ -731,11 +776,11 @@ public class IdentityService(
         return new EmailContent(text, html);
     }
 
-    private async Task SendConfirmationEmailAsync(string email, string token)
+    private async Task SendConfirmationEmailAsync(string email, string token, string code)
     {
         if (emailSender is null) return;
 
-        var message = BuildConfirmationEmail(token);
+        var message = BuildConfirmationEmail(token, code);
         await emailSender.SendAsync(
             email,
             "Confirm your email / Confirma tu correo",
@@ -818,6 +863,10 @@ public class IdentityService(
         var opaque = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
         return (opaque, HashToken(opaque));
     }
+
+    private static string CreateEmailVerificationCode() =>
+        RandomNumberGenerator.GetInt32(1_000_000)
+            .ToString("D6", System.Globalization.CultureInfo.InvariantCulture);
 
     /// <summary>
     /// A one-way, log-safe handle for an account: <c>acct_</c> plus the first 12 hex characters of

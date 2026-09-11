@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.RateLimiting;
 namespace AgendaBuddy.Identity.Extensions;
 
 /// <summary>
-/// The per-IP limiter on the two routes that spend BCrypt.
+/// The per-IP limiter on routes that spend BCrypt or verify a low-entropy email code.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -19,7 +19,7 @@ namespace AgendaBuddy.Identity.Extensions;
 /// domestic connection.
 /// </para>
 /// <para>
-/// <b>Both routes, not just login</b> (design decision D-4): <c>RegisterAsync</c> hashes at the same work
+/// <b>Both BCrypt routes, not just login</b> (design decision D-4): <c>RegisterAsync</c> hashes at the same work
 /// factor, so limiting <c>login</c> alone would leave an equal-cost vector wide open. <c>refresh</c> is
 /// deliberately <b>not</b> limited — it spends no BCrypt, and throttling it would risk breaking a
 /// legitimate client's hourly rotation.
@@ -31,6 +31,8 @@ namespace AgendaBuddy.Identity.Extensions;
 /// account is already loaded. The two halves also cover disjoint attacks: Identity verifies an unknown
 /// email against a dummy hash to keep enumeration constant-time, so an attacker using
 /// random addresses generates <b>no per-account state at all</b> and only the limiter sees them.
+/// Six-digit email confirmation uses this policy as well: the code has one million possible values, so
+/// unlimited online attempts would turn a convenience fallback into an account-verification bypass.
 /// </para>
 /// </remarks>
 public static class RateLimitingExtensions

@@ -6,17 +6,7 @@ namespace AgendaBuddy.MobileApp.Tests.Infrastructure;
 public class EmailConfirmationLinkTests
 {
     [Fact]
-    public void AgendaMeHttpsLinkReturnsDecodedToken()
-    {
-        var result = EmailConfirmationLink.Parse(
-            new Uri("https://agendame.app/confirm-email?token=a%2Bb%2Fc%3D"));
-
-        Assert.True(result.IsValid);
-        Assert.Equal("a+b/c=", result.Token);
-    }
-
-    [Fact]
-    public void DebugBuildAcceptsTheLocalSimulatorLink()
+    public void InstalledAppLinkReturnsDecodedToken()
     {
         var result = EmailConfirmationLink.Parse(
             new Uri("agendame://email/confirm-email?token=a%2Bb%2Fc%3D"));
@@ -27,6 +17,7 @@ public class EmailConfirmationLinkTests
 
     [Theory]
     [InlineData("http://agendame.app/confirm-email?token=abc")]
+    [InlineData("https://agendame.app/confirm-email?token=abc")]
     [InlineData("https://evil.example/confirm-email?token=abc")]
     [InlineData("https://agendame.app/other?token=abc")]
     [InlineData("https://agendame.app/confirm-email")]

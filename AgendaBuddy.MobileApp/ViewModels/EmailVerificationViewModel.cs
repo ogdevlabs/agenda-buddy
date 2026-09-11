@@ -14,6 +14,12 @@ public partial class EmailVerificationViewModel(IAuthService authService) : Obse
     private string _token = string.Empty;
 
     [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(ConfirmCodeCommand))]
+    private string _code = string.Empty;
+
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(ConfirmCodeCommand))]
+    [NotifyCanExecuteChangedFor(nameof(ResendCommand))]
     private bool _isLoading;
 
     [ObservableProperty]
@@ -37,6 +43,32 @@ public partial class EmailVerificationViewModel(IAuthService authService) : Obse
             StatusMessage = IsVerified
                 ? AppResources.EmailVerification_Verified
                 : AppResources.EmailVerification_Invalid;
+            if (IsVerified)
+                VerificationSucceeded?.Invoke();
+        }
+        catch (HttpRequestException)
+        {
+            StatusMessage = AppResources.EmailVerification_VerifyUnavailable;
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    [RelayCommand(CanExecute = nameof(CanConfirmCode))]
+    private async Task ConfirmCodeAsync()
+    {
+        IsLoading = true;
+        StatusMessage = AppResources.EmailVerification_CheckingCode;
+        try
+        {
+            IsVerified = await authService.ConfirmEmailCodeAsync(Email.Trim(), Code);
+            StatusMessage = IsVerified
+                ? AppResources.EmailVerification_Verified
+                : AppResources.EmailVerification_InvalidCode;
+            if (IsVerified)
+                VerificationSucceeded?.Invoke();
         }
         catch (HttpRequestException)
         {
@@ -70,6 +102,14 @@ public partial class EmailVerificationViewModel(IAuthService authService) : Obse
     }
 
     private bool CanResend() => !string.IsNullOrWhiteSpace(Email) && !IsLoading;
+
+    private bool CanConfirmCode() =>
+        !string.IsNullOrWhiteSpace(Email)
+        && Code.Length == 6
+        && Code.All(char.IsAsciiDigit)
+        && !IsLoading;
+
+    public event Action? VerificationSucceeded;
 
     partial void OnIsVerifiedChanged(bool value) => OnPropertyChanged(nameof(ShowPendingActions));
 }

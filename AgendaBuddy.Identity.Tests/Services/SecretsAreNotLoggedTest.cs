@@ -38,16 +38,19 @@ public class SecretsAreNotLoggedTest : IDisposable
     public void Dispose() => Environment.SetEnvironmentVariable("JWT_PRIVATE_KEY", null);
 
     [Fact]
-    public async Task Register_DoesNotLogTheEmailConfirmationToken()
+    public async Task Register_DoesNotLogTheEmailConfirmationTokenOrCode()
     {
         var result = await _svc.RegisterAsync("logging@example.com", "password123", "Provider");
 
         var token = result!.EmailVerificationToken;
+        var code = result.EmailVerificationCode;
         Assert.False(string.IsNullOrWhiteSpace(token));
+        Assert.Matches("^[0-9]{6}$", code);
 
         // The event itself is still recorded — only the secret is gone.
         Assert.Contains(_logger.Messages, m => m.Contains("credential.email-confirmation-requested"));
         Assert.DoesNotContain(_logger.Messages, m => m.Contains(token!));
+        Assert.DoesNotContain(_logger.Messages, m => m.Contains(code));
     }
 
     [Fact]

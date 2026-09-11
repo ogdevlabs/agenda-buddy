@@ -160,8 +160,7 @@ internal static class AppHostWiring
         if (deployTarget == DeploymentTarget.Local)
         {
             identity
-                .WithEnvironment("Email__LocalCaptureEnabled", "true")
-                .WithEnvironment("Email__AppLinkBaseUrl", "agendame://email");
+                .WithEnvironment("Email__LocalCaptureEnabled", "true");
         }
         var booking = AddApi<Projects.AgendaBuddy_Booking_Api>(
             "booking", agendaDb, needsPushDelivery: true, needsPayments: true);

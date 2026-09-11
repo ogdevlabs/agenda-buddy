@@ -270,7 +270,6 @@ public class AppHostWiringTest
         var identity = await PublishEnvironmentOf(builder, "identity");
 
         Assert.Equal("true", Assert.Contains("Email__LocalCaptureEnabled", identity));
-        Assert.Equal("agendame://email", Assert.Contains("Email__AppLinkBaseUrl", identity));
 
         foreach (var service in ExpectedServices.Where(name => name != "identity"))
         {
@@ -285,7 +284,6 @@ public class AppHostWiringTest
         var environment = await PublishEnvironmentOf(BuildModel(DeploymentTarget.Cloud), "identity");
 
         Assert.DoesNotContain("Email__LocalCaptureEnabled", environment.Keys);
-        Assert.DoesNotContain("Email__AppLinkBaseUrl", environment.Keys);
     }
 
     // ── Push delivery ───────────────────────────────────────────────────────────────────────────────

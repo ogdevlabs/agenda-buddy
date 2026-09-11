@@ -71,6 +71,17 @@ public class AuthService : IAuthService
         return response.IsSuccessStatusCode;
     }
 
+    public async Task<bool> ConfirmEmailCodeAsync(
+        string email,
+        string code,
+        CancellationToken ct = default)
+    {
+        var client = _httpClientFactory.CreateClient("AgendaBuddyApiNoAuth");
+        var route = AuthRouteBuilder.ConfirmEmail();
+        var response = await client.PostAsJsonAsync(route.Path, new { email, code }, ct);
+        return response.IsSuccessStatusCode;
+    }
+
     public async Task<bool> RequestEmailVerificationAsync(string email, CancellationToken ct = default)
     {
         var client = _httpClientFactory.CreateClient("AgendaBuddyApiNoAuth");

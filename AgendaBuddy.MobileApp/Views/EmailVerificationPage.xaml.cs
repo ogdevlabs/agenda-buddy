@@ -17,6 +17,7 @@ public partial class EmailVerificationPage : ContentPage, IQueryAttributable
         _viewModel = viewModel;
         _pendingRegistrationStore = pendingRegistrationStore;
         BindingContext = viewModel;
+        viewModel.VerificationSucceeded += OnVerificationSucceeded;
     }
 
     protected override async void OnAppearing()
@@ -42,6 +43,9 @@ public partial class EmailVerificationPage : ContentPage, IQueryAttributable
     }
 
     private async void OnSignInClicked(object? sender, EventArgs eventArgs) =>
+        await Shell.Current.GoToAsync("//login");
+
+    private async void OnVerificationSucceeded() =>
         await Shell.Current.GoToAsync("//login");
 }
 #endif

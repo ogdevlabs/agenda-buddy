@@ -113,6 +113,14 @@ public class EmailVerificationTokenDocument
     [BsonElement("hash")]
     public string Hash { get; set; }
 
+    /// <summary>SHA-256 hash of the six-digit fallback code. The raw code is delivered only by email.</summary>
+    [BsonElement("code_hash")]
+    public string CodeHash { get; set; }
+
+    /// <summary>UTC expiry for the low-entropy code; deliberately shorter than the app-link token.</summary>
+    [BsonElement("code_expiry")]
+    public DateTime CodeExpiry { get; set; }
+
     /// <summary>UTC expiry timestamp — 24 hours, longer-lived than a password-reset token since
     /// confirming ownership is not as time-sensitive as a credential change.</summary>
     [BsonElement("expiry")]

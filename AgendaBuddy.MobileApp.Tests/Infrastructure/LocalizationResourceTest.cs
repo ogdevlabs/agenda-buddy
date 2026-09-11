@@ -13,6 +13,7 @@ public class LocalizationResourceTest
         "Appointment_TimeAndDuration",
         "Duration_ManyMinutes",
         "Duration_OneMinute",
+        "EmailVerification_CodePlaceholder",
         "Fee_WithType",
         "Profession_014",
         "Profession_018",

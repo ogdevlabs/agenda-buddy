@@ -47,6 +47,24 @@
                                AutomationId="VerificationEmailEntry" />
                     </Frame>
 
+                          <Label Text="{x:Static strings:AppResources.EmailVerification_CodeInstruction}"
+                              Style="{StaticResource BodySecondary}"
+                              HorizontalTextAlignment="Center" />
+                          <Frame Style="{StaticResource InputFrame}">
+                           <Entry Text="{Binding Code}"
+                               Placeholder="{x:Static strings:AppResources.EmailVerification_CodePlaceholder}"
+                               Keyboard="Numeric"
+                               MaxLength="6"
+                               HorizontalTextAlignment="Center"
+                               FontSize="24"
+                               Style="{StaticResource InputStyle}"
+                               AutomationId="VerificationCodeEntry" />
+                          </Frame>
+                          <controls:SafeButton Text="{x:Static strings:AppResources.EmailVerification_ConfirmCode}"
+                                      Style="{StaticResource PrimaryButton}"
+                                      Command="{Binding ConfirmCodeCommand}"
+                                      AutomationId="ConfirmVerificationCodeButton" />
+
                     <ActivityIndicator IsRunning="{Binding IsLoading}"
                                        IsVisible="{Binding IsLoading}"
                                        Color="{StaticResource Primary}"

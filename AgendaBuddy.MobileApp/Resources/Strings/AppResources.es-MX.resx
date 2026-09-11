@@ -1000,7 +1000,7 @@
   <data name="EmailVerification_Title" xml:space="preserve"><value>Confirmar correo</value></data>
   <data name="EmailVerification_Heading" xml:space="preserve"><value>Confirma tu correo</value></data>
   <data name="EmailVerification_Resend" xml:space="preserve"><value>Reenviar correo</value></data>
-  <data name="EmailVerification_Pending" xml:space="preserve"><value>Revisa tu bandeja de entrada y abre el enlace de confirmación.</value></data>
+  <data name="EmailVerification_Pending" xml:space="preserve"><value>Revisa tu correo. Abre el botón del mensaje o ingresa el código de seis dígitos aquí.</value></data>
   <data name="EmailVerification_Checking" xml:space="preserve"><value>Verificando tu enlace de confirmación...</value></data>
   <data name="EmailVerification_Verified" xml:space="preserve"><value>Correo confirmado. Inicia sesión para continuar.</value></data>
   <data name="EmailVerification_Invalid" xml:space="preserve"><value>Este enlace de confirmación no es válido o ha vencido.</value></data>
@@ -1008,4 +1008,10 @@
   <data name="EmailVerification_Resent" xml:space="preserve"><value>Si esta cuenta está pendiente de confirmación, se envió un enlace nuevo.</value></data>
   <data name="EmailVerification_ResendFailed" xml:space="preserve"><value>No pudimos enviar un enlace nuevo. Inténtalo de nuevo en unos momentos.</value></data>
   <data name="EmailVerification_ResendUnavailable" xml:space="preserve"><value>No pudimos enviar un enlace nuevo. Revisa tu conexión e inténtalo de nuevo.</value></data>
+  <data name="EmailVerification_CodeInstruction" xml:space="preserve"><value>Ingresa el código de seis dígitos que enviamos a tu correo.</value></data>
+  <data name="EmailVerification_CodePlaceholder" xml:space="preserve"><value>000000</value></data>
+  <data name="EmailVerification_ConfirmCode" xml:space="preserve"><value>Confirmar código</value></data>
+  <data name="EmailVerification_CheckingCode" xml:space="preserve"><value>Verificando tu código de confirmación...</value></data>
+  <data name="EmailVerification_InvalidCode" xml:space="preserve"><value>Este código de confirmación no es válido o ha vencido.</value></data>
+  <data name="Registration_CheckEmailToast" xml:space="preserve"><value>Cuenta creada. Revisa tu correo para usar el botón o código de confirmación.</value></data>
 </root>

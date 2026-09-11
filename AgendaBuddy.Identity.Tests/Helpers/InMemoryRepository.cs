@@ -258,6 +258,8 @@ public class InMemoryCredentialRepository : IRepository<CredentialEntity>
                     : new EmailVerificationTokenDocument
                     {
                         Hash = value.AsBsonDocument["hash"].AsString,
+                        CodeHash = value.AsBsonDocument["code_hash"].AsString,
+                        CodeExpiry = value.AsBsonDocument["code_expiry"].ToUniversalTime(),
                         Expiry = value.AsBsonDocument["expiry"].ToUniversalTime()
                     };
                 break;
@@ -335,6 +337,8 @@ public class InMemoryCredentialRepository : IRepository<CredentialEntity>
             "reset_token.hash" => Compare(e.ResetToken?.Hash, condition),
             "reset_token.expiry" => Compare(e.ResetToken?.Expiry, condition),
             "email_verification_token.hash" => Compare(e.EmailVerificationToken?.Hash, condition),
+            "email_verification_token.code_hash" => Compare(e.EmailVerificationToken?.CodeHash, condition),
+            "email_verification_token.code_expiry" => Compare(e.EmailVerificationToken?.CodeExpiry, condition),
             "email_verification_token.expiry" => Compare(e.EmailVerificationToken?.Expiry, condition),
             "failed_attempts" => Compare(e.FailedAttempts, condition),
             "lock_until" => Compare(e.LockUntil, condition),

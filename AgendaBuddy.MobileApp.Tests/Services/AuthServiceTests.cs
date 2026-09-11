@@ -83,6 +83,25 @@ public class AuthServiceTests
         storage.Verify(s => s.SetAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
     }
 
+    [Fact]
+    public async Task ConfirmEmailCodeAsync_PostsEmailAndSixDigitCode()
+    {
+        var storage = new Mock<ISecureStorageService>();
+        var handler = new FakeHttpMessageHandler(HttpStatusCode.NoContent);
+        var client = new HttpClient(handler) { BaseAddress = new Uri("https://localhost/") };
+        var factory = new Mock<IHttpClientFactory>();
+        factory.Setup(f => f.CreateClient("AgendaBuddyApiNoAuth")).Returns(client);
+        var sut = new AuthService(factory.Object, storage.Object);
+
+        Assert.True(await sut.ConfirmEmailCodeAsync("user@example.com", "123456"));
+
+        var request = Assert.Single(handler.Requests);
+        Assert.Equal("api/v1/auth/register/confirm", request.RequestUri!.AbsolutePath.TrimStart('/'));
+        var body = await request.Content!.ReadAsStringAsync();
+        Assert.Contains("user@example.com", body);
+        Assert.Contains("123456", body);
+    }
+
     // ---------------------------------------------------------------------------
     // LogoutAsync calls the server-side logout endpoint (in addition to
     // clearing local storage), carrying the stored refresh token so Identity can invalidate it.

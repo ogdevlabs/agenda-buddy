@@ -110,6 +110,7 @@ public class IdentityPersistenceTest(ServiceHostFixture<IdentityAnchor> host, Cr
             Assert.False(afterRegister.EmailVerified);
             Assert.Null(afterRegister.RefreshToken);
             Assert.NotNull(emailSender.Token);
+            Assert.Matches("^[0-9]{6}$", emailSender.Code);
 
             var blockedLogin = await service.Client.PostAsJsonAsync("api/v1/auth/login", new
             {
@@ -119,7 +120,7 @@ public class IdentityPersistenceTest(ServiceHostFixture<IdentityAnchor> host, Cr
             Assert.Equal(HttpStatusCode.Forbidden, blockedLogin.StatusCode);
 
             var confirmResponse = await service.Client.PostAsJsonAsync(
-                "api/v1/auth/register/confirm", new { Token = emailSender.Token });
+                "api/v1/auth/register/confirm", new { Email = RegisterEmail, Code = emailSender.Code });
             Assert.Equal(HttpStatusCode.NoContent, confirmResponse.StatusCode);
 
             // ── login ───────────────────────────────────────────────────────────────────────────────
@@ -172,6 +173,7 @@ public class IdentityPersistenceTest(ServiceHostFixture<IdentityAnchor> host, Cr
     private sealed class RecordingEmailSender : IEmailSender
     {
         public string? Token { get; private set; }
+        public string? Code { get; private set; }
 
         public Task<bool> SendAsync(
             string toAddress,
@@ -193,6 +195,7 @@ public class IdentityPersistenceTest(ServiceHostFixture<IdentityAnchor> host, Cr
             var end = body.IndexOfAny(['\r', '\n'], start);
             var encoded = end < 0 ? body[start..] : body[start..end];
             Token = Uri.UnescapeDataString(encoded);
+            Code = System.Text.RegularExpressions.Regex.Match(body, @"\b\d{6}\b").Value;
             return Task.FromResult(true);
         }
     }

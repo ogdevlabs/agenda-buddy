@@ -62,16 +62,16 @@ public static class LegalDocuments
     /// Where the Terms will be published. ⚠️ <b>The site does not exist yet</b> — the in-app document is the
     /// canonical copy until it does, which is why nothing links out to this today.
     /// </summary>
-    public const string TermsUrl = "https://agendame.app/terms";
+    public const string TermsUrl = "https://fererelabs.com/agendame/terms";
 
     /// <summary>
     /// Where the Privacy Policy will be published. Same caveat as <see cref="TermsUrl"/>, and this is the URL the
     /// App Store listing will need.
     /// </summary>
-    public const string PrivacyUrl = "https://agendame.app/privacy";
+    public const string PrivacyUrl = "https://fererelabs.com/agendame/privacy";
 
     /// <summary>Who to contact about either document.</summary>
-    public const string ContactEmail = "privacy@agendame.app";
+    public const string ContactEmail = "AgendaMe@fererelabs.com";
 
     public static LegalDocument Terms => BuildDocument("Legal_Terms");
 
