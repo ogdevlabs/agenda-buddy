@@ -47,7 +47,7 @@ Review each paired heading together with its body in `AppResources.resx` and `Ap
 | Review item | English | Spanish | Legal | Native Spanish |
 |---|---|---|---|---|
 | Titles, summaries, effective-date labels and date formatting | Present | Present | PENDING | PENDING |
-| Contact address (`privacy@agendame.app`) | Present | Present | PENDING | PENDING |
+| Contact address (`AgendaMe@fererelabs.com`) | Present | Present | PENDING | PENDING |
 | Account data: email, name and optional phone number | Present | Present | PENDING | PENDING |
 | User content: services, availability, appointments, messages and notes | Present | Present | PENDING | PENDING |
 | Technical data: device time zone and push token | Present | Present | PENDING | PENDING |

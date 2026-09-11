@@ -20,7 +20,7 @@ public class AuthModule : ICarterModule
         app.ServiceProvider.GetRequiredService<IConfiguration>()
             .GetSection(RateLimitingOptions.Section).Bind(rateLimiting);
 
-        // Applied to `register` and `login` only, and only when the limiter is registered — RequireRateLimiting
+        // Applied to `register`, `login`, and confirmation-code attempts, and only when the limiter is registered — RequireRateLimiting
         // with no registered policy throws at request time, so the two conditions have to agree. `refresh` and
         // `logout` stay unlimited: neither spends BCrypt, and throttling refresh would break the hourly
         // rotation a legitimate mobile client performs (D-4).
@@ -139,16 +139,37 @@ public class AuthModule : ICarterModule
             catch (ServiceUnavailableException ex) { return Results.Problem(detail: ex.Message, statusCode: 503, title: "service_unavailable"); }
         }).RequireAuthorization().WithName("DeleteAccount");
 
-        auth.MapPost("/register/confirm", async (EmailConfirmRequest req, IdentityService svc) =>
+        var confirmEmail = auth.MapPost("/register/confirm", async (EmailConfirmRequest req, IdentityService svc) =>
         {
             try
             {
-                await svc.ConfirmEmailAsync(req.Token);
+                if (!string.IsNullOrWhiteSpace(req.Token))
+                {
+                    await svc.ConfirmEmailAsync(req.Token);
+                }
+                else if (!string.IsNullOrWhiteSpace(req.Email)
+                         && req.Code is { Length: 6 }
+                         && req.Code.All(char.IsAsciiDigit))
+                {
+                    await svc.ConfirmEmailCodeAsync(req.Email, req.Code);
+                }
+                else
+                {
+                    return Results.BadRequest(new
+                    {
+                        error = "validation_error",
+                        message = "Provide a confirmation token or an email and six-digit code."
+                    });
+                }
+
                 return Results.NoContent();
             }
             catch (UnauthorizedException ex) { return Results.Problem(detail: ex.Message, statusCode: 401, title: "unauthorized"); }
             catch (ServiceUnavailableException ex) { return Results.Problem(detail: ex.Message, statusCode: 503, title: "service_unavailable"); }
         }).WithName("ConfirmEmail");
+
+        if (rateLimiting.Enabled)
+            confirmEmail.RequireRateLimiting(RateLimitingOptions.PolicyName);
 
         var resendVerification = auth.MapPost("/register/verification", async (
             EmailVerificationRequest req,

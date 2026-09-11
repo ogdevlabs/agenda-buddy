@@ -158,9 +158,9 @@ GATEWAY_URL=http://localhost:<gateway-port> ./scripts/local-email.sh user@local.
 GATEWAY_URL=http://localhost:<gateway-port> ./scripts/local-email.sh user@local.test --open-ios
 ```
 
-The inbox route and `agendame://email` confirmation links exist only when the local AppHost sets both
-`Security:Local` and `Email:LocalCaptureEnabled`; cloud deployments continue to use Resend and HTTPS
-Universal Links.
+The inbox route exists only when the local AppHost sets both `Security:Local` and
+`Email:LocalCaptureEnabled`; cloud deployments continue to use Resend. Confirmation email uses the
+installed-app `agendame://email` button and also includes a six-digit code for manual entry.
 
 ### First run on a new machine — three secrets
 

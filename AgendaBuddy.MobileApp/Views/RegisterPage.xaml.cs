@@ -1,4 +1,5 @@
 #if MOBILE
+using AgendaBuddy.MobileApp.Infrastructure;
 using AgendaBuddy.MobileApp.ViewModels;
 
 namespace AgendaBuddy.MobileApp.Views;
@@ -18,6 +19,7 @@ public partial class RegisterPage : ContentPage
 
     private async void OnVerificationPending(string email)
     {
+        await ToastNotifier.ShowAsync(AppResources.Registration_CheckEmailToast);
         await Shell.Current.GoToAsync(
             $"//emailVerification?email={Uri.EscapeDataString(email)}");
     }

@@ -57,18 +57,12 @@ logs, analytics, crash reports, and OS handoff logs. The opaque random token is 
 only as a SHA-256 hash. Confirmation should match the hash and expiry atomically, without email in the
 request or URL.
 
-### Important: no verified app-link path exists
+### Corrected: no owned web domain exists
 
-The mobile app has no confirmation route, URI activation handler, Android App Link association, or iOS
-Universal Link association. A custom URI scheme alone can be claimed by another installed application and
-is not sufficient for a bearer confirmation token.
-
-Build requires an owned HTTPS origin that serves:
-
-- `/.well-known/apple-app-site-association`
-- `/.well-known/assetlinks.json`
-
-The link should open AgendaMe when installed and a small HTTPS confirmation fallback when it is not.
+The earlier review assumed `agendame.app` was owned. It is not, so Universal/App Links and domain
+association files are not viable. The email button uses AgendaMe's registered `agendame://` custom scheme
+when the app is installed. A separate six-digit, email-bound, rate-limited code is the universal fallback;
+the button is convenience, not the only route to confirmation.
 
 ### Advisory: delivery failure can strand a new account
 
@@ -85,10 +79,11 @@ verified addresses to avoid account enumeration, and should be rate-limited.
 3. Identity sends the bilingual HTML email with a plain-text fallback.
 4. The app shows a pending-verification screen with **Resend email** and **Back to sign in** actions. It
    does not create the Customer or Provider profile yet.
-5. The HTTPS confirmation link opens AgendaMe through verified platform association.
-6. The app sends only the opaque token to Identity. Identity atomically matches its hash and expiry, sets
-   `email_verified = true`, removes the token, and logs `credential.email-confirmed` without the token.
-7. The app shows **Email verified** and routes to sign-in. Normal profile creation and role onboarding begin
+5. The `agendame://` button opens AgendaMe when installed; otherwise the user returns to the pending screen
+  and enters the six-digit code from the email.
+6. Identity atomically confirms either the opaque token or matching `{email, code}`. Both are stored only as
+  hashes; the code expires after 15 minutes and the button token after 24 hours.
+7. The app routes directly to sign-in after successful confirmation. Normal profile creation and role onboarding begin
    only after a successful password login.
 8. Invalid, expired, and replayed links produce one public result and offer **Send a new link**.
 
@@ -100,31 +95,31 @@ verified addresses to avoid account enumeration, and should be rate-limited.
   is minted or rotated.
 - **AC3:** Refresh cannot issue a session for an unverified credential.
 - **AC4:** The delivered email contains the approved English and Spanish copy, two accessible CTA labels,
-  one HTTPS confirmation target, and a plain-text fallback.
+  one installed-app confirmation target, a six-digit code, and a plain-text fallback.
 - **AC5:** The URL and confirmation request contain only the opaque token, never the email address.
 - **AC6:** A valid, unexpired token atomically verifies the credential, clears the token, and emits a
   token-free structured log event.
 - **AC7:** Wrong, expired, and replayed tokens have the same public response and do not modify the account.
-- **AC8:** The verified HTTPS link opens the installed Android/iOS app; without the app it renders a safe
-  browser fallback.
+- **AC8:** The custom-scheme button opens the installed Android/iOS app, and the six-digit code confirms the
+  account when direct app opening is unavailable.
 - **AC9:** The app clearly renders pending, confirming, verified, invalid/expired, offline, and resend
   throttled states; only verified users proceed to sign-in and profile onboarding.
 - **AC10:** Resend is anti-enumerating, rotates the old confirmation token, is rate-limited, and never logs
   either raw token.
 - **AC11:** Existing accounts created before this policy receive an explicit migration decision; the
   deployment must not silently lock every legacy account because a missing BSON boolean reads as `false`.
-- **AC12:** Unit, integration, email-payload, mobile routing, Android association, and iOS association tests
-  cover the complete flow and the three former session bypasses.
+- **AC12:** Unit, integration, email-payload, mobile routing, custom-scheme, and code-entry tests cover the
+  complete flow and the three former session bypasses.
 
 ## Threat Review
 
 | Threat | Control |
-|---|---|
+| --- | --- |
 | Session before ownership proof | Gate registration, login, and refresh on the same invariant |
 | Token theft from storage/logging | Store SHA-256 only; never log token or provider response body |
 | PII leakage through URLs | Remove email from confirmation URL and request |
 | Link replay | Atomic hash + expiry filter; unset token on success |
-| Link interception by another app | Verified HTTPS Universal Links / Android App Links |
+| Custom-scheme interception or unavailable app | Email-bound six-digit fallback code; password still required for session |
 | Account enumeration through login/resend | Stable public errors and responses; rate limiting |
 | Delivery outage strands account | Pending screen, resend path, observable delivery failure |
 | Legacy-account lockout | Explicit migration/backfill policy before enforcement |
@@ -137,15 +132,14 @@ verified addresses to avoid account enumeration, and should be rate-limited.
    and payload tests.
 3. Mobile flow: pending and confirmation screens, token-only route builder, state handling, and no profile
    creation before verified sign-in.
-4. Platform links: HTTPS fallback endpoint, Android association/intent filter, iOS association/entitlement,
-   and device-level verification.
+4. Platform links: registered custom scheme on Android/iOS plus device-level verification.
 5. PDLC Verify: OpenAPI regeneration, threat-control evidence, real Resend delivery, physical Android/iOS
    link smoke tests, and rollout evidence for legacy credentials.
 
 ## Approved Decisions
 
-1. **Link origin:** use `https://agendame.app` for confirmation links, the browser fallback, and both
-  platform association files.
+1. **Link handling (superseded 2026-09-10):** do not use `agendame.app`; no such domain is owned. Use the
+  installed-app `agendame://` scheme plus an email-bound six-digit fallback code.
 2. **Legacy accounts:** reset non-production credentials when enforcement rolls out, then apply the same
   verification rule to every newly registered account. No production-account migration is required for
   the current rollout.
@@ -153,7 +147,5 @@ verified addresses to avoid account enumeration, and should be rate-limited.
   their password. Possession of the email link alone does not create an authenticated session.
 4. **Language:** send one bilingual email to every recipient. The app has no persisted language preference
   before registration, so selecting one language is not deterministic today.
-5. **Platform rollout:** enable verified email links on iOS first. Android App Links remain an explicit TODO
-  until a physical Android device and the Google Play app-signing SHA-256 fingerprint are available; the
-  `AndroidEmailVerificationAppLinksEnabled` build property defaults to `false`, and a deployable
-  `assetlinks.json` must remain absent until then.
+5. **Platform rollout:** both mobile platforms register the existing custom scheme. No domain association
+  files or Google Play signing fingerprint are required for email confirmation.

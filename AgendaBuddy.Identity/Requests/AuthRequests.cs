@@ -25,10 +25,10 @@ public record LogoutRequest(
 public record TokenResponse(string AccessToken, string RefreshToken);
 
 /// <summary>
-/// Service-level registration result. The raw token exists only so tests can exercise confirmation; the
-/// HTTP endpoint must never project it onto the wire.
+/// Service-level registration result. The raw token and code exist only so tests can exercise confirmation;
+/// the HTTP endpoint must never project either onto the wire.
 /// </summary>
-public record RegistrationResponse(string EmailVerificationToken);
+public record RegistrationResponse(string EmailVerificationToken, string EmailVerificationCode);
 
 public record RegisterDeviceTokenRequest(
     [Required] string Token,
@@ -46,6 +46,6 @@ public record PasswordResetConfirmRequest(
     [Required] string NewPassword
 );
 
-public record EmailConfirmRequest([Required] string Token);
+public record EmailConfirmRequest(string? Token, [EmailAddress] string? Email, string? Code);
 
 public record EmailVerificationRequest([Required][EmailAddress] string Email);

@@ -136,6 +136,24 @@ public class AuthRateLimitTest(ServiceHostFixture<IdentityAnchor> host)
     }
 
     [Fact]
+    public async Task SixDigitEmailConfirmationAttemptsAreRateLimited()
+    {
+        using var service = host.StartService(settings: LimiterOn);
+
+        var statuses = new List<HttpStatusCode>();
+        for (var attempt = 0; attempt < Permitted + 1; attempt++)
+        {
+            var response = await service.Client.PostAsync(
+                "api/v1/auth/register/confirm",
+                JsonContent.Create(new { email = "unknown@example.com", code = "123456" }));
+            statuses.Add(response.StatusCode);
+        }
+
+        Assert.All(statuses.Take(Permitted), status => Assert.Equal(HttpStatusCode.Unauthorized, status));
+        Assert.Equal(HttpStatusCode.TooManyRequests, statuses[^1]);
+    }
+
+    [Fact]
     public async Task Refresh_IsNotRateLimited()
     {
         // Also D-4, and the other half of it: refresh spends no BCrypt, so throttling it would buy
