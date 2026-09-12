@@ -2,7 +2,7 @@
 
 **Date:** 2026-09-12
 **Version:** `v0.22.2`
-**Status:** Draft
+**Status:** Final
 **Bead:** `agenda-buddy-djb`
 **PR:** #166
 
@@ -41,4 +41,8 @@ unambiguous.
 
 ## Ship
 
-Pending PR creation, green required checks, merge, annotated tag publication, and GitHub Release verification.
+- PR #166 passed required GitHub Actions run `34710347353`: changes, backend build/test, dependency audit,
+  integration, and summary succeeded; path-inapplicable jobs skipped.
+- PR #166 merged through the GitHub REST API as `fec0a954d8cbb5853aba84fb10020d6b3dfa8201`.
+- The user explicitly approved Ship. The annotated `v0.22.2` tag and matching stable GitHub Release are created
+  from the ship-bookkeeping merge and independently verified before this operation is reported complete.
