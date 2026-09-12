@@ -149,8 +149,8 @@ as history and do not override the current baseline or [CLAUDE.md](../../../CLAU
 | 003 | F-021 identity-hardening (`v0.3.0`) | 2026-08-22 | [EPISODE_identity-hardening_2026-08-22.md](../episodes/EPISODE_identity-hardening_2026-08-22.md) | [#39](https://github.com/ogdevlabs/agenda-buddy/pull/39) |
 | 004 | F-014 wire-unreached-services (`v0.4.0`) | 2026-08-23 | [EPISODE_wire-unreached-services_2026-08-23.md](../episodes/EPISODE_wire-unreached-services_2026-08-23.md) | [#40](https://github.com/ogdevlabs/agenda-buddy/pull/40) |
 | 005 | F-015 api-gateway-and-mobile-contract (`v0.5.0`) | 2026-08-24 | [EPISODE_api-gateway-and-mobile-contract_2026-08-24.md](../episodes/EPISODE_api-gateway-and-mobile-contract_2026-08-24.md) | [#41](https://github.com/ogdevlabs/agenda-buddy/pull/41) |
-| 006 | F-017 container-and-cd-hardening (`v0.6.0`) | 2026-08-26 | [006_container-and-cd-hardening_2026-08-26.md](../episodes/006_container-and-cd-hardening_2026-08-26.md) | [#48](https://github.com/ogdevlabs/agenda-buddy/pull/48) |
-| 007 | F-018 api-refactor-foundations (`v0.7.0`) | 2026-08-26 | [007_api-refactor-foundations_2026-08-26.md](../episodes/007_api-refactor-foundations_2026-08-26.md) | [#69](https://github.com/ogdevlabs/agenda-buddy/pull/69) |
+| 006 | F-017 container-and-cd-hardening (`v0.6.0`) | 2026-08-26 | [006_container-and-cd-hardening_2026-08-26.md](episodes/006_container-and-cd-hardening_2026-08-26.md) | [#48](https://github.com/ogdevlabs/agenda-buddy/pull/48) |
+| 007 | F-018 api-refactor-foundations (`v0.7.0`) | 2026-08-26 | [007_api-refactor-foundations_2026-08-26.md](episodes/007_api-refactor-foundations_2026-08-26.md) | [#69](https://github.com/ogdevlabs/agenda-buddy/pull/69) |
 | 008 | F-019 api-refactor-pilot-booking (`v0.8.0`) | 2026-08-27 | [EPISODE_api-refactor-pilot-booking_2026-08-27.md](../episodes/EPISODE_api-refactor-pilot-booking_2026-08-27.md) | none — merged directly (`fb91cb1`); `gh pr create` blocked, see episode's Links section |
 | 009 | F-020 api-refactor-rollout (`v0.9.0`) | 2026-08-27 | [EPISODE_api-refactor-rollout_2026-08-27.md](../episodes/EPISODE_api-refactor-rollout_2026-08-27.md) | none — merged directly; `gh pr create` blocked, see episode's Links section |
 | 010 | F-025 booking-correctness (`v0.10.0`) | 2026-08-27 | [EPISODE_booking-correctness_2026-08-27.md](../episodes/EPISODE_booking-correctness_2026-08-27.md) | #72 |
@@ -159,14 +159,15 @@ as history and do not override the current baseline or [CLAUDE.md](../../../CLAU
 | 013 | F-023 token-revocation (`v0.13.0`) | 2026-08-27 | [EPISODE_token-revocation_2026-08-27.md](../episodes/EPISODE_token-revocation_2026-08-27.md) | #79 |
 | 014 | F-027 carter-route-modules (`v0.14.0`) | 2026-08-27 | [EPISODE_carter-route-modules_2026-08-27.md](../episodes/EPISODE_carter-route-modules_2026-08-27.md) | #83 |
 | 015 | F-024 data-subject-rights (`v0.15.0`) | 2026-08-27 | [EPISODE_data-subject-rights_2026-08-27.md](../episodes/EPISODE_data-subject-rights_2026-08-27.md) | #85 |
+| — | F-028–F-032 release bundle (`v0.16.0`) | 2026-09-06 | No numbered episode; see `CHANGELOG.md` | #150 release merge |
 | 016 | F-033 spanish-mobile-localization (`v0.17.0`) | 2026-09-09 | [EPISODE_spanish-mobile-localization_2026-09-09.md](../episodes/EPISODE_spanish-mobile-localization_2026-09-09.md) | #151 |
 | 017 | F-034 profession-search-keyboard-dismissal (`v0.18.0`) | 2026-09-09 | [EPISODE_profession-search-keyboard-dismissal_2026-09-09.md](../episodes/EPISODE_profession-search-keyboard-dismissal_2026-09-09.md) | #152 |
 | 018 | F-035 marketplace-payments (`v0.19.0`) | 2026-09-10 | [EPISODE_marketplace-payments_2026-09-09.md](../episodes/EPISODE_marketplace-payments_2026-09-09.md) | #153 |
 | 019 | dev-user-data-reset (`v0.20.0`) | 2026-09-10 | [EPISODE_dev-user-data-reset_2026-09-10.md](../episodes/EPISODE_dev-user-data-reset_2026-09-10.md) | #157–#160 |
 | 020 | PDLC documentation reconciliation (`v0.22.2`) | 2026-09-12 | [EPISODE_pdlc-documentation-reconciliation_2026-09-12.md](../episodes/EPISODE_pdlc-documentation-reconciliation_2026-09-12.md) | Pending |
 
-Standalone releases `v0.21.0`–`v0.22.1` shipped through PRs #161–#165 without separate PDLC episodes;
-their release notes are recorded in `CHANGELOG.md` and their annotated tags.
+Standalone releases `v0.16.0` and `v0.21.0`–`v0.22.1` shipped without separate PDLC episodes; their release
+notes are recorded in `CHANGELOG.md` and their annotated tags.
 
 ---
 
