@@ -4,6 +4,50 @@ All notable changes to this project are documented in this file, in [Keep a Chan
 
 ## [Unreleased]
 
+## [0.22.2] - 2026-09-12
+
+### Changed
+
+- Reconciled the PDLC constitution, intent, overview, roadmap, and live state with the shipped .NET 10,
+  Aspire, Gateway, broker-free messaging, mobile, payment, authentication, and release architecture.
+- Restored the missing `v0.21.0` through `v0.22.1` release chronology and made Beads the explicit authority
+  for live backlog and claim state.
+
+## [0.22.1] - 2026-09-11
+
+### Fixed
+
+- Password recovery now uses absolute Shell routes for top-level pages, preventing forgot-password navigation
+  from crashing. A structural test guards the route contract.
+
+## [0.22.0] - 2026-09-11
+
+### Added
+
+- Cold-start sessions restore through secure rotating refresh tokens and native device biometrics without
+  storing passwords.
+- Email-verification messages include richer bilingual content and platform configuration coverage.
+
+## [0.21.2] - 2026-09-11
+
+### Fixed
+
+- Stripe onboarding deferral is restricted to local development; non-local payment configuration continues
+  to fail closed.
+
+## [0.21.1] - 2026-09-10
+
+### Fixed
+
+- Email verification supports a code fallback when a platform callback cannot be opened.
+
+## [0.21.0] - 2026-09-10
+
+### Added
+
+- Registration now requires email ownership verification before issuing an authenticated session, with
+  bilingual confirmation email, local iOS capture flow, and configuration-driven platform links.
+
 ## [0.20.0] - 2026-09-10
 
 ### Added

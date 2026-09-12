@@ -1,7 +1,7 @@
 # Roadmap
 
 **Project:** Agenda Buddy
-**Last updated:** 2026-08-27T10:00:00Z
+**Last updated:** 2026-09-12T17:40:00Z
 
 ---
 
@@ -13,6 +13,10 @@
 ---
 
 ## Feature Backlog
+
+> Current through F-035 and release `v0.22.2`. Beads is authoritative for work filed after these roadmap
+> features; use `bd ready` for the live queue. Release chronology lives in
+> [episodes/index.md](../episodes/index.md).
 
 <!-- Claimed by: git user email of the dev holding the roadmap-level Beads claim.
      This column is a cache of Beads assignees — if it disagrees with `bd list

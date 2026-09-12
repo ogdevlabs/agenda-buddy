@@ -5,15 +5,15 @@
      If the fundamental problem or user changes, update this file and record why in docs/pdlc/memory/DECISIONS.md.
      Claude reads this at the start of every Inception phase to anchor the Discover conversation. -->
 
-**Project:** Agenda Buddy
+**Project:** Agenda Buddy (product name: AgendaMe)
 **Created:** 2026-07-30
-**Last updated:** 2026-07-30
+**Last updated:** 2026-09-12
 
 ---
 
 ## Project Name
 
-Agenda Buddy — the scheduling platform for one-to-one service providers
+AgendaMe — the scheduling platform for one-to-one service providers
 
 ---
 
@@ -40,7 +40,7 @@ Professionals who offer personalized one-to-one sessions — fitness coaches, tu
 
 ## Core Value Proposition
 
-Only Agenda Buddy lets independent service providers manage their entire client workflow — from service catalog to appointment booking — in one place, so they spend zero time on scheduling admin.
+AgendaMe lets independent service providers manage their client workflow — from service catalogue and availability through booking, payment, messaging, and follow-up — in one mobile experience.
 
 ---
 
@@ -58,28 +58,19 @@ Only Agenda Buddy lets independent service providers manage their entire client 
 
 ## Out of Scope
 
-- ~~Mobile app (web API only for now — mobile client is a future phase)~~ **Stale as of F-012/F-015.** The
-  mobile app shipped (F-012, `MobileApp/`, .NET MAUI) and, as of F-015 (2026-08-23), it actually reaches the
-  live backend through a gateway (`Gateway/`) — real dashboard/calendar/customers data, real session notes,
-  payments, and provider reports, with the `SeedDataProvider` fixture fallback removed. Flagged as stale at
-  this feature's own Discover step; corrected here at F-015-T14's closing verification.
-- Payment processing (fee tracking exists on ServiceEntity but no payment flow)
-- Journal and notes feature (listed in README as future)
-- Provider-to-customer messaging (Kafka infrastructure is in place but messaging UI is not built)
 - Multi-provider organizations or team accounts (solo provider only in v1)
 - White-labelling
+- User-uploaded avatar photos until image storage is designed (`agenda-buddy-5qr`)
+- Production Stripe Connect and physical-wallet activation until deployment credentials and external accounts are available (`agenda-buddy-83z`)
+- iOS push verification without a physical device (`agenda-buddy-lq5`)
 
 ---
 
 ## Key Constraints
 
-- .NET 8 microservices architecture — cannot pivot to a monolith or different language
+- .NET 10 microservices architecture — cannot pivot to a monolith or different language without a new architecture decision
 - MongoDB as the primary datastore — no relational DB migration planned
-- Kafka already wired in for async messaging — new async features should use the existing Kafka infrastructure
-- Docker Compose for local development — all services must run containerized
-- ~~No authentication layer exists yet — this is a critical gap before any public exposure~~ **Stale as of
-  F-001/F-021.** JWT-based authentication has existed since F-001, and F-021 (identity-hardening) added
-  login/register throttling, transport security, and closed the account-destroying-refresh gap. Every
-  service requires a valid JWT except the seven routes deliberately left anonymous (register/login/refresh/
-  logout, and reference-data reads on Professions). Flagged as stale at this feature's own Discover step;
-  corrected here at F-015-T14's closing verification.
+- There is no message broker; messaging is MongoDB-backed and notification fan-out is synchronous and best-effort
+- .NET Aspire is the primary local orchestrator; Docker Compose is a legacy fallback
+- The MAUI client reaches all backend services through the explicit-allowlist YARP Gateway
+- JWT authentication, ownership checks, role checks, token revocation, and email verification protect non-public capabilities
