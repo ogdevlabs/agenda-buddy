@@ -2,7 +2,7 @@
 
 **Date:** 2026-09-12
 **Version:** `v0.23.0`
-**Status:** Draft
+**Status:** Final
 **Bead:** `agenda-buddy-cs1`
 **PR:** #168
 
@@ -42,4 +42,8 @@ find scheduled, completed, and cancelled sessions quickly in either supported la
 
 ## Ship
 
-Pending PR creation, green required checks, merge, annotated tag publication, and GitHub Release verification.
+- PR #168 passed required GitHub Actions run `34717208994`: backend, integration, mobile unit, Android Release,
+  iOS Release, security, all seven SDK-container/Trivy jobs, and summary succeeded.
+- PR #168 merged through the GitHub REST API as `62c6b1f1356b6e3beba2d5d90bddc8ceed7498ee`.
+- The user explicitly approved Ship. The annotated `v0.23.0` tag and matching stable GitHub Release are created
+  from the ship-bookkeeping merge and independently verified before this operation is reported complete.
