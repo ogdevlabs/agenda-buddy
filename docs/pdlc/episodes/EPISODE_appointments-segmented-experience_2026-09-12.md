@@ -4,7 +4,7 @@
 **Version:** `v0.23.0`
 **Status:** Draft
 **Bead:** `agenda-buddy-cs1`
-**PR:** Pending
+**PR:** #168
 
 ## Intent
 

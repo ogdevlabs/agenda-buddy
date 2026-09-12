@@ -28,7 +28,7 @@ Delivery records, one per shipped feature. Permanent — episodes are never arch
 | 018 | marketplace-payments | 2026-09-10 | [EPISODE_marketplace-payments_2026-09-09.md](EPISODE_marketplace-payments_2026-09-09.md) | #153 | Shipped (`v0.19.0`) |
 | 019 | dev-user-data-reset | 2026-09-10 | [EPISODE_dev-user-data-reset_2026-09-10.md](EPISODE_dev-user-data-reset_2026-09-10.md) | #157, #158, #159, #160 | Shipped (`v0.20.0`) |
 | 020 | pdlc-documentation-reconciliation | 2026-09-12 | [EPISODE_pdlc-documentation-reconciliation_2026-09-12.md](EPISODE_pdlc-documentation-reconciliation_2026-09-12.md) | #166 | Shipped (`v0.22.2`) |
-| 021 | appointments-segmented-experience | 2026-09-12 | [EPISODE_appointments-segmented-experience_2026-09-12.md](EPISODE_appointments-segmented-experience_2026-09-12.md) | Pending | Draft (`v0.23.0`) |
+| 021 | appointments-segmented-experience | 2026-09-12 | [EPISODE_appointments-segmented-experience_2026-09-12.md](EPISODE_appointments-segmented-experience_2026-09-12.md) | #168 | Draft (`v0.23.0`) |
 
 **Naming:** `EPISODE_<feature-slug>_<YYYY-MM-DD>.md`, where the date is when the episode was opened, not
 when the feature shipped — 002 opened 2026-08-18 and its ship gate closed 2026-08-22.
