@@ -13,6 +13,11 @@ All notable changes to this project are documented in this file, in [Keep a Chan
 - Restored the missing `v0.21.0` through `v0.22.1` release chronology and made Beads the explicit authority
   for live backlog and claim state.
 
+### Fixed
+
+- Integration booking fixtures now move weekend candidate slots to Monday, matching the default working week
+  and preventing the suite from failing only when run on Saturday or Sunday.
+
 ## [0.22.1] - 2026-09-11
 
 ### Fixed

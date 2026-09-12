@@ -23,6 +23,8 @@ unambiguous.
   `v0.21.0`–`v0.22.1`.
 - Marked Beads as authoritative for live backlog and claims in roadmap and state.
 - Backfilled missing changelog entries from the annotated `v0.21.0`–`v0.22.1` tags.
+- Fixed `FutureSlot` so booking integration fixtures honor the default Monday–Friday working week; added a
+  deterministic regression test for Friday, Saturday, Sunday, and Monday candidates.
 
 ## Verification
 
@@ -31,7 +33,11 @@ unambiguous.
 - Confirmed the changelog contains one ordered heading for each release from `v0.20.0` through `v0.22.2`.
 - Confirmed retired current-state claims about Kafka, missing authentication, and unshipped payment/notes no
   longer appear in the living summaries.
-- Documentation-only change; no product build or test suite is required before PR CI.
+- `dotnet format agenda-buddy-backend.slnf --verify-no-changes --no-restore`
+- Backend: 1,161 passed, 0 failed.
+- Integration: 410 passed, 0 failed. The first run exposed the weekend fixture defect (404 passed, 2 failed);
+  the focused regression slice then passed 7/7 before the full rerun.
+- Mobile: 916 passed, 7 intentionally skipped, 0 failed.
 
 ## Ship
 

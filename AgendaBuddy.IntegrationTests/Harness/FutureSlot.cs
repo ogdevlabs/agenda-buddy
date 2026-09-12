@@ -15,6 +15,18 @@ internal static class FutureSlot
     /// A UTC instant <paramref name="daysAhead"/> whole days from today at <paramref name="hour"/>:00.
     /// Distinct <paramref name="daysAhead"/> values give non-overlapping slots.
     /// </summary>
-    public static DateTime Start(int daysAhead = 7, int hour = 10) =>
-        DateTime.UtcNow.Date.AddDays(daysAhead).AddHours(hour);
+    public static DateTime Start(int daysAhead = 7, int hour = 10)
+    {
+        var candidate = DateTime.UtcNow.Date.AddDays(daysAhead).AddHours(hour);
+
+        return MoveToDefaultWorkingDay(candidate);
+    }
+
+    internal static DateTime MoveToDefaultWorkingDay(DateTime candidate) =>
+        candidate.DayOfWeek switch
+        {
+            DayOfWeek.Saturday => candidate.AddDays(2),
+            DayOfWeek.Sunday => candidate.AddDays(1),
+            _ => candidate,
+        };
 }
