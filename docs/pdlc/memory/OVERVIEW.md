@@ -6,7 +6,7 @@
      Do not edit manually — let PDLC maintain it. If you need to correct something, update and note the reason. -->
 
 **Project:** Agenda Buddy
-**Last updated:** 2026-08-27T10:00:00Z
+**Last updated:** 2026-09-12T17:40:00Z
 
 ---
 
@@ -17,6 +17,25 @@ Agenda Buddy is a scheduling and appointment management platform for independent
 ---
 
 ## Active Functionality
+
+**Current baseline (`v0.22.2`):**
+
+- A bilingual (`en`/`es-MX`) .NET MAUI app supports provider and customer onboarding, profiles, service
+  catalogues, availability, booking, messaging, notifications, notes, reporting, payments, and account erasure.
+- The client reaches seven authenticated domain services through an explicit-allowlist YARP Gateway; .NET Aspire
+  runs the Gateway, services, and MongoDB locally.
+- Stripe Connect supports customer payment setup, provider onboarding, manual authorization, 90/10 destination
+  charges, capture, cancellation release/refund, and signed replay-safe webhooks. Unconfigured non-local payment
+  operations fail closed.
+- Notifications persist in MongoDB and fan out synchronously to in-app, email, and push channels. There is no
+  Kafka broker, outbox, or retry pipeline.
+- Authentication includes rotating refresh tokens, revocation, rate limiting, lockout, email verification, and
+  biometric-backed cold-start session restoration on supported devices.
+- The dev environment auto-deploys material changes from `main`, detects deployment drift, and provides a guarded
+  workflow to erase dev users and invalidate all pre-reset tokens.
+
+The entries below are chronological delivery history. Statements describing an earlier architecture are retained
+as history and do not override the current baseline or [CLAUDE.md](../../../CLAUDE.md).
 
 *Pre-PDLC functionality — documented at initialization. Future entries tracked per episode.*
 
@@ -130,28 +149,39 @@ Agenda Buddy is a scheduling and appointment management platform for independent
 | 003 | F-021 identity-hardening (`v0.3.0`) | 2026-08-22 | [EPISODE_identity-hardening_2026-08-22.md](../episodes/EPISODE_identity-hardening_2026-08-22.md) | [#39](https://github.com/ogdevlabs/agenda-buddy/pull/39) |
 | 004 | F-014 wire-unreached-services (`v0.4.0`) | 2026-08-23 | [EPISODE_wire-unreached-services_2026-08-23.md](../episodes/EPISODE_wire-unreached-services_2026-08-23.md) | [#40](https://github.com/ogdevlabs/agenda-buddy/pull/40) |
 | 005 | F-015 api-gateway-and-mobile-contract (`v0.5.0`) | 2026-08-24 | [EPISODE_api-gateway-and-mobile-contract_2026-08-24.md](../episodes/EPISODE_api-gateway-and-mobile-contract_2026-08-24.md) | [#41](https://github.com/ogdevlabs/agenda-buddy/pull/41) |
-| 006 | F-017 container-and-cd-hardening (`v0.6.0`) | 2026-08-26 | [006_container-and-cd-hardening_2026-08-26.md](../episodes/006_container-and-cd-hardening_2026-08-26.md) | [#48](https://github.com/ogdevlabs/agenda-buddy/pull/48) |
-| 007 | F-018 api-refactor-foundations (`v0.7.0`) | 2026-08-26 | [007_api-refactor-foundations_2026-08-26.md](../episodes/007_api-refactor-foundations_2026-08-26.md) | [#69](https://github.com/ogdevlabs/agenda-buddy/pull/69) |
+| 006 | F-017 container-and-cd-hardening (`v0.6.0`) | 2026-08-26 | [006_container-and-cd-hardening_2026-08-26.md](episodes/006_container-and-cd-hardening_2026-08-26.md) | [#48](https://github.com/ogdevlabs/agenda-buddy/pull/48) |
+| 007 | F-018 api-refactor-foundations (`v0.7.0`) | 2026-08-26 | [007_api-refactor-foundations_2026-08-26.md](episodes/007_api-refactor-foundations_2026-08-26.md) | [#69](https://github.com/ogdevlabs/agenda-buddy/pull/69) |
 | 008 | F-019 api-refactor-pilot-booking (`v0.8.0`) | 2026-08-27 | [EPISODE_api-refactor-pilot-booking_2026-08-27.md](../episodes/EPISODE_api-refactor-pilot-booking_2026-08-27.md) | none — merged directly (`fb91cb1`); `gh pr create` blocked, see episode's Links section |
 | 009 | F-020 api-refactor-rollout (`v0.9.0`) | 2026-08-27 | [EPISODE_api-refactor-rollout_2026-08-27.md](../episodes/EPISODE_api-refactor-rollout_2026-08-27.md) | none — merged directly; `gh pr create` blocked, see episode's Links section |
+| 010 | F-025 booking-correctness (`v0.10.0`) | 2026-08-27 | [EPISODE_booking-correctness_2026-08-27.md](../episodes/EPISODE_booking-correctness_2026-08-27.md) | #72 |
+| 011 | F-022 password-reset-flow (`v0.11.0`) | 2026-08-27 | [EPISODE_password-reset-flow_2026-08-27.md](../episodes/EPISODE_password-reset-flow_2026-08-27.md) | #77 |
+| 012 | F-026 provider-subscription (`v0.12.0`) | 2026-08-27 | [EPISODE_provider-subscription_2026-08-27.md](../episodes/EPISODE_provider-subscription_2026-08-27.md) | #80 |
+| 013 | F-023 token-revocation (`v0.13.0`) | 2026-08-27 | [EPISODE_token-revocation_2026-08-27.md](../episodes/EPISODE_token-revocation_2026-08-27.md) | #79 |
+| 014 | F-027 carter-route-modules (`v0.14.0`) | 2026-08-27 | [EPISODE_carter-route-modules_2026-08-27.md](../episodes/EPISODE_carter-route-modules_2026-08-27.md) | #83 |
+| 015 | F-024 data-subject-rights (`v0.15.0`) | 2026-08-27 | [EPISODE_data-subject-rights_2026-08-27.md](../episodes/EPISODE_data-subject-rights_2026-08-27.md) | #85 |
+| — | F-028–F-032 release bundle (`v0.16.0`) | 2026-09-06 | No numbered episode; see `CHANGELOG.md` | #150 release merge |
+| 016 | F-033 spanish-mobile-localization (`v0.17.0`) | 2026-09-09 | [EPISODE_spanish-mobile-localization_2026-09-09.md](../episodes/EPISODE_spanish-mobile-localization_2026-09-09.md) | #151 |
+| 017 | F-034 profession-search-keyboard-dismissal (`v0.18.0`) | 2026-09-09 | [EPISODE_profession-search-keyboard-dismissal_2026-09-09.md](../episodes/EPISODE_profession-search-keyboard-dismissal_2026-09-09.md) | #152 |
+| 018 | F-035 marketplace-payments (`v0.19.0`) | 2026-09-10 | [EPISODE_marketplace-payments_2026-09-09.md](../episodes/EPISODE_marketplace-payments_2026-09-09.md) | #153 |
+| 019 | dev-user-data-reset (`v0.20.0`) | 2026-09-10 | [EPISODE_dev-user-data-reset_2026-09-10.md](../episodes/EPISODE_dev-user-data-reset_2026-09-10.md) | #157–#160 |
+| 020 | PDLC documentation reconciliation (`v0.22.2`) | 2026-09-12 | [EPISODE_pdlc-documentation-reconciliation_2026-09-12.md](../episodes/EPISODE_pdlc-documentation-reconciliation_2026-09-12.md) | Pending |
+
+Standalone releases `v0.16.0` and `v0.21.0`–`v0.22.1` shipped without separate PDLC episodes; their release
+notes are recorded in `CHANGELOG.md` and their annotated tags.
 
 ---
 
 ## Architecture Summary
 
-- **.NET Aspire orchestration** *(added F-013)*: `AgendaBuddy.AppHost` is the composition root for local development — it declares MongoDB and Kafka as container resources and all seven services plus the Gateway as projects, assigning ports dynamically. `AgendaBuddy.ServiceDefaults` is referenced by every service (and the Gateway) and supplies OpenTelemetry, health/liveness endpoints, service discovery, HTTP resilience, and the `PiiRedactingProcessor`. Docker Compose remains as a legacy fallback.
-- **Seven ASP.NET Minimal API microservices**: Booking, Calendar, Customer, Provider, Services, Profession — plus **Identity** — each with its own test project. *(The "six" count predates Identity.)*
-- **Booking is a 4-project Clean Architecture pilot** *(added F-019)*: `Booking.Api` (thin — endpoints/DI
-  only), `Booking.Core` (MediatR command/query handlers), `Booking.Domain` (commands/queries/DTOs, the
-  `DataResponse<T>` envelope), `Booking.Infrastructure` (empty — YAGNI). The other 6 services keep the
-  original one-project-per-service shape until F-020 replicates this split across them.
-- **`Gateway`, an eighth process** *(added F-015)*: a thin YARP reverse proxy in front of all seven services — `MobileApp`'s only configured base address. Explicit `api/v1/{service}/**` route allowlist, built from live Aspire service-discovery config, never a catch-all. No business logic, no auth validation — JWT passthrough only.
-- **Shared Library project**: all domain entities (`AppointmentEntity`, `ProviderEntity`, `CustomerEntity`, `ServiceEntity`, `ProfessionEntity`), the generic `IRepository<T>` / `MongoDbRepository<T>`, domain services, and tools (CacheAside, EnumHelper) live here and are consumed by all services
-- **CQRS via MediatR**: the shared `EventAndCommands` project holds all commands, queries, and their handlers; each handler calls Library services and persists an audit event to EventStore
-- **Kafka**: Confluent stack (Kafka + Zookeeper + Schema Registry + Kafka UI) run via Docker Compose; per-provider topics created on-demand
-- **MongoDB**: document store for all domain data; embedded sub-documents for provider services and appointments. One `IMongoClient` singleton is shared process-wide by all services and `EventStore` *(F-013)*; connection strings resolve via `MongoConnectionResolver` (Aspire → environment → appsettings).
-- **Cache-aside pattern**: `CacheAside` extension on `IDistributedCache` with semaphore-guarded double-checked locking
-- **CI security gates** *(added F-017)*: every PR gets an unconditional dependency-vulnerability audit + gitleaks secret scan (`security-scan`); every service-touching PR also builds each service via .NET SDK container support and Trivy-scans the image (`docker-build-and-scan`). No hand-written Dockerfile is built or scanned in CI — they serve only the legacy Compose path.
+- **.NET Aspire orchestration**: `AgendaBuddy.AppHost` runs MongoDB, seven services, and the Gateway. `AgendaBuddy.ServiceDefaults` supplies OpenTelemetry, health/liveness endpoints, service discovery, HTTP resilience, transport security, and PII redaction.
+- **Seven domain services plus Gateway**: Booking, Calendar, Customer, Provider, Services, Profession, and Identity are independent ASP.NET Core processes; YARP is the MAUI client's only backend entry point.
+- **Six Clean Architecture service families**: Booking, Calendar, Customer, Provider, Services, and Profession each use Api/Core/Domain/Infrastructure projects. Identity deliberately retains direct `IdentityService` dispatch.
+- **CQRS and audit**: MediatR handlers live in each service's Core project. `AgendaBuddy.EventAndCommands` contains only EventStore/audit infrastructure, with bounded MongoDB retention.
+- **Shared domain infrastructure**: `AgendaBuddy.Library` owns entities, repositories, domain services, notification delivery, payment abstractions, and shared tools.
+- **No broker**: customer messaging is MongoDB-backed; notification fan-out is synchronous and best-effort through `INotificationDispatcher`.
+- **MongoDB**: one `IMongoClient` singleton is shared process-wide; connection strings resolve through `MongoConnectionResolver`.
+- **Mobile**: `AgendaBuddy.MobileApp` is a bilingual .NET MAUI client. Its routing contracts are isolated from MAUI types so the `net10.0` test slice can verify them.
+- **CI/CD**: backend, integration, mobile, native mobile-build, format, dependency, secret, SDK-container, and Trivy gates run in GitHub Actions. Material changes on `main` deploy to dev and an hourly drift check repairs missed deployments.
 
 ---
 

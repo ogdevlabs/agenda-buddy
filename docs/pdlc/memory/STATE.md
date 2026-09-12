@@ -5,7 +5,7 @@
      Claude reads this file at the start of every session to auto-resume from the last checkpoint.
      If this file is missing or empty, PDLC will prompt you to run /pdlc init. -->
 
-**Last updated:** 2026-09-10T17:10:00Z
+**Last updated:** 2026-09-12T17:40:00Z
 
 ---
 
@@ -18,6 +18,11 @@ Idle
 ## Current Feature
 
 none
+
+_Authoritative snapshot: `v0.22.2` is the current release. Releases `v0.21.0`–`v0.22.1` added email-verification
+onboarding, its code fallback, local-only Stripe onboarding deferral, biometric-backed session restoration, and
+forgot-password navigation repair. No PDLC feature is currently active. Beads is authoritative for the live
+backlog and claims; the remaining entries in this section are chronological checkpoint history._
 
 _**Dev user-data reset SHIPPED** as `v0.20.0` via PRs #157–#160. The main-only workflow reuses the canonical
 dev stop operation, waits for actual replica drain with refreshed Azure OIDC sessions, clears all user documents
