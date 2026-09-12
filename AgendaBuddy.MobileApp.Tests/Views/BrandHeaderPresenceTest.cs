@@ -128,6 +128,16 @@ public class BrandHeaderPresenceTest
         Assert.Equal("1", (string?)userName.Attribute("MaxLines"));
     }
 
+    [Fact]
+    public void NavigationRefreshesTheProfileNameAfterSignIn()
+    {
+        var code = File.ReadAllText(Path.Combine(
+            RepoRoot(), "AgendaBuddy.MobileApp", "Controls", "BrandHeader.xaml.cs"));
+
+        Assert.Contains("OnShellNavigated", code, StringComparison.Ordinal);
+        Assert.Contains("_ = viewModel.RefreshAsync();", code, StringComparison.Ordinal);
+    }
+
     /// <summary>
     /// The name under the app icon is an MSBuild property, so it is the one place the brand cannot come from
     /// <see cref="AppBrand"/> and the one most likely to be left behind by a rename.

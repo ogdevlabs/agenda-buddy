@@ -31,8 +31,9 @@ find scheduled, completed, and cancelled sessions quickly in either supported la
 ## Verification
 
 - Backend: 1,164 passed, 0 failed.
-- Integration: 412 passed, 0 failed, including authenticated page-two retrieval and OpenAPI drift.
-- Mobile: 936 passed, 7 intentional live-Identity skips, 0 failed.
+- Integration: 413 passed, 0 failed, including a provider with 23 completed appointments retrieved across five
+  pages without duplicates or gaps, authenticated page-two retrieval, and OpenAPI drift.
+- Mobile: 937 passed, 7 intentional live-Identity skips, 0 failed.
 - Android `net10.0-android` build passed.
 - iOS simulator `net10.0-ios` build passed.
 - `dotnet format agenda-buddy-backend.slnf --verify-no-changes --no-restore` passed.

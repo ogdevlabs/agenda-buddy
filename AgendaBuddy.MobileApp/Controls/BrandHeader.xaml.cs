@@ -113,7 +113,13 @@ public partial class BrandHeader : ContentView
         }
     }
 
-    private void OnShellNavigated(object? sender, ShellNavigatedEventArgs e) => RefreshCanGoBack();
+    private void OnShellNavigated(object? sender, ShellNavigatedEventArgs e)
+    {
+        RefreshCanGoBack();
+
+        if (BindingContext is BrandHeaderViewModel viewModel)
+            _ = viewModel.RefreshAsync();
+    }
 
     /// <summary>
     /// A tab root is one page deep; anything pushed on top of it is two or more.
