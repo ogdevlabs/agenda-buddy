@@ -208,7 +208,7 @@ public class CalendarApiService : ICalendarApiService
                 $"Appointment page request failed with status {(int)response.StatusCode}.");
 
         var json = await response.Content.ReadAsStringAsync(ct);
-        var appointmentsPage = ParseAppointmentsPage(json, page, pageSize);
+        var appointmentsPage = ParseAppointmentsPage(json);
         await EnrichAppointmentsAsync(appointmentsPage.Items, ct);
         return appointmentsPage;
     }
@@ -262,29 +262,23 @@ public class CalendarApiService : ICalendarApiService
         }
     }
 
-    internal static AppointmentPage ParseAppointmentsPage(
-        string json,
-        int requestedPage,
-        int requestedPageSize)
+    internal static AppointmentPage ParseAppointmentsPage(string json)
     {
         using var doc = JsonDocument.Parse(json);
         if (doc.RootElement.ValueKind != JsonValueKind.Object
             || !doc.RootElement.TryGetProperty("data", out var data)
             || data.ValueKind != JsonValueKind.Object
             || !data.TryGetProperty("items", out var items)
-            || items.ValueKind != JsonValueKind.Array)
-            return AppointmentPage.Empty(requestedPage, requestedPageSize);
+            || items.ValueKind != JsonValueKind.Array
+            || !data.TryGetProperty("totalCount", out var total)
+            || !total.TryGetInt64(out var totalCount)
+            || !data.TryGetProperty("page", out var pageElement)
+            || !pageElement.TryGetInt32(out var page)
+            || !data.TryGetProperty("pageSize", out var sizeElement)
+            || !sizeElement.TryGetInt32(out var pageSize))
+            throw new JsonException("Appointment page response is missing required paging metadata.");
 
         var appointments = ParseAppointments(items.GetRawText());
-        var totalCount = data.TryGetProperty("totalCount", out var total) && total.TryGetInt64(out var count)
-            ? count
-            : appointments.Count;
-        var page = data.TryGetProperty("page", out var pageElement) && pageElement.TryGetInt32(out var parsedPage)
-            ? parsedPage
-            : requestedPage;
-        var pageSize = data.TryGetProperty("pageSize", out var sizeElement) && sizeElement.TryGetInt32(out var parsedSize)
-            ? parsedSize
-            : requestedPageSize;
 
         return new AppointmentPage(appointments, totalCount, page, pageSize);
     }

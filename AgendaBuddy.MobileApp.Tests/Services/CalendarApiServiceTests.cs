@@ -34,7 +34,7 @@ public class CalendarApiServiceTests
                         }
                         """;
 
-                var result = CalendarApiService.ParseAppointmentsPage(json, 1, 5);
+                var result = CalendarApiService.ParseAppointmentsPage(json);
 
                 Assert.Equal(7, result.TotalCount);
                 Assert.Equal(2, result.Page);
@@ -49,6 +49,15 @@ public class CalendarApiServiceTests
 
                 await Assert.ThrowsAsync<HttpRequestException>(() => sut.GetAppointmentsPageAsync(
                     AppointmentPageSegment.Done, 2, 5));
+            }
+
+            [Fact]
+            public void ParseAppointmentsPage_MissingMetadata_ThrowsInsteadOfLookingEmpty()
+            {
+                const string json = """{"data":{"items":[]},"errors":[]}""";
+
+                Assert.Throws<System.Text.Json.JsonException>(() =>
+                    CalendarApiService.ParseAppointmentsPage(json));
             }
 
     private static IHttpClientFactory CreateFactory(HttpStatusCode statusCode, string? jsonContent = null)
