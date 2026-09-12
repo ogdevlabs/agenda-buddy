@@ -1,7 +1,7 @@
 # Roadmap
 
 **Project:** Agenda Buddy
-**Last updated:** 2026-09-12T17:40:00Z
+**Last updated:** 2026-09-12T19:15:00Z
 
 ---
 
@@ -60,6 +60,7 @@
 | F-033 | spanish-mobile-localization | **Shipped 2026-09-09.** Localized the complete AgendaMe mobile experience into Latin-American Spanish (`es-MX`) using 591 paired RESX keys, persisted device language, safe Shell replacement, 115 profession display mappings, all 12 notification types, localized errors, and paired legal documents. Android/iOS Release packages and live English/Spanish provider/customer simulator flows verified. External legal/native review was explicitly accepted as a release risk and remains tracked in `agenda-buddy-hff`; no approval was fabricated. | 33 | Shipped | oscargarcia@ogdevlabs.onmicrosoft.com | 2026-09-09 | `v0.17.0`; `agenda-buddy-d8l`; [PRD](../prds/PRD_F-033_spanish-mobile-localization_2026-09-08.md); [Architecture](../design/spanish-mobile-localization/ARCHITECTURE.md) |
 | F-034 | profession-search-keyboard-dismissal | **Shipped 2026-09-09.** Providers can dismiss the Professions search keyboard by tapping outside or pressing Search. Both paths preserve the query and selections, restoring access to the pinned Save action on iOS. Verified live with the software keyboard on an iPhone 17 Pro simulator. | 34 | Shipped | oscargarcia@ogdevlabs.onmicrosoft.com | 2026-09-09 | `v0.18.0`, PR #152, `agenda-buddy-26r`; [PRD](../prds/PRD_F-034_profession-search-keyboard-dismissal_2026-09-09.md) |
 | F-035 | marketplace-payments | **Shipped 2026-09-10.** Stripe Connect marketplace payments: mandatory customer payment setup and provider payout onboarding; immutable server-priced bookings; authorization on provider confirmation; 90/10 destination-charge capture; full release/refund on provider cancellation; signed webhook reconciliation; bilingual mobile/Profile flows. External Connect/wallet activation remains `agenda-buddy-83z`; missing non-local configuration fails closed. | 35 | Shipped | oscargarcia@ogdevlabs.onmicrosoft.com | 2026-09-10 | `v0.19.0`, PR #153, `agenda-buddy-jaq`; [PRD](../prds/PRD_F-035_marketplace-payments_2026-09-09.md); [Architecture](../design/marketplace-payments/ARCHITECTURE.md) |
+| F-036 | appointments-segmented-experience | Calendar is renamed Appointments/Citas. Providers and customers share counted Scheduled/Done/Cancelled segments; historical segments retrieve the newest 5 and page older records through an authenticated bounded Calendar API. Providers retain Manage calendar for availability and time off. | 36 | In Progress | oscargarcia@ogdevlabs.onmicrosoft.com | — | `v0.23.0` candidate; `agenda-buddy-cs1`; episode 021 |
 
 > **API refactor decomposed 2026-08-18.** `/brainstorm refactor-minimal-apis` established that the requested scope — full Clean Architecture across 7 services (25 → ~46 projects), five new packages, a Testcontainers harness, the `Persitency` rename, and `MobileApp` into CI — is too large for one PRD. It is now a three-stage program with the **full Clean Architecture target preserved**, staged so the integration-test harness exists *before* the endpoint rewrite rather than being built alongside it. Program research: `docs/pdlc/brainstorm/brainstorm_refactor-minimal-apis_2026-08-18.md`.
 >

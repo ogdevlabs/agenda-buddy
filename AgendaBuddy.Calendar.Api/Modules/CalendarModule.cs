@@ -88,6 +88,35 @@ public class CalendarModule : ICarterModule
             .WithName("CheckCalendarAppointments")
             .RequireAuthorization();
 
+        calendar.MapGet("/appointments/{email}/page",
+            async Task<Results<Ok<DataResponse<PagedResponse<AppointmentEntity>>>, BadRequest>> (
+                IMediator mediator,
+                ClaimsPrincipal user,
+                string email,
+                string segment,
+                CancellationToken cancellationToken,
+                int? page = null,
+                int? pageSize = null) =>
+            {
+                OwnershipGuard.AssertOwner(user, email);
+
+                if (!Enum.TryParse<AppointmentListSegment>(segment, ignoreCase: true, out var parsedSegment))
+                    return TypedResults.BadRequest();
+
+                var pageRequest = PageRequest.Clamp(page, pageSize);
+                var result = await mediator.Send(new GetAppointmentsPageQuery
+                {
+                    Email = email,
+                    Segment = parsedSegment,
+                    Page = pageRequest,
+                    NowUtc = DateTime.UtcNow
+                }, cancellationToken);
+
+                return TypedResults.Ok(DataResponse<PagedResponse<AppointmentEntity>>.Ok(result.Value));
+            })
+            .WithName("GetAppointmentsPage")
+            .RequireAuthorization();
+
         // ── Time off ──────────────────────────────────────────────────────────────────────────────────
         //
         // A block is a first-class record on its own collection, replacing the whole-day fake appointment

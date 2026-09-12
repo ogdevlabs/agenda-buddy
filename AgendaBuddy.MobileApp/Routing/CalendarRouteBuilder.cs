@@ -1,3 +1,5 @@
+using AgendaBuddy.MobileApp.Models;
+
 namespace AgendaBuddy.MobileApp.Routing;
 
 public static class CalendarRouteBuilder
@@ -38,4 +40,13 @@ public static class CalendarRouteBuilder
     /// </summary>
     public static RouteSpec Appointments(string email) =>
         new(HttpMethod.Get, $"api/v1/calendar/appointments/{Uri.EscapeDataString(email)}");
+
+    public static RouteSpec AppointmentsPage(
+        string email,
+        AppointmentPageSegment segment,
+        int page,
+        int pageSize) =>
+        new(HttpMethod.Get,
+            $"api/v1/calendar/appointments/{Uri.EscapeDataString(email)}/page"
+            + $"?segment={segment.ToString().ToLowerInvariant()}&page={page}&pageSize={pageSize}");
 }

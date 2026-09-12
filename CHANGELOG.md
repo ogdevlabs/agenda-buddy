@@ -4,6 +4,21 @@ All notable changes to this project are documented in this file, in [Keep a Chan
 
 ## [Unreleased]
 
+## [0.23.0] - 2026-09-12
+
+### Added
+
+- Providers and customers now share an Appointments screen with counted Scheduled, Done, and Cancelled
+  segments (`Programadas`, `Realizadas`, and `Canceladas` in Spanish).
+- Done and Cancelled initially retrieve the five newest records and use authenticated server-backed pagination
+  for older pages. Providers retain the dedicated Manage calendar entry point for working hours and time off.
+
+### Changed
+
+- The user-facing Calendar tab and page are now named Appointments in English and Citas in Spanish.
+- Pending reschedules are grouped and displayed by their proposed time, while the agreed original time remains
+  available on appointment detail until the proposal is answered.
+
 ## [0.22.2] - 2026-09-12
 
 ### Changed

@@ -88,6 +88,23 @@ public class LocalizationResourceTest
         }
     }
 
+    [Fact]
+    public void AppointmentNavigationAndSegmentsUseTheApprovedEnglishAndSpanishLabels()
+    {
+        var english = Load("AppResources.resx");
+        var spanish = Load("AppResources.es-MX.resx");
+
+        Assert.Equal("Appointments", english["Xaml_Calendar"]);
+        Assert.Equal("Scheduled", english["Appointments_Scheduled"]);
+        Assert.Equal("Done", english["Appointments_Done"]);
+        Assert.Equal("Cancelled", english["Appointments_Cancelled"]);
+
+        Assert.Equal("Citas", spanish["Xaml_Calendar"]);
+        Assert.Equal("Programadas", spanish["Appointments_Scheduled"]);
+        Assert.Equal("Realizadas", spanish["Appointments_Done"]);
+        Assert.Equal("Canceladas", spanish["Appointments_Cancelled"]);
+    }
+
     private static Dictionary<string, string> Load(string fileName)
     {
         var path = Path.Combine(RepoRoot(), "AgendaBuddy.MobileApp", "Resources", "Strings", fileName);

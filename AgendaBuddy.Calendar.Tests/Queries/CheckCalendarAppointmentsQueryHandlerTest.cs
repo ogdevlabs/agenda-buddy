@@ -1,3 +1,6 @@
+using System.Linq;
+using AgendaBuddy.Library.Dtos;
+
 namespace AgendaBuddy.Calendar.Tests.Queries;
 
 public class CheckCalendarAppointmentsQueryHandlerTest
@@ -86,4 +89,110 @@ public class CheckCalendarAppointmentsQueryHandlerTest
 
         await Assert.ThrowsAsync<ArgumentNullException>(() => handler.Handle(null!, CancellationToken.None));
     }
+
+    [Fact]
+    public async Task History_ProviderDone_ReturnsNewestFiveAndReportsTotal()
+    {
+        var now = new DateTime(2026, 9, 12, 12, 0, 0, DateTimeKind.Utc);
+        var appointments = Enumerable.Range(1, 7)
+            .Select(day => Appointment(now.AddDays(-day), AppointmentStatus.Booked))
+            .Append(Appointment(now.AddDays(1), AppointmentStatus.Completed))
+            .Append(Appointment(now.AddDays(-8), AppointmentStatus.Cancelled))
+            .ToList();
+        var providerService = new Mock<IProviderService>();
+        providerService.Setup(service => service.FindProvidersAsync(It.IsAny<BsonDocument>()))
+            .ReturnsAsync(new ProviderEntity
+            {
+                FirstName = "Test",
+                LastName = "Provider",
+                Email = ProviderEmail,
+                AppointmentEntities = appointments
+            });
+        var handler = new GetAppointmentsPageQueryHandler(
+            providerService.Object, Mock.Of<IEventStore>());
+
+        var result = await handler.Handle(new GetAppointmentsPageQuery
+        {
+            Email = ProviderEmail,
+            Segment = AppointmentListSegment.Done,
+            Page = new PageRequest(1, 5),
+            NowUtc = now
+        }, CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(8, result.Value.TotalCount);
+        Assert.Equal(5, result.Value.Items.Count());
+        Assert.Equal(
+            [now.AddDays(1), now.AddDays(-1), now.AddDays(-2), now.AddDays(-3), now.AddDays(-4)],
+            result.Value.Items.Select(appointment => appointment.Start));
+    }
+
+    [Fact]
+    public async Task History_CustomerCancelled_ReturnsRequestedPageNewestFirst()
+    {
+        var now = new DateTime(2026, 9, 12, 12, 0, 0, DateTimeKind.Utc);
+        var appointments = Enumerable.Range(1, 7)
+            .Select(day => Appointment(now.AddDays(-day), AppointmentStatus.Cancelled))
+            .Append(Appointment(now.AddDays(-8), AppointmentStatus.Completed))
+            .ToList();
+        var providerService = new Mock<IProviderService>();
+        providerService.Setup(service => service.FindProvidersAsync(It.IsAny<BsonDocument>()))
+            .ReturnsAsync((ProviderEntity)null!);
+        providerService.Setup(service => service.FindAppointmentsByCustomerAsync(CustomerEmail))
+            .ReturnsAsync(appointments);
+        var handler = new GetAppointmentsPageQueryHandler(
+            providerService.Object, Mock.Of<IEventStore>());
+
+        var result = await handler.Handle(new GetAppointmentsPageQuery
+        {
+            Email = CustomerEmail,
+            Segment = AppointmentListSegment.Cancelled,
+            Page = new PageRequest(2, 5),
+            NowUtc = now
+        }, CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(7, result.Value.TotalCount);
+        Assert.Equal([now.AddDays(-6), now.AddDays(-7)],
+            result.Value.Items.Select(appointment => appointment.Start));
+    }
+
+    [Fact]
+    public async Task Page_Scheduled_UsesFutureProposedTimeInsteadOfPastOriginalTime()
+    {
+        var now = new DateTime(2026, 9, 12, 12, 0, 0, DateTimeKind.Utc);
+        var proposed = Appointment(now.AddDays(-2), AppointmentStatus.RescheduleRequested);
+        proposed.ProposedStart = now.AddDays(1);
+        var providerService = new Mock<IProviderService>();
+        providerService.Setup(service => service.FindProvidersAsync(It.IsAny<BsonDocument>()))
+            .ReturnsAsync(new ProviderEntity
+            {
+                FirstName = "Test",
+                LastName = "Provider",
+                Email = ProviderEmail,
+                AppointmentEntities = [proposed]
+            });
+        var handler = new GetAppointmentsPageQueryHandler(
+            providerService.Object, Mock.Of<IEventStore>());
+
+        var result = await handler.Handle(new GetAppointmentsPageQuery
+        {
+            Email = ProviderEmail,
+            Segment = AppointmentListSegment.Scheduled,
+            Page = new PageRequest(1, 100),
+            NowUtc = now
+        }, CancellationToken.None);
+
+        Assert.Equal(proposed, Assert.Single(result.Value.Items));
+    }
+
+    private static AppointmentEntity Appointment(DateTime start, AppointmentStatus status) =>
+        new()
+        {
+            EmailProvider = ProviderEmail,
+            EmailCustomer = CustomerEmail,
+            Start = start,
+            End = start.AddHours(1),
+            AppointmentStatus = status
+        };
 }

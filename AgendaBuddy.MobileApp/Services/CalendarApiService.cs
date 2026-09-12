@@ -187,6 +187,36 @@ public class CalendarApiService : ICalendarApiService
         // from the directory. Best-effort and deliberately non-fatal: a directory that fails to load
         // degrades to the email address, which is what every row showed before, rather than losing the
         // appointments themselves.
+        await EnrichAppointmentsAsync(appointments, ct);
+
+        return appointments;
+    }
+
+    public async Task<AppointmentPage> GetAppointmentsPageAsync(
+        AppointmentPageSegment segment,
+        int page,
+        int pageSize,
+        CancellationToken ct = default)
+    {
+        var client = _httpClientFactory.CreateClient("AgendaBuddyApi");
+        var route = CalendarRouteBuilder.AppointmentsPage(
+            _session.Email, segment, page, pageSize);
+        var response = await client.GetAsync(route.Path, ct);
+
+        if (!response.IsSuccessStatusCode)
+            throw new HttpRequestException(
+                $"Appointment page request failed with status {(int)response.StatusCode}.");
+
+        var json = await response.Content.ReadAsStringAsync(ct);
+        var appointmentsPage = ParseAppointmentsPage(json, page, pageSize);
+        await EnrichAppointmentsAsync(appointmentsPage.Items, ct);
+        return appointmentsPage;
+    }
+
+    private async Task EnrichAppointmentsAsync(
+        List<AppointmentDetail> appointments,
+        CancellationToken ct)
+    {
         var directory = await LoadCounterpartDirectoryAsync(ct);
 
         foreach (var appointment in appointments)
@@ -230,8 +260,33 @@ public class CalendarApiService : ICalendarApiService
             appointment.ProposedStart = ToLocal(appointment.ProposedStart);
             appointment.PreviousStart = ToLocal(appointment.PreviousStart);
         }
+    }
 
-        return appointments;
+    internal static AppointmentPage ParseAppointmentsPage(
+        string json,
+        int requestedPage,
+        int requestedPageSize)
+    {
+        using var doc = JsonDocument.Parse(json);
+        if (doc.RootElement.ValueKind != JsonValueKind.Object
+            || !doc.RootElement.TryGetProperty("data", out var data)
+            || data.ValueKind != JsonValueKind.Object
+            || !data.TryGetProperty("items", out var items)
+            || items.ValueKind != JsonValueKind.Array)
+            return AppointmentPage.Empty(requestedPage, requestedPageSize);
+
+        var appointments = ParseAppointments(items.GetRawText());
+        var totalCount = data.TryGetProperty("totalCount", out var total) && total.TryGetInt64(out var count)
+            ? count
+            : appointments.Count;
+        var page = data.TryGetProperty("page", out var pageElement) && pageElement.TryGetInt32(out var parsedPage)
+            ? parsedPage
+            : requestedPage;
+        var pageSize = data.TryGetProperty("pageSize", out var sizeElement) && sizeElement.TryGetInt32(out var parsedSize)
+            ? parsedSize
+            : requestedPageSize;
+
+        return new AppointmentPage(appointments, totalCount, page, pageSize);
     }
 
     /// <summary>

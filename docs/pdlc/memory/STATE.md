@@ -5,7 +5,7 @@
      Claude reads this file at the start of every session to auto-resume from the last checkpoint.
      If this file is missing or empty, PDLC will prompt you to run /pdlc init. -->
 
-**Last updated:** 2026-09-12T17:40:00Z
+**Last updated:** 2026-09-12T19:15:00Z
 
 ---
 
@@ -17,7 +17,12 @@ Idle
 
 ## Current Feature
 
-none
+F-036 — appointments-segmented-experience
+
+_Release candidate `v0.23.0`: the mobile Calendar surface is now Appointments/Citas for both roles, with
+counted Scheduled/Done/Cancelled segments and five-item server-backed historical pages. Local gates are green:
+backend 1,164; integration 412; mobile 932 passed with 7 intentional live-Identity skips; Android and iOS builds;
+format and OpenAPI drift. PR, CI, merge, tag, and GitHub Release remain pending._
 
 _Authoritative snapshot: `v0.22.2` is the current release. Releases `v0.21.0`–`v0.22.1` added email-verification
 onboarding, its code fallback, local-only Stripe onboarding deferral, biometric-backed session restoration, and

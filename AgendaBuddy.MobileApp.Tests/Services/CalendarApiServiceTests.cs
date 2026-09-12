@@ -11,6 +11,46 @@ namespace AgendaBuddy.MobileApp.Tests.Services;
 
 public class CalendarApiServiceTests
 {
+        [Fact]
+        public void ParseAppointmentsPage_UnwrapsItemsAndMetadata()
+        {
+                var json = """
+                        {
+                            "data": {
+                                "items": [
+                                    {
+                                        "identifier": "a1",
+                                        "emailProvider": "provider@example.com",
+                                        "emailCustomer": "customer@example.com",
+                                        "start": "2026-09-10T15:00:00Z",
+                                        "appointmentStatus": 2
+                                    }
+                                ],
+                                "totalCount": 7,
+                                "page": 2,
+                                "pageSize": 5
+                            },
+                            "errors": []
+                        }
+                        """;
+
+                var result = CalendarApiService.ParseAppointmentsPage(json, 1, 5);
+
+                Assert.Equal(7, result.TotalCount);
+                Assert.Equal(2, result.Page);
+                Assert.Equal(5, result.PageSize);
+                Assert.Equal("a1", Assert.Single(result.Items).Id);
+        }
+
+            [Fact]
+            public async Task GetAppointmentsPage_HttpFailure_ThrowsInsteadOfLookingEmpty()
+            {
+                var sut = Sut(CreateFactory(HttpStatusCode.ServiceUnavailable), CreateSession());
+
+                await Assert.ThrowsAsync<HttpRequestException>(() => sut.GetAppointmentsPageAsync(
+                    AppointmentPageSegment.Done, 2, 5));
+            }
+
     private static IHttpClientFactory CreateFactory(HttpStatusCode statusCode, string? jsonContent = null)
     {
         var content = jsonContent is not null

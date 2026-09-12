@@ -91,6 +91,49 @@ public class CalendarPersistenceTest(ServiceHostFixture<CalendarAnchor> host, Cr
     }
 
     [Fact]
+    public async Task AppointmentPage_ReturnsOnlyTheRequestedFiveItems()
+    {
+        const string owner = "calendar-page-owner@example.com";
+        using var service = host.StartService("Production");
+        var appointments = Enumerable.Range(1, 7)
+            .Select(day => new AppointmentEntity
+            {
+                Identifier = $"calendar-page-{day}",
+                EmailProvider = owner,
+                EmailCustomer = CustomerInTheBook,
+                Start = new DateTime(2026, 9, day, 10, 0, 0, DateTimeKind.Utc),
+                End = new DateTime(2026, 9, day, 11, 0, 0, DateTimeKind.Utc),
+                AppointmentStatus = AppointmentStatus.Completed
+            })
+            .ToList();
+
+        await ConfiguredCollection.Of<ProviderEntity>(service, "ProvidersCollection", "providers")
+            .InsertOneAsync(new ProviderEntity
+            {
+                Id = ObjectId.GenerateNewId(),
+                FirstName = "Paged",
+                LastName = "Provider",
+                Email = owner,
+                AppointmentEntities = appointments
+            });
+
+        var request = new HttpRequestMessage(HttpMethod.Get,
+            $"api/v1/calendar/appointments/{owner}/page?segment=done&page=2&pageSize=5");
+        request.Headers.Authorization = new AuthenticationHeaderValue(
+            "Bearer", _tokens.CreateToken(owner, TokenFactory.ProviderRole));
+
+        var response = await service.Client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var page = body.RootElement.GetProperty("data");
+        Assert.Equal(7, page.GetProperty("totalCount").GetInt64());
+        Assert.Equal(2, page.GetProperty("page").GetInt32());
+        Assert.Equal(5, page.GetProperty("pageSize").GetInt32());
+        Assert.Equal(2, page.GetProperty("items").GetArrayLength());
+    }
+
+    [Fact]
     public async Task AC6_TheSeededProvider_IsFoundByCheckCalendarAvailability()
     {
         // Availability is a computed 30-day slot grid (SupportTools.GetThirtyDaysCalendarAvailability) —

@@ -27,4 +27,15 @@ public class CalendarRouteContractTest(Harness.ServiceHostFixture<CalendarAnchor
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
+
+    [Fact]
+    public async Task GetAppointmentPage_Anonymously_Returns401()
+    {
+        using var service = host.StartService();
+
+        var response = await service.Client.GetAsync(
+            "api/v1/calendar/appointments/caller@example.com/page?segment=done&page=1&pageSize=5");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
 }
