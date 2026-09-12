@@ -19,6 +19,11 @@ All notable changes to this project are documented in this file, in [Keep a Chan
 - Pending reschedules are grouped and displayed by their proposed time, while the agreed original time remains
   available on appointment detail until the proposal is answered.
 
+### Fixed
+
+- Long account identifiers can no longer shift the AgendaMe lockup off center or collide with the role label.
+  The header identity row now shows only the resolved profile name and remains hidden when no profile name exists.
+
 ## [0.22.2] - 2026-09-12
 
 ### Changed

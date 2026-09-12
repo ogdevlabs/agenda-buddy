@@ -182,14 +182,15 @@ public class DashboardGreetingNameTests
     }
 
     [Fact]
-    public async Task WithNoProfileTheGreetingFallsBackToTheEmailRatherThanNothing()
+    public async Task WithNoProfileTheGreetingDoesNotUseTheEmailAsAName()
     {
         var vm = Build(firstName: null);
 
         await vm.LoadCommand.ExecuteAsync(null);
 
-        Assert.Equal("pat@example.com", vm.UserDisplayName);
-        Assert.Equal(", pat@example.com", vm.GreetingNameSuffix);
+        Assert.Equal(string.Empty, vm.UserDisplayName);
+        Assert.Equal(string.Empty, vm.GreetingNameSuffix);
+        Assert.False(vm.HasUserDisplayName);
     }
 
     [Fact]

@@ -22,12 +22,15 @@ find scheduled, completed, and cancelled sessions quickly in either supported la
   five records, and expose Previous/Next page controls for additional history.
 - Pending reschedules use their proposed time for grouping and list display while appointment detail retains the
   original agreed time until the proposal is answered.
+- Simulator verification exposed a long-account-name BrandHeader defect: the shared auto-sized grid let account
+  text shift the AgendaMe lockup and push the role off-screen. The brand and identity now occupy independent
+  centered rows; the bounded identity row shows a profile name only, never an email fallback.
 
 ## Verification
 
 - Backend: 1,164 passed, 0 failed.
 - Integration: 412 passed, 0 failed, including authenticated page-two retrieval and OpenAPI drift.
-- Mobile: 933 passed, 7 intentional live-Identity skips, 0 failed.
+- Mobile: 934 passed, 7 intentional live-Identity skips, 0 failed.
 - Android `net10.0-android` build passed.
 - iOS simulator `net10.0-ios` build passed.
 - `dotnet format agenda-buddy-backend.slnf --verify-no-changes --no-restore` passed.

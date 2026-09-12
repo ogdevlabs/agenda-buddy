@@ -21,7 +21,7 @@ F-036 — appointments-segmented-experience
 
 _Release candidate `v0.23.0`: the mobile Calendar surface is now Appointments/Citas for both roles, with
 counted Scheduled/Done/Cancelled segments and five-item server-backed historical pages. Local gates are green:
-backend 1,164; integration 412; mobile 933 passed with 7 intentional live-Identity skips; Android and iOS builds;
+backend 1,164; integration 412; mobile 934 passed with 7 intentional live-Identity skips; Android and iOS builds;
 format and OpenAPI drift. PR, CI, merge, tag, and GitHub Release remain pending._
 
 _Authoritative snapshot: `v0.22.2` is the current release. Releases `v0.21.0`–`v0.22.1` added email-verification
