@@ -1,4 +1,5 @@
 using AgendaBuddy.MobileApp.Routing;
+using AgendaBuddy.MobileApp.Models;
 using Xunit;
 
 namespace AgendaBuddy.MobileApp.Tests.Routing;
@@ -67,6 +68,18 @@ public class CalendarRouteBuilderTests
 
         Assert.Equal(HttpMethod.Get, route.Method);
         Assert.Equal("api/v1/calendar/appointments/alice%40example.com", route.Path);
+    }
+
+    [Fact]
+    public void AppointmentsPage_BuildsPagedSegmentRoute()
+    {
+        var route = CalendarRouteBuilder.AppointmentsPage(
+            "alice+tag@example.com", AppointmentPageSegment.Cancelled, 2, 5);
+
+        Assert.Equal(HttpMethod.Get, route.Method);
+        Assert.Equal(
+            "api/v1/calendar/appointments/alice%2Btag%40example.com/page?segment=cancelled&page=2&pageSize=5",
+            route.Path);
     }
 
     // Emails are user data in a path segment, and a plus-addressed one is perfectly legal. Encoding them

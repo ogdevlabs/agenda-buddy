@@ -78,6 +78,9 @@ public static class AppResources
     public static string Validation_DayMustStartBeforeEnd => GetString(nameof(Validation_DayMustStartBeforeEnd));
     public static string WorkDay_Closed => GetString(nameof(WorkDay_Closed));
     public static string WorkDay_Invalid => GetString(nameof(WorkDay_Invalid));
+    public static string Appointments_Scheduled => GetString(nameof(Appointments_Scheduled));
+    public static string Appointments_Done => GetString(nameof(Appointments_Done));
+    public static string Appointments_Cancelled => GetString(nameof(Appointments_Cancelled));
     public static string Xaml_1CHOOSEASERVICE => GetString(nameof(Xaml_1CHOOSEASERVICE));
     public static string Xaml_2CHOOSEADATEANDTIME => GetString(nameof(Xaml_2CHOOSEADATEANDTIME));
     public static string Xaml_AServiceMustBeOfferedUnderOneOfYourProfessions => GetString(nameof(Xaml_AServiceMustBeOfferedUnderOneOfYourProfessions));

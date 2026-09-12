@@ -25,4 +25,10 @@ public interface ICalendarApiService
     /// the deviation note on <see cref="AgendaBuddy.MobileApp.Routing.BookingRouteBuilder"/>.
     /// </summary>
     Task<List<AppointmentDetail>> GetAppointmentsAsync(CancellationToken ct = default);
+
+    Task<AppointmentPage> GetAppointmentsPageAsync(
+        AppointmentPageSegment segment,
+        int page,
+        int pageSize,
+        CancellationToken ct = default);
 }

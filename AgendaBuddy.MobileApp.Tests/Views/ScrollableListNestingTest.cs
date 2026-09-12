@@ -26,7 +26,6 @@ public class ScrollableListNestingTest
         // BookAppointmentPage when its two bespoke lists were replaced by the shared SlotPicker control. The
         // point of this allowlist is that it shrinks.
         "BookAppointmentPage.xaml",
-        "CalendarPage.xaml",
         "DashboardPage.xaml",
     ];
 

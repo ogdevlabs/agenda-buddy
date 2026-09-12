@@ -4,6 +4,26 @@ All notable changes to this project are documented in this file, in [Keep a Chan
 
 ## [Unreleased]
 
+## [0.23.0] - 2026-09-12
+
+### Added
+
+- Providers and customers now share an Appointments screen with counted Scheduled, Done, and Cancelled
+  segments (`Programadas`, `Realizadas`, and `Canceladas` in Spanish).
+- Done and Cancelled initially retrieve the five newest records and use authenticated server-backed pagination
+  for older pages. Providers retain the dedicated Manage calendar entry point for working hours and time off.
+
+### Changed
+
+- The user-facing Calendar tab and page are now named Appointments in English and Citas in Spanish.
+- Pending reschedules are grouped and displayed by their proposed time, while the agreed original time remains
+  available on appointment detail until the proposal is answered.
+
+### Fixed
+
+- Long account identifiers can no longer shift the AgendaMe lockup off center or collide with the role label.
+  The header identity row now shows only the resolved profile name and remains hidden when no profile name exists.
+
 ## [0.22.2] - 2026-09-12
 
 ### Changed
@@ -530,7 +550,18 @@ All notable changes to this project are documented in this file, in [Keep a Chan
 - A `null` `EmailProvider` on `POST /appointments` passes both Validot and the ownership guard, then throws downstream during provider lookup, surfacing as an unhandled 500 rather than a 400 — `agenda-buddy-cy2`.
 - Mapster is approved (ADR-049) for this line of work but has zero call sites yet.
 
-[Unreleased]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.18.0...HEAD
+[Unreleased]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.23.0...HEAD
+[0.23.0]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.22.2...v0.23.0
+[0.22.2]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.22.1...v0.22.2
+[0.22.1]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.22.0...v0.22.1
+[0.22.0]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.21.2...v0.22.0
+[0.21.2]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.21.1...v0.21.2
+[0.21.1]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.21.0...v0.21.1
+[0.21.0]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.20.0...v0.21.0
+[0.20.0]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.19.2...v0.20.0
+[0.19.2]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.19.1...v0.19.2
+[0.19.1]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.19.0...v0.19.1
+[0.19.0]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.18.0...v0.19.0
 [0.18.0]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.17.0...v0.18.0
 [0.17.0]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.16.0...v0.17.0
 [0.16.0]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.15.0...v0.16.0

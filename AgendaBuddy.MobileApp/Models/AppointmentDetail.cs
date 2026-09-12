@@ -59,6 +59,13 @@ public class AppointmentDetail
     public bool HasPendingReschedule =>
         Status == AppointmentStatus.RescheduleRequested && ProposedStart.HasValue;
 
+    /// <summary>The time the customer appointment list groups, sorts, and displays.</summary>
+    public DateTime ListTime => HasPendingReschedule ? ProposedStart!.Value : ScheduledAt;
+
+    public string ListTimeLabel => AppResources.Format(
+        HasPendingReschedule ? "Appointments_ProposedTime" : "Appointments_ScheduledTime",
+        ListTime);
+
     /// <summary>
     /// The last moment a CUSTOMER may still cancel, on this device's clock.
     /// </summary>

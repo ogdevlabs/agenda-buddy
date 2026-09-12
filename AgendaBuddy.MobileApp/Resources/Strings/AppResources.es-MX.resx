@@ -380,6 +380,17 @@
   <data name="Calendar_OpenEveryDayOneHour" xml:space="preserve"><value>Abierto todos los días, 1 hora disponible por semana.</value></data>
   <data name="Calendar_ClosedDaysOneHour" xml:space="preserve"><value>Cerrado: {0} · 1 hora disponible por semana.</value></data>
   <data name="Calendar_WeekInvalid" xml:space="preserve"><value>Algunos horarios terminan antes de comenzar.</value></data>
+  <data name="Appointments_Scheduled" xml:space="preserve"><value>Programadas</value></data>
+  <data name="Appointments_Done" xml:space="preserve"><value>Realizadas</value></data>
+  <data name="Appointments_Cancelled" xml:space="preserve"><value>Canceladas</value></data>
+  <data name="Appointments_ScheduledTime" xml:space="preserve"><value>{0:ddd, d MMM · H:mm}</value></data>
+  <data name="Appointments_ProposedTime" xml:space="preserve"><value>Propuesta · {0:ddd, d MMM · H:mm}</value></data>
+  <data name="Appointments_EmptyScheduledTitle" xml:space="preserve"><value>No hay citas programadas</value></data>
+  <data name="Appointments_EmptyScheduledSubtitle" xml:space="preserve"><value>Tu próxima sesión reservada aparecerá aquí.</value></data>
+  <data name="Appointments_EmptyDoneTitle" xml:space="preserve"><value>No hay citas realizadas</value></data>
+  <data name="Appointments_EmptyDoneSubtitle" xml:space="preserve"><value>Las sesiones completadas aparecerán aquí.</value></data>
+  <data name="Appointments_EmptyCancelledTitle" xml:space="preserve"><value>No hay citas canceladas</value></data>
+  <data name="Appointments_EmptyCancelledSubtitle" xml:space="preserve"><value>Las sesiones canceladas aparecerán aquí.</value></data>
   <data name="Contacts_CustomersEmptySubtitle" xml:space="preserve"><value>Cuando un cliente reserve una sesión contigo, aparecerá aquí.</value></data>
   <data name="Contacts_CustomersEmptyTitle" xml:space="preserve"><value>Aún no hay clientes</value></data>
   <data name="Contacts_CustomersSearch" xml:space="preserve"><value>Buscar clientes...</value></data>
@@ -526,7 +537,7 @@
     <value>Reservar cita</value>
   </data>
   <data name="Xaml_Calendar" xml:space="preserve">
-    <value>Calendario</value>
+    <value>Citas</value>
   </data>
   <data name="Xaml_CalendarSettings" xml:space="preserve">
     <value>Configuración del calendario</value>

@@ -6,7 +6,7 @@
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
              x:Class="AgendaBuddy.MobileApp.Views.MessagingPage"
              Title="{x:Static strings:AppResources.Xaml_Messages}"
-             BackgroundColor="#F2F2F7"
+             BackgroundColor="{StaticResource BackgroundPage}"
              Shell.NavBarIsVisible="False">
 
     <ContentPage.Resources>
@@ -23,25 +23,25 @@
 
         <Grid Grid.Row="1" RowDefinitions="Auto,Auto,Auto,*">
 
-            <!-- Header -->
+            <!-- Standard operational-page header: shared with Appointments and Contacts. -->
             <Grid Grid.Row="0"
-                  BackgroundColor="White"
-                  Padding="20,16,20,12"
+                BackgroundColor="{StaticResource Primary}"
+                Padding="24,24,24,20"
                   ColumnDefinitions="*,Auto">
                 <Label Grid.Column="0"
                        Text="{x:Static strings:AppResources.Xaml_Messages}"
-                       FontSize="34"
+                     FontSize="30"
                        FontAttributes="Bold"
-                       TextColor="{StaticResource iOSLabel}"
+                     TextColor="White"
                        VerticalOptions="Center" />
 
                 <!-- This tab can only ever list threads that already exist, so without a way out to the
                      contact list neither side could say anything first. -->
                 <controls:SafeButton Grid.Column="1"
                         Text="{x:Static strings:AppResources.Xaml_New}"
-                        BackgroundColor="#E0F2FE"
-                        TextColor="#0369A1"
-                        CornerRadius="10"
+                        BackgroundColor="{StaticResource BrandAccent}"
+                        TextColor="{StaticResource TextPrimary}"
+                        CornerRadius="8"
                         FontSize="15"
                         FontAttributes="Bold"
                         HeightRequest="38"

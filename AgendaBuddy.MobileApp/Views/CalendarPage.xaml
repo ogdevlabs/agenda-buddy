@@ -3,311 +3,254 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:strings="clr-namespace:AgendaBuddy.MobileApp.Resources.Strings"
              xmlns:controls="clr-namespace:AgendaBuddy.MobileApp.Controls"
-             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
              x:Class="AgendaBuddy.MobileApp.Views.CalendarPage"
              x:Name="ThisPage"
              Title="{x:Static strings:AppResources.Xaml_Calendar}"
-             BackgroundColor="#F2F2F7"
+             BackgroundColor="{StaticResource BackgroundPage}"
              Shell.NavBarIsVisible="False">
 
     <ContentPage.Resources>
-        <!-- iOS System Colors -->
         <Color x:Key="iOSBlue">#007AFF</Color>
         <Color x:Key="iOSRed">#FF3B30</Color>
         <Color x:Key="iOSGray">#8E8E93</Color>
-        <Color x:Key="iOSGray2">#AEAEB2</Color>
         <Color x:Key="iOSGray5">#E5E5EA</Color>
-        <Color x:Key="iOSGray6">#F2F2F7</Color>
         <Color x:Key="iOSLabel">#000000</Color>
         <Color x:Key="iOSSecondaryLabel">#3C3C4399</Color>
-        <Color x:Key="iOSTertiaryLabel">#3C3C434D</Color>
-        <Color x:Key="iOSGroupedBg">#FFFFFF</Color>
-        <Color x:Key="iOSOrange">#FF9500</Color>
-        <Color x:Key="iOSPurple">#AF52DE</Color>
-        <Color x:Key="iOSTeal">#5AC8FA</Color>
     </ContentPage.Resources>
 
     <Grid RowDefinitions="Auto,*">
-
         <controls:BrandHeader Grid.Row="0" />
 
-        <Grid Grid.Row="1" RowDefinitions="Auto,Auto,Auto,*">
+        <Grid Grid.Row="1"
+              RowDefinitions="Auto,Auto,Auto,Auto,*,Auto"
+              AutomationId="AppointmentsView">
 
-            <!-- Header -->
-            <Grid Grid.Row="0"
-                  BackgroundColor="White"
-                  Padding="20,16,20,12"
-                  RowDefinitions="Auto,Auto"
-                  RowSpacing="12">
-                <Grid Grid.Row="0" ColumnDefinitions="*,Auto">
-                    <!-- Month & Year -->
-                    <VerticalStackLayout Grid.Column="0" Spacing="2">
-                        <Label Text="{Binding MonthYear}"
-                               FontSize="28"
-                               FontAttributes="Bold"
-                               TextColor="{StaticResource iOSLabel}" />
-                        <Label Text="{Binding WeekLabel}"
-                               FontSize="13"
-                               TextColor="{StaticResource iOSGray}" />
+            <Grid Grid.Row="0" BackgroundColor="{StaticResource Primary}" Padding="24,24,24,20">
+                <Label Text="{x:Static strings:AppResources.Xaml_Calendar}"
+                       FontSize="30"
+                       FontAttributes="Bold"
+                       TextColor="White" />
+            </Grid>
+
+            <Border Grid.Row="1"
+                    IsVisible="{Binding IsProvider}"
+                    AutomationId="ManageCalendarButton"
+                    Margin="16,12,16,0"
+                    BackgroundColor="{StaticResource PrimarySubtle}"
+                    Stroke="{StaticResource Primary}"
+                    StrokeThickness="1"
+                    Padding="14,11">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="8" />
+                </Border.StrokeShape>
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnCalendarSettingsTapped" />
+                </Border.GestureRecognizers>
+                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
+                    <Label Text="&#x2699;" FontSize="17"
+                           TextColor="{StaticResource Primary}" VerticalOptions="Center" />
+                    <VerticalStackLayout Grid.Column="1" Spacing="1" VerticalOptions="Center">
+                        <Label Text="{x:Static strings:AppResources.Xaml_ManageCalendar}"
+                               FontSize="15" FontAttributes="Bold" TextColor="{StaticResource Primary}" />
+                        <Label Text="{x:Static strings:AppResources.Xaml_WorkingDaysHoursAndTimeOff}"
+                               FontSize="12" TextColor="{StaticResource TextMuted}" />
                     </VerticalStackLayout>
-                    <!-- Week navigation only. The calendar-hours entry point is the labelled row below: a bare
-                         gear glyph beside two chevrons is three unlabelled icons in a cluster, and providers were
-                         not finding it. -->
-                    <HorizontalStackLayout Grid.Column="1" Spacing="4" VerticalOptions="Center">
-                        <controls:SafeButton Text="&#x276E;"
-                                Command="{Binding PreviousPageCommand}"
-                                IsEnabled="{Binding CanGoBack}"
-                                BackgroundColor="Transparent"
-                                TextColor="{StaticResource iOSBlue}"
-                                FontSize="18"
-                                WidthRequest="40"
-                                HeightRequest="40"
-                                Padding="2" />
-                        <controls:SafeButton Text="&#x276F;"
-                                Command="{Binding NextPageCommand}"
-                                IsEnabled="{Binding CanGoForward}"
-                                BackgroundColor="Transparent"
-                                TextColor="{StaticResource iOSBlue}"
-                                FontSize="18"
-                                WidthRequest="40"
-                                HeightRequest="40"
-                                Padding="2" />
-                    </HorizontalStackLayout>
+                    <Label Grid.Column="2" Text="&#x276F;" FontSize="14"
+                           TextColor="{StaticResource Primary}" VerticalOptions="Center" />
                 </Grid>
+            </Border>
 
-                <!--
-                    Manage calendar — the provider's way into their working week and time off.
+            <Border Grid.Row="2"
+                    Margin="16,12,16,10"
+                    Padding="3"
+                    BackgroundColor="{StaticResource iOSGray5}"
+                    StrokeThickness="0">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="10" />
+                </Border.StrokeShape>
+                <Grid ColumnDefinitions="*,*,*" ColumnSpacing="3" HeightRequest="44">
+                    <Border Grid.Column="0" StrokeThickness="0" BackgroundColor="Transparent"
+                            AutomationId="ScheduledAppointmentsTab">
+                        <Border.StrokeShape><RoundRectangle CornerRadius="8" /></Border.StrokeShape>
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding SelectAppointmentTabCommand}"
+                                                  CommandParameter="Scheduled" />
+                        </Border.GestureRecognizers>
+                        <Border.Triggers>
+                            <DataTrigger TargetType="Border" Binding="{Binding IsScheduledTab}" Value="True">
+                                <Setter Property="BackgroundColor" Value="White" />
+                            </DataTrigger>
+                        </Border.Triggers>
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="4" Padding="6,0" VerticalOptions="Center">
+                            <Label Text="{x:Static strings:AppResources.Appointments_Scheduled}"
+                                   FontSize="12" TextColor="{StaticResource iOSSecondaryLabel}"
+                                   LineBreakMode="TailTruncation" VerticalOptions="Center">
+                                <Label.Triggers>
+                                    <DataTrigger TargetType="Label" Binding="{Binding IsScheduledTab}" Value="True">
+                                        <Setter Property="TextColor" Value="{StaticResource iOSLabel}" />
+                                        <Setter Property="FontAttributes" Value="Bold" />
+                                    </DataTrigger>
+                                </Label.Triggers>
+                            </Label>
+                            <Label Grid.Column="1" Text="{Binding ScheduledCount}" FontSize="11"
+                                   FontAttributes="Bold" TextColor="{StaticResource iOSGray}" />
+                        </Grid>
+                    </Border>
 
-                    A LABELLED, full-width row, not the 40x40 gear this replaces. That gear sat between the two
-                    week-navigation chevrons at 18pt with no label, so it read as a third arrow and providers were
-                    not finding it at all — which matters more than it looks, because it is the only way to close a
-                    day and therefore the only way to stop being booked at weekends.
+                    <Border Grid.Column="1" StrokeThickness="0" BackgroundColor="Transparent"
+                            AutomationId="DoneAppointmentsTab">
+                        <Border.StrokeShape><RoundRectangle CornerRadius="8" /></Border.StrokeShape>
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding SelectAppointmentTabCommand}"
+                                                  CommandParameter="Done" />
+                        </Border.GestureRecognizers>
+                        <Border.Triggers>
+                            <DataTrigger TargetType="Border" Binding="{Binding IsDoneTab}" Value="True">
+                                <Setter Property="BackgroundColor" Value="White" />
+                            </DataTrigger>
+                        </Border.Triggers>
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="4" Padding="6,0" VerticalOptions="Center">
+                            <Label Text="{x:Static strings:AppResources.Appointments_Done}"
+                                   FontSize="12" TextColor="{StaticResource iOSSecondaryLabel}"
+                                   LineBreakMode="TailTruncation" VerticalOptions="Center">
+                                <Label.Triggers>
+                                    <DataTrigger TargetType="Label" Binding="{Binding IsDoneTab}" Value="True">
+                                        <Setter Property="TextColor" Value="{StaticResource iOSLabel}" />
+                                        <Setter Property="FontAttributes" Value="Bold" />
+                                    </DataTrigger>
+                                </Label.Triggers>
+                            </Label>
+                            <Label Grid.Column="1" Text="{Binding DoneCount}" FontSize="11"
+                                   FontAttributes="Bold" TextColor="{StaticResource iOSGray}" />
+                        </Grid>
+                    </Border>
 
-                    Provider-only: a customer has no working week to manage, and the row would lead to a screen
-                    that refuses them.
-                -->
-                <Border Grid.Row="1"
-                        IsVisible="{Binding IsProvider}"
-                        AutomationId="ManageCalendarButton"
-                        BackgroundColor="{StaticResource PrimarySubtle}"
-                        Stroke="{StaticResource Primary}"
+                    <Border Grid.Column="2" StrokeThickness="0" BackgroundColor="Transparent"
+                            AutomationId="CancelledAppointmentsTab">
+                        <Border.StrokeShape><RoundRectangle CornerRadius="8" /></Border.StrokeShape>
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding SelectAppointmentTabCommand}"
+                                                  CommandParameter="Cancelled" />
+                        </Border.GestureRecognizers>
+                        <Border.Triggers>
+                            <DataTrigger TargetType="Border" Binding="{Binding IsCancelledTab}" Value="True">
+                                <Setter Property="BackgroundColor" Value="White" />
+                            </DataTrigger>
+                        </Border.Triggers>
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="4" Padding="6,0" VerticalOptions="Center">
+                            <Label Text="{x:Static strings:AppResources.Appointments_Cancelled}"
+                                   FontSize="12" TextColor="{StaticResource iOSSecondaryLabel}"
+                                   LineBreakMode="TailTruncation" VerticalOptions="Center">
+                                <Label.Triggers>
+                                    <DataTrigger TargetType="Label" Binding="{Binding IsCancelledTab}" Value="True">
+                                        <Setter Property="TextColor" Value="{StaticResource iOSLabel}" />
+                                        <Setter Property="FontAttributes" Value="Bold" />
+                                    </DataTrigger>
+                                </Label.Triggers>
+                            </Label>
+                            <Label Grid.Column="1" Text="{Binding CancelledCount}" FontSize="11"
+                                   FontAttributes="Bold" TextColor="{StaticResource iOSGray}" />
+                        </Grid>
+                    </Border>
+                </Grid>
+            </Border>
+
+            <Grid Grid.Row="3" Padding="16,0">
+                <ActivityIndicator IsRunning="{Binding IsLoading}"
+                                   IsVisible="{Binding IsLoading}"
+                                   Color="{StaticResource iOSGray}"
+                                   HorizontalOptions="Center"
+                                   Margin="0,12" />
+                <Border IsVisible="{Binding HasError}"
+                        BackgroundColor="#FFF2F2"
+                        Stroke="#FFD6D6"
                         StrokeThickness="1"
-                        Padding="14,11">
-                    <Border.StrokeShape>
-                        <RoundRectangle CornerRadius="12" />
-                    </Border.StrokeShape>
-                    <Border.GestureRecognizers>
-                        <TapGestureRecognizer Tapped="OnCalendarSettingsTapped" />
-                    </Border.GestureRecognizers>
-                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
-                        <Label Grid.Column="0" Text="&#x2699;" FontSize="17"
-                               TextColor="{StaticResource Primary}" VerticalOptions="Center" />
-                        <VerticalStackLayout Grid.Column="1" Spacing="1" VerticalOptions="Center">
-                            <Label Text="{x:Static strings:AppResources.Xaml_ManageCalendar}" FontSize="15" FontAttributes="Bold"
-                                   TextColor="{StaticResource Primary}" />
-                            <Label Text="{x:Static strings:AppResources.Xaml_WorkingDaysHoursAndTimeOff}" FontSize="12"
-                                   TextColor="{StaticResource TextMuted}" />
-                        </VerticalStackLayout>
-                        <Label Grid.Column="2" Text="&#x276F;" FontSize="14"
-                               TextColor="{StaticResource Primary}" VerticalOptions="Center" />
+                        Padding="14,10">
+                    <Border.StrokeShape><RoundRectangle CornerRadius="8" /></Border.StrokeShape>
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                        <Label Text="{Binding ErrorMessage}" TextColor="{StaticResource iOSRed}"
+                               FontSize="14" VerticalOptions="Center" />
+                        <controls:SafeButton Grid.Column="1"
+                                             Text="{x:Static strings:AppResources.Xaml_Retry}"
+                                             Command="{Binding LoadCommand}"
+                                             BackgroundColor="Transparent"
+                                             TextColor="{StaticResource iOSBlue}" />
                     </Grid>
                 </Border>
             </Grid>
 
-            <!-- Day selector strip -->
-            <Grid Grid.Row="1" BackgroundColor="White" Padding="0,0,0,12">
-                <!-- SelectionMode="None" and a tap instead: with "Single", iOS draws its OWN grey selected-cell
-                     background, which appeared as a grey rectangle behind the red circle this template already
-                     draws for the selected day. Two selection visuals, one of them wrong. Selection still lives
-                     on the view model, which is what the red circle binds to. -->
-                <CollectionView ItemsSource="{Binding Days}"
+            <Grid Grid.Row="4">
+                <CollectionView ItemsSource="{Binding DisplayedAppointments}"
                                 SelectionMode="None"
-                                HeightRequest="76"
-                                Margin="12,0">
+                                Margin="16,4,16,16"
+                                AutomationId="AppointmentsCollection">
                     <CollectionView.ItemsLayout>
-                        <LinearItemsLayout Orientation="Horizontal" ItemSpacing="0" />
+                        <LinearItemsLayout Orientation="Vertical" ItemSpacing="8" />
                     </CollectionView.ItemsLayout>
                     <CollectionView.ItemTemplate>
                         <DataTemplate>
-                            <Grid WidthRequest="52" HeightRequest="72">
-                                <Grid.GestureRecognizers>
+                            <Border BackgroundColor="White" Stroke="#E5E5EA" StrokeThickness="1" Padding="14">
+                                <Border.StrokeShape><RoundRectangle CornerRadius="8" /></Border.StrokeShape>
+                                <Border.GestureRecognizers>
                                     <TapGestureRecognizer
-                                        Command="{Binding Source={x:Reference ThisPage}, Path=BindingContext.SelectDayCommand}"
-                                        CommandParameter="{Binding}" />
-                                </Grid.GestureRecognizers>
-                                <VerticalStackLayout VerticalOptions="Center"
-                                                     HorizontalOptions="Center"
-                                                     Spacing="4">
-                                    <!-- Day of week label -->
-                                    <Label Text="{Binding DayOfWeek}"
-                                           FontSize="11"
-                                           TextColor="{Binding IsToday, Converter={toolkit:BoolToObjectConverter TrueObject={StaticResource iOSRed}, FalseObject={StaticResource iOSGray}}}"
-                                           HorizontalOptions="Center"
-                                           TextTransform="Uppercase" />
-                                    <!-- Day number circle -->
-                                    <Grid WidthRequest="36" HeightRequest="36" HorizontalOptions="Center">
-                                        <BoxView CornerRadius="18"
-                                                 WidthRequest="36"
-                                                 HeightRequest="36"
-                                                 Color="{Binding IsSelected, Converter={toolkit:BoolToObjectConverter TrueObject={StaticResource iOSRed}, FalseObject=Transparent}}"
-                                                 HorizontalOptions="Center"
-                                                 VerticalOptions="Center" />
-                                        <Label Text="{Binding DayNumber}"
-                                               FontSize="17"
-                                               FontAttributes="{Binding IsToday, Converter={toolkit:BoolToObjectConverter TrueObject=Bold, FalseObject=None}}"
-                                               TextColor="{Binding IsSelected, Converter={toolkit:BoolToObjectConverter TrueObject=White, FalseObject={StaticResource iOSLabel}}}"
-                                               HorizontalOptions="Center"
-                                               VerticalOptions="Center" />
-                                    </Grid>
-                                    <!-- Dot indicator for bookings -->
-                                    <BoxView WidthRequest="5"
-                                             HeightRequest="5"
-                                             CornerRadius="2.5"
-                                             HorizontalOptions="Center"
-                                             Color="{Binding HasBookings, Converter={toolkit:BoolToObjectConverter TrueObject={StaticResource iOSGray2}, FalseObject=Transparent}}" />
-                                </VerticalStackLayout>
-                            </Grid>
+                                        Command="{Binding Source={x:Reference ThisPage}, Path=BindingContext.OpenAppointmentFromListCommand}"
+                                        CommandParameter="{Binding .}" />
+                                </Border.GestureRecognizers>
+                                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                                    <controls:Avatar Size="44" Source="{Binding AvatarAsset}"
+                                                     AutomationId="AppointmentAvatar" />
+                                    <VerticalStackLayout Grid.Column="1" Spacing="3" VerticalOptions="Center">
+                                        <Label Text="{Binding DisplayName}" FontSize="16" FontAttributes="Bold"
+                                               TextColor="{StaticResource iOSLabel}" LineBreakMode="TailTruncation" />
+                                        <Label Text="{Binding ServiceName}" FontSize="13"
+                                               TextColor="{StaticResource iOSSecondaryLabel}" LineBreakMode="TailTruncation" />
+                                        <Label Text="{Binding ListTimeLabel}" FontSize="13"
+                                               TextColor="{StaticResource iOSGray}" LineBreakMode="TailTruncation" />
+                                    </VerticalStackLayout>
+                                    <VerticalStackLayout Grid.Column="2" Spacing="4" VerticalOptions="Center"
+                                                         HorizontalOptions="End">
+                                        <Label Text="{Binding StatusLabel}" FontSize="11" FontAttributes="Bold"
+                                               TextColor="{StaticResource iOSBlue}" HorizontalTextAlignment="End" />
+                                        <Label Text="&#x203A;" FontSize="22" TextColor="{StaticResource iOSGray}"
+                                               HorizontalOptions="End" />
+                                    </VerticalStackLayout>
+                                </Grid>
+                            </Border>
                         </DataTemplate>
                     </CollectionView.ItemTemplate>
                 </CollectionView>
-                <!-- Separator -->
-                <BoxView HeightRequest="0.5"
-                         Color="{StaticResource iOSGray5}"
-                         VerticalOptions="End" />
+
+                <VerticalStackLayout IsVisible="{Binding AppointmentListIsEmpty}"
+                                     Spacing="8" HorizontalOptions="Center" VerticalOptions="Center"
+                                     Padding="36" AutomationId="AppointmentsEmptyState">
+                    <Label Text="{Binding EmptyTitle}" FontSize="20" FontAttributes="Bold"
+                           TextColor="{StaticResource iOSLabel}" HorizontalTextAlignment="Center" />
+                    <Label Text="{Binding EmptySubtitle}" FontSize="14"
+                           TextColor="{StaticResource iOSGray}" HorizontalTextAlignment="Center" />
+                </VerticalStackLayout>
             </Grid>
 
-            <!-- Activity indicator -->
-            <ActivityIndicator Grid.Row="2"
-                               IsRunning="{Binding IsLoading}"
-                               IsVisible="{Binding IsLoading}"
-                               Color="{StaticResource iOSGray}"
-                               HorizontalOptions="Center"
-                               Margin="0,24" />
-
-            <!-- Day detail content -->
-            <ScrollView Grid.Row="3" Padding="0,8,0,0">
-                <VerticalStackLayout Spacing="0"
-                                     IsVisible="{Binding HasSelectedDay}">
-
-                    <!-- Booked sessions list -->
-                    <CollectionView ItemsSource="{Binding SelectedDay.BookedSlots}"
-                                    SelectionMode="None"
-                                    IsVisible="{Binding SelectedDay.HasBookings}">
-                        <CollectionView.ItemsLayout>
-                            <LinearItemsLayout Orientation="Vertical" ItemSpacing="0" />
-                        </CollectionView.ItemsLayout>
-                        <CollectionView.ItemTemplate>
-                            <DataTemplate>
-                                <!-- TAPPABLE. The calendar is where a provider looks to change a scheduled
-                                     session, and until this the rows were inert: the ONLY way into an
-                                     appointment was a dashboard row, so a session further out than the
-                                     dashboard page showed could not be opened at all. The chevron is there
-                                     because a row that navigates has to look like one. -->
-                                <Grid Padding="20,0,20,0" HeightRequest="60">
-                                    <Grid.GestureRecognizers>
-                                        <TapGestureRecognizer
-                                            Command="{Binding Source={x:Reference ThisPage}, Path=BindingContext.OpenAppointmentCommand}"
-                                            CommandParameter="{Binding}" />
-                                    </Grid.GestureRecognizers>
-                                    <Grid ColumnDefinitions="4,12,Auto,*,Auto" ColumnSpacing="0">
-                                        <!-- Color bar -->
-                                        <BoxView Grid.Column="0"
-                                                 BackgroundColor="{StaticResource iOSRed}"
-                                                 CornerRadius="2"
-                                                 VerticalOptions="Fill"
-                                                 Margin="0,6" />
-                                        <!-- The counterpart's assigned avatar, same as everywhere else. -->
-                                        <controls:Avatar Grid.Column="2"
-                                                         Size="34"
-                                                         Margin="0,0,10,0"
-                                                         Source="{Binding Appointment.AvatarAsset}"
-                                                         AutomationId="CalendarRowAvatar" />
-                                        <!-- Content -->
-                                        <VerticalStackLayout Grid.Column="3"
-                                                             VerticalOptions="Center"
-                                                             Spacing="2">
-                                            <Label Text="{Binding Label}"
-                                                   FontSize="15"
-                                                   TextColor="{StaticResource iOSLabel}" />
-                                            <!-- Hidden rather than blank when the session has no recorded
-                                                 length: an empty second line reads as missing data. -->
-                                            <Label Text="{Binding DurationLabel}"
-                                                   IsVisible="{Binding HasDuration}"
-                                                   FontSize="13"
-                                                   TextColor="{StaticResource iOSGray}" />
-                                        </VerticalStackLayout>
-                                        <!-- Hidden on a row with no identifier: it cannot be opened, and a
-                                             chevron would promise a tap that lands nowhere. -->
-                                        <Label Grid.Column="4"
-                                               Text="&#x203A;"
-                                               FontSize="22"
-                                               IsVisible="{Binding CanOpen}"
-                                               VerticalOptions="Center"
-                                               TextColor="{StaticResource iOSGray}"
-                                               AutomationId="OpenAppointmentChevron" />
-                                    </Grid>
-                                    <!-- Bottom separator -->
-                                    <BoxView HeightRequest="0.5"
-                                             Color="{StaticResource iOSGray5}"
-                                             VerticalOptions="End"
-                                             Margin="36,0,0,0" />
-                                </Grid>
-                            </DataTemplate>
-                        </CollectionView.ItemTemplate>
-                    </CollectionView>
-
-                    <!-- Available slots section -->
-                    <VerticalStackLayout IsVisible="{Binding HasAvailableSlots}"
-                                         Padding="20,16,20,0"
-                                         Spacing="10">
-                        <Label Text="{x:Static strings:AppResources.Xaml_Available}"
-                               FontSize="13"
-                               FontAttributes="Bold"
-                               TextColor="{StaticResource iOSGray}"
-                               TextTransform="Uppercase"
-                               Margin="0,0,0,4" />
-                        <FlexLayout BindableLayout.ItemsSource="{Binding SelectedDay.AvailableSlots}"
-                                    Wrap="Wrap"
-                                    JustifyContent="Start"
-                                    AlignItems="Start">
-                            <BindableLayout.ItemTemplate>
-                                <DataTemplate>
-                                    <Frame BackgroundColor="White"
-                                           CornerRadius="8"
-                                           Padding="10,6"
-                                           Margin="0,0,8,8"
-                                           HasShadow="False"
-                                           BorderColor="{StaticResource iOSGray5}">
-                                        <Label Text="{Binding .}"
-                                               FontSize="13"
-                                               TextColor="{StaticResource iOSBlue}" />
-                                    </Frame>
-                                </DataTemplate>
-                            </BindableLayout.ItemTemplate>
-                        </FlexLayout>
-                    </VerticalStackLayout>
-
-                    <!-- Empty state -->
-                    <VerticalStackLayout Spacing="6"
-                                         HorizontalOptions="Center"
-                                         Margin="0,60"
-                                         IsVisible="{Binding SelectedDayIsEmpty}">
-                        <Label Text="{x:Static strings:AppResources.Xaml_NoEvents}"
-                               FontSize="20"
-                               FontAttributes="Bold"
-                               TextColor="{StaticResource iOSLabel}"
-                               HorizontalOptions="Center" />
-                        <Label Text="{x:Static strings:AppResources.Xaml_NothingScheduledForThisDay}"
-                               FontSize="15"
-                               TextColor="{StaticResource iOSGray}"
-                               HorizontalOptions="Center" />
-                    </VerticalStackLayout>
-
-                </VerticalStackLayout>
-            </ScrollView>
-
+            <Grid Grid.Row="5"
+                  IsVisible="{Binding HistoryPaginationIsVisible}"
+                  ColumnDefinitions="Auto,*,Auto"
+                  Padding="16,8,16,14"
+                  BackgroundColor="White">
+                <controls:SafeButton Text="&#x276E;"
+                                     Command="{Binding PreviousHistoryPageCommand}"
+                                     IsEnabled="{Binding CanGoBackInHistory}"
+                                     BackgroundColor="Transparent"
+                                     TextColor="{StaticResource iOSBlue}"
+                                     WidthRequest="44" HeightRequest="40" />
+                <Label Grid.Column="1" Text="{Binding HistoryPageLabel}"
+                       FontSize="13" TextColor="{StaticResource iOSGray}"
+                       HorizontalOptions="Center" VerticalOptions="Center" />
+                <controls:SafeButton Grid.Column="2" Text="&#x276F;"
+                                     Command="{Binding NextHistoryPageCommand}"
+                                     IsEnabled="{Binding CanGoForwardInHistory}"
+                                     BackgroundColor="Transparent"
+                                     TextColor="{StaticResource iOSBlue}"
+                                     WidthRequest="44" HeightRequest="40" />
+            </Grid>
         </Grid>
-
     </Grid>
-
 </ContentPage>

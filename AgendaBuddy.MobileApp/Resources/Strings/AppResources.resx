@@ -380,6 +380,17 @@
   <data name="Calendar_OpenEveryDayOneHour" xml:space="preserve"><value>Open every day, 1 bookable hour a week.</value></data>
   <data name="Calendar_ClosedDaysOneHour" xml:space="preserve"><value>Closed {0} · 1 bookable hour a week.</value></data>
   <data name="Calendar_WeekInvalid" xml:space="preserve"><value>Some days do not open before they close.</value></data>
+  <data name="Appointments_Scheduled" xml:space="preserve"><value>Scheduled</value></data>
+  <data name="Appointments_Done" xml:space="preserve"><value>Done</value></data>
+  <data name="Appointments_Cancelled" xml:space="preserve"><value>Cancelled</value></data>
+  <data name="Appointments_ScheduledTime" xml:space="preserve"><value>{0:ddd, MMM d · h:mm tt}</value></data>
+  <data name="Appointments_ProposedTime" xml:space="preserve"><value>Proposed · {0:ddd, MMM d · h:mm tt}</value></data>
+  <data name="Appointments_EmptyScheduledTitle" xml:space="preserve"><value>No scheduled appointments</value></data>
+  <data name="Appointments_EmptyScheduledSubtitle" xml:space="preserve"><value>Your next booked session will appear here.</value></data>
+  <data name="Appointments_EmptyDoneTitle" xml:space="preserve"><value>No completed appointments</value></data>
+  <data name="Appointments_EmptyDoneSubtitle" xml:space="preserve"><value>Completed sessions will appear here.</value></data>
+  <data name="Appointments_EmptyCancelledTitle" xml:space="preserve"><value>No cancelled appointments</value></data>
+  <data name="Appointments_EmptyCancelledSubtitle" xml:space="preserve"><value>Cancelled sessions will appear here.</value></data>
   <data name="Contacts_CustomersEmptySubtitle" xml:space="preserve"><value>Once a client books a session with you, they will appear here.</value></data>
   <data name="Contacts_CustomersEmptyTitle" xml:space="preserve"><value>No customers yet</value></data>
   <data name="Contacts_CustomersSearch" xml:space="preserve"><value>Search customers...</value></data>
@@ -526,7 +537,7 @@
     <value>Book Appointment</value>
   </data>
   <data name="Xaml_Calendar" xml:space="preserve">
-    <value>Calendar</value>
+    <value>Appointments</value>
   </data>
   <data name="Xaml_CalendarSettings" xml:space="preserve">
     <value>Calendar Settings</value>

@@ -120,7 +120,7 @@ public class BrandHeaderViewModelTests : IDisposable
     }
 
     [Fact]
-    public async Task BlankNameOnTheProfileFallsBackToTheEmail()
+    public async Task BlankNameOnTheProfileDoesNotShowTheEmailAsAName()
     {
         var providerApi = new Mock<IProviderApiService>();
         providerApi.Setup(p => p.GetProfileAsync(ProviderEmail, It.IsAny<CancellationToken>()))
@@ -130,11 +130,12 @@ public class BrandHeaderViewModelTests : IDisposable
 
         await vm.RefreshAsync();
 
-        Assert.Equal(ProviderEmail, vm.DisplayName);
+        Assert.Equal(string.Empty, vm.DisplayName);
+        Assert.False(vm.HasUser);
     }
 
     [Fact]
-    public async Task MissingProfileFallsBackToTheEmail()
+    public async Task MissingProfileDoesNotShowTheEmailAsAName()
     {
         var providerApi = new Mock<IProviderApiService>();
         providerApi.Setup(p => p.GetProfileAsync(ProviderEmail, It.IsAny<CancellationToken>()))
@@ -144,11 +145,12 @@ public class BrandHeaderViewModelTests : IDisposable
 
         await vm.RefreshAsync();
 
-        Assert.Equal(ProviderEmail, vm.DisplayName);
+        Assert.Equal(string.Empty, vm.DisplayName);
+        Assert.False(vm.HasUser);
     }
 
     [Fact]
-    public async Task ProfileFetchThrowingFallsBackToTheEmailInsteadOfPropagating()
+    public async Task ProfileFetchThrowingHidesTheNameInsteadOfShowingTheEmail()
     {
         var providerApi = new Mock<IProviderApiService>();
         providerApi.Setup(p => p.GetProfileAsync(ProviderEmail, It.IsAny<CancellationToken>()))
@@ -158,7 +160,8 @@ public class BrandHeaderViewModelTests : IDisposable
 
         await vm.RefreshAsync();
 
-        Assert.Equal(ProviderEmail, vm.DisplayName);
+        Assert.Equal(string.Empty, vm.DisplayName);
+        Assert.False(vm.HasUser);
     }
 
     [Fact]
@@ -172,7 +175,7 @@ public class BrandHeaderViewModelTests : IDisposable
         var vm = Build(Session(ProviderEmail, "provider"), providerApi);
 
         await vm.RefreshAsync();
-        Assert.Equal(ProviderEmail, vm.DisplayName);
+        Assert.Equal(string.Empty, vm.DisplayName);
 
         await vm.RefreshAsync();
         Assert.Equal("Pat Coach", vm.DisplayName);
@@ -247,13 +250,14 @@ public class BrandHeaderViewModelTests : IDisposable
     }
 
     [Fact]
-    public async Task AnUnrecognisedRoleShowsTheNameWithNoRoleChip()
+    public async Task AnUnrecognisedRoleShowsNeitherAnEmailNorARoleChip()
     {
         var vm = Build(Session(ProviderEmail, "administrator"));
 
         await vm.RefreshAsync();
 
-        Assert.Equal(ProviderEmail, vm.DisplayName);
+        Assert.Equal(string.Empty, vm.DisplayName);
+        Assert.False(vm.HasUser);
         Assert.Equal(string.Empty, vm.RoleLabel);
         Assert.False(vm.HasRole);
     }

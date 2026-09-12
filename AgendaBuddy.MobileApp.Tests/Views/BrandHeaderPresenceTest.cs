@@ -104,6 +104,40 @@ public class BrandHeaderPresenceTest
         Assert.NotEmpty(AppBrand.NameAccent);
     }
 
+    [Fact]
+    public void TheBrandIsCentredIndependentlyFromTheBoundedUserNameRow()
+    {
+        var header = XDocument.Load(Path.Combine(
+            RepoRoot(), "AgendaBuddy.MobileApp", "Controls", "BrandHeader.xaml"));
+        var brandName = header.Descendants()
+            .Single(element => (string?)element.Attribute("AutomationId") == "BrandHeaderName");
+        var userName = header.Descendants()
+            .Single(element => (string?)element.Attribute("AutomationId") == "BrandHeaderUserName");
+
+        var brandLockup = brandName.Parent;
+        Assert.NotNull(brandLockup);
+        Assert.Equal("HorizontalStackLayout", brandLockup!.Name.LocalName);
+        Assert.Equal("Center", (string?)brandLockup.Attribute("HorizontalOptions"));
+
+        var identityRow = userName.Parent;
+        Assert.NotNull(identityRow);
+        Assert.Equal("Grid", identityRow!.Name.LocalName);
+        Assert.Equal("280", (string?)identityRow.Attribute("WidthRequest"));
+        Assert.Equal("Center", (string?)identityRow.Attribute("HorizontalOptions"));
+        Assert.Equal("TailTruncation", (string?)userName.Attribute("LineBreakMode"));
+        Assert.Equal("1", (string?)userName.Attribute("MaxLines"));
+    }
+
+    [Fact]
+    public void NavigationRefreshesTheProfileNameAfterSignIn()
+    {
+        var code = File.ReadAllText(Path.Combine(
+            RepoRoot(), "AgendaBuddy.MobileApp", "Controls", "BrandHeader.xaml.cs"));
+
+        Assert.Contains("OnShellNavigated", code, StringComparison.Ordinal);
+        Assert.Contains("_ = viewModel.RefreshAsync();", code, StringComparison.Ordinal);
+    }
+
     /// <summary>
     /// The name under the app icon is an MSBuild property, so it is the one place the brand cannot come from
     /// <see cref="AppBrand"/> and the one most likely to be left behind by a rename.

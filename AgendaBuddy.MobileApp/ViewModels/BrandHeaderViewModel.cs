@@ -13,9 +13,8 @@ namespace AgendaBuddy.MobileApp.ViewModels;
 /// on every page, and a per-page profile call would be a round trip per tap.
 /// </para>
 /// <para>
-/// The JWT carries only the email and role, so the name has to come from the profile API. The email is
-/// what renders while that call is in flight and what stays if it never succeeds: the header decorates
-/// every page, so it must always show something rather than a blank or the word "null".
+/// The JWT carries only the email and role, so the name has to come from the profile API. Email is an account
+/// identifier, not a display name: the identity row stays hidden until a profile name resolves.
 /// </para>
 /// <para>
 /// This deliberately does not live on <see cref="IUserSessionService"/>, which the API services already
@@ -97,8 +96,7 @@ public partial class BrandHeaderViewModel : ObservableObject
         if (string.Equals(_resolvedFor, email, StringComparison.OrdinalIgnoreCase))
             return;
 
-        if (string.IsNullOrEmpty(DisplayName) || !string.Equals(DisplayName, email, StringComparison.OrdinalIgnoreCase))
-            DisplayName = email;
+        DisplayName = string.Empty;
 
         var name = await FetchNameAsync(email, ct);
         if (string.IsNullOrWhiteSpace(name))
@@ -170,8 +168,8 @@ public partial class BrandHeaderViewModel : ObservableObject
         }
         catch (Exception)
         {
-            // Any failure at all falls back to the email. A decorative header must never break the page
-            // it sits on, and accounts with no profile row are a known state (agenda-buddy-fg5).
+            // A decorative header must never break the page it sits on. Accounts with no profile row are a
+            // known state (agenda-buddy-fg5), and their email is deliberately not presented as a person's name.
             return null;
         }
     }
