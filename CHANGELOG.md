@@ -545,7 +545,18 @@ All notable changes to this project are documented in this file, in [Keep a Chan
 - A `null` `EmailProvider` on `POST /appointments` passes both Validot and the ownership guard, then throws downstream during provider lookup, surfacing as an unhandled 500 rather than a 400 — `agenda-buddy-cy2`.
 - Mapster is approved (ADR-049) for this line of work but has zero call sites yet.
 
-[Unreleased]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.18.0...HEAD
+[Unreleased]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.23.0...HEAD
+[0.23.0]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.22.2...v0.23.0
+[0.22.2]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.22.1...v0.22.2
+[0.22.1]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.22.0...v0.22.1
+[0.22.0]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.21.2...v0.22.0
+[0.21.2]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.21.1...v0.21.2
+[0.21.1]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.21.0...v0.21.1
+[0.21.0]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.20.0...v0.21.0
+[0.20.0]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.19.2...v0.20.0
+[0.19.2]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.19.1...v0.19.2
+[0.19.1]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.19.0...v0.19.1
+[0.19.0]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.18.0...v0.19.0
 [0.18.0]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.17.0...v0.18.0
 [0.17.0]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.16.0...v0.17.0
 [0.16.0]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.15.0...v0.16.0
