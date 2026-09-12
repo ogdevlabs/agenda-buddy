@@ -6,7 +6,7 @@
              x:Class="AgendaBuddy.MobileApp.Views.CalendarPage"
              x:Name="ThisPage"
              Title="{x:Static strings:AppResources.Xaml_Calendar}"
-             BackgroundColor="#F2F2F7"
+             BackgroundColor="{StaticResource BackgroundPage}"
              Shell.NavBarIsVisible="False">
 
     <ContentPage.Resources>
@@ -25,11 +25,11 @@
               RowDefinitions="Auto,Auto,Auto,Auto,*,Auto"
               AutomationId="AppointmentsView">
 
-            <Grid Grid.Row="0" BackgroundColor="White" Padding="20,18,20,14">
+            <Grid Grid.Row="0" BackgroundColor="{StaticResource Primary}" Padding="24,24,24,20">
                 <Label Text="{x:Static strings:AppResources.Xaml_Calendar}"
-                       FontSize="28"
+                       FontSize="30"
                        FontAttributes="Bold"
-                       TextColor="{StaticResource iOSLabel}" />
+                       TextColor="White" />
             </Grid>
 
             <Border Grid.Row="1"

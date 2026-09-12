@@ -80,4 +80,34 @@ public class AppointmentSegmentsTest
         Assert.Contains(attributes, attribute => attribute.Value == "{Binding NextHistoryPageCommand}");
         Assert.Contains(attributes, attribute => attribute.Value == "{Binding HistoryPageLabel}");
     }
+
+    [Theory]
+    [InlineData("CalendarPage.xaml", "{x:Static strings:AppResources.Xaml_Calendar}")]
+    [InlineData("MessagingPage.xaml", "{x:Static strings:AppResources.Xaml_Messages}")]
+    public void AppointmentsAndMessagesUseTheStandardPageTitleStyle(string fileName, string titleResource)
+    {
+        var page = XDocument.Load(Path.Combine(
+            RepoRoot(), "AgendaBuddy.MobileApp", "Views", fileName));
+        Assert.Equal("{StaticResource BackgroundPage}", (string?)page.Root!.Attribute("BackgroundColor"));
+
+        var title = page.Descendants()
+            .Single(element => element.Name.LocalName == "Label"
+                && (string?)element.Attribute("Text") == titleResource);
+
+        Assert.Equal("30", (string?)title.Attribute("FontSize"));
+        Assert.Equal("Bold", (string?)title.Attribute("FontAttributes"));
+        Assert.Equal("White", (string?)title.Attribute("TextColor"));
+        Assert.Equal("{StaticResource Primary}", (string?)title.Parent!.Attribute("BackgroundColor"));
+        Assert.Equal("24,24,24,20", (string?)title.Parent.Attribute("Padding"));
+    }
+
+    private static string RepoRoot()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "agenda-buddy.sln")))
+            directory = directory.Parent;
+
+        Assert.NotNull(directory);
+        return directory!.FullName;
+    }
 }

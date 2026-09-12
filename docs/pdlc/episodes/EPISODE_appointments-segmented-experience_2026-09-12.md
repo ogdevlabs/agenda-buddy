@@ -25,15 +25,19 @@ find scheduled, completed, and cancelled sessions quickly in either supported la
 - Simulator verification exposed a long-account-name BrandHeader defect: the shared auto-sized grid let account
   text shift the AgendaMe lockup and push the role off-screen. The brand and identity now occupy independent
   centered rows; the bounded identity row shows a profile name only, never an email fallback.
+- Appointments and Messages now share the established operational-page treatment: `BackgroundPage`, a `Primary`
+  title band, 24px inset, and 30px bold white title. Structural coverage prevents either page drifting again.
 
 ## Verification
 
 - Backend: 1,164 passed, 0 failed.
 - Integration: 412 passed, 0 failed, including authenticated page-two retrieval and OpenAPI drift.
-- Mobile: 934 passed, 7 intentional live-Identity skips, 0 failed.
+- Mobile: 936 passed, 7 intentional live-Identity skips, 0 failed.
 - Android `net10.0-android` build passed.
 - iOS simulator `net10.0-ios` build passed.
 - `dotnet format agenda-buddy-backend.slnf --verify-no-changes --no-restore` passed.
+- iPhone 17 Pro simulator: disposable verified customer exercised Programadas, Realizadas, and Canceladas against
+  the live local Gateway; all labels/counts fit, selected states and empty states rendered without overlap.
 
 ## Ship
 
