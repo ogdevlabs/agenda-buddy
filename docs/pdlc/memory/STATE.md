@@ -17,12 +17,12 @@ Idle
 
 ## Current Feature
 
-F-036 — appointments-segmented-experience
+none
 
-_Release candidate `v0.23.0`: the mobile Calendar surface is now Appointments/Citas for both roles, with
-counted Scheduled/Done/Cancelled segments and five-item server-backed historical pages. Local gates are green:
-backend 1,164; integration 413; mobile 937 passed with 7 intentional live-Identity skips; Android and iOS builds;
-format and OpenAPI drift. PR, CI, merge, tag, and GitHub Release remain pending._
+_**F-036 appointments-segmented-experience SHIPPED** as `v0.23.0` via PR #168. Calendar is now the shared
+Appointments/Citas screen for both roles, with counted Scheduled/Done/Cancelled segments and five-item
+server-backed historical pages. The simulator pass also corrected BrandHeader centering/name fallback and aligned
+Appointments/Messages title styling. Final CI run `34717208994` was green across all applicable jobs._
 
 _Authoritative snapshot: `v0.22.2` is the current release. Releases `v0.21.0`–`v0.22.1` added email-verification
 onboarding, its code fallback, local-only Stripe onboarding deferral, biometric-backed session restoration, and
