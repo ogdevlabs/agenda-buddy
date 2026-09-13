@@ -25,22 +25,18 @@
 
             <!-- Standard operational-page header: shared with Appointments and Contacts. -->
             <Grid Grid.Row="0"
-                BackgroundColor="{StaticResource Primary}"
-                Padding="24,24,24,20"
+                                    Style="{StaticResource OperationalPageHeader}"
                   ColumnDefinitions="*,Auto">
                 <Label Grid.Column="0"
                        Text="{x:Static strings:AppResources.Xaml_Messages}"
-                     FontSize="30"
-                       FontAttributes="Bold"
-                     TextColor="White"
-                       VerticalOptions="Center" />
+                                             Style="{StaticResource OperationalPageTitle}" />
 
                 <!-- This tab can only ever list threads that already exist, so without a way out to the
                      contact list neither side could say anything first. -->
                 <controls:SafeButton Grid.Column="1"
                         Text="{x:Static strings:AppResources.Xaml_New}"
-                        BackgroundColor="{StaticResource BrandAccent}"
-                        TextColor="{StaticResource TextPrimary}"
+                        BackgroundColor="White"
+                        TextColor="{StaticResource PrimaryDark}"
                         CornerRadius="8"
                         FontSize="15"
                         FontAttributes="Bold"

@@ -6,7 +6,7 @@
              x:Class="AgendaBuddy.MobileApp.Controls.BrandHeader"
              x:Name="Root">
 
-    <Grid RowDefinitions="Auto,3" Background="{StaticResource BrandGradient}">
+    <Grid RowDefinitions="Auto,2" BackgroundColor="{StaticResource PrimaryDark}">
 
         <!--
             Mark and wordmark are one lockup, centred as a group rather than each centred on its own — the
@@ -58,8 +58,8 @@
 
             <!-- A separate bounded row: account text can never resize or displace the centred brand lockup. -->
             <Grid Grid.Row="1"
-                  WidthRequest="280"
-                  ColumnDefinitions="*,Auto,Auto"
+                                    MaximumWidthRequest="280"
+                                    ColumnDefinitions="Auto,Auto,Auto"
                   ColumnSpacing="7"
                   HorizontalOptions="Center">
                 <Grid.IsVisible>
@@ -75,7 +75,7 @@
                        TextColor="{StaticResource TextOnPrimary}"
                        LineBreakMode="TailTruncation"
                        MaxLines="1"
-                       HorizontalTextAlignment="End"
+                       MaximumWidthRequest="190"
                        VerticalOptions="Center"
                        AutomationId="BrandHeaderUserName" />
                 <!-- An amber dot rather than a middot: picks up the mark's accent and the wordmark's. -->

@@ -7,15 +7,15 @@
              x:Class="AgendaBuddy.MobileApp.Views.CustomersPage"
              x:Name="ThisPage"
              Title="{Binding PageTitle}"
-             BackgroundColor="#F2F2F7"
+             BackgroundColor="{StaticResource BackgroundPage}"
              Shell.NavBarIsVisible="False">
 
     <ContentPage.Resources>
         <toolkit:InvertedBoolConverter x:Key="InvertedBoolConverter" />
-        <Color x:Key="iOSBlue">#007AFF</Color>
+        <Color x:Key="iOSBlue">#087F6A</Color>
         <Color x:Key="iOSGreen">#34C759</Color>
         <Color x:Key="iOSOrange">#FF9500</Color>
-        <Color x:Key="iOSPurple">#AF52DE</Color>
+        <Color x:Key="iOSPurple">#087F6A</Color>
         <Color x:Key="iOSGray">#8E8E93</Color>
         <Color x:Key="iOSGray5">#E5E5EA</Color>
         <Color x:Key="iOSLabel">#000000</Color>
@@ -28,22 +28,19 @@
         <Grid Grid.Row="1" RowDefinitions="Auto,Auto,Auto,Auto,Auto,*">
 
             <!-- Immersive header -->
-            <Grid Grid.Row="0" BackgroundColor="{StaticResource Primary}" Padding="0">
-                <VerticalStackLayout Padding="24,24,24,20" Spacing="6">
+            <Grid Grid.Row="0" Style="{StaticResource OperationalPageHeader}">
+                <VerticalStackLayout Spacing="4">
                     <Label Text="{Binding PageTitle}"
-                           FontSize="30"
-                           FontAttributes="Bold"
-                           TextColor="White" />
+                           Style="{StaticResource OperationalPageTitle}" />
                     <Label Text="{Binding Customers.Count, StringFormat='{0} contacts'}"
-                           FontSize="14"
-                           TextColor="#AEAEB2" />
+                           Style="{StaticResource OperationalPageSubtitle}" />
                 </VerticalStackLayout>
             </Grid>
 
             <!-- Search bar -->
             <Frame Grid.Row="1"
                    BackgroundColor="White"
-                   CornerRadius="10"
+                   CornerRadius="8"
                    BorderColor="Transparent"
                    Padding="12,8"
                    HasShadow="False"
@@ -241,7 +238,7 @@
                                            Padding="10,6"
                                            HasShadow="False"
                                            BorderColor="Transparent"
-                                           BackgroundColor="{Binding IsProvider, Converter={toolkit:BoolToObjectConverter TrueObject=#EDE9FE, FalseObject=#DBEAFE}}"
+                                           BackgroundColor="{StaticResource PrimarySubtle}"
                                            VerticalOptions="Center">
                                         <Frame.GestureRecognizers>
                                             <TapGestureRecognizer
@@ -308,7 +305,7 @@
                                                 CommandParameter="{Binding .}"
                                                 AutomationId="BookProviderButton" />
                                         <controls:SafeButton Text="{Binding IsSubscribed, Converter={toolkit:BoolToObjectConverter TrueObject='Unsubscribe', FalseObject='Subscribe'}}"
-                                                BackgroundColor="{Binding IsSubscribed, Converter={toolkit:BoolToObjectConverter TrueObject=#F1F5F9, FalseObject=#EDE9FE}}"
+                                                BackgroundColor="{Binding IsSubscribed, Converter={toolkit:BoolToObjectConverter TrueObject=#F1F5F9, FalseObject=#E7F5F1}}"
                                                 TextColor="{Binding IsSubscribed, Converter={toolkit:BoolToObjectConverter TrueObject={StaticResource iOSGray}, FalseObject={StaticResource iOSPurple}}}"
                                                 CornerRadius="10"
                                                 FontSize="14"

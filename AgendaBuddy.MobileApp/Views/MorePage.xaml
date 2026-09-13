@@ -14,14 +14,17 @@
         header, no styling. Folding the two overflow tabs into this one page brings the TabBar back to five
         so nothing is auto-generated.
     -->
-    <Grid RowDefinitions="Auto,*">
+    <Grid RowDefinitions="Auto,Auto,*">
 
         <controls:BrandHeader Grid.Row="0" />
 
-        <ScrollView Grid.Row="1">
-            <VerticalStackLayout Padding="20,16,20,24" Spacing="16">
+        <Grid Grid.Row="1" Style="{StaticResource OperationalPageHeader}">
+            <Label Text="{x:Static strings:AppResources.Xaml_More}"
+                   Style="{StaticResource OperationalPageTitle}" />
+        </Grid>
 
-                <Label Text="{x:Static strings:AppResources.Xaml_More}" FontSize="22" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" />
+        <ScrollView Grid.Row="2">
+            <VerticalStackLayout Padding="20,16,20,24" Spacing="16">
 
                 <Frame Style="{StaticResource CardCompact}" Padding="0" Margin="0">
                     <VerticalStackLayout Spacing="0">
