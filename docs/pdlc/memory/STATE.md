@@ -5,7 +5,7 @@
      Claude reads this file at the start of every session to auto-resume from the last checkpoint.
      If this file is missing or empty, PDLC will prompt you to run /pdlc init. -->
 
-**Last updated:** 2026-09-12T19:15:00Z
+**Last updated:** 2026-09-13
 
 ---
 
@@ -19,15 +19,19 @@ Idle
 
 none
 
+_**mobile-visual-system-and-app-icon SHIPPED** as `v0.24.0` via PR #170. The five mobile tab roots now share
+an AgendaMe-specific jade/neutral visual hierarchy, long profile names remain centered and readable, and the
+stock purple icon/`AB` splash are replaced by a text-free jade calendar/check mark. Final feature CI run
+`34783161499` was green across every applicable job._
+
 _**F-036 appointments-segmented-experience SHIPPED** as `v0.23.0` via PR #168. Calendar is now the shared
 Appointments/Citas screen for both roles, with counted Scheduled/Done/Cancelled segments and five-item
 server-backed historical pages. The simulator pass also corrected BrandHeader centering/name fallback and aligned
 Appointments/Messages title styling. Final CI run `34717208994` was green across all applicable jobs._
 
-_Authoritative snapshot: `v0.22.2` is the current release. Releases `v0.21.0`–`v0.22.1` added email-verification
-onboarding, its code fallback, local-only Stripe onboarding deferral, biometric-backed session restoration, and
-forgot-password navigation repair. No PDLC feature is currently active. Beads is authoritative for the live
-backlog and claims; the remaining entries in this section are chronological checkpoint history._
+_Authoritative snapshot: `v0.24.0` is the current release. No PDLC feature is currently active. Beads is
+authoritative for the live backlog and claims; the remaining entries in this section are chronological checkpoint
+history._
 
 _**Dev user-data reset SHIPPED** as `v0.20.0` via PRs #157–#160. The main-only workflow reuses the canonical
 dev stop operation, waits for actual replica drain with refreshed Azure OIDC sessions, clears all user documents

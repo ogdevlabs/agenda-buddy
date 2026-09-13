@@ -4,6 +4,21 @@ All notable changes to this project are documented in this file, in [Keep a Chan
 
 ## [Unreleased]
 
+## [0.24.0] - 2026-09-13
+
+### Added
+
+- AgendaMe now has a text-free jade calendar/check app icon with amber details, shared by Android adaptive icons,
+  iOS icon catalogs, and the launch screen.
+- Structural tests guard the app-icon palette and artwork contract alongside the shared tab-root visual hierarchy.
+
+### Changed
+
+- Dashboard, Appointments, Contacts, Messages, and More now use a cohesive jade, warm-neutral, and amber visual
+  system with shared operational headers, quieter metric cards, compact controls, and consistent tab states.
+- The Dashboard greeting and profile name use separate lines so long names remain readable without clipping the
+  date, while the BrandHeader identity group stays centered by its actual content.
+
 ## [0.23.0] - 2026-09-12
 
 ### Added
@@ -550,7 +565,8 @@ All notable changes to this project are documented in this file, in [Keep a Chan
 - A `null` `EmailProvider` on `POST /appointments` passes both Validot and the ownership guard, then throws downstream during provider lookup, surfacing as an unhandled 500 rather than a 400 — `agenda-buddy-cy2`.
 - Mapster is approved (ADR-049) for this line of work but has zero call sites yet.
 
-[Unreleased]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.23.0...HEAD
+[Unreleased]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.24.0...HEAD
+[0.24.0]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.23.0...v0.24.0
 [0.23.0]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.22.2...v0.23.0
 [0.22.2]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.22.1...v0.22.2
 [0.22.1]: https://github.com/ogdevlabs/agenda-buddy/compare/v0.22.0...v0.22.1
