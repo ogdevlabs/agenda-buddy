@@ -122,10 +122,13 @@ public class BrandHeaderPresenceTest
         var identityRow = userName.Parent;
         Assert.NotNull(identityRow);
         Assert.Equal("Grid", identityRow!.Name.LocalName);
-        Assert.Equal("280", (string?)identityRow.Attribute("WidthRequest"));
+        Assert.Equal("280", (string?)identityRow.Attribute("MaximumWidthRequest"));
+        Assert.Equal("Auto,Auto,Auto", (string?)identityRow.Attribute("ColumnDefinitions"));
         Assert.Equal("Center", (string?)identityRow.Attribute("HorizontalOptions"));
         Assert.Equal("TailTruncation", (string?)userName.Attribute("LineBreakMode"));
         Assert.Equal("1", (string?)userName.Attribute("MaxLines"));
+        Assert.Equal("190", (string?)userName.Attribute("MaximumWidthRequest"));
+        Assert.Null(userName.Attribute("HorizontalTextAlignment"));
     }
 
     [Fact]

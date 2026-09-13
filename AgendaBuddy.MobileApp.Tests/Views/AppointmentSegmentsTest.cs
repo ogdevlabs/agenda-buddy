@@ -84,7 +84,9 @@ public class AppointmentSegmentsTest
     [Theory]
     [InlineData("CalendarPage.xaml", "{x:Static strings:AppResources.Xaml_Calendar}")]
     [InlineData("MessagingPage.xaml", "{x:Static strings:AppResources.Xaml_Messages}")]
-    public void AppointmentsAndMessagesUseTheStandardPageTitleStyle(string fileName, string titleResource)
+    [InlineData("CustomersPage.xaml", "{Binding PageTitle}")]
+    [InlineData("MorePage.xaml", "{x:Static strings:AppResources.Xaml_More}")]
+    public void TabRootsUseTheSharedOperationalPageTitleStyle(string fileName, string titleResource)
     {
         var page = XDocument.Load(Path.Combine(
             RepoRoot(), "AgendaBuddy.MobileApp", "Views", fileName));
@@ -94,11 +96,72 @@ public class AppointmentSegmentsTest
             .Single(element => element.Name.LocalName == "Label"
                 && (string?)element.Attribute("Text") == titleResource);
 
-        Assert.Equal("30", (string?)title.Attribute("FontSize"));
-        Assert.Equal("Bold", (string?)title.Attribute("FontAttributes"));
-        Assert.Equal("White", (string?)title.Attribute("TextColor"));
-        Assert.Equal("{StaticResource Primary}", (string?)title.Parent!.Attribute("BackgroundColor"));
-        Assert.Equal("24,24,24,20", (string?)title.Parent.Attribute("Padding"));
+        Assert.Equal("{StaticResource OperationalPageTitle}", (string?)title.Attribute("Style"));
+        Assert.Contains(title.Ancestors(), ancestor =>
+            (string?)ancestor.Attribute("Style") == "{StaticResource OperationalPageHeader}");
+    }
+
+    [Fact]
+    public void OperationalPageStylesDefineOneTitleHierarchy()
+    {
+        var app = XDocument.Load(Path.Combine(RepoRoot(), "AgendaBuddy.MobileApp", "App.xaml"));
+        XNamespace x = "http://schemas.microsoft.com/winfx/2009/xaml";
+        var styles = app.Descendants("{http://schemas.microsoft.com/dotnet/2021/maui}Style")
+            .ToDictionary(style => (string?)style.Attribute(x + "Key") ?? string.Empty);
+
+        var header = styles["OperationalPageHeader"];
+        Assert.Contains(header.Elements(), setter =>
+            (string?)setter.Attribute("Property") == "BackgroundColor"
+            && (string?)setter.Attribute("Value") == "{StaticResource Primary}");
+        Assert.Contains(header.Elements(), setter =>
+            (string?)setter.Attribute("Property") == "Padding"
+            && (string?)setter.Attribute("Value") == "24,20");
+
+        var title = styles["OperationalPageTitle"];
+        Assert.Contains(title.Elements(), setter =>
+            (string?)setter.Attribute("Property") == "FontSize"
+            && (string?)setter.Attribute("Value") == "30");
+        Assert.Contains(title.Elements(), setter =>
+            (string?)setter.Attribute("Property") == "FontAttributes"
+            && (string?)setter.Attribute("Value") == "Bold");
+    }
+
+    [Fact]
+    public void DashboardUsesTheSharedOperationalPageTitleStyle()
+    {
+        var dashboard = XDocument.Load(Path.Combine(
+            RepoRoot(), "AgendaBuddy.MobileApp", "Views", "DashboardPage.xaml"));
+        var title = dashboard.Descendants()
+            .Single(element => (string?)element.Attribute("AutomationId") == "DashboardOperationalTitle");
+
+        Assert.Equal("{StaticResource OperationalPageTitle}", (string?)title.Attribute("Style"));
+        Assert.Equal("{StaticResource OperationalPageHeader}", (string?)title.Parent!.Parent!.Attribute("Style"));
+        Assert.Equal("{StaticResource BackgroundPage}", (string?)dashboard.Root!.Attribute("BackgroundColor"));
+
+        var header = dashboard.Descendants()
+            .Single(element => element.Name.LocalName == "BrandHeader");
+        Assert.Equal("False", (string?)header.Attribute("ShowUser"));
+        Assert.Equal("{Binding Greeting}", (string?)title.Attribute("Text"));
+        Assert.DoesNotContain(title.Descendants(), element => element.Name.LocalName == "FormattedString");
+
+        var name = dashboard.Descendants()
+            .Single(element => (string?)element.Attribute("AutomationId") == "DashboardGreetingName");
+        Assert.Equal("{Binding UserDisplayName}", (string?)name.Attribute("Text"));
+        Assert.Equal("22", (string?)name.Attribute("FontSize"));
+        Assert.Equal("TailTruncation", (string?)name.Attribute("LineBreakMode"));
+        Assert.Equal("1", (string?)name.Attribute("MaxLines"));
+    }
+
+    [Fact]
+    public void ContactsOperationalAccentsUseTheBrandPalette()
+    {
+        var contactsPath = Path.Combine(
+            RepoRoot(), "AgendaBuddy.MobileApp", "Views", "CustomersPage.xaml");
+        var contacts = File.ReadAllText(contactsPath);
+
+        Assert.DoesNotContain("#AF52DE", contacts, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("#EDE9FE", contacts, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("#DBEAFE", contacts, StringComparison.OrdinalIgnoreCase);
     }
 
     private static string RepoRoot()

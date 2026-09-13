@@ -5,7 +5,11 @@
        xmlns:infrastructure="clr-namespace:AgendaBuddy.MobileApp.Infrastructure"
     xmlns:strings="clr-namespace:AgendaBuddy.MobileApp.Resources.Strings"
        x:Class="AgendaBuddy.MobileApp.AppShell"
-       Title="{x:Static infrastructure:AppBrand.Name}">
+    Title="{x:Static infrastructure:AppBrand.Name}"
+    Shell.TabBarBackgroundColor="White"
+    Shell.TabBarForegroundColor="{StaticResource Primary}"
+    Shell.TabBarUnselectedColor="{StaticResource TextMuted}"
+    Shell.TabBarTitleColor="{StaticResource Primary}">
 
     <ShellContent
         Route="login"

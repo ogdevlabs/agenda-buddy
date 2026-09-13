@@ -10,57 +10,57 @@
             <!-- ============================================ -->
 
             <!-- Primary -->
-            <Color x:Key="Primary">#4F46E5</Color>
-            <Color x:Key="PrimaryDark">#3730A3</Color>
-            <Color x:Key="PrimaryLight">#818CF8</Color>
-            <Color x:Key="PrimarySubtle">#EEF2FF</Color>
+            <Color x:Key="Primary">#087F6A</Color>
+            <Color x:Key="PrimaryDark">#075E54</Color>
+            <Color x:Key="PrimaryLight">#55B5A2</Color>
+            <Color x:Key="PrimarySubtle">#E7F5F1</Color>
 
-            <!-- Accent (Warm Amber) -->
-            <Color x:Key="Accent">#F59E0B</Color>
-            <Color x:Key="AccentDark">#D97706</Color>
-            <Color x:Key="AccentLight">#FDE68A</Color>
+            <!-- Accent: warm attention, never routine navigation. -->
+            <Color x:Key="Accent">#D79B2B</Color>
+            <Color x:Key="AccentDark">#A76E0A</Color>
+            <Color x:Key="AccentLight">#F8E7B5</Color>
 
             <!-- Semantic -->
-            <Color x:Key="Success">#10B981</Color>
-            <Color x:Key="SuccessLight">#D1FAE5</Color>
-            <Color x:Key="SuccessSubtle">#ECFDF5</Color>
+            <Color x:Key="Success">#238A63</Color>
+            <Color x:Key="SuccessLight">#CFEADF</Color>
+            <Color x:Key="SuccessSubtle">#EDF8F3</Color>
             <Color x:Key="Error">#EF4444</Color>
             <Color x:Key="ErrorLight">#FEE2E2</Color>
             <Color x:Key="Warning">#F59E0B</Color>
             <Color x:Key="WarningLight">#FEF3C7</Color>
-            <Color x:Key="Info">#3B82F6</Color>
-            <Color x:Key="InfoLight">#DBEAFE</Color>
+            <Color x:Key="Info">#2F6FB0</Color>
+            <Color x:Key="InfoLight">#E4EFF9</Color>
 
             <!-- Neutrals -->
-            <Color x:Key="TextPrimary">#1E293B</Color>
-            <Color x:Key="TextSecondary">#64748B</Color>
-            <Color x:Key="TextMuted">#94A3B8</Color>
+            <Color x:Key="TextPrimary">#202725</Color>
+            <Color x:Key="TextSecondary">#5E6965</Color>
+            <Color x:Key="TextMuted">#84908B</Color>
             <Color x:Key="TextOnDark">#F8FAFC</Color>
             <Color x:Key="TextOnPrimary">#FFFFFF</Color>
             <!-- Secondary text on a Primary-filled surface: readable, but subordinate to TextOnPrimary. -->
-            <Color x:Key="TextOnPrimaryMuted">#C7D2FE</Color>
+            <Color x:Key="TextOnPrimaryMuted">#C8E7DE</Color>
             <!-- Brand accent: the "Me" half of the wordmark, and the user's own name wherever a screen
                  greets them. Warm against the indigo, so it reads as the thing that is about YOU. -->
-            <Color x:Key="BrandAccent">#FDE68A</Color>
+            <Color x:Key="BrandAccent">#F3C969</Color>
             <!-- The header's two identity facts read as different KINDS of information, so they do not share
                  a colour: who you are (plain white, the one you scan for) vs what you are (cool, secondary). -->
-            <Color x:Key="BrandHeaderUserRole">#A5B4FC</Color>
+            <Color x:Key="BrandHeaderUserRole">#A7D8CD</Color>
             <!-- The wordmark's backdrop. Three stops with real distance between them, so it reads as depth
                  rather than the single muddy purple two near-identical indigos gave. -->
-            <Color x:Key="BrandGradientStart">#3730A3</Color>
-            <Color x:Key="BrandGradientMid">#6D28D9</Color>
-            <Color x:Key="BrandGradientEnd">#9333EA</Color>
+            <Color x:Key="BrandGradientStart">#075E54</Color>
+            <Color x:Key="BrandGradientMid">#087F6A</Color>
+            <Color x:Key="BrandGradientEnd">#246B73</Color>
             <!-- The badge the mark sits on: solid white, the same treatment the auth screens already use. -->
             <Color x:Key="BrandBadgeFill">#FFFFFF</Color>
 
-            <Color x:Key="BackgroundPage">#F8FAFC</Color>
+            <Color x:Key="BackgroundPage">#F7F9F8</Color>
             <Color x:Key="BackgroundCard">#FFFFFF</Color>
-            <Color x:Key="BackgroundDark">#1E1B4B</Color>
+            <Color x:Key="BackgroundDark">#123B35</Color>
             <Color x:Key="BackgroundElevated">#FFFFFF</Color>
 
-            <Color x:Key="BorderLight">#E2E8F0</Color>
-            <Color x:Key="BorderMedium">#CBD5E1</Color>
-            <Color x:Key="Divider">#F1F5F9</Color>
+            <Color x:Key="BorderLight">#DCE4E1</Color>
+            <Color x:Key="BorderMedium">#C6D0CC</Color>
+            <Color x:Key="Divider">#EDF1EF</Color>
 
             <!-- Left-to-right rather than diagonal: two stacked elements using a diagonal ramp meet at
                  mismatched colours and show a seam. -->
@@ -92,6 +92,26 @@
                 <Setter Property="TextColor" Value="{StaticResource TextPrimary}" />
             </Style>
 
+            <Style x:Key="OperationalPageHeader" TargetType="Grid">
+                <Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
+                <Setter Property="Padding" Value="24,20" />
+            </Style>
+
+            <Style x:Key="OperationalPageTitle" TargetType="Label">
+                <Setter Property="FontSize" Value="30" />
+                <Setter Property="FontAttributes" Value="Bold" />
+                <Setter Property="TextColor" Value="{StaticResource TextOnPrimary}" />
+                <Setter Property="VerticalOptions" Value="Center" />
+                <Setter Property="LineBreakMode" Value="TailTruncation" />
+                <Setter Property="MaxLines" Value="1" />
+            </Style>
+
+            <Style x:Key="OperationalPageSubtitle" TargetType="Label">
+                <Setter Property="FontSize" Value="14" />
+                <Setter Property="TextColor" Value="{StaticResource TextOnPrimaryMuted}" />
+                <Setter Property="LineBreakMode" Value="TailTruncation" />
+            </Style>
+
             <Style x:Key="Body" TargetType="Label">
                 <Setter Property="FontSize" Value="16" />
                 <Setter Property="TextColor" Value="{StaticResource TextPrimary}" />
@@ -121,8 +141,8 @@
             <!-- Card Style -->
             <Style x:Key="CardStyle" TargetType="Frame">
                 <Setter Property="BackgroundColor" Value="{StaticResource BackgroundCard}" />
-                <Setter Property="CornerRadius" Value="16" />
-                <Setter Property="BorderColor" Value="#F1F5F9" />
+                <Setter Property="CornerRadius" Value="8" />
+                <Setter Property="BorderColor" Value="{StaticResource BorderLight}" />
                 <Setter Property="Padding" Value="20" />
                 <Setter Property="HasShadow" Value="False" />
                 <Setter Property="Margin" Value="0,0,0,12" />
@@ -131,8 +151,8 @@
             <!-- Card Style (compact) -->
             <Style x:Key="CardCompact" TargetType="Frame">
                 <Setter Property="BackgroundColor" Value="{StaticResource BackgroundCard}" />
-                <Setter Property="CornerRadius" Value="14" />
-                <Setter Property="BorderColor" Value="#F1F5F9" />
+                <Setter Property="CornerRadius" Value="8" />
+                <Setter Property="BorderColor" Value="{StaticResource BorderLight}" />
                 <Setter Property="Padding" Value="16" />
                 <Setter Property="HasShadow" Value="False" />
                 <Setter Property="Margin" Value="0,0,0,8" />
@@ -144,7 +164,7 @@
                 <Setter Property="TextColor" Value="{StaticResource TextOnPrimary}" />
                 <Setter Property="FontAttributes" Value="Bold" />
                 <Setter Property="FontSize" Value="16" />
-                <Setter Property="CornerRadius" Value="24" />
+                <Setter Property="CornerRadius" Value="8" />
                 <Setter Property="Padding" Value="24,16" />
                 <Setter Property="HeightRequest" Value="52" />
             </Style>
@@ -155,7 +175,7 @@
                 <Setter Property="TextColor" Value="{StaticResource Primary}" />
                 <Setter Property="FontAttributes" Value="Bold" />
                 <Setter Property="FontSize" Value="16" />
-                <Setter Property="CornerRadius" Value="24" />
+                <Setter Property="CornerRadius" Value="8" />
                 <Setter Property="BorderColor" Value="{StaticResource Primary}" />
                 <Setter Property="BorderWidth" Value="2" />
                 <Setter Property="Padding" Value="24,16" />
@@ -168,7 +188,7 @@
                 <Setter Property="TextColor" Value="{StaticResource TextOnPrimary}" />
                 <Setter Property="FontAttributes" Value="Bold" />
                 <Setter Property="FontSize" Value="15" />
-                <Setter Property="CornerRadius" Value="24" />
+                <Setter Property="CornerRadius" Value="8" />
                 <Setter Property="Padding" Value="20,14" />
                 <Setter Property="HeightRequest" Value="48" />
             </Style>
@@ -181,7 +201,7 @@
                 <Setter Property="TextColor" Value="{StaticResource TextOnPrimary}" />
                 <Setter Property="FontAttributes" Value="Bold" />
                 <Setter Property="FontSize" Value="15" />
-                <Setter Property="CornerRadius" Value="24" />
+                <Setter Property="CornerRadius" Value="8" />
                 <Setter Property="Padding" Value="20,14" />
                 <Setter Property="HeightRequest" Value="48" />
             </Style>
@@ -192,7 +212,7 @@
                 <Setter Property="TextColor" Value="{StaticResource Error}" />
                 <Setter Property="FontAttributes" Value="Bold" />
                 <Setter Property="FontSize" Value="15" />
-                <Setter Property="CornerRadius" Value="24" />
+                <Setter Property="CornerRadius" Value="8" />
                 <Setter Property="BorderColor" Value="{StaticResource Error}" />
                 <Setter Property="BorderWidth" Value="2" />
                 <Setter Property="Padding" Value="20,14" />
@@ -210,7 +230,7 @@
             <!-- Input Frame (wraps Entry for rounded look) -->
             <Style x:Key="InputFrame" TargetType="Frame">
                 <Setter Property="BackgroundColor" Value="{StaticResource BackgroundCard}" />
-                <Setter Property="CornerRadius" Value="12" />
+                <Setter Property="CornerRadius" Value="8" />
                 <Setter Property="BorderColor" Value="{StaticResource BorderMedium}" />
                 <Setter Property="Padding" Value="16,4" />
                 <Setter Property="HasShadow" Value="False" />
@@ -220,7 +240,7 @@
             <!-- Error Banner Style -->
             <Style x:Key="ErrorBannerStyle" TargetType="Frame">
                 <Setter Property="BackgroundColor" Value="{StaticResource ErrorLight}" />
-                <Setter Property="CornerRadius" Value="12" />
+                <Setter Property="CornerRadius" Value="8" />
                 <Setter Property="BorderColor" Value="{StaticResource Error}" />
                 <Setter Property="Padding" Value="16,12" />
                 <Setter Property="HasShadow" Value="False" />

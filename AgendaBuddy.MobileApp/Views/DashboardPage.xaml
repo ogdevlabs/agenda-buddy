@@ -7,7 +7,7 @@
              xmlns:System="clr-namespace:System;assembly=netstandard"
              x:Class="AgendaBuddy.MobileApp.Views.DashboardPage"
              Title="{x:Static strings:AppResources.Xaml_Dashboard}"
-             BackgroundColor="#F2F2F7"
+             BackgroundColor="{StaticResource BackgroundPage}"
              Shell.NavBarIsVisible="False">
 
     <ContentPage.Resources>
@@ -27,7 +27,7 @@
 
     <Grid RowDefinitions="Auto,*">
 
-        <!-- Brand only: the greeting below names the user, so the header does not repeat it. -->
+        <!-- Dashboard names the user directly below the greeting, so the shared header does not repeat it. -->
         <controls:BrandHeader Grid.Row="0" ShowUser="False" />
 
         <Grid Grid.Row="1" RowDefinitions="*,Auto">
@@ -43,69 +43,67 @@
                 <ScrollView>
                     <VerticalStackLayout Padding="0" Spacing="0">
 
-                        <!-- Immersive gradient header -->
-                        <Grid BackgroundColor="{StaticResource BrandGradientMid}" Padding="0">
-                            <VerticalStackLayout Padding="24,24,24,28" Spacing="6">
-                                <Label FontSize="30" FontAttributes="Bold" TextColor="White">
-                                    <Label.FormattedText>
-                                        <FormattedString>
-                                            <Span Text="{Binding Greeting}" />
-                                            <Span Text="{Binding GreetingNameSuffix}"
-                                                  TextColor="{StaticResource BrandAccent}" />
-                                        </FormattedString>
-                                    </Label.FormattedText>
-                                </Label>
+                        <Grid Style="{StaticResource OperationalPageHeader}">
+                            <VerticalStackLayout Spacing="4">
+                                    <Label Text="{Binding Greeting}"
+                                           Style="{StaticResource OperationalPageTitle}"
+                                           AutomationId="DashboardOperationalTitle" />
+                                <Label Text="{Binding UserDisplayName}"
+                                    IsVisible="{Binding HasUserDisplayName}"
+                                    FontSize="22"
+                                    FontAttributes="Bold"
+                                    TextColor="{StaticResource BrandAccent}"
+                                    LineBreakMode="TailTruncation"
+                                    MaxLines="1"
+                                    AutomationId="DashboardGreetingName" />
                                 <Label Text="{Binding Source={x:Static System:DateTime.Now}, StringFormat='{0:dddd, MMMM d}'}"
-                                       FontSize="15"
-                                       TextColor="#AEAEB2" />
+                                        Style="{StaticResource OperationalPageSubtitle}" />
                             </VerticalStackLayout>
                         </Grid>
 
-                        <!-- Summary Cards Row — overlapping header for depth -->
+                        <!-- Quiet operational metrics: white surfaces, with color reserved for the numbers. -->
                         <Grid ColumnDefinitions="*,*"
                               ColumnSpacing="10"
-                              Margin="16,-14,16,0"
+                            Margin="16,12,16,0"
                               ZIndex="1">
 
-                            <!-- Today card — vibrant blue -->
                             <Frame Grid.Column="0"
-                                   BackgroundColor="{StaticResource iOSBlue}"
-                                   CornerRadius="16"
-                                   BorderColor="Transparent"
+                                BackgroundColor="{StaticResource BackgroundCard}"
+                                CornerRadius="8"
+                                BorderColor="{StaticResource BorderLight}"
                                    HasShadow="False"
                                    Padding="18">
                                 <VerticalStackLayout Spacing="4">
                                     <Label Text="{Binding PrimaryStatLabel}"
                                            FontSize="13"
-                                           TextColor="#99FFFFFF" />
+                                           TextColor="{StaticResource TextSecondary}" />
                                     <Label Text="{Binding TodayCount}"
                                            FontSize="36"
                                            FontAttributes="Bold"
-                                           TextColor="White" />
+                                           TextColor="{StaticResource Primary}" />
                                     <Label Text="{Binding PrimaryStatCaption}"
                                            FontSize="13"
-                                           TextColor="#99FFFFFF" />
+                                           TextColor="{StaticResource TextMuted}" />
                                 </VerticalStackLayout>
                             </Frame>
 
-                            <!-- Week card — vibrant orange -->
                             <Frame Grid.Column="1"
-                                   BackgroundColor="{StaticResource iOSOrange}"
-                                   CornerRadius="16"
-                                   BorderColor="Transparent"
+                                BackgroundColor="{StaticResource BackgroundCard}"
+                                CornerRadius="8"
+                                BorderColor="{StaticResource BorderLight}"
                                    HasShadow="False"
                                    Padding="18">
                                 <VerticalStackLayout Spacing="4">
                                     <Label Text="{Binding SecondaryStatLabel}"
                                            FontSize="13"
-                                           TextColor="#99FFFFFF" />
+                                           TextColor="{StaticResource TextSecondary}" />
                                     <Label Text="{Binding WeekCount}"
                                            FontSize="36"
                                            FontAttributes="Bold"
-                                           TextColor="White" />
+                                           TextColor="{StaticResource AccentDark}" />
                                     <Label Text="{Binding SecondaryStatCaption}"
                                            FontSize="13"
-                                           TextColor="#99FFFFFF" />
+                                           TextColor="{StaticResource TextMuted}" />
                                 </VerticalStackLayout>
                             </Frame>
 
@@ -212,9 +210,9 @@
                             </CollectionView.ItemsLayout>
                             <CollectionView.ItemTemplate>
                                 <DataTemplate>
-                                    <Frame BackgroundColor="{Binding IsPast, Converter={toolkit:BoolToObjectConverter TrueObject={StaticResource iOSPastBg}, FalseObject=White}}"
-                                           CornerRadius="14"
-                                           BorderColor="Transparent"
+                                     <Frame BackgroundColor="{Binding IsPast, Converter={toolkit:BoolToObjectConverter TrueObject={StaticResource iOSPastBg}, FalseObject=White}}"
+                                         CornerRadius="8"
+                                         BorderColor="{StaticResource BorderLight}"
                                            HasShadow="False"
                                            Padding="0">
                                         <Frame.GestureRecognizers>

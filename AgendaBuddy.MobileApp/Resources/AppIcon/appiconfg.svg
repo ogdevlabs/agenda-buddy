@@ -1,28 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-  Icon foreground: the same calendar-with-your-day mark as Resources/Images/brand_mark.svg, inverted for the
-  indigo background — white frame, indigo page, amber day. Replaces the template's "AB" text, which named
-  the wrong product.
-  The platforms inset and mask this, so the mark sits well inside the safe area rather than filling the tile.
--->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
-  <g transform="translate(32 32) scale(1.0)">
-    <!-- Binding tabs -->
-    <rect x="17" y="3" width="6" height="11" rx="3" fill="#FFFFFF"/>
-    <rect x="41" y="3" width="6" height="11" rx="3" fill="#FFFFFF"/>
-
-    <!-- Calendar body -->
-    <rect x="6" y="9" width="52" height="49" rx="9" fill="#FFFFFF"/>
-
-    <!-- Page interior, matching the icon background -->
-    <rect x="11" y="26" width="42" height="27" rx="4" fill="#4F46E5"/>
-
-    <!-- Days, with the amber one larger: your day -->
-    <circle cx="19" cy="34" r="2.6" fill="#FFFFFF"/>
-    <circle cx="28" cy="34" r="2.6" fill="#FFFFFF"/>
-    <circle cx="37" cy="34" r="2.6" fill="#FFFFFF"/>
-    <circle cx="46.5" cy="34" r="4.2" fill="#F59E0B"/>
-    <circle cx="19" cy="45" r="2.6" fill="#FFFFFF"/>
-    <circle cx="28" cy="45" r="2.6" fill="#FFFFFF"/>
-  </g>
+  <rect x="20" y="24" width="88" height="84" rx="22" fill="#FFFFFF"/>
+  <rect x="39" y="14" width="11" height="24" rx="5.5" fill="#F3C969"/>
+  <rect x="78" y="14" width="11" height="24" rx="5.5" fill="#F3C969"/>
+  <rect x="34" y="48" width="60" height="5" rx="2.5" fill="#DCE4E1"/>
+  <path d="M38 73 L51 86 L63 68 L75 83 L92 61"
+        fill="none"
+        stroke="#087F6A"
+        stroke-width="8"
+        stroke-linecap="round"
+        stroke-linejoin="round"/>
+  <circle cx="92" cy="61" r="7" fill="#F3C969"/>
 </svg>
