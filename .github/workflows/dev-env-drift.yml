@@ -134,8 +134,11 @@ jobs:
             sync "dev is at $deployed, which has identical content to main"
           fi
 
-          material=$(printf '%s\n' "$changed" | grep -Ev "$INERT")
-          count=$(printf '%s\n' "$material" | grep -c . )
+          # grep exits 1 when it finds no matches. Here that is the healthy "all changes are inert" case,
+          # not a shell failure; GitHub invokes this script with `bash -e`, so both empty-result pipelines
+          # must be made explicitly successful.
+          material=$(printf '%s\n' "$changed" | grep -Ev "$INERT" || true)
+          count=$(printf '%s\n' "$material" | grep -c . || true)
 
           {
             echo "### Drift check — ${{ inputs.environment || 'dev' }}"

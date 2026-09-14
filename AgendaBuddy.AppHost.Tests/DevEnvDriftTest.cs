@@ -211,6 +211,15 @@ public class DevEnvDriftTest
             $"'{path}' is not excluded, so the hourly drift check would redeploy the environment for it.");
     }
 
+    [Fact]
+    public void ZeroMaterialChangesDoNotAbortTheStrictShell()
+    {
+        var workflow = Drift();
+
+        Assert.Contains("grep -Ev \"$INERT\" || true", workflow, StringComparison.Ordinal);
+        Assert.Contains("grep -c . || true", workflow, StringComparison.Ordinal);
+    }
+
     // ── It must not deadlock against the workflows it calls ────────────────────────────────────────
 
     /// <summary>
