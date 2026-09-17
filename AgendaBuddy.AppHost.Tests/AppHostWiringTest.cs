@@ -536,6 +536,14 @@ public class AppHostWiringTest
         }
     }
 
+    [Fact]
+    public async Task ACloudBookingDeploymentReceivesTheExplicitPaymentMode()
+    {
+        var environment = await EnvironmentOf(BuildModel(DeploymentTarget.Cloud), "booking");
+
+        Assert.Contains("Payments__Mode", environment.Keys);
+    }
+
     // E-6: a service that starts before MongoDB accepts connections fails its first request.
     [Fact]
     public void EveryServiceWaitsForMongoDb()

@@ -63,7 +63,8 @@ public class PaymentGatewaySelectionTest
         // PRD risk R4: the residual risk of a non-charging default is that it becomes permanent — payments
         // recorded that never happened, while every artifact says the feature is delivered. Same mitigation
         // as ADR-033: warn loudly rather than fail to start.
-        var warning = PaymentGatewayFactory.RecordingModeWarning(ConfigurationWith(null), isLocalRun: false);
+        var warning = PaymentGatewayFactory.RecordingModeWarning(
+            new ConfigurationBuilder().AddInMemoryCollection().Build(), isLocalRun: false);
 
         Assert.NotNull(warning);
         Assert.Contains(PaymentGatewayFactory.ApiKeyConfigurationKey, warning, System.StringComparison.Ordinal);
@@ -77,6 +78,37 @@ public class PaymentGatewaySelectionTest
         Assert.Equal(PaymentGatewayMode.Unconfigured, PaymentGatewayFactory.ModeFor(configuration));
         var gateway = Assert.IsType<UnconfiguredPaymentGateway>(PaymentGatewayFactory.Create(configuration));
         Assert.False(gateway.AllowsSkippingOnboarding);
+    }
+
+    [Fact]
+    public void ExplicitRecordingMode_AllowsADeployedDevEnvironmentToBookWithoutCharging()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                [PaymentGatewayFactory.ModeConfigurationKey] = nameof(PaymentGatewayMode.Recording),
+                [PaymentGatewayFactory.ApiKeyConfigurationKey] = PaymentGatewayFactory.UnconfiguredParameterValue
+            })
+            .Build();
+
+        Assert.Equal(PaymentGatewayMode.Recording, PaymentGatewayFactory.ModeFor(configuration));
+        Assert.IsType<RecordingPaymentGateway>(PaymentGatewayFactory.Create(configuration));
+        Assert.Contains("synthetic local_ records", PaymentGatewayFactory.RecordingModeWarning(
+            configuration, isLocalRun: false), System.StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void StripeKeyTakesPriorityOverExplicitRecordingMode()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                [PaymentGatewayFactory.ModeConfigurationKey] = nameof(PaymentGatewayMode.Recording),
+                [PaymentGatewayFactory.ApiKeyConfigurationKey] = "sk_test_not_a_real_key"
+            })
+            .Build();
+
+        Assert.Equal(PaymentGatewayMode.Stripe, PaymentGatewayFactory.ModeFor(configuration));
     }
 
     [Fact]

@@ -28,7 +28,7 @@ public class PaymentsAndStatusTest(ServiceHostFixture<BookingAnchor> host, Crypt
     {
         var service = host.StartService("Production", new Dictionary<string, string>
         {
-            ["Security:Local"] = "true"
+            [PaymentGatewayFactory.ModeConfigurationKey] = nameof(PaymentGatewayMode.Recording)
         });
 
         // The default is a fixed past date, which suits every test about the cancel/status MECHANISM. The

@@ -184,7 +184,7 @@ public class BookAppointmentViewModelTests
                 It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .Callback<string, string, DateTime, DateTime, string?, CancellationToken>(
                 (p, c, s, e, svc, _) => { sentProvider = p; sentCustomer = c; sentStart = s; sentEnd = e; sentService = svc; })
-            .ReturnsAsync("appt-1");
+            .ReturnsAsync(AppointmentBookingResult.Booked("appt-1"));
 
         var vm = Build(ServicesApi(Svc("Deep Tissue", "Wellness", 90)), CalendarApi(Slot9), booking);
         await vm.LoadCommand.ExecuteAsync(null);
@@ -210,7 +210,7 @@ public class BookAppointmentViewModelTests
                 It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .Callback<string, string, DateTime, DateTime, string?, CancellationToken>(
                 (_, _, _, e, _, _) => sentEnd = e)
-            .ReturnsAsync("appt-1");
+            .ReturnsAsync(AppointmentBookingResult.Booked("appt-1"));
 
         var vm = Build(ServicesApi(Svc("No Duration", "Wellness", null)), CalendarApi(Slot9), booking);
         await vm.LoadCommand.ExecuteAsync(null);
@@ -230,7 +230,9 @@ public class BookAppointmentViewModelTests
         booking.Setup(b => b.BookAppointmentAsync(
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DateTime>(), It.IsAny<DateTime>(),
                 It.IsAny<string?>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((string?)null);
+            .ReturnsAsync(AppointmentBookingResult.Refused(
+                System.Net.HttpStatusCode.BadRequest,
+                $"This time overlaps with an existing appointment for {Provider}."));
         var calendar = CalendarApi(Slot9);
 
         var vm = Build(ServicesApi(Svc("A", "Fitness", 60)), calendar, booking);
@@ -244,6 +246,28 @@ public class BookAppointmentViewModelTests
         // once on select, once on the refetch
         calendar.Verify(a => a.GetProviderAvailabilityAsync(
             It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
+    }
+
+    [Fact]
+    public async Task Booking_APaymentRefusalShowsTheRealReasonWithoutDiscardingTheSlot()
+    {
+        var booking = new Mock<IBookingApiService>();
+        booking.Setup(b => b.BookAppointmentAsync(
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DateTime>(), It.IsAny<DateTime>(),
+                It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(AppointmentBookingResult.Refused(
+                System.Net.HttpStatusCode.BadRequest,
+                "A payment method is required before requesting this appointment."));
+        var calendar = CalendarApi(Slot9);
+        var vm = Build(ServicesApi(Svc("A", "Fitness", 60)), calendar, booking);
+        await vm.LoadCommand.ExecuteAsync(null);
+        vm.Picker.SelectSlotCommand.Execute(vm.Picker.TimesForSelectedDate.Single(t => t.StartUtc == Slot9));
+
+        await vm.BookCommand.ExecuteAsync(null);
+
+        Assert.Equal("A payment method is required before requesting this appointment.", vm.ErrorMessage);
+        calendar.Verify(a => a.GetProviderAvailabilityAsync(
+            It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     // Fully booked is a normal state and must not read as an error.
