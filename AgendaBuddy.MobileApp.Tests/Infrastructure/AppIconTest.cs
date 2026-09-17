@@ -19,12 +19,19 @@ public class AppIconTest
 
         Assert.DoesNotContain(foreground.Descendants(), element => element.Name.LocalName == "text");
         Assert.DoesNotContain(splash.Descendants(), element => element.Name.LocalName == "text");
-        Assert.Contains(foreground.Descendants(), element =>
-            element.Name.LocalName == "path"
-            && (string?)element.Attribute("fill") == "#087F6A");
+        Assert.True(XNode.DeepEquals(foreground.Root, splash.Root));
         Assert.Contains(foreground.Descendants(), element =>
             element.Name.LocalName == "rect"
-            && (string?)element.Attribute("fill") == "#E7F5F1");
+            && (string?)element.Attribute("id") == "calendar-body"
+            && (string?)element.Attribute("fill") == "#075E54");
+        Assert.Contains(foreground.Descendants(), element =>
+            element.Name.LocalName == "rect"
+            && (string?)element.Attribute("id") == "calendar-page"
+            && (string?)element.Attribute("fill") == "#FFFFFF");
+        Assert.Contains(foreground.Descendants(), element =>
+            element.Name.LocalName == "rect"
+            && (string?)element.Attribute("id") == "selected-day"
+            && (string?)element.Attribute("fill") == "#F3C969");
         Assert.Contains("<MauiIcon", project, StringComparison.Ordinal);
         Assert.Contains("ForegroundFile=\"Resources\\Images\\brand_mark.svg\"", project, StringComparison.Ordinal);
         Assert.False(File.Exists(Path.Combine(

@@ -1,6 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
   <rect x="16" y="16" width="96" height="96" rx="28" fill="#E7F5F1"/>
-  <path fill="#087F6A" fill-rule="evenodd" d="M24 89 42 39h13l18 50H59l-4-12H42l-4 12H24Zm22-24h6l-3-11-3 11Z"/>
-  <path fill="#087F6A" d="M69 89V39h12l8 22 8-22h12v50H97V61l-6 18h-4l-6-18v28H69Z"/>
+  <rect id="calendar-body" x="27" y="31" width="74" height="72" rx="17" fill="#075E54"/>
+  <rect id="calendar-page" x="34" y="55" width="60" height="40" rx="8" fill="#FFFFFF"/>
+  <rect x="42" y="23" width="9" height="21" rx="4.5" fill="#F3C969"/>
+  <rect x="77" y="23" width="9" height="21" rx="4.5" fill="#F3C969"/>
+  <circle cx="46" cy="67" r="3" fill="#087F6A"/>
+  <circle cx="57" cy="67" r="3" fill="#087F6A"/>
+  <circle cx="68" cy="67" r="3" fill="#087F6A"/>
+  <circle cx="46" cy="80" r="3" fill="#087F6A"/>
+  <circle cx="57" cy="80" r="3" fill="#087F6A"/>
+  <rect id="selected-day" x="75" y="61" width="13" height="13" rx="6.5" fill="#F3C969"/>
+  <circle cx="81.5" cy="67.5" r="2.5" fill="#075E54"/>
 </svg>
