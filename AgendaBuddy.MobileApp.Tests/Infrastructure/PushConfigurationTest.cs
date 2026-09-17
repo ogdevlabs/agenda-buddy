@@ -116,7 +116,20 @@ public class PushConfigurationTest
 
         var modes = (XElement?)key!.NextNode;
         Assert.NotNull(modes);
+        Assert.Contains("fetch", modes!.Elements("string").Select(e => e.Value));
         Assert.Contains("remote-notification", modes!.Elements("string").Select(e => e.Value));
+    }
+
+    [Fact]
+    public void IosUsesTheMauiSceneLifecycle()
+    {
+        var plist = XDocument.Load(Path.Combine(MobileApp(), "Platforms", "iOS", "Info.plist"));
+        var sceneDelegate = File.ReadAllText(Path.Combine(MobileApp(), "Platforms", "iOS", "SceneDelegate.cs"));
+
+        Assert.Contains("__MAUI_DEFAULT_SCENE_CONFIGURATION__", plist.ToString(), StringComparison.Ordinal);
+        Assert.Contains("SceneDelegate", plist.ToString(), StringComparison.Ordinal);
+        Assert.Contains("MauiUISceneDelegate", sceneDelegate, StringComparison.Ordinal);
+        Assert.Contains("AppLinkHandler.Open", sceneDelegate, StringComparison.Ordinal);
     }
 
     /// <summary>

@@ -60,7 +60,6 @@ public class ProviderModule : ICarterModule
         // Get provider list
         providers.MapGet("", async Task<Ok<DataResponse<PagedResponse<ProviderSummary>>>> (
             IMediator mediator,
-            IDistributedCache cache,
             CancellationToken cancellationToken,
             int? page = null, int? pageSize = null, bool bookableOnly = false) =>
         {
@@ -69,22 +68,16 @@ public class ProviderModule : ICarterModule
             // page size would restore a full-dataset dump.
             var pageRequest = PageRequest.Clamp(page, pageSize);
 
-            // ⚠️ The cache key carries the page, or page 2 would serve page 1's entry. Cheap to get wrong and
-            // invisible in a single-page test.
-            // bookableOnly is part of the key: the filtered and unfiltered pages are different result
-            // sets, and sharing one entry would serve whichever was cached first to both callers.
-            var key = $"providers-p{pageRequest.Page}-s{pageRequest.PageSize}-b{bookableOnly}";
-            var providerCollection = await cache.GetOrCreateAsync(key, async token =>
-            {
-                var result = await mediator.Send(
-                    new GetProvidersQuery { Page = pageRequest, BookableOnly = bookableOnly }, token);
-                return result.IsSuccess ? result.Value : null!;
-            }, cancellationToken: cancellationToken);
+            // Professions and services are embedded in ProviderEntity but written by separate API processes.
+            // Their in-memory caches cannot invalidate this process, so caching the directory made successful
+            // writes invisible to customers for five minutes.
+            var result = await mediator.Send(
+                new GetProvidersQuery { Page = pageRequest, BookableOnly = bookableOnly }, cancellationToken);
+            var providerCollection = result.IsSuccess ? result.Value : null;
 
             if (providerCollection is null)
             {
-                // 204 is RETIRED (ADR-023): a client always gets a parseable body. CacheAside returns default! on a
-                // 500 ms lock timeout, so this branch is a cache miss rather than an empty collection.
+                // 204 is RETIRED (ADR-023): a client always gets a parseable body.
                 return TypedResults.Ok(DataResponse<PagedResponse<ProviderSummary>>.Ok(
                     PagedResponse<ProviderSummary>.From([], 0, pageRequest)));
             }

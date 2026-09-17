@@ -1,26 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-  AgendaMe mark: a calendar page with one day picked out in amber — the schedule, and the one day in it
-  that is yours. Drawn for a WHITE badge, so the frame is indigo and the page interior is white; the amber
-  day is the only warm element and is the thing that survives at 16px.
-  Filled shapes only, no strokes and no gradients, because the resizetizer rasterises this at build time.
--->
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
-  <!-- Binding tabs -->
-  <rect x="17" y="3" width="6" height="11" rx="3" fill="#4F46E5"/>
-  <rect x="41" y="3" width="6" height="11" rx="3" fill="#4F46E5"/>
-
-  <!-- Calendar body -->
-  <rect x="6" y="9" width="52" height="49" rx="9" fill="#4F46E5"/>
-
-  <!-- Page interior -->
-  <rect x="11" y="26" width="42" height="27" rx="4" fill="#FFFFFF"/>
-
-  <!-- Days, with the amber one larger: your day -->
-  <circle cx="19" cy="34" r="2.6" fill="#4F46E5"/>
-  <circle cx="28" cy="34" r="2.6" fill="#4F46E5"/>
-  <circle cx="37" cy="34" r="2.6" fill="#4F46E5"/>
-  <circle cx="46.5" cy="34" r="4.2" fill="#F59E0B"/>
-  <circle cx="19" cy="45" r="2.6" fill="#4F46E5"/>
-  <circle cx="28" cy="45" r="2.6" fill="#4F46E5"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <rect x="16" y="16" width="96" height="96" rx="28" fill="#E7F5F1"/>
+  <path fill="#087F6A" fill-rule="evenodd" d="M24 89 42 39h13l18 50H59l-4-12H42l-4 12H24Zm22-24h6l-3-11-3 11Z"/>
+  <path fill="#087F6A" d="M69 89V39h12l8 22 8-22h12v50H97V61l-6 18h-4l-6-18v28H69Z"/>
 </svg>

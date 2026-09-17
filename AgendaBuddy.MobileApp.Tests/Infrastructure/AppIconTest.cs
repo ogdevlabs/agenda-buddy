@@ -9,8 +9,9 @@ public class AppIconTest
     public void AppIconAndSplashUseTheAgendaMeMarkAndPalette()
     {
         var root = RepoRoot();
-        var foreground = XDocument.Load(Path.Combine(
-            root, "AgendaBuddy.MobileApp", "Resources", "AppIcon", "appiconfg.svg"));
+        var markPath = Path.Combine(
+            root, "AgendaBuddy.MobileApp", "Resources", "Images", "brand_mark.svg");
+        var foreground = XDocument.Load(markPath);
         var splash = XDocument.Load(Path.Combine(
             root, "AgendaBuddy.MobileApp", "Resources", "Splash", "splash.svg"));
         var project = File.ReadAllText(Path.Combine(
@@ -20,11 +21,19 @@ public class AppIconTest
         Assert.DoesNotContain(splash.Descendants(), element => element.Name.LocalName == "text");
         Assert.Contains(foreground.Descendants(), element =>
             element.Name.LocalName == "path"
-            && (string?)element.Attribute("stroke") == "#087F6A");
+            && (string?)element.Attribute("fill") == "#087F6A");
         Assert.Contains(foreground.Descendants(), element =>
-            element.Name.LocalName == "circle"
-            && (string?)element.Attribute("fill") == "#F3C969");
+            element.Name.LocalName == "rect"
+            && (string?)element.Attribute("fill") == "#E7F5F1");
         Assert.Contains("<MauiIcon", project, StringComparison.Ordinal);
+        Assert.Contains("ForegroundFile=\"Resources\\Images\\brand_mark.svg\"", project, StringComparison.Ordinal);
+        Assert.False(File.Exists(Path.Combine(
+            root, "AgendaBuddy.MobileApp", "Resources", "AppIcon", "appiconfg.svg")));
+        foreach (var view in new[] { "LoginPage.xaml", "RegisterPage.xaml", "EmailVerificationPage.xaml" })
+        {
+            var xaml = File.ReadAllText(Path.Combine(root, "AgendaBuddy.MobileApp", "Views", view));
+            Assert.Contains("Source=\"brand_mark.png\"", xaml, StringComparison.Ordinal);
+        }
         Assert.Contains("<MauiSplashScreen", project, StringComparison.Ordinal);
         Assert.Equal(2, project.Split("Color=\"#075E54\"", StringSplitOptions.None).Length - 1);
         Assert.DoesNotContain("#512BD4", project, StringComparison.OrdinalIgnoreCase);

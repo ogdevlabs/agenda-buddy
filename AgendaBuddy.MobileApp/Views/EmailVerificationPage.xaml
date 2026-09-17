@@ -16,21 +16,11 @@
                    HasShadow="True"
                    Padding="32">
                 <VerticalStackLayout Spacing="16">
-                    <Frame BackgroundColor="{StaticResource PrimarySubtle}"
-                           CornerRadius="20"
-                           WidthRequest="64"
-                           HeightRequest="64"
-                           Padding="0"
-                           HasShadow="False"
-                           BorderColor="Transparent"
-                           HorizontalOptions="Center">
-                        <Label Text="{x:Static infrastructure:AppBrand.Monogram}"
-                               FontSize="24"
-                               FontAttributes="Bold"
-                               TextColor="{StaticResource Primary}"
-                               HorizontalOptions="Center"
-                               VerticalOptions="Center" />
-                    </Frame>
+                          <Image Source="brand_mark.png"
+                              WidthRequest="64"
+                              HeightRequest="64"
+                              Aspect="AspectFit"
+                              HorizontalOptions="Center" />
 
                     <Label Text="{x:Static strings:AppResources.EmailVerification_Heading}"
                            Style="{StaticResource TitleLarge}"

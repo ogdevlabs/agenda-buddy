@@ -92,7 +92,7 @@
 
     <!-- App resources (only when building MAUI targets) -->
     <ItemGroup Condition="'$(UseMaui)' == 'true'">
-        <MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" Color="#075E54" />
+        <MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\Images\brand_mark.svg" Color="#075E54" />
         <MauiSplashScreen Include="Resources\Splash\splash.svg" Color="#075E54" BaseSize="128,128" />
         <MauiImage Include="Resources\Images\*" />
         <MauiFont Include="Resources\Fonts\*" />

@@ -148,6 +148,35 @@ public class PaymentServiceTest
     }
 
     [Fact]
+    public async Task AuthorizeAsync_RecordingMode_AllowsMissingOnboarding()
+    {
+        _repoMock.Setup(r => r.FindOneAsync(It.IsAny<BsonDocument>())).ReturnsAsync((PaymentEntity?)null);
+        _repoMock.Setup(r => r.InsertAsync(It.IsAny<PaymentEntity>())).Returns(Task.CompletedTask);
+        _repoMock.Setup(r => r.UpdateAsync(It.IsAny<string>(), It.IsAny<PaymentEntity>())).ReturnsAsync(true);
+        _gatewayMock.SetupGet(g => g.AllowsSkippingOnboarding).Returns(true);
+        _gatewayMock.Setup(g => g.AuthorizeAsync(It.Is<PaymentAuthorizationRequest>(request =>
+                request.CustomerId == "cus_local_bypass"
+                && request.PaymentMethodId == "pm_local_bypass"
+                && request.ConnectedAccountId == "acct_local_bypass")))
+            .ReturnsAsync(new PaymentAuthorizationResult("local_test", "requires_capture"));
+        var appointment = new AppointmentEntity
+        {
+            Identifier = "appt-local",
+            EmailProvider = "p@ex.com",
+            EmailCustomer = "c@ex.com",
+            ServiceName = "Consultation",
+            Start = DateTime.UtcNow.AddDays(2),
+            PaymentAmountMinor = 5000,
+            PaymentCurrency = "usd"
+        };
+
+        var result = await _svc.AuthorizeAsync(appointment, new CustomerEntity(), new ProviderEntity());
+
+        Assert.Equal(PaymentStatus.Authorized, result.Status);
+        Assert.Equal("local_test", result.StripePaymentIntentId);
+    }
+
+    [Fact]
     public async Task CaptureAsync_AuthorizedPayment_CapturesAndPersistsSucceeded()
     {
         var payment = new PaymentEntity("appt-001", "p@ex.com", "c@ex.com", 50m)
