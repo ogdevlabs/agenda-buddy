@@ -28,22 +28,12 @@
 
                     <!-- Brand area -->
                     <VerticalStackLayout Spacing="4" Margin="0,0,0,20">
-                        <Frame BackgroundColor="{StaticResource PrimarySubtle}"
-                               CornerRadius="20"
+                           <Image Source="brand_mark.png"
                                WidthRequest="64"
                                HeightRequest="64"
-                               Padding="0"
-                               HasShadow="False"
-                               BorderColor="Transparent"
+                               Aspect="AspectFit"
                                HorizontalOptions="Center"
-                               Margin="0,0,0,16">
-                            <Label Text="{x:Static infrastructure:AppBrand.Monogram}"
-                                   FontSize="24"
-                                   FontAttributes="Bold"
-                                   TextColor="{StaticResource Primary}"
-                                   HorizontalOptions="Center"
-                                   VerticalOptions="Center" />
-                        </Frame>
+                               Margin="0,0,0,16" />
 
                         <Label Text="{x:Static strings:AppResources.Xaml_CreateAccount}"
                                Style="{StaticResource TitleLarge}"

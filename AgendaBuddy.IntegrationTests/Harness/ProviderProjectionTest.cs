@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using AgendaBuddy.Library.Entities;
 using MongoDB.Bson;
+using MongoDB.Driver;
 
 namespace AgendaBuddy.IntegrationTests.Harness;
 
@@ -146,5 +147,33 @@ public class ProviderProjectionTest : IClassFixture<ServiceHostFixture<ProviderA
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         AssertNoEmbeddedData(body);
+    }
+
+    [Fact]
+    public async Task DirectoryImmediatelyReflectsProfessionAndServiceWritesFromOtherProcesses()
+    {
+        using var service = await StartWithAProviderOnFile();
+
+        var before = await service.Client.SendAsync(Read("api/v1/providers", Browser));
+        var beforeBody = await before.Content.ReadAsStringAsync();
+        Assert.DoesNotContain("Career Coaching", beforeBody, StringComparison.Ordinal);
+
+        await service.Database.GetCollection<ProviderEntity>("providers").UpdateOneAsync(
+            Builders<ProviderEntity>.Filter.Eq(provider => provider.Email, Owner),
+            Builders<ProviderEntity>.Update
+                .Set(provider => provider.Professions, ["Career Coaching"])
+                .Push(provider => provider.ServiceEntities, new ServiceEntity("Career Plan", "One hour", 50m)
+                {
+                    ProfessionName = "Career Coaching",
+                    DurationMinutes = 60,
+                    IsActive = true
+                }));
+
+        var after = await service.Client.SendAsync(Read("api/v1/providers", Browser));
+        var afterBody = await after.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, after.StatusCode);
+        Assert.Contains("Career Coaching", afterBody, StringComparison.Ordinal);
+        Assert.Contains("Career Plan", afterBody, StringComparison.Ordinal);
     }
 }

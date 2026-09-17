@@ -17,6 +17,7 @@ public class BookingAppointmentCommandHandler(
     IEventStore eventStore,
     IDateTimeProvider dateTimeProvider,
     CustomerService customerService,
+    IPaymentGateway paymentGateway,
     INotificationDispatcher notificationDispatcher)
     : IRequestHandler<BookAppointmentCommand, Result<AppointmentEntity>>
 {
@@ -87,7 +88,7 @@ public class BookingAppointmentCommandHandler(
             }
         }
 
-        if (appointmentEntity.PaymentAmountMinor is > 0)
+        if (appointmentEntity.PaymentAmountMinor is > 0 && !paymentGateway.AllowsSkippingOnboarding)
         {
             var customer = await customerService.FindCustomerAsync(
                 SupportTools<CustomerEntity>.FilterByEmail(appointmentEntity.EmailCustomer));

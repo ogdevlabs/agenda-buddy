@@ -20,9 +20,11 @@ public class PaymentService(
 
         if (appointment.PaymentAmountMinor is null or <= 0 || string.IsNullOrWhiteSpace(appointment.PaymentCurrency))
             throw new InvalidOperationException("This appointment has no valid price snapshot.");
-        if (customer.StripeCustomerId is null || customer.StripeDefaultPaymentMethodId is null)
+        if (!gateway.AllowsSkippingOnboarding
+            && (customer.StripeCustomerId is null || customer.StripeDefaultPaymentMethodId is null))
             throw new InvalidOperationException("The customer must add a payment method before confirmation.");
-        if (provider.StripeConnectedAccountId is null || !provider.StripeChargesEnabled || !provider.StripePayoutsEnabled)
+        if (!gateway.AllowsSkippingOnboarding
+            && (provider.StripeConnectedAccountId is null || !provider.StripeChargesEnabled || !provider.StripePayoutsEnabled))
             throw new InvalidOperationException("The provider must finish payout setup before confirmation.");
         if (appointment.Start > DateTime.UtcNow.Add(MaximumAuthorizationLeadTime))
             throw new InvalidOperationException(
@@ -53,9 +55,9 @@ public class PaymentService(
         var authorization = await gateway.AuthorizeAsync(new PaymentAuthorizationRequest(
             payment.AmountMinor,
             payment.Currency,
-            customer.StripeCustomerId,
-            customer.StripeDefaultPaymentMethodId,
-            provider.StripeConnectedAccountId,
+            customer.StripeCustomerId ?? "cus_local_bypass",
+            customer.StripeDefaultPaymentMethodId ?? "pm_local_bypass",
+            provider.StripeConnectedAccountId ?? "acct_local_bypass",
             payment.ApplicationFeeMinor,
             $"Appointment {appointment.Identifier} - {appointment.ServiceName}",
             $"{appointment.Identifier}:{payment.AuthorizationAttempt}"));

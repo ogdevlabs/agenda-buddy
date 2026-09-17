@@ -84,6 +84,14 @@ public class PaymentsAndStatusTest(ServiceHostFixture<BookingAnchor> host, Crypt
         return provider.AppointmentEntities.Single(a => a.Identifier == Appointment).AppointmentStatus;
     }
 
+    private static DateTime NextBookableStart()
+    {
+        var start = DateTime.UtcNow.Date.AddDays(1).AddHours(10);
+        while (start.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday)
+            start = start.AddDays(1);
+        return start;
+    }
+
     // ── Status ──────────────────────────────────────────────────────────────────────────────────────
 
     [Theory]
@@ -413,6 +421,58 @@ public class PaymentsAndStatusTest(ServiceHostFixture<BookingAnchor> host, Crypt
         Assert.Equal(HttpStatusCode.MethodNotAllowed, response.StatusCode);
         Assert.Equal(0, await service.Database.GetCollection<PaymentEntity>("payments")
             .CountDocumentsAsync(Builders<PaymentEntity>.Filter.Empty));
+    }
+
+    [Fact]
+    public async Task RecordingMode_BooksAndConfirmsPaidServiceWithoutOnboarding()
+    {
+        using var service = await StartWithAnAppointmentAsync();
+        await service.Database.GetCollection<ProviderEntity>("providers").UpdateOneAsync(
+            Builders<ProviderEntity>.Filter.Eq(provider => provider.Email, Provider),
+            Builders<ProviderEntity>.Update
+                .Set(provider => provider.Professions, ["Coaching"])
+                .Set(provider => provider.ServiceEntities,
+                [
+                    new ServiceEntity("Consultation", "One hour", 50m)
+                    {
+                        ProfessionName = "Coaching",
+                        DurationMinutes = 60,
+                        IsActive = true
+                    }
+                ]));
+        await service.Database.GetCollection<CustomerEntity>("customers").InsertOneAsync(new CustomerEntity
+        {
+            Id = ObjectId.GenerateNewId(),
+            Email = Customer,
+            FirstName = "Status",
+            LastName = "Customer"
+        });
+        var start = NextBookableStart();
+
+        var booked = await service.Client.SendAsync(Authorised(
+            HttpMethod.Post, "api/v1/booking/appointments", Customer, TokenFactory.CustomerRole,
+            new
+            {
+                emailProvider = Provider,
+                emailCustomer = Customer,
+                start,
+                end = start.AddHours(1),
+                serviceName = "Consultation"
+            }));
+
+        Assert.Equal(HttpStatusCode.Created, booked.StatusCode);
+        var wrapper = await booked.Content.ReadFromJsonAsync<DataResponse<AppointmentEntity>>(HarnessJson.Options);
+        var identifier = wrapper!.Data!.Identifier;
+
+        var confirmed = await service.Client.SendAsync(Authorised(
+            HttpMethod.Post, $"api/v1/booking/appointments/{identifier}/status",
+            Provider, TokenFactory.ProviderRole, new { status = "Booked" }));
+
+        Assert.Equal(HttpStatusCode.OK, confirmed.StatusCode);
+        var payment = await service.Database.GetCollection<PaymentEntity>("payments")
+            .Find(Builders<PaymentEntity>.Filter.Eq(value => value.AppointmentIdentifier, identifier)).SingleAsync();
+        Assert.Equal(PaymentStatus.Authorized, payment.Status);
+        Assert.StartsWith(RecordingPaymentGateway.LocalIntentPrefix, payment.StripePaymentIntentId);
     }
 
     [Fact]
