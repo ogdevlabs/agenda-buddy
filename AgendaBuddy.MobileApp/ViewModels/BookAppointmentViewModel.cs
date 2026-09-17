@@ -281,21 +281,22 @@ public partial class BookAppointmentViewModel : ObservableObject
             var emailProvider = _session.IsProvider ? _session.Email : CounterpartEmail;
             var emailCustomer = _session.IsProvider ? CounterpartEmail : _session.Email;
 
-            var identifier = await _bookingApiService.BookAppointmentAsync(
+            var result = await _bookingApiService.BookAppointmentAsync(
                 emailProvider, emailCustomer, start, end, SelectedService.Name);
 
-            if (identifier is null)
+            if (!result.Succeeded)
             {
-                // Most likely someone took the slot between the fetch and the tap — the server rejects an
-                // overlap. Re-fetch so the stale slot disappears instead of being offered again.
-                ErrorMessage = AppResources.Error_BookingConflict;
+                ErrorMessage = result.IsSlotConflict
+                    ? AppResources.Error_BookingConflict
+                    : result.ErrorMessage ?? AppResources.GetString("Error_ActionRejected");
                 await ToastNotifier.ShowAsync(ErrorMessage);
-                await RefreshAvailabilityAsync();
+                if (result.IsSlotConflict)
+                    await RefreshAvailabilityAsync();
                 return;
             }
 
             await ToastNotifier.ShowAsync(AppResources.GetString("Action_AppointmentBooked"));
-            BookingSucceeded?.Invoke(this, identifier);
+            BookingSucceeded?.Invoke(this, result.Identifier!);
         }
         catch (GatewayServiceUnavailableException ex)
         {

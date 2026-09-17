@@ -609,6 +609,15 @@ public class AutoDeployPathFilterTest
         Assert.Contains(sentinelAssignment, deploy, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void DevDeployUsesRecordingPayments_AndEveryOtherEnvironmentFailsClosed()
+    {
+        var deploy = Workflow("deploy.yml");
+
+        Assert.Contains("parameters[\"payments_mode\"]", deploy, StringComparison.Ordinal);
+        Assert.Contains("\"Recording\" if os.environ[\"DEPLOY_ENVIRONMENT\"] == \"dev\" else \"Unconfigured\"", deploy, StringComparison.Ordinal);
+    }
+
     // ── A deploy without a provision recovers the provisioning outputs ─────────────────────────────
 
     /// <summary>

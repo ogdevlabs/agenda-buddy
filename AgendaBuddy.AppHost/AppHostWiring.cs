@@ -62,6 +62,7 @@ internal static class AppHostWiring
         IResourceBuilder<ParameterResource>? resendApiKey = null;
         IResourceBuilder<ParameterResource>? stripeApiKey = null;
         IResourceBuilder<ParameterResource>? stripeWebhookSecret = null;
+        IResourceBuilder<ParameterResource>? paymentsMode = null;
 
         // Push delivery. Declared in both shapes, but on different terms, and the difference is the whole
         // point.
@@ -151,6 +152,7 @@ internal static class AppHostWiring
             resendApiKey = builder.AddParameter("resend-api-key", secret: true);
             stripeApiKey = builder.AddParameter("stripe-api-key", secret: true);
             stripeWebhookSecret = builder.AddParameter("stripe-webhook-secret", secret: true);
+            paymentsMode = builder.AddParameter("payments-mode");
         }
         // spendsBcrypt: Identity's login and register are the only routes in the system that hash a
         // password — 262 ms of CPU each, measured — so it is the only service the per-IP limiter applies
@@ -281,6 +283,8 @@ internal static class AppHostWiring
                 service.WithEnvironment("Payments__Stripe__ApiKey", stripeApiKey);
             if (needsPayments && stripeWebhookSecret is not null)
                 service.WithEnvironment("Payments__Stripe__WebhookSecret", stripeWebhookSecret);
+            if (needsPayments && paymentsMode is not null)
+                service.WithEnvironment("Payments__Mode", paymentsMode);
 
             // Booking and Customer are the two services that PRODUCE notifications, so they are the two that
             // need to reach FCM. Null when no credentials are configured, so nothing is injected and

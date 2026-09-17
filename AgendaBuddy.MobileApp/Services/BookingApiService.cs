@@ -118,7 +118,7 @@ public class BookingApiService : IBookingApiService
 
     // ── Create / cancel ───────────────────────────────────────────────────────────────────────────────
 
-    public async Task<string?> BookAppointmentAsync(string emailProvider, string emailCustomer, DateTime start, DateTime end, string? serviceName = null, CancellationToken ct = default)
+    public async Task<AppointmentBookingResult> BookAppointmentAsync(string emailProvider, string emailCustomer, DateTime start, DateTime end, string? serviceName = null, CancellationToken ct = default)
     {
         var client = _httpClientFactory.CreateClient("AgendaBuddyApi");
         var route = BookingRouteBuilder.BookAppointment();
@@ -126,12 +126,29 @@ public class BookingApiService : IBookingApiService
             BookingRouteBuilder.BuildBookAppointmentPayload(emailProvider, emailCustomer, start, end, serviceName), JsonOptions);
         var content = new StringContent(body, Encoding.UTF8, "application/json");
 
-        var response = await client.PostAsync(route.Path, content, ct);
-        if (!response.IsSuccessStatusCode)
-            return null;
+        try
+        {
+            var response = await client.PostAsync(route.Path, content, ct);
+            if (!response.IsSuccessStatusCode)
+            {
+                var failedService = await response.TryReadFailedServiceAsync(ct);
+                if (failedService is not null)
+                    return AppointmentBookingResult.Unreachable(failedService);
 
-        var json = await response.Content.ReadAsStringAsync(ct);
-        return ExtractDataField(json, "identifier");
+                return AppointmentBookingResult.Refused(
+                    response.StatusCode, await ReadRefusalMessageAsync(response, ct));
+            }
+
+            var json = await response.Content.ReadAsStringAsync(ct);
+            var identifier = ExtractDataField(json, "identifier");
+            return identifier is not null
+                ? AppointmentBookingResult.Booked(identifier)
+                : AppointmentBookingResult.Refused(response.StatusCode);
+        }
+        catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException)
+        {
+            return AppointmentBookingResult.Unreachable(exception.Message);
+        }
     }
 
     public async Task<AppointmentActionResult> CancelAppointmentAsync(

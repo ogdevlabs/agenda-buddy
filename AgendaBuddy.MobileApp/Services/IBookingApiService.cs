@@ -21,10 +21,10 @@ public interface IBookingApiService
     /// <summary>
     /// <c>POST /api/v1/booking/appointments</c>. Either participant may book on their own behalf
     /// (<c>OwnershipGuard.AssertOwnerAny</c>) — <paramref name="emailProvider"/>/<paramref name="emailCustomer"/>
-    /// are whichever the caller is booking with, not necessarily their own email. Returns the identifier the
-    /// server generated, or <c>null</c> on failure.
+    /// are whichever the caller is booking with, not necessarily their own email. Returns the identifier or a
+    /// typed refusal so a payment/setup error cannot be mislabeled as a stale slot.
     /// </summary>
-    Task<string?> BookAppointmentAsync(string emailProvider, string emailCustomer, DateTime start, DateTime end, string? serviceName = null, CancellationToken ct = default);
+    Task<AppointmentBookingResult> BookAppointmentAsync(string emailProvider, string emailCustomer, DateTime start, DateTime end, string? serviceName = null, CancellationToken ct = default);
 
     /// <summary>
     /// The real cancellation route — <c>DELETE /api/v1/booking/appointments/</c>, body-identified. Distinct

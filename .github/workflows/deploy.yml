@@ -192,6 +192,7 @@ jobs:
       - name: Configure azd environment from Key Vault
         env:
           KEY_VAULT_NAME: ${{ steps.tf.outputs.key_vault_name }}
+          DEPLOY_ENVIRONMENT: ${{ inputs.environment }}
           # azd's generated Bicep hardcodes the group name as rg-<azd env name>, and
           # AZURE_RESOURCE_GROUP does not override it. Prefixing here keeps the application in
           # rg-agenda-buddy-<env>, the group Terraform already owns, rather than a separate rg-<env>.
@@ -288,6 +289,12 @@ jobs:
               # AuthenticationExtensions and IdentityService.ReadPrivateKeyPem already call
               # .Replace("\\n", "\n") for exactly this case.
               parameters[param] = value.replace("\n", "\\n")
+
+          # Financial operations remain fail-closed in every cloud environment except dev. Dev uses the
+          # existing non-charging recording gateway so booking can be exercised without Stripe onboarding.
+          parameters["payments_mode"] = (
+              "Recording" if os.environ["DEPLOY_ENVIRONMENT"] == "dev" else "Unconfigured"
+          )
 
           path = pathlib.Path(".azure") / env_name / "config.json"
           config = json.loads(path.read_text()) if path.exists() and path.stat().st_size else {}

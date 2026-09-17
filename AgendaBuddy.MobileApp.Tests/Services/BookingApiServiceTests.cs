@@ -39,6 +39,38 @@ public class BookingApiServiceTests
         ServiceId = "s1"
     };
 
+    [Fact]
+    public async Task BookAppointment_ReturnsCreatedIdentifier()
+    {
+        var sut = new BookingApiService(
+            CreateFactory(HttpStatusCode.Created, """{"data":{"identifier":"appt-1"},"errors":[]}"""),
+            new Mock<ICalendarApiService>().Object);
+
+        var result = await sut.BookAppointmentAsync(
+            "provider@example.com", "customer@example.com",
+            DateTime.UtcNow.AddDays(1), DateTime.UtcNow.AddDays(1).AddHours(1), "Consultation");
+
+        Assert.True(result.Succeeded);
+        Assert.Equal("appt-1", result.Identifier);
+    }
+
+    [Fact]
+    public async Task BookAppointment_PreservesServerRefusalInsteadOfCallingEveryFailureAConflict()
+    {
+        var sut = new BookingApiService(
+            CreateFactory(HttpStatusCode.BadRequest,
+                """{"data":null,"errors":["A payment method is required before requesting this appointment."]}"""),
+            new Mock<ICalendarApiService>().Object);
+
+        var result = await sut.BookAppointmentAsync(
+            "provider@example.com", "customer@example.com",
+            DateTime.UtcNow.AddDays(1), DateTime.UtcNow.AddDays(1).AddHours(1), "Consultation");
+
+        Assert.False(result.Succeeded);
+        Assert.False(result.IsSlotConflict);
+        Assert.Equal("A payment method is required before requesting this appointment.", result.ErrorMessage);
+    }
+
     // ---------------------------------------------------------------------------
     // GetTodayAppointmentsAsync tests
     //

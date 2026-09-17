@@ -36,6 +36,7 @@ public enum PaymentGatewayMode
 public static class PaymentGatewayFactory
 {
     public const string UnconfiguredParameterValue = "__UNCONFIGURED__";
+    public const string ModeConfigurationKey = "Payments:Mode";
 
     /// <summary>
     /// The configuration key holding the Stripe secret. <b>It must never appear in
@@ -51,7 +52,8 @@ public static class PaymentGatewayFactory
         ArgumentNullException.ThrowIfNull(configuration);
 
         if (IsConfigured(configuration[ApiKeyConfigurationKey])) return PaymentGatewayMode.Stripe;
-        return string.Equals(configuration["Security:Local"], "true", StringComparison.OrdinalIgnoreCase)
+        return string.Equals(configuration[ModeConfigurationKey], nameof(PaymentGatewayMode.Recording), StringComparison.OrdinalIgnoreCase)
+            || string.Equals(configuration["Security:Local"], "true", StringComparison.OrdinalIgnoreCase)
             ? PaymentGatewayMode.Recording
             : PaymentGatewayMode.Unconfigured;
     }
@@ -82,6 +84,12 @@ public static class PaymentGatewayFactory
     public static string? RecordingModeWarning(IConfiguration configuration, bool isLocalRun)
     {
         if (isLocalRun || ModeFor(configuration) is PaymentGatewayMode.Stripe) return null;
+
+        if (ModeFor(configuration) is PaymentGatewayMode.Recording)
+        {
+            return $"Payments are in {nameof(PaymentGatewayMode.Recording)} mode. Financial operations "
+                + "write synthetic local_ records and never move money.";
+        }
 
         return $"Payments are unavailable: no {ApiKeyConfigurationKey} is configured. Financial operations "
             + "fail closed; no local success record is written.";
