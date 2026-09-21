@@ -119,7 +119,8 @@ public static class ProfessionDisplayNames
             ["Trading"] = "Profession_112",
             ["Travel"] = "Profession_113",
             ["Video Creator"] = "Profession_114",
-            ["Writing"] = "Profession_115"
+            ["Writing"] = "Profession_115",
+            ["Tattoo Artist"] = "Profession_116"
         };
 
     public static string Get(string canonicalName)

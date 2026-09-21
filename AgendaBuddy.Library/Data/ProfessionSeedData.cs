@@ -116,6 +116,7 @@ public static class ProfessionSeedData
             new ProfessionEntity {Name ="Systems Engineering"},
             new ProfessionEntity {Name ="Talent Acquisition"},
             new ProfessionEntity {Name ="Tarot"},
+            new ProfessionEntity {Name ="Tattoo Artist"},
             new ProfessionEntity {Name ="Technology"},
             new ProfessionEntity {Name ="Trading"},
             new ProfessionEntity {Name ="Travel"},
