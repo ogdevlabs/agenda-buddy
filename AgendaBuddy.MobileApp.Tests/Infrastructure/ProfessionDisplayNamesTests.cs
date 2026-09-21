@@ -20,7 +20,7 @@ public class ProfessionDisplayNamesTests
     {
         var seedNames = ProfessionSeedData.SeedData().Select(profession => profession.Name).ToList();
 
-        Assert.Equal(115, seedNames.Count);
+        Assert.Equal(116, seedNames.Count);
         Assert.Equal(seedNames.Count, seedNames.Distinct(StringComparer.Ordinal).Count());
         Assert.Equal(seedNames.Order(StringComparer.Ordinal), ProfessionDisplayNames.ResourceKeys.Keys.Order(StringComparer.Ordinal));
         Assert.Equal(seedNames.Count, ProfessionDisplayNames.ResourceKeys.Values.Distinct(StringComparer.Ordinal).Count());

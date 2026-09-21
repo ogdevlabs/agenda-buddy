@@ -338,6 +338,7 @@
   <data name="Profession_113" xml:space="preserve"><value>Travel</value></data>
   <data name="Profession_114" xml:space="preserve"><value>Video Creator</value></data>
   <data name="Profession_115" xml:space="preserve"><value>Writing</value></data>
+  <data name="Profession_116" xml:space="preserve"><value>Tattoo Artist</value></data>
   <data name="RelativeTime_DaysAgo" xml:space="preserve"><value>{0}d ago</value></data>
   <data name="RelativeTime_HoursAgo" xml:space="preserve"><value>{0}h ago</value></data>
   <data name="RelativeTime_MinutesAgo" xml:space="preserve"><value>{0}m ago</value></data>
