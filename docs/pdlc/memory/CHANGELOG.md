@@ -19,6 +19,44 @@
 
 ---
 
+## v0.25.0 — 2026-09-21
+
+Retroactive catch-up (Episode 023), not a single planned feature. Six PRs (#172–#177) merged to `main` after
+`v0.24.0` without running the Ship sub-phase, so this entry — and its tag/release — cover all six at once.
+⚠️ This changelog was already stale before this entry: its previous entry is `v0.7.0` (2026-08-26), and the
+seventeen versions shipped between `v0.7.0` and `v0.24.0` are not reconstructed here (see Episode 023 for why).
+
+### Added
+- **"Tattoo Artist" profession** ("Tatuador" in `es-MX`) added to the catalog seed data and mobile
+  display-name mapping (#177).
+- **`Payments:Mode` configuration** with explicit Stripe precedence, so the Cloud AppHost shape can select the
+  non-charging `Recording` gateway for `dev` while staging/production stay `Unconfigured` (#175).
+
+### Changed
+- **Profession catalog seeding** now upserts by name on every service startup instead of only inserting the
+  whole seed batch when the collection is completely empty — a profession added to the seed list now reaches
+  every already-seeded environment (including deployed dev) through the normal deploy pipeline, with no
+  migration framework or manual write required (#177).
+- **App branding** standardized on the AgendaMe "AM" mark, then replaced with a calendar-mark vector shared by
+  in-app UI, the adaptive app icon, and the splash screen (#173, #174).
+- **Provider booking flow** now serves fresh provider profession/service data across service processes instead
+  of a stale cross-process read, and allows paid booking/confirmation through the non-charging recording
+  gateway in local development (#173).
+- **Availability refresh** narrowed to fire only on genuine overlap conflicts, instead of on every non-2xx
+  booking response (#175).
+
+### Fixed
+- **Dev-environment drift check** treated an expected-empty result from its own `grep -Ev` pipeline as a
+  failure under `bash -e`/`pipefail`, so a healthy "nothing to deploy" run appeared red and skipped the heal
+  step (#172, Bead `agenda-buddy-5ns`).
+- **Paid bookings in deployed dev** were rejected outright: the Cloud AppHost shape received Stripe's
+  unconfigured sentinel and fell back to the fail-closed gateway, and the mobile client collapsed every
+  non-2xx response to `null`, mislabeling every refusal as a stale slot (#175).
+- **Registration's Customer role option** had no `IsChecked` binding and no shared `GroupName` with Provider,
+  so it could not be selected and nothing enforced the two options being mutually exclusive (#176).
+
+---
+
 ## v0.7.0 — 2026-08-26
 
 Stage 1/3 of the API refactor program (F-018). Completes the Testcontainers integration-test harness F-016

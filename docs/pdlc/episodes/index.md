@@ -30,6 +30,11 @@ Delivery records, one per shipped feature. Permanent — episodes are never arch
 | 020 | pdlc-documentation-reconciliation | 2026-09-12 | [EPISODE_pdlc-documentation-reconciliation_2026-09-12.md](EPISODE_pdlc-documentation-reconciliation_2026-09-12.md) | #166 | Shipped (`v0.22.2`) |
 | 021 | appointments-segmented-experience | 2026-09-12 | [EPISODE_appointments-segmented-experience_2026-09-12.md](EPISODE_appointments-segmented-experience_2026-09-12.md) | #168 | Shipped (`v0.23.0`) |
 | 022 | mobile-visual-system-and-app-icon | 2026-09-13 | [EPISODE_mobile-visual-system-and-app-icon_2026-09-13.md](EPISODE_mobile-visual-system-and-app-icon_2026-09-13.md) | #170 | Shipped (`v0.24.0`) |
+| 023 | release-catchup | 2026-09-21 | [EPISODE_release-catchup-2026-09-21.md](EPISODE_release-catchup-2026-09-21.md) | #172, #173, #174, #175, #176, #177 | Shipped (`v0.25.0`) |
+
+**Episode 023 is a retroactive catch-up, not a planned feature.** PRs #172–#177 merged to `main` without
+running the Ship sub-phase, so `main` had six unreleased commits and no tag past `v0.24.0` until the user
+asked why. See the episode file for the per-PR breakdown and the process-gap note.
 
 **Naming:** `EPISODE_<feature-slug>_<YYYY-MM-DD>.md`, where the date is when the episode was opened, not
 when the feature shipped — 002 opened 2026-08-18 and its ship gate closed 2026-08-22.
