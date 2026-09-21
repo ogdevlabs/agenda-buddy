@@ -148,8 +148,15 @@
                                 BackgroundColor="{StaticResource PrimarySubtle}"
                                 Padding="12,14"
                                 HorizontalOptions="Fill">
+                            <Border.Triggers>
+                                <DataTrigger TargetType="Border" Binding="{Binding IsProvider}" Value="False">
+                                    <Setter Property="Stroke" Value="{StaticResource BorderMedium}" />
+                                    <Setter Property="BackgroundColor" Value="{StaticResource BackgroundCard}" />
+                                </DataTrigger>
+                            </Border.Triggers>
                             <VerticalStackLayout Spacing="6" HorizontalOptions="Center">
                                 <RadioButton Content="Provider"
+                                             GroupName="Role"
                                              IsChecked="{Binding IsProvider}"
                                              TextColor="{StaticResource Primary}"
                                              AutomationId="ProviderRadio" />
@@ -168,8 +175,16 @@
                                 BackgroundColor="{StaticResource BackgroundCard}"
                                 Padding="12,14"
                                 HorizontalOptions="Fill">
+                            <Border.Triggers>
+                                <DataTrigger TargetType="Border" Binding="{Binding IsProvider}" Value="False">
+                                    <Setter Property="Stroke" Value="{StaticResource Primary}" />
+                                    <Setter Property="BackgroundColor" Value="{StaticResource PrimarySubtle}" />
+                                </DataTrigger>
+                            </Border.Triggers>
                             <VerticalStackLayout Spacing="6" HorizontalOptions="Center">
                                 <RadioButton Content="Customer"
+                                             GroupName="Role"
+                                             IsChecked="{Binding IsProvider, Converter={StaticResource InvertedBoolConverter}}"
                                              TextColor="{StaticResource TextPrimary}"
                                              AutomationId="CustomerRadio" />
                                 <Label Text="{x:Static strings:AppResources.Xaml_IBookServices}"
