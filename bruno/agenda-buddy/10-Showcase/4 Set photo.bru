@@ -1,0 +1,21 @@
+meta {
+  name: 4 Set photo
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{gatewayUrl}}/api/v1/showcase/me/photo
+  body: json
+}
+
+body:json {
+  {
+    "hash": "{{mediaHash}}"
+  }
+}
+
+docs {
+  Attaches an uploaded hash as the profile photo. `null` removes it. `400` `unknown-media` for a hash
+  this provider never uploaded. `/me/logo` is the same shape for the logo.
+}

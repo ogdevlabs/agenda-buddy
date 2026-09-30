@@ -1,0 +1,15 @@
+meta {
+  name: 8 Remove portfolio item
+  type: http
+  seq: 8
+}
+
+delete {
+  url: {{gatewayUrl}}/api/v1/showcase/me/portfolio/{{mediaHash}}
+  body: none
+}
+
+docs {
+  `204` whether or not it was there. The image stays stored for 24 hours so the app can offer undo (re-adding
+  the same hash), then the media sweep deletes it.
+}

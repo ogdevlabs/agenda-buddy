@@ -2,6 +2,7 @@ using AgendaBuddy.Library.Configuration;
 using AgendaBuddy.Library.Entities;
 using AgendaBuddy.Library.Repositories;
 using AgendaBuddy.Library.Services;
+using AgendaBuddy.Library.Showcase;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -53,12 +54,32 @@ public static class AccountErasureExtensions
         services.TryAddCollection<DeviceTokenEntity>(
             configuration, "DeviceTokensCollection", "device_tokens", identityDatabaseName);
 
+        services.TryAddShowcaseCollections(configuration, databaseName);
+
         services.TryAddScoped<IAccountErasureService, AccountErasureService>();
 
         return services;
     }
 
-    private static void TryAddCollection<TEntity>(
+    /// <summary>The six showcase collections, which erasure clears for both roles.</summary>
+    internal static void TryAddShowcaseCollections(
+        this IServiceCollection services, IConfiguration configuration, string databaseName)
+    {
+        services.TryAddCollection<ProviderShowcaseEntity>(configuration, "ShowcasesCollection",
+            ShowcaseCollections.Showcases, databaseName);
+        services.TryAddCollection<MediaRefEntity>(configuration, "MediaRefsCollection",
+            ShowcaseCollections.MediaRefs, databaseName);
+        services.TryAddCollection<ShowcaseVisitEntity>(configuration, "ShowcaseVisitsCollection",
+            ShowcaseCollections.Visits, databaseName);
+        services.TryAddCollection<GoCounterEntity>(configuration, "GoCountersCollection",
+            ShowcaseCollections.GoCounters, databaseName);
+        services.TryAddCollection<ShowcaseReportEntity>(configuration, "ShowcaseReportsCollection",
+            ShowcaseCollections.Reports, databaseName);
+        services.TryAddCollection<ShowcaseBlockEntity>(configuration, "ShowcaseBlocksCollection",
+            ShowcaseCollections.Blocks, databaseName);
+    }
+
+    internal static void TryAddCollection<TEntity>(
         this IServiceCollection services,
         IConfiguration configuration,
         string settingName,

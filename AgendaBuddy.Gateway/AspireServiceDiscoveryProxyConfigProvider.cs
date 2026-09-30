@@ -81,6 +81,11 @@ public sealed class AspireServiceDiscoveryProxyConfigProvider : IProxyConfigProv
         // screens were unreachable through the gateway despite every other check passing.
         ("customer", "customer-messages", "/api/v1/messages/{**catch-all}"),
         ("customer", "customer-notifications", "/api/v1/notifications/{**catch-all}"),
+        // Showcase, its media and the QR redirect are top-level groups on Provider, for the same reason.
+        // /go is the one anonymous route: a scan from a phone camera reaches it with no token.
+        ("provider", "provider-showcase", "/api/v1/showcase/{**catch-all}"),
+        ("provider", "provider-media", "/api/v1/media/{**catch-all}"),
+        ("provider", "provider-go", "/api/v1/go/{**catch-all}"),
     ];
 
     /// <summary>The distinct logical/Aspire resource names <see cref="_routeSpecs"/> covers.</summary>

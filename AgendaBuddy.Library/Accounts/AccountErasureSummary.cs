@@ -17,6 +17,10 @@ namespace AgendaBuddy.Library.Accounts;
 /// The address every scrubbed field was rewritten to. Recorded so the audit trail can answer "which rows were
 /// this deletion's" without itself holding the address that was erased.
 /// </param>
+/// <param name="ShowcaseRowsDeleted">
+/// Rows removed across the six showcase collections: the showcase itself, media records, visits, scan counters,
+/// reports and hides, on whichever side of each the account stood.
+/// </param>
 public record AccountErasureSummary(
     bool ProfileFound,
     string Tombstone,
@@ -27,4 +31,5 @@ public record AccountErasureSummary(
     long NotificationsDeleted,
     long NotesDeleted,
     long SubscriptionsRemoved,
-    long DeviceTokensDeleted);
+    long DeviceTokensDeleted,
+    long ShowcaseRowsDeleted = 0);

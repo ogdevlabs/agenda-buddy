@@ -26,6 +26,17 @@ public interface IProviderService
     /// </remarks>
     Task<(IEnumerable<ProviderEntity> Items, long TotalCount)> GetPagedBookableProvidersAsync(int skip, int take);
 
+    /// <summary>
+    /// As <see cref="GetPagedProvidersAsync(int,int)"/>, leaving out the given providers — the ones the caller has
+    /// hidden. Excluded in the query rather than from the page, so the page stays full and the total stays honest.
+    /// </summary>
+    Task<(IEnumerable<ProviderEntity> Items, long TotalCount)> GetPagedProvidersAsync(
+        int skip, int take, IReadOnlyCollection<ObjectId> excludedIds);
+
+    /// <summary>As <see cref="GetPagedBookableProvidersAsync(int,int)"/>, leaving out the given providers.</summary>
+    Task<(IEnumerable<ProviderEntity> Items, long TotalCount)> GetPagedBookableProvidersAsync(
+        int skip, int take, IReadOnlyCollection<ObjectId> excludedIds);
+
     Task<ProviderEntity> GetProviderByIdAsync(string id);
     Task AddProviderAsync(ProviderEntity provider);
     Task<bool> UpdateProviderAsync(string id, ProviderEntity provider);

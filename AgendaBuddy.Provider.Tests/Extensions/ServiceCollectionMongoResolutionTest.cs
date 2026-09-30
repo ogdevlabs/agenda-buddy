@@ -98,7 +98,10 @@ public class ServiceCollectionMongoResolutionTest
         // Deleting an account has to scrub the address out of every collection carrying it, and all seven are
         // collections this service does not otherwise touch. It registers with TryAddScoped, so ProviderEntity is
         // not duplicated — a request resolving it gets a single instance, not two.
-        Assert.Equal(8, repositories.Count);
+        //
+        // Six more for the showcase collections, which erasure clears — the showcase itself, its media references,
+        // visits, scan counters, reports and hides.
+        Assert.Equal(14, repositories.Count);
         Assert.All(repositories, descriptor => Assert.Equal(ServiceLifetime.Scoped, descriptor.Lifetime));
     }
 }

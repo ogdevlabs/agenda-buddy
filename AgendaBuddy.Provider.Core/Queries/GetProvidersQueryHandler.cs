@@ -17,9 +17,14 @@ public class GetProvidersQueryHandler(
 
         await mediator.Publish(new GetAllProvidersEvent(), cancellationToken);
 
-        var (items, totalCount) = request.BookableOnly
-            ? await providerService.GetPagedBookableProvidersAsync(request.Page.Skip, request.Page.PageSize)
-            : await providerService.GetPagedProvidersAsync(request.Page.Skip, request.Page.PageSize);
+        var excluded = request.ExcludedProviderIds;
+        var (items, totalCount) = (request.BookableOnly, excluded.Count == 0) switch
+        {
+            (true, true) => await providerService.GetPagedBookableProvidersAsync(request.Page.Skip, request.Page.PageSize),
+            (true, false) => await providerService.GetPagedBookableProvidersAsync(request.Page.Skip, request.Page.PageSize, excluded),
+            (false, true) => await providerService.GetPagedProvidersAsync(request.Page.Skip, request.Page.PageSize),
+            (false, false) => await providerService.GetPagedProvidersAsync(request.Page.Skip, request.Page.PageSize, excluded)
+        };
         var providerEntities = items.ToList();
 
         await eventStore.SaveAsync(providerEntities.Count != 0

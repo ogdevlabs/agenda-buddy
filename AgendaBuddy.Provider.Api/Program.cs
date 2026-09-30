@@ -66,7 +66,18 @@ builder.Services.AddAuthorization();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddCarter(configurator: c => c.WithModule<ProviderModule>());
+// Showcase: text, photo/logo, portfolio, public code, media and the /go redirect. Email delivery is for the
+// operator report notice only.
+builder.Services.AddEmailDelivery(builder.Configuration);
+builder.Services.AddShowcase(builder.Configuration);
+builder.Services.AddShowcaseRateLimiter(builder.Configuration);
+builder.Services.AddHostedService<MediaSweepService>();
+
+builder.Services.AddCarter(configurator: c => c
+    .WithModule<ProviderModule>()
+    .WithModule<ShowcaseModule>()
+    .WithModule<MediaModule>()
+    .WithModule<GoModule>());
 
 var app = builder.Build();
 
@@ -102,6 +113,23 @@ _ = Task.Run(async () =>
     catch (Exception ex)
     {
         app.Logger.LogWarning(ex, "Could not ensure the events collection's retention index at startup");
+    }
+});
+
+// Same fire-and-forget rationale: the showcase routes work without their indexes, only slower and without the
+// uniqueness that the index enforces, so a missing index is a warning rather than a failed startup.
+_ = Task.Run(async () =>
+{
+    try
+    {
+        var databaseName = MongoConnectionResolver.ResolveSetting(builder.Configuration, "DatabaseName", "agenda_buddy");
+        await ShowcaseIndexes.CreateAsync(app.Services.GetRequiredService<IMongoClient>().GetDatabase(databaseName));
+        if (app.Services.GetRequiredService<IBlobStore>() is AzureBlobStore blobStore)
+            await blobStore.EnsureContainerAsync();
+    }
+    catch (Exception ex)
+    {
+        app.Logger.LogWarning(ex, "Could not ensure the showcase indexes or media container at startup");
     }
 });
 
@@ -169,6 +197,7 @@ app.UseAgendaBuddyTransportSecurity();
 app.UseAntiforgery();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
 app.UseStatusCodePages();
 
 app.MapCarter();

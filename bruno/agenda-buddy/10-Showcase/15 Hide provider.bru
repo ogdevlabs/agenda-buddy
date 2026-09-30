@@ -1,0 +1,15 @@
+meta {
+  name: 15 Hide provider
+  type: http
+  seq: 15
+}
+
+put {
+  url: {{gatewayUrl}}/api/v1/showcase/{{providerRef}}/hide
+  body: none
+}
+
+docs {
+  Customer role only. The provider disappears from this customer's directory and showcase views. `204`;
+  `DELETE` on the same path unhides. `GET /api/v1/showcase/hidden` lists the hidden ones.
+}

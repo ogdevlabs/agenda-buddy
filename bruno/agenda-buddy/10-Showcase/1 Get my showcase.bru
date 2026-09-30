@@ -1,0 +1,16 @@
+meta {
+  name: 1 Get my showcase
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{gatewayUrl}}/api/v1/showcase/me
+  body: none
+}
+
+docs {
+  The signed-in provider's own showcase: tagline, about, photo/logo hashes, the portfolio in display order,
+  a completeness checklist and the scan→visit→booking funnel. Created empty on first read. Provider role only (403
+  otherwise). `takenDown: true` means an operator hid it; only the owner still sees it.
+}

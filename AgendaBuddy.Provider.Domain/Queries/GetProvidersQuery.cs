@@ -1,3 +1,5 @@
+using MongoDB.Bson;
+
 namespace AgendaBuddy.Provider.Domain.Queries;
 
 [ExcludeFromCodeCoverage]
@@ -20,4 +22,7 @@ public class GetProvidersQuery : IRequest<Result<PagedResponse<ProviderEntity>>>
     /// provider it cannot book.
     /// </remarks>
     public bool BookableOnly { get; set; }
+
+    /// <summary>Providers the caller has hidden; they never appear in the caller's directory.</summary>
+    public List<ObjectId> ExcludedProviderIds { get; set; } = [];
 }

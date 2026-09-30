@@ -15,3 +15,6 @@ global using AgendaBuddy.Library.Tools;
 global using MediatR;
 global using MongoDB.Bson;
 global using System.Text.Json;
+global using AgendaBuddy.Library.Media;
+global using AgendaBuddy.Library.Showcase;
+global using AgendaBuddy.Provider.Domain.Showcase;

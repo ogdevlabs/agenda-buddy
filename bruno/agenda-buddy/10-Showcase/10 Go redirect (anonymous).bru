@@ -1,0 +1,19 @@
+meta {
+  name: 10 Go redirect (anonymous)
+  type: http
+  seq: 10
+}
+
+get {
+  url: {{gatewayUrl}}/api/v1/go/{{publicCode}}
+  body: none
+  auth: none
+}
+
+docs {
+  **The only anonymous showcase route.** iOS user agents are `302`'d to the App Store, Android to Play, anything
+  else gets a static chooser page with the two-step instruction ("install, then scan again inside the app").
+  Answers **identically for known, unknown and malformed codes** and stores only an anonymous per-platform counter
+  — no address, cookie, timestamp or visitor id. `no-store`, `no-referrer`, strict CSP. Only an `https` store URL
+  is ever redirected to or linked. Per-IP rate limited when `Security:RateLimiting:Enabled`.
+}

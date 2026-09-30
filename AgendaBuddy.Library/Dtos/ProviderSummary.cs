@@ -1,4 +1,5 @@
 using AgendaBuddy.Library.Entities;
+using AgendaBuddy.Library.Showcase;
 
 namespace AgendaBuddy.Library.Dtos;
 
@@ -14,8 +15,8 @@ namespace AgendaBuddy.Library.Dtos;
 /// projection is required regardless of the authentication decision.
 /// </para>
 /// <para>
-/// <b>Deliberately absent:</b> <c>AppointmentEntities</c>, <c>SubscribedCustomerCollection</c>,
-/// <c>Id</c>. Absence is by construction — this type has no field to populate — rather
+/// <b>Deliberately absent:</b> <c>AppointmentEntities</c>, <c>SubscribedCustomerCollection</c>. The id is
+/// exposed only as the opaque <see cref="ProviderRef"/>. Absence is by construction — this type has no field to populate — rather
 /// than by a filtering step someone could forget.
 /// </para>
 /// <para>
@@ -51,6 +52,18 @@ public sealed class ProviderSummary
     /// 2026-08-29 alongside that field; this DTO's own remarks about a missing profession field predate it.</summary>
     public required List<string> Professions { get; init; }
 
+    /// <summary>
+    /// The provider's opaque showcase reference — what the showcase and media routes are keyed on, so no route has
+    /// to carry an email address. It is the document id, which this projection otherwise omits; it names nothing.
+    /// </summary>
+    public string? ProviderRef { get; init; }
+
+    /// <summary>The showcase photo, when one is set and not taken down; null falls back to the avatar mark.</summary>
+    public string? PhotoHash { get; init; }
+
+    /// <summary>When the portfolio last gained an image; the client compares it with its own last visit.</summary>
+    public DateTime? PortfolioChangedAt { get; init; }
+
     /// <summary>Projects a stored provider to the shape a non-owner may see.</summary>
     /// <remarks>
     /// <b>The whole service catalogue is exposed, deliberately.</b> Narrowing it to the "bookable" ones
@@ -68,5 +81,19 @@ public sealed class ProviderSummary
         LastName = provider.LastName,
         Services = provider.ServiceEntities ?? [],
         Professions = provider.Professions,
+        ProviderRef = provider.Id == ObjectId.Empty ? null : provider.Id.ToString(),
+    };
+
+    /// <summary>As <see cref="From(ProviderEntity)"/>, joined with the provider's showcase directory entry.</summary>
+    public static ProviderSummary From(ProviderEntity provider, ShowcaseDirectoryEntry? entry) => new()
+    {
+        Email = provider.Email,
+        FirstName = provider.FirstName,
+        LastName = provider.LastName,
+        Services = provider.ServiceEntities ?? [],
+        Professions = provider.Professions,
+        ProviderRef = provider.Id == ObjectId.Empty ? null : provider.Id.ToString(),
+        PhotoHash = entry?.PhotoHash,
+        PortfolioChangedAt = entry?.PortfolioChangedAt,
     };
 }

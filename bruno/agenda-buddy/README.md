@@ -17,6 +17,12 @@ so a URL saying `customers` about a provider's inbox would assert something fals
 needs a subscription between the two parties or it answers `403`** — run `2-Customer/5 Subscribe to provider`
 first. That refusal is a permission decision, not a transport failure.
 
+`10-Showcase` covers three top-level groups on the **Provider** service: `/api/v1/showcase` (a provider's
+photo, logo, portfolio and public code, and the customer-facing view), `/api/v1/media` (upload and fetch — there
+is no public image URL) and `/api/v1/go/{code}`, the one anonymous route, which a QR scan from a phone camera
+reaches. Run `3 Upload media` first and copy the returned `hash` into `mediaHash`; `9 Create public code` gives
+`publicCode`, and a provider's `providerRef` is the `providerRef` field on `GET /api/v1/providers`.
+
 This file is for browsing the repo. Bruno's own in-app "Docs" tab on the collection root (`collection.bru`)
 has the same content and is what you'll actually see while working — open the collection in Bruno and click
 the collection name to read it there.

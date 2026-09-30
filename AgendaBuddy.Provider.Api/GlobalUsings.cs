@@ -37,3 +37,7 @@ global using ProviderService = AgendaBuddy.Library.Services.ProviderService;
 global using AgendaBuddy.EventAndCommands;
 global using AgendaBuddy.EventAndCommands.Persistence;
 global using Carter;
+global using AgendaBuddy.Library.Media;
+global using AgendaBuddy.Library.Showcase;
+global using AgendaBuddy.Provider.Api.Showcase;
+global using AgendaBuddy.Provider.Domain.Showcase;

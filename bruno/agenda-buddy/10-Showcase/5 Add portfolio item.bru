@@ -1,0 +1,23 @@
+meta {
+  name: 5 Add portfolio item
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{gatewayUrl}}/api/v1/showcase/me/portfolio
+  body: json
+}
+
+body:json {
+  {
+    "hash": "{{mediaHash}}",
+    "caption": "Retrato en acuarela",
+    "serviceId": null
+  }
+}
+
+docs {
+  `201` + `Location` when added, `200` when the hash is already in the portfolio. `409` `portfolio-full` at
+  20 items. `serviceId`, when set, must name one of this provider's active services (`400` `invalid-service`).
+}
