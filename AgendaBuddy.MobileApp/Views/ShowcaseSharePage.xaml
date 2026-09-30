@@ -43,6 +43,15 @@
                                TextColor="{StaticResource TextPrimary}" AutomationId="ShareCodeLabel" />
                         <Label Text="{x:Static strings:AppResources.Share_Instructions}" Style="{StaticResource BodySecondary}"
                                HorizontalTextAlignment="Center" />
+                        <!-- Icon-only: shares the link and code as text, for a chat where an image is too much. -->
+                        <Button Text="&#x2934;" FontSize="20" Padding="0"
+                                WidthRequest="44" HeightRequest="44" CornerRadius="22"
+                                HorizontalOptions="Center"
+                                BackgroundColor="{StaticResource PrimarySubtle}"
+                                TextColor="{StaticResource Primary}"
+                                SemanticProperties.Description="{x:Static strings:AppResources.Share_Share}"
+                                Clicked="OnShareLinkClicked"
+                                AutomationId="ShareLinkButton" />
                     </VerticalStackLayout>
                 </Frame>
 

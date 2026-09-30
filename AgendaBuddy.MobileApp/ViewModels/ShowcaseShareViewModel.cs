@@ -95,6 +95,9 @@ public partial class ShowcaseShareViewModel : ObservableObject
     /// </summary>
     public string QrPayload => Url;
 
+    /// <summary>The same two-step instruction the share art carries, as text.</summary>
+    public string LinkShareText => ShareCardText.For(AppBrand.Name, ProviderName, Code).ToPlainText();
+
     [RelayCommand]
     private Task ShareStoryAsync() => ShareAsync(ShareFormat.Story);
 

@@ -75,13 +75,13 @@ public static class MauiProgram
         // Secure storage abstraction
         builder.Services.AddTransient<ISecureStorageService, MauiSecureStorageService>();
         builder.Services.AddTransient<IPendingRegistrationStore, PendingRegistrationStore>();
-    #if ANDROID
+#if ANDROID
         builder.Services.AddSingleton<IBiometricAuthenticationService, AndroidBiometricAuthenticationService>();
-    #elif IOS
+#elif IOS
         builder.Services.AddSingleton<IBiometricAuthenticationService, IosBiometricAuthenticationService>();
-    #else
+#else
         builder.Services.AddSingleton<IBiometricAuthenticationService, UnavailableBiometricAuthenticationService>();
-    #endif
+#endif
 
         // HTTP client with named client and JWT delegating handler
         builder.Services.AddTransient<JwtDelegatingHandler>();

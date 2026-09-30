@@ -62,6 +62,10 @@ public sealed record ShareCardText(string Brand, string Name, string Code, strin
             AppResources.Format("Showcase_ShareStepOne", brand),
             AppResources.Format("Showcase_ShareStepTwo", display));
     }
+
+    /// <summary>The same words as a text message: who, then both steps, which include the code.</summary>
+    public string ToPlainText() =>
+        string.Join(Environment.NewLine, new[] { Name, StepOne, StepTwo }.Where(line => !string.IsNullOrWhiteSpace(line)));
 }
 
 public static class ShareImageLayout

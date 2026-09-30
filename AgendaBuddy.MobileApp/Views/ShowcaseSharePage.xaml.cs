@@ -26,6 +26,25 @@ public partial class ShowcaseSharePage : ContentPage
         _viewModel.LoadCommand.Execute(null);
     }
 
+    private async void OnShareLinkClicked(object? sender, EventArgs e)
+    {
+        if (!_viewModel.HasCode)
+            return;
+
+        try
+        {
+            await Share.Default.RequestAsync(new ShareTextRequest
+            {
+                Text = _viewModel.LinkShareText,
+                Uri = _viewModel.Url
+            });
+        }
+        catch (Exception)
+        {
+            // The three image formats below remain; a failed text share has nothing further to offer.
+        }
+    }
+
     private void OnViewModelChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName != nameof(ShowcaseShareViewModel.QrPng))

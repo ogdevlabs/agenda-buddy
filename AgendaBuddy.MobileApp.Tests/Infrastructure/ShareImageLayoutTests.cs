@@ -89,6 +89,14 @@ public class ShareImageLayoutTests
     }
 
     [Fact]
+    public void TheTextShareCarriesTheNameAndBothSteps()
+    {
+        var text = new ShareCardText("AgendaMe", "Mariana Ruiz", "K7Q 2X9", "1 · one", "2 · two K7Q 2X9").ToPlainText();
+
+        Assert.Equal(string.Join(Environment.NewLine, "Mariana Ruiz", "1 · one", "2 · two K7Q 2X9"), text);
+    }
+
+    [Fact]
     public void TheQrEncodesThePayloadAsASquareModuleGrid()
     {
         var modules = ShowcaseQr.Modules("https://agendame.app/api/v1/go/K7Q2X9");
