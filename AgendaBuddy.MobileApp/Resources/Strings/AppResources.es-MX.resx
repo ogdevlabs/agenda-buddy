@@ -46,11 +46,11 @@
   <data name="Legal_Terms_Clause03_Heading" xml:space="preserve"><value>3. Citas, cancelación y pago</value></data>
   <data name="Legal_Terms_Clause03_Body" xml:space="preserve"><value>Una cita es un acuerdo entre el profesional y el cliente. Los clientes nos autorizan a guardar un método de pago con Stripe y a retener fuera de sesión el precio reservado cuando el profesional confirma. Cobramos la retención al completar el servicio: 90% del cobro bruto se asigna al profesional y 10% corresponde a la tarifa de servicio de {0}. Si el profesional cancela antes del cobro, se libera toda la retención; si cancela después, se reembolsa el pago completo y se revierten ambas asignaciones. Las cancelaciones del cliente siguen la política mostrada en la reserva. Stripe procesa pagos y cobros conforme a sus términos; nunca recibimos ni almacenamos números completos de tarjetas o cuentas bancarias.</value></data>
   <data name="Legal_Terms_Clause04_Heading" xml:space="preserve"><value>4. Uso aceptable</value></data>
-  <data name="Legal_Terms_Clause04_Body" xml:space="preserve"><value>No uses la aplicación para acosar o suplantar a alguien, enviar publicidad no solicitada, recopilar información de otras personas, infringir la ley ni interferir con el servicio, investigarlo o sobrecargarlo. No intentes acceder a datos que no te pertenecen.</value></data>
+  <data name="Legal_Terms_Clause04_Body" xml:space="preserve"><value>No uses la aplicación para acosar o suplantar a alguien, enviar publicidad no solicitada, recopilar información de otras personas, infringir la ley ni interferir con el servicio, investigarlo o sobrecargarlo. No intentes acceder a datos que no te pertenecen. Las imágenes y textos de una vitrina no deben contener desnudos o contenido sexual, violencia, odio o acoso, información personal de otras personas ni nada ilegal, y no deben presentar como tuyo un trabajo que no lo es.</value></data>
   <data name="Legal_Terms_Clause05_Heading" xml:space="preserve"><value>5. Tu contenido</value></data>
-  <data name="Legal_Terms_Clause05_Body" xml:space="preserve"><value>Conservas la propiedad de lo que ingresas en la aplicación: tu perfil, tus servicios, tus mensajes y tus notas. Nos otorgas únicamente el permiso necesario para almacenarlo y mostrarlo a las personas a quienes lo diriges.</value></data>
+  <data name="Legal_Terms_Clause05_Body" xml:space="preserve"><value>Conservas la propiedad de lo que ingresas en la aplicación: tu perfil, tus servicios, tus mensajes y tus notas. Nos otorgas únicamente el permiso necesario para almacenarlo y mostrarlo a las personas a quienes lo diriges. Al subir una foto, un logotipo o imágenes de portafolio a tu vitrina, confirmas que te pertenecen o que tienes permiso para usarlas, y que toda persona identificable en ellas aceptó aparecer. Nos otorgas permiso para almacenarlas, volver a codificarlas, cambiar su tamaño y mostrarlas a los usuarios que abran tu vitrina o escaneen su código.</value></data>
   <data name="Legal_Terms_Clause06_Heading" xml:space="preserve"><value>6. Suspensión y eliminación</value></data>
-  <data name="Legal_Terms_Clause06_Body" xml:space="preserve"><value>Puedes eliminar tu cuenta en cualquier momento desde la pantalla Perfil. Podemos suspender o cerrar una cuenta que incumpla estos términos. Al eliminar tu cuenta, se eliminan tu perfil y tu correo electrónico de los registros de las personas con quienes tuviste relación; no se elimina el registro de las citas que esas personas hayan tenido.</value></data>
+  <data name="Legal_Terms_Clause06_Body" xml:space="preserve"><value>Puedes eliminar tu cuenta en cualquier momento desde la pantalla Perfil. Podemos suspender o cerrar una cuenta que incumpla estos términos. Al eliminar tu cuenta, se eliminan tu perfil y tu correo electrónico de los registros de las personas con quienes tuviste relación; no se elimina el registro de las citas que esas personas hayan tenido. Cualquier persona puede reportar una vitrina desde su menú Más opciones. Podemos quitar imágenes o textos que incumplan estos términos, u ocultar una vitrina, sin previo aviso. Para plantear una inquietud sobre el contenido, incluida una reclamación de que infringe tus derechos, escribe a {1}.</value></data>
   <data name="Legal_Terms_Clause07_Heading" xml:space="preserve"><value>7. Disponibilidad y exención de responsabilidad</value></data>
   <data name="Legal_Terms_Clause07_Body" xml:space="preserve"><value>La aplicación se proporciona tal como está. No prometemos que funcionará sin interrupciones ni errores, y no garantizamos que un profesional respetará una reserva ni que un cliente asistirá. Conserva una copia de cualquier información que no puedas permitirte perder.</value></data>
   <data name="Legal_Terms_Clause08_Heading" xml:space="preserve"><value>8. Limitación de responsabilidad</value></data>
@@ -62,15 +62,15 @@
   <data name="Legal_Privacy_Title" xml:space="preserve"><value>Política de privacidad</value></data>
   <data name="Legal_Privacy_Summary" xml:space="preserve"><value>Esta política explica qué datos recopila {0}, por qué los recopila, quién puede verlos y qué puedes hacer al respecto. Se aplica a la aplicación y al servicio que la sustenta.</value></data>
   <data name="Legal_Privacy_Clause01_Heading" xml:space="preserve"><value>1. Qué recopilamos</value></data>
-  <data name="Legal_Privacy_Clause01_Body" xml:space="preserve"><value>Datos de la cuenta que nos proporcionas: correo electrónico, nombre, apellido y, de manera opcional, teléfono. Contenido que creas: servicios, disponibilidad, citas, mensajes y notas. Datos de pago que conservamos: identificadores de cliente, método de pago, intento de pago y cuenta conectada de Stripe, marca y últimos cuatro dígitos de la tarjeta, importes, tarifas, estados y fechas. Stripe recopila directamente los datos completos de tarjetas, billeteras, identidad y cuenta bancaria del profesional; no recibimos ni almacenamos números completos de tarjeta, códigos de seguridad o números de cuenta bancaria. Los datos técnicos incluyen la zona horaria y un token de notificaciones push si las permites. No recopilamos tu ubicación, contactos ni fotos.</value></data>
+  <data name="Legal_Privacy_Clause01_Body" xml:space="preserve"><value>Datos de la cuenta que nos proporcionas: correo electrónico, nombre, apellido y, de manera opcional, teléfono. Contenido que creas: servicios, disponibilidad, citas, mensajes y notas. Datos de pago que conservamos: identificadores de cliente, método de pago, intento de pago y cuenta conectada de Stripe, marca y últimos cuatro dígitos de la tarjeta, importes, tarifas, estados y fechas. Stripe recopila directamente los datos completos de tarjetas, billeteras, identidad y cuenta bancaria del profesional; no recibimos ni almacenamos números completos de tarjeta, códigos de seguridad o números de cuenta bancaria. Los datos técnicos incluyen la zona horaria y un token de notificaciones push si las permites. Si eres profesional y creas tu vitrina, también guardamos la foto de perfil, el logotipo, las imágenes de portafolio y sus descripciones que subas. Cada imagen se vuelve a codificar en nuestros servidores y se eliminan sus metadatos, incluidos los datos de la cámara y la ubicación, antes de guardarla. Conservamos registros de visitas cuando un usuario con sesión iniciada abre una vitrina (quién y cuándo), para que el profesional sepa cuántas personas la vieron y un cliente que regresa vea lo nuevo; conteos anónimos de escaneos de códigos QR que no identifican a nadie; y los reportes que los usuarios envían sobre una vitrina, con el motivo y el detalle proporcionado. No recopilamos tu ubicación ni tus contactos, y las únicas fotos que recibimos son las que decides subir.</value></data>
   <data name="Legal_Privacy_Clause02_Heading" xml:space="preserve"><value>2. Para qué usamos tus datos</value></data>
   <data name="Legal_Privacy_Clause02_Body" xml:space="preserve"><value>Para crear y proteger tu cuenta, programar citas y recordatorios, guardar con consentimiento el método de pago del cliente, autorizar y cobrar reservas, pagar a profesionales mediante Stripe Connect, procesar cancelaciones, reembolsos y disputas, permitir la comunicación y notificar sobre reservas. No vendemos tus datos ni los usamos para publicidad.</value></data>
   <data name="Legal_Privacy_Clause03_Heading" xml:space="preserve"><value>3. Quién puede verlos</value></data>
-  <data name="Legal_Privacy_Clause03_Body" xml:space="preserve"><value>Un profesional puede ver el nombre, correo electrónico, número de teléfono e historial de citas de los clientes que reservan con ese profesional o se suscriben a sus servicios. Un cliente puede ver el perfil público, los servicios y los horarios disponibles de un profesional. Nadie más puede ver tus datos, salvo los proveedores de servicios indicados a continuación y nuestro personal cuando necesite acceder para operar el servicio o darte soporte.</value></data>
+  <data name="Legal_Privacy_Clause03_Body" xml:space="preserve"><value>Un profesional puede ver el nombre, correo electrónico, número de teléfono e historial de citas de los clientes que reservan con ese profesional o se suscriben a sus servicios. Un cliente puede ver el perfil público, los servicios y los horarios disponibles de un profesional. Cualquier usuario con sesión iniciada puede abrir la vitrina de un profesional (foto, logotipo, imágenes de portafolio y sus descripciones, frase y descripción), también mediante un código o enlace compartido. El profesional ve totales de escaneos, visitas y reservas, no quién escaneó. Nuestro personal revisa los reportes sobre una vitrina. Nadie más puede ver tus datos, salvo los proveedores de servicios indicados a continuación y nuestro personal cuando necesite acceder para operar el servicio o darte soporte.</value></data>
   <data name="Legal_Privacy_Clause04_Heading" xml:space="preserve"><value>4. Proveedores de servicios que usamos</value></data>
   <data name="Legal_Privacy_Clause04_Body" xml:space="preserve"><value>Servicios de alojamiento en la nube y almacenamiento de bases de datos; un proveedor de correo electrónico para enviar confirmaciones y restablecimientos de contraseña; un proveedor de notificaciones push para enviar notificaciones a tu dispositivo; y un procesador de pagos cuando se realiza un pago. Cada proveedor recibe únicamente lo necesario para realizar su función.</value></data>
   <data name="Legal_Privacy_Clause05_Heading" xml:space="preserve"><value>5. Durante cuánto tiempo conservamos tus datos</value></data>
-  <data name="Legal_Privacy_Clause05_Body" xml:space="preserve"><value>Mientras exista tu cuenta. Cuando eliminas tu cuenta, eliminamos tu perfil y quitamos tu nombre, correo electrónico y número de teléfono de los registros de las personas con quienes tuviste relación, para conservar su propio historial de citas sin identificarte. Los registros de auditoría y seguridad se conservan por un periodo limitado y no contienen tu correo electrónico.</value></data>
+  <data name="Legal_Privacy_Clause05_Body" xml:space="preserve"><value>Mientras exista tu cuenta. Las imágenes y descripciones de la vitrina se conservan hasta que las quitas o eliminas tu cuenta; los conteos anónimos de escaneos solo se conservan como totales. Cuando eliminas tu cuenta, eliminamos tu perfil y quitamos tu nombre, correo electrónico y número de teléfono de los registros de las personas con quienes tuviste relación, para conservar su propio historial de citas sin identificarte. Los registros de auditoría y seguridad se conservan por un periodo limitado y no contienen tu correo electrónico.</value></data>
   <data name="Legal_Privacy_Clause06_Heading" xml:space="preserve"><value>6. Tus opciones</value></data>
   <data name="Legal_Privacy_Clause06_Body" xml:space="preserve"><value>Puedes editar tu nombre y número de teléfono, cambiar tu avatar y desactivar las notificaciones push en el sistema operativo en cualquier momento. Puedes eliminar tu cuenta desde la pantalla Perfil y la eliminación entra en vigor de inmediato. No puedes cambiar tu correo electrónico porque este identifica tu cuenta.</value></data>
   <data name="Legal_Privacy_Clause07_Heading" xml:space="preserve"><value>7. Tus derechos</value></data>
@@ -1031,4 +1031,163 @@
   <data name="EmailVerification_CheckingCode" xml:space="preserve"><value>Verificando tu código de confirmación...</value></data>
   <data name="EmailVerification_InvalidCode" xml:space="preserve"><value>Este código de confirmación no es válido o ha vencido.</value></data>
   <data name="Registration_CheckEmailToast" xml:space="preserve"><value>Cuenta creada. Revisa tu correo para usar el botón o código de confirmación.</value></data>
+  <data name="ShowcaseError_UnsupportedFormat" xml:space="preserve"><value>Usa una foto JPEG, PNG o WebP.</value></data>
+  <data name="ShowcaseError_TooLarge" xml:space="preserve"><value>Esta foto es demasiado grande. Prueba con una más pequeña.</value></data>
+  <data name="ShowcaseError_TooManyPixels" xml:space="preserve"><value>Esta foto es demasiado grande. Prueba con una más pequeña.</value></data>
+  <data name="ShowcaseError_DimensionExceeded" xml:space="preserve"><value>Esta foto es demasiado grande. Prueba con una más pequeña.</value></data>
+  <data name="ShowcaseError_Undecodable" xml:space="preserve"><value>Este archivo no se pudo abrir como foto.</value></data>
+  <data name="ShowcaseError_UnknownMedia" xml:space="preserve"><value>Esa foto ya no está disponible. Súbela de nuevo.</value></data>
+  <data name="ShowcaseError_StorageUnavailable" xml:space="preserve"><value>Ahora no se pueden guardar fotos. Intenta de nuevo en unos minutos.</value></data>
+  <data name="ShowcaseError_PortfolioFull" xml:space="preserve"><value>Tu portafolio ya tiene 20 imágenes. Quita una para agregar otra.</value></data>
+  <data name="ShowcaseError_PortfolioChanged" xml:space="preserve"><value>Tu portafolio cambió en otro dispositivo. Lo volvimos a cargar; intenta de nuevo.</value></data>
+  <data name="ShowcaseError_NotFound" xml:space="preserve"><value>Este proveedor no está disponible.</value></data>
+  <data name="ShowcaseError_RateLimited" xml:space="preserve"><value>Demasiados intentos. Espera un momento e intenta de nuevo.</value></data>
+  <data name="ShowcaseError_Invalid" xml:space="preserve"><value>Algo en esa solicitud no fue aceptado. Revísalo e intenta de nuevo.</value></data>
+  <data name="ShowcaseError_Network" xml:space="preserve"><value>No se pudo conectar con AgendaMe. Revisa tu conexión e intenta de nuevo.</value></data>
+  <data name="ShowcaseError_Unknown" xml:space="preserve"><value>Algo salió mal. Intenta de nuevo.</value></data>
+  <data name="Showcase_Funnel_Zero" xml:space="preserve"><value>Nadie ha escaneado tu código todavía. Compártelo desde QR y compartir.</value></data>
+  <data name="Showcase_Funnel_ThisWeek" xml:space="preserve"><value>Esta semana</value></data>
+  <data name="Showcase_Funnel_LastDays" xml:space="preserve"><value>En los últimos {0} días</value></data>
+  <data name="Showcase_Funnel_Sentence" xml:space="preserve"><value>{0}, {1}, {2} y {3}.</value></data>
+  <data name="Showcase_Funnel_Scans_Zero" xml:space="preserve"><value>nadie escaneó tu código</value></data>
+  <data name="Showcase_Funnel_Scans_One" xml:space="preserve"><value>1 persona escaneó tu código</value></data>
+  <data name="Showcase_Funnel_Scans_Many" xml:space="preserve"><value>{0} personas escanearon tu código</value></data>
+  <data name="Showcase_Funnel_Opened_Zero" xml:space="preserve"><value>nadie abrió tu vitrina</value></data>
+  <data name="Showcase_Funnel_Opened_One" xml:space="preserve"><value>1 abrió tu vitrina</value></data>
+  <data name="Showcase_Funnel_Opened_Many" xml:space="preserve"><value>{0} abrieron tu vitrina</value></data>
+  <data name="Showcase_Funnel_Booked_Zero" xml:space="preserve"><value>nadie reservó</value></data>
+  <data name="Showcase_Funnel_Booked_One" xml:space="preserve"><value>1 reservó</value></data>
+  <data name="Showcase_Funnel_Booked_Many" xml:space="preserve"><value>{0} reservaron</value></data>
+  <data name="Showcase_CompletenessLabel" xml:space="preserve"><value>{0} de {1} listos</value></data>
+  <data name="Showcase_PortfolioCount" xml:space="preserve"><value>{0} de {1}</value></data>
+  <data name="Showcase_SeeWork" xml:space="preserve"><value>Ver el trabajo de {0}</value></data>
+  <data name="Showcase_SeeWorkNoName" xml:space="preserve"><value>Ver su trabajo</value></data>
+  <data name="Showcase_OpenedFromCode" xml:space="preserve"><value>Abierto desde el código de {0}</value></data>
+  <data name="Showcase_OpenedFromCodeNoName" xml:space="preserve"><value>Abierto desde el código de un proveedor</value></data>
+  <data name="Showcase_Hidden" xml:space="preserve"><value>{0} está oculto</value></data>
+  <data name="Showcase_HiddenNoName" xml:space="preserve"><value>Proveedor oculto</value></data>
+  <data name="Showcase_TileDescription" xml:space="preserve"><value>Foto {0} de {1}</value></data>
+  <data name="Showcase_TileDescriptionWithCaption" xml:space="preserve"><value>Foto {0} de {1}, {2}</value></data>
+  <data name="Showcase_NextSession" xml:space="preserve"><value>Tu próxima sesión: {0}</value></data>
+  <data name="Showcase_NextSessionWithService" xml:space="preserve"><value>Tu próxima sesión: {0} · {1}</value></data>
+  <data name="Showcase_ShareStepOne" xml:space="preserve"><value>1 · Escanea para descargar {0}</value></data>
+  <data name="Showcase_ShareStepTwo" xml:space="preserve"><value>2 · En la app, toca Escanear código — o escribe {0}</value></data>
+  <data name="General_Undo" xml:space="preserve"><value>Deshacer</value></data>
+  <data name="General_Keep" xml:space="preserve"><value>Conservar</value></data>
+  <data name="Showcase_TaglineEmpty" xml:space="preserve"><value>Aún no tienes frase: una línea sobre lo que haces.</value></data>
+  <data name="Showcase_AboutEmpty" xml:space="preserve"><value>Aún no hay nada sobre ti. Cuenta a tus clientes cómo trabajas.</value></data>
+  <data name="Showcase_PickFailed" xml:space="preserve"><value>No se pudo abrir esa foto. Prueba con otra.</value></data>
+  <data name="Showcase_TaglineTooLong" xml:space="preserve"><value>Tu frase es demasiado larga: máximo {0} caracteres.</value></data>
+  <data name="Showcase_AboutTooLong" xml:space="preserve"><value>Tu descripción es demasiado larga: máximo {0} caracteres.</value></data>
+  <data name="Showcase_CaptionTooLong" xml:space="preserve"><value>Esa descripción es demasiado larga: máximo {0} caracteres.</value></data>
+  <data name="Showcase_SelfReason" xml:space="preserve"><value>Esta es tu vitrina. Tus clientes ven aquí Reservar, Suscribirse y Mensaje.</value></data>
+  <data name="Showcase_CustomersOnlyReason" xml:space="preserve"><value>Reservar, suscribirse y enviar mensajes es para cuentas de cliente.</value></data>
+  <data name="Showcase_SubscribeToMessage" xml:space="preserve"><value>Suscríbete para enviar un mensaje.</value></data>
+  <data name="Showcase_Subscribe" xml:space="preserve"><value>Suscribirse</value></data>
+  <data name="Showcase_Unsubscribe" xml:space="preserve"><value>Cancelar suscripción</value></data>
+  <data name="Showcase_ContactUnavailable" xml:space="preserve"><value>No se pudo contactar a este proveedor ahora. Inténtalo desde tu lista de proveedores.</value></data>
+  <data name="Error_Subscribe" xml:space="preserve"><value>No se pudo suscribir. Inténtalo de nuevo.</value></data>
+  <data name="Error_Unsubscribe" xml:space="preserve"><value>No se pudo cancelar la suscripción. Inténtalo de nuevo.</value></data>
+  <data name="Portfolio_Title" xml:space="preserve"><value>Portafolio</value></data>
+  <data name="Portfolio_MakeCover" xml:space="preserve"><value>Usar como portada</value></data>
+  <data name="Portfolio_MoveEarlier" xml:space="preserve"><value>Mover antes</value></data>
+  <data name="Portfolio_MoveLater" xml:space="preserve"><value>Mover después</value></data>
+  <data name="Portfolio_EditCaption" xml:space="preserve"><value>Editar descripción</value></data>
+  <data name="Portfolio_Remove" xml:space="preserve"><value>Quitar</value></data>
+  <data name="Portfolio_Removed" xml:space="preserve"><value>Se quitó de tu portafolio</value></data>
+  <data name="Portfolio_Add" xml:space="preserve"><value>Agregar fotos</value></data>
+  <data name="Portfolio_Full" xml:space="preserve"><value>Tu portafolio está lleno. Quita una foto para agregar otra.</value></data>
+  <data name="Portfolio_Empty" xml:space="preserve"><value>Aún no hay fotos. Agrega hasta 20 de tus mejores trabajos.</value></data>
+  <data name="Portfolio_Hint" xml:space="preserve"><value>La primera foto es tu portada.</value></data>
+  <data name="Portfolio_Uploading" xml:space="preserve"><value>Subiendo…</value></data>
+  <data name="Portfolio_Discard" xml:space="preserve"><value>Descartar</value></data>
+  <data name="Portfolio_Cover" xml:space="preserve"><value>Portada</value></data>
+  <data name="Portfolio_NewBadge" xml:space="preserve"><value>NUEVO</value></data>
+  <data name="Portfolio_CaptionPrompt" xml:space="preserve"><value>Descripción de la foto</value></data>
+  <data name="Portfolio_CaptionPlaceholder" xml:space="preserve"><value>Describe esta pieza</value></data>
+  <data name="Portfolio_MoreOptions" xml:space="preserve"><value>Más opciones</value></data>
+  <data name="Portfolio_RetryUpload" xml:space="preserve"><value>Reintentar subida</value></data>
+  <data name="MyShowcase_Title" xml:space="preserve"><value>Mi vitrina</value></data>
+  <data name="MyShowcase_Subtitle" xml:space="preserve"><value>Lo que tus clientes ven antes de reservar.</value></data>
+  <data name="MyShowcase_YouCard" xml:space="preserve"><value>Tú</value></data>
+  <data name="MyShowcase_WorkCard" xml:space="preserve"><value>Tu trabajo</value></data>
+  <data name="MyShowcase_ShareCard" xml:space="preserve"><value>Compartir</value></data>
+  <data name="MyShowcase_EditPhotoLogo" xml:space="preserve"><value>Foto y logotipo</value></data>
+  <data name="MyShowcase_EditText" xml:space="preserve"><value>Frase y descripción</value></data>
+  <data name="MyShowcase_ManagePortfolio" xml:space="preserve"><value>Administrar portafolio</value></data>
+  <data name="MyShowcase_PortfolioPrompt" xml:space="preserve"><value>Muestra tu trabajo: tus clientes pueden verlo antes de reservar.</value></data>
+  <data name="MyShowcase_OpenShare" xml:space="preserve"><value>QR y compartir</value></data>
+  <data name="MyShowcase_Preview" xml:space="preserve"><value>Ver como cliente</value></data>
+  <data name="MyShowcase_ShowQr" xml:space="preserve"><value>Mostrar mi código QR</value></data>
+  <data name="MyShowcase_YourCode" xml:space="preserve"><value>Tu código: {0}</value></data>
+  <data name="MyShowcase_NoCodeYet" xml:space="preserve"><value>Abre QR y compartir para obtener tu código.</value></data>
+  <data name="MyShowcase_Complete" xml:space="preserve"><value>Tu vitrina está completa.</value></data>
+  <data name="PhotoLogo_PhotoHeading" xml:space="preserve"><value>Foto de perfil</value></data>
+  <data name="PhotoLogo_PhotoHint" xml:space="preserve"><value>Una foto clara de ti. Reemplaza tu avatar en toda la app.</value></data>
+  <data name="PhotoLogo_LogoHeading" xml:space="preserve"><value>Logotipo</value></data>
+  <data name="PhotoLogo_LogoHint" xml:space="preserve"><value>Se muestra como insignia en tu vitrina.</value></data>
+  <data name="PhotoLogo_Choose" xml:space="preserve"><value>Elegir foto</value></data>
+  <data name="PhotoLogo_Replace" xml:space="preserve"><value>Reemplazar</value></data>
+  <data name="PhotoLogo_Remove" xml:space="preserve"><value>Quitar</value></data>
+  <data name="PhotoLogo_Saving" xml:space="preserve"><value>Guardando…</value></data>
+  <data name="ShowcaseText_TaglineLabel" xml:space="preserve"><value>Frase</value></data>
+  <data name="ShowcaseText_TaglinePlaceholder" xml:space="preserve"><value>p. ej. Tatuajes de línea fina en la Condesa</value></data>
+  <data name="ShowcaseText_AboutLabel" xml:space="preserve"><value>Acerca de</value></data>
+  <data name="ShowcaseText_AboutPlaceholder" xml:space="preserve"><value>Qué haces, cómo trabajas y qué esperar.</value></data>
+  <data name="Action_ShowcaseSaved" xml:space="preserve"><value>Vitrina guardada.</value></data>
+  <data name="Share_ImageFailed" xml:space="preserve"><value>No se pudo crear la imagen. Inténtalo de nuevo.</value></data>
+  <data name="Share_Preparing" xml:space="preserve"><value>Preparando imagen…</value></data>
+  <data name="Share_CodeLabel" xml:space="preserve"><value>Tu código</value></data>
+  <data name="Share_Instructions" xml:space="preserve"><value>Tus clientes lo escanean en AgendaMe o escriben el código.</value></data>
+  <data name="Share_ShareAs" xml:space="preserve"><value>Compartir como imagen</value></data>
+  <data name="Share_Story" xml:space="preserve"><value>Historia</value></data>
+  <data name="Share_Square" xml:space="preserve"><value>Publicación</value></data>
+  <data name="Share_Card" xml:space="preserve"><value>Tarjeta</value></data>
+  <data name="Share_Share" xml:space="preserve"><value>Compartir</value></data>
+  <data name="Share_QrDescription" xml:space="preserve"><value>Tu código QR</value></data>
+  <data name="Scan_Title" xml:space="preserve"><value>Escanear código</value></data>
+  <data name="Scan_Hint" xml:space="preserve"><value>Apunta la cámara al código de AgendaMe de un proveedor.</value></data>
+  <data name="Scan_TypeInstead" xml:space="preserve"><value>Escribir el código</value></data>
+  <data name="Scan_UseCamera" xml:space="preserve"><value>Escanear con la cámara</value></data>
+  <data name="Scan_CodePlaceholder" xml:space="preserve"><value>Código de 6 caracteres</value></data>
+  <data name="Scan_Open" xml:space="preserve"><value>Abrir vitrina</value></data>
+  <data name="Scan_CameraDenied" xml:space="preserve"><value>El acceso a la cámara está desactivado. Actívalo en Ajustes para escanear, o escribe el código.</value></data>
+  <data name="Scan_OpenSettings" xml:space="preserve"><value>Abrir Ajustes</value></data>
+  <data name="Scan_CameraUnavailable" xml:space="preserve"><value>El escaneo no está disponible en este dispositivo. Escribe el código.</value></data>
+  <data name="Scan_Resolving" xml:space="preserve"><value>Abriendo…</value></data>
+  <data name="Scan_NotAnAgendaMeCode" xml:space="preserve"><value>Ese no es un código de AgendaMe</value></data>
+  <data name="Scan_InvalidCode" xml:space="preserve"><value>Los códigos tienen 6 letras y números, como K7Q 2X9.</value></data>
+  <data name="Scan_CodeNotFound" xml:space="preserve"><value>Ningún proveedor tiene ese código. Revísalo e inténtalo de nuevo.</value></data>
+  <data name="ProviderShowcase_Title" xml:space="preserve"><value>Vitrina</value></data>
+  <data name="ProviderShowcase_Work" xml:space="preserve"><value>Trabajo</value></data>
+  <data name="ProviderShowcase_Services" xml:space="preserve"><value>Servicios</value></data>
+  <data name="ProviderShowcase_Book" xml:space="preserve"><value>Reservar</value></data>
+  <data name="ProviderShowcase_Empty" xml:space="preserve"><value>Aún no hay nada aquí. Los servicios de abajo se pueden reservar.</value></data>
+  <data name="ProviderShowcase_NetworkError" xml:space="preserve"><value>No se pudo cargar esta vitrina. Revisa tu conexión e inténtalo de nuevo.</value></data>
+  <data name="ProviderShowcase_Report" xml:space="preserve"><value>Reportar</value></data>
+  <data name="ProviderShowcase_Hide" xml:space="preserve"><value>Ocultar proveedor</value></data>
+  <data name="ProviderShowcase_MoreOptions" xml:space="preserve"><value>Más opciones</value></data>
+  <data name="ProviderShowcase_PhotoDescription" xml:space="preserve"><value>Foto de {0}</value></data>
+  <data name="ShowcaseReport_Title" xml:space="preserve"><value>¿Por qué lo reportas?</value></data>
+  <data name="ShowcaseReport_DetailPrompt" xml:space="preserve"><value>Cuéntanos más</value></data>
+  <data name="ShowcaseReport_DetailOptional" xml:space="preserve"><value>¿Algo más que debamos saber? (opcional)</value></data>
+  <data name="ShowcaseReport_Send" xml:space="preserve"><value>Enviar</value></data>
+  <data name="ShowcaseReport_DetailRequired" xml:space="preserve"><value>Cuéntanos qué pasa para poder revisarlo.</value></data>
+  <data name="ShowcaseReport_DetailTooLong" xml:space="preserve"><value>Escribe como máximo {0} caracteres.</value></data>
+  <data name="ShowcaseReport_Thanks" xml:space="preserve"><value>Gracias, lo revisaremos.</value></data>
+  <data name="ShowcaseReport_Failed" xml:space="preserve"><value>No se pudo enviar tu reporte. Inténtalo de nuevo.</value></data>
+  <data name="ShowcaseReport_Reason_Inappropriate" xml:space="preserve"><value>Contenido inapropiado</value></data>
+  <data name="ShowcaseReport_Reason_NotTheirWork" xml:space="preserve"><value>No es trabajo de este proveedor</value></data>
+  <data name="ShowcaseReport_Reason_Spam" xml:space="preserve"><value>Spam o fraude</value></data>
+  <data name="ShowcaseReport_Reason_Other" xml:space="preserve"><value>Otro motivo</value></data>
+  <data name="ShowcaseHide_Confirm" xml:space="preserve"><value>¿Ocultar a {0}? No aparecerá en tu lista de proveedores ni al escanear. Puedes deshacerlo cuando quieras en Más → Proveedores ocultos.</value></data>
+  <data name="ShowcaseHide_ThisProvider" xml:space="preserve"><value>este proveedor</value></data>
+  <data name="HiddenProviders_Title" xml:space="preserve"><value>Proveedores ocultos</value></data>
+  <data name="HiddenProviders_Hint" xml:space="preserve"><value>Los proveedores ocultos no aparecen en tu lista de proveedores ni al escanear.</value></data>
+  <data name="HiddenProviders_Empty" xml:space="preserve"><value>No has ocultado a ningún proveedor.</value></data>
+  <data name="HiddenProviders_Unhide" xml:space="preserve"><value>Mostrar de nuevo</value></data>
+  <data name="HiddenProviders_Unhidden" xml:space="preserve"><value>{0} vuelve a estar visible.</value></data>
+  <data name="HiddenProviders_UnhiddenNoName" xml:space="preserve"><value>El proveedor vuelve a estar visible.</value></data>
+  <data name="Dashboard_FindProvider" xml:space="preserve"><value>¿Encontraste un proveedor? Escanea su código o escríbelo.</value></data>
+  <data name="Showcase_TypeCode" xml:space="preserve"><value>Escribir código</value></data>
 </root>

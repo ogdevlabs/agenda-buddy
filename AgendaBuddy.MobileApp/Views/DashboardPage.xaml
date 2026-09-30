@@ -61,6 +61,24 @@
                             </VerticalStackLayout>
                         </Grid>
 
+                        <!-- Customer-only, until they have a provider: the way in to one. -->
+                        <Frame Style="{StaticResource CardCompact}"
+                               Margin="16,12,16,0"
+                               IsVisible="{Binding ShowFindProviderCard}"
+                               AutomationId="DashboardFindProviderCard">
+                            <Frame.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding ScanProviderCommand}" />
+                            </Frame.GestureRecognizers>
+                            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                                <Label Grid.Column="0" Text="&#x25A3;" FontSize="22"
+                                       TextColor="{StaticResource Primary}" VerticalOptions="Center" />
+                                <Label Grid.Column="1" Text="{Binding FindProviderLabel}"
+                                       Style="{StaticResource Body}" VerticalOptions="Center" />
+                                <Label Grid.Column="2" Text="&#x203A;" FontSize="22"
+                                       TextColor="{StaticResource iOSGray}" VerticalOptions="Center" />
+                            </Grid>
+                        </Frame>
+
                         <!-- Quiet operational metrics: white surfaces, with color reserved for the numbers. -->
                         <Grid ColumnDefinitions="*,*"
                               ColumnSpacing="10"

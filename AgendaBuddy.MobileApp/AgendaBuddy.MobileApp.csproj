@@ -77,6 +77,10 @@
              PushNotificationService catches that - so a missing initialisation is a silently dead push path
              rather than a crash. Same TFM condition as CloudMessaging above. -->
         <PackageReference Include="Plugin.Firebase.Core" Version="3.0.0" Condition="'$(UseMaui)' == 'true'" />
+        <!-- Pure C#, no System.Drawing: the QR matrix is generated on-device and drawn by the share composer. -->
+        <PackageReference Include="QRCoder" Version="1.8.0" />
+        <!-- The in-app scanner, wrapped behind IQrScanner so it can be swapped for a platform reader. -->
+        <PackageReference Include="ZXing.Net.Maui.Controls" Version="0.10.4" Condition="'$(UseMaui)' == 'true'" />
         <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.0" />
         <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.0" />
         <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.0" Condition="'$(Configuration)' == 'Debug'" />

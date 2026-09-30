@@ -29,6 +29,38 @@ public partial class Avatar : ContentView
     public static readonly BindableProperty SourceProperty =
         BindableProperty.Create(nameof(Source), typeof(string), typeof(Avatar), defaultValue: string.Empty);
 
+    /// <summary>The provider's uploaded photo. When it and <see cref="ProviderRef"/> are both known it supersedes the mark.</summary>
+    public static readonly BindableProperty PhotoHashProperty =
+        BindableProperty.Create(nameof(PhotoHash), typeof(string), typeof(Avatar), null,
+            propertyChanged: OnPhotoChanged);
+
+    public static readonly BindableProperty ProviderRefProperty =
+        BindableProperty.Create(nameof(ProviderRef), typeof(string), typeof(Avatar), null,
+            propertyChanged: OnPhotoChanged);
+
+    public string? PhotoHash
+    {
+        get => (string?)GetValue(PhotoHashProperty);
+        set => SetValue(PhotoHashProperty, value);
+    }
+
+    public string? ProviderRef
+    {
+        get => (string?)GetValue(ProviderRefProperty);
+        set => SetValue(ProviderRefProperty, value);
+    }
+
+    public bool HasPhoto => Infrastructure.AuthenticatedImageSource.PhotoSupersedesMark(ProviderRef, PhotoHash);
+
+    public bool HasMark => !HasPhoto;
+
+    private static void OnPhotoChanged(BindableObject bindable, object oldValue, object newValue)
+    {
+        var avatar = (Avatar)bindable;
+        avatar.OnPropertyChanged(nameof(HasPhoto));
+        avatar.OnPropertyChanged(nameof(HasMark));
+    }
+
     public double Size
     {
         get => (double)GetValue(SizeProperty);

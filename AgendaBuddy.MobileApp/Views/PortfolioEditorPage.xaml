@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The provider's portfolio editor. The grid is the page's only scroller, so it virtualises and the Add action
+    stays pinned under it. Each tile carries its own upload state: one failed upload costs one photo, retried
+    from the bytes it kept, never the batch.
+-->
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:strings="clr-namespace:AgendaBuddy.MobileApp.Resources.Strings"
+             xmlns:controls="clr-namespace:AgendaBuddy.MobileApp.Controls"
+             xmlns:models="clr-namespace:AgendaBuddy.MobileApp.Models"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             x:Class="AgendaBuddy.MobileApp.Views.PortfolioEditorPage"
+             x:Name="Page"
+             Title="{x:Static strings:AppResources.Portfolio_Title}"
+             BackgroundColor="{StaticResource BackgroundPage}"
+             Shell.NavBarIsVisible="False">
+
+    <ContentPage.Resources>
+        <toolkit:InvertedBoolConverter x:Key="InvertedBoolConverter" />
+    </ContentPage.Resources>
+
+    <Grid RowDefinitions="Auto,Auto,*,Auto">
+
+        <controls:BrandHeader Grid.Row="0" />
+
+        <VerticalStackLayout Grid.Row="1" Padding="20,16,20,8" Spacing="6">
+            <Grid ColumnDefinitions="*,Auto">
+                <Label Grid.Column="0" Text="{x:Static strings:AppResources.Portfolio_Title}" Style="{StaticResource TitleMedium}" />
+                <Label Grid.Column="1" Text="{Binding CountLabel}" FontSize="14" VerticalOptions="Center"
+                       TextColor="{StaticResource TextSecondary}" AutomationId="PortfolioCountLabel" />
+            </Grid>
+            <Label Text="{x:Static strings:AppResources.Portfolio_Hint}" Style="{StaticResource BodySecondary}" />
+            <Frame Style="{StaticResource ErrorBannerStyle}" IsVisible="{Binding HasError}" Margin="0">
+                <Label Text="{Binding ErrorMessage}" TextColor="{StaticResource Error}" FontSize="13"
+                       AutomationId="PortfolioError" />
+            </Frame>
+            <ActivityIndicator IsRunning="{Binding IsLoading}" IsVisible="{Binding IsLoading}"
+                               Color="{StaticResource Primary}" HorizontalOptions="Center" />
+        </VerticalStackLayout>
+
+        <CollectionView Grid.Row="2"
+                        ItemsSource="{Binding Tiles}"
+                        Margin="16,0"
+                        SelectionMode="None"
+                        AutomationId="PortfolioEditorGrid">
+            <CollectionView.ItemsLayout>
+                <GridItemsLayout Orientation="Vertical" Span="3"
+                                 HorizontalItemSpacing="6" VerticalItemSpacing="6" />
+            </CollectionView.ItemsLayout>
+            <CollectionView.EmptyView>
+                <Label Text="{x:Static strings:AppResources.Portfolio_Empty}" Margin="8,24"
+                       HorizontalTextAlignment="Center" Style="{StaticResource BodySecondary}" />
+            </CollectionView.EmptyView>
+            <CollectionView.ItemTemplate>
+                <DataTemplate x:DataType="models:PortfolioTile">
+                    <Grid HeightRequest="112" BackgroundColor="{StaticResource Divider}"
+                          SemanticProperties.Description="{Binding Description}">
+
+                        <controls:AuthenticatedImage ProviderRef="{Binding ProviderRef}" Hash="{Binding Hash}"
+                                                     IsVisible="{Binding HasImage}" />
+
+                        <!-- Cover marker on the first image. -->
+                        <Border IsVisible="{Binding IsCover}" BackgroundColor="{StaticResource Primary}"
+                                StrokeThickness="0" Padding="6,2" Margin="4"
+                                HorizontalOptions="Start" VerticalOptions="Start">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="6" />
+                            </Border.StrokeShape>
+                            <Label Text="{x:Static strings:AppResources.Portfolio_Cover}" FontSize="10"
+                                   FontAttributes="Bold" TextColor="White" />
+                        </Border>
+
+                        <!-- Uploading -->
+                        <Grid IsVisible="{Binding IsUploading}" BackgroundColor="#80000000">
+                            <VerticalStackLayout VerticalOptions="Center" Spacing="4">
+                                <ActivityIndicator IsRunning="{Binding IsUploading}" Color="White" />
+                                <Label Text="{x:Static strings:AppResources.Portfolio_Uploading}" FontSize="11"
+                                       TextColor="White" HorizontalTextAlignment="Center" />
+                            </VerticalStackLayout>
+                        </Grid>
+
+                        <!-- Failed: retry from the kept bytes, or let it go. -->
+                        <Grid IsVisible="{Binding IsFailed}" BackgroundColor="#CC000000" Padding="4"
+                              RowDefinitions="*,Auto,Auto" RowSpacing="2">
+                            <Label Grid.Row="0" Text="{Binding ErrorText}" FontSize="10" TextColor="White"
+                                   LineBreakMode="TailTruncation" MaxLines="3" HorizontalTextAlignment="Center"
+                                   VerticalOptions="Center" />
+                            <Button Grid.Row="1" Text="{x:Static strings:AppResources.Portfolio_RetryUpload}"
+                                    FontSize="11" Padding="4,0" HeightRequest="28" CornerRadius="6"
+                                    BackgroundColor="White" TextColor="{StaticResource Primary}"
+                                    Command="{Binding Source={x:Reference Page}, Path=BindingContext.RetryCommand}"
+                                    CommandParameter="{Binding .}" />
+                            <Button Grid.Row="2" Text="{x:Static strings:AppResources.Portfolio_Discard}"
+                                    FontSize="11" Padding="4,0" HeightRequest="28" CornerRadius="6"
+                                    BackgroundColor="Transparent" TextColor="White"
+                                    Command="{Binding Source={x:Reference Page}, Path=BindingContext.DiscardCommand}"
+                                    CommandParameter="{Binding .}" />
+                        </Grid>
+
+                        <!-- Icon-only menu; its description names it. -->
+                        <Button Text="&#x22EF;" FontSize="16" Padding="0"
+                                WidthRequest="32" HeightRequest="32" CornerRadius="16" Margin="4"
+                                HorizontalOptions="End" VerticalOptions="Start"
+                                BackgroundColor="#99000000" TextColor="White"
+                                IsVisible="{Binding IsReady}"
+                                SemanticProperties.Description="{x:Static strings:AppResources.Portfolio_MoreOptions}"
+                                Command="{Binding Source={x:Reference Page}, Path=BindingContext.OpenMenuCommand}"
+                                CommandParameter="{Binding .}" />
+                    </Grid>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <VerticalStackLayout Grid.Row="3" Padding="20,8,20,20" Spacing="6">
+            <Label Text="{x:Static strings:AppResources.Portfolio_Full}" HorizontalOptions="Center"
+                   FontSize="12" TextColor="{StaticResource TextMuted}" IsVisible="{Binding IsFull}" />
+            <controls:SafeButton Style="{StaticResource PrimaryButton}"
+                                 Text="{x:Static strings:AppResources.Portfolio_Add}"
+                                 Command="{Binding AddCommand}"
+                                 IsVisible="{Binding CanAdd}"
+                                 AutomationId="AddPortfolioPhotosButton" />
+        </VerticalStackLayout>
+
+    </Grid>
+
+</ContentPage>

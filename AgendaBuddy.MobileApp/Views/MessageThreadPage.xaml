@@ -20,15 +20,26 @@
 
         <Grid Grid.Row="1" RowDefinitions="Auto,*,Auto">
 
-            <!-- Error banner -->
-            <Frame Grid.Row="0"
-                   Style="{StaticResource ErrorBannerStyle}"
-                   IsVisible="{Binding HasError}"
-                   Margin="16,8">
-                <Label Text="{Binding ErrorMessage}"
-                       TextColor="{StaticResource Error}"
-                       FontSize="14" />
-            </Frame>
+            <VerticalStackLayout Grid.Row="0">
+                <!-- Customer-only: the provider's work, from the thread with them. -->
+                <controls:ProviderWorkStrip x:Name="WorkStrip"
+                                            Margin="16,8,16,0"
+                                            ProviderRef="{Binding ProviderRef}"
+                                            PhotoHash="{Binding PhotoHash}"
+                                            Label="{Binding SeeWorkLabel}"
+                                            Command="{Binding OpenCommand}"
+                                            IsVisible="{Binding HasShowcase}"
+                                            AutomationId="MessageProviderWorkStrip" />
+
+                <!-- Error banner -->
+                <Frame Style="{StaticResource ErrorBannerStyle}"
+                       IsVisible="{Binding HasError}"
+                       Margin="16,8">
+                    <Label Text="{Binding ErrorMessage}"
+                           TextColor="{StaticResource Error}"
+                           FontSize="14" />
+                </Frame>
+            </VerticalStackLayout>
 
             <!-- Loading indicator -->
             <ActivityIndicator Grid.Row="1"

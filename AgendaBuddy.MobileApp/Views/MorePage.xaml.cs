@@ -1,4 +1,5 @@
 #if MOBILE
+using AgendaBuddy.MobileApp.Services;
 using AgendaBuddy.MobileApp.ViewModels;
 
 namespace AgendaBuddy.MobileApp.Views;
@@ -6,11 +7,13 @@ namespace AgendaBuddy.MobileApp.Views;
 public partial class MorePage : ContentPage
 {
     private readonly NotificationBadgeViewModel _badge;
+    private readonly IUserSessionService _session;
 
-    public MorePage(NotificationBadgeViewModel badge)
+    public MorePage(NotificationBadgeViewModel badge, IUserSessionService session)
     {
         InitializeComponent();
         _badge = badge;
+        _session = session;
         BindingContext = _badge;
     }
 
@@ -21,6 +24,8 @@ public partial class MorePage : ContentPage
     protected override void OnAppearing()
     {
         base.OnAppearing();
+        HiddenProvidersRow.IsVisible = _session.IsCustomer;
+        HiddenProvidersDivider.IsVisible = _session.IsCustomer;
         _ = _badge.RefreshAsync();
     }
 
@@ -32,6 +37,16 @@ public partial class MorePage : ContentPage
     private async void OnProfileClicked(object? sender, TappedEventArgs e)
     {
         await Shell.Current.GoToAsync("profile");
+    }
+
+    private async void OnScanClicked(object? sender, TappedEventArgs e)
+    {
+        await Shell.Current.GoToAsync("scanProvider");
+    }
+
+    private async void OnHiddenProvidersClicked(object? sender, TappedEventArgs e)
+    {
+        await Shell.Current.GoToAsync("hiddenProviders");
     }
 }
 #endif

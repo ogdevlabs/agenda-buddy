@@ -24,6 +24,17 @@ public class PinnedActionTest
         // An action that operates on the whole list must not scroll away with the list.
         { "NotificationsPage.xaml", "MarkAllReadButton" },
         { "NotificationsPage.xaml", "UnreadFilterButton" },
+        { "ShowcaseTextPage.xaml", "SaveShowcaseTextButton" },
+        { "PortfolioEditorPage.xaml", "AddPortfolioPhotosButton" },
+        { "ShowcaseSharePage.xaml", "ShareStoryButton" },
+        { "ShowcaseSharePage.xaml", "ShareSquareButton" },
+        { "ShowcaseSharePage.xaml", "ShareCardButton" },
+        { "ScanProviderPage.xaml", "ScanOpenButton" },
+        { "ScanProviderPage.xaml", "ScanTypeInsteadButton" },
+        { "ScanProviderPage.xaml", "ScanUseCameraButton" },
+        { "ProviderShowcasePage.xaml", "ShowcaseBookButton" },
+        { "ProviderShowcasePage.xaml", "ShowcaseSubscribeButton" },
+        { "ProviderShowcasePage.xaml", "ShowcaseMessageButton" },
     };
 
     [Theory]

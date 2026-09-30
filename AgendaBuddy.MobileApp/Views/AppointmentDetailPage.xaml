@@ -121,6 +121,15 @@
                                        TextColor="{StaticResource TextPrimary}" />
                             </Grid>
 
+                            <!-- Customer-only: the provider's work, one tap from the session with them. -->
+                            <controls:ProviderWorkStrip x:Name="WorkStrip"
+                                                        ProviderRef="{Binding ProviderRef}"
+                                                        PhotoHash="{Binding PhotoHash}"
+                                                        Label="{Binding SeeWorkLabel}"
+                                                        Command="{Binding OpenCommand}"
+                                                        IsVisible="{Binding HasShowcase}"
+                                                        AutomationId="AppointmentProviderWorkStrip" />
+
                             <!-- Date and time on one line each, no tile. -->
                             <VerticalStackLayout Spacing="2">
                                 <Label Text="{Binding Appointment.ScheduledAt, StringFormat='{0:dddd d MMMM}'}"

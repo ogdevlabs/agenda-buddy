@@ -79,6 +79,8 @@ public partial class CustomersViewModel : ObservableObject
 
     public event EventHandler<CustomerSummary>? MessageRequested;
 
+    public event EventHandler<Infrastructure.ShowcaseRequestedEventArgs>? ShowcaseRequested;
+
     public CustomersViewModel(ICustomerApiService customerApiService, IProviderApiService providerApiService, IUserSessionService session)
     {
         _customerApiService = customerApiService;
@@ -272,6 +274,16 @@ public partial class CustomersViewModel : ObservableObject
     [RelayCommand]
     private void Message(CustomerSummary contact) =>
         MessageRequested?.Invoke(this, contact);
+
+    /// <summary>Opens a provider's showcase from the directory. A row with no showcase id offers no link.</summary>
+    [RelayCommand]
+    private void OpenShowcase(CustomerSummary? contact)
+    {
+        if (contact is null || !contact.HasShowcase)
+            return;
+        ShowcaseRequested?.Invoke(this, new Infrastructure.ShowcaseRequestedEventArgs(
+            contact.ProviderRef, contact.Email, Routing.ShowcaseSource.Directory));
+    }
 
     [RelayCommand]
     private void Book(CustomerSummary contact) =>

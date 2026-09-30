@@ -18,6 +18,7 @@ public partial class DashboardPage : ContentPage
         BindingContext = _viewModel;
 
         _viewModel.AppointmentSelected += OnAppointmentSelected;
+        _viewModel.ScanProviderRequested += OnScanProviderRequested;
     }
 
     protected override void OnAppearing()
@@ -46,6 +47,9 @@ public partial class DashboardPage : ContentPage
 
         await Shell.Current.GoToAsync(AppointmentNavigation.Route, nav);
     }
+
+    private async void OnScanProviderRequested(object? sender, EventArgs e) =>
+        await Shell.Current.GoToAsync("scanProvider");
 
     private async void OnLogoutClicked(object? sender, EventArgs e)
     {

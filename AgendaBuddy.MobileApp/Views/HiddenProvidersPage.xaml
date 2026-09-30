@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The providers this customer has hidden from the directory, each with its own way back. Reached from More.
+-->
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:strings="clr-namespace:AgendaBuddy.MobileApp.Resources.Strings"
+             xmlns:controls="clr-namespace:AgendaBuddy.MobileApp.Controls"
+             xmlns:models="clr-namespace:AgendaBuddy.MobileApp.Models"
+             x:Class="AgendaBuddy.MobileApp.Views.HiddenProvidersPage"
+             x:Name="Page"
+             Title="{x:Static strings:AppResources.HiddenProviders_Title}"
+             BackgroundColor="{StaticResource BackgroundPage}"
+             Shell.NavBarIsVisible="False">
+
+    <Grid RowDefinitions="Auto,Auto,*">
+
+        <controls:BrandHeader Grid.Row="0" />
+
+        <VerticalStackLayout Grid.Row="1" Padding="20,16,20,8" Spacing="8">
+            <Label Text="{x:Static strings:AppResources.HiddenProviders_Title}" Style="{StaticResource TitleMedium}" />
+            <Label Text="{x:Static strings:AppResources.HiddenProviders_Hint}" Style="{StaticResource BodySecondary}" />
+            <Frame Style="{StaticResource ErrorBannerStyle}" IsVisible="{Binding HasError}" Margin="0">
+                <Label Text="{Binding ErrorMessage}" TextColor="{StaticResource Error}" FontSize="13"
+                       AutomationId="HiddenProvidersError" />
+            </Frame>
+            <ActivityIndicator IsRunning="{Binding IsLoading}" IsVisible="{Binding IsLoading}"
+                               Color="{StaticResource Primary}" HorizontalOptions="Center" />
+        </VerticalStackLayout>
+
+        <RefreshView Grid.Row="2" Command="{Binding RefreshCommand}" IsRefreshing="{Binding IsRefreshing}">
+            <CollectionView ItemsSource="{Binding Providers}" Margin="20,0,20,20"
+                            AutomationId="HiddenProvidersList">
+                <CollectionView.EmptyView>
+                    <Label Text="{x:Static strings:AppResources.HiddenProviders_Empty}" Style="{StaticResource BodySecondary}"
+                           IsVisible="{Binding IsEmpty}" Margin="0,16" />
+                </CollectionView.EmptyView>
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="models:HiddenProvider">
+                        <Frame Style="{StaticResource CardCompact}" Margin="0,0,0,8">
+                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                                <Label Grid.Column="0" Text="{Binding FullName}" FontSize="15" FontAttributes="Bold"
+                                       TextColor="{StaticResource TextPrimary}" VerticalOptions="Center" />
+                                <controls:SafeButton Grid.Column="1" Style="{StaticResource SecondaryButton}"
+                                                     Text="{x:Static strings:AppResources.HiddenProviders_Unhide}"
+                                                     Command="{Binding Source={x:Reference Page}, Path=BindingContext.UnhideCommand}"
+                                                     CommandParameter="{Binding .}"
+                                                     AutomationId="HiddenProvidersUnhideButton" />
+                            </Grid>
+                        </Frame>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </RefreshView>
+
+    </Grid>
+
+</ContentPage>
