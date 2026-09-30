@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    A provider's portfolio at full size, one image at a time, opened on the tile that was tapped. The position and
+    the caption sit under the image rather than over it, so a caption never hides the work it describes.
+-->
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:strings="clr-namespace:AgendaBuddy.MobileApp.Resources.Strings"
+             xmlns:controls="clr-namespace:AgendaBuddy.MobileApp.Controls"
+             xmlns:models="clr-namespace:AgendaBuddy.MobileApp.Models"
+             x:Class="AgendaBuddy.MobileApp.Views.PortfolioViewerPage"
+             Title="{x:Static strings:AppResources.ProviderShowcase_Work}"
+             BackgroundColor="Black"
+             Shell.NavBarIsVisible="False">
+
+    <Grid RowDefinitions="Auto,*,Auto">
+
+        <controls:BrandHeader Grid.Row="0" />
+
+        <CarouselView Grid.Row="1"
+                      ItemsSource="{Binding Tiles}"
+                      Position="{Binding Position}"
+                      Loop="False"
+                      AutomationId="PortfolioViewerCarousel">
+            <CarouselView.ItemTemplate>
+                <DataTemplate x:DataType="models:PortfolioTile">
+                    <controls:AuthenticatedImage ProviderRef="{Binding ProviderRef}" Hash="{Binding Hash}"
+                                                 Variant="Full" Aspect="AspectFit"
+                                                 SemanticProperties.Description="{Binding Description}" />
+                </DataTemplate>
+            </CarouselView.ItemTemplate>
+        </CarouselView>
+
+        <VerticalStackLayout Grid.Row="2" Padding="20,10,20,24" Spacing="6">
+            <Label Text="{Binding PositionLabel}" FontSize="13" TextColor="#CCFFFFFF"
+                   HorizontalTextAlignment="Center" AutomationId="PortfolioViewerPosition" />
+            <Label Text="{Binding Caption}" FontSize="15" TextColor="White"
+                   HorizontalTextAlignment="Center" IsVisible="{Binding HasCaption}"
+                   AutomationId="PortfolioViewerCaption" />
+        </VerticalStackLayout>
+
+    </Grid>
+
+</ContentPage>

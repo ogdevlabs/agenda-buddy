@@ -31,6 +31,15 @@ public static class AppNavigation
         Microsoft.Maui.Controls.Routing.RegisterRoute("privacy", typeof(PrivacyPage));
         Microsoft.Maui.Controls.Routing.RegisterRoute("customerPaymentMethod", typeof(CustomerPaymentMethodPage));
         Microsoft.Maui.Controls.Routing.RegisterRoute("providerPayout", typeof(ProviderPayoutPage));
+        Microsoft.Maui.Controls.Routing.RegisterRoute("myShowcase", typeof(MyShowcasePage));
+        Microsoft.Maui.Controls.Routing.RegisterRoute("showcasePhotoLogo", typeof(ShowcasePhotoLogoPage));
+        Microsoft.Maui.Controls.Routing.RegisterRoute("showcaseText", typeof(ShowcaseTextPage));
+        Microsoft.Maui.Controls.Routing.RegisterRoute("portfolioEditor", typeof(PortfolioEditorPage));
+        Microsoft.Maui.Controls.Routing.RegisterRoute("showcaseShare", typeof(ShowcaseSharePage));
+        Microsoft.Maui.Controls.Routing.RegisterRoute("scanProvider", typeof(ScanProviderPage));
+        Microsoft.Maui.Controls.Routing.RegisterRoute("providerShowcase", typeof(ProviderShowcasePage));
+        Microsoft.Maui.Controls.Routing.RegisterRoute("portfolioViewer", typeof(PortfolioViewerPage));
+        Microsoft.Maui.Controls.Routing.RegisterRoute("hiddenProviders", typeof(HiddenProvidersPage));
     }
 }
 #endif

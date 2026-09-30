@@ -41,7 +41,8 @@ public partial class ProviderShowcaseViewModel : ObservableObject
         nameof(BadgeHash), nameof(HasBadge), nameof(AvatarAsset), nameof(NextSession), nameof(HasNextSession),
         nameof(Services), nameof(HasServices), nameof(IsSelf), nameof(IsSubscribed), nameof(CanAct),
         nameof(CanBook), nameof(CanSubscribe), nameof(CanMessage), nameof(ActionsReason), nameof(HasActionsReason),
-        nameof(SubscribeLabel), nameof(CanHide), nameof(CanReport), nameof(HasPortfolio), nameof(IsEmptyShowcase))]
+        nameof(SubscribeLabel), nameof(CanHide), nameof(CanReport), nameof(HasPortfolio), nameof(IsEmptyShowcase),
+        nameof(HeroDescription))]
     private ShowcaseView? _showcase;
 
     [ObservableProperty]
@@ -59,15 +60,15 @@ public partial class ProviderShowcaseViewModel : ObservableObject
     private bool _isBusy;
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasFailure))]
+    [NotifyPropertyChangedFor(nameof(HasFailure), nameof(ShowErrorBanner))]
     private bool _isNotFound;
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasFailure))]
+    [NotifyPropertyChangedFor(nameof(HasFailure), nameof(ShowErrorBanner))]
     private bool _isNetworkError;
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasError))]
+    [NotifyPropertyChangedFor(nameof(HasError), nameof(ShowErrorBanner))]
     private string _errorMessage = string.Empty;
 
     public ProviderShowcaseViewModel(
@@ -93,6 +94,9 @@ public partial class ProviderShowcaseViewModel : ObservableObject
     public bool HasError => !string.IsNullOrEmpty(ErrorMessage);
     public bool HasFailure => IsNotFound || IsNetworkError;
 
+    /// <summary>An error about an action on a loaded showcase; a failed load has its own state instead.</summary>
+    public bool ShowErrorBanner => HasError && !HasFailure;
+
     public string FullName => Showcase?.FullName ?? string.Empty;
     public string FirstName => Showcase?.FirstName ?? string.Empty;
     public string ProfessionsLine => Showcase is null ? string.Empty : string.Join(" · ", Showcase.Professions);
@@ -109,6 +113,8 @@ public partial class ProviderShowcaseViewModel : ObservableObject
         : Showcase.Portfolio.FirstOrDefault()?.Hash ?? Showcase.PhotoHash ?? string.Empty;
 
     public bool HasHeroImage => !string.IsNullOrEmpty(HeroHash);
+
+    public string HeroDescription => AppResources.Format("ProviderShowcase_PhotoDescription", FullName);
 
     /// <summary>The round mark over the hero: the logo, else the photo.</summary>
     public string BadgeHash => Showcase?.LogoHash ?? Showcase?.PhotoHash ?? string.Empty;

@@ -21,7 +21,7 @@ public partial class ScanProviderViewModel : ObservableObject
     private string _lastRejectedScan = string.Empty;
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsCameraReady), nameof(IsCameraDenied), nameof(IsCameraUnavailable))]
+    [NotifyPropertyChangedFor(nameof(IsCameraReady), nameof(IsCameraDenied), nameof(IsCameraUnavailable), nameof(CanSwitchToCamera))]
     private CameraAccess? _camera;
 
     [ObservableProperty]
@@ -31,6 +31,7 @@ public partial class ScanProviderViewModel : ObservableObject
     private string _typedCode = string.Empty;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanSwitchToCamera))]
     private bool _isTyping;
 
     [ObservableProperty]
@@ -56,6 +57,7 @@ public partial class ScanProviderViewModel : ObservableObject
     public bool IsCameraReady => Camera == CameraAccess.Granted;
     public bool IsCameraDenied => Camera == CameraAccess.Denied;
     public bool IsCameraUnavailable => Camera == CameraAccess.Unavailable;
+    public bool CanSwitchToCamera => IsTyping && IsCameraReady;
     public bool IsIdle => !IsResolving;
     public bool HasScanMessage => !string.IsNullOrEmpty(ScanMessage);
     public bool HasError => !string.IsNullOrEmpty(ErrorMessage);

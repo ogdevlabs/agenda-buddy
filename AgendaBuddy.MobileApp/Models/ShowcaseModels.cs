@@ -1,3 +1,5 @@
+using AgendaBuddy.MobileApp.Resources.Strings;
+
 namespace AgendaBuddy.MobileApp.Models;
 
 /// <summary>
@@ -85,6 +87,19 @@ public sealed class ShowcaseServiceItem
     public decimal Fee { get; set; }
     public string FeeType { get; set; } = string.Empty;
     public int DurationMinutes { get; set; }
+
+    /// <summary>Fee and duration as one line, e.g. "$450.00 per session · 60 min".</summary>
+    public string DetailLabel
+    {
+        get
+        {
+            var feeType = Enum.TryParse<AgendaBuddy.Library.Entities.FeeType>(FeeType, ignoreCase: true, out var parsed)
+                ? parsed
+                : AgendaBuddy.Library.Entities.FeeType.Fixed;
+            var fee = AppResources.Format("Fee_WithType", RuntimeText.Currency(Fee), RuntimeText.FeeType(feeType));
+            return DurationMinutes > 0 ? $"{fee} · {RuntimeText.Duration(DurationMinutes)}" : fee;
+        }
+    }
 }
 
 public sealed class ShowcaseRelationship

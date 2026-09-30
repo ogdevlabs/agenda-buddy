@@ -171,6 +171,16 @@ public static class MauiProgram
         builder.Services.AddTransient<ForgotPasswordViewModel>();
         builder.Services.AddTransient<ResetPasswordConfirmViewModel>();
         builder.Services.AddTransient<PaymentAccountViewModel>();
+        builder.Services.AddTransient<MyShowcaseViewModel>();
+        builder.Services.AddTransient<ShowcasePhotoLogoViewModel>();
+        builder.Services.AddTransient<ShowcaseTextViewModel>();
+        builder.Services.AddTransient<PortfolioEditorViewModel>();
+        builder.Services.AddTransient<PortfolioViewerViewModel>();
+        builder.Services.AddTransient<ProviderShowcaseViewModel>();
+        builder.Services.AddTransient<ScanProviderViewModel>();
+        builder.Services.AddTransient<ShowcaseShareViewModel>();
+        builder.Services.AddTransient<HiddenProvidersViewModel>();
+        builder.Services.AddTransient<ShowcaseLinkViewModel>();
 
         // Views
         builder.Services.AddTransient<LoginPage>();
@@ -200,6 +210,15 @@ public static class MauiProgram
         builder.Services.AddTransient<PrivacyPage>();
         builder.Services.AddTransient<CustomerPaymentMethodPage>();
         builder.Services.AddTransient<ProviderPayoutPage>();
+        builder.Services.AddTransient<MyShowcasePage>();
+        builder.Services.AddTransient<ShowcasePhotoLogoPage>();
+        builder.Services.AddTransient<ShowcaseTextPage>();
+        builder.Services.AddTransient<PortfolioEditorPage>();
+        builder.Services.AddTransient<PortfolioViewerPage>();
+        builder.Services.AddTransient<ProviderShowcasePage>();
+        builder.Services.AddTransient<ScanProviderPage>();
+        builder.Services.AddTransient<ShowcaseSharePage>();
+        builder.Services.AddTransient<HiddenProvidersPage>();
         builder.Services.AddTransient<MorePage>();
         builder.Services.AddTransient<ForgotPasswordPage>();
         builder.Services.AddTransient<ResetPasswordConfirmPage>();

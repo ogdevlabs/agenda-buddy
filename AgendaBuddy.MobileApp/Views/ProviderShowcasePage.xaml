@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    A provider's showcase as a customer sees it. The hero is the cover of the portfolio, else the photo, else the
+    brand gradient. Book, Subscribe and Message are pinned under the scroller so they cannot scroll away, and are
+    disabled with the reason stated beside them when they cannot be used (a provider previewing their own
+    showcase, or not subscribed yet for Message) — a greyed button with no reason reads as broken.
+-->
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:strings="clr-namespace:AgendaBuddy.MobileApp.Resources.Strings"
+             xmlns:controls="clr-namespace:AgendaBuddy.MobileApp.Controls"
+             xmlns:models="clr-namespace:AgendaBuddy.MobileApp.Models"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             x:Class="AgendaBuddy.MobileApp.Views.ProviderShowcasePage"
+             Title="{x:Static strings:AppResources.ProviderShowcase_Title}"
+             BackgroundColor="{StaticResource BackgroundPage}"
+             Shell.NavBarIsVisible="False">
+
+    <ContentPage.Resources>
+        <toolkit:InvertedBoolConverter x:Key="InvertedBoolConverter" />
+    </ContentPage.Resources>
+
+    <Grid RowDefinitions="Auto,*,Auto">
+
+        <controls:BrandHeader Grid.Row="0" />
+
+        <RefreshView Grid.Row="1" Command="{Binding RefreshCommand}" IsRefreshing="{Binding IsRefreshing}">
+            <ScrollView>
+                <VerticalStackLayout Spacing="0">
+
+                    <!-- Hero -->
+                    <Grid HeightRequest="240" IsVisible="{Binding HasShowcase}">
+                        <BoxView Background="{StaticResource BrandGradient}" />
+                        <controls:AuthenticatedImage ProviderRef="{Binding ProviderRef}" Hash="{Binding HeroHash}"
+                                                     Variant="Full"
+                                                     IsVisible="{Binding HasHeroImage}"
+                                                     SemanticProperties.Description="{Binding HeroDescription}"
+                                                     AutomationId="ShowcaseHeroImage" />
+                        <Button Text="&#x22EF;" FontSize="18" Padding="0"
+                                WidthRequest="40" HeightRequest="40" CornerRadius="20" Margin="12"
+                                HorizontalOptions="End" VerticalOptions="Start"
+                                BackgroundColor="#99000000" TextColor="White"
+                                IsVisible="{Binding CanReport}"
+                                SemanticProperties.Description="{x:Static strings:AppResources.ProviderShowcase_MoreOptions}"
+                                Clicked="OnMoreClicked"
+                                AutomationId="ShowcaseMoreOptionsButton" />
+                    </Grid>
+
+                    <VerticalStackLayout Padding="20,16,20,24" Spacing="14">
+
+                        <ActivityIndicator IsRunning="{Binding IsLoading}" IsVisible="{Binding IsLoading}"
+                                           Color="{StaticResource Primary}" HorizontalOptions="Center" />
+
+                        <!-- Not found / could not load: two different answers, said differently. -->
+                        <Frame Style="{StaticResource CardCompact}" Margin="0" IsVisible="{Binding IsNotFound}">
+                            <Label Text="{Binding ErrorMessage}" Style="{StaticResource Body}"
+                                   AutomationId="ShowcaseNotFound" />
+                        </Frame>
+                        <Frame Style="{StaticResource CardCompact}" Margin="0" IsVisible="{Binding IsNetworkError}">
+                            <VerticalStackLayout Spacing="10">
+                                <Label Text="{x:Static strings:AppResources.ProviderShowcase_NetworkError}" Style="{StaticResource Body}"
+                                       AutomationId="ShowcaseNetworkError" />
+                                <controls:SafeButton Style="{StaticResource SecondaryButton}"
+                                                     Text="{x:Static strings:AppResources.Xaml_Retry}"
+                                                     Command="{Binding RetryCommand}"
+                                                     AutomationId="ShowcaseRetryButton" />
+                            </VerticalStackLayout>
+                        </Frame>
+
+                        <VerticalStackLayout Spacing="14" IsVisible="{Binding HasShowcase}">
+
+                            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="14">
+                                <Border Grid.Column="0" WidthRequest="64" HeightRequest="64" StrokeThickness="0"
+                                        BackgroundColor="{StaticResource BackgroundCard}" IsVisible="{Binding HasBadge}">
+                                    <Border.StrokeShape>
+                                        <RoundRectangle CornerRadius="32" />
+                                    </Border.StrokeShape>
+                                    <controls:AuthenticatedImage ProviderRef="{Binding ProviderRef}" Hash="{Binding BadgeHash}" />
+                                </Border>
+                                <controls:Avatar Grid.Column="0" Size="64" Source="{Binding AvatarAsset}"
+                                                 IsVisible="{Binding HasBadge, Converter={StaticResource InvertedBoolConverter}}" />
+                                <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
+                                    <Label Text="{Binding FullName}" Style="{StaticResource TitleLarge}"
+                                           AutomationId="ShowcaseProviderName" />
+                                    <Label Text="{Binding ProfessionsLine}" Style="{StaticResource BodySecondary}"
+                                           IsVisible="{Binding HasProfessions}" />
+                                </VerticalStackLayout>
+                            </Grid>
+
+                            <Label Text="{Binding Tagline}" FontSize="16" FontAttributes="Italic"
+                                   TextColor="{StaticResource TextPrimary}" IsVisible="{Binding HasTagline}" />
+
+                            <controls:NextSessionBanner Text="{Binding NextSession}" />
+
+                            <Frame Style="{StaticResource ErrorBannerStyle}" Margin="0" IsVisible="{Binding ShowErrorBanner}">
+                                <Label Text="{Binding ErrorMessage}" TextColor="{StaticResource Error}" FontSize="13"
+                                       AutomationId="ShowcaseError" />
+                            </Frame>
+
+                            <Label Text="{x:Static strings:AppResources.ProviderShowcase_Empty}" Style="{StaticResource BodySecondary}"
+                                   IsVisible="{Binding IsEmptyShowcase}" />
+
+                            <Label Text="{Binding About}" Style="{StaticResource Body}" IsVisible="{Binding HasAbout}"
+                                   AutomationId="ShowcaseAbout" />
+
+                            <VerticalStackLayout Spacing="8" IsVisible="{Binding HasPortfolio}">
+                                <Label Text="{x:Static strings:AppResources.ProviderShowcase_Work}" Style="{StaticResource Overline}" />
+                                <controls:PortfolioGrid ItemsSource="{Binding Tiles}"
+                                                        TileCommand="{Binding OpenPhotoCommand}"
+                                                        AutomationId="ShowcasePortfolio" />
+                            </VerticalStackLayout>
+
+                            <VerticalStackLayout Spacing="8" IsVisible="{Binding HasServices}">
+                                <Label Text="{x:Static strings:AppResources.ProviderShowcase_Services}" Style="{StaticResource Overline}" />
+                                <VerticalStackLayout Spacing="8" BindableLayout.ItemsSource="{Binding Services}">
+                                    <BindableLayout.ItemTemplate>
+                                        <DataTemplate x:DataType="models:ShowcaseServiceItem">
+                                            <Frame Style="{StaticResource CardCompact}" Margin="0">
+                                                <VerticalStackLayout Spacing="2">
+                                                    <Label Text="{Binding Name}" FontSize="15" FontAttributes="Bold"
+                                                           TextColor="{StaticResource TextPrimary}" />
+                                                    <Label Text="{Binding DetailLabel}" Style="{StaticResource BodySecondary}" />
+                                                </VerticalStackLayout>
+                                            </Frame>
+                                        </DataTemplate>
+                                    </BindableLayout.ItemTemplate>
+                                </VerticalStackLayout>
+                            </VerticalStackLayout>
+
+                        </VerticalStackLayout>
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+            </ScrollView>
+        </RefreshView>
+
+        <!-- Pinned actions. -->
+        <VerticalStackLayout Grid.Row="2" Padding="20,8,20,20" Spacing="8" IsVisible="{Binding HasShowcase}">
+            <Label Text="{Binding ActionsReason}" FontSize="13" TextColor="{StaticResource TextSecondary}"
+                   HorizontalTextAlignment="Center" IsVisible="{Binding HasActionsReason}"
+                   AutomationId="ShowcaseActionsReason" />
+            <controls:SafeButton Style="{StaticResource PrimaryButton}"
+                                 Text="{x:Static strings:AppResources.ProviderShowcase_Book}"
+                                 Command="{Binding BookCommand}"
+                                 IsEnabled="{Binding CanBook}"
+                                 AutomationId="ShowcaseBookButton" />
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+                <controls:SafeButton Grid.Column="0" Style="{StaticResource SecondaryButton}"
+                                     Text="{Binding SubscribeLabel}"
+                                     Command="{Binding ToggleSubscriptionCommand}"
+                                     IsEnabled="{Binding CanSubscribe}"
+                                     AutomationId="ShowcaseSubscribeButton" />
+                <controls:SafeButton Grid.Column="1" Style="{StaticResource SecondaryButton}"
+                                     Text="{x:Static strings:AppResources.Xaml_Message}"
+                                     Command="{Binding MessageCommand}"
+                                     IsEnabled="{Binding CanMessage}"
+                                     AutomationId="ShowcaseMessageButton" />
+            </Grid>
+        </VerticalStackLayout>
+
+    </Grid>
+
+</ContentPage>
