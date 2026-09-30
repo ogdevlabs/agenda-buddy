@@ -1,5 +1,6 @@
 #if MOBILE
 using CommunityToolkit.Maui;
+using ZXing.Net.Maui.Controls;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 #if FIREBASE
@@ -20,7 +21,8 @@ public static class MauiProgram
 
         builder
             .UseMauiApp<App>()
-            .UseMauiCommunityToolkit();
+            .UseMauiCommunityToolkit()
+            .UseBarcodeReader();
 
 #if FIREBASE
         // Firebase has to be initialised before CrossFirebaseCloudMessaging.Current is touched, or that
@@ -73,13 +75,13 @@ public static class MauiProgram
         // Secure storage abstraction
         builder.Services.AddTransient<ISecureStorageService, MauiSecureStorageService>();
         builder.Services.AddTransient<IPendingRegistrationStore, PendingRegistrationStore>();
-    #if ANDROID
+#if ANDROID
         builder.Services.AddSingleton<IBiometricAuthenticationService, AndroidBiometricAuthenticationService>();
-    #elif IOS
+#elif IOS
         builder.Services.AddSingleton<IBiometricAuthenticationService, IosBiometricAuthenticationService>();
-    #else
+#else
         builder.Services.AddSingleton<IBiometricAuthenticationService, UnavailableBiometricAuthenticationService>();
-    #endif
+#endif
 
         // HTTP client with named client and JWT delegating handler
         builder.Services.AddTransient<JwtDelegatingHandler>();
@@ -121,6 +123,12 @@ public static class MauiProgram
         builder.Services.AddTransient<IServicesApiService, ServicesApiService>();
         builder.Services.AddTransient<IProfessionApiService, ProfessionApiService>();
         builder.Services.AddTransient<IPaymentAccountApiService, PaymentAccountApiService>();
+        builder.Services.AddTransient<IShowcaseApiService, ShowcaseApiService>();
+        builder.Services.AddSingleton(_ => new MediaCache(FileSystem.CacheDirectory));
+        builder.Services.AddSingleton<MediaImageLoader>();
+        builder.Services.AddTransient<IImagePicker, MauiImagePicker>();
+        builder.Services.AddTransient<IQrScanner, MauiQrScanner>();
+        builder.Services.AddTransient<IShareImageService, MauiShareImageService>();
 
         // The in-app banner. Registered before PushNotificationService only for readability -- what matters is
         // that it exists at all: neither platform draws a notification banner while the app is in the
@@ -163,6 +171,16 @@ public static class MauiProgram
         builder.Services.AddTransient<ForgotPasswordViewModel>();
         builder.Services.AddTransient<ResetPasswordConfirmViewModel>();
         builder.Services.AddTransient<PaymentAccountViewModel>();
+        builder.Services.AddTransient<MyShowcaseViewModel>();
+        builder.Services.AddTransient<ShowcasePhotoLogoViewModel>();
+        builder.Services.AddTransient<ShowcaseTextViewModel>();
+        builder.Services.AddTransient<PortfolioEditorViewModel>();
+        builder.Services.AddTransient<PortfolioViewerViewModel>();
+        builder.Services.AddTransient<ProviderShowcaseViewModel>();
+        builder.Services.AddTransient<ScanProviderViewModel>();
+        builder.Services.AddTransient<ShowcaseShareViewModel>();
+        builder.Services.AddTransient<HiddenProvidersViewModel>();
+        builder.Services.AddTransient<ShowcaseLinkViewModel>();
 
         // Views
         builder.Services.AddTransient<LoginPage>();
@@ -192,6 +210,15 @@ public static class MauiProgram
         builder.Services.AddTransient<PrivacyPage>();
         builder.Services.AddTransient<CustomerPaymentMethodPage>();
         builder.Services.AddTransient<ProviderPayoutPage>();
+        builder.Services.AddTransient<MyShowcasePage>();
+        builder.Services.AddTransient<ShowcasePhotoLogoPage>();
+        builder.Services.AddTransient<ShowcaseTextPage>();
+        builder.Services.AddTransient<PortfolioEditorPage>();
+        builder.Services.AddTransient<PortfolioViewerPage>();
+        builder.Services.AddTransient<ProviderShowcasePage>();
+        builder.Services.AddTransient<ScanProviderPage>();
+        builder.Services.AddTransient<ShowcaseSharePage>();
+        builder.Services.AddTransient<HiddenProvidersPage>();
         builder.Services.AddTransient<MorePage>();
         builder.Services.AddTransient<ForgotPasswordPage>();
         builder.Services.AddTransient<ResetPasswordConfirmPage>();

@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The provider's photo and logo. Choosing uploads the image and then points the showcase at it; Remove clears
+    the pointer only. Each half saves on its own, so there is no Save button to forget.
+-->
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:strings="clr-namespace:AgendaBuddy.MobileApp.Resources.Strings"
+             xmlns:controls="clr-namespace:AgendaBuddy.MobileApp.Controls"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             x:Class="AgendaBuddy.MobileApp.Views.ShowcasePhotoLogoPage"
+             Title="{x:Static strings:AppResources.MyShowcase_EditPhotoLogo}"
+             BackgroundColor="{StaticResource BackgroundPage}"
+             Shell.NavBarIsVisible="False">
+
+    <ContentPage.Resources>
+        <toolkit:InvertedBoolConverter x:Key="InvertedBoolConverter" />
+    </ContentPage.Resources>
+
+    <Grid RowDefinitions="Auto,*">
+
+        <controls:BrandHeader Grid.Row="0" />
+
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Padding="20,16,20,24" Spacing="16">
+
+                <Label Text="{x:Static strings:AppResources.MyShowcase_EditPhotoLogo}" Style="{StaticResource TitleMedium}" />
+
+                <Frame Style="{StaticResource ErrorBannerStyle}" IsVisible="{Binding HasError}" Margin="0">
+                    <Label Text="{Binding ErrorMessage}" TextColor="{StaticResource Error}" FontSize="13" />
+                </Frame>
+
+                <!-- Photo -->
+                <Frame Style="{StaticResource CardCompact}" Margin="0">
+                    <VerticalStackLayout Spacing="12">
+                        <Label Text="{x:Static strings:AppResources.PhotoLogo_PhotoHeading}" Style="{StaticResource TitleSmall}" />
+                        <Label Text="{x:Static strings:AppResources.PhotoLogo_PhotoHint}" Style="{StaticResource BodySecondary}" />
+                        <Border WidthRequest="120" HeightRequest="120" HorizontalOptions="Center"
+                                StrokeThickness="0" BackgroundColor="{StaticResource Divider}">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="60" />
+                            </Border.StrokeShape>
+                            <Grid>
+                                <controls:AuthenticatedImage ProviderRef="{Binding ProviderRef}" Hash="{Binding PhotoHash}"
+                                                             IsVisible="{Binding HasPhoto}" AutomationId="ShowcasePhotoPreview" />
+                                <ActivityIndicator IsRunning="{Binding IsSavingPhoto}" IsVisible="{Binding IsSavingPhoto}"
+                                                   Color="{StaticResource Primary}" />
+                            </Grid>
+                        </Border>
+                        <Label Text="{x:Static strings:AppResources.PhotoLogo_Saving}" HorizontalOptions="Center"
+                               FontSize="12" TextColor="{StaticResource TextMuted}" IsVisible="{Binding IsSavingPhoto}" />
+                        <controls:SafeButton Style="{StaticResource PrimaryButton}"
+                                             Text="{x:Static strings:AppResources.PhotoLogo_Choose}"
+                                             Command="{Binding ChoosePhotoCommand}"
+                                             IsVisible="{Binding HasPhoto, Converter={StaticResource InvertedBoolConverter}}"
+                                             AutomationId="ChoosePhotoButton" />
+                        <Grid ColumnDefinitions="*,*" ColumnSpacing="10" IsVisible="{Binding HasPhoto}">
+                            <controls:SafeButton Grid.Column="0" Style="{StaticResource SecondaryButton}"
+                                                 Text="{x:Static strings:AppResources.PhotoLogo_Replace}"
+                                                 Command="{Binding ChoosePhotoCommand}"
+                                                 AutomationId="ReplacePhotoButton" />
+                            <controls:SafeButton Grid.Column="1" Style="{StaticResource DangerButton}"
+                                                 Text="{x:Static strings:AppResources.PhotoLogo_Remove}"
+                                                 Command="{Binding RemovePhotoCommand}"
+                                                 AutomationId="RemovePhotoButton" />
+                        </Grid>
+                    </VerticalStackLayout>
+                </Frame>
+
+                <!-- Logo -->
+                <Frame Style="{StaticResource CardCompact}" Margin="0">
+                    <VerticalStackLayout Spacing="12">
+                        <Label Text="{x:Static strings:AppResources.PhotoLogo_LogoHeading}" Style="{StaticResource TitleSmall}" />
+                        <Label Text="{x:Static strings:AppResources.PhotoLogo_LogoHint}" Style="{StaticResource BodySecondary}" />
+                        <Border WidthRequest="120" HeightRequest="120" HorizontalOptions="Center"
+                                StrokeThickness="0" BackgroundColor="{StaticResource Divider}">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="14" />
+                            </Border.StrokeShape>
+                            <Grid>
+                                <controls:AuthenticatedImage ProviderRef="{Binding ProviderRef}" Hash="{Binding LogoHash}"
+                                                             Aspect="AspectFit"
+                                                             IsVisible="{Binding HasLogo}" AutomationId="ShowcaseLogoPreview" />
+                                <ActivityIndicator IsRunning="{Binding IsSavingLogo}" IsVisible="{Binding IsSavingLogo}"
+                                                   Color="{StaticResource Primary}" />
+                            </Grid>
+                        </Border>
+                        <Label Text="{x:Static strings:AppResources.PhotoLogo_Saving}" HorizontalOptions="Center"
+                               FontSize="12" TextColor="{StaticResource TextMuted}" IsVisible="{Binding IsSavingLogo}" />
+                        <controls:SafeButton Style="{StaticResource PrimaryButton}"
+                                             Text="{x:Static strings:AppResources.PhotoLogo_Choose}"
+                                             Command="{Binding ChooseLogoCommand}"
+                                             IsVisible="{Binding HasLogo, Converter={StaticResource InvertedBoolConverter}}"
+                                             AutomationId="ChooseLogoButton" />
+                        <Grid ColumnDefinitions="*,*" ColumnSpacing="10" IsVisible="{Binding HasLogo}">
+                            <controls:SafeButton Grid.Column="0" Style="{StaticResource SecondaryButton}"
+                                                 Text="{x:Static strings:AppResources.PhotoLogo_Replace}"
+                                                 Command="{Binding ChooseLogoCommand}"
+                                                 AutomationId="ReplaceLogoButton" />
+                            <controls:SafeButton Grid.Column="1" Style="{StaticResource DangerButton}"
+                                                 Text="{x:Static strings:AppResources.PhotoLogo_Remove}"
+                                                 Command="{Binding RemoveLogoCommand}"
+                                                 AutomationId="RemoveLogoButton" />
+                        </Grid>
+                    </VerticalStackLayout>
+                </Frame>
+
+            </VerticalStackLayout>
+        </ScrollView>
+
+    </Grid>
+
+</ContentPage>

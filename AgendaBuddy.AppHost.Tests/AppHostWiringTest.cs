@@ -358,11 +358,44 @@ public class AppHostWiringTest
     }
 
     [Fact]
-    public async Task NoServiceOtherThanIdentityReceivesTheMailProviderKey()
+    public async Task CloudTargetGivesProviderTheMailProviderKeyForShowcaseReports()
+    {
+        var variables = await PublishEnvironmentOf(BuildModel(DeploymentTarget.Cloud), "provider");
+
+        Assert.Contains("Email__ApiKey", variables.Keys);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ProviderIsToldTheGatewayAddressItsShowcaseCodesEncode(bool cloud)
+    {
+        var variables = await PublishEnvironmentOf(
+            BuildModel(cloud ? DeploymentTarget.Cloud : DeploymentTarget.Local), "provider");
+
+        Assert.Contains("Showcase__Go__BaseUrl", variables.Keys);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ProviderIsTheOnlyServiceReferencingTheMediaBlobs(bool cloud)
+    {
+        var builder = BuildModel(cloud ? DeploymentTarget.Cloud : DeploymentTarget.Local);
+
+        Assert.Contains(builder.Resources, resource => resource.Name == "media");
+        foreach (var name in ExpectedServices)
+        {
+            Assert.Equal(name == "provider", References(builder, name).Contains("media"));
+        }
+    }
+
+    [Fact]
+    public async Task NoServiceOtherThanIdentityAndProviderReceivesTheMailProviderKey()
     {
         var builder = BuildModel(DeploymentTarget.Cloud);
 
-        foreach (var name in ExpectedServices.Where(service => service != "identity"))
+        foreach (var name in ExpectedServices.Where(service => service is not ("identity" or "provider")))
         {
             Assert.DoesNotContain("Email__ApiKey", (await PublishEnvironmentOf(builder, name)).Keys);
         }
@@ -628,10 +661,15 @@ public class AppHostWiringTest
         Assert.Single(BuildModel(DeploymentTarget.Cloud).Resources.OfType<AzureEnvironmentResource>());
     }
 
+    // The media blob store makes Aspire register its Azure environment in both shapes, so the local invariant is
+    // what it provisions: every Azure resource in a local run is an emulator, and nothing reaches a subscription.
     [Fact]
-    public void LocalTargetWiresNoAzureInfrastructure()
+    public void LocalTargetProvisionsNothingInAzure()
     {
-        Assert.Empty(BuildModel().Resources.OfType<AzureEnvironmentResource>());
+        var azureResources = BuildModel().Resources.OfType<AzureProvisioningResource>().ToList();
+
+        Assert.NotEmpty(azureResources);
+        Assert.All(azureResources, resource => Assert.True(resource.IsEmulator(), $"{resource.Name} is not emulated"));
     }
 
 #pragma warning restore ASPIREAZURE001

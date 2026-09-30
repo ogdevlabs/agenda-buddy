@@ -96,6 +96,20 @@ public class GatewayRoutingTest
         Assert.Equal("customer", route.ClusterId);
     }
 
+    [Theory]
+    [InlineData("provider-showcase", "/api/v1/showcase/{**catch-all}")]
+    [InlineData("provider-media", "/api/v1/media/{**catch-all}")]
+    [InlineData("provider-go", "/api/v1/go/{**catch-all}")]
+    public void RouteTable_MapsTopLevelShowcaseGroupsToTheProviderCluster(string routeId, string expectedPath)
+    {
+        using var factory = CreateFactory();
+        var config = factory.Services.GetRequiredService<IProxyConfigProvider>().GetConfig();
+
+        var route = Assert.Single(config.Routes, r => r.RouteId == routeId);
+        Assert.Equal(expectedPath, route.Match.Path);
+        Assert.Equal("provider", route.ClusterId);
+    }
+
     [Fact]
     public void RouteTable_MapsBothIdentityPathsToTheIdentityCluster()
     {

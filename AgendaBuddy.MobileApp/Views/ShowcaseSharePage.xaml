@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The provider's code: a QR to hold up in person, the typed form for reading aloud, and three image formats to
+    post. The image is composed only when a format is chosen, and it carries the two-step instruction itself so a
+    customer who sees it anywhere knows what to do with it.
+-->
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:strings="clr-namespace:AgendaBuddy.MobileApp.Resources.Strings"
+             xmlns:controls="clr-namespace:AgendaBuddy.MobileApp.Controls"
+             x:Class="AgendaBuddy.MobileApp.Views.ShowcaseSharePage"
+             Title="{x:Static strings:AppResources.MyShowcase_OpenShare}"
+             BackgroundColor="{StaticResource BackgroundPage}"
+             Shell.NavBarIsVisible="False">
+
+    <Grid RowDefinitions="Auto,*,Auto">
+
+        <controls:BrandHeader Grid.Row="0" />
+
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Padding="20,16,20,24" Spacing="14">
+
+                <Label Text="{x:Static strings:AppResources.MyShowcase_OpenShare}" Style="{StaticResource TitleMedium}" />
+
+                <Frame Style="{StaticResource ErrorBannerStyle}" IsVisible="{Binding HasError}" Margin="0">
+                    <Label Text="{Binding ErrorMessage}" TextColor="{StaticResource Error}" FontSize="13"
+                           AutomationId="ShareError" />
+                </Frame>
+
+                <ActivityIndicator IsRunning="{Binding IsLoading}" IsVisible="{Binding IsLoading}"
+                                   Color="{StaticResource Primary}" HorizontalOptions="Center" />
+
+                <Frame Style="{StaticResource CardStyle}" Margin="0" IsVisible="{Binding HasCode}">
+                    <VerticalStackLayout Spacing="12" HorizontalOptions="Center">
+                        <Image x:Name="QrImage" WidthRequest="220" HeightRequest="220" HorizontalOptions="Center"
+                               BackgroundColor="White"
+                               SemanticProperties.Description="{x:Static strings:AppResources.Share_QrDescription}"
+                               AutomationId="ShareQrImage" />
+                        <Label Text="{x:Static strings:AppResources.Share_CodeLabel}" Style="{StaticResource Overline}"
+                               HorizontalOptions="Center" />
+                        <Label Text="{Binding DisplayCode}" FontSize="30" FontAttributes="Bold"
+                               CharacterSpacing="4" HorizontalOptions="Center"
+                               TextColor="{StaticResource TextPrimary}" AutomationId="ShareCodeLabel" />
+                        <Label Text="{x:Static strings:AppResources.Share_Instructions}" Style="{StaticResource BodySecondary}"
+                               HorizontalTextAlignment="Center" />
+                        <!-- Icon-only: shares the link and code as text, for a chat where an image is too much. -->
+                        <Button Text="&#x2934;" FontSize="20" Padding="0"
+                                WidthRequest="44" HeightRequest="44" CornerRadius="22"
+                                HorizontalOptions="Center"
+                                BackgroundColor="{StaticResource PrimarySubtle}"
+                                TextColor="{StaticResource Primary}"
+                                SemanticProperties.Description="{x:Static strings:AppResources.Share_Share}"
+                                Clicked="OnShareLinkClicked"
+                                AutomationId="ShareLinkButton" />
+                    </VerticalStackLayout>
+                </Frame>
+
+                <Label Text="{x:Static strings:AppResources.Share_Preparing}" HorizontalOptions="Center"
+                       FontSize="13" TextColor="{StaticResource TextMuted}" IsVisible="{Binding IsPreparing}" />
+
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <!-- Pinned: the three share formats. Narrow padding: at a third of the width the style's 24pt clips "Publicación". -->
+        <VerticalStackLayout Grid.Row="2" Padding="20,8,20,20" Spacing="8" IsVisible="{Binding HasCode}">
+            <Label Text="{x:Static strings:AppResources.Share_ShareAs}" Style="{StaticResource Overline}" />
+            <Grid ColumnDefinitions="*,*,*" ColumnSpacing="8">
+                <controls:SafeButton Grid.Column="0" Style="{StaticResource SecondaryButton}" Padding="4,0" FontSize="15"
+                                     Text="{x:Static strings:AppResources.Share_Story}"
+                                     Command="{Binding ShareStoryCommand}"
+                                     IsEnabled="{Binding CanShare}"
+                                     AutomationId="ShareStoryButton" />
+                <controls:SafeButton Grid.Column="1" Style="{StaticResource SecondaryButton}" Padding="4,0" FontSize="15"
+                                     Text="{x:Static strings:AppResources.Share_Square}"
+                                     Command="{Binding ShareSquareCommand}"
+                                     IsEnabled="{Binding CanShare}"
+                                     AutomationId="ShareSquareButton" />
+                <controls:SafeButton Grid.Column="2" Style="{StaticResource SecondaryButton}" Padding="4,0" FontSize="15"
+                                     Text="{x:Static strings:AppResources.Share_Card}"
+                                     Command="{Binding ShareCardCommand}"
+                                     IsEnabled="{Binding CanShare}"
+                                     AutomationId="ShareCardButton" />
+            </Grid>
+        </VerticalStackLayout>
+
+    </Grid>
+
+</ContentPage>

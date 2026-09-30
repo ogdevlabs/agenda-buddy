@@ -80,6 +80,37 @@ public class ProviderApiServiceTests
     }
 
     [Fact]
+    public void ParsePagedProviders_ReadsTheShowcaseFields()
+    {
+        const string json = """
+            {
+                "data": {
+                    "items": [
+                        {"email": "m@example.com", "firstName": "Mariana", "lastName": "Ruiz", "services": [],
+                         "providerRef": "66f1a2b3c4d5e6f708192a3b", "photoHash": "aa11",
+                         "portfolioChangedAt": "2026-09-29T10:00:00Z"},
+                        {"email": "p@example.com", "firstName": "Pat", "lastName": "Coach", "services": []}
+                    ],
+                    "totalCount": 2, "page": 1, "pageSize": 25
+                },
+                "errors": []
+            }
+            """;
+
+        var result = ProviderApiService.ParsePagedProviders(json);
+
+        Assert.Equal("66f1a2b3c4d5e6f708192a3b", result[0].ProviderRef);
+        Assert.Equal("aa11", result[0].PhotoHash);
+        Assert.Equal(new DateTime(2026, 9, 29, 10, 0, 0, DateTimeKind.Utc), result[0].PortfolioChangedAt);
+        Assert.True(result[0].HasShowcase);
+
+        Assert.Equal(string.Empty, result[1].ProviderRef);
+        Assert.Equal(string.Empty, result[1].PhotoHash);
+        Assert.Null(result[1].PortfolioChangedAt);
+        Assert.False(result[1].HasShowcase);
+    }
+
+    [Fact]
     public async Task GetReport_Returns200_DeserializesReport()
     {
         const string json = """

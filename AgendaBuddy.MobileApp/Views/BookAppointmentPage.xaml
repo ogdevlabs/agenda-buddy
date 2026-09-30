@@ -44,6 +44,15 @@
                         <Label Text="{Binding ErrorMessage}" TextColor="{StaticResource Error}" FontSize="14" />
                     </Frame>
 
+                    <!-- Customer-only: the provider's work, for a second look before choosing a time. -->
+                    <controls:ProviderWorkStrip x:Name="WorkStrip"
+                                                ProviderRef="{Binding ProviderRef}"
+                                                PhotoHash="{Binding PhotoHash}"
+                                                Label="{Binding SeeWorkLabel}"
+                                                Command="{Binding OpenCommand}"
+                                                IsVisible="{Binding HasShowcase}"
+                                                AutomationId="BookProviderWorkStrip" />
+
                     <!-- A provider with nothing bookable cannot be booked; say so rather than showing an
                          empty calendar the customer will poke at. -->
                     <Frame CornerRadius="20" BackgroundColor="White" BorderColor="#E2E8F0" HasShadow="True"

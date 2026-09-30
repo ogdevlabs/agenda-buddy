@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The provider's own showcase hub: three cards (You, Your work, Share), each leading to the screen that edits
+    it, under a completeness meter and the week's funnel sentence.
+-->
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:strings="clr-namespace:AgendaBuddy.MobileApp.Resources.Strings"
+             xmlns:controls="clr-namespace:AgendaBuddy.MobileApp.Controls"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             x:Class="AgendaBuddy.MobileApp.Views.MyShowcasePage"
+             Title="{x:Static strings:AppResources.MyShowcase_Title}"
+             BackgroundColor="{StaticResource BackgroundPage}"
+             Shell.NavBarIsVisible="False">
+
+    <ContentPage.Resources>
+        <toolkit:InvertedBoolConverter x:Key="InvertedBoolConverter" />
+    </ContentPage.Resources>
+
+    <Grid RowDefinitions="Auto,*">
+
+        <controls:BrandHeader Grid.Row="0" />
+
+        <RefreshView Grid.Row="1"
+                     Command="{Binding RefreshCommand}"
+                     IsRefreshing="{Binding IsRefreshing}">
+            <ScrollView>
+                <VerticalStackLayout Padding="20,16,20,24" Spacing="16">
+
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="{x:Static strings:AppResources.MyShowcase_Title}" Style="{StaticResource TitleMedium}" />
+                        <Label Text="{x:Static strings:AppResources.MyShowcase_Subtitle}" Style="{StaticResource BodySecondary}" />
+                    </VerticalStackLayout>
+
+                    <Frame Style="{StaticResource ErrorBannerStyle}" IsVisible="{Binding HasError}" Margin="0">
+                        <Label Text="{Binding ErrorMessage}" TextColor="{StaticResource Error}" FontSize="13" />
+                    </Frame>
+
+                    <ActivityIndicator IsRunning="{Binding IsLoading}" IsVisible="{Binding IsLoading}"
+                                       Color="{StaticResource Primary}" HorizontalOptions="Center" />
+
+                    <VerticalStackLayout Spacing="16" IsVisible="{Binding HasShowcase}">
+
+                        <Frame Style="{StaticResource CardCompact}" Margin="0">
+                            <VerticalStackLayout Spacing="10">
+                                <controls:CompletenessMeter Progress="{Binding CompletenessProgress}"
+                                                            Label="{Binding CompletenessLabel}"
+                                                            AutomationId="ShowcaseCompletenessMeter" />
+                                <Label Text="{Binding FunnelSentence}" Style="{StaticResource BodySecondary}"
+                                       AutomationId="ShowcaseFunnelSentence" />
+                            </VerticalStackLayout>
+                        </Frame>
+
+                        <!-- You -->
+                        <Label Text="{x:Static strings:AppResources.MyShowcase_YouCard}" Style="{StaticResource Overline}" Margin="4,0,0,0" />
+                        <Frame Style="{StaticResource CardCompact}" Margin="0">
+                            <VerticalStackLayout Spacing="12">
+                                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="14">
+                                    <Grid Grid.Column="0" WidthRequest="64" HeightRequest="64">
+                                        <Border StrokeThickness="0" BackgroundColor="{StaticResource Divider}">
+                                            <Border.StrokeShape>
+                                                <RoundRectangle CornerRadius="32" />
+                                            </Border.StrokeShape>
+                                            <controls:AuthenticatedImage ProviderRef="{Binding ProviderRef}"
+                                                                         Hash="{Binding PhotoHash}"
+                                                                         IsVisible="{Binding HasPhoto}" />
+                                        </Border>
+                                    </Grid>
+                                    <VerticalStackLayout Grid.Column="1" Spacing="4" VerticalOptions="Center">
+                                        <Label Text="{Binding TaglineText}" FontSize="15" FontAttributes="Bold"
+                                               TextColor="{StaticResource TextPrimary}" LineBreakMode="WordWrap" />
+                                        <Label Text="{Binding AboutText}" FontSize="13" MaxLines="3"
+                                               LineBreakMode="TailTruncation" TextColor="{StaticResource TextMuted}" />
+                                    </VerticalStackLayout>
+                                </Grid>
+                                <!-- Stacked, not side by side: at half width the Spanish labels truncate. -->
+                                <VerticalStackLayout Spacing="10">
+                                    <controls:SafeButton Style="{StaticResource SecondaryButton}"
+                                                         Text="{x:Static strings:AppResources.MyShowcase_EditPhotoLogo}"
+                                                         Clicked="OnPhotoLogoClicked"
+                                                         AutomationId="ShowcaseEditPhotoLogoButton" />
+                                    <controls:SafeButton Style="{StaticResource SecondaryButton}"
+                                                         Text="{x:Static strings:AppResources.MyShowcase_EditText}"
+                                                         Clicked="OnTextClicked"
+                                                         AutomationId="ShowcaseEditTextButton" />
+                                </VerticalStackLayout>
+                            </VerticalStackLayout>
+                        </Frame>
+
+                        <!-- Your work -->
+                        <Label Text="{x:Static strings:AppResources.MyShowcase_WorkCard}" Style="{StaticResource Overline}" Margin="4,0,0,0" />
+                        <Frame Style="{StaticResource CardCompact}" Margin="0">
+                            <VerticalStackLayout Spacing="12">
+                                <Label Text="{Binding PortfolioCountLabel}" FontSize="14"
+                                       TextColor="{StaticResource TextSecondary}" />
+                                <Label Text="{x:Static strings:AppResources.MyShowcase_PortfolioPrompt}"
+                                       Style="{StaticResource BodySecondary}"
+                                       IsVisible="{Binding ShowPortfolioPrompt}" />
+                                <controls:PortfolioGrid ItemsSource="{Binding Preview}"
+                                                        IsVisible="{Binding HasPortfolio}"
+                                                        AutomationId="ShowcasePortfolioPreview" />
+                                <controls:SafeButton Style="{StaticResource PrimaryButton}"
+                                                     Text="{x:Static strings:AppResources.MyShowcase_ManagePortfolio}"
+                                                     Clicked="OnPortfolioClicked"
+                                                     AutomationId="ShowcaseManagePortfolioButton" />
+                            </VerticalStackLayout>
+                        </Frame>
+
+                        <!-- Share -->
+                        <Label Text="{x:Static strings:AppResources.MyShowcase_ShareCard}" Style="{StaticResource Overline}" Margin="4,0,0,0" />
+                        <Frame Style="{StaticResource CardCompact}" Margin="0">
+                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                                <VerticalStackLayout Grid.Column="0" Spacing="4" VerticalOptions="Center">
+                                    <Label Text="{x:Static strings:AppResources.MyShowcase_YourCode}" FontSize="12"
+                                           TextColor="{StaticResource TextMuted}" />
+                                    <Label Text="{Binding PublicCodeDisplay}" FontSize="22" FontAttributes="Bold"
+                                           CharacterSpacing="2" TextColor="{StaticResource TextPrimary}"
+                                           IsVisible="{Binding HasPublicCode}"
+                                           AutomationId="ShowcasePublicCode" />
+                                    <Label Text="{x:Static strings:AppResources.MyShowcase_NoCodeYet}"
+                                           Style="{StaticResource BodySecondary}"
+                                           IsVisible="{Binding HasNoPublicCode}" />
+                                </VerticalStackLayout>
+                                <!-- Icon-only: the QR glyph opens the share screen; its description says so. -->
+                                <Button Grid.Column="1" Text="&#x25A6;" FontSize="24"
+                                        WidthRequest="52" HeightRequest="52" CornerRadius="26" Padding="0"
+                                        BackgroundColor="{StaticResource PrimarySubtle}"
+                                        TextColor="{StaticResource Primary}"
+                                        SemanticProperties.Description="{x:Static strings:AppResources.MyShowcase_ShowQr}"
+                                        Clicked="OnShareClicked"
+                                        AutomationId="ShowcaseShowQrButton" />
+                            </Grid>
+                        </Frame>
+
+                    </VerticalStackLayout>
+
+                </VerticalStackLayout>
+            </ScrollView>
+        </RefreshView>
+
+    </Grid>
+
+</ContentPage>

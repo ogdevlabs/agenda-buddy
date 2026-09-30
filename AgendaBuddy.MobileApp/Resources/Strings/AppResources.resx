@@ -46,11 +46,11 @@
   <data name="Legal_Terms_Clause03_Heading" xml:space="preserve"><value>3. Appointments, cancellation and payment</value></data>
   <data name="Legal_Terms_Clause03_Body" xml:space="preserve"><value>An appointment is an agreement between the provider and the customer. Customers authorize us to save a payment method with Stripe and place an off-session hold for the booked price when the provider confirms. We capture the hold when the service is completed: 90% of the gross charge is allocated to the provider and 10% is the {0} service fee. If the provider cancels before capture, the full hold is released; if cancellation occurs after capture, the payment is fully refunded and both allocations are reversed. Customer cancellations follow the cancellation policy shown for the booking. Stripe processes payments and payouts under its terms; we never receive or store full card or bank account numbers.</value></data>
   <data name="Legal_Terms_Clause04_Heading" xml:space="preserve"><value>4. Acceptable use</value></data>
-  <data name="Legal_Terms_Clause04_Body" xml:space="preserve"><value>Do not use the app to harass anyone, to impersonate anyone, to send unsolicited marketing, to collect other people's information, to break the law, or to interfere with, probe or overload the service. Do not attempt to access data that is not yours.</value></data>
+  <data name="Legal_Terms_Clause04_Body" xml:space="preserve"><value>Do not use the app to harass anyone, to impersonate anyone, to send unsolicited marketing, to collect other people's information, to break the law, or to interfere with, probe or overload the service. Do not attempt to access data that is not yours. Showcase images and text must not contain nudity or sexual content, violence, hate or harassment, anyone else's personal information, or anything illegal, and must not present work that is not yours as your own.</value></data>
   <data name="Legal_Terms_Clause05_Heading" xml:space="preserve"><value>5. Your content</value></data>
-  <data name="Legal_Terms_Clause05_Body" xml:space="preserve"><value>You keep ownership of what you put into the app — your profile, your services, your messages and your notes. You grant us the permission we need to store it and show it to the people you direct it to, and nothing more.</value></data>
+  <data name="Legal_Terms_Clause05_Body" xml:space="preserve"><value>You keep ownership of what you put into the app — your profile, your services, your messages and your notes. You grant us the permission we need to store it and show it to the people you direct it to, and nothing more. When you upload a photo, a logo or portfolio images to a showcase, you confirm that you own them or have permission to use them, and that anyone identifiable in them has agreed to appear. You grant us permission to store, re-encode, resize and display them to the users who open your showcase or scan its code.</value></data>
   <data name="Legal_Terms_Clause06_Heading" xml:space="preserve"><value>6. Suspension and deletion</value></data>
-  <data name="Legal_Terms_Clause06_Body" xml:space="preserve"><value>You can delete your account at any time from the Profile screen. We may suspend or close an account that breaks these terms. Deleting your account removes your profile and your address from the records of people you dealt with; it does not delete their own record of appointments that took place.</value></data>
+  <data name="Legal_Terms_Clause06_Body" xml:space="preserve"><value>You can delete your account at any time from the Profile screen. We may suspend or close an account that breaks these terms. Deleting your account removes your profile and your address from the records of people you dealt with; it does not delete their own record of appointments that took place. Anyone can report a showcase from its More options menu. We may remove images or text that break these terms, or hide a showcase, without notice. To raise a concern about content, including a claim that it infringes your rights, write to {1}.</value></data>
   <data name="Legal_Terms_Clause07_Heading" xml:space="preserve"><value>7. Availability and disclaimer</value></data>
   <data name="Legal_Terms_Clause07_Body" xml:space="preserve"><value>The app is provided as is. We do not promise it will be uninterrupted or error-free, and we do not guarantee that a provider will honour a booking or that a customer will attend one. Back up anything you cannot afford to lose.</value></data>
   <data name="Legal_Terms_Clause08_Heading" xml:space="preserve"><value>8. Limitation of liability</value></data>
@@ -62,15 +62,15 @@
   <data name="Legal_Privacy_Title" xml:space="preserve"><value>Privacy Policy</value></data>
   <data name="Legal_Privacy_Summary" xml:space="preserve"><value>This policy explains what {0} collects, why, who sees it, and what you can do about it. It covers the app and the service behind it.</value></data>
   <data name="Legal_Privacy_Clause01_Heading" xml:space="preserve"><value>1. What we collect</value></data>
-  <data name="Legal_Privacy_Clause01_Body" xml:space="preserve"><value>Account details you give us: your email address, your first and last name, and optionally your phone number. Content you create: your services, availability, appointments, messages and notes. Payment data we keep: Stripe customer, payment-method, payment-intent and connected-account identifiers, masked card brand and last four digits, amounts, fees, status and timestamps. Stripe collects full card, wallet, identity and provider bank details directly; we do not receive or store full card numbers, security codes or bank account numbers. Technical data needed to run the app includes your device's time zone and a push notification token if you allow notifications. We do not collect your location, contacts or photos.</value></data>
+  <data name="Legal_Privacy_Clause01_Body" xml:space="preserve"><value>Account details you give us: your email address, your first and last name, and optionally your phone number. Content you create: your services, availability, appointments, messages and notes. Payment data we keep: Stripe customer, payment-method, payment-intent and connected-account identifiers, masked card brand and last four digits, amounts, fees, status and timestamps. Stripe collects full card, wallet, identity and provider bank details directly; we do not receive or store full card numbers, security codes or bank account numbers. Technical data needed to run the app includes your device's time zone and a push notification token if you allow notifications. If you are a provider and build a showcase, we also store the profile photo, logo, portfolio images and captions you upload. Every image is re-encoded on our servers and its metadata, including camera details and location, is removed before it is stored. We keep visit records when a signed-in user opens a showcase (who and when), so a provider can see how many people looked and a returning customer can see what is new; anonymous counts of QR code scans that carry no identity; and reports users file about a showcase, with the reason and any detail given. We do not collect your location or contacts, and the only photos we receive are the ones you choose to upload.</value></data>
   <data name="Legal_Privacy_Clause02_Heading" xml:space="preserve"><value>2. Why we use it</value></data>
   <data name="Legal_Privacy_Clause02_Body" xml:space="preserve"><value>To create and secure your account, schedule and remind you about appointments, save a customer payment method with consent, authorize and capture booked charges, pay providers through Stripe Connect, process cancellations, refunds and disputes, let both parties communicate, and notify you about bookings. We do not sell your data or use it for advertising.</value></data>
   <data name="Legal_Privacy_Clause03_Heading" xml:space="preserve"><value>3. Who sees it</value></data>
-  <data name="Legal_Privacy_Clause03_Body" xml:space="preserve"><value>A provider sees the name, email, phone number and appointment history of customers who book with them or subscribe to them. A customer sees a provider's public profile, services and free times. Nobody else sees your data except the service providers below, and our own staff where they need it to operate or support the service.</value></data>
+  <data name="Legal_Privacy_Clause03_Body" xml:space="preserve"><value>A provider sees the name, email, phone number and appointment history of customers who book with them or subscribe to them. A customer sees a provider's public profile, services and free times. A provider's showcase (photo, logo, portfolio images and captions, tagline and description) can be opened by any signed-in user, including through a shared code or link. A provider sees totals of scans, visits and bookings, not who scanned. Reports about a showcase are reviewed by our staff. Nobody else sees your data except the service providers below, and our own staff where they need it to operate or support the service.</value></data>
   <data name="Legal_Privacy_Clause04_Heading" xml:space="preserve"><value>4. Service providers we use</value></data>
   <data name="Legal_Privacy_Clause04_Body" xml:space="preserve"><value>Cloud hosting and database storage; an email delivery provider, to send confirmations and password resets; a push notification provider, to deliver notifications to your device; and a payment processor where payment is taken. Each receives only what it needs to do its job.</value></data>
   <data name="Legal_Privacy_Clause05_Heading" xml:space="preserve"><value>5. How long we keep it</value></data>
-  <data name="Legal_Privacy_Clause05_Body" xml:space="preserve"><value>For as long as your account exists. When you delete your account we remove your profile and strip your name, email address and phone number from records belonging to people you dealt with, so their own appointment history stays intact without identifying you. Audit and security logs are kept for a limited period and do not contain your address.</value></data>
+  <data name="Legal_Privacy_Clause05_Body" xml:space="preserve"><value>For as long as your account exists. Showcase images and captions are kept until you remove them or delete your account; anonymous scan counts are kept only as totals. When you delete your account we remove your profile and strip your name, email address and phone number from records belonging to people you dealt with, so their own appointment history stays intact without identifying you. Audit and security logs are kept for a limited period and do not contain your address.</value></data>
   <data name="Legal_Privacy_Clause06_Heading" xml:space="preserve"><value>6. Your choices</value></data>
   <data name="Legal_Privacy_Clause06_Body" xml:space="preserve"><value>You can edit your name and phone number, change your avatar, and turn push notifications off at the operating-system level at any time. You can delete your account from the Profile screen, which takes effect immediately. Your email address cannot be changed, because it is what identifies your account.</value></data>
   <data name="Legal_Privacy_Clause07_Heading" xml:space="preserve"><value>7. Your rights</value></data>
@@ -1031,4 +1031,163 @@
   <data name="EmailVerification_CheckingCode" xml:space="preserve"><value>Checking your confirmation code...</value></data>
   <data name="EmailVerification_InvalidCode" xml:space="preserve"><value>This confirmation code is invalid or has expired.</value></data>
   <data name="Registration_CheckEmailToast" xml:space="preserve"><value>Account created. Check your email for the confirmation button or code.</value></data>
+  <data name="ShowcaseError_UnsupportedFormat" xml:space="preserve"><value>Use a JPEG, PNG or WebP photo.</value></data>
+  <data name="ShowcaseError_TooLarge" xml:space="preserve"><value>This photo is too large. Try a smaller one.</value></data>
+  <data name="ShowcaseError_TooManyPixels" xml:space="preserve"><value>This photo is too large. Try a smaller one.</value></data>
+  <data name="ShowcaseError_DimensionExceeded" xml:space="preserve"><value>This photo is too large. Try a smaller one.</value></data>
+  <data name="ShowcaseError_Undecodable" xml:space="preserve"><value>This file couldn't be opened as a photo.</value></data>
+  <data name="ShowcaseError_UnknownMedia" xml:space="preserve"><value>That photo is no longer available. Upload it again.</value></data>
+  <data name="ShowcaseError_StorageUnavailable" xml:space="preserve"><value>Photos can't be saved right now. Try again in a few minutes.</value></data>
+  <data name="ShowcaseError_PortfolioFull" xml:space="preserve"><value>Your portfolio already has 20 images. Remove one to add another.</value></data>
+  <data name="ShowcaseError_PortfolioChanged" xml:space="preserve"><value>Your portfolio changed on another device. We've reloaded it — try again.</value></data>
+  <data name="ShowcaseError_NotFound" xml:space="preserve"><value>This provider isn't available.</value></data>
+  <data name="ShowcaseError_RateLimited" xml:space="preserve"><value>Too many attempts. Wait a moment and try again.</value></data>
+  <data name="ShowcaseError_Invalid" xml:space="preserve"><value>Something in that request wasn't accepted. Check it and try again.</value></data>
+  <data name="ShowcaseError_Network" xml:space="preserve"><value>Couldn't reach AgendaMe. Check your connection and try again.</value></data>
+  <data name="ShowcaseError_Unknown" xml:space="preserve"><value>Something went wrong. Try again.</value></data>
+  <data name="Showcase_Funnel_Zero" xml:space="preserve"><value>No one has scanned your code yet. Share it from QR &amp; Share.</value></data>
+  <data name="Showcase_Funnel_ThisWeek" xml:space="preserve"><value>This week</value></data>
+  <data name="Showcase_Funnel_LastDays" xml:space="preserve"><value>In the last {0} days</value></data>
+  <data name="Showcase_Funnel_Sentence" xml:space="preserve"><value>{0}, {1}, {2} and {3}.</value></data>
+  <data name="Showcase_Funnel_Scans_Zero" xml:space="preserve"><value>no one scanned your code</value></data>
+  <data name="Showcase_Funnel_Scans_One" xml:space="preserve"><value>1 person scanned your code</value></data>
+  <data name="Showcase_Funnel_Scans_Many" xml:space="preserve"><value>{0} people scanned your code</value></data>
+  <data name="Showcase_Funnel_Opened_Zero" xml:space="preserve"><value>no one opened your showcase</value></data>
+  <data name="Showcase_Funnel_Opened_One" xml:space="preserve"><value>1 opened your showcase</value></data>
+  <data name="Showcase_Funnel_Opened_Many" xml:space="preserve"><value>{0} opened your showcase</value></data>
+  <data name="Showcase_Funnel_Booked_Zero" xml:space="preserve"><value>no one booked</value></data>
+  <data name="Showcase_Funnel_Booked_One" xml:space="preserve"><value>1 booked</value></data>
+  <data name="Showcase_Funnel_Booked_Many" xml:space="preserve"><value>{0} booked</value></data>
+  <data name="Showcase_CompletenessLabel" xml:space="preserve"><value>{0} of {1} done</value></data>
+  <data name="Showcase_PortfolioCount" xml:space="preserve"><value>{0} of {1}</value></data>
+  <data name="Showcase_SeeWork" xml:space="preserve"><value>See {0}'s work</value></data>
+  <data name="Showcase_SeeWorkNoName" xml:space="preserve"><value>See their work</value></data>
+  <data name="Showcase_OpenedFromCode" xml:space="preserve"><value>Opened from {0}'s code</value></data>
+  <data name="Showcase_OpenedFromCodeNoName" xml:space="preserve"><value>Opened from a provider's code</value></data>
+  <data name="Showcase_Hidden" xml:space="preserve"><value>{0} is hidden</value></data>
+  <data name="Showcase_HiddenNoName" xml:space="preserve"><value>Provider hidden</value></data>
+  <data name="Showcase_TileDescription" xml:space="preserve"><value>Photo {0} of {1}</value></data>
+  <data name="Showcase_TileDescriptionWithCaption" xml:space="preserve"><value>Photo {0} of {1}, {2}</value></data>
+  <data name="Showcase_NextSession" xml:space="preserve"><value>Your next session: {0}</value></data>
+  <data name="Showcase_NextSessionWithService" xml:space="preserve"><value>Your next session: {0} · {1}</value></data>
+  <data name="Showcase_ShareStepOne" xml:space="preserve"><value>1 · Scan to get {0}</value></data>
+  <data name="Showcase_ShareStepTwo" xml:space="preserve"><value>2 · In the app, tap Scan a code — or type {0}</value></data>
+  <data name="General_Undo" xml:space="preserve"><value>Undo</value></data>
+  <data name="General_Keep" xml:space="preserve"><value>Keep</value></data>
+  <data name="Showcase_TaglineEmpty" xml:space="preserve"><value>No tagline yet — one line on what you do.</value></data>
+  <data name="Showcase_AboutEmpty" xml:space="preserve"><value>Nothing about you yet. Tell customers how you work.</value></data>
+  <data name="Showcase_PickFailed" xml:space="preserve"><value>Couldn't open that photo. Try another one.</value></data>
+  <data name="Showcase_TaglineTooLong" xml:space="preserve"><value>Your tagline is too long — keep it to {0} characters.</value></data>
+  <data name="Showcase_AboutTooLong" xml:space="preserve"><value>Your About text is too long — keep it to {0} characters.</value></data>
+  <data name="Showcase_CaptionTooLong" xml:space="preserve"><value>That caption is too long — keep it to {0} characters.</value></data>
+  <data name="Showcase_SelfReason" xml:space="preserve"><value>This is your showcase. Customers see Book, Subscribe and Message here.</value></data>
+  <data name="Showcase_CustomersOnlyReason" xml:space="preserve"><value>Booking, subscribing and messaging are for customer accounts.</value></data>
+  <data name="Showcase_SubscribeToMessage" xml:space="preserve"><value>Subscribe to send a message.</value></data>
+  <data name="Showcase_Subscribe" xml:space="preserve"><value>Subscribe</value></data>
+  <data name="Showcase_Unsubscribe" xml:space="preserve"><value>Unsubscribe</value></data>
+  <data name="Showcase_ContactUnavailable" xml:space="preserve"><value>Couldn't reach this provider right now. Try again from your providers list.</value></data>
+  <data name="Error_Subscribe" xml:space="preserve"><value>Could not subscribe. Try again.</value></data>
+  <data name="Error_Unsubscribe" xml:space="preserve"><value>Could not unsubscribe. Try again.</value></data>
+  <data name="Portfolio_Title" xml:space="preserve"><value>Portfolio</value></data>
+  <data name="Portfolio_MakeCover" xml:space="preserve"><value>Make cover</value></data>
+  <data name="Portfolio_MoveEarlier" xml:space="preserve"><value>Move earlier</value></data>
+  <data name="Portfolio_MoveLater" xml:space="preserve"><value>Move later</value></data>
+  <data name="Portfolio_EditCaption" xml:space="preserve"><value>Edit caption</value></data>
+  <data name="Portfolio_Remove" xml:space="preserve"><value>Remove</value></data>
+  <data name="Portfolio_Removed" xml:space="preserve"><value>Removed from your portfolio</value></data>
+  <data name="Portfolio_Add" xml:space="preserve"><value>Add photos</value></data>
+  <data name="Portfolio_Full" xml:space="preserve"><value>Your portfolio is full. Remove a photo to add another.</value></data>
+  <data name="Portfolio_Empty" xml:space="preserve"><value>No photos yet. Add up to 20 of your best work.</value></data>
+  <data name="Portfolio_Hint" xml:space="preserve"><value>The first photo is your cover.</value></data>
+  <data name="Portfolio_Uploading" xml:space="preserve"><value>Uploading…</value></data>
+  <data name="Portfolio_Discard" xml:space="preserve"><value>Discard</value></data>
+  <data name="Portfolio_Cover" xml:space="preserve"><value>Cover</value></data>
+  <data name="Portfolio_NewBadge" xml:space="preserve"><value>NEW</value></data>
+  <data name="Portfolio_CaptionPrompt" xml:space="preserve"><value>Caption</value></data>
+  <data name="Portfolio_CaptionPlaceholder" xml:space="preserve"><value>Describe this piece</value></data>
+  <data name="Portfolio_MoreOptions" xml:space="preserve"><value>More options</value></data>
+  <data name="Portfolio_RetryUpload" xml:space="preserve"><value>Retry upload</value></data>
+  <data name="MyShowcase_Title" xml:space="preserve"><value>My showcase</value></data>
+  <data name="MyShowcase_Subtitle" xml:space="preserve"><value>What customers see before they book.</value></data>
+  <data name="MyShowcase_YouCard" xml:space="preserve"><value>You</value></data>
+  <data name="MyShowcase_WorkCard" xml:space="preserve"><value>Your work</value></data>
+  <data name="MyShowcase_ShareCard" xml:space="preserve"><value>Share</value></data>
+  <data name="MyShowcase_EditPhotoLogo" xml:space="preserve"><value>Photo &amp; logo</value></data>
+  <data name="MyShowcase_EditText" xml:space="preserve"><value>Tagline &amp; about</value></data>
+  <data name="MyShowcase_ManagePortfolio" xml:space="preserve"><value>Manage portfolio</value></data>
+  <data name="MyShowcase_PortfolioPrompt" xml:space="preserve"><value>Show your work — customers can see it before they book.</value></data>
+  <data name="MyShowcase_OpenShare" xml:space="preserve"><value>QR &amp; Share</value></data>
+  <data name="MyShowcase_Preview" xml:space="preserve"><value>Preview as a customer</value></data>
+  <data name="MyShowcase_ShowQr" xml:space="preserve"><value>Show my QR code</value></data>
+  <data name="MyShowcase_YourCode" xml:space="preserve"><value>Your code</value></data>
+  <data name="MyShowcase_NoCodeYet" xml:space="preserve"><value>Open QR &amp; Share to get your code.</value></data>
+  <data name="MyShowcase_Complete" xml:space="preserve"><value>Your showcase is complete.</value></data>
+  <data name="PhotoLogo_PhotoHeading" xml:space="preserve"><value>Profile photo</value></data>
+  <data name="PhotoLogo_PhotoHint" xml:space="preserve"><value>A clear photo of you. It replaces your avatar across the app.</value></data>
+  <data name="PhotoLogo_LogoHeading" xml:space="preserve"><value>Logo</value></data>
+  <data name="PhotoLogo_LogoHint" xml:space="preserve"><value>Shown as the badge on your showcase.</value></data>
+  <data name="PhotoLogo_Choose" xml:space="preserve"><value>Choose photo</value></data>
+  <data name="PhotoLogo_Replace" xml:space="preserve"><value>Replace</value></data>
+  <data name="PhotoLogo_Remove" xml:space="preserve"><value>Remove</value></data>
+  <data name="PhotoLogo_Saving" xml:space="preserve"><value>Saving…</value></data>
+  <data name="ShowcaseText_TaglineLabel" xml:space="preserve"><value>Tagline</value></data>
+  <data name="ShowcaseText_TaglinePlaceholder" xml:space="preserve"><value>e.g. Fine-line tattoos in Condesa</value></data>
+  <data name="ShowcaseText_AboutLabel" xml:space="preserve"><value>About</value></data>
+  <data name="ShowcaseText_AboutPlaceholder" xml:space="preserve"><value>What you do, how you work, what to expect.</value></data>
+  <data name="Action_ShowcaseSaved" xml:space="preserve"><value>Showcase saved.</value></data>
+  <data name="Share_ImageFailed" xml:space="preserve"><value>Couldn't create the image. Try again.</value></data>
+  <data name="Share_Preparing" xml:space="preserve"><value>Preparing image…</value></data>
+  <data name="Share_CodeLabel" xml:space="preserve"><value>Your code</value></data>
+  <data name="Share_Instructions" xml:space="preserve"><value>Customers scan this in AgendaMe, or type the code.</value></data>
+  <data name="Share_ShareAs" xml:space="preserve"><value>Share as an image</value></data>
+  <data name="Share_Story" xml:space="preserve"><value>Story</value></data>
+  <data name="Share_Square" xml:space="preserve"><value>Post</value></data>
+  <data name="Share_Card" xml:space="preserve"><value>Card</value></data>
+  <data name="Share_Share" xml:space="preserve"><value>Share</value></data>
+  <data name="Share_QrDescription" xml:space="preserve"><value>Your QR code</value></data>
+  <data name="Scan_Title" xml:space="preserve"><value>Scan a code</value></data>
+  <data name="Scan_Hint" xml:space="preserve"><value>Point your camera at a provider's AgendaMe code.</value></data>
+  <data name="Scan_TypeInstead" xml:space="preserve"><value>Type a code instead</value></data>
+  <data name="Scan_UseCamera" xml:space="preserve"><value>Scan with the camera</value></data>
+  <data name="Scan_CodePlaceholder" xml:space="preserve"><value>6-character code</value></data>
+  <data name="Scan_Open" xml:space="preserve"><value>Open showcase</value></data>
+  <data name="Scan_CameraDenied" xml:space="preserve"><value>Camera access is off. Allow it in Settings to scan, or type the code.</value></data>
+  <data name="Scan_OpenSettings" xml:space="preserve"><value>Open Settings</value></data>
+  <data name="Scan_CameraUnavailable" xml:space="preserve"><value>Scanning isn't available on this device. Type the code instead.</value></data>
+  <data name="Scan_Resolving" xml:space="preserve"><value>Opening…</value></data>
+  <data name="Scan_NotAnAgendaMeCode" xml:space="preserve"><value>That's not an AgendaMe code</value></data>
+  <data name="Scan_InvalidCode" xml:space="preserve"><value>Codes are 6 letters and numbers, like K7Q 2X9.</value></data>
+  <data name="Scan_CodeNotFound" xml:space="preserve"><value>No provider has that code. Check it and try again.</value></data>
+  <data name="ProviderShowcase_Title" xml:space="preserve"><value>Showcase</value></data>
+  <data name="ProviderShowcase_Work" xml:space="preserve"><value>Work</value></data>
+  <data name="ProviderShowcase_Services" xml:space="preserve"><value>Services</value></data>
+  <data name="ProviderShowcase_Book" xml:space="preserve"><value>Book</value></data>
+  <data name="ProviderShowcase_Empty" xml:space="preserve"><value>Nothing here yet. The services below can still be booked.</value></data>
+  <data name="ProviderShowcase_NetworkError" xml:space="preserve"><value>Couldn't load this showcase. Check your connection and try again.</value></data>
+  <data name="ProviderShowcase_Report" xml:space="preserve"><value>Report</value></data>
+  <data name="ProviderShowcase_Hide" xml:space="preserve"><value>Hide provider</value></data>
+  <data name="ProviderShowcase_MoreOptions" xml:space="preserve"><value>More options</value></data>
+  <data name="ProviderShowcase_PhotoDescription" xml:space="preserve"><value>Photo of {0}</value></data>
+  <data name="ShowcaseReport_Title" xml:space="preserve"><value>Why are you reporting this?</value></data>
+  <data name="ShowcaseReport_DetailPrompt" xml:space="preserve"><value>Tell us more</value></data>
+  <data name="ShowcaseReport_DetailOptional" xml:space="preserve"><value>Anything else we should know? (optional)</value></data>
+  <data name="ShowcaseReport_Send" xml:space="preserve"><value>Send</value></data>
+  <data name="ShowcaseReport_DetailRequired" xml:space="preserve"><value>Tell us what's wrong so we can review it.</value></data>
+  <data name="ShowcaseReport_DetailTooLong" xml:space="preserve"><value>Keep the details to {0} characters.</value></data>
+  <data name="ShowcaseReport_Thanks" xml:space="preserve"><value>Thanks — we'll review this.</value></data>
+  <data name="ShowcaseReport_Failed" xml:space="preserve"><value>Couldn't send your report. Try again.</value></data>
+  <data name="ShowcaseReport_Reason_Inappropriate" xml:space="preserve"><value>Inappropriate content</value></data>
+  <data name="ShowcaseReport_Reason_NotTheirWork" xml:space="preserve"><value>Not this provider's work</value></data>
+  <data name="ShowcaseReport_Reason_Spam" xml:space="preserve"><value>Spam or scam</value></data>
+  <data name="ShowcaseReport_Reason_Other" xml:space="preserve"><value>Something else</value></data>
+  <data name="ShowcaseHide_Confirm" xml:space="preserve"><value>Hide {0}? You won't see them in your providers list or when scanning. Undo any time in More → Hidden providers.</value></data>
+  <data name="ShowcaseHide_ThisProvider" xml:space="preserve"><value>this provider</value></data>
+  <data name="HiddenProviders_Title" xml:space="preserve"><value>Hidden providers</value></data>
+  <data name="HiddenProviders_Hint" xml:space="preserve"><value>Hidden providers don't appear in your providers list or when scanning.</value></data>
+  <data name="HiddenProviders_Empty" xml:space="preserve"><value>You haven't hidden any providers.</value></data>
+  <data name="HiddenProviders_Unhide" xml:space="preserve"><value>Unhide</value></data>
+  <data name="HiddenProviders_Unhidden" xml:space="preserve"><value>{0} is visible again.</value></data>
+  <data name="HiddenProviders_UnhiddenNoName" xml:space="preserve"><value>Provider visible again.</value></data>
+  <data name="Dashboard_FindProvider" xml:space="preserve"><value>Found a provider? Scan their code or type it in.</value></data>
+  <data name="Showcase_TypeCode" xml:space="preserve"><value>Type a code</value></data>
 </root>

@@ -35,6 +35,8 @@ public partial class ProfilePage : ContentPage
 
     private async void OnLanguageTapped(object? sender, EventArgs e) => await Shell.Current.GoToAsync("language");
 
+    private async void OnShowcaseTapped(object? sender, EventArgs e) => await Shell.Current.GoToAsync("myShowcase");
+
     private async void OnServicesTapped(object? sender, EventArgs e) => await Shell.Current.GoToAsync("services");
 
     private async void OnProfessionsTapped(object? sender, EventArgs e) => await Shell.Current.GoToAsync("professions");

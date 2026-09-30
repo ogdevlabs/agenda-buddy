@@ -1,0 +1,22 @@
+meta {
+  name: 2 Set text
+  type: http
+  seq: 2
+}
+
+put {
+  url: {{gatewayUrl}}/api/v1/showcase/me/text
+  body: json
+}
+
+body:json {
+  {
+    "tagline": "Retratos y tatuaje fine-line en CDMX",
+    "about": "Diez años de oficio."
+  }
+}
+
+docs {
+  Tagline ≤ 80 and about ≤ 600 characters, after trimming and removing control characters. Over the limit is
+  `400` with `errors.tagline`/`errors.about` = `["too-long"]` — never truncated. `null` clears a field.
+}

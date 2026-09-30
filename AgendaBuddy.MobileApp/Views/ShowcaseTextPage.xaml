@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Tagline and about. Save is always enabled and the handler says what is wrong by name: a disabled button does
+    not say why, and a counter that has gone red is easy to miss behind the keyboard.
+-->
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:strings="clr-namespace:AgendaBuddy.MobileApp.Resources.Strings"
+             xmlns:controls="clr-namespace:AgendaBuddy.MobileApp.Controls"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             x:Class="AgendaBuddy.MobileApp.Views.ShowcaseTextPage"
+             Title="{x:Static strings:AppResources.MyShowcase_EditText}"
+             BackgroundColor="{StaticResource BackgroundPage}"
+             Shell.NavBarIsVisible="False"
+             HideSoftInputOnTapped="True">
+
+    <Grid RowDefinitions="Auto,*,Auto">
+
+        <controls:BrandHeader Grid.Row="0" />
+
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Padding="20,16,20,24" Spacing="14">
+
+                <Label Text="{x:Static strings:AppResources.MyShowcase_EditText}" Style="{StaticResource TitleMedium}" />
+
+                <Frame Style="{StaticResource ErrorBannerStyle}" IsVisible="{Binding HasError}" Margin="0">
+                    <Label Text="{Binding ErrorMessage}" TextColor="{StaticResource Error}" FontSize="13"
+                           AutomationId="ShowcaseTextError" />
+                </Frame>
+
+                <Grid ColumnDefinitions="*,Auto">
+                    <Label Grid.Column="0" Text="{x:Static strings:AppResources.ShowcaseText_TaglineLabel}"
+                           FontSize="14" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" />
+                    <Label Grid.Column="1" Text="{Binding TaglineCounter}" FontSize="12">
+                        <Label.TextColor>
+                            <Binding Path="IsTaglineTooLong"
+                                     Converter="{toolkit:BoolToObjectConverter TrueObject={StaticResource Error}, FalseObject={StaticResource TextMuted}}" />
+                        </Label.TextColor>
+                    </Label>
+                </Grid>
+                <Frame Style="{StaticResource InputFrame}">
+                    <Entry Text="{Binding Tagline}"
+                           Placeholder="{x:Static strings:AppResources.ShowcaseText_TaglinePlaceholder}"
+                           Style="{StaticResource InputStyle}"
+                           AutomationId="ShowcaseTaglineEntry" />
+                </Frame>
+
+                <Grid ColumnDefinitions="*,Auto">
+                    <Label Grid.Column="0" Text="{x:Static strings:AppResources.ShowcaseText_AboutLabel}"
+                           FontSize="14" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" />
+                    <Label Grid.Column="1" Text="{Binding AboutCounter}" FontSize="12">
+                        <Label.TextColor>
+                            <Binding Path="IsAboutTooLong"
+                                     Converter="{toolkit:BoolToObjectConverter TrueObject={StaticResource Error}, FalseObject={StaticResource TextMuted}}" />
+                        </Label.TextColor>
+                    </Label>
+                </Grid>
+                <Frame Style="{StaticResource InputFrame}">
+                    <Editor Text="{Binding About}"
+                            Placeholder="{x:Static strings:AppResources.ShowcaseText_AboutPlaceholder}"
+                            AutoSize="TextChanges"
+                            MinimumHeightRequest="140"
+                            AutomationId="ShowcaseAboutEditor" />
+                </Frame>
+
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <controls:SafeButton Grid.Row="2" Margin="20,8,20,20"
+                             Style="{StaticResource PrimaryButton}"
+                             Text="{x:Static strings:AppResources.General_Save}"
+                             Command="{Binding SaveCommand}"
+                             AutomationId="SaveShowcaseTextButton" />
+
+    </Grid>
+
+</ContentPage>

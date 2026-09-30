@@ -1,5 +1,7 @@
 using AgendaBuddy.Library.Accounts;
 using AgendaBuddy.Library.Entities;
+using AgendaBuddy.Library.Media;
+using AgendaBuddy.Library.Showcase;
 using AgendaBuddy.Library.Repositories;
 using AgendaBuddy.Library.Services;
 using MongoDB.Bson;
@@ -30,10 +32,19 @@ public class AccountErasureServiceTest
     private readonly Mock<IRepository<NoteEntity>> _notes = new();
     private readonly Mock<IRepository<PaymentEntity>> _payments = new();
     private readonly Mock<IRepository<DeviceTokenEntity>> _deviceTokens = new();
+    private readonly Mock<IRepository<ProviderShowcaseEntity>> _showcases = new();
+    private readonly Mock<IRepository<MediaRefEntity>> _mediaRefs = new();
+    private readonly Mock<IRepository<ShowcaseVisitEntity>> _visits = new();
+    private readonly Mock<IRepository<GoCounterEntity>> _goCounters = new();
+    private readonly Mock<IRepository<ShowcaseReportEntity>> _reports = new();
+    private readonly Mock<IRepository<ShowcaseBlockEntity>> _blocks = new();
+    private readonly Mock<IBlobStore> _blobStore = new();
 
     private AccountErasureService Service() => new(
         _customers.Object, _providers.Object, _appointments.Object, _messages.Object,
-        _notifications.Object, _notes.Object, _payments.Object, _deviceTokens.Object);
+        _notifications.Object, _notes.Object, _payments.Object, _deviceTokens.Object,
+        _showcases.Object, _mediaRefs.Object, _visits.Object, _goCounters.Object, _reports.Object, _blocks.Object,
+        _blobStore.Object);
 
     public AccountErasureServiceTest()
     {
@@ -338,5 +349,50 @@ public class AccountErasureServiceTest
                  .ReturnsAsync(1).Callback<BsonDocument, BsonDocument>((_, u) => Capture(u));
         _providers.Setup(r => r.UpdateManyAsync(It.IsAny<BsonDocument>(), It.IsAny<BsonDocument>()))
                   .ReturnsAsync(1).Callback<BsonDocument, BsonDocument>((_, u) => Capture(u));
+    }
+
+    // ── the showcase ───────────────────────────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task ErasingAProviderDeletesEveryShowcaseRowAndItsStoredImages()
+    {
+        var providerId = ObjectId.GenerateNewId();
+        _providers.Setup(r => r.FindOneAsync(It.IsAny<BsonDocument>()))
+                  .ReturnsAsync(new ProviderEntity { Id = providerId, Email = ProviderEmail });
+
+        await Service().EraseProviderAsync(ProviderEmail);
+
+        _showcases.Verify(r => r.DeleteManyAsync(It.Is<BsonDocument>(f => f["provider_id"] == providerId)), Times.Once);
+        _mediaRefs.Verify(r => r.DeleteManyAsync(It.Is<BsonDocument>(f => f["provider_id"] == providerId)), Times.Once);
+        _goCounters.Verify(r => r.DeleteManyAsync(It.Is<BsonDocument>(f => f["provider_id"] == providerId)), Times.Once);
+        _blobStore.Verify(b => b.DeletePrefixAsync(MediaKeys.Prefix(providerId), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    /// <summary>
+    /// Storage being down must not make an erasure fail: an account that cannot be deleted is what App Review
+    /// forbids, and the media sweep removes the orphaned prefix later.
+    /// </summary>
+    [Fact]
+    public async Task ErasingAProviderSucceedsWhenMediaStorageIsDown()
+    {
+        _providers.Setup(r => r.FindOneAsync(It.IsAny<BsonDocument>()))
+                  .ReturnsAsync(new ProviderEntity { Id = ObjectId.GenerateNewId(), Email = ProviderEmail });
+        _blobStore.Setup(b => b.DeletePrefixAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                  .ThrowsAsync(new MediaStorageUnavailableException("down", new Exception()));
+
+        var summary = await Service().EraseProviderAsync(ProviderEmail);
+
+        Assert.NotNull(summary);
+        _providers.Verify(r => r.FindOneAndDeleteAsync(It.IsAny<BsonDocument>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task ErasingACustomerDeletesTheirVisitsBlocksAndReports()
+    {
+        await Service().EraseCustomerAsync(CustomerEmail);
+
+        _visits.Verify(r => r.DeleteManyAsync(It.Is<BsonDocument>(f => Filters(f, "customer_email", CustomerEmail))), Times.Once);
+        _blocks.Verify(r => r.DeleteManyAsync(It.Is<BsonDocument>(f => Filters(f, "customer_email", CustomerEmail))), Times.Once);
+        _reports.Verify(r => r.DeleteManyAsync(It.Is<BsonDocument>(f => Filters(f, "reporter_email", CustomerEmail))), Times.Once);
     }
 }

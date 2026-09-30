@@ -22,6 +22,15 @@
         <PackageReference Include="MongoDB.Driver" Version="2.25.0" />
     </ItemGroup>
 
+    <!-- Showcase media. Private so they do not flow into AgendaBuddy.MobileApp, which references this project
+         for shared types and must not ship a server-side image decoder; AgendaBuddy.Provider.Api, the only
+         service that stores media, references them directly. -->
+    <ItemGroup>
+        <PackageReference Include="Azure.Identity" Version="1.13.2" PrivateAssets="all" />
+        <PackageReference Include="Azure.Storage.Blobs" Version="12.23.0" PrivateAssets="all" />
+        <PackageReference Include="SkiaSharp" Version="4.153.1" PrivateAssets="all" />
+    </ItemGroup>
+
     <ItemGroup>
         <Content Include="..\.dockerignore">
             <Link>.dockerignore</Link>

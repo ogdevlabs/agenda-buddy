@@ -41,6 +41,15 @@ public partial class ProfileViewModel : ObservableObject
     /// </summary>
     private readonly BrandHeaderViewModel? _brandHeader;
 
+    private readonly IShowcaseApiService? _showcaseApi;
+
+    /// <summary>A provider's own showcase reference and photo, so the hero shows their photo once they have one.</summary>
+    [ObservableProperty]
+    private string? _showcaseProviderRef;
+
+    [ObservableProperty]
+    private string? _showcasePhotoHash;
+
     [ObservableProperty]
     private string _email = string.Empty;
 
@@ -112,8 +121,10 @@ public partial class ProfileViewModel : ObservableObject
         IAuthService authService,
         IUserSessionService session,
         NotificationBadgeViewModel? notificationBadge = null,
-        BrandHeaderViewModel? brandHeader = null)
+        BrandHeaderViewModel? brandHeader = null,
+        IShowcaseApiService? showcaseApi = null)
     {
+        _showcaseApi = showcaseApi;
         _providerApiService = providerApiService;
         _customerApiService = customerApiService;
         _authService = authService;
@@ -165,6 +176,8 @@ public partial class ProfileViewModel : ObservableObject
                 {
                     try { await _providerApiService.SyncTimeZoneAsync(Email); }
                     catch (Exception) { /* leaves the previous zone in place */ }
+
+                    await LoadShowcasePhotoAsync();
                 }
             }
             catch (Exception)
@@ -176,6 +189,27 @@ public partial class ProfileViewModel : ObservableObject
         {
             IsLoading = false;
             OnPropertyChanged(nameof(NeedsProfileSetup));
+        }
+    }
+
+    /// <remarks>Best-effort: without it the hero keeps the assigned mark, which is what it showed before photos existed.</remarks>
+    private async Task LoadShowcasePhotoAsync()
+    {
+        if (_showcaseApi is null)
+            return;
+
+        try
+        {
+            var mine = await _showcaseApi.GetMineAsync();
+            if (mine.IsSuccess && mine.Value is not null)
+            {
+                ShowcaseProviderRef = mine.Value.ProviderRef;
+                ShowcasePhotoHash = mine.Value.PhotoHash;
+            }
+        }
+        catch (Exception)
+        {
+            // leaves the assigned mark in place
         }
     }
 

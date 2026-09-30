@@ -1805,3 +1805,52 @@ financial mutations rather than recording success.
 
 **Consequences.** A service edit cannot rewrite an agreed price, zero-decimal currencies remain representable, and
 no request can underpay by choosing an amount. Historical appointments without snapshots are not auto-charged.
+
+---
+
+## ADR-069 — Showcase media lives in a private blob container behind an authenticated proxy route (F-037)
+
+**Date:** 2026-09-30 · **Status:** Accepted
+
+**Decision.** Provider photos, logos and portfolio images are re-encoded server-side (SkiaSharp, JPEG q85, `full`
+≤1600 px and `thumb` ≤480 px) and stored under `{providerId}/{sha256}/{variant}` in a private `media` container
+of a dedicated storage account (no public access, no shared key). They are served only by
+`GET /api/v1/media/{providerRef}/{hash}/{variant}` to a signed-in caller. No SAS URL, CDN or public container.
+
+**Why.** Re-encoding strips EXIF/GPS by construction and defeats polyglots; a SAS URL would be a bearer credential
+that works signed out. Keys prefixed by provider make erasure one prefix delete.
+
+**Accepted risk (T-384).** Any signed-in user who holds a provider ref and hash may fetch the image. Showcase
+content is promotional, hashes are 256-bit, and hidden/taken-down/erased providers answer 404.
+
+---
+
+## ADR-070 — `/go/{code}` is the only anonymous route, and it carries no content (F-037)
+
+**Date:** 2026-09-30 · **Status:** Accepted
+
+**Decision.** A QR encodes `{Showcase:Go:BaseUrl}/api/v1/go/{code}`. The route 302s to the configured store URL by
+platform, or serves one fixed chooser page; known and unknown codes are byte-identical. The only write is an
+anonymous per-platform counter. No deferred deep linking: the printed code and in-app scanner carry the second hop.
+
+**Why.** Showcase content is sign-in-only; deferred deep linking needs fingerprinting or clipboard writes.
+
+---
+
+## ADR-071 — Showcase state lives in its own collections, written with filter-guarded targeted updates (F-037)
+
+**Date:** 2026-09-30 · **Status:** Accepted
+
+**Decision.** New collections `provider_showcase`, `media_refs`, `showcase_visits`, `go_counters`,
+`showcase_reports`, `showcase_blocks`. `ProviderEntity` is unchanged so the whole-document profile `PUT` cannot
+erase a photo. The 20-image cap and reorder permutation check are enforced in the update filter (ADR-032 idiom).
+
+---
+
+## ADR-072 — Automated content-safety scanning is deferred; report, hide and operator takedown ship now (F-037)
+
+**Date:** 2026-09-30 · **Status:** Accepted
+
+**Decision.** Launch is Mexico-only. Report (operator email to `Showcase:ReportEmail`, 48 h target), customer Hide,
+and a `hidden_by_operator` takedown flag set by direct database write ship now. Hash-matching/content-safety
+scanning at upload is deferred until US distribution or a vendor decision requires it.

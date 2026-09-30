@@ -1,0 +1,21 @@
+meta {
+  name: 13 Lookup avatars
+  type: http
+  seq: 13
+}
+
+post {
+  url: {{gatewayUrl}}/api/v1/showcase/lookup
+  body: json
+}
+
+body:json {
+  {
+    "emails": ["{{providerEmail}}"]
+  }
+}
+
+docs {
+  Photo hash and avatar mark for up to 50 counterparties the caller already has (contacts, conversations).
+  More than 50 is `400` `too-many`. Hidden and taken-down providers resolve to their avatar mark only.
+}

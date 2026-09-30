@@ -60,6 +60,8 @@ public class ProviderModule : ICarterModule
         // Get provider list
         providers.MapGet("", async Task<Ok<DataResponse<PagedResponse<ProviderSummary>>>> (
             IMediator mediator,
+            ClaimsPrincipal user,
+            IShowcaseService showcaseService,
             CancellationToken cancellationToken,
             int? page = null, int? pageSize = null, bool bookableOnly = false) =>
         {
@@ -71,8 +73,16 @@ public class ProviderModule : ICarterModule
             // Professions and services are embedded in ProviderEntity but written by separate API processes.
             // Their in-memory caches cannot invalidate this process, so caching the directory made successful
             // writes invisible to customers for five minutes.
+            // A provider a customer has hidden leaves their directory. Excluded in the query, not after it, so the
+            // page size and total stay honest.
+            var callerEmail = OwnershipGuard.ResolveCallerEmail(user);
+            var excluded = callerEmail is null || user.IsInRole("Provider")
+                ? []
+                : (await showcaseService.GetBlockedProviderIdsAsync(callerEmail)).ToList();
+
             var result = await mediator.Send(
-                new GetProvidersQuery { Page = pageRequest, BookableOnly = bookableOnly }, cancellationToken);
+                new GetProvidersQuery { Page = pageRequest, BookableOnly = bookableOnly, ExcludedProviderIds = excluded },
+                cancellationToken);
             var providerCollection = result.IsSuccess ? result.Value : null;
 
             if (providerCollection is null)
@@ -90,8 +100,11 @@ public class ProviderModule : ICarterModule
             // ⚠️ THE LIST IS HOMOGENEOUS -- every element is a ProviderSummary, including the caller's own record.
             // An owner loses nothing: GET /api/v1/providers/{email} returns their full record, and that route
             // DOES apply the ownership branch. Deviation recorded in api-contracts.md.
+            var entries = await showcaseService.GetDirectoryEntriesAsync(providerCollection.Items.Select(p => p.Id));
             return TypedResults.Ok(DataResponse<PagedResponse<ProviderSummary>>.Ok(PagedResponse<ProviderSummary>.From(
-                providerCollection.Items.Select(ProviderSummary.From).ToList(),
+                providerCollection.Items
+                    .Select(p => ProviderSummary.From(p, entries.GetValueOrDefault(p.Id)))
+                    .ToList(),
                 providerCollection.TotalCount,
                 pageRequest)));
         })

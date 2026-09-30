@@ -60,5 +60,17 @@ public partial class CustomerSummary : ObservableObject
     /// referenced by its raster name.
     /// </remarks>
     public string AvatarAsset => Infrastructure.AvatarSource.For(AvatarId, Email);
+
+    /// <summary>Only meaningful when <see cref="IsProvider"/> — the opaque id their showcase and images are addressed by.</summary>
+    public string ProviderRef { get; set; } = string.Empty;
+
+    /// <summary>The provider's own photo, which supersedes <see cref="AvatarAsset"/> wherever it is set.</summary>
+    public string PhotoHash { get; set; } = string.Empty;
+
+    public DateTime? PortfolioChangedAt { get; set; }
+
+    public bool HasShowcase => IsProvider && !string.IsNullOrWhiteSpace(ProviderRef);
+
+    public string SeeWorkLabel => Infrastructure.ShowcaseText.SeeWork(Infrastructure.ShowcaseText.FirstNameOf(FullName));
     public string SessionsLabel => IsProvider ? $"{TotalSessions} services" : $"{TotalSessions} sessions";
 }

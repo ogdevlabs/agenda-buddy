@@ -1,0 +1,15 @@
+meta {
+  name: 9 Create public code
+  type: http
+  seq: 9
+}
+
+post {
+  url: {{gatewayUrl}}/api/v1/showcase/me/code
+  body: none
+}
+
+docs {
+  Get-or-create: always returns the same `{code,url}`, so a printed QR keeps working. The `url` is
+  `{gateway}/api/v1/go/{code}` and is what the QR encodes.
+}

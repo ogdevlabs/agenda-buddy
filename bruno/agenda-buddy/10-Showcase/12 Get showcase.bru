@@ -1,0 +1,17 @@
+meta {
+  name: 12 Get showcase
+  type: http
+  seq: 12
+}
+
+get {
+  url: {{gatewayUrl}}/api/v1/showcase/{{providerRef}}?source=directory
+  body: none
+}
+
+docs {
+  The customer-facing showcase: profile, portfolio (each item flagged `isNew` since the caller's last visit),
+  bookable services and the caller's relationship (subscribed, next appointment, booked before). `source` is one
+  of `scan`, `code`, `directory`, `appointment`, `message`, `booking` and feeds the provider's funnel; a
+  provider viewing their own showcase is not counted.
+}

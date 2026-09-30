@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Opening a provider's showcase from their code. The camera reads QR codes only; typing the code is always one
+    tap away, because a denied permission, a device with no camera or a code read aloud must not be a dead end.
+-->
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:strings="clr-namespace:AgendaBuddy.MobileApp.Resources.Strings"
+             xmlns:controls="clr-namespace:AgendaBuddy.MobileApp.Controls"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             xmlns:zxing="clr-namespace:ZXing.Net.Maui.Controls;assembly=ZXing.Net.MAUI.Controls"
+             x:Class="AgendaBuddy.MobileApp.Views.ScanProviderPage"
+             Title="{x:Static strings:AppResources.Scan_Title}"
+             BackgroundColor="{StaticResource BackgroundPage}"
+             Shell.NavBarIsVisible="False"
+             HideSoftInputOnTapped="True">
+
+    <ContentPage.Resources>
+        <toolkit:InvertedBoolConverter x:Key="InvertedBoolConverter" />
+    </ContentPage.Resources>
+
+    <Grid RowDefinitions="Auto,*,Auto">
+
+        <controls:BrandHeader Grid.Row="0" />
+
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Padding="20,16,20,24" Spacing="14">
+
+                <Label Text="{x:Static strings:AppResources.Scan_Title}" Style="{StaticResource TitleMedium}" />
+
+                <!-- Camera -->
+                <VerticalStackLayout Spacing="10" IsVisible="{Binding IsTyping, Converter={StaticResource InvertedBoolConverter}}">
+                    <Label Text="{x:Static strings:AppResources.Scan_Hint}" Style="{StaticResource BodySecondary}" />
+                    <Border HeightRequest="300" StrokeThickness="0" BackgroundColor="Black"
+                            IsVisible="{Binding IsCameraReady}">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="16" />
+                        </Border.StrokeShape>
+                        <Grid>
+                            <zxing:CameraBarcodeReaderView x:Name="Reader"
+                                                           IsDetecting="{Binding IsDetecting}"
+                                                           BarcodesDetected="OnBarcodesDetected"
+                                                           AutomationId="ScanCameraView" />
+                            <ActivityIndicator IsRunning="{Binding IsResolving}" IsVisible="{Binding IsResolving}"
+                                               Color="White" />
+                        </Grid>
+                    </Border>
+                    <Frame Style="{StaticResource CardCompact}" Margin="0" IsVisible="{Binding HasScanMessage}">
+                        <Label Text="{Binding ScanMessage}" FontSize="14" TextColor="{StaticResource TextPrimary}"
+                               AutomationId="ScanMessage" />
+                    </Frame>
+                </VerticalStackLayout>
+
+                <!-- Camera denied: the one place that can change it. -->
+                <Frame Style="{StaticResource CardCompact}" Margin="0" IsVisible="{Binding IsCameraDenied}">
+                    <VerticalStackLayout Spacing="10">
+                        <Label Text="{x:Static strings:AppResources.Scan_CameraDenied}" Style="{StaticResource Body}" />
+                        <controls:SafeButton Style="{StaticResource SecondaryButton}"
+                                             Text="{x:Static strings:AppResources.Scan_OpenSettings}"
+                                             Command="{Binding OpenSettingsCommand}"
+                                             AutomationId="ScanOpenSettingsButton" />
+                    </VerticalStackLayout>
+                </Frame>
+
+                <Frame Style="{StaticResource CardCompact}" Margin="0" IsVisible="{Binding IsCameraUnavailable}">
+                    <Label Text="{x:Static strings:AppResources.Scan_CameraUnavailable}" Style="{StaticResource Body}" />
+                </Frame>
+
+                <!-- Typed code -->
+                <VerticalStackLayout Spacing="10" IsVisible="{Binding IsTyping}">
+                    <Frame Style="{StaticResource InputFrame}">
+                        <Entry Text="{Binding TypedCode}"
+                               Placeholder="{x:Static strings:AppResources.Scan_CodePlaceholder}"
+                               Style="{StaticResource InputStyle}"
+                               Keyboard="Plain"
+                               IsSpellCheckEnabled="False"
+                               IsTextPredictionEnabled="False"
+                               ReturnType="Go"
+                               ReturnCommand="{Binding SubmitCodeCommand}"
+                               AutomationId="ScanCodeEntry" />
+                    </Frame>
+                    <Frame Style="{StaticResource ErrorBannerStyle}" IsVisible="{Binding HasError}" Margin="0">
+                        <Label Text="{Binding ErrorMessage}" TextColor="{StaticResource Error}" FontSize="13"
+                               AutomationId="ScanError" />
+                    </Frame>
+                    <Label Text="{x:Static strings:AppResources.Scan_Resolving}" FontSize="13"
+                           TextColor="{StaticResource TextMuted}" IsVisible="{Binding IsResolving}" />
+                </VerticalStackLayout>
+
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <!-- Pinned: the typed-code submit, and the switch between the two ways in. -->
+        <VerticalStackLayout Grid.Row="2" Padding="20,8,20,20" Spacing="8">
+            <controls:SafeButton Style="{StaticResource PrimaryButton}"
+                                 Text="{x:Static strings:AppResources.Scan_Open}"
+                                 Command="{Binding SubmitCodeCommand}"
+                                 IsVisible="{Binding IsTyping}"
+                                 IsEnabled="{Binding IsIdle}"
+                                 AutomationId="ScanOpenButton" />
+            <controls:SafeButton Style="{StaticResource SecondaryButton}"
+                                 Text="{x:Static strings:AppResources.Scan_TypeInstead}"
+                                 Command="{Binding ShowTypingCommand}"
+                                 IsVisible="{Binding IsTyping, Converter={StaticResource InvertedBoolConverter}}"
+                                 AutomationId="ScanTypeInsteadButton" />
+            <controls:SafeButton Style="{StaticResource SecondaryButton}"
+                                 Text="{x:Static strings:AppResources.Scan_UseCamera}"
+                                 Command="{Binding ShowCameraCommand}"
+                                 IsVisible="{Binding CanSwitchToCamera}"
+                                 AutomationId="ScanUseCameraButton" />
+        </VerticalStackLayout>
+
+    </Grid>
+
+</ContentPage>

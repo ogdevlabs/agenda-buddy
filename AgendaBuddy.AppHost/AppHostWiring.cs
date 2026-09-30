@@ -167,7 +167,20 @@ internal static class AppHostWiring
         var booking = AddApi<Projects.AgendaBuddy_Booking_Api>(
             "booking", agendaDb, needsPushDelivery: true, needsPayments: true);
         var customer = AddApi<Projects.AgendaBuddy_Customer_Api>("customer", agendaDb, needsPushDelivery: true);
-        var provider = AddApi<Projects.AgendaBuddy_Provider_Api>("provider", agendaDb);
+        // Provider emails the operator when a showcase is reported.
+        var provider = AddApi<Projects.AgendaBuddy_Provider_Api>("provider", agendaDb, needsEmailDelivery: true);
+
+        // Showcase images. Blob storage, never MongoDB: images are the one thing here that grows by megabytes
+        // (ADR-069). Locally an Azurite emulator; in the cloud a storage account the provider reaches with its
+        // managed identity, so no storage key exists to leak. Only Provider references it — every image is
+        // served through its authenticated route, and there is no public blob URL.
+        var storage = builder.AddAzureStorage("storage");
+        if (deployTarget == DeploymentTarget.Local)
+            storage.RunAsEmulator(emulator => emulator.WithDataVolume());
+        var media = storage.AddBlobs("media");
+        provider.WithReference(media);
+        if (deployTarget == DeploymentTarget.Local)
+            provider.WaitFor(storage);
         var calendar = AddApi<Projects.AgendaBuddy_Calendar_Api>("calendar", agendaDb);
         var services = AddApi<Projects.AgendaBuddy_Services_Api>("services", agendaDb);
         var profession = AddApi<Projects.AgendaBuddy_Profession_Api>("profession", agendaDb);
@@ -206,6 +219,10 @@ internal static class AppHostWiring
         // The Gateway is MobileApp's only address (F-015) — it is the one process that needs
         // ingress. The seven domain services stay internal-only in the Cloud shape (see AddApi).
         if (deployTarget == DeploymentTarget.Cloud) gateway.WithExternalHttpEndpoints();
+
+        // A showcase QR encodes an absolute /go URL, and the Gateway is the only address a phone camera can
+        // reach, so Provider is told the Gateway's own endpoint rather than deriving one from a request header.
+        provider.WithEnvironment("Showcase__Go__BaseUrl", gateway.GetEndpoint("http"));
 
         return builder;
 
@@ -274,8 +291,8 @@ internal static class AppHostWiring
             // the private key.
             if (needsPrivateKey) service.WithEnvironment("JWT_PRIVATE_KEY", jwtPrivateKey);
 
-            // Identity is the only service that sends email. Null in the Local shape, so nothing is
-            // injected and ResendEmailSender degrades to a logged no-op.
+            // Identity sends account email and Provider sends showcase reports to the operator. Null in the
+            // Local shape, so nothing is injected and ResendEmailSender degrades to a logged no-op.
             if (needsEmailDelivery && resendApiKey is not null)
                 service.WithEnvironment("Email__ApiKey", resendApiKey);
 

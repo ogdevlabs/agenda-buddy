@@ -1,0 +1,20 @@
+meta {
+  name: 3 Upload media
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{gatewayUrl}}/api/v1/media
+  body: none
+}
+
+docs {
+  Raw image bytes as the body (JPEG, PNG or WebP; ≤ 5 MB, ≤ 8000 px a side, ≤ 40 MP). Every upload is
+  **re-encoded** to an sRGB JPEG (1600 px) plus a 480 px thumbnail; nothing the client sent is stored, which is
+  what strips EXIF/GPS. `201` with `{hash,width,height,deduplicated:false}`; the same image again is `200` with
+  `deduplicated:true`. `400` codes: `unsupported-format`, `too-large`, `too-many-pixels`, `dimension-exceeded`,
+  `undecodable`. `413` over the byte cap, `429` + `Retry-After` past 60 uploads/hour, `503` when storage is
+  down. An upload is private to its owner until it is attached as the photo, logo or a portfolio item.
+  Set the body to a file in Bruno's Body tab (binary).
+}

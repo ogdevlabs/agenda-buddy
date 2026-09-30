@@ -174,6 +174,78 @@ public class LegalDocumentsTest : IDisposable
     }
 
     /// <summary>
+    /// The showcase stores images a provider uploads, visit records, anonymous scan counts and reports. A policy
+    /// that still said "we do not collect photos" once uploads existed would be a false statement.
+    /// </summary>
+    [Theory]
+    [InlineData("en-US", "profile photo")]
+    [InlineData("en-US", "logo")]
+    [InlineData("en-US", "portfolio images")]
+    [InlineData("en-US", "captions")]
+    [InlineData("en-US", "re-encoded")]
+    [InlineData("en-US", "metadata")]
+    [InlineData("en-US", "visit records")]
+    [InlineData("en-US", "anonymous counts of QR code scans")]
+    [InlineData("en-US", "reports")]
+    [InlineData("es-MX", "foto de perfil")]
+    [InlineData("es-MX", "logotipo")]
+    [InlineData("es-MX", "imágenes de portafolio")]
+    [InlineData("es-MX", "descripciones")]
+    [InlineData("es-MX", "vuelve a codificar")]
+    [InlineData("es-MX", "metadatos")]
+    [InlineData("es-MX", "registros de visitas")]
+    [InlineData("es-MX", "conteos anónimos de escaneos")]
+    [InlineData("es-MX", "reportes")]
+    public void ThePrivacyPolicyDisclosesWhatTheShowcaseStores(string cultureName, string subject)
+    {
+        AppResources.Culture = new CultureInfo(cultureName);
+
+        Assert.Contains(subject, LegalDocuments.Privacy.ToPlainText(), StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Theory]
+    [InlineData("en-US")]
+    [InlineData("es-MX")]
+    public void ThePrivacyPolicyNoLongerDeniesReceivingPhotos(string cultureName)
+    {
+        AppResources.Culture = new CultureInfo(cultureName);
+        var text = LegalDocuments.Privacy.ToPlainText();
+
+        Assert.DoesNotContain("contacts or photos", text, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("contactos ni fotos", text, StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>Uploading images needs an image-rights warranty, a content rule, a removal route and somewhere to write.</summary>
+    [Theory]
+    [InlineData("en-US", "you own them or have permission to use them")]
+    [InlineData("en-US", "must not contain nudity")]
+    [InlineData("en-US", "report a showcase")]
+    [InlineData("en-US", "remove images or text")]
+    [InlineData("en-US", "infringes your rights")]
+    [InlineData("es-MX", "te pertenecen o que tienes permiso para usarlas")]
+    [InlineData("es-MX", "no deben contener desnudos")]
+    [InlineData("es-MX", "reportar una vitrina")]
+    [InlineData("es-MX", "quitar imágenes o textos")]
+    [InlineData("es-MX", "infringe tus derechos")]
+    public void TheTermsCoverShowcaseContent(string cultureName, string subject)
+    {
+        AppResources.Culture = new CultureInfo(cultureName);
+
+        Assert.Contains(subject, LegalDocuments.Terms.ToPlainText(), StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Theory]
+    [InlineData("en-US")]
+    [InlineData("es-MX")]
+    public void TheTermsNameTheContactAddressForContentConcerns(string cultureName)
+    {
+        AppResources.Culture = new CultureInfo(cultureName);
+        var clause = LegalDocuments.Terms.Clauses[5];
+
+        Assert.Contains(LegalDocuments.ContactEmail, clause.Body, StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
     /// Deletion is the erasure right this app exercises directly, so the policy has to say what deleting does —
     /// including that the counterparty's records survive with the identity stripped, which is the part a reader
     /// would otherwise be surprised by.

@@ -52,13 +52,38 @@ public class ProviderService(IRepository<ProviderEntity> providerRepository) : I
         // $ne/$nin rather than equality, because both fields are omitted from older documents:
         // isActive defaults to true in code and profession_name postdates the services already stored,
         // so "missing" has to be read as active and as unclassified respectively.
-        var bookable = new BsonDocument("services", new BsonDocument("$elemMatch", new BsonDocument
+        return await providerRepository.GetPagedAsync(BookableFilter(), skip, take);
+    }
+
+    public async Task<(IEnumerable<ProviderEntity> Items, long TotalCount)> GetPagedProvidersAsync(
+        int skip, int take, IReadOnlyCollection<ObjectId> excludedIds)
+    {
+        if (excludedIds.Count == 0)
+            return await GetPagedProvidersAsync(skip, take);
+
+        return await providerRepository.GetPagedAsync(Excluding(new BsonDocument(), excludedIds), skip, take);
+    }
+
+    public async Task<(IEnumerable<ProviderEntity> Items, long TotalCount)> GetPagedBookableProvidersAsync(
+        int skip, int take, IReadOnlyCollection<ObjectId> excludedIds)
+    {
+        if (excludedIds.Count == 0)
+            return await GetPagedBookableProvidersAsync(skip, take);
+
+        return await providerRepository.GetPagedAsync(Excluding(BookableFilter(), excludedIds), skip, take);
+    }
+
+    private static BsonDocument BookableFilter() =>
+        new("services", new BsonDocument("$elemMatch", new BsonDocument
         {
             { "isActive", new BsonDocument("$ne", false) },
             { "profession_name", new BsonDocument("$nin", new BsonArray { BsonNull.Value, "" }) }
         }));
 
-        return await providerRepository.GetPagedAsync(bookable, skip, take);
+    private static BsonDocument Excluding(BsonDocument filter, IReadOnlyCollection<ObjectId> excludedIds)
+    {
+        filter.Add("_id", new BsonDocument("$nin", new BsonArray(excludedIds)));
+        return filter;
     }
 
     public async Task<ProviderEntity> FindProvidersAsync(BsonDocument filter)

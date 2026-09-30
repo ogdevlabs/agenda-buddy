@@ -79,6 +79,40 @@
                                    TextColor="{StaticResource TextMuted}" VerticalOptions="Center" />
                         </Grid>
 
+                        <BoxView HeightRequest="0.5" Color="{StaticResource BorderLight}" Margin="16,0" />
+
+                        <Grid ColumnDefinitions="Auto,*,Auto" Padding="16,14" ColumnSpacing="14"
+                              AutomationId="MoreScanCodeRow">
+                            <Grid.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnScanClicked" />
+                            </Grid.GestureRecognizers>
+                            <Label Grid.Column="0" Text="&#x2317;" FontSize="20" WidthRequest="22"
+                                   HorizontalTextAlignment="Center"
+                                   TextColor="{StaticResource Primary}" VerticalOptions="Center" />
+                            <Label Grid.Column="1" Text="{x:Static strings:AppResources.Scan_Title}" FontSize="16"
+                                   TextColor="{StaticResource TextPrimary}" VerticalOptions="Center" />
+                            <Label Grid.Column="2" Text="&#x276F;" FontSize="14"
+                                   TextColor="{StaticResource TextMuted}" VerticalOptions="Center" />
+                        </Grid>
+
+                        <!-- Customer-only: hiding is what a customer does to a provider. -->
+                        <BoxView x:Name="HiddenProvidersDivider" HeightRequest="0.5"
+                                 Color="{StaticResource BorderLight}" Margin="16,0" IsVisible="False" />
+
+                        <Grid x:Name="HiddenProvidersRow" ColumnDefinitions="Auto,*,Auto" Padding="16,14"
+                              ColumnSpacing="14" AutomationId="MoreHiddenProvidersRow" IsVisible="False">
+                            <Grid.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnHiddenProvidersClicked" />
+                            </Grid.GestureRecognizers>
+                            <Label Grid.Column="0" Text="&#x2298;" FontSize="18" WidthRequest="22"
+                                   HorizontalTextAlignment="Center"
+                                   TextColor="{StaticResource TextMuted}" VerticalOptions="Center" />
+                            <Label Grid.Column="1" Text="{x:Static strings:AppResources.HiddenProviders_Title}" FontSize="16"
+                                   TextColor="{StaticResource TextPrimary}" VerticalOptions="Center" />
+                            <Label Grid.Column="2" Text="&#x276F;" FontSize="14"
+                                   TextColor="{StaticResource TextMuted}" VerticalOptions="Center" />
+                        </Grid>
+
                     </VerticalStackLayout>
                 </Frame>
 

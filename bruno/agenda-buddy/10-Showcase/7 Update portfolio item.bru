@@ -1,0 +1,21 @@
+meta {
+  name: 7 Update portfolio item
+  type: http
+  seq: 7
+}
+
+patch {
+  url: {{gatewayUrl}}/api/v1/showcase/me/portfolio/{{mediaHash}}
+  body: json
+}
+
+body:json {
+  {
+    "caption": "Nuevo pie de foto",
+    "serviceId": null
+  }
+}
+
+docs {
+  Caption ≤ 140 and the linked service. `404` when the hash is not in the portfolio.
+}

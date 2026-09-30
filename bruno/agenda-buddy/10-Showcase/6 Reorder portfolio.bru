@@ -1,0 +1,21 @@
+meta {
+  name: 6 Reorder portfolio
+  type: http
+  seq: 6
+}
+
+put {
+  url: {{gatewayUrl}}/api/v1/showcase/me/portfolio/order
+  body: json
+}
+
+body:json {
+  {
+    "hashes": ["{{mediaHash}}"]
+  }
+}
+
+docs {
+  The complete new order — every current hash exactly once. Anything else is `409` `portfolio-changed`, so a
+  reorder based on a stale list cannot drop or duplicate an item.
+}

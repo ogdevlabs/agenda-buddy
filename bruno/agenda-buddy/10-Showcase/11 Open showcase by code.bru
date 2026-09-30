@@ -1,0 +1,16 @@
+meta {
+  name: 11 Open showcase by code
+  type: http
+  seq: 11
+}
+
+get {
+  url: {{gatewayUrl}}/api/v1/showcase/by-code/{{publicCode}}?source=scan
+  body: none
+}
+
+docs {
+  What the in-app scanner calls. Signed-in only, 30 requests/minute per account (`429` + `Retry-After`) so the
+  code space cannot be walked. `404` `showcase-not-found` for an unknown code and for a provider who is inactive,
+  taken down or hidden by the caller — one answer for all of them.
+}

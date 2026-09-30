@@ -39,6 +39,12 @@
 	<false/>
 	<key>NSFaceIDUsageDescription</key>
 	<string>Use Face ID to securely unlock your AgendaMe session.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>AgendaMe uses the camera to scan a provider's code and to take photos for your showcase.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>AgendaMe opens your photo library so you can choose photos for your showcase.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>AgendaMe saves your showcase share image to your photo library when you ask it to.</string>
 	<key>CFBundleLocalizations</key>
 	<array>
 		<string>en</string>

@@ -1,0 +1,23 @@
+meta {
+  name: 14 Report showcase
+  type: http
+  seq: 14
+}
+
+post {
+  url: {{gatewayUrl}}/api/v1/showcase/{{providerRef}}/report
+  body: json
+}
+
+body:json {
+  {
+    "reason": "spam",
+    "detail": null,
+    "portfolioHash": null
+  }
+}
+
+docs {
+  `reason` ∈ `inappropriate`, `not_their_work`, `spam`, `other` (`other` requires `detail`, ≤ 500). `202`;
+  the operator at `Showcase:ReportEmail` is emailed best-effort. Reporting yourself is `404`.
+}

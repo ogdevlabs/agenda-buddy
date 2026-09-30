@@ -1,4 +1,8 @@
 using AgendaBuddy.Library.Accounts;
+using AgendaBuddy.Library.Media;
+using AgendaBuddy.Library.Showcase;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace AgendaBuddy.Library.Services;
 
@@ -26,9 +30,19 @@ public class AccountErasureService(
     IRepository<NotificationEntity> notifications,
     IRepository<NoteEntity> notes,
     IRepository<PaymentEntity> payments,
-    IRepository<DeviceTokenEntity> deviceTokens)
+    IRepository<DeviceTokenEntity> deviceTokens,
+    IRepository<ProviderShowcaseEntity> showcases,
+    IRepository<MediaRefEntity> mediaRefs,
+    IRepository<ShowcaseVisitEntity> showcaseVisits,
+    IRepository<GoCounterEntity> goCounters,
+    IRepository<ShowcaseReportEntity> showcaseReports,
+    IRepository<ShowcaseBlockEntity> showcaseBlocks,
+    IBlobStore? blobStore = null,
+    ILogger<AccountErasureService>? logger = null)
     : IAccountErasureService
 {
+    private readonly ILogger logger = logger ?? NullLogger<AccountErasureService>.Instance;
+
     public async Task<AccountErasureSummary> EraseCustomerAsync(string email)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(email);
@@ -69,6 +83,12 @@ public class AccountErasureService(
             new BsonDocument("subscribed_customer_collection", email),
             new BsonDocument("$pull", new BsonDocument("subscribed_customer_collection", email)));
 
+        // The customer's own side of the showcase: who they looked at, whom they hid and what they reported.
+        var showcaseRowsDeleted =
+            await showcaseVisits.DeleteManyAsync(new BsonDocument("customer_email", email))
+            + await showcaseBlocks.DeleteManyAsync(new BsonDocument("customer_email", email))
+            + await showcaseReports.DeleteManyAsync(new BsonDocument("reporter_email", email));
+
         var profile = await customers.FindOneAndDeleteAsync(SupportTools<CustomerEntity>.FilterByEmail(email));
 
         return new AccountErasureSummary(
@@ -81,7 +101,8 @@ public class AccountErasureService(
             NotificationsDeleted: notificationsDeleted,
             NotesDeleted: 0,
             SubscriptionsRemoved: subscriptionsRemoved,
-            DeviceTokensDeleted: deviceTokensDeleted);
+            DeviceTokensDeleted: deviceTokensDeleted,
+            ShowcaseRowsDeleted: showcaseRowsDeleted);
     }
 
     public async Task<AccountErasureSummary> EraseProviderAsync(string email)
@@ -115,6 +136,8 @@ public class AccountErasureService(
             new BsonDocument("subscribed_provider_collection", email),
             new BsonDocument("$pull", new BsonDocument("subscribed_provider_collection", email)));
 
+        var showcaseRowsDeleted = await EraseProviderShowcaseAsync(email);
+
         // Last, and it takes the services and the embedded appointment list with it — both are fields of this
         // document, so there is no separate collection to scrub.
         var profile = await providers.FindOneAndDeleteAsync(SupportTools<ProviderEntity>.FilterByEmail(email));
@@ -129,7 +152,52 @@ public class AccountErasureService(
             NotificationsDeleted: notificationsDeleted,
             NotesDeleted: notesDeleted,
             SubscriptionsRemoved: subscriptionsRemoved,
-            DeviceTokensDeleted: deviceTokensDeleted);
+            DeviceTokensDeleted: deviceTokensDeleted,
+            ShowcaseRowsDeleted: showcaseRowsDeleted);
+    }
+
+    /// <summary>
+    /// Deletes everything the showcase holds about this provider, then their stored images.
+    /// </summary>
+    /// <remarks>
+    /// Keyed on the provider's id, read before the profile goes, because every showcase row but one is keyed on
+    /// it and nothing else links them to the address. The blob delete is <b>best-effort</b>: storage being down must
+    /// not make an erasure fail — that would leave the account undeletable, which App Review forbids — and the
+    /// media sweep removes every blob prefix whose provider document no longer exists, so the bytes still go.
+    /// </remarks>
+    private async Task<long> EraseProviderShowcaseAsync(string email)
+    {
+        var provider = await providers.FindOneAsync(SupportTools<ProviderEntity>.FilterByEmail(email));
+        var showcase = await showcases.FindOneAsync(new BsonDocument("provider_email", email));
+        var providerId = provider?.Id ?? showcase?.ProviderId;
+        if (providerId is not { } id)
+            return 0;
+
+        var byProvider = new BsonDocument("provider_id", id);
+        var deleted =
+            await showcases.DeleteManyAsync(byProvider)
+            + await mediaRefs.DeleteManyAsync(byProvider)
+            + await showcaseVisits.DeleteManyAsync(byProvider)
+            + await goCounters.DeleteManyAsync(byProvider)
+            + await showcaseReports.DeleteManyAsync(byProvider)
+            + await showcaseBlocks.DeleteManyAsync(byProvider)
+            + await showcaseVisits.DeleteManyAsync(new BsonDocument("customer_email", email))
+            + await showcaseBlocks.DeleteManyAsync(new BsonDocument("customer_email", email))
+            + await showcaseReports.DeleteManyAsync(new BsonDocument("reporter_email", email));
+
+        if (blobStore is not null)
+        {
+            try
+            {
+                await blobStore.DeletePrefixAsync(MediaKeys.Prefix(id));
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Media for an erased provider could not be deleted now; the media sweep will remove it");
+            }
+        }
+
+        return deleted;
     }
 
     /// <summary>

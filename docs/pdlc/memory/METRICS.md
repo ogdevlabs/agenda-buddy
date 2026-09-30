@@ -123,7 +123,7 @@ findings and 0 open UX ADRs, so there is nothing accumulating to flag yet.
 
 | Date | Feature | Step | Gate outcome | Trigger signal | Variants generated | Convergence outcome | Useful? (Y/N) | Note |
 |------|---------|------|--------------|----------------|--------------------|---------------------|---------------|------|
-<!-- No fires yet. -->
+| 2026-09-30 | provider-showcase | 10.7 | Skipped | none (H8=3, H4=3, converged, 0 visual P1s) | 0 | n/a | n/a | closest: F-003 reorder menu, resolved textually |
 
 ### Calibration trigger
 

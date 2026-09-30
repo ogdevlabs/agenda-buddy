@@ -1,4 +1,6 @@
 #if MOBILE
+using AgendaBuddy.MobileApp.Infrastructure;
+using AgendaBuddy.MobileApp.Services;
 using AgendaBuddy.MobileApp.ViewModels;
 
 namespace AgendaBuddy.MobileApp.Views;
@@ -9,6 +11,8 @@ namespace AgendaBuddy.MobileApp.Views;
 public partial class BookAppointmentPage : ContentPage
 {
     private readonly BookAppointmentViewModel _viewModel;
+    private readonly ShowcaseLinkViewModel _showcaseLink;
+    private readonly IUserSessionService _session;
 
     public string CounterpartEmail { get; set; } = string.Empty;
     public string CounterpartName { get; set; } = string.Empty;
@@ -16,11 +20,20 @@ public partial class BookAppointmentPage : ContentPage
     /// <summary>Carried from the directory's profession filter so the service list stays in that scope.</summary>
     public string Profession { get; set; } = string.Empty;
 
-    public BookAppointmentPage(BookAppointmentViewModel viewModel)
+    public BookAppointmentPage(
+        BookAppointmentViewModel viewModel,
+        ShowcaseLinkViewModel showcaseLink,
+        IUserSessionService session)
     {
         InitializeComponent();
         _viewModel = viewModel;
+        _showcaseLink = showcaseLink;
+        _session = session;
         BindingContext = _viewModel;
+
+        _showcaseLink.Source = Routing.ShowcaseSource.Booking;
+        WorkStrip.BindingContext = _showcaseLink;
+        _showcaseLink.ShowcaseRequested += OnShowcaseRequested;
 
         _viewModel.BookingSucceeded += OnBookingSucceeded;
     }
@@ -36,7 +49,13 @@ public partial class BookAppointmentPage : ContentPage
         // The services and the availability behind them are fetched here rather than in the constructor:
         // the query properties are only populated after construction, so the provider is unknown until now.
         _viewModel.LoadCommand.Execute(null);
+
+        if (_session.IsCustomer)
+            _ = _showcaseLink.LoadAsync(CounterpartEmail, _viewModel.CounterpartName);
     }
+
+    private async void OnShowcaseRequested(object? sender, ShowcaseRequestedEventArgs e) =>
+        await Shell.Current.GoToAsync(ShowcaseNavigation.Route, e.Parameters);
 
     /// <summary>
     /// Lands on the Dashboard, not the appointment detail page. Previously this popped back to the

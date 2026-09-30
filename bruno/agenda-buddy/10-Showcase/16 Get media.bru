@@ -1,0 +1,16 @@
+meta {
+  name: 16 Get media
+  type: http
+  seq: 16
+}
+
+get {
+  url: {{gatewayUrl}}/api/v1/media/{{providerRef}}/{{mediaHash}}/thumb
+  body: none
+}
+
+docs {
+  `thumb` or `full`. Signed-in only; there is no public blob URL. `404` for every reason the caller may not
+  have it — unknown, detached, erased, deactivated, hidden, taken down — so the route is not an oracle.
+  `Cache-Control: private, immutable`, `ETag`, `304` on `If-None-Match`, `nosniff`.
+}

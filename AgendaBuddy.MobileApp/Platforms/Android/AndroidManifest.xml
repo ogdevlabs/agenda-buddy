@@ -18,4 +18,15 @@
 	     PushNotificationService asks for before registering a token. Without this the token registers
 	     and every notification is dropped silently by the OS. -->
 	<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+	<!-- Scanning a provider's code and taking showcase photos. Photos are chosen through the system photo
+	     picker, which needs no storage permission, so READ_MEDIA_IMAGES is deliberately not requested. -->
+	<uses-permission android:name="android.permission.CAMERA" />
+	<uses-feature android:name="android.hardware.camera" android:required="false" />
+	<!-- MediaPicker.IsCaptureSupported resolves an IMAGE_CAPTURE handler, which Android 11+ package visibility
+	     hides unless it is declared here; without it the scanner reports the camera as unavailable. -->
+	<queries>
+		<intent>
+			<action android:name="android.media.action.IMAGE_CAPTURE" />
+		</intent>
+	</queries>
 </manifest>

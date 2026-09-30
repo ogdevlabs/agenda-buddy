@@ -44,7 +44,9 @@
                             <Grid.GestureRecognizers>
                                 <TapGestureRecognizer Tapped="OnAvatarTapped" />
                             </Grid.GestureRecognizers>
-                            <controls:Avatar Size="104" Source="{Binding AvatarAsset}" AutomationId="ProfileAvatar" />
+                            <controls:Avatar Size="104" Source="{Binding AvatarAsset}"
+                                             ProviderRef="{Binding ShowcaseProviderRef}" PhotoHash="{Binding ShowcasePhotoHash}"
+                                             AutomationId="ProfileAvatar" />
                         </Grid>
 
                         <Label Text="{Binding DisplayName}"
@@ -175,6 +177,21 @@
                 <Frame Style="{StaticResource CardCompact}" Padding="0" Margin="0"
                        IsVisible="{Binding IsProvider}">
                     <VerticalStackLayout Spacing="0">
+
+                        <Grid ColumnDefinitions="*,Auto" Padding="16,14" ColumnSpacing="12"
+                              AutomationId="MyShowcaseRow">
+                            <Grid.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnShowcaseTapped" />
+                            </Grid.GestureRecognizers>
+                            <VerticalStackLayout Grid.Column="0" Spacing="2">
+                                <Label Text="{x:Static strings:AppResources.MyShowcase_Title}" FontSize="16" TextColor="{StaticResource TextPrimary}" />
+                                <Label Text="{x:Static strings:AppResources.MyShowcase_Subtitle}" FontSize="12" TextColor="{StaticResource TextMuted}" />
+                            </VerticalStackLayout>
+                            <Label Grid.Column="1" Text="&#x276F;" FontSize="14"
+                                   TextColor="{StaticResource TextMuted}" VerticalOptions="Center" />
+                        </Grid>
+
+                        <BoxView HeightRequest="0.5" Color="{StaticResource BorderLight}" Margin="16,0" />
 
                         <Grid ColumnDefinitions="*,Auto" Padding="16,14" ColumnSpacing="12"
                               AutomationId="MyServicesRow">
