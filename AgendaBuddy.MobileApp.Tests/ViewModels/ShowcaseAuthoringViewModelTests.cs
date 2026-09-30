@@ -46,6 +46,8 @@ public class MyShowcaseViewModelTests
         Assert.False(vm.HasLogo);
         Assert.Equal(MyShowcaseViewModel.PreviewCount, vm.Preview.Count);
         Assert.Equal("K7Q 2X9", vm.PublicCodeDisplay);
+        Assert.True(vm.HasPublicCode);
+        Assert.False(vm.HasNoPublicCode);
         Assert.Equal(0.4, vm.CompletenessProgress, 3);
         Assert.False(vm.IsComplete);
         Assert.False(vm.ShowPortfolioPrompt);
@@ -66,6 +68,8 @@ public class MyShowcaseViewModelTests
         Assert.False(vm.HasTagline);
         Assert.Equal(AppResources.GetString("Showcase_TaglineEmpty"), vm.TaglineText);
         Assert.Equal(AppResources.GetString("Showcase_AboutEmpty"), vm.AboutText);
+        Assert.False(vm.HasPublicCode);
+        Assert.True(vm.HasNoPublicCode);
     }
 
     [Fact]

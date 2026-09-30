@@ -61,21 +61,21 @@
             </VerticalStackLayout>
         </ScrollView>
 
-        <!-- Pinned: the three share formats. -->
+        <!-- Pinned: the three share formats. Narrow padding: at a third of the width the style's 24pt clips "Publicación". -->
         <VerticalStackLayout Grid.Row="2" Padding="20,8,20,20" Spacing="8" IsVisible="{Binding HasCode}">
             <Label Text="{x:Static strings:AppResources.Share_ShareAs}" Style="{StaticResource Overline}" />
             <Grid ColumnDefinitions="*,*,*" ColumnSpacing="8">
-                <controls:SafeButton Grid.Column="0" Style="{StaticResource SecondaryButton}"
+                <controls:SafeButton Grid.Column="0" Style="{StaticResource SecondaryButton}" Padding="4,0" FontSize="15"
                                      Text="{x:Static strings:AppResources.Share_Story}"
                                      Command="{Binding ShareStoryCommand}"
                                      IsEnabled="{Binding CanShare}"
                                      AutomationId="ShareStoryButton" />
-                <controls:SafeButton Grid.Column="1" Style="{StaticResource SecondaryButton}"
+                <controls:SafeButton Grid.Column="1" Style="{StaticResource SecondaryButton}" Padding="4,0" FontSize="15"
                                      Text="{x:Static strings:AppResources.Share_Square}"
                                      Command="{Binding ShareSquareCommand}"
                                      IsEnabled="{Binding CanShare}"
                                      AutomationId="ShareSquareButton" />
-                <controls:SafeButton Grid.Column="2" Style="{StaticResource SecondaryButton}"
+                <controls:SafeButton Grid.Column="2" Style="{StaticResource SecondaryButton}" Padding="4,0" FontSize="15"
                                      Text="{x:Static strings:AppResources.Share_Card}"
                                      Command="{Binding ShareCardCommand}"
                                      IsEnabled="{Binding CanShare}"

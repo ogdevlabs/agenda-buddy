@@ -73,16 +73,17 @@
                                                LineBreakMode="TailTruncation" TextColor="{StaticResource TextMuted}" />
                                     </VerticalStackLayout>
                                 </Grid>
-                                <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
-                                    <controls:SafeButton Grid.Column="0" Style="{StaticResource SecondaryButton}"
+                                <!-- Stacked, not side by side: at half width the Spanish labels truncate. -->
+                                <VerticalStackLayout Spacing="10">
+                                    <controls:SafeButton Style="{StaticResource SecondaryButton}"
                                                          Text="{x:Static strings:AppResources.MyShowcase_EditPhotoLogo}"
                                                          Clicked="OnPhotoLogoClicked"
                                                          AutomationId="ShowcaseEditPhotoLogoButton" />
-                                    <controls:SafeButton Grid.Column="1" Style="{StaticResource SecondaryButton}"
+                                    <controls:SafeButton Style="{StaticResource SecondaryButton}"
                                                          Text="{x:Static strings:AppResources.MyShowcase_EditText}"
                                                          Clicked="OnTextClicked"
                                                          AutomationId="ShowcaseEditTextButton" />
-                                </Grid>
+                                </VerticalStackLayout>
                             </VerticalStackLayout>
                         </Frame>
 
@@ -114,7 +115,11 @@
                                            TextColor="{StaticResource TextMuted}" />
                                     <Label Text="{Binding PublicCodeDisplay}" FontSize="22" FontAttributes="Bold"
                                            CharacterSpacing="2" TextColor="{StaticResource TextPrimary}"
+                                           IsVisible="{Binding HasPublicCode}"
                                            AutomationId="ShowcasePublicCode" />
+                                    <Label Text="{x:Static strings:AppResources.MyShowcase_NoCodeYet}"
+                                           Style="{StaticResource BodySecondary}"
+                                           IsVisible="{Binding HasNoPublicCode}" />
                                 </VerticalStackLayout>
                                 <!-- Icon-only: the QR glyph opens the share screen; its description says so. -->
                                 <Button Grid.Column="1" Text="&#x25A6;" FontSize="24"

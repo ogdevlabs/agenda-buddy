@@ -1119,7 +1119,7 @@
   <data name="MyShowcase_OpenShare" xml:space="preserve"><value>QR y compartir</value></data>
   <data name="MyShowcase_Preview" xml:space="preserve"><value>Ver como cliente</value></data>
   <data name="MyShowcase_ShowQr" xml:space="preserve"><value>Mostrar mi código QR</value></data>
-  <data name="MyShowcase_YourCode" xml:space="preserve"><value>Tu código: {0}</value></data>
+  <data name="MyShowcase_YourCode" xml:space="preserve"><value>Tu código</value></data>
   <data name="MyShowcase_NoCodeYet" xml:space="preserve"><value>Abre QR y compartir para obtener tu código.</value></data>
   <data name="MyShowcase_Complete" xml:space="preserve"><value>Tu vitrina está completa.</value></data>
   <data name="PhotoLogo_PhotoHeading" xml:space="preserve"><value>Foto de perfil</value></data>

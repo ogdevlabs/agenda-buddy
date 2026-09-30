@@ -1119,7 +1119,7 @@
   <data name="MyShowcase_OpenShare" xml:space="preserve"><value>QR &amp; Share</value></data>
   <data name="MyShowcase_Preview" xml:space="preserve"><value>Preview as a customer</value></data>
   <data name="MyShowcase_ShowQr" xml:space="preserve"><value>Show my QR code</value></data>
-  <data name="MyShowcase_YourCode" xml:space="preserve"><value>Your code: {0}</value></data>
+  <data name="MyShowcase_YourCode" xml:space="preserve"><value>Your code</value></data>
   <data name="MyShowcase_NoCodeYet" xml:space="preserve"><value>Open QR &amp; Share to get your code.</value></data>
   <data name="MyShowcase_Complete" xml:space="preserve"><value>Your showcase is complete.</value></data>
   <data name="PhotoLogo_PhotoHeading" xml:space="preserve"><value>Profile photo</value></data>

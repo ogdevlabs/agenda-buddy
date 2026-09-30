@@ -9,6 +9,9 @@ namespace AgendaBuddy.MobileApp.Services;
 /// The system picker needs no photo-library permission on either platform, which is why none is requested.
 /// Every picked file is decoded and re-encoded here rather than trusting the picker's own resize options: the
 /// server only accepts JPEG, PNG and WebP, and an iPhone's HEIC original would otherwise arrive as HEIC.
+/// ⚠️ Never pass MaximumWidth/MaximumHeight to the picker. On iOS they route every result through MAUI's own
+/// compression inside an async callback, and one failure there is swallowed without completing the pick — the
+/// sheet closes, the await never returns, and a multi-photo selection silently adds nothing.
 /// </remarks>
 public sealed class MauiImagePicker : IImagePicker
 {
@@ -34,12 +37,7 @@ public sealed class MauiImagePicker : IImagePicker
 
     private static async Task<IReadOnlyList<FileResult>> PickFilesAsync(int limit)
     {
-        var options = new MediaPickerOptions
-        {
-            SelectionLimit = limit,
-            MaximumWidth = IImagePicker.MaxLongEdge,
-            MaximumHeight = IImagePicker.MaxLongEdge
-        };
+        var options = new MediaPickerOptions { SelectionLimit = limit };
         var picked = await MediaPicker.Default.PickPhotosAsync(options);
         return picked?.Where(f => f is not null).ToList() ?? new List<FileResult>();
     }

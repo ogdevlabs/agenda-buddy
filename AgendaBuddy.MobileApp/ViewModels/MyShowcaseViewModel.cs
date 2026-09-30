@@ -21,7 +21,7 @@ public partial class MyShowcaseViewModel : ObservableObject
         nameof(HasShowcase), nameof(ProviderRef), nameof(PhotoHash), nameof(LogoHash), nameof(HasPhoto),
         nameof(HasLogo), nameof(TaglineText), nameof(HasTagline), nameof(AboutText), nameof(HasAbout),
         nameof(CompletenessLabel), nameof(CompletenessProgress), nameof(IsComplete), nameof(FunnelSentence),
-        nameof(PortfolioCountLabel), nameof(HasPortfolio), nameof(ShowPortfolioPrompt), nameof(PublicCodeDisplay))]
+        nameof(PortfolioCountLabel), nameof(HasPortfolio), nameof(ShowPortfolioPrompt), nameof(PublicCodeDisplay), nameof(HasPublicCode), nameof(HasNoPublicCode))]
     private MyShowcase? _showcase;
 
     [ObservableProperty]
@@ -71,6 +71,10 @@ public partial class MyShowcaseViewModel : ObservableObject
     public bool ShowPortfolioPrompt => HasShowcase && !HasPortfolio && !IsLoading;
 
     public string PublicCodeDisplay => ShowcaseCodeParser.FormatForDisplay(Showcase?.PublicCode);
+
+    /// <summary>A code is minted the first time the share screen opens; until then the card says where to get one.</summary>
+    public bool HasPublicCode => !string.IsNullOrWhiteSpace(Showcase?.PublicCode);
+    public bool HasNoPublicCode => HasShowcase && !HasPublicCode;
 
     [RelayCommand]
     private Task LoadAsync() => LoadCoreAsync();
