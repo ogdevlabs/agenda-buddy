@@ -92,12 +92,22 @@ public class ProviderApiService : IProviderApiService
                 Availability = "Contact the provider to check availability",
                 Professions = professions,
                 // As in CustomerApiService: absent for a pre-avatar account, and AvatarAsset falls back.
-                AvatarId = GetString(element, "avatarId")
+                AvatarId = GetString(element, "avatarId"),
+                ProviderRef = GetString(element, "providerRef"),
+                PhotoHash = GetString(element, "photoHash"),
+                PortfolioChangedAt = GetDate(element, "portfolioChangedAt")
             });
         }
 
         return result;
     }
+
+    private static DateTime? GetDate(JsonElement element, string propertyName) =>
+        element.TryGetProperty(propertyName, out var value)
+        && value.ValueKind == JsonValueKind.String
+        && value.TryGetDateTime(out var date)
+            ? date.ToUniversalTime()
+            : null;
 
     private static string GetString(JsonElement element, string propertyName) =>
         element.TryGetProperty(propertyName, out var value) && value.ValueKind == JsonValueKind.String
