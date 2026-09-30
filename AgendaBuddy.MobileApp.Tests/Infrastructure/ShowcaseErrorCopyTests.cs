@@ -13,8 +13,8 @@ public class ShowcaseErrorCopyTests
     {
         { ShowcaseErrorCodes.UnsupportedFormat, "Use a JPEG, PNG or WebP photo.", "Usa una foto JPEG, PNG o WebP." },
         { ShowcaseErrorCodes.TooLarge, "This photo is too large. Try a smaller one.", "Esta foto es demasiado grande. Prueba con una más pequeña." },
-        { ShowcaseErrorCodes.TooManyPixels, "This photo has too many pixels. Try a smaller one.", "Esta foto tiene demasiados píxeles. Prueba con una más pequeña." },
-        { ShowcaseErrorCodes.DimensionExceeded, "This photo is too wide or too tall. Try a smaller one.", "Esta foto es demasiado ancha o alta. Prueba con una más pequeña." },
+        { ShowcaseErrorCodes.TooManyPixels, "This photo is too large. Try a smaller one.", "Esta foto es demasiado grande. Prueba con una más pequeña." },
+        { ShowcaseErrorCodes.DimensionExceeded, "This photo is too large. Try a smaller one.", "Esta foto es demasiado grande. Prueba con una más pequeña." },
         { ShowcaseErrorCodes.Undecodable, "This file couldn't be opened as a photo.", "Este archivo no se pudo abrir como foto." },
         { ShowcaseErrorCodes.UnknownMedia, "That photo is no longer available. Upload it again.", "Esa foto ya no está disponible. Súbela de nuevo." },
         { ShowcaseErrorCodes.StorageUnavailable, "Photos can't be saved right now. Try again in a few minutes.", "Ahora no se pueden guardar fotos. Intenta de nuevo en unos minutos." },

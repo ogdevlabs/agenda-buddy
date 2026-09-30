@@ -21,4 +21,8 @@ public interface IInAppAlertService
     /// <param name="actionLabel">The button's text, e.g. "View".</param>
     /// <param name="action">Run when the button is tapped; never run otherwise.</param>
     Task ShowAsync(string message, string actionLabel, Func<Task> action);
+
+    /// <summary>As above, shown for <paramref name="duration"/> — e.g. an Undo that is only offered briefly.</summary>
+    Task ShowAsync(string message, string actionLabel, Func<Task> action, TimeSpan duration) =>
+        ShowAsync(message, actionLabel, action);
 }

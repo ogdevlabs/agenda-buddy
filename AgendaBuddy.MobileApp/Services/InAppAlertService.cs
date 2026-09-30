@@ -34,7 +34,10 @@ public class InAppAlertService : IInAppAlertService
         }
     }
 
-    public async Task ShowAsync(string message, string actionLabel, Func<Task> action)
+    public Task ShowAsync(string message, string actionLabel, Func<Task> action) =>
+        ShowAsync(message, actionLabel, action, ActionableDuration);
+
+    public async Task ShowAsync(string message, string actionLabel, Func<Task> action, TimeSpan duration)
     {
         if (string.IsNullOrWhiteSpace(message)) return;
 
@@ -47,7 +50,7 @@ public class InAppAlertService : IInAppAlertService
                     // navigation inside it deadlocks the main thread it is dispatched on.
                     action: () => _ = action(),
                     actionButtonText: actionLabel,
-                    duration: ActionableDuration,
+                    duration: duration,
                     visualOptions: BannerOptions()).Show());
         }
         catch (Exception)

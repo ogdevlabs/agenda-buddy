@@ -1033,8 +1033,8 @@
   <data name="Registration_CheckEmailToast" xml:space="preserve"><value>Account created. Check your email for the confirmation button or code.</value></data>
   <data name="ShowcaseError_UnsupportedFormat" xml:space="preserve"><value>Use a JPEG, PNG or WebP photo.</value></data>
   <data name="ShowcaseError_TooLarge" xml:space="preserve"><value>This photo is too large. Try a smaller one.</value></data>
-  <data name="ShowcaseError_TooManyPixels" xml:space="preserve"><value>This photo has too many pixels. Try a smaller one.</value></data>
-  <data name="ShowcaseError_DimensionExceeded" xml:space="preserve"><value>This photo is too wide or too tall. Try a smaller one.</value></data>
+  <data name="ShowcaseError_TooManyPixels" xml:space="preserve"><value>This photo is too large. Try a smaller one.</value></data>
+  <data name="ShowcaseError_DimensionExceeded" xml:space="preserve"><value>This photo is too large. Try a smaller one.</value></data>
   <data name="ShowcaseError_Undecodable" xml:space="preserve"><value>This file couldn't be opened as a photo.</value></data>
   <data name="ShowcaseError_UnknownMedia" xml:space="preserve"><value>That photo is no longer available. Upload it again.</value></data>
   <data name="ShowcaseError_StorageUnavailable" xml:space="preserve"><value>Photos can't be saved right now. Try again in a few minutes.</value></data>
@@ -1072,4 +1072,122 @@
   <data name="Showcase_NextSessionWithService" xml:space="preserve"><value>Your next session: {0} · {1}</value></data>
   <data name="Showcase_ShareStepOne" xml:space="preserve"><value>1 · Scan to get {0}</value></data>
   <data name="Showcase_ShareStepTwo" xml:space="preserve"><value>2 · In the app, tap Scan a code — or type {0}</value></data>
+  <data name="General_Undo" xml:space="preserve"><value>Undo</value></data>
+  <data name="General_Keep" xml:space="preserve"><value>Keep</value></data>
+  <data name="Showcase_TaglineEmpty" xml:space="preserve"><value>No tagline yet — one line on what you do.</value></data>
+  <data name="Showcase_AboutEmpty" xml:space="preserve"><value>Nothing about you yet. Tell customers how you work.</value></data>
+  <data name="Showcase_PickFailed" xml:space="preserve"><value>Couldn't open that photo. Try another one.</value></data>
+  <data name="Showcase_TaglineTooLong" xml:space="preserve"><value>Your tagline is too long — keep it to {0} characters.</value></data>
+  <data name="Showcase_AboutTooLong" xml:space="preserve"><value>Your About text is too long — keep it to {0} characters.</value></data>
+  <data name="Showcase_CaptionTooLong" xml:space="preserve"><value>That caption is too long — keep it to {0} characters.</value></data>
+  <data name="Showcase_SelfReason" xml:space="preserve"><value>This is your showcase. Customers see Book, Subscribe and Message here.</value></data>
+  <data name="Showcase_CustomersOnlyReason" xml:space="preserve"><value>Booking, subscribing and messaging are for customer accounts.</value></data>
+  <data name="Showcase_SubscribeToMessage" xml:space="preserve"><value>Subscribe to send a message.</value></data>
+  <data name="Showcase_Subscribe" xml:space="preserve"><value>Subscribe</value></data>
+  <data name="Showcase_Unsubscribe" xml:space="preserve"><value>Unsubscribe</value></data>
+  <data name="Showcase_ContactUnavailable" xml:space="preserve"><value>Couldn't reach this provider right now. Try again from your providers list.</value></data>
+  <data name="Error_Subscribe" xml:space="preserve"><value>Could not subscribe. Try again.</value></data>
+  <data name="Error_Unsubscribe" xml:space="preserve"><value>Could not unsubscribe. Try again.</value></data>
+  <data name="Portfolio_Title" xml:space="preserve"><value>Portfolio</value></data>
+  <data name="Portfolio_MakeCover" xml:space="preserve"><value>Make cover</value></data>
+  <data name="Portfolio_MoveEarlier" xml:space="preserve"><value>Move earlier</value></data>
+  <data name="Portfolio_MoveLater" xml:space="preserve"><value>Move later</value></data>
+  <data name="Portfolio_EditCaption" xml:space="preserve"><value>Edit caption</value></data>
+  <data name="Portfolio_Remove" xml:space="preserve"><value>Remove</value></data>
+  <data name="Portfolio_Removed" xml:space="preserve"><value>Removed from your portfolio</value></data>
+  <data name="Portfolio_Add" xml:space="preserve"><value>Add photos</value></data>
+  <data name="Portfolio_Full" xml:space="preserve"><value>Your portfolio is full. Remove a photo to add another.</value></data>
+  <data name="Portfolio_Empty" xml:space="preserve"><value>No photos yet. Add up to 20 of your best work.</value></data>
+  <data name="Portfolio_Hint" xml:space="preserve"><value>The first photo is your cover.</value></data>
+  <data name="Portfolio_Uploading" xml:space="preserve"><value>Uploading…</value></data>
+  <data name="Portfolio_Discard" xml:space="preserve"><value>Discard</value></data>
+  <data name="Portfolio_Cover" xml:space="preserve"><value>Cover</value></data>
+  <data name="Portfolio_NewBadge" xml:space="preserve"><value>NEW</value></data>
+  <data name="Portfolio_CaptionPrompt" xml:space="preserve"><value>Caption</value></data>
+  <data name="Portfolio_CaptionPlaceholder" xml:space="preserve"><value>Describe this piece</value></data>
+  <data name="Portfolio_MoreOptions" xml:space="preserve"><value>More options</value></data>
+  <data name="Portfolio_RetryUpload" xml:space="preserve"><value>Retry upload</value></data>
+  <data name="MyShowcase_Title" xml:space="preserve"><value>My showcase</value></data>
+  <data name="MyShowcase_Subtitle" xml:space="preserve"><value>What customers see before they book.</value></data>
+  <data name="MyShowcase_YouCard" xml:space="preserve"><value>You</value></data>
+  <data name="MyShowcase_WorkCard" xml:space="preserve"><value>Your work</value></data>
+  <data name="MyShowcase_ShareCard" xml:space="preserve"><value>Share</value></data>
+  <data name="MyShowcase_EditPhotoLogo" xml:space="preserve"><value>Photo &amp; logo</value></data>
+  <data name="MyShowcase_EditText" xml:space="preserve"><value>Tagline &amp; about</value></data>
+  <data name="MyShowcase_ManagePortfolio" xml:space="preserve"><value>Manage portfolio</value></data>
+  <data name="MyShowcase_PortfolioPrompt" xml:space="preserve"><value>Show your work — customers can see it before they book.</value></data>
+  <data name="MyShowcase_OpenShare" xml:space="preserve"><value>QR &amp; Share</value></data>
+  <data name="MyShowcase_Preview" xml:space="preserve"><value>Preview as a customer</value></data>
+  <data name="MyShowcase_ShowQr" xml:space="preserve"><value>Show my QR code</value></data>
+  <data name="MyShowcase_YourCode" xml:space="preserve"><value>Your code: {0}</value></data>
+  <data name="MyShowcase_NoCodeYet" xml:space="preserve"><value>Open QR &amp; Share to get your code.</value></data>
+  <data name="MyShowcase_Complete" xml:space="preserve"><value>Your showcase is complete.</value></data>
+  <data name="PhotoLogo_PhotoHeading" xml:space="preserve"><value>Profile photo</value></data>
+  <data name="PhotoLogo_PhotoHint" xml:space="preserve"><value>A clear photo of you. It replaces your avatar across the app.</value></data>
+  <data name="PhotoLogo_LogoHeading" xml:space="preserve"><value>Logo</value></data>
+  <data name="PhotoLogo_LogoHint" xml:space="preserve"><value>Shown as the badge on your showcase.</value></data>
+  <data name="PhotoLogo_Choose" xml:space="preserve"><value>Choose photo</value></data>
+  <data name="PhotoLogo_Replace" xml:space="preserve"><value>Replace</value></data>
+  <data name="PhotoLogo_Remove" xml:space="preserve"><value>Remove</value></data>
+  <data name="PhotoLogo_Saving" xml:space="preserve"><value>Saving…</value></data>
+  <data name="ShowcaseText_TaglineLabel" xml:space="preserve"><value>Tagline</value></data>
+  <data name="ShowcaseText_TaglinePlaceholder" xml:space="preserve"><value>e.g. Fine-line tattoos in Condesa</value></data>
+  <data name="ShowcaseText_AboutLabel" xml:space="preserve"><value>About</value></data>
+  <data name="ShowcaseText_AboutPlaceholder" xml:space="preserve"><value>What you do, how you work, what to expect.</value></data>
+  <data name="Action_ShowcaseSaved" xml:space="preserve"><value>Showcase saved.</value></data>
+  <data name="Share_ImageFailed" xml:space="preserve"><value>Couldn't create the image. Try again.</value></data>
+  <data name="Share_Preparing" xml:space="preserve"><value>Preparing image…</value></data>
+  <data name="Share_CodeLabel" xml:space="preserve"><value>Your code</value></data>
+  <data name="Share_Instructions" xml:space="preserve"><value>Customers scan this in AgendaMe, or type the code.</value></data>
+  <data name="Share_ShareAs" xml:space="preserve"><value>Share as an image</value></data>
+  <data name="Share_Story" xml:space="preserve"><value>Story</value></data>
+  <data name="Share_Square" xml:space="preserve"><value>Post</value></data>
+  <data name="Share_Card" xml:space="preserve"><value>Card</value></data>
+  <data name="Share_Share" xml:space="preserve"><value>Share</value></data>
+  <data name="Share_QrDescription" xml:space="preserve"><value>Your QR code</value></data>
+  <data name="Scan_Title" xml:space="preserve"><value>Scan a code</value></data>
+  <data name="Scan_Hint" xml:space="preserve"><value>Point your camera at a provider's AgendaMe code.</value></data>
+  <data name="Scan_TypeInstead" xml:space="preserve"><value>Type a code instead</value></data>
+  <data name="Scan_UseCamera" xml:space="preserve"><value>Scan with the camera</value></data>
+  <data name="Scan_CodePlaceholder" xml:space="preserve"><value>6-character code</value></data>
+  <data name="Scan_Open" xml:space="preserve"><value>Open showcase</value></data>
+  <data name="Scan_CameraDenied" xml:space="preserve"><value>Camera access is off. Allow it in Settings to scan, or type the code.</value></data>
+  <data name="Scan_OpenSettings" xml:space="preserve"><value>Open Settings</value></data>
+  <data name="Scan_CameraUnavailable" xml:space="preserve"><value>Scanning isn't available on this device. Type the code instead.</value></data>
+  <data name="Scan_Resolving" xml:space="preserve"><value>Opening…</value></data>
+  <data name="Scan_NotAnAgendaMeCode" xml:space="preserve"><value>That's not an AgendaMe code</value></data>
+  <data name="Scan_InvalidCode" xml:space="preserve"><value>Codes are 6 letters and numbers, like K7Q 2X9.</value></data>
+  <data name="Scan_CodeNotFound" xml:space="preserve"><value>No provider has that code. Check it and try again.</value></data>
+  <data name="ProviderShowcase_Title" xml:space="preserve"><value>Showcase</value></data>
+  <data name="ProviderShowcase_Work" xml:space="preserve"><value>Work</value></data>
+  <data name="ProviderShowcase_Services" xml:space="preserve"><value>Services</value></data>
+  <data name="ProviderShowcase_Book" xml:space="preserve"><value>Book</value></data>
+  <data name="ProviderShowcase_Empty" xml:space="preserve"><value>Nothing here yet. The services below can still be booked.</value></data>
+  <data name="ProviderShowcase_NetworkError" xml:space="preserve"><value>Couldn't load this showcase. Check your connection and try again.</value></data>
+  <data name="ProviderShowcase_Report" xml:space="preserve"><value>Report</value></data>
+  <data name="ProviderShowcase_Hide" xml:space="preserve"><value>Hide provider</value></data>
+  <data name="ProviderShowcase_MoreOptions" xml:space="preserve"><value>More options</value></data>
+  <data name="ProviderShowcase_PhotoDescription" xml:space="preserve"><value>Photo of {0}</value></data>
+  <data name="ShowcaseReport_Title" xml:space="preserve"><value>Why are you reporting this?</value></data>
+  <data name="ShowcaseReport_DetailPrompt" xml:space="preserve"><value>Tell us more</value></data>
+  <data name="ShowcaseReport_DetailOptional" xml:space="preserve"><value>Anything else we should know? (optional)</value></data>
+  <data name="ShowcaseReport_Send" xml:space="preserve"><value>Send</value></data>
+  <data name="ShowcaseReport_DetailRequired" xml:space="preserve"><value>Tell us what's wrong so we can review it.</value></data>
+  <data name="ShowcaseReport_DetailTooLong" xml:space="preserve"><value>Keep the details to {0} characters.</value></data>
+  <data name="ShowcaseReport_Thanks" xml:space="preserve"><value>Thanks — we'll review this.</value></data>
+  <data name="ShowcaseReport_Failed" xml:space="preserve"><value>Couldn't send your report. Try again.</value></data>
+  <data name="ShowcaseReport_Reason_Inappropriate" xml:space="preserve"><value>Inappropriate content</value></data>
+  <data name="ShowcaseReport_Reason_NotTheirWork" xml:space="preserve"><value>Not this provider's work</value></data>
+  <data name="ShowcaseReport_Reason_Spam" xml:space="preserve"><value>Spam or scam</value></data>
+  <data name="ShowcaseReport_Reason_Other" xml:space="preserve"><value>Something else</value></data>
+  <data name="ShowcaseHide_Confirm" xml:space="preserve"><value>Hide {0}? You won't see them in your providers list or when scanning. Undo any time in More → Hidden providers.</value></data>
+  <data name="ShowcaseHide_ThisProvider" xml:space="preserve"><value>this provider</value></data>
+  <data name="HiddenProviders_Title" xml:space="preserve"><value>Hidden providers</value></data>
+  <data name="HiddenProviders_Hint" xml:space="preserve"><value>Hidden providers don't appear in your providers list or when scanning.</value></data>
+  <data name="HiddenProviders_Empty" xml:space="preserve"><value>You haven't hidden any providers.</value></data>
+  <data name="HiddenProviders_Unhide" xml:space="preserve"><value>Unhide</value></data>
+  <data name="HiddenProviders_Unhidden" xml:space="preserve"><value>{0} is visible again.</value></data>
+  <data name="HiddenProviders_UnhiddenNoName" xml:space="preserve"><value>Provider visible again.</value></data>
+  <data name="Dashboard_FindProvider" xml:space="preserve"><value>Found a provider? Scan their code or type it in.</value></data>
+  <data name="Showcase_TypeCode" xml:space="preserve"><value>Type a code</value></data>
 </root>

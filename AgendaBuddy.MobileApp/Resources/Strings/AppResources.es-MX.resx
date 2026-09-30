@@ -1033,8 +1033,8 @@
   <data name="Registration_CheckEmailToast" xml:space="preserve"><value>Cuenta creada. Revisa tu correo para usar el botón o código de confirmación.</value></data>
   <data name="ShowcaseError_UnsupportedFormat" xml:space="preserve"><value>Usa una foto JPEG, PNG o WebP.</value></data>
   <data name="ShowcaseError_TooLarge" xml:space="preserve"><value>Esta foto es demasiado grande. Prueba con una más pequeña.</value></data>
-  <data name="ShowcaseError_TooManyPixels" xml:space="preserve"><value>Esta foto tiene demasiados píxeles. Prueba con una más pequeña.</value></data>
-  <data name="ShowcaseError_DimensionExceeded" xml:space="preserve"><value>Esta foto es demasiado ancha o alta. Prueba con una más pequeña.</value></data>
+  <data name="ShowcaseError_TooManyPixels" xml:space="preserve"><value>Esta foto es demasiado grande. Prueba con una más pequeña.</value></data>
+  <data name="ShowcaseError_DimensionExceeded" xml:space="preserve"><value>Esta foto es demasiado grande. Prueba con una más pequeña.</value></data>
   <data name="ShowcaseError_Undecodable" xml:space="preserve"><value>Este archivo no se pudo abrir como foto.</value></data>
   <data name="ShowcaseError_UnknownMedia" xml:space="preserve"><value>Esa foto ya no está disponible. Súbela de nuevo.</value></data>
   <data name="ShowcaseError_StorageUnavailable" xml:space="preserve"><value>Ahora no se pueden guardar fotos. Intenta de nuevo en unos minutos.</value></data>
@@ -1072,4 +1072,122 @@
   <data name="Showcase_NextSessionWithService" xml:space="preserve"><value>Tu próxima sesión: {0} · {1}</value></data>
   <data name="Showcase_ShareStepOne" xml:space="preserve"><value>1 · Escanea para descargar {0}</value></data>
   <data name="Showcase_ShareStepTwo" xml:space="preserve"><value>2 · En la app, toca Escanear código — o escribe {0}</value></data>
+  <data name="General_Undo" xml:space="preserve"><value>Deshacer</value></data>
+  <data name="General_Keep" xml:space="preserve"><value>Conservar</value></data>
+  <data name="Showcase_TaglineEmpty" xml:space="preserve"><value>Aún no tienes frase: una línea sobre lo que haces.</value></data>
+  <data name="Showcase_AboutEmpty" xml:space="preserve"><value>Aún no hay nada sobre ti. Cuenta a tus clientes cómo trabajas.</value></data>
+  <data name="Showcase_PickFailed" xml:space="preserve"><value>No se pudo abrir esa foto. Prueba con otra.</value></data>
+  <data name="Showcase_TaglineTooLong" xml:space="preserve"><value>Tu frase es demasiado larga: máximo {0} caracteres.</value></data>
+  <data name="Showcase_AboutTooLong" xml:space="preserve"><value>Tu descripción es demasiado larga: máximo {0} caracteres.</value></data>
+  <data name="Showcase_CaptionTooLong" xml:space="preserve"><value>Esa descripción es demasiado larga: máximo {0} caracteres.</value></data>
+  <data name="Showcase_SelfReason" xml:space="preserve"><value>Esta es tu vitrina. Tus clientes ven aquí Reservar, Suscribirse y Mensaje.</value></data>
+  <data name="Showcase_CustomersOnlyReason" xml:space="preserve"><value>Reservar, suscribirse y enviar mensajes es para cuentas de cliente.</value></data>
+  <data name="Showcase_SubscribeToMessage" xml:space="preserve"><value>Suscríbete para enviar un mensaje.</value></data>
+  <data name="Showcase_Subscribe" xml:space="preserve"><value>Suscribirse</value></data>
+  <data name="Showcase_Unsubscribe" xml:space="preserve"><value>Cancelar suscripción</value></data>
+  <data name="Showcase_ContactUnavailable" xml:space="preserve"><value>No se pudo contactar a este proveedor ahora. Inténtalo desde tu lista de proveedores.</value></data>
+  <data name="Error_Subscribe" xml:space="preserve"><value>No se pudo suscribir. Inténtalo de nuevo.</value></data>
+  <data name="Error_Unsubscribe" xml:space="preserve"><value>No se pudo cancelar la suscripción. Inténtalo de nuevo.</value></data>
+  <data name="Portfolio_Title" xml:space="preserve"><value>Portafolio</value></data>
+  <data name="Portfolio_MakeCover" xml:space="preserve"><value>Usar como portada</value></data>
+  <data name="Portfolio_MoveEarlier" xml:space="preserve"><value>Mover antes</value></data>
+  <data name="Portfolio_MoveLater" xml:space="preserve"><value>Mover después</value></data>
+  <data name="Portfolio_EditCaption" xml:space="preserve"><value>Editar descripción</value></data>
+  <data name="Portfolio_Remove" xml:space="preserve"><value>Quitar</value></data>
+  <data name="Portfolio_Removed" xml:space="preserve"><value>Se quitó de tu portafolio</value></data>
+  <data name="Portfolio_Add" xml:space="preserve"><value>Agregar fotos</value></data>
+  <data name="Portfolio_Full" xml:space="preserve"><value>Tu portafolio está lleno. Quita una foto para agregar otra.</value></data>
+  <data name="Portfolio_Empty" xml:space="preserve"><value>Aún no hay fotos. Agrega hasta 20 de tus mejores trabajos.</value></data>
+  <data name="Portfolio_Hint" xml:space="preserve"><value>La primera foto es tu portada.</value></data>
+  <data name="Portfolio_Uploading" xml:space="preserve"><value>Subiendo…</value></data>
+  <data name="Portfolio_Discard" xml:space="preserve"><value>Descartar</value></data>
+  <data name="Portfolio_Cover" xml:space="preserve"><value>Portada</value></data>
+  <data name="Portfolio_NewBadge" xml:space="preserve"><value>NUEVO</value></data>
+  <data name="Portfolio_CaptionPrompt" xml:space="preserve"><value>Descripción de la foto</value></data>
+  <data name="Portfolio_CaptionPlaceholder" xml:space="preserve"><value>Describe esta pieza</value></data>
+  <data name="Portfolio_MoreOptions" xml:space="preserve"><value>Más opciones</value></data>
+  <data name="Portfolio_RetryUpload" xml:space="preserve"><value>Reintentar subida</value></data>
+  <data name="MyShowcase_Title" xml:space="preserve"><value>Mi vitrina</value></data>
+  <data name="MyShowcase_Subtitle" xml:space="preserve"><value>Lo que tus clientes ven antes de reservar.</value></data>
+  <data name="MyShowcase_YouCard" xml:space="preserve"><value>Tú</value></data>
+  <data name="MyShowcase_WorkCard" xml:space="preserve"><value>Tu trabajo</value></data>
+  <data name="MyShowcase_ShareCard" xml:space="preserve"><value>Compartir</value></data>
+  <data name="MyShowcase_EditPhotoLogo" xml:space="preserve"><value>Foto y logotipo</value></data>
+  <data name="MyShowcase_EditText" xml:space="preserve"><value>Frase y descripción</value></data>
+  <data name="MyShowcase_ManagePortfolio" xml:space="preserve"><value>Administrar portafolio</value></data>
+  <data name="MyShowcase_PortfolioPrompt" xml:space="preserve"><value>Muestra tu trabajo: tus clientes pueden verlo antes de reservar.</value></data>
+  <data name="MyShowcase_OpenShare" xml:space="preserve"><value>QR y compartir</value></data>
+  <data name="MyShowcase_Preview" xml:space="preserve"><value>Ver como cliente</value></data>
+  <data name="MyShowcase_ShowQr" xml:space="preserve"><value>Mostrar mi código QR</value></data>
+  <data name="MyShowcase_YourCode" xml:space="preserve"><value>Tu código: {0}</value></data>
+  <data name="MyShowcase_NoCodeYet" xml:space="preserve"><value>Abre QR y compartir para obtener tu código.</value></data>
+  <data name="MyShowcase_Complete" xml:space="preserve"><value>Tu vitrina está completa.</value></data>
+  <data name="PhotoLogo_PhotoHeading" xml:space="preserve"><value>Foto de perfil</value></data>
+  <data name="PhotoLogo_PhotoHint" xml:space="preserve"><value>Una foto clara de ti. Reemplaza tu avatar en toda la app.</value></data>
+  <data name="PhotoLogo_LogoHeading" xml:space="preserve"><value>Logotipo</value></data>
+  <data name="PhotoLogo_LogoHint" xml:space="preserve"><value>Se muestra como insignia en tu vitrina.</value></data>
+  <data name="PhotoLogo_Choose" xml:space="preserve"><value>Elegir foto</value></data>
+  <data name="PhotoLogo_Replace" xml:space="preserve"><value>Reemplazar</value></data>
+  <data name="PhotoLogo_Remove" xml:space="preserve"><value>Quitar</value></data>
+  <data name="PhotoLogo_Saving" xml:space="preserve"><value>Guardando…</value></data>
+  <data name="ShowcaseText_TaglineLabel" xml:space="preserve"><value>Frase</value></data>
+  <data name="ShowcaseText_TaglinePlaceholder" xml:space="preserve"><value>p. ej. Tatuajes de línea fina en la Condesa</value></data>
+  <data name="ShowcaseText_AboutLabel" xml:space="preserve"><value>Acerca de</value></data>
+  <data name="ShowcaseText_AboutPlaceholder" xml:space="preserve"><value>Qué haces, cómo trabajas y qué esperar.</value></data>
+  <data name="Action_ShowcaseSaved" xml:space="preserve"><value>Vitrina guardada.</value></data>
+  <data name="Share_ImageFailed" xml:space="preserve"><value>No se pudo crear la imagen. Inténtalo de nuevo.</value></data>
+  <data name="Share_Preparing" xml:space="preserve"><value>Preparando imagen…</value></data>
+  <data name="Share_CodeLabel" xml:space="preserve"><value>Tu código</value></data>
+  <data name="Share_Instructions" xml:space="preserve"><value>Tus clientes lo escanean en AgendaMe o escriben el código.</value></data>
+  <data name="Share_ShareAs" xml:space="preserve"><value>Compartir como imagen</value></data>
+  <data name="Share_Story" xml:space="preserve"><value>Historia</value></data>
+  <data name="Share_Square" xml:space="preserve"><value>Publicación</value></data>
+  <data name="Share_Card" xml:space="preserve"><value>Tarjeta</value></data>
+  <data name="Share_Share" xml:space="preserve"><value>Compartir</value></data>
+  <data name="Share_QrDescription" xml:space="preserve"><value>Tu código QR</value></data>
+  <data name="Scan_Title" xml:space="preserve"><value>Escanear código</value></data>
+  <data name="Scan_Hint" xml:space="preserve"><value>Apunta la cámara al código de AgendaMe de un proveedor.</value></data>
+  <data name="Scan_TypeInstead" xml:space="preserve"><value>Escribir el código</value></data>
+  <data name="Scan_UseCamera" xml:space="preserve"><value>Escanear con la cámara</value></data>
+  <data name="Scan_CodePlaceholder" xml:space="preserve"><value>Código de 6 caracteres</value></data>
+  <data name="Scan_Open" xml:space="preserve"><value>Abrir vitrina</value></data>
+  <data name="Scan_CameraDenied" xml:space="preserve"><value>El acceso a la cámara está desactivado. Actívalo en Ajustes para escanear, o escribe el código.</value></data>
+  <data name="Scan_OpenSettings" xml:space="preserve"><value>Abrir Ajustes</value></data>
+  <data name="Scan_CameraUnavailable" xml:space="preserve"><value>El escaneo no está disponible en este dispositivo. Escribe el código.</value></data>
+  <data name="Scan_Resolving" xml:space="preserve"><value>Abriendo…</value></data>
+  <data name="Scan_NotAnAgendaMeCode" xml:space="preserve"><value>Ese no es un código de AgendaMe</value></data>
+  <data name="Scan_InvalidCode" xml:space="preserve"><value>Los códigos tienen 6 letras y números, como K7Q 2X9.</value></data>
+  <data name="Scan_CodeNotFound" xml:space="preserve"><value>Ningún proveedor tiene ese código. Revísalo e inténtalo de nuevo.</value></data>
+  <data name="ProviderShowcase_Title" xml:space="preserve"><value>Vitrina</value></data>
+  <data name="ProviderShowcase_Work" xml:space="preserve"><value>Trabajo</value></data>
+  <data name="ProviderShowcase_Services" xml:space="preserve"><value>Servicios</value></data>
+  <data name="ProviderShowcase_Book" xml:space="preserve"><value>Reservar</value></data>
+  <data name="ProviderShowcase_Empty" xml:space="preserve"><value>Aún no hay nada aquí. Los servicios de abajo se pueden reservar.</value></data>
+  <data name="ProviderShowcase_NetworkError" xml:space="preserve"><value>No se pudo cargar esta vitrina. Revisa tu conexión e inténtalo de nuevo.</value></data>
+  <data name="ProviderShowcase_Report" xml:space="preserve"><value>Reportar</value></data>
+  <data name="ProviderShowcase_Hide" xml:space="preserve"><value>Ocultar proveedor</value></data>
+  <data name="ProviderShowcase_MoreOptions" xml:space="preserve"><value>Más opciones</value></data>
+  <data name="ProviderShowcase_PhotoDescription" xml:space="preserve"><value>Foto de {0}</value></data>
+  <data name="ShowcaseReport_Title" xml:space="preserve"><value>¿Por qué lo reportas?</value></data>
+  <data name="ShowcaseReport_DetailPrompt" xml:space="preserve"><value>Cuéntanos más</value></data>
+  <data name="ShowcaseReport_DetailOptional" xml:space="preserve"><value>¿Algo más que debamos saber? (opcional)</value></data>
+  <data name="ShowcaseReport_Send" xml:space="preserve"><value>Enviar</value></data>
+  <data name="ShowcaseReport_DetailRequired" xml:space="preserve"><value>Cuéntanos qué pasa para poder revisarlo.</value></data>
+  <data name="ShowcaseReport_DetailTooLong" xml:space="preserve"><value>Escribe como máximo {0} caracteres.</value></data>
+  <data name="ShowcaseReport_Thanks" xml:space="preserve"><value>Gracias, lo revisaremos.</value></data>
+  <data name="ShowcaseReport_Failed" xml:space="preserve"><value>No se pudo enviar tu reporte. Inténtalo de nuevo.</value></data>
+  <data name="ShowcaseReport_Reason_Inappropriate" xml:space="preserve"><value>Contenido inapropiado</value></data>
+  <data name="ShowcaseReport_Reason_NotTheirWork" xml:space="preserve"><value>No es trabajo de este proveedor</value></data>
+  <data name="ShowcaseReport_Reason_Spam" xml:space="preserve"><value>Spam o fraude</value></data>
+  <data name="ShowcaseReport_Reason_Other" xml:space="preserve"><value>Otro motivo</value></data>
+  <data name="ShowcaseHide_Confirm" xml:space="preserve"><value>¿Ocultar a {0}? No aparecerá en tu lista de proveedores ni al escanear. Puedes deshacerlo cuando quieras en Más → Proveedores ocultos.</value></data>
+  <data name="ShowcaseHide_ThisProvider" xml:space="preserve"><value>este proveedor</value></data>
+  <data name="HiddenProviders_Title" xml:space="preserve"><value>Proveedores ocultos</value></data>
+  <data name="HiddenProviders_Hint" xml:space="preserve"><value>Los proveedores ocultos no aparecen en tu lista de proveedores ni al escanear.</value></data>
+  <data name="HiddenProviders_Empty" xml:space="preserve"><value>No has ocultado a ningún proveedor.</value></data>
+  <data name="HiddenProviders_Unhide" xml:space="preserve"><value>Mostrar de nuevo</value></data>
+  <data name="HiddenProviders_Unhidden" xml:space="preserve"><value>{0} vuelve a estar visible.</value></data>
+  <data name="HiddenProviders_UnhiddenNoName" xml:space="preserve"><value>El proveedor vuelve a estar visible.</value></data>
+  <data name="Dashboard_FindProvider" xml:space="preserve"><value>¿Encontraste un proveedor? Escanea su código o escríbelo.</value></data>
+  <data name="Showcase_TypeCode" xml:space="preserve"><value>Escribir código</value></data>
 </root>
