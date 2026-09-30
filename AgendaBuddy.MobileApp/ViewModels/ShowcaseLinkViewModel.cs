@@ -1,6 +1,8 @@
 using AgendaBuddy.MobileApp.Infrastructure;
 using AgendaBuddy.MobileApp.Services;
+using AgendaBuddy.MobileApp.Routing;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 
 namespace AgendaBuddy.MobileApp.ViewModels;
 
@@ -30,6 +32,19 @@ public partial class ShowcaseLinkViewModel : ObservableObject
     private string _firstName = string.Empty;
 
     public ShowcaseLinkViewModel(IShowcaseApiService api) => _api = api;
+
+    /// <summary>Which surface the link sits on, recorded with the visit for the provider's funnel.</summary>
+    public ShowcaseSource Source { get; set; } = ShowcaseSource.Appointment;
+
+    public event EventHandler<ShowcaseRequestedEventArgs>? ShowcaseRequested;
+
+    [RelayCommand]
+    private void Open()
+    {
+        if (!HasShowcase)
+            return;
+        ShowcaseRequested?.Invoke(this, new ShowcaseRequestedEventArgs(ProviderRef, Email, Source));
+    }
 
     public bool HasShowcase => !string.IsNullOrEmpty(ProviderRef);
     public bool HasPhoto => !string.IsNullOrEmpty(PhotoHash);

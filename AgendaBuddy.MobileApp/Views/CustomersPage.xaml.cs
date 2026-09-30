@@ -15,6 +15,7 @@ public partial class CustomersPage : ContentPage
 
         _viewModel.BookRequested += OnBookRequested;
         _viewModel.MessageRequested += OnMessageRequested;
+        _viewModel.ShowcaseRequested += OnShowcaseRequested;
     }
 
     protected override void OnAppearing()
@@ -39,6 +40,9 @@ public partial class CustomersPage : ContentPage
         };
         await Shell.Current.GoToAsync("messageThread", nav);
     }
+
+    private async void OnShowcaseRequested(object? sender, Infrastructure.ShowcaseRequestedEventArgs e) =>
+        await Shell.Current.GoToAsync(Infrastructure.ShowcaseNavigation.Route, e.Parameters);
 
     private async void OnBookRequested(object? sender, BookRequestedEventArgs e)
     {

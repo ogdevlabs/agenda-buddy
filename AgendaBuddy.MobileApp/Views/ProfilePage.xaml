@@ -44,7 +44,9 @@
                             <Grid.GestureRecognizers>
                                 <TapGestureRecognizer Tapped="OnAvatarTapped" />
                             </Grid.GestureRecognizers>
-                            <controls:Avatar Size="104" Source="{Binding AvatarAsset}" AutomationId="ProfileAvatar" />
+                            <controls:Avatar Size="104" Source="{Binding AvatarAsset}"
+                                             ProviderRef="{Binding ShowcaseProviderRef}" PhotoHash="{Binding ShowcasePhotoHash}"
+                                             AutomationId="ProfileAvatar" />
                         </Grid>
 
                         <Label Text="{Binding DisplayName}"

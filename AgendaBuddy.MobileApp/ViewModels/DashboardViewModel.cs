@@ -11,6 +11,7 @@ public partial class DashboardViewModel : ObservableObject
     private readonly IBookingApiService _bookingApiService;
     private readonly IUserSessionService _session;
     private readonly BrandHeaderViewModel _signedInUser;
+    private readonly ICustomerApiService? _customerApi;
     private List<AppointmentSummary> _allAppointments = new();
     private int _pageIndex;
     private const int PageSize = 4;
@@ -87,6 +88,23 @@ public partial class DashboardViewModel : ObservableObject
 
     public event EventHandler? AppointmentsLoaded;
 
+    /// <summary>
+    /// Whether the customer already has somebody to book with — a subscription or an upcoming booking. Until then
+    /// the dashboard offers the way in (scan a provider's code or type it), and it collapses once it has done its job.
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowFindProviderCard))]
+    private bool _hasProviderRelationship = true;
+
+    public bool ShowFindProviderCard => IsCustomer && !HasProviderRelationship;
+
+    public string FindProviderLabel => AppResources.GetString("Dashboard_FindProvider");
+
+    public event EventHandler? ScanProviderRequested;
+
+    [RelayCommand]
+    private void ScanProvider() => ScanProviderRequested?.Invoke(this, EventArgs.Empty);
+
     /// <remarks>
     /// Takes <see cref="BrandHeaderViewModel"/> because it is the singleton that already resolves and caches
     /// the signed-in user's name — the JWT does not carry one, so it costs a profile call. Fetching it again
@@ -95,11 +113,13 @@ public partial class DashboardViewModel : ObservableObject
     public DashboardViewModel(
         IBookingApiService bookingApiService,
         IUserSessionService session,
-        BrandHeaderViewModel signedInUser)
+        BrandHeaderViewModel signedInUser,
+        ICustomerApiService? customerApi = null)
     {
         _bookingApiService = bookingApiService;
         _session = session;
         _signedInUser = signedInUser;
+        _customerApi = customerApi;
         Greeting = DateTime.Now.Hour switch
         {
             < 12 => AppResources.GetString("Dashboard_GoodMorning"),
@@ -174,6 +194,8 @@ public partial class DashboardViewModel : ObservableObject
             WeekCount = results.Count;
 
             AppointmentsLoaded?.Invoke(this, EventArgs.Empty);
+
+            await UpdateProviderRelationshipAsync(results.Count > 0);
         }
         catch (Exception exception)
         {
@@ -191,6 +213,32 @@ public partial class DashboardViewModel : ObservableObject
             IsLoading = false;
             IsRefreshing = false;
         }
+    }
+
+    /// <remarks>
+    /// Fails closed to "has a relationship": a card inviting somebody to find a provider is noise if a blip hid the
+    /// ones they already have.
+    /// </remarks>
+    private async Task UpdateProviderRelationshipAsync(bool hasUpcoming)
+    {
+        if (!IsCustomer || hasUpcoming || _customerApi is null)
+        {
+            HasProviderRelationship = true;
+            OnPropertyChanged(nameof(ShowFindProviderCard));
+            return;
+        }
+
+        try
+        {
+            var subscriptions = await _customerApi.GetSubscriptionsAsync(_session.Email);
+            HasProviderRelationship = subscriptions.Count > 0;
+        }
+        catch (Exception)
+        {
+            HasProviderRelationship = true;
+        }
+
+        OnPropertyChanged(nameof(ShowFindProviderCard));
     }
 
     [RelayCommand]

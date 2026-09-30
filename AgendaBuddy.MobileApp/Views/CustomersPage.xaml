@@ -214,6 +214,8 @@
                                                      Size="48"
                                                      VerticalOptions="Start"
                                                      Source="{Binding AvatarAsset}"
+                                                     ProviderRef="{Binding ProviderRef}"
+                                                     PhotoHash="{Binding PhotoHash}"
                                                      AutomationId="ContactAvatar" />
 
                                     <!-- Name + subtitle -->
@@ -289,6 +291,19 @@
                                                FontSize="14" TextColor="{StaticResource iOSGray}"
                                                LineBreakMode="WordWrap" />
                                     </Grid>
+
+                                    <!-- The provider's showcase: their work, before deciding to book. -->
+                                    <controls:SafeButton Text="{Binding SeeWorkLabel}"
+                                            BackgroundColor="Transparent"
+                                            TextColor="{StaticResource iOSBlue}"
+                                            FontSize="14"
+                                            FontAttributes="Bold"
+                                            HorizontalOptions="Start"
+                                            Padding="0,4"
+                                            IsVisible="{Binding HasShowcase}"
+                                            Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.OpenShowcaseCommand}"
+                                            CommandParameter="{Binding .}"
+                                            AutomationId="SeeProviderWorkButton" />
 
                                     <!-- Provider actions -->
                                     <HorizontalStackLayout Spacing="8" Margin="0,8,0,0"

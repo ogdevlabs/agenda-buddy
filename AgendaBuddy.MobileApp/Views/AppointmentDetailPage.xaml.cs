@@ -23,6 +23,8 @@ namespace AgendaBuddy.MobileApp.Views;
 public partial class AppointmentDetailPage : ContentPage
 {
     private readonly AppointmentDetailViewModel _viewModel;
+    private readonly ShowcaseLinkViewModel _showcaseLink;
+    private readonly Services.IUserSessionService _session;
 
     public string AppointmentId { get; set; } = string.Empty;
     public string CustomerEmail { get; set; } = string.Empty;
@@ -51,11 +53,21 @@ public partial class AppointmentDetailPage : ContentPage
     public string ServiceDurationMinutesStr { get; set; } = string.Empty;
     public string CustomerNotes { get; set; } = string.Empty;
 
-    public AppointmentDetailPage(AppointmentDetailViewModel viewModel)
+    public AppointmentDetailPage(
+        AppointmentDetailViewModel viewModel,
+        ShowcaseLinkViewModel showcaseLink,
+        Services.IUserSessionService session)
     {
         InitializeComponent();
         _viewModel = viewModel;
+        _showcaseLink = showcaseLink;
+        _session = session;
         BindingContext = _viewModel;
+
+        _showcaseLink.Source = Routing.ShowcaseSource.Appointment;
+        WorkStrip.BindingContext = _showcaseLink;
+        _showcaseLink.ShowcaseRequested += OnShowcaseRequested;
+        _viewModel.PropertyChanged += OnViewModelPropertyChanged;
 
         _viewModel.ActionRequested += OnActionRequested;
         JwtDelegatingHandler.UnauthorizedAccess += OnUnauthorizedAccess;
@@ -105,6 +117,22 @@ public partial class AppointmentDetailPage : ContentPage
             CustomerNotes = CustomerNotes
         };
     }
+
+    private void OnViewModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName != nameof(AppointmentDetailViewModel.Appointment) || !_session.IsCustomer)
+            return;
+        if (_viewModel.Appointment is not { } appointment)
+            return;
+
+        // A fallback built from navigation carries the counterpart, which for a customer is the provider.
+        var email = string.IsNullOrWhiteSpace(appointment.ProviderEmail) ? appointment.ContactEmail : appointment.ProviderEmail;
+        var name = string.IsNullOrWhiteSpace(appointment.ProviderName) ? appointment.DisplayName : appointment.ProviderName;
+        _ = _showcaseLink.LoadAsync(email, name);
+    }
+
+    private async void OnShowcaseRequested(object? sender, ShowcaseRequestedEventArgs e) =>
+        await Shell.Current.GoToAsync(ShowcaseNavigation.Route, e.Parameters);
 
     private async void OnActionRequested(object? sender, AppointmentActionEventArgs e)
     {
