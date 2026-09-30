@@ -60,7 +60,6 @@ AgendaMe lets independent service providers manage their client workflow — fro
 
 - Multi-provider organizations or team accounts (solo provider only in v1)
 - White-labelling
-- User-uploaded avatar photos until image storage is designed (`agenda-buddy-5qr`)
 - Production Stripe Connect and physical-wallet activation until deployment credentials and external accounts are available (`agenda-buddy-83z`)
 - iOS push verification without a physical device (`agenda-buddy-lq5`)
 

@@ -5,19 +5,27 @@
      Claude reads this file at the start of every session to auto-resume from the last checkpoint.
      If this file is missing or empty, PDLC will prompt you to run /pdlc init. -->
 
-**Last updated:** 2026-09-13
+**Last updated:** 2026-09-30
 
 ---
 
 ## Current Phase
 
-Idle
+Construction
 
 ---
 
 ## Current Feature
 
-none
+provider-showcase (F-037)
+
+## Roadmap Claim
+
+- **Feature ID:** F-037
+- **Feature record:** docs/pdlc/tasks/F-037/_feature.md
+- **Claimed by:** oscargarcia@ogdevlabs.onmicrosoft.com
+- **Claimed at:** 2026-09-30T16:13:37Z
+- **Branch:** feat/F-037-provider-showcase   (cut off origin/main; draft PR #179 is open)
 
 _**mobile-visual-system-and-app-icon SHIPPED** as `v0.24.0` via PR #170. The five mobile tab roots now share
 an AgendaMe-specific jade/neutral visual hierarchy, long profile names remain centered and readable, and the
@@ -256,11 +264,13 @@ _None active. Run `/night-shift <F-NNN>` to start an autonomous run (requires by
 
 ## Current Sub-phase
 
-none
+Design
 
 ---
 
 ## Last Checkpoint
+
+Inception / Discover / 2026-09-30T16:13:37Z — F-037 provider-showcase claimed.
 
 Operation / Complete / 2026-08-27T00:00:00Z — **F-025 SHIPPED as `v0.10.0`.** Ran fully autonomously
 (user: "be fully autonomous"), Inception through Ship, per the standing full-autonomy grant. Three
@@ -1364,13 +1374,22 @@ re-planning (`/continue`).
 
 ```json
 {
-  "phase_completed": null,
-  "next_phase": null,
-  "feature": null,
-  "key_outputs": [],
-  "decisions_made": [],
-  "next_action": null,
-  "pending_questions": []
+  "phase_completed": "Inception / Define",
+  "next_phase": "Inception / Design",
+  "feature": "provider-showcase",
+  "key_outputs": [
+    "docs/pdlc/prds/PRD_F-037_provider-showcase_2026-09-30.md",
+    "docs/pdlc/brainstorm/brainstorm_provider-showcase_2026-09-30.md"
+  ],
+  "decisions_made": [
+    "36 requirements / 37 ACs / 12 BDD stories; only /go anonymous",
+    "Media route keyed {providerRef}/{hash}/{variant}; per-provider blob prefix",
+    "3 waves planned; UGC Report + Hide in scope"
+  ],
+  "next_action": "Read skills/brainstorm/steps/03-design.md and begin Bloom's Taxonomy design questioning",
+  "pending_questions": [
+    "Server image library license \u2014 package approval in Design"
+  ]
 }
 ```
 
