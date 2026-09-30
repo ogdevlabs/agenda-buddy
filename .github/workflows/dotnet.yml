@@ -887,8 +887,9 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
+      # Same workload set as ios-release.yml; see the reason there.
       - name: Install MAUI Android workload
-        run: dotnet workload install maui-android
+        run: dotnet workload install maui-android --version 10.0.401
 
       - name: Build Android (Release)
         run: dotnet build AgendaBuddy.MobileApp/AgendaBuddy.MobileApp.csproj /p:MobilePlatform=android -c Release
@@ -910,8 +911,9 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
+      # Same workload set as ios-release.yml; see the reason there.
       - name: Install MAUI iOS workload
-        run: dotnet workload install maui-ios
+        run: dotnet workload install maui-ios --version 10.0.401
 
       - name: Build iOS (Release)
         run: dotnet build AgendaBuddy.MobileApp/AgendaBuddy.MobileApp.csproj /p:MobilePlatform=ios -c Release
