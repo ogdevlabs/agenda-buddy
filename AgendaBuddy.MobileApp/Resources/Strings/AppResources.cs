@@ -248,6 +248,47 @@ public static class AppResources
     public static string Xaml_YourReport => GetString(nameof(Xaml_YourReport));
     public static string Xaml_YourSchedulingCompanion => GetString(nameof(Xaml_YourSchedulingCompanion));
 
+    public static string ShowcaseError_UnsupportedFormat => GetString(nameof(ShowcaseError_UnsupportedFormat));
+    public static string ShowcaseError_TooLarge => GetString(nameof(ShowcaseError_TooLarge));
+    public static string ShowcaseError_TooManyPixels => GetString(nameof(ShowcaseError_TooManyPixels));
+    public static string ShowcaseError_DimensionExceeded => GetString(nameof(ShowcaseError_DimensionExceeded));
+    public static string ShowcaseError_Undecodable => GetString(nameof(ShowcaseError_Undecodable));
+    public static string ShowcaseError_UnknownMedia => GetString(nameof(ShowcaseError_UnknownMedia));
+    public static string ShowcaseError_StorageUnavailable => GetString(nameof(ShowcaseError_StorageUnavailable));
+    public static string ShowcaseError_PortfolioFull => GetString(nameof(ShowcaseError_PortfolioFull));
+    public static string ShowcaseError_PortfolioChanged => GetString(nameof(ShowcaseError_PortfolioChanged));
+    public static string ShowcaseError_NotFound => GetString(nameof(ShowcaseError_NotFound));
+    public static string ShowcaseError_RateLimited => GetString(nameof(ShowcaseError_RateLimited));
+    public static string ShowcaseError_Invalid => GetString(nameof(ShowcaseError_Invalid));
+    public static string ShowcaseError_Network => GetString(nameof(ShowcaseError_Network));
+    public static string ShowcaseError_Unknown => GetString(nameof(ShowcaseError_Unknown));
+    public static string Showcase_Funnel_Zero => GetString(nameof(Showcase_Funnel_Zero));
+    public static string Showcase_Funnel_ThisWeek => GetString(nameof(Showcase_Funnel_ThisWeek));
+    public static string Showcase_Funnel_LastDays => GetString(nameof(Showcase_Funnel_LastDays));
+    public static string Showcase_Funnel_Sentence => GetString(nameof(Showcase_Funnel_Sentence));
+    public static string Showcase_Funnel_Scans_Zero => GetString(nameof(Showcase_Funnel_Scans_Zero));
+    public static string Showcase_Funnel_Scans_One => GetString(nameof(Showcase_Funnel_Scans_One));
+    public static string Showcase_Funnel_Scans_Many => GetString(nameof(Showcase_Funnel_Scans_Many));
+    public static string Showcase_Funnel_Opened_Zero => GetString(nameof(Showcase_Funnel_Opened_Zero));
+    public static string Showcase_Funnel_Opened_One => GetString(nameof(Showcase_Funnel_Opened_One));
+    public static string Showcase_Funnel_Opened_Many => GetString(nameof(Showcase_Funnel_Opened_Many));
+    public static string Showcase_Funnel_Booked_Zero => GetString(nameof(Showcase_Funnel_Booked_Zero));
+    public static string Showcase_Funnel_Booked_One => GetString(nameof(Showcase_Funnel_Booked_One));
+    public static string Showcase_Funnel_Booked_Many => GetString(nameof(Showcase_Funnel_Booked_Many));
+    public static string Showcase_CompletenessLabel => GetString(nameof(Showcase_CompletenessLabel));
+    public static string Showcase_PortfolioCount => GetString(nameof(Showcase_PortfolioCount));
+    public static string Showcase_SeeWork => GetString(nameof(Showcase_SeeWork));
+    public static string Showcase_SeeWorkNoName => GetString(nameof(Showcase_SeeWorkNoName));
+    public static string Showcase_OpenedFromCode => GetString(nameof(Showcase_OpenedFromCode));
+    public static string Showcase_OpenedFromCodeNoName => GetString(nameof(Showcase_OpenedFromCodeNoName));
+    public static string Showcase_Hidden => GetString(nameof(Showcase_Hidden));
+    public static string Showcase_HiddenNoName => GetString(nameof(Showcase_HiddenNoName));
+    public static string Showcase_TileDescription => GetString(nameof(Showcase_TileDescription));
+    public static string Showcase_TileDescriptionWithCaption => GetString(nameof(Showcase_TileDescriptionWithCaption));
+    public static string Showcase_NextSession => GetString(nameof(Showcase_NextSession));
+    public static string Showcase_NextSessionWithService => GetString(nameof(Showcase_NextSessionWithService));
+    public static string Showcase_ShareStepOne => GetString(nameof(Showcase_ShareStepOne));
+    public static string Showcase_ShareStepTwo => GetString(nameof(Showcase_ShareStepTwo));
     public static string GetString(string key) =>
         ResourceManager.GetString(key, Culture ?? CultureInfo.CurrentUICulture)
         ?? throw new MissingManifestResourceException($"Missing app resource '{key}'.");
