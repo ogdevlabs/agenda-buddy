@@ -54,8 +54,13 @@ jobs:
         with:
           dotnet-version: "10.0.x"
 
+      # Pinned to a workload set, never "latest": each workload set carries an iOS manifest that binds
+      # one Xcode SDK, and a new set can land before the runner image ships that Xcode. 10.0.401.1
+      # bound iOS 27 against the image's Xcode 26.5 and failed the signed archive with MT4162, while
+      # the unsigned CI build still passed because it skips the linker step that checks. Move this
+      # together with dotnet.yml's mobile jobs, and only to a set whose Xcode the runner has.
       - name: Install MAUI iOS workload
-        run: dotnet workload install maui-ios
+        run: dotnet workload install maui-ios --version 10.0.401
 
       # A throwaway keychain, not the runner's login keychain: it is deleted in the final step even
       # when the build fails, so a private key never outlives the job. Verified locally against the
