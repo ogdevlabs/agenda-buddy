@@ -1,7 +1,7 @@
 # Roadmap
 
 **Project:** Agenda Buddy
-**Last updated:** 2026-09-12T19:15:00Z
+**Last updated:** 2026-09-30
 
 ---
 
@@ -61,6 +61,7 @@
 | F-034 | profession-search-keyboard-dismissal | **Shipped 2026-09-09.** Providers can dismiss the Professions search keyboard by tapping outside or pressing Search. Both paths preserve the query and selections, restoring access to the pinned Save action on iOS. Verified live with the software keyboard on an iPhone 17 Pro simulator. | 34 | Shipped | oscargarcia@ogdevlabs.onmicrosoft.com | 2026-09-09 | `v0.18.0`, PR #152, `agenda-buddy-26r`; [PRD](../prds/PRD_F-034_profession-search-keyboard-dismissal_2026-09-09.md) |
 | F-035 | marketplace-payments | **Shipped 2026-09-10.** Stripe Connect marketplace payments: mandatory customer payment setup and provider payout onboarding; immutable server-priced bookings; authorization on provider confirmation; 90/10 destination-charge capture; full release/refund on provider cancellation; signed webhook reconciliation; bilingual mobile/Profile flows. External Connect/wallet activation remains `agenda-buddy-83z`; missing non-local configuration fails closed. | 35 | Shipped | oscargarcia@ogdevlabs.onmicrosoft.com | 2026-09-10 | `v0.19.0`, PR #153, `agenda-buddy-jaq`; [PRD](../prds/PRD_F-035_marketplace-payments_2026-09-09.md); [Architecture](../design/marketplace-payments/ARCHITECTURE.md) |
 | F-036 | appointments-segmented-experience | Calendar is renamed Appointments/Citas. Providers and customers share counted Scheduled/Done/Cancelled segments; historical segments retrieve the newest 5 and page older records through an authenticated bounded Calendar API. Providers retain Manage calendar for availability and time off. | 36 | Shipped | oscargarcia@ogdevlabs.onmicrosoft.com | 2026-09-12 | `v0.23.0`, PR #168, `agenda-buddy-cs1`; [Episode 021](../episodes/EPISODE_appointments-segmented-experience_2026-09-12.md) |
+| F-037 | provider-showcase | Provider rich content as an immersive marketing showcase: profile photo, brand logo, a portfolio of up to 20 work images, and a shareable QR code that sends social-network visitors to the provider's profile and services. | 37 | In Progress | oscargarcia@ogdevlabs.onmicrosoft.com | — | — |
 
 > **API refactor decomposed 2026-08-18.** `/brainstorm refactor-minimal-apis` established that the requested scope — full Clean Architecture across 7 services (25 → ~46 projects), five new packages, a Testcontainers harness, the `Persitency` rename, and `MobileApp` into CI — is too large for one PRD. It is now a three-stage program with the **full Clean Architecture target preserved**, staged so the integration-test harness exists *before* the endpoint rewrite rather than being built alongside it. Program research: `docs/pdlc/brainstorm/brainstorm_refactor-minimal-apis_2026-08-18.md`.
 >
