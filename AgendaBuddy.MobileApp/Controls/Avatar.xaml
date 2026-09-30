@@ -16,6 +16,7 @@
 <ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="AgendaBuddy.MobileApp.Controls.Avatar"
+             xmlns:controls="clr-namespace:AgendaBuddy.MobileApp.Controls"
              x:Name="Root">
 
     <Border WidthRequest="{Binding Size, Source={x:Reference Root}}"
@@ -28,10 +29,19 @@
         <Border.StrokeShape>
             <RoundRectangle CornerRadius="{Binding Radius, Source={x:Reference Root}}" />
         </Border.StrokeShape>
-        <Image Source="{Binding Source, Source={x:Reference Root}}"
-               Aspect="AspectFill"
-               WidthRequest="{Binding Size, Source={x:Reference Root}}"
-               HeightRequest="{Binding Size, Source={x:Reference Root}}"
-               AutomationId="AvatarImage" />
+        <Grid>
+            <Image Source="{Binding Source, Source={x:Reference Root}}"
+                   Aspect="AspectFill"
+                   IsVisible="{Binding HasMark, Source={x:Reference Root}}"
+                   WidthRequest="{Binding Size, Source={x:Reference Root}}"
+                   HeightRequest="{Binding Size, Source={x:Reference Root}}"
+                   AutomationId="AvatarImage" />
+            <controls:AuthenticatedImage ProviderRef="{Binding ProviderRef, Source={x:Reference Root}}"
+                                         Hash="{Binding PhotoHash, Source={x:Reference Root}}"
+                                         IsVisible="{Binding HasPhoto, Source={x:Reference Root}}"
+                                         WidthRequest="{Binding Size, Source={x:Reference Root}}"
+                                         HeightRequest="{Binding Size, Source={x:Reference Root}}"
+                                         AutomationId="AvatarPhoto" />
+        </Grid>
     </Border>
 </ContentView>

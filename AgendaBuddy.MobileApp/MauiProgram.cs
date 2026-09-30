@@ -1,5 +1,6 @@
 #if MOBILE
 using CommunityToolkit.Maui;
+using ZXing.Net.Maui.Controls;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 #if FIREBASE
@@ -20,7 +21,8 @@ public static class MauiProgram
 
         builder
             .UseMauiApp<App>()
-            .UseMauiCommunityToolkit();
+            .UseMauiCommunityToolkit()
+            .UseBarcodeReader();
 
 #if FIREBASE
         // Firebase has to be initialised before CrossFirebaseCloudMessaging.Current is touched, or that
@@ -121,6 +123,12 @@ public static class MauiProgram
         builder.Services.AddTransient<IServicesApiService, ServicesApiService>();
         builder.Services.AddTransient<IProfessionApiService, ProfessionApiService>();
         builder.Services.AddTransient<IPaymentAccountApiService, PaymentAccountApiService>();
+        builder.Services.AddTransient<IShowcaseApiService, ShowcaseApiService>();
+        builder.Services.AddSingleton(_ => new MediaCache(FileSystem.CacheDirectory));
+        builder.Services.AddSingleton<MediaImageLoader>();
+        builder.Services.AddTransient<IImagePicker, MauiImagePicker>();
+        builder.Services.AddTransient<IQrScanner, MauiQrScanner>();
+        builder.Services.AddTransient<IShareImageService, MauiShareImageService>();
 
         // The in-app banner. Registered before PushNotificationService only for readability -- what matters is
         // that it exists at all: neither platform draws a notification banner while the app is in the
