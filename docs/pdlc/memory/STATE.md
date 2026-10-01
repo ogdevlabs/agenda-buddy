@@ -5,27 +5,33 @@
      Claude reads this file at the start of every session to auto-resume from the last checkpoint.
      If this file is missing or empty, PDLC will prompt you to run /pdlc init. -->
 
-**Last updated:** 2026-09-30
+**Last updated:** 2026-10-01
 
 ---
 
 ## Current Phase
 
-Construction
+Inception
+
+**Current Sub-phase:** Discover
+
+**Last Checkpoint:** Inception / Discover / 2026-10-01T00:00:00Z
 
 ---
 
 ## Current Feature
 
-provider-showcase (F-037)
+native-calendar-sync (F-038)
 
 ## Roadmap Claim
 
-- **Feature ID:** F-037
-- **Feature record:** docs/pdlc/tasks/F-037/_feature.md
+- **Feature ID:** F-038
+- **Feature record:** docs/pdlc/tasks/F-038/_feature.md
 - **Claimed by:** oscargarcia@ogdevlabs.onmicrosoft.com
-- **Claimed at:** 2026-09-30T16:13:37Z
-- **Branch:** feat/F-037-provider-showcase   (cut off origin/main; draft PR #179 is open)
+- **Claimed at:** 2026-10-01T00:00:00Z
+- **Branch:** feat/F-038-native-calendar-sync   (cut off origin/main)
+
+_**F-037 provider-showcase SHIPPED** via PR #179 (2026-09-30); PDLC record closed at the start of F-038._
 
 _**mobile-visual-system-and-app-icon SHIPPED** as `v0.24.0` via PR #170. The five mobile tab roots now share
 an AgendaMe-specific jade/neutral visual hierarchy, long profile names remain centered and readable, and the
