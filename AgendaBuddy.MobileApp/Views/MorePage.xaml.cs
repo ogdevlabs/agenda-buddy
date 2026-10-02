@@ -24,6 +24,8 @@ public partial class MorePage : ContentPage
     protected override void OnAppearing()
     {
         base.OnAppearing();
+        ScanCodeRow.IsVisible = _session.IsCustomer;
+        ScanCodeDivider.IsVisible = _session.IsCustomer;
         HiddenProvidersRow.IsVisible = _session.IsCustomer;
         HiddenProvidersDivider.IsVisible = _session.IsCustomer;
         ManageCalendarRow.IsVisible = _session.IsProvider;
