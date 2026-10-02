@@ -1190,4 +1190,76 @@
   <data name="HiddenProviders_UnhiddenNoName" xml:space="preserve"><value>El proveedor vuelve a estar visible.</value></data>
   <data name="Dashboard_FindProvider" xml:space="preserve"><value>¿Encontraste un proveedor? Escanea su código o escríbelo.</value></data>
   <data name="Showcase_TypeCode" xml:space="preserve"><value>Escribir código</value></data>
+  <data name="CalendarSync_Title" xml:space="preserve">
+    <value>Calendario del teléfono</value>
+  </data>
+  <data name="CalendarSync_RowSubtitle" xml:space="preserve">
+    <value>Muestra tus citas en el Calendario de Apple o en Google Calendar</value>
+  </data>
+  <data name="CalendarSync_EntryRow" xml:space="preserve">
+    <value>Ver estas citas en el calendario de tu teléfono</value>
+  </data>
+  <data name="CalendarSync_Explainer" xml:space="preserve">
+    <value>Tus citas de AgendaMe aparecen en el calendario de tu teléfono y se mantienen al día solas. Los cambios se reflejan en unos 15 minutos, según la app de calendario.</value>
+  </data>
+  <data name="CalendarSync_Privacy" xml:space="preserve">
+    <value>El calendario muestra horarios, servicios y nombres; nunca correos ni teléfonos. Cualquiera con el enlace puede verlo, así que agrégalo solo a calendarios tuyos.</value>
+  </data>
+  <data name="CalendarSync_TurnOn" xml:space="preserve">
+    <value>Activar sincronización de calendario</value>
+  </data>
+  <data name="CalendarSync_On" xml:space="preserve">
+    <value>La sincronización de calendario está activada</value>
+  </data>
+  <data name="CalendarSync_AfterAdding" xml:space="preserve">
+    <value>Después de agregarlo, busca un calendario llamado AgendaMe. Es de solo lectura: cambia tus citas aquí, en AgendaMe.</value>
+  </data>
+  <data name="CalendarSync_NoLinkHere" xml:space="preserve">
+    <value>La sincronización está activada, pero su enlace se creó en otro dispositivo o antes de reinstalar la app. Por seguridad solo se muestra una vez. Obtén un enlace nuevo para agregarlo aquí; el anterior dejará de funcionar.</value>
+  </data>
+  <data name="CalendarSync_AddToApple" xml:space="preserve">
+    <value>Agregar al Calendario de Apple</value>
+  </data>
+  <data name="CalendarSync_AddToGoogle" xml:space="preserve">
+    <value>Agregar a Google Calendar</value>
+  </data>
+  <data name="CalendarSync_CopyLink" xml:space="preserve">
+    <value>Copiar enlace</value>
+  </data>
+  <data name="CalendarSync_LinkCopied" xml:space="preserve">
+    <value>Enlace copiado. Pégalo en cualquier app de calendario que permita suscribirse por URL.</value>
+  </data>
+  <data name="CalendarSync_CopyFailed" xml:space="preserve">
+    <value>No se pudo copiar el enlace. Inténtalo de nuevo.</value>
+  </data>
+  <data name="CalendarSync_Reset" xml:space="preserve">
+    <value>Obtener un enlace nuevo</value>
+  </data>
+  <data name="CalendarSync_ResetConfirmTitle" xml:space="preserve">
+    <value>¿Obtener un enlace nuevo?</value>
+  </data>
+  <data name="CalendarSync_ResetConfirmMessage" xml:space="preserve">
+    <value>Los calendarios suscritos con el enlace actual dejarán de actualizarse. Tendrás que agregarles el enlace nuevo.</value>
+  </data>
+  <data name="CalendarSync_ResetConfirmAccept" xml:space="preserve">
+    <value>Obtener enlace</value>
+  </data>
+  <data name="CalendarSync_TurnOff" xml:space="preserve">
+    <value>Desactivar sincronización</value>
+  </data>
+  <data name="CalendarSync_TurnOffConfirmTitle" xml:space="preserve">
+    <value>¿Desactivar la sincronización?</value>
+  </data>
+  <data name="CalendarSync_TurnOffConfirmMessage" xml:space="preserve">
+    <value>Tus citas dejarán de actualizarse en todos los calendarios suscritos a este enlace. Quita el calendario AgendaMe de esas apps para borrarlo.</value>
+  </data>
+  <data name="CalendarSync_LoadFailed" xml:space="preserve">
+    <value>No se pudo consultar la sincronización. Revisa tu conexión e inténtalo de nuevo.</value>
+  </data>
+  <data name="CalendarSync_ActionFailed" xml:space="preserve">
+    <value>No se pudo conectar con AgendaMe. No se cambió nada; inténtalo de nuevo.</value>
+  </data>
+  <data name="CalendarSync_OpenFailed" xml:space="preserve">
+    <value>No se pudo abrir una app de calendario. Copia el enlace y agrégalo desde tu app de calendario.</value>
+  </data>
 </root>

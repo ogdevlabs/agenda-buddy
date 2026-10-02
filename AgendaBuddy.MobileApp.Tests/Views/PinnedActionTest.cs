@@ -35,6 +35,10 @@ public class PinnedActionTest
         { "ProviderShowcasePage.xaml", "ShowcaseBookButton" },
         { "ProviderShowcasePage.xaml", "ShowcaseSubscribeButton" },
         { "ProviderShowcasePage.xaml", "ShowcaseMessageButton" },
+        { "CalendarSyncPage.xaml", "CalendarSyncTurnOnButton" },
+        { "CalendarSyncPage.xaml", "CalendarSyncNewLinkButton" },
+        { "CalendarSyncPage.xaml", "CalendarSyncPrimarySubscribeButton" },
+        { "CalendarSyncPage.xaml", "CalendarSyncSecondarySubscribeButton" },
     };
 
     [Theory]

@@ -407,6 +407,31 @@ public static class AppResources
     public static string HiddenProviders_UnhiddenNoName => GetString(nameof(HiddenProviders_UnhiddenNoName));
     public static string Dashboard_FindProvider => GetString(nameof(Dashboard_FindProvider));
     public static string Showcase_TypeCode => GetString(nameof(Showcase_TypeCode));
+    public static string CalendarSync_Title => GetString(nameof(CalendarSync_Title));
+    public static string CalendarSync_RowSubtitle => GetString(nameof(CalendarSync_RowSubtitle));
+    public static string CalendarSync_EntryRow => GetString(nameof(CalendarSync_EntryRow));
+    public static string CalendarSync_Explainer => GetString(nameof(CalendarSync_Explainer));
+    public static string CalendarSync_Privacy => GetString(nameof(CalendarSync_Privacy));
+    public static string CalendarSync_TurnOn => GetString(nameof(CalendarSync_TurnOn));
+    public static string CalendarSync_On => GetString(nameof(CalendarSync_On));
+    public static string CalendarSync_AfterAdding => GetString(nameof(CalendarSync_AfterAdding));
+    public static string CalendarSync_NoLinkHere => GetString(nameof(CalendarSync_NoLinkHere));
+    public static string CalendarSync_AddToApple => GetString(nameof(CalendarSync_AddToApple));
+    public static string CalendarSync_AddToGoogle => GetString(nameof(CalendarSync_AddToGoogle));
+    public static string CalendarSync_CopyLink => GetString(nameof(CalendarSync_CopyLink));
+    public static string CalendarSync_LinkCopied => GetString(nameof(CalendarSync_LinkCopied));
+    public static string CalendarSync_CopyFailed => GetString(nameof(CalendarSync_CopyFailed));
+    public static string CalendarSync_Reset => GetString(nameof(CalendarSync_Reset));
+    public static string CalendarSync_ResetConfirmTitle => GetString(nameof(CalendarSync_ResetConfirmTitle));
+    public static string CalendarSync_ResetConfirmMessage => GetString(nameof(CalendarSync_ResetConfirmMessage));
+    public static string CalendarSync_ResetConfirmAccept => GetString(nameof(CalendarSync_ResetConfirmAccept));
+    public static string CalendarSync_TurnOff => GetString(nameof(CalendarSync_TurnOff));
+    public static string CalendarSync_TurnOffConfirmTitle => GetString(nameof(CalendarSync_TurnOffConfirmTitle));
+    public static string CalendarSync_TurnOffConfirmMessage => GetString(nameof(CalendarSync_TurnOffConfirmMessage));
+    public static string CalendarSync_LoadFailed => GetString(nameof(CalendarSync_LoadFailed));
+    public static string CalendarSync_ActionFailed => GetString(nameof(CalendarSync_ActionFailed));
+    public static string CalendarSync_OpenFailed => GetString(nameof(CalendarSync_OpenFailed));
+
     public static string GetString(string key) =>
         ResourceManager.GetString(key, Culture ?? CultureInfo.CurrentUICulture)
         ?? throw new MissingManifestResourceException($"Missing app resource '{key}'.");

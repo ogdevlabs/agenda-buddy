@@ -30,33 +30,45 @@
                        Style="{StaticResource OperationalPageTitle}" />
             </Grid>
 
-            <Border Grid.Row="1"
-                    IsVisible="{Binding IsProvider}"
-                    AutomationId="ManageCalendarButton"
-                    Margin="16,12,16,0"
-                    BackgroundColor="{StaticResource PrimarySubtle}"
-                    Stroke="{StaticResource Primary}"
-                    StrokeThickness="1"
-                    Padding="14,11">
-                <Border.StrokeShape>
-                    <RoundRectangle CornerRadius="8" />
-                </Border.StrokeShape>
-                <Border.GestureRecognizers>
-                    <TapGestureRecognizer Tapped="OnCalendarSettingsTapped" />
-                </Border.GestureRecognizers>
-                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
-                    <Label Text="&#x2699;" FontSize="17"
+            <VerticalStackLayout Grid.Row="1" Spacing="0">
+                <Border IsVisible="{Binding IsProvider}"
+                        AutomationId="ManageCalendarButton"
+                        Margin="16,12,16,0"
+                        BackgroundColor="{StaticResource PrimarySubtle}"
+                        Stroke="{StaticResource Primary}"
+                        StrokeThickness="1"
+                        Padding="14,11">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="8" />
+                    </Border.StrokeShape>
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnCalendarSettingsTapped" />
+                    </Border.GestureRecognizers>
+                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
+                        <Label Text="&#x2699;" FontSize="17"
+                               TextColor="{StaticResource Primary}" VerticalOptions="Center" />
+                        <VerticalStackLayout Grid.Column="1" Spacing="1" VerticalOptions="Center">
+                            <Label Text="{x:Static strings:AppResources.Xaml_ManageCalendar}"
+                                   FontSize="15" FontAttributes="Bold" TextColor="{StaticResource Primary}" />
+                            <Label Text="{x:Static strings:AppResources.Xaml_WorkingDaysHoursAndTimeOff}"
+                                   FontSize="12" TextColor="{StaticResource TextMuted}" />
+                        </VerticalStackLayout>
+                        <Label Grid.Column="2" Text="&#x276F;" FontSize="14"
+                               TextColor="{StaticResource Primary}" VerticalOptions="Center" />
+                    </Grid>
+                </Border>
+
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10" Margin="16,10,16,0" Padding="2,4"
+                      AutomationId="CalendarSyncEntryRow">
+                    <Grid.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnCalendarSyncTapped" />
+                    </Grid.GestureRecognizers>
+                    <Label Text="{x:Static strings:AppResources.CalendarSync_EntryRow}" FontSize="14"
                            TextColor="{StaticResource Primary}" VerticalOptions="Center" />
-                    <VerticalStackLayout Grid.Column="1" Spacing="1" VerticalOptions="Center">
-                        <Label Text="{x:Static strings:AppResources.Xaml_ManageCalendar}"
-                               FontSize="15" FontAttributes="Bold" TextColor="{StaticResource Primary}" />
-                        <Label Text="{x:Static strings:AppResources.Xaml_WorkingDaysHoursAndTimeOff}"
-                               FontSize="12" TextColor="{StaticResource TextMuted}" />
-                    </VerticalStackLayout>
-                    <Label Grid.Column="2" Text="&#x276F;" FontSize="14"
+                    <Label Grid.Column="1" Text="&#x276F;" FontSize="13"
                            TextColor="{StaticResource Primary}" VerticalOptions="Center" />
                 </Grid>
-            </Border>
+            </VerticalStackLayout>
 
             <Border Grid.Row="2"
                     Margin="16,12,16,10"

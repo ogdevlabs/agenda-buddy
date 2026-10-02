@@ -107,7 +107,9 @@ public class ServiceCollectionMongoResolutionTest
         // — a request resolving one of them gets a single instance, not two.
         //
         // Six more for the showcase collections, which erasure clears for a customer's visits, hides and reports.
-        Assert.Equal(14, repositories.Count);
+        //
+        // One more for the calendar feed, which erasure revokes so the account's subscribed link stops answering.
+        Assert.Equal(15, repositories.Count);
         Assert.All(repositories, descriptor => Assert.Equal(ServiceLifetime.Scoped, descriptor.Lifetime));
     }
 }

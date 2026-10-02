@@ -124,6 +124,8 @@ public static class MauiProgram
         builder.Services.AddTransient<IProfessionApiService, ProfessionApiService>();
         builder.Services.AddTransient<IPaymentAccountApiService, PaymentAccountApiService>();
         builder.Services.AddTransient<IShowcaseApiService, ShowcaseApiService>();
+        builder.Services.AddTransient<ICalendarFeedApiService, CalendarFeedApiService>();
+        builder.Services.AddTransient<ICalendarSyncDevice, MauiCalendarSyncDevice>();
         builder.Services.AddSingleton(_ => new MediaCache(FileSystem.CacheDirectory));
         builder.Services.AddSingleton<MediaImageLoader>();
         builder.Services.AddTransient<IImagePicker, MauiImagePicker>();
@@ -181,6 +183,7 @@ public static class MauiProgram
         builder.Services.AddTransient<ShowcaseShareViewModel>();
         builder.Services.AddTransient<HiddenProvidersViewModel>();
         builder.Services.AddTransient<ShowcaseLinkViewModel>();
+        builder.Services.AddTransient<CalendarSyncViewModel>();
 
         // Views
         builder.Services.AddTransient<LoginPage>();
@@ -219,6 +222,7 @@ public static class MauiProgram
         builder.Services.AddTransient<ScanProviderPage>();
         builder.Services.AddTransient<ShowcaseSharePage>();
         builder.Services.AddTransient<HiddenProvidersPage>();
+        builder.Services.AddTransient<CalendarSyncPage>();
         builder.Services.AddTransient<MorePage>();
         builder.Services.AddTransient<ForgotPasswordPage>();
         builder.Services.AddTransient<ResetPasswordConfirmPage>();

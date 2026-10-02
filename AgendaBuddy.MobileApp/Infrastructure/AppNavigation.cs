@@ -40,6 +40,7 @@ public static class AppNavigation
         Microsoft.Maui.Controls.Routing.RegisterRoute("providerShowcase", typeof(ProviderShowcasePage));
         Microsoft.Maui.Controls.Routing.RegisterRoute("portfolioViewer", typeof(PortfolioViewerPage));
         Microsoft.Maui.Controls.Routing.RegisterRoute("hiddenProviders", typeof(HiddenProvidersPage));
+        Microsoft.Maui.Controls.Routing.RegisterRoute("calendarSync", typeof(CalendarSyncPage));
     }
 }
 #endif

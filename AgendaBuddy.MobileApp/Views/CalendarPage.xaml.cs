@@ -44,6 +44,9 @@ public partial class CalendarPage : ContentPage
     /// 40x40 gear button it replaces — that one sat between the two week-navigation chevrons with no label, read as
     /// a third arrow, and providers were not finding it.
     /// </remarks>
+    private async void OnCalendarSyncTapped(object? sender, TappedEventArgs e) =>
+        await Shell.Current.GoToAsync("calendarSync");
+
     private async void OnCalendarSettingsTapped(object? sender, TappedEventArgs e)
     {
         // Returning re-triggers OnAppearing, so the calendar reloads against the saved window.
