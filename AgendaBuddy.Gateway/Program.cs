@@ -9,6 +9,11 @@ var builder = WebApplication.CreateBuilder(args);
 // all seven domain services (see Booking/Program.cs). Inherits PiiRedactingProcessor automatically.
 builder.AddServiceDefaults();
 
+// The per-request Information logs of the hosting layer and the forwarder print the raw path, and a calendar feed
+// path carries its bearer token (ADR-074). Spans are redacted by PiiRedactingProcessor; these logs would not be.
+builder.Logging.AddFilter("Microsoft.AspNetCore.Hosting.Diagnostics", LogLevel.Warning);
+builder.Logging.AddFilter("Yarp.ReverseProxy.Forwarder", LogLevel.Warning);
+
 // AspireServiceDiscoveryProxyConfigProvider builds the full seven-service api/v1/{service}/** allowlist
 // (plus api/v1/auth/** and the root-mapped /device-token, both -> identity) — routes/clusters are built
 // programmatically from the same Aspire service-discovery configuration keys
