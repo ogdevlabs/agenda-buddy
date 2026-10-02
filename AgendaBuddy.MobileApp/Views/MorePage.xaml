@@ -95,6 +95,48 @@
                                    TextColor="{StaticResource TextMuted}" VerticalOptions="Center" />
                         </Grid>
 
+                        <BoxView HeightRequest="0.5" Color="{StaticResource BorderLight}" Margin="16,0" />
+
+                        <Grid ColumnDefinitions="Auto,*,Auto" Padding="16,14" ColumnSpacing="14"
+                              AutomationId="MoreCalendarSyncRow">
+                            <Grid.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnCalendarSyncClicked" />
+                            </Grid.GestureRecognizers>
+                            <Label Grid.Column="0" Text="&#x21C4;" FontSize="18" WidthRequest="22"
+                                   HorizontalTextAlignment="Center"
+                                   TextColor="{StaticResource Primary}" VerticalOptions="Center" />
+                            <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
+                                <Label Text="{x:Static strings:AppResources.CalendarSync_Title}" FontSize="16"
+                                       TextColor="{StaticResource TextPrimary}" />
+                                <Label Text="{x:Static strings:AppResources.CalendarSync_RowSubtitle}" FontSize="12"
+                                       TextColor="{StaticResource TextMuted}" />
+                            </VerticalStackLayout>
+                            <Label Grid.Column="2" Text="&#x276F;" FontSize="14"
+                                   TextColor="{StaticResource TextMuted}" VerticalOptions="Center" />
+                        </Grid>
+
+                        <!-- Provider-only: a customer has no working week, and the screen behind it refuses them. -->
+                        <BoxView x:Name="ManageCalendarDivider" HeightRequest="0.5"
+                                 Color="{StaticResource BorderLight}" Margin="16,0" IsVisible="False" />
+
+                        <Grid x:Name="ManageCalendarRow" ColumnDefinitions="Auto,*,Auto" Padding="16,14"
+                              ColumnSpacing="14" AutomationId="MoreManageCalendarRow" IsVisible="False">
+                            <Grid.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnManageCalendarClicked" />
+                            </Grid.GestureRecognizers>
+                            <Label Grid.Column="0" Text="&#x2699;&#xFE0E;" FontSize="18" WidthRequest="22"
+                                   HorizontalTextAlignment="Center"
+                                   TextColor="{StaticResource Primary}" VerticalOptions="Center" />
+                            <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
+                                <Label Text="{x:Static strings:AppResources.Xaml_ManageCalendar}" FontSize="16"
+                                       TextColor="{StaticResource TextPrimary}" />
+                                <Label Text="{x:Static strings:AppResources.Xaml_WorkingDaysHoursAndTimeOff}" FontSize="12"
+                                       TextColor="{StaticResource TextMuted}" />
+                            </VerticalStackLayout>
+                            <Label Grid.Column="2" Text="&#x276F;" FontSize="14"
+                                   TextColor="{StaticResource TextMuted}" VerticalOptions="Center" />
+                        </Grid>
+
                         <!-- Customer-only: hiding is what a customer does to a provider. -->
                         <BoxView x:Name="HiddenProvidersDivider" HeightRequest="0.5"
                                  Color="{StaticResource BorderLight}" Margin="16,0" IsVisible="False" />

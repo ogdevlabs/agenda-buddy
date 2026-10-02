@@ -26,6 +26,8 @@ public partial class MorePage : ContentPage
         base.OnAppearing();
         HiddenProvidersRow.IsVisible = _session.IsCustomer;
         HiddenProvidersDivider.IsVisible = _session.IsCustomer;
+        ManageCalendarRow.IsVisible = _session.IsProvider;
+        ManageCalendarDivider.IsVisible = _session.IsProvider;
         _ = _badge.RefreshAsync();
     }
 
@@ -42,6 +44,16 @@ public partial class MorePage : ContentPage
     private async void OnScanClicked(object? sender, TappedEventArgs e)
     {
         await Shell.Current.GoToAsync("scanProvider");
+    }
+
+    private async void OnCalendarSyncClicked(object? sender, TappedEventArgs e)
+    {
+        await Shell.Current.GoToAsync("calendarSync");
+    }
+
+    private async void OnManageCalendarClicked(object? sender, TappedEventArgs e)
+    {
+        await Shell.Current.GoToAsync("calendarSettings");
     }
 
     private async void OnHiddenProvidersClicked(object? sender, TappedEventArgs e)

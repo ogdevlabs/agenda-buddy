@@ -97,4 +97,29 @@ public class ManageCalendarEntryPointTest
 
         Assert.Empty(glyphOnlyButtons);
     }
+
+    /// <summary>
+    /// More carries it too, gated on the provider role in code-behind the same way Hidden providers is gated on the
+    /// customer role, so it starts hidden and only the provider branch reveals it.
+    /// </summary>
+    [Fact]
+    public void MoreCarriesAProviderOnlyManageCalendarRow()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "agenda-buddy.sln")))
+            directory = directory.Parent;
+
+        var views = Path.Combine(directory!.FullName, "AgendaBuddy.MobileApp", "Views");
+        var row = XDocument.Load(Path.Combine(views, "MorePage.xaml")).Descendants()
+            .Single(e => (string?)e.Attribute("AutomationId") == "MoreManageCalendarRow");
+
+        Assert.Equal("False", (string?)row.Attribute("IsVisible"));
+        Assert.Contains(row.Descendants(), e => (string?)e.Attribute("Tapped") == "OnManageCalendarClicked");
+
+        var codeBehind = File.ReadAllText(Path.Combine(views, "MorePage.xaml.cs"));
+        Assert.Contains("ManageCalendarRow.IsVisible = _session.IsProvider;", codeBehind, StringComparison.Ordinal);
+        var method = codeBehind.IndexOf("void OnManageCalendarClicked(", StringComparison.Ordinal);
+        Assert.True(method >= 0);
+        Assert.Contains("\"calendarSettings\"", codeBehind[method..(method + 200)], StringComparison.Ordinal);
+    }
 }
