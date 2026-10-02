@@ -1193,6 +1193,12 @@
   <data name="CalendarSync_Title" xml:space="preserve">
     <value>Phone calendar</value>
   </data>
+  <data name="CalendarSync_Overline" xml:space="preserve">
+    <value>Sync with your phone</value>
+  </data>
+  <data name="CalendarSync_LinkOverline" xml:space="preserve">
+    <value>Your private link</value>
+  </data>
   <data name="CalendarSync_RowSubtitle" xml:space="preserve">
     <value>Show your appointments in Apple or Google Calendar</value>
   </data>

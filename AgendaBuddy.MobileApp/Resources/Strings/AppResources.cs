@@ -409,6 +409,8 @@ public static class AppResources
     public static string Showcase_TypeCode => GetString(nameof(Showcase_TypeCode));
     public static string CalendarSync_Title => GetString(nameof(CalendarSync_Title));
     public static string CalendarSync_RowSubtitle => GetString(nameof(CalendarSync_RowSubtitle));
+    public static string CalendarSync_Overline => GetString(nameof(CalendarSync_Overline));
+    public static string CalendarSync_LinkOverline => GetString(nameof(CalendarSync_LinkOverline));
     public static string CalendarSync_EntryRow => GetString(nameof(CalendarSync_EntryRow));
     public static string CalendarSync_Explainer => GetString(nameof(CalendarSync_Explainer));
     public static string CalendarSync_Privacy => GetString(nameof(CalendarSync_Privacy));
