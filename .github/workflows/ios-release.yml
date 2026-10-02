@@ -52,10 +52,14 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: "10.0.x"
+          dotnet-version: "10.0.401"
 
+      # Pinned SDK and workload set: an unpinned install takes the newest iOS SDK pack, which can
+      # require an Xcode the runner image does not ship yet. Workload set 10.0.401.1 moved to the
+      # iOS 27.0 pack, and every archive then failed MT4162 under the image's Xcode 26.6. Move both
+      # pins together, and only once the runner image carries the matching Xcode.
       - name: Install MAUI iOS workload
-        run: dotnet workload install maui-ios
+        run: dotnet workload install maui-ios --version 10.0.401
 
       # A throwaway keychain, not the runner's login keychain: it is deleted in the final step even
       # when the build fails, so a private key never outlives the job. Verified locally against the

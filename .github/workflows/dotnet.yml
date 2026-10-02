@@ -908,10 +908,14 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: '10.0.x'
+          dotnet-version: "10.0.401"
 
+      # Pinned SDK and workload set: an unpinned install takes the newest iOS SDK pack, which can
+      # require an Xcode the runner image does not ship yet. Workload set 10.0.401.1 moved to the
+      # iOS 27.0 pack, and every archive then failed MT4162 under the image's Xcode 26.6. Move both
+      # pins together, and only once the runner image carries the matching Xcode.
       - name: Install MAUI iOS workload
-        run: dotnet workload install maui-ios
+        run: dotnet workload install maui-ios --version 10.0.401
 
       - name: Build iOS (Release)
         run: dotnet build AgendaBuddy.MobileApp/AgendaBuddy.MobileApp.csproj /p:MobilePlatform=ios -c Release
