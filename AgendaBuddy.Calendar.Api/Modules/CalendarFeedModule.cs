@@ -80,7 +80,9 @@ public class CalendarFeedModule : ICarterModule
                     if (ics is null)
                     {
                         headers.CacheControl = "no-store";
-                        return Results.NotFound();
+                        // A fixed body rather than ProblemDetails, whose per-request traceId would make otherwise
+                        // identical answers differ.
+                        return Results.Text("Not found", "text/plain; charset=utf-8", statusCode: StatusCodes.Status404NotFound);
                     }
 
                     headers.CacheControl = "private, max-age=900";
@@ -89,7 +91,7 @@ public class CalendarFeedModule : ICarterModule
             .WithName("GetCalendarFeed")
             .AllowAnonymous()
             .Produces(StatusCodes.Status200OK, contentType: "text/calendar")
-            .Produces(StatusCodes.Status404NotFound);
+            .Produces(StatusCodes.Status404NotFound, contentType: "text/plain");
     }
 
     public static string FeedPath(string token) => $"/api/v1/calendar/feed/{token}.ics";

@@ -1,0 +1,22 @@
+meta {
+  name: 7 Calendar feed status
+  type: http
+  seq: 7
+}
+get {
+  url: {{gatewayUrl}}/api/v1/calendar/feed
+}
+tests {
+  test("200 with enabled flag", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().data).to.have.property("enabled");
+  });
+  test("never returns the URL or token", function () {
+    expect(JSON.stringify(res.getBody())).to.not.include(".ics");
+  });
+}
+docs {
+  Whether the signed-in caller has a calendar subscription feed, and since when. The caller is the token's
+  `sub` — there is no address in the path. The URL itself is **never** returned here: only the hash of its
+  token is stored (ADR-074), so it exists in plain form only in the `POST` response that created it.
+}
