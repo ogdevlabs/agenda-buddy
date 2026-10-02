@@ -38,18 +38,35 @@ public class AccountErasureServiceTest
     private readonly Mock<IRepository<GoCounterEntity>> _goCounters = new();
     private readonly Mock<IRepository<ShowcaseReportEntity>> _reports = new();
     private readonly Mock<IRepository<ShowcaseBlockEntity>> _blocks = new();
+    private readonly Mock<IRepository<CalendarFeedEntity>> _calendarFeeds = new();
     private readonly Mock<IBlobStore> _blobStore = new();
 
     private AccountErasureService Service() => new(
         _customers.Object, _providers.Object, _appointments.Object, _messages.Object,
         _notifications.Object, _notes.Object, _payments.Object, _deviceTokens.Object,
         _showcases.Object, _mediaRefs.Object, _visits.Object, _goCounters.Object, _reports.Object, _blocks.Object,
-        _blobStore.Object);
+        _calendarFeeds.Object, _blobStore.Object);
 
     public AccountErasureServiceTest()
     {
         _appointments.Setup(r => r.FindAllAsync(It.IsAny<BsonDocument>()))
                      .ReturnsAsync([]);
+    }
+
+    [Theory]
+    [InlineData(CustomerEmail, false)]
+    [InlineData(ProviderEmail, true)]
+    public async Task ErasureRevokesTheCalendarFeed(string email, bool provider)
+    {
+        _calendarFeeds.Setup(r => r.DeleteManyAsync(It.IsAny<BsonDocument>())).ReturnsAsync(1);
+
+        var summary = provider
+            ? await Service().EraseProviderAsync(email)
+            : await Service().EraseCustomerAsync(email);
+
+        Assert.Equal(1, summary.CalendarFeedsDeleted);
+        _calendarFeeds.Verify(r => r.DeleteManyAsync(
+            It.Is<BsonDocument>(f => Filters(f, "owner_email", email))), Times.Once);
     }
 
     // ── the customer path ──────────────────────────────────────────────────────────────────────────

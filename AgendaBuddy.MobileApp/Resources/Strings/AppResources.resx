@@ -1190,4 +1190,76 @@
   <data name="HiddenProviders_UnhiddenNoName" xml:space="preserve"><value>Provider visible again.</value></data>
   <data name="Dashboard_FindProvider" xml:space="preserve"><value>Found a provider? Scan their code or type it in.</value></data>
   <data name="Showcase_TypeCode" xml:space="preserve"><value>Type a code</value></data>
+  <data name="CalendarSync_Title" xml:space="preserve">
+    <value>Phone calendar</value>
+  </data>
+  <data name="CalendarSync_RowSubtitle" xml:space="preserve">
+    <value>Show your appointments in Apple or Google Calendar</value>
+  </data>
+  <data name="CalendarSync_EntryRow" xml:space="preserve">
+    <value>See these appointments in your phone's calendar</value>
+  </data>
+  <data name="CalendarSync_Explainer" xml:space="preserve">
+    <value>Your AgendaMe appointments appear in your phone's calendar and stay up to date on their own. Changes show up there within about 15 minutes, depending on the calendar app.</value>
+  </data>
+  <data name="CalendarSync_Privacy" xml:space="preserve">
+    <value>The calendar shows times, services and names — never email addresses or phone numbers. Anyone with the link can see it, so share it only with calendars you own.</value>
+  </data>
+  <data name="CalendarSync_TurnOn" xml:space="preserve">
+    <value>Turn on calendar sync</value>
+  </data>
+  <data name="CalendarSync_On" xml:space="preserve">
+    <value>Calendar sync is on</value>
+  </data>
+  <data name="CalendarSync_AfterAdding" xml:space="preserve">
+    <value>After adding it, look for a calendar named AgendaMe. It is read-only: change appointments here, in AgendaMe.</value>
+  </data>
+  <data name="CalendarSync_NoLinkHere" xml:space="preserve">
+    <value>Calendar sync is on, but its link was created on another device or before the app was reinstalled. For your security it is shown only once. Get a new link to add it here — the old link will stop working.</value>
+  </data>
+  <data name="CalendarSync_AddToApple" xml:space="preserve">
+    <value>Add to Apple Calendar</value>
+  </data>
+  <data name="CalendarSync_AddToGoogle" xml:space="preserve">
+    <value>Add to Google Calendar</value>
+  </data>
+  <data name="CalendarSync_CopyLink" xml:space="preserve">
+    <value>Copy link</value>
+  </data>
+  <data name="CalendarSync_LinkCopied" xml:space="preserve">
+    <value>Link copied. Paste it into any calendar app that can subscribe by URL.</value>
+  </data>
+  <data name="CalendarSync_CopyFailed" xml:space="preserve">
+    <value>Could not copy the link. Try again.</value>
+  </data>
+  <data name="CalendarSync_Reset" xml:space="preserve">
+    <value>Get a new link</value>
+  </data>
+  <data name="CalendarSync_ResetConfirmTitle" xml:space="preserve">
+    <value>Get a new link?</value>
+  </data>
+  <data name="CalendarSync_ResetConfirmMessage" xml:space="preserve">
+    <value>Calendars subscribed with the current link will stop updating. You will need to add the new link to them again.</value>
+  </data>
+  <data name="CalendarSync_ResetConfirmAccept" xml:space="preserve">
+    <value>Get new link</value>
+  </data>
+  <data name="CalendarSync_TurnOff" xml:space="preserve">
+    <value>Turn off calendar sync</value>
+  </data>
+  <data name="CalendarSync_TurnOffConfirmTitle" xml:space="preserve">
+    <value>Turn off calendar sync?</value>
+  </data>
+  <data name="CalendarSync_TurnOffConfirmMessage" xml:space="preserve">
+    <value>Your appointments will stop updating in every calendar subscribed to this link. Remove the AgendaMe calendar from those apps to clear it.</value>
+  </data>
+  <data name="CalendarSync_LoadFailed" xml:space="preserve">
+    <value>Could not check calendar sync. Check your connection and try again.</value>
+  </data>
+  <data name="CalendarSync_ActionFailed" xml:space="preserve">
+    <value>Could not reach AgendaMe. Nothing was changed — try again.</value>
+  </data>
+  <data name="CalendarSync_OpenFailed" xml:space="preserve">
+    <value>Could not open a calendar app. Copy the link and add it from your calendar app instead.</value>
+  </data>
 </root>

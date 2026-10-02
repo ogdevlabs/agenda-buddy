@@ -54,7 +54,7 @@ builder.Services.AddAgendaBuddyAuthentication();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddCarter(configurator: c => c.WithModule<CalendarModule>());
+builder.Services.AddCarter(configurator: c => c.WithModule<CalendarModule>().WithModule<CalendarFeedModule>());
 
 var app = builder.Build();
 

@@ -29,6 +29,8 @@ public class TelemetryPiiTest
 {
     private const string Email = "customer.pii@example.com";
     private const string RouteTemplate = "/api/v1/providers/{email}";
+    private const string FeedRouteTemplate = "/api/v1/calendar/feed/{file}";
+    private const string FeedToken = "Zm9vYmFyZm9vYmFyZm9vYmFyZm9vYmFyZm9vYmFyZm9";
 
     private static async Task<(WebApplication App, List<Activity> Exported)> StartServiceAsync()
     {
@@ -46,6 +48,7 @@ public class TelemetryPiiTest
 
         // Mirrors the real anonymous provider endpoints: PII in the path.
         app.MapGet(RouteTemplate, (string email) => Results.Ok(new { email }));
+        app.MapGet(FeedRouteTemplate, (string file) => Results.Text("BEGIN:VCALENDAR"));
 
         await app.StartAsync();
         return (app, exported);
@@ -121,6 +124,25 @@ public class TelemetryPiiTest
         Assert.NotNull(path);
         Assert.StartsWith("/api/v1/providers/", path);
         Assert.Contains("[redacted-email]", path);
+    }
+
+    /// <summary>A calendar feed URL is a bearer credential, so its token must not reach the collector either.</summary>
+    [Fact]
+    public async Task ExportedSpan_CarriesNoCalendarFeedToken()
+    {
+        var exported = await RequestWithPiiAsync($"/api/v1/calendar/feed/{FeedToken}.ics");
+
+        var leaks = exported
+            .SelectMany(activity => activity.TagObjects.Select(tag => tag.Value?.ToString()).Append(activity.DisplayName))
+            .Where(value => value is not null && value.Contains(FeedToken, StringComparison.Ordinal))
+            .ToList();
+        Assert.Empty(leaks);
+
+        var path = exported
+            .Where(activity => (activity.GetTagItem("http.route") as string) == FeedRouteTemplate)
+            .Select(activity => activity.GetTagItem("url.path") as string)
+            .FirstOrDefault(value => !string.IsNullOrEmpty(value));
+        Assert.Equal("/api/v1/calendar/feed/[redacted-token]", path);
     }
 
     private static List<string> Offenders(IEnumerable<Activity> exported) =>

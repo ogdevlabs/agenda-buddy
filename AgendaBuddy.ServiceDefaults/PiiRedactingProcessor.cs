@@ -5,7 +5,7 @@ using OpenTelemetry;
 namespace AgendaBuddy.ServiceDefaults;
 
 /// <summary>
-/// Strips email addresses out of span tags before they are exported.
+/// Strips email addresses and calendar feed tokens out of span tags before they are exported.
 /// </summary>
 /// <remarks>
 /// The threat model assumed ASP.NET Core instrumentation records route templates rather than raw
@@ -33,12 +33,23 @@ internal sealed partial class PiiRedactingProcessor : BaseProcessor<Activity>
 
     private const string Replacement = "[redacted-email]";
 
+    private const string TokenReplacement = "/calendar/feed/[redacted-token]";
+
     /// <summary>
     /// Matches an email address inside a URL path or query. Deliberately narrow: it must contain
     /// an <c>@</c> with non-delimiter characters either side.
     /// </summary>
     [GeneratedRegex(@"[^/?&=\s@]+@[^/?&=\s@]+\.[^/?&=\s@]+", RegexOptions.IgnoreCase)]
     private static partial Regex EmailPattern();
+
+    /// <summary>
+    /// A calendar feed path segment is a bearer credential (ADR-074): whoever holds the URL reads the calendar.
+    /// </summary>
+    [GeneratedRegex(@"/calendar/feed/[^/?&#\s]+", RegexOptions.IgnoreCase)]
+    private static partial Regex FeedTokenPattern();
+
+    private static string Redact(string value) =>
+        FeedTokenPattern().Replace(EmailPattern().Replace(value, Replacement), TokenReplacement);
 
     /// <summary>
     /// Redacts email addresses from URL-bearing tags as the span ends, before any exporter sees it.
@@ -52,15 +63,13 @@ internal sealed partial class PiiRedactingProcessor : BaseProcessor<Activity>
         {
             if (data.GetTagItem(tag) is not string value || value.Length == 0) continue;
 
-            var redacted = EmailPattern().Replace(value, Replacement);
+            var redacted = Redact(value);
             if (!ReferenceEquals(redacted, value) && redacted != value) data.SetTag(tag, redacted);
         }
 
         // The span's display name is the route template for ASP.NET Core spans, but a custom span
         // could carry a raw path — cheap to cover.
-        if (EmailPattern().IsMatch(data.DisplayName))
-        {
-            data.DisplayName = EmailPattern().Replace(data.DisplayName, Replacement);
-        }
+        var displayName = Redact(data.DisplayName);
+        if (displayName != data.DisplayName) data.DisplayName = displayName;
     }
 }

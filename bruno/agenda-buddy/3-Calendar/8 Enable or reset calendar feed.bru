@@ -1,0 +1,35 @@
+meta {
+  name: 8 Enable or reset calendar feed
+  type: http
+  seq: 8
+}
+post {
+  url: {{gatewayUrl}}/api/v1/calendar/feed
+  body: json
+}
+body:json {
+  {
+    "language": "es-MX"
+  }
+}
+script:post-response {
+  if (res.getStatus() === 200) {
+    const url = new URL(res.getBody().data.url);
+    bru.setVar("calendarFeedPath", url.pathname);
+  }
+}
+tests {
+  test("200 with an .ics URL", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().data.url).to.match(/\/api\/v1\/calendar\/feed\/[A-Za-z0-9_-]{43}\.ics$/);
+  });
+}
+docs {
+  Issues a new subscription URL for the caller's own calendar (ADR-073). **Every call revokes the previous
+  URL** — this is both "turn on" and "reset link". `language` picks the event-title language (`es*` →
+  Spanish, anything else English).
+
+  Subscribe with `webcal://<host><path>` (Apple Calendar) or
+  `https://calendar.google.com/calendar/r?cid=<escaped webcal URL>` (Google Calendar). The host is
+  `CalendarFeed:BaseUrl` — the Gateway — because Apple's and Google's servers fetch it.
+}

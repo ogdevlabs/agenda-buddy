@@ -1,0 +1,18 @@
+meta {
+  name: 10 Turn off calendar feed
+  type: http
+  seq: 10
+}
+delete {
+  url: {{gatewayUrl}}/api/v1/calendar/feed
+}
+tests {
+  test("204 whether or not a feed existed", function () {
+    expect(res.getStatus()).to.equal(204);
+  });
+}
+docs {
+  Revokes the caller's subscription URL. Subscribed calendars get `404` on their next poll and stop
+  updating; most keep the events they already fetched until the user removes the subscription. Answers
+  `204` whether or not a feed existed. Account deletion revokes it too.
+}

@@ -55,6 +55,8 @@ public static class AccountErasureExtensions
             configuration, "DeviceTokensCollection", "device_tokens", identityDatabaseName);
 
         services.TryAddShowcaseCollections(configuration, databaseName);
+        services.TryAddCollection<CalendarFeedEntity>(
+            configuration, "CalendarFeedsCollection", "calendar_feeds", databaseName);
 
         services.TryAddScoped<IAccountErasureService, AccountErasureService>();
 

@@ -139,6 +139,22 @@
                         <BoxView HeightRequest="0.5" Color="{StaticResource BorderLight}" Margin="16,0" />
 
                         <Grid ColumnDefinitions="*,Auto" Padding="16,14" ColumnSpacing="12"
+                              AutomationId="CalendarSyncRow">
+                            <Grid.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnCalendarSyncTapped" />
+                            </Grid.GestureRecognizers>
+                            <VerticalStackLayout Grid.Column="0" Spacing="2">
+                                <Label Text="{x:Static strings:AppResources.CalendarSync_Title}" FontSize="16" TextColor="{StaticResource TextPrimary}" />
+                                <Label Text="{x:Static strings:AppResources.CalendarSync_RowSubtitle}"
+                                       FontSize="12" TextColor="{StaticResource TextMuted}" />
+                            </VerticalStackLayout>
+                            <Label Grid.Column="1" Text="&#x276F;" FontSize="14"
+                                   TextColor="{StaticResource TextMuted}" VerticalOptions="Center" />
+                        </Grid>
+
+                        <BoxView HeightRequest="0.5" Color="{StaticResource BorderLight}" Margin="16,0" />
+
+                        <Grid ColumnDefinitions="*,Auto" Padding="16,14" ColumnSpacing="12"
                               AutomationId="ChangePasswordRow">
                             <Grid.GestureRecognizers>
                                 <TapGestureRecognizer Tapped="OnChangePasswordTapped" />

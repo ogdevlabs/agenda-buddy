@@ -83,6 +83,7 @@ public class ServiceCollectionMongoResolutionTest
         Assert.NotNull(scope.ServiceProvider.GetService<IRepository<AppointmentEntity>>());
         Assert.NotNull(scope.ServiceProvider.GetService<IRepository<CustomerEntity>>());
         Assert.NotNull(scope.ServiceProvider.GetService<IRepository<CalendarBlockEntity>>());
+        Assert.NotNull(scope.ServiceProvider.GetService<IRepository<CalendarFeedEntity>>());
     }
 
     /// <summary>
@@ -118,9 +119,9 @@ public class ServiceCollectionMongoResolutionTest
                                  && descriptor.ServiceType.GetGenericTypeDefinition() == typeof(IRepository<>))
             .ToList();
 
-        // Providers, appointments, customers, and calendar blocks -- time off is its own collection, not
-        // whole-day fake appointments in `appointments`.
-        Assert.Equal(4, repositories.Count);
+        // Providers, appointments, customers, calendar blocks and calendar feeds -- time off is its own
+        // collection, not whole-day fake appointments in `appointments`.
+        Assert.Equal(5, repositories.Count);
         Assert.All(repositories, descriptor => Assert.Equal(ServiceLifetime.Scoped, descriptor.Lifetime));
     }
 }

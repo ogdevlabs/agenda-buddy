@@ -379,6 +379,17 @@ public class AppHostWiringTest
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
+    public async Task CalendarIsToldTheGatewayAddressItsFeedUrlsUse(bool cloud)
+    {
+        var variables = await PublishEnvironmentOf(
+            BuildModel(cloud ? DeploymentTarget.Cloud : DeploymentTarget.Local), "calendar");
+
+        Assert.Contains("CalendarFeed__BaseUrl", variables.Keys);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
     public void ProviderIsTheOnlyServiceReferencingTheMediaBlobs(bool cloud)
     {
         var builder = BuildModel(cloud ? DeploymentTarget.Cloud : DeploymentTarget.Local);

@@ -37,6 +37,7 @@ public class AccountErasureService(
     IRepository<GoCounterEntity> goCounters,
     IRepository<ShowcaseReportEntity> showcaseReports,
     IRepository<ShowcaseBlockEntity> showcaseBlocks,
+    IRepository<CalendarFeedEntity> calendarFeeds,
     IBlobStore? blobStore = null,
     ILogger<AccountErasureService>? logger = null)
     : IAccountErasureService
@@ -48,6 +49,8 @@ public class AccountErasureService(
         ArgumentException.ThrowIfNullOrWhiteSpace(email);
 
         var tombstone = AccountErasure.NewTombstone();
+
+        var calendarFeedsDeleted = await RevokeCalendarFeedAsync(email);
 
         // The inbox is the account's own, so it goes rather than being anonymised — a scrubbed notification is
         // a row nobody can ever read addressed to nobody.
@@ -102,7 +105,8 @@ public class AccountErasureService(
             NotesDeleted: 0,
             SubscriptionsRemoved: subscriptionsRemoved,
             DeviceTokensDeleted: deviceTokensDeleted,
-            ShowcaseRowsDeleted: showcaseRowsDeleted);
+            ShowcaseRowsDeleted: showcaseRowsDeleted,
+            CalendarFeedsDeleted: calendarFeedsDeleted);
     }
 
     public async Task<AccountErasureSummary> EraseProviderAsync(string email)
@@ -110,6 +114,8 @@ public class AccountErasureService(
         ArgumentException.ThrowIfNullOrWhiteSpace(email);
 
         var tombstone = AccountErasure.NewTombstone();
+
+        var calendarFeedsDeleted = await RevokeCalendarFeedAsync(email);
 
         var notificationsDeleted = await notifications.DeleteManyAsync(
             new BsonDocument("recipient_email", email));
@@ -153,8 +159,16 @@ public class AccountErasureService(
             NotesDeleted: notesDeleted,
             SubscriptionsRemoved: subscriptionsRemoved,
             DeviceTokensDeleted: deviceTokensDeleted,
-            ShowcaseRowsDeleted: showcaseRowsDeleted);
+            ShowcaseRowsDeleted: showcaseRowsDeleted,
+            CalendarFeedsDeleted: calendarFeedsDeleted);
     }
+
+    /// <summary>
+    /// Revokes the account's calendar subscription URL. First, because it is the one trace still being read from
+    /// outside: every subscribed calendar keeps polling it until it answers 404.
+    /// </summary>
+    private Task<long> RevokeCalendarFeedAsync(string email) =>
+        calendarFeeds.DeleteManyAsync(new BsonDocument("owner_email", email));
 
     /// <summary>
     /// Deletes everything the showcase holds about this provider, then their stored images.

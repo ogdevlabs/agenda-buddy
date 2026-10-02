@@ -224,6 +224,9 @@ internal static class AppHostWiring
         // reach, so Provider is told the Gateway's own endpoint rather than deriving one from a request header.
         provider.WithEnvironment("Showcase__Go__BaseUrl", gateway.GetEndpoint("http"));
 
+        // A calendar subscription URL is fetched by Apple's and Google's servers, which can reach only the Gateway.
+        calendar.WithEnvironment("CalendarFeed__BaseUrl", gateway.GetEndpoint("http"));
+
         return builder;
 
         IResourceBuilder<ProjectResource> AddApi<TProject>(

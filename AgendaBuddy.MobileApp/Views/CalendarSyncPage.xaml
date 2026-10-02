@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Subscribes the phone's own calendar to the account's feed. Three states: off, on with the link on this
+    device, and on without it (the link is shown once). The subscribe and turn-on actions are pinned; copy, reset
+    and turn off are secondary and live with the explanation.
+-->
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:strings="clr-namespace:AgendaBuddy.MobileApp.Resources.Strings"
+             xmlns:controls="clr-namespace:AgendaBuddy.MobileApp.Controls"
+             x:Class="AgendaBuddy.MobileApp.Views.CalendarSyncPage"
+             Title="{x:Static strings:AppResources.CalendarSync_Title}"
+             BackgroundColor="{StaticResource BackgroundPage}"
+             Shell.NavBarIsVisible="False">
+
+    <Grid RowDefinitions="Auto,*,Auto">
+
+        <controls:BrandHeader Grid.Row="0" />
+
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Padding="20,16,20,24" Spacing="14">
+
+                <Label Text="{x:Static strings:AppResources.CalendarSync_Title}" Style="{StaticResource TitleMedium}" />
+
+                <Frame Style="{StaticResource ErrorBannerStyle}" IsVisible="{Binding HasError}" Margin="0">
+                    <Label Text="{Binding ErrorMessage}" TextColor="{StaticResource Error}" FontSize="13"
+                           AutomationId="CalendarSyncError" />
+                </Frame>
+
+                <ActivityIndicator IsRunning="{Binding IsLoading}" IsVisible="{Binding IsLoading}"
+                                   Color="{StaticResource Primary}" HorizontalOptions="Center" />
+
+                <Frame Style="{StaticResource CardStyle}" Margin="0" IsVisible="{Binding IsOff}">
+                    <VerticalStackLayout Spacing="10">
+                        <Label Text="{x:Static strings:AppResources.CalendarSync_Explainer}"
+                               Style="{StaticResource BodySecondary}" />
+                        <Label Text="{x:Static strings:AppResources.CalendarSync_Privacy}"
+                               FontSize="13" TextColor="{StaticResource TextMuted}" />
+                    </VerticalStackLayout>
+                </Frame>
+
+                <Frame Style="{StaticResource CardStyle}" Margin="0" IsVisible="{Binding IsOnWithLink}">
+                    <VerticalStackLayout Spacing="10">
+                        <Label Text="{x:Static strings:AppResources.CalendarSync_On}" FontSize="16"
+                               FontAttributes="Bold" TextColor="{StaticResource Success}"
+                               AutomationId="CalendarSyncOnLabel" />
+                        <Label Text="{x:Static strings:AppResources.CalendarSync_AfterAdding}"
+                               Style="{StaticResource BodySecondary}" />
+                        <Label Text="{x:Static strings:AppResources.CalendarSync_Privacy}"
+                               FontSize="13" TextColor="{StaticResource TextMuted}" />
+                    </VerticalStackLayout>
+                </Frame>
+
+                <Frame Style="{StaticResource CardStyle}" Margin="0" IsVisible="{Binding IsOnWithoutLink}">
+                    <Label Text="{x:Static strings:AppResources.CalendarSync_NoLinkHere}"
+                           Style="{StaticResource BodySecondary}" AutomationId="CalendarSyncNoLinkLabel" />
+                </Frame>
+
+                <Label Text="{Binding StatusMessage}" IsVisible="{Binding HasStatus}" FontSize="13"
+                       TextColor="{StaticResource TextMuted}" AutomationId="CalendarSyncStatus" />
+
+                <VerticalStackLayout Spacing="8" IsVisible="{Binding IsOnWithLink}">
+                    <controls:SafeButton Style="{StaticResource SecondaryButton}"
+                                         Text="{x:Static strings:AppResources.CalendarSync_CopyLink}"
+                                         Command="{Binding CopyLinkCommand}"
+                                         AutomationId="CalendarSyncCopyButton" />
+                    <controls:SafeButton Style="{StaticResource SecondaryButton}"
+                                         Text="{x:Static strings:AppResources.CalendarSync_Reset}"
+                                         Command="{Binding ResetLinkCommand}"
+                                         AutomationId="CalendarSyncResetButton" />
+                </VerticalStackLayout>
+
+                <controls:SafeButton Style="{StaticResource DangerButton}"
+                                     IsVisible="{Binding IsEnabled}"
+                                     Text="{x:Static strings:AppResources.CalendarSync_TurnOff}"
+                                     Command="{Binding TurnOffCommand}"
+                                     AutomationId="CalendarSyncTurnOffButton" />
+
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <!-- Pinned: the one action each state is for. -->
+        <VerticalStackLayout Grid.Row="2" Padding="20,8,20,20" Spacing="8">
+            <controls:SafeButton Style="{StaticResource PrimaryButton}"
+                                 IsVisible="{Binding IsOff}"
+                                 Text="{x:Static strings:AppResources.CalendarSync_TurnOn}"
+                                 Command="{Binding TurnOnCommand}"
+                                 AutomationId="CalendarSyncTurnOnButton" />
+            <controls:SafeButton Style="{StaticResource PrimaryButton}"
+                                 IsVisible="{Binding IsOnWithoutLink}"
+                                 Text="{x:Static strings:AppResources.CalendarSync_Reset}"
+                                 Command="{Binding ResetLinkCommand}"
+                                 AutomationId="CalendarSyncNewLinkButton" />
+            <controls:SafeButton Style="{StaticResource PrimaryButton}"
+                                 IsVisible="{Binding IsOnWithLink}"
+                                 Text="{Binding PrimarySubscribeLabel}"
+                                 Command="{Binding SubscribePrimaryCommand}"
+                                 AutomationId="CalendarSyncPrimarySubscribeButton" />
+            <controls:SafeButton Style="{StaticResource SecondaryButton}"
+                                 IsVisible="{Binding IsOnWithLink}"
+                                 Text="{Binding SecondarySubscribeLabel}"
+                                 Command="{Binding SubscribeSecondaryCommand}"
+                                 AutomationId="CalendarSyncSecondarySubscribeButton" />
+        </VerticalStackLayout>
+
+    </Grid>
+
+</ContentPage>

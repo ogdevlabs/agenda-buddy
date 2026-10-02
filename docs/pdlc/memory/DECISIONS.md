@@ -1854,3 +1854,22 @@ erase a photo. The 20-image cap and reorder permutation check are enforced in th
 **Decision.** Launch is Mexico-only. Report (operator email to `Showcase:ReportEmail`, 48 h target), customer Hide,
 and a `hidden_by_operator` takedown flag set by direct database write ship now. Hash-matching/content-safety
 scanning at upload is deferred until US distribution or a vendor decision requires it.
+
+## ADR-073 — Calendar integration is a subscribed iCalendar feed, not an on-device write (F-038)
+
+**Date:** 2026-10-01 · **Status:** Accepted
+
+A per-user secret `.ics` URL, subscribed through `webcal://` (Apple Calendar) and Google Calendar's `cid` link,
+keeps entries current while AgendaMe is closed, needs no calendar permission, and is testable on the backend.
+On-device EventKit/CalendarContract writes only update while the app runs, need two permission flows and compile
+only on platform TFMs; they remain a follow-up for Android, where Google refreshes subscriptions slowly.
+
+## ADR-074 — The calendar feed fetch is the second anonymous route; tokens are stored hashed (F-038)
+
+**Date:** 2026-10-01 · **Status:** Accepted
+
+`GET /api/v1/calendar/feed/{token}.ics` is anonymous because calendar apps cannot send a bearer token. The token is
+a 256-bit capability, stored only as SHA-256, answered with an identical 404 for every failure, redacted from
+telemetry, and revoked by reset, turn-off and account erasure. Like `/go` and media GET it bypasses MediatR: an
+audit row per 15-minute poll would be noise. Enable, rotate and revoke are audited handlers.
+

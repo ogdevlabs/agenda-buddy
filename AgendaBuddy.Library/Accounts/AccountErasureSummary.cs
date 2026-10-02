@@ -32,4 +32,5 @@ public record AccountErasureSummary(
     long NotesDeleted,
     long SubscriptionsRemoved,
     long DeviceTokensDeleted,
-    long ShowcaseRowsDeleted = 0);
+    long ShowcaseRowsDeleted = 0,
+    long CalendarFeedsDeleted = 0);

@@ -23,6 +23,8 @@ public static class ServiceCollectionExtension
         var customersCollection = MongoConnectionResolver.ResolveSetting(configuration, "CustomersCollection", "customers");
         var calendarBlocksCollection = MongoConnectionResolver.ResolveSetting(
             configuration, "CalendarBlocksCollection", "calendar_blocks");
+        var calendarFeedsCollection = MongoConnectionResolver.ResolveSetting(
+            configuration, "CalendarFeedsCollection", "calendar_feeds");
         serviceCollection.AddScoped<IRepository<ProviderEntity>>(serviceProvider =>
             new MongoDbRepository<ProviderEntity>(
                 serviceProvider.GetRequiredService<IMongoClient>().GetDatabase(databaseName),
@@ -44,6 +46,11 @@ public static class ServiceCollectionExtension
                 serviceProvider.GetRequiredService<IMongoClient>().GetDatabase(databaseName),
                 calendarBlocksCollection));
 
+        serviceCollection.AddScoped<IRepository<CalendarFeedEntity>>(serviceProvider =>
+            new MongoDbRepository<CalendarFeedEntity>(
+                serviceProvider.GetRequiredService<IMongoClient>().GetDatabase(databaseName),
+                calendarFeedsCollection));
+
         serviceCollection.AddScoped<ProviderService>();
         serviceCollection.AddScoped<CalendarService>();
         serviceCollection.AddScoped<CustomerService>();
@@ -51,6 +58,7 @@ public static class ServiceCollectionExtension
         // Required by CheckCalendarAvailabilityQueryHandler: without it a customer is offered slots inside the
         // provider's time off, which is the whole point of recording it.
         serviceCollection.AddScoped<ICalendarBlockService, CalendarBlockService>();
+        serviceCollection.AddScoped<ICalendarFeedService, CalendarFeedService>();
 
         // CheckCalendarAvailabilityQueryHandler/CheckCalendarAppointmentsQueryHandler are typed against
         // IProviderService, not the concrete class -- it already covers everything they call.

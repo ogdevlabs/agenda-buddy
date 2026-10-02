@@ -1,0 +1,29 @@
+meta {
+  name: 9 Fetch calendar feed (anonymous)
+  type: http
+  seq: 9
+}
+get {
+  url: {{gatewayUrl}}{{calendarFeedPath}}
+  auth: none
+}
+tests {
+  test("200 text/calendar", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getHeader("content-type")).to.include("text/calendar");
+  });
+  test("no email addresses", function () {
+    expect(res.getBody()).to.not.match(/[^\s:;]+@[^\s:;]+\.[a-z]+/i);
+  });
+}
+docs {
+  What a calendar app polls — **no Authorization header**: the URL is the credential (ADR-074). Run
+  `8 Enable or reset calendar feed` first; it stores the path in `calendarFeedPath`.
+
+  RFC 5545, UTC times, 60 days back / 365 ahead, at most 500 events. Each event carries the service, the
+  other party's display name, the time and a status (`TENTATIVE` requested, `CONFIRMED` booked/completed,
+  `CANCELLED`) — never an email, phone, fee or note.
+
+  Unknown, malformed and revoked tokens all answer the **same** `404` with a fixed body, so the route is
+  not an oracle. The token is redacted from exported spans and the Gateway's request logs.
+}

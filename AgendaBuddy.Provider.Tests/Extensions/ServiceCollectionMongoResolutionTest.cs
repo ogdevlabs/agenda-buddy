@@ -101,7 +101,9 @@ public class ServiceCollectionMongoResolutionTest
         //
         // Six more for the showcase collections, which erasure clears — the showcase itself, its media references,
         // visits, scan counters, reports and hides.
-        Assert.Equal(14, repositories.Count);
+        //
+        // One more for the calendar feed, which erasure revokes so the account's subscribed link stops answering.
+        Assert.Equal(15, repositories.Count);
         Assert.All(repositories, descriptor => Assert.Equal(ServiceLifetime.Scoped, descriptor.Lifetime));
     }
 }
