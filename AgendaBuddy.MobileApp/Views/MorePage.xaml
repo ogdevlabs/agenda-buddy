@@ -79,10 +79,11 @@
                                    TextColor="{StaticResource TextMuted}" VerticalOptions="Center" />
                         </Grid>
 
-                        <BoxView HeightRequest="0.5" Color="{StaticResource BorderLight}" Margin="16,0" />
+                        <BoxView x:Name="ScanCodeDivider" HeightRequest="0.5"
+                                 Color="{StaticResource BorderLight}" Margin="16,0" IsVisible="False" />
 
-                        <Grid ColumnDefinitions="Auto,*,Auto" Padding="16,14" ColumnSpacing="14"
-                              AutomationId="MoreScanCodeRow">
+                        <Grid x:Name="ScanCodeRow" ColumnDefinitions="Auto,*,Auto" Padding="16,14"
+                              ColumnSpacing="14" AutomationId="MoreScanCodeRow" IsVisible="False">
                             <Grid.GestureRecognizers>
                                 <TapGestureRecognizer Tapped="OnScanClicked" />
                             </Grid.GestureRecognizers>
