@@ -4,6 +4,21 @@ All notable changes to this project are documented in this file, in [Keep a Chan
 
 ## [Unreleased]
 
+## [0.26.0] - 2026-10-01
+
+### Added
+
+- Phone calendar sync for providers and customers: AgendaMe appointments appear in Apple Calendar or Google
+  Calendar through a subscribed iCalendar feed and update on their own. No calendar permission is requested.
+- A Phone calendar screen (Profile and Appointments) turns sync on, adds it to the native calendar first, copies
+  the link, issues a new link, or turns sync off; reset and turn-off confirm first.
+- `GET/POST/DELETE /api/v1/calendar/feed` and the anonymous `GET /api/v1/calendar/feed/{token}.ics`.
+
+### Security
+
+- The feed link is a 256-bit secret stored only as a SHA-256 hash, answers one identical 404 for every failure,
+  is redacted from telemetry and Gateway logs, carries no email or phone, and is revoked by account deletion.
+
 ## [0.24.0] - 2026-09-13
 
 ### Added

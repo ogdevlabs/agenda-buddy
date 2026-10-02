@@ -1,10 +1,10 @@
 ---
 id: F-038
 title: F-038
-status: open
+status: shipped
 priority: null
 labels: [roadmap]
-claimed_by: oscargarcia@ogdevlabs.onmicrosoft.com
+claimed_by: null
 created: 2026-10-01
 updated: 2026-10-01
 ---

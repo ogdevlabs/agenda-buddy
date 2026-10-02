@@ -11,27 +11,22 @@
 
 ## Current Phase
 
-Construction
+Idle
 
-**Current Sub-phase:** Build
-
-**Last Checkpoint:** Construction / Build / 2026-10-01T01:00:00Z
-
-_Inception complete for F-038 (unattended run): PRD `docs/pdlc/prds/PRD_F-038_native-calendar-sync_2026-10-01.md`, design `docs/pdlc/design/native-calendar-sync/ARCHITECTURE.md`, ADR-073/074._
+**Last Checkpoint:** Operation / Ship / 2026-10-01
 
 ---
 
 ## Current Feature
 
-native-calendar-sync (F-038)
+none
 
 ## Roadmap Claim
 
-- **Feature ID:** F-038
-- **Feature record:** docs/pdlc/tasks/F-038/_feature.md
-- **Claimed by:** oscargarcia@ogdevlabs.onmicrosoft.com
-- **Claimed at:** 2026-10-01T00:00:00Z
-- **Branch:** feat/F-038-native-calendar-sync   (cut off origin/main)
+none
+
+_**F-038 native-calendar-sync SHIPPED** as `v0.26.0` via PR #181 (2026-10-01): subscribed iCalendar feed per
+account, Apple via `webcal://`, Google via its subscribe page. Episode 024._
 
 _**F-037 provider-showcase SHIPPED** via PR #179 (2026-09-30); PDLC record closed at the start of F-038._
 
